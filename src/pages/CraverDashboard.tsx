@@ -65,9 +65,9 @@ const CraverDashboard: React.FC = () => {
 
     fetchOrders();
 
-    // Set up realtime subscription
+    // Set up realtime subscription with more specific event handling
     const channel = supabase
-      .channel('orders-changes')
+      .channel('orders-realtime')
       .on(
         'postgres_changes',
         {
@@ -76,8 +76,31 @@ const CraverDashboard: React.FC = () => {
           table: 'orders'
         },
         (payload) => {
-          console.log('Order change:', payload);
-          fetchOrders();
+          console.log('Order realtime update:', payload);
+          
+          if (payload.eventType === 'UPDATE') {
+            const updatedOrder = payload.new as Order;
+            
+            setOrders(prevOrders => 
+              prevOrders.map(order => 
+                order.id === updatedOrder.id ? updatedOrder : order
+              )
+            );
+
+            // Update active order if it's the one that changed
+            if (updatedOrder.assigned_craver_id === user.id && 
+                ['assigned', 'picked_up'].includes(updatedOrder.status)) {
+              setActiveOrder(updatedOrder);
+            } else if (updatedOrder.assigned_craver_id !== user.id) {
+              // Order was unassigned or assigned to someone else
+              setActiveOrder(prev => prev?.id === updatedOrder.id ? null : prev);
+            }
+          }
+          
+          if (payload.eventType === 'INSERT') {
+            const newOrder = payload.new as Order;
+            setOrders(prevOrders => [newOrder, ...prevOrders]);
+          }
         }
       )
       .subscribe();
@@ -130,28 +153,64 @@ const CraverDashboard: React.FC = () => {
   const handleAcceptOrder = async (order: Order) => {
     if (!user) return;
 
-    const { error } = await supabase
-      .from('orders')
-      .update({
-        status: 'assigned',
-        assigned_craver_id: user.id
-      })
-      .eq('id', order.id)
-      .eq('status', 'pending'); // Ensure order is still pending
+    // Immediately update UI for instant feedback
+    const updatedOrder = {
+      ...order,
+      status: 'assigned' as const,
+      assigned_craver_id: user.id
+    };
+    
+    // Update local state immediately
+    setOrders(prevOrders => 
+      prevOrders.map(o => o.id === order.id ? updatedOrder : o)
+    );
+    setActiveOrder(updatedOrder);
 
-    if (error) {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({
+          status: 'assigned',
+          assigned_craver_id: user.id
+        })
+        .eq('id', order.id)
+        .eq('status', 'pending'); // Ensure order is still pending
+
+      if (error) {
+        console.error('Failed to accept order:', error);
+        // Revert local state on error
+        setOrders(prevOrders => 
+          prevOrders.map(o => o.id === order.id ? order : o)
+        );
+        setActiveOrder(null);
+        
+        toast({
+          title: "Error",
+          description: "Failed to accept order. It may have been taken by another driver.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Order Accepted! 🎉",
+        description: `Navigate to ${order.pickup_name} for pickup`,
+      });
+      
+    } catch (error) {
+      console.error('Error accepting order:', error);
+      // Revert local state on error
+      setOrders(prevOrders => 
+        prevOrders.map(o => o.id === order.id ? order : o)
+      );
+      setActiveOrder(null);
+      
       toast({
         title: "Error",
-        description: "Failed to accept order. It may have been taken by another driver.",
+        description: "Something went wrong. Please try again.",
         variant: "destructive",
       });
-      return;
     }
-
-    toast({
-      title: "Order Accepted",
-      description: `You've accepted the order from ${order.pickup_name}`,
-    });
   };
 
   const handleStatusUpdate = async (orderId: string, newStatus: 'picked_up' | 'delivered') => {

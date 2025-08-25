@@ -100,7 +100,7 @@ const OrderMap: React.FC<OrderMapProps> = ({ orders, activeOrder, onOrderClick }
               {pendingOrders.map((order) => (
                 <Card 
                   key={order.id} 
-                  className="cursor-pointer hover:shadow-md transition-shadow border-l-4"
+                  className="cursor-pointer hover:shadow-lg transition-all transform hover:scale-[1.02] border-l-4"
                   style={{
                     borderLeftColor: order.payout_cents >= 1000 ? '#ef4444' : 
                                    order.payout_cents >= 700 ? '#f97316' : '#eab308'
@@ -123,20 +123,20 @@ const OrderMap: React.FC<OrderMapProps> = ({ orders, activeOrder, onOrderClick }
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
                       <Navigation className="h-3 w-3" />
                       <span>To: {order.dropoff_name}</span>
                     </div>
                     
                     <Button 
                       size="sm" 
-                      className="w-full mt-2"
+                      className="w-full bg-green-600 hover:bg-green-700 text-white font-medium"
                       onClick={(e) => {
                         e.stopPropagation();
                         onOrderClick(order);
                       }}
                     >
-                      Accept Order
+                      Accept Order - ${(order.payout_cents / 100).toFixed(2)}
                     </Button>
                   </CardContent>
                 </Card>
