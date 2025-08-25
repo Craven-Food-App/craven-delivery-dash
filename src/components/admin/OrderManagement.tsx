@@ -4,7 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Package, MapPin, DollarSign, Clock, User, Navigation } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Package, MapPin, DollarSign, Clock, User, Navigation, UserCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Order {
@@ -25,9 +27,19 @@ interface Order {
   assigned_craver_id?: string | null;
 }
 
+interface Craver {
+  id: string;
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
+
 const OrderManagement: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [cravers, setCravers] = useState<Craver[]>([]);
   const [loading, setLoading] = useState(true);
+  const [assigningOrders, setAssigningOrders] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -51,12 +63,33 @@ const OrderManagement: React.FC = () => {
         setOrders(data || []);
       } catch (error) {
         console.error('Error fetching orders:', error);
-      } finally {
-        setLoading(false);
       }
     };
 
-    fetchOrders();
+    const fetchCravers = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('craver_applications')
+          .select('id, user_id, first_name, last_name, email')
+          .eq('status', 'approved');
+
+        if (error) {
+          console.error('Error fetching cravers:', error);
+          return;
+        }
+
+        setCravers(data || []);
+      } catch (error) {
+        console.error('Error fetching cravers:', error);
+      }
+    };
+
+    const loadData = async () => {
+      await Promise.all([fetchOrders(), fetchCravers()]);
+      setLoading(false);
+    };
+
+    loadData();
 
     // Set up real-time subscription for orders
     const channel = supabase
@@ -124,6 +157,50 @@ const OrderManagement: React.FC = () => {
 
   const formatTime = (timestamp: string) => {
     return new Date(timestamp).toLocaleString();
+  };
+
+  const assignOrder = async (orderId: string, craverId: string) => {
+    setAssigningOrders(prev => new Set(prev).add(orderId));
+    
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          assigned_craver_id: craverId,
+          status: 'assigned',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId);
+
+      if (error) {
+        console.error('Error assigning order:', error);
+        toast({
+          title: "Error",
+          description: "Failed to assign order",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const craver = cravers.find(c => c.user_id === craverId);
+      toast({
+        title: "Order Assigned! 🚗",
+        description: `Order assigned to ${craver?.first_name} ${craver?.last_name}`,
+      });
+    } catch (error) {
+      console.error('Error assigning order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to assign order",
+        variant: "destructive",
+      });
+    } finally {
+      setAssigningOrders(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(orderId);
+        return newSet;
+      });
+    }
   };
 
   const ordersByStatus = {
@@ -270,7 +347,33 @@ const OrderManagement: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      {order.status === 'pending' && (
+                        <div className="mt-3 pt-3 border-t">
+                          <div className="flex items-center gap-3">
+                            <UserCheck className="h-4 w-4 text-muted-foreground" />
+                            <Select onValueChange={(craverId) => assignOrder(order.id, craverId)}>
+                              <SelectTrigger className="w-[200px]">
+                                <SelectValue placeholder="Assign to craver..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {cravers.map((craver) => (
+                                  <SelectItem key={craver.user_id} value={craver.user_id}>
+                                    {craver.first_name} {craver.last_name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {assigningOrders.has(order.id) && (
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                                Assigning...
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mt-3">
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
@@ -286,7 +389,7 @@ const OrderManagement: React.FC = () => {
                         {order.assigned_craver_id && (
                           <div className="flex items-center gap-1">
                             <User className="h-3 w-3" />
-                            Craver: {order.assigned_craver_id.slice(-8)}
+                            Craver: {cravers.find(c => c.user_id === order.assigned_craver_id)?.first_name || order.assigned_craver_id.slice(-8)}
                           </div>
                         )}
                       </div>
