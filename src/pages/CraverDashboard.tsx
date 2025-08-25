@@ -149,21 +149,54 @@ const CraverDashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      toast({
+        title: "Location Not Available",
+        description: "Geolocation is not supported by this browser. Some features may be limited.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const handleLocationSuccess = (position) => {
+      const { latitude, longitude } = position.coords;
+      setUserLocation({ lat: latitude, lng: longitude });
+      updateLocation(latitude, longitude);
+    };
+
+    const handleLocationError = (error) => {
+      let message = "Unable to get your location.";
+      switch(error.code) {
+        case error.PERMISSION_DENIED:
+          message = "Location access denied. Please enable location access to receive nearby orders.";
+          break;
+        case error.POSITION_UNAVAILABLE:
+          message = "Location information is unavailable.";
+          break;
+        case error.TIMEOUT:
+          message = "Location request timed out.";
+          break;
+      }
+      
+      console.warn('Location tracking error:', error);
+      
+      // Only show toast once, not repeatedly
+      if (error.code === error.PERMISSION_DENIED) {
+        toast({
+          title: "Location Permission Required",
+          description: message,
+          variant: "destructive",
+        });
+      }
+    };
 
     const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        setUserLocation({ lat: latitude, lng: longitude });
-        updateLocation(latitude, longitude);
-      },
-      (error) => {
-        console.warn('Location tracking error:', error);
-      },
+      handleLocationSuccess,
+      handleLocationError,
       {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000
+        enableHighAccuracy: false, // Reduce battery usage
+        timeout: 15000,
+        maximumAge: 300000 // 5 minutes
       }
     );
 
@@ -409,14 +442,15 @@ const CraverDashboard: React.FC = () => {
           activeOrder={activeOrder}
           onCompleteDelivery={handleCompleteDelivery}
         />
+        
         <div className="flex h-screen">
           {/* Map Section */}
           <div className="flex-1 p-4">
             <DasherMap 
-              orders={orders}
+              orders={filteredOrders}
               activeOrder={activeOrder}
               onOrderClick={(order) => {
-                if (order.status === 'pending') {
+                if (order.status === 'pending' && onlineStatus) {
                   handleAcceptOrder(order);
                 }
               }}
@@ -442,13 +476,36 @@ const CraverDashboard: React.FC = () => {
               </TabsList>
 
               <TabsContent value="orders" className="flex-1 space-y-4 mt-4">
+                {/* Online Status Indicator */}
+                <Card className={`border-l-4 ${onlineStatus ? 'border-l-green-500 bg-green-50/50' : 'border-l-red-500 bg-red-50/50'}`}>
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${onlineStatus ? 'bg-green-500' : 'bg-red-500'}`} />
+                        <span className="font-medium">
+                          {onlineStatus ? 'Online' : 'Offline'}
+                        </span>
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {onlineStatus ? 'Receiving orders' : 'Not receiving orders'}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Daily Earnings Tracker */}
                 <DailyEarningsTracker user={user} />
 
                 {/* Active Order */}
                 {activeOrder && (
-                  <Card>
-                    <CardContent className="p-4">
+                  <Card className="border-l-4 border-l-blue-500">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Car className="h-4 w-4" />
+                        Active Delivery
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
                       <ActiveOrderCard
                         order={activeOrder}
                         onStatusUpdate={handleStatusUpdate}
@@ -466,22 +523,29 @@ const CraverDashboard: React.FC = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <ScrollArea className="h-[500px]">
-                      <div className="space-y-4 p-4">
+                    <ScrollArea className="h-[400px]">
+                      <div className="space-y-3 p-4">
                         {!onlineStatus ? (
                           <div className="text-center py-8">
-                            <p className="text-muted-foreground mb-4">You're currently offline</p>
-                            <p className="text-sm text-muted-foreground">Turn on your online status to receive orders</p>
+                            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                              <Car className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                            <p className="text-muted-foreground mb-2 font-medium">You're currently offline</p>
+                            <p className="text-sm text-muted-foreground">Go to Tools tab to go online</p>
                           </div>
                         ) : availableOrders.length === 0 ? (
-                          <p className="text-muted-foreground text-center py-8">
-                            No orders available at the moment
-                          </p>
+                          <div className="text-center py-8">
+                            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                              <Package className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                            <p className="text-muted-foreground mb-2 font-medium">No orders available</p>
+                            <p className="text-sm text-muted-foreground">New orders will appear here</p>
+                          </div>
                         ) : (
                           availableOrders.map((order, index) => (
                             <div key={order.id}>
                               <Card 
-                                className="cursor-pointer hover:shadow-lg transition-all transform hover:scale-[1.02] border-l-4"
+                                className="cursor-pointer hover:shadow-lg transition-all transform hover:scale-[1.02] border-l-4 hover:border-l-primary"
                                 style={{
                                   borderLeftColor: order.payout_cents >= 1000 ? '#ef4444' : 
                                                  order.payout_cents >= 700 ? '#f97316' : '#eab308'
@@ -490,23 +554,24 @@ const CraverDashboard: React.FC = () => {
                               >
                                 <CardContent className="p-3">
                                   <div className="flex justify-between items-start mb-2">
-                                    <div className="flex-1">
-                                      <h4 className="font-medium text-sm">{order.pickup_name}</h4>
-                                      <p className="text-xs text-muted-foreground">{order.pickup_address}</p>
+                                    <div className="flex-1 pr-2">
+                                      <h4 className="font-medium text-sm leading-tight">{order.pickup_name}</h4>
+                                      <p className="text-xs text-muted-foreground mt-1">{order.pickup_address}</p>
+                                      <p className="text-xs text-muted-foreground mt-1">→ {order.dropoff_name}</p>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-right flex-shrink-0">
                                       <div className="text-lg font-bold text-green-600">
                                         ${(order.payout_cents / 100).toFixed(2)}
                                       </div>
                                       <div className="text-xs text-muted-foreground">
-                                        {order.distance_km} km
+                                        {order.distance_km.toFixed(1)} km
                                       </div>
                                     </div>
                                   </div>
                                 </CardContent>
                               </Card>
                               {index < availableOrders.length - 1 && (
-                                <Separator className="my-4" />
+                                <Separator className="my-3" />
                               )}
                             </div>
                           ))
