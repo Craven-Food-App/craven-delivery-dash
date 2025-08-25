@@ -9,6 +9,7 @@ import { EndTimeSheet } from './EndTimeSheet';
 import { BottomNavigation } from './BottomNavigation';
 import { OnlineSearchPanel } from './OnlineSearchPanel';
 import { OfferCard } from './OfferCard';
+import { AccountSection } from './AccountSection';
 import SimpleMap from '@/components/SimpleMap';
 
 type DriverState = 'offline' | 'setEndTime' | 'online_searching' | 'online_paused' | 'offer_presented' | 'on_delivery';
@@ -167,6 +168,15 @@ export const MobileDriverDashboard: React.FC = () => {
         return 'Offline';
     }
   };
+
+  if (activeTab === 'account') {
+    return (
+      <>
+        <AccountSection />
+        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      </>
+    );
+  }
 
   if (activeTab !== 'main') {
     return (
