@@ -232,22 +232,46 @@ const CraverDashboard: React.FC = () => {
     }
 
     try {
+      // First check if user is approved craver
+      const { data: craverCheck } = await supabase
+        .from('craver_applications')
+        .select('status')
+        .eq('user_id', user.id)
+        .eq('status', 'approved')
+        .maybeSingle();
+
+      if (!craverCheck) {
+        toast({
+          title: "Access Denied",
+          description: "You need to be an approved craver to update order status.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { data: updatedOrder, error } = await supabase
         .from('orders')
         .update({ status: newStatus })
         .eq('id', orderId)
         .eq('assigned_craver_id', user.id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Failed to update order status:', error);
+        
+        toast({
+          title: "Update Failed",
+          description: error.message || "Failed to update order status. Please try again.",
+          variant: "destructive",
+        });
+        
         // Revert UI on error
         const { data } = await supabase
           .from('orders')
           .select('*')
           .eq('id', orderId)
-          .single();
+          .maybeSingle();
         
         if (data) {
           setOrders(prevOrders => 
@@ -257,10 +281,13 @@ const CraverDashboard: React.FC = () => {
           );
           setActiveOrder(data.assigned_craver_id === user.id ? data : null);
         }
-        
+        return;
+      }
+
+      if (!updatedOrder) {
         toast({
-          title: "Error",
-          description: "Failed to update order status. Please try again.",
+          title: "Update Failed",
+          description: "Order not found or not assigned to you. Please refresh and try again.",
           variant: "destructive",
         });
         return;
