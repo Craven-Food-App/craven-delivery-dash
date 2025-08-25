@@ -324,6 +324,7 @@ const CraverDashboard: React.FC = () => {
                     Available Orders ({availableOrders.length})
                   </CardTitle>
                 </CardHeader>
+                <CardContent className="p-0">
                   <ScrollArea className="h-[600px]">
                     <div className="space-y-4 p-4">
                       {availableOrders.length === 0 ? (
@@ -366,6 +367,7 @@ const CraverDashboard: React.FC = () => {
                       )}
                     </div>
                   </ScrollArea>
+                </CardContent>
               </Card>
             </div>
           </div>
