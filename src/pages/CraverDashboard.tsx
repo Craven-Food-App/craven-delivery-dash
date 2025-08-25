@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import AccessGuard from '@/components/AccessGuard';
 import DasherMap from '@/components/DasherMap';
 import ActiveOrderCard from '@/components/ActiveOrderCard';
+import DailyEarningsTracker from '@/components/DailyEarningsTracker';
 import DeliveryProximityDetector from '@/components/DeliveryProximityDetector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -314,6 +315,9 @@ const CraverDashboard: React.FC = () => {
           {/* Orders Panel */}
           <div className="w-96 border-l bg-muted/10 p-4 flex flex-col">
             <div className="space-y-4">
+              {/* Daily Earnings Tracker */}
+              <DailyEarningsTracker user={user} />
+
               {/* Active Order */}
               {activeOrder && (
                 <Card>
