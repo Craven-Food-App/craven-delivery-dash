@@ -50,11 +50,15 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
   }, [orders, activeOrder, loading]);
 
   const initializeMap = async (token?: string) => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current) {
+      console.log('Map container not found');
+      return;
+    }
 
     try {
       setLoading(true);
       setError(null);
+      console.log('Starting map initialization...');
       
       let mapboxToken = token;
       
@@ -63,9 +67,11 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
         // Try to get Mapbox token from edge function
         const { data, error } = await supabase.functions.invoke('get-mapbox-token');
         
+        console.log('Edge function response:', { data, error });
+        
         if (error) {
           console.error('Edge function error:', error);
-          throw new Error('Failed to get Mapbox token from server');
+          throw new Error(`Failed to get Mapbox token: ${error.message}`);
         }
         
         if (!data?.token) {
@@ -74,6 +80,7 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
         }
         
         mapboxToken = data.token;
+        console.log('Mapbox token received successfully');
       }
 
       console.log('Initializing map with token...');
