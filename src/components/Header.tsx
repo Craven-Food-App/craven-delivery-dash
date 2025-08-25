@@ -32,6 +32,15 @@ const Header = () => {
 
           {/* Actions */}
           <div className="flex items-center space-x-4">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="hidden sm:flex text-primary hover:text-primary hover:bg-primary/10"
+              onClick={() => window.location.href = '/craver'}
+            >
+              Become a Craver
+            </Button>
+            
             <Button variant="ghost" size="icon" className="relative">
               <ShoppingCart className="h-5 w-5" />
               <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
