@@ -10,6 +10,7 @@ import { BottomNavigation } from './BottomNavigation';
 import { OnlineSearchPanel } from './OnlineSearchPanel';
 import { OfferCard } from './OfferCard';
 import { AccountSection } from './AccountSection';
+import { RatingsSection } from './RatingsSection';
 import SimpleMap from '@/components/SimpleMap';
 
 type DriverState = 'offline' | 'setEndTime' | 'online_searching' | 'online_paused' | 'offer_presented' | 'on_delivery';
@@ -173,6 +174,15 @@ export const MobileDriverDashboard: React.FC = () => {
     return (
       <>
         <AccountSection />
+        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      </>
+    );
+  }
+
+  if (activeTab === 'ratings') {
+    return (
+      <>
+        <RatingsSection />
         <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
       </>
     );
