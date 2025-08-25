@@ -37,8 +37,13 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    initializeMap();
+    // Add a small delay to ensure the component is mounted
+    const timer = setTimeout(() => {
+      initializeMap();
+    }, 100);
+    
     return () => {
+      clearTimeout(timer);
       map.current?.remove();
     };
   }, []);
