@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { Car, DollarSign, Clock, Shield, CheckCircle, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { CraverApplicationForm } from "@/components/CraverApplicationForm";
 
 const CraverHub = () => {
+  const [showApplicationForm, setShowApplicationForm] = useState(false);
   const benefits = [
     {
       icon: DollarSign,
@@ -62,7 +65,11 @@ const CraverHub = () => {
               Join thousands of Cravers making a difference in their communities.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="text-lg px-8 py-6">
+              <Button 
+                size="lg" 
+                className="text-lg px-8 py-6"
+                onClick={() => setShowApplicationForm(true)}
+              >
                 Start Earning Today
               </Button>
               <Button variant="outline" size="lg" className="text-lg px-8 py-6">
@@ -178,7 +185,11 @@ const CraverHub = () => {
           <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
             Join our community of Cravers and start earning money delivering the food people love.
           </p>
-          <Button size="lg" className="text-lg px-8 py-6">
+          <Button 
+            size="lg" 
+            className="text-lg px-8 py-6"
+            onClick={() => setShowApplicationForm(true)}
+          >
             Apply to Become a Craver
           </Button>
           <p className="text-sm text-muted-foreground mt-4">
@@ -188,6 +199,10 @@ const CraverHub = () => {
       </section>
 
       <Footer />
+      
+      {showApplicationForm && (
+        <CraverApplicationForm onClose={() => setShowApplicationForm(false)} />
+      )}
     </div>
   );
 };
