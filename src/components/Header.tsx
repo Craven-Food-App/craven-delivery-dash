@@ -57,7 +57,12 @@ const Header = () => {
               </span>
             </Button>
             
-            <Button variant="outline" size="sm" className="hidden sm:flex">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="hidden sm:flex"
+              onClick={() => window.location.href = '/auth'}
+            >
               <User className="h-4 w-4 mr-2" />
               Sign In
             </Button>
