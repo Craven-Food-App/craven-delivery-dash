@@ -32,6 +32,8 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
   const map = useRef<mapboxgl.Map | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showTokenInput, setShowTokenInput] = useState(false);
+  const [manualToken, setManualToken] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -47,20 +49,35 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
     }
   }, [orders, activeOrder, loading]);
 
-  const initializeMap = async () => {
+  const initializeMap = async (token?: string) => {
     if (!mapContainer.current) return;
 
     try {
       setLoading(true);
+      setError(null);
       
-      // Get Mapbox token from edge function
-      const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+      let mapboxToken = token;
       
-      if (error || !data?.token) {
-        throw new Error('Failed to get Mapbox token');
+      if (!mapboxToken) {
+        console.log('Fetching Mapbox token from edge function...');
+        // Try to get Mapbox token from edge function
+        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+        
+        if (error) {
+          console.error('Edge function error:', error);
+          throw new Error('Failed to get Mapbox token from server');
+        }
+        
+        if (!data?.token) {
+          console.error('No token returned:', data);
+          throw new Error('No Mapbox token available');
+        }
+        
+        mapboxToken = data.token;
       }
 
-      mapboxgl.accessToken = data.token;
+      console.log('Initializing map with token...');
+      mapboxgl.accessToken = mapboxToken;
       
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
@@ -76,21 +93,32 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
 
       // Wait for map to load before adding features
       map.current.on('load', () => {
+        console.log('Map loaded successfully');
         addHeatmapLayer();
         addOrderClusters();
         getUserLocation();
         setLoading(false);
       });
 
-    } catch (error) {
-      console.error('Map initialization error:', error);
-      setError('Failed to load map. Please try again.');
-      setLoading(false);
-      toast({
-        title: "Map Error",
-        description: "Failed to load map. Please refresh the page.",
-        variant: "destructive",
+      map.current.on('error', (e) => {
+        console.error('Map error:', e);
+        throw new Error('Map failed to load');
       });
+
+    } catch (error: any) {
+      console.error('Map initialization error:', error);
+      setError(error.message || 'Failed to load map');
+      setLoading(false);
+      
+      // Show fallback option to enter token manually
+      if (!token) {
+        setShowTokenInput(true);
+        toast({
+          title: "Map Loading Failed",
+          description: "You can enter your Mapbox token manually to continue.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -416,22 +444,82 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
     }
   };
 
+  const handleManualToken = () => {
+    if (!manualToken.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid Mapbox token",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setShowTokenInput(false);
+    initializeMap(manualToken);
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-full bg-muted/20 rounded-lg">
         <Loader2 className="h-8 w-8 animate-spin mb-2" />
         <p className="text-sm text-muted-foreground">Loading map...</p>
+        <button 
+          onClick={() => {
+            setLoading(false);
+            setShowTokenInput(true);
+          }}
+          className="text-xs text-primary hover:underline mt-2"
+        >
+          Having trouble? Click here
+        </button>
       </div>
     );
   }
 
-  if (error) {
+  if (error || showTokenInput) {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-muted/20 rounded-lg">
-        <p className="text-sm text-destructive mb-2">{error}</p>
+      <div className="flex flex-col items-center justify-center h-full bg-muted/20 rounded-lg p-4">
+        {error && <p className="text-sm text-destructive mb-4">{error}</p>}
+        
+        {showTokenInput && (
+          <div className="w-full max-w-md space-y-4">
+            <div className="text-center">
+              <h3 className="font-semibold mb-2">Enter Mapbox Token</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Get your free token from{' '}
+                <a 
+                  href="https://mapbox.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-primary hover:underline"
+                >
+                  mapbox.com
+                </a>
+              </p>
+            </div>
+            
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="pk.eyJ1Ijoi..."
+                value={manualToken}
+                onChange={(e) => setManualToken(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleManualToken()}
+                className="flex-1 px-3 py-2 border border-input rounded-md text-sm"
+              />
+              <button 
+                onClick={handleManualToken}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90"
+              >
+                Load Map
+              </button>
+            </div>
+          </div>
+        )}
+        
         <button 
-          onClick={initializeMap}
-          className="text-sm text-primary hover:underline"
+          onClick={() => initializeMap()}
+          className="text-sm text-primary hover:underline mt-4"
         >
           Try Again
         </button>
