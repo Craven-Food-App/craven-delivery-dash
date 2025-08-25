@@ -285,29 +285,64 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
             
             <div className="space-y-2">
               <Label>Date of Birth *</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !data.dateOfBirth && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {data.dateOfBirth ? format(data.dateOfBirth, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={data.dateOfBirth}
-                    onSelect={(date) => updateData('dateOfBirth', date)}
-                    disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                    initialFocus
+              <div className="grid grid-cols-2 gap-4">
+                {/* Date Picker Option */}
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground">Select from calendar</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !data.dateOfBirth && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {data.dateOfBirth ? format(data.dateOfBirth, "PPP") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={data.dateOfBirth}
+                        onSelect={(date) => updateData('dateOfBirth', date)}
+                        disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
+                {/* Text Input Option */}
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground">Or type date (MM/DD/YYYY)</Label>
+                  <Input
+                    type="date"
+                    value={data.dateOfBirth ? data.dateOfBirth.toISOString().split('T')[0] : ''}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        const selectedDate = new Date(e.target.value);
+                        // Adjust for timezone offset to prevent date shifting
+                        selectedDate.setMinutes(selectedDate.getMinutes() + selectedDate.getTimezoneOffset());
+                        updateData('dateOfBirth', selectedDate);
+                      } else {
+                        updateData('dateOfBirth', undefined);
+                      }
+                    }}
+                    max={new Date().toISOString().split('T')[0]}
+                    min="1900-01-01"
+                    className="w-full"
                   />
-                </PopoverContent>
-              </Popover>
+                </div>
+              </div>
+              
+              {data.dateOfBirth && (
+                <div className="text-sm text-muted-foreground mt-2">
+                  Selected: {format(data.dateOfBirth, "MMMM do, yyyy")}
+                </div>
+              )}
             </div>
           </div>
         );
@@ -463,29 +498,51 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
               </div>
               <div className="space-y-2">
                 <Label>License Expiry *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !data.licenseExpiry && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {data.licenseExpiry ? format(data.licenseExpiry, "PPP") : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={data.licenseExpiry}
-                      onSelect={(date) => updateData('licenseExpiry', date)}
-                      disabled={(date) => date < new Date()}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Date Picker Option */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !data.licenseExpiry && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {data.licenseExpiry ? format(data.licenseExpiry, "PPP") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={data.licenseExpiry}
+                        onSelect={(date) => updateData('licenseExpiry', date)}
+                        disabled={(date) => date < new Date()}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  
+                  {/* Text Input Option */}
+                  <Input
+                    type="date"
+                    value={data.licenseExpiry ? data.licenseExpiry.toISOString().split('T')[0] : ''}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        const selectedDate = new Date(e.target.value);
+                        selectedDate.setMinutes(selectedDate.getMinutes() + selectedDate.getTimezoneOffset());
+                        updateData('licenseExpiry', selectedDate);
+                      } else {
+                        updateData('licenseExpiry', undefined);
+                      }
+                    }}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full"
+                    placeholder="YYYY-MM-DD"
+                  />
+                </div>
               </div>
             </div>
           </div>
