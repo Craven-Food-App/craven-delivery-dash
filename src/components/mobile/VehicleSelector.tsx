@@ -1,6 +1,6 @@
-import React from 'react';
-import { Car, Bike, Zap, PersonStanding, Calendar } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Car, Bike, Zap, PersonStanding, Calendar, ChevronDown, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
@@ -31,41 +31,80 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
   onVehicleSelect,
   docsStatus
 }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const selectedOption = vehicleOptions.find(v => v.type === selectedVehicle);
+  const SelectedIcon = selectedOption?.icon || Car;
+  
   return (
-    <div className="w-full">
+    <div className="w-full relative">
       <h3 className="text-sm font-medium text-muted-foreground mb-3">Vehicle</h3>
-      <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        {vehicleOptions.map((vehicle) => {
-          const Icon = vehicle.icon;
-          const isSelected = selectedVehicle === vehicle.type;
-          const docsComplete = docsStatus[vehicle.type];
-          
-          return (
-            <Card
-              key={vehicle.type}
-              className={`min-w-[80px] cursor-pointer transition-smooth ${
-                isSelected 
-                  ? 'ring-2 ring-primary bg-primary/5' 
-                  : 'hover:bg-accent'
-              }`}
-              onClick={() => onVehicleSelect(vehicle.type)}
+      
+      {/* Dropdown Button */}
+      <Button
+        variant="outline"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full justify-between h-12 bg-card hover:bg-accent"
+      >
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <SelectedIcon className="h-5 w-5" />
+            <Badge
+              variant={docsStatus[selectedVehicle] ? "secondary" : "destructive"}
+              className="absolute -top-2 -right-2 h-4 w-4 p-0 text-[10px] flex items-center justify-center"
             >
-              <CardContent className="p-3 text-center">
-                <div className="relative mb-2">
-                  <Icon className="h-8 w-8 mx-auto text-foreground" />
-                  <Badge
-                    variant={docsComplete ? "secondary" : "destructive"}
-                    className="absolute -top-1 -right-1 h-4 w-4 p-0 text-[10px] flex items-center justify-center"
-                  >
-                    {docsComplete ? '✓' : '✗'}
-                  </Badge>
-                </div>
-                <p className="text-xs font-medium">{vehicle.label}</p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+              {docsStatus[selectedVehicle] ? '✓' : '✗'}
+            </Badge>
+          </div>
+          <span className="font-medium">{selectedOption?.label}</span>
+        </div>
+        <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </Button>
+
+      {/* Dropdown Menu */}
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 z-40" 
+            onClick={() => setIsOpen(false)}
+          />
+          
+          {/* Menu */}
+          <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+            {vehicleOptions.map((vehicle) => {
+              const Icon = vehicle.icon;
+              const isSelected = selectedVehicle === vehicle.type;
+              const docsComplete = docsStatus[vehicle.type];
+              
+              return (
+                <button
+                  key={vehicle.type}
+                  onClick={() => {
+                    onVehicleSelect(vehicle.type);
+                    setIsOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 p-3 hover:bg-accent transition-smooth ${
+                    isSelected ? 'bg-primary/5' : ''
+                  }`}
+                >
+                  <div className="relative">
+                    <Icon className="h-5 w-5" />
+                    <Badge
+                      variant={docsComplete ? "secondary" : "destructive"}
+                      className="absolute -top-2 -right-2 h-4 w-4 p-0 text-[10px] flex items-center justify-center"
+                    >
+                      {docsComplete ? '✓' : '✗'}
+                    </Badge>
+                  </div>
+                  <span className="font-medium flex-1 text-left">{vehicle.label}</span>
+                  {isSelected && <Check className="h-4 w-4 text-primary" />}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 };
