@@ -45,6 +45,8 @@ const CraverDashboard: React.FC = () => {
     if (!user) return;
 
     const fetchOrders = async () => {
+      console.log('Fetching orders for user:', user.id);
+      
       const { data, error } = await supabase
         .from('orders')
         .select('*')
@@ -55,6 +57,7 @@ const CraverDashboard: React.FC = () => {
         return;
       }
 
+      console.log('Fetched orders:', data);
       setOrders(data || []);
       
       // Find active order for current user
@@ -62,6 +65,7 @@ const CraverDashboard: React.FC = () => {
         order.assigned_craver_id === user.id && 
         ['assigned', 'picked_up'].includes(order.status)
       );
+      console.log('Active order for user:', active);
       setActiveOrder(active || null);
     };
 
