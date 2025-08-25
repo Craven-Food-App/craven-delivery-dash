@@ -7,14 +7,127 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
   }
   public: {
     Tables: {
-      [_ in never]: never
+      craver_applications: {
+        Row: {
+          account_number_last_four: string | null
+          bank_account_type: string | null
+          city: string
+          created_at: string
+          date_of_birth: string
+          drivers_license_back: string | null
+          drivers_license_front: string | null
+          email: string
+          first_name: string
+          id: string
+          insurance_document: string | null
+          last_name: string
+          license_expiry: string
+          license_number: string
+          license_plate: string | null
+          license_state: string
+          phone: string
+          profile_photo: string | null
+          reviewed_at: string | null
+          reviewer_notes: string | null
+          routing_number: string | null
+          ssn_last_four: string
+          state: string
+          status: Database["public"]["Enums"]["application_status"]
+          street_address: string
+          submitted_at: string | null
+          updated_at: string
+          user_id: string | null
+          vehicle_color: string | null
+          vehicle_make: string | null
+          vehicle_model: string | null
+          vehicle_registration: string | null
+          vehicle_type: Database["public"]["Enums"]["vehicle_type"]
+          vehicle_year: number | null
+          zip_code: string
+        }
+        Insert: {
+          account_number_last_four?: string | null
+          bank_account_type?: string | null
+          city: string
+          created_at?: string
+          date_of_birth: string
+          drivers_license_back?: string | null
+          drivers_license_front?: string | null
+          email: string
+          first_name: string
+          id?: string
+          insurance_document?: string | null
+          last_name: string
+          license_expiry: string
+          license_number: string
+          license_plate?: string | null
+          license_state: string
+          phone: string
+          profile_photo?: string | null
+          reviewed_at?: string | null
+          reviewer_notes?: string | null
+          routing_number?: string | null
+          ssn_last_four: string
+          state: string
+          status?: Database["public"]["Enums"]["application_status"]
+          street_address: string
+          submitted_at?: string | null
+          updated_at?: string
+          user_id?: string | null
+          vehicle_color?: string | null
+          vehicle_make?: string | null
+          vehicle_model?: string | null
+          vehicle_registration?: string | null
+          vehicle_type: Database["public"]["Enums"]["vehicle_type"]
+          vehicle_year?: number | null
+          zip_code: string
+        }
+        Update: {
+          account_number_last_four?: string | null
+          bank_account_type?: string | null
+          city?: string
+          created_at?: string
+          date_of_birth?: string
+          drivers_license_back?: string | null
+          drivers_license_front?: string | null
+          email?: string
+          first_name?: string
+          id?: string
+          insurance_document?: string | null
+          last_name?: string
+          license_expiry?: string
+          license_number?: string
+          license_plate?: string | null
+          license_state?: string
+          phone?: string
+          profile_photo?: string | null
+          reviewed_at?: string | null
+          reviewer_notes?: string | null
+          routing_number?: string | null
+          ssn_last_four?: string
+          state?: string
+          status?: Database["public"]["Enums"]["application_status"]
+          street_address?: string
+          submitted_at?: string | null
+          updated_at?: string
+          user_id?: string | null
+          vehicle_color?: string | null
+          vehicle_make?: string | null
+          vehicle_model?: string | null
+          vehicle_registration?: string | null
+          vehicle_type?: Database["public"]["Enums"]["vehicle_type"]
+          vehicle_year?: number | null
+          zip_code?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +136,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      application_status: "pending" | "under_review" | "approved" | "rejected"
+      vehicle_type: "car" | "bike" | "scooter" | "motorcycle" | "walking"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +264,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      application_status: ["pending", "under_review", "approved", "rejected"],
+      vehicle_type: ["car", "bike", "scooter", "motorcycle", "walking"],
+    },
   },
 } as const
