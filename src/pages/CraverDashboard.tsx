@@ -155,28 +155,65 @@ const CraverDashboard: React.FC = () => {
   const handleAcceptOrder = async (order: Order) => {
     if (!user) return;
 
-    // Immediately update UI for instant feedback
-    const updatedOrder = {
-      ...order,
-      status: 'assigned' as const,
-      assigned_craver_id: user.id
-    };
+    // First check if user is approved craver
+    console.log('Checking craver status for user:', user.id);
     
-    // Update local state immediately
-    setOrders(prevOrders => 
-      prevOrders.map(o => o.id === order.id ? updatedOrder : o)
-    );
-    setActiveOrder(updatedOrder);
-
     try {
-      const { error } = await supabase
+      const { data: craverCheck, error: craverError } = await supabase
+        .from('craver_applications')
+        .select('status, id')
+        .eq('user_id', user.id)
+        .eq('status', 'approved')
+        .maybeSingle();
+
+      console.log('Craver application check:', { craverCheck, craverError });
+
+      if (craverError) {
+        console.error('Error checking craver status:', craverError);
+        toast({
+          title: "Error",
+          description: "Unable to verify craver status. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!craverCheck) {
+        toast({
+          title: "Access Denied",
+          description: "You need to be an approved craver to accept orders. Please complete your application first.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Immediately update UI for instant feedback
+      const updatedOrder = {
+        ...order,
+        status: 'assigned' as const,
+        assigned_craver_id: user.id
+      };
+      
+      // Update local state immediately
+      setOrders(prevOrders => 
+        prevOrders.map(o => o.id === order.id ? updatedOrder : o)
+      );
+      setActiveOrder(updatedOrder);
+
+      console.log('Attempting to accept order:', { orderId: order.id, userId: user.id });
+
+      const { data: acceptedOrder, error } = await supabase
         .from('orders')
         .update({
           status: 'assigned',
           assigned_craver_id: user.id
         })
         .eq('id', order.id)
-        .eq('status', 'pending'); // Ensure order is still pending
+        .eq('status', 'pending') // Ensure order is still pending
+        .select()
+        .maybeSingle();
+
+      console.log('Order acceptance result:', { acceptedOrder, error });
 
       if (error) {
         console.error('Failed to accept order:', error);
@@ -188,7 +225,22 @@ const CraverDashboard: React.FC = () => {
         
         toast({
           title: "Error",
-          description: "Failed to accept order. It may have been taken by another driver.",
+          description: error.message || "Failed to accept order. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!acceptedOrder) {
+        // Order was likely taken by another driver
+        setOrders(prevOrders => 
+          prevOrders.map(o => o.id === order.id ? order : o)
+        );
+        setActiveOrder(null);
+        
+        toast({
+          title: "Order Unavailable",
+          description: "This order was already taken by another driver.",
           variant: "destructive",
         });
         return;
