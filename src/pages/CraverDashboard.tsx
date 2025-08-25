@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import AccessGuard from '@/components/AccessGuard';
-import Map from '@/components/Map';
+import SimpleMap from '@/components/SimpleMap';
 import OrderCard from '@/components/OrderCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -189,7 +189,7 @@ const CraverDashboard: React.FC = () => {
         <div className="flex h-screen">
           {/* Map Section */}
           <div className="flex-1 p-4">
-            <Map 
+            <SimpleMap 
               orders={orders}
               activeOrder={activeOrder}
               onOrderClick={(order) => {
