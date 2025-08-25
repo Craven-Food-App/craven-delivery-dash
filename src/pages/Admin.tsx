@@ -1,8 +1,10 @@
 import React from 'react';
 import AdminAccessGuard from '@/components/AdminAccessGuard';
 import ApplicationReview from '@/components/admin/ApplicationReview';
+import OrderManagement from '@/components/admin/OrderManagement';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Shield } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowLeft, Shield, Package, Users } from 'lucide-react';
 
 const Admin: React.FC = () => {
   return (
@@ -34,8 +36,27 @@ const Admin: React.FC = () => {
         </header>
 
         {/* Main Content */}
-        <main>
-          <ApplicationReview />
+        <main className="container mx-auto px-4 py-6">
+          <Tabs defaultValue="orders" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="orders" className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Order Management
+              </TabsTrigger>
+              <TabsTrigger value="applications" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Craver Applications
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="orders" className="space-y-4">
+              <OrderManagement />
+            </TabsContent>
+            
+            <TabsContent value="applications" className="space-y-4">
+              <ApplicationReview />
+            </TabsContent>
+          </Tabs>
         </main>
       </div>
     </AdminAccessGuard>
