@@ -232,11 +232,13 @@ const CraverDashboard: React.FC = () => {
     }
 
     try {
-      const { error } = await supabase
+      const { data: updatedOrder, error } = await supabase
         .from('orders')
         .update({ status: newStatus })
         .eq('id', orderId)
-        .eq('assigned_craver_id', user.id);
+        .eq('assigned_craver_id', user.id)
+        .select()
+        .single();
 
       if (error) {
         console.error('Failed to update order status:', error);
@@ -263,6 +265,8 @@ const CraverDashboard: React.FC = () => {
         });
         return;
       }
+
+      console.log('Order status updated successfully:', updatedOrder);
 
       const statusMessages = {
         picked_up: "✅ Order picked up! Navigate to customer.",

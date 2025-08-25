@@ -37,12 +37,18 @@ const DailyEarningsTracker: React.FC<DailyEarningsProps> = ({ user }) => {
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'orders',
-          filter: `assigned_craver_id=eq.${user.id}`
+          table: 'orders'
         },
         (payload) => {
-          if (payload.new.status === 'delivered') {
-            fetchDailyEarnings();
+          console.log('Order update received:', payload);
+          // Check if this order was just delivered by current user
+          if (payload.new.status === 'delivered' && 
+              payload.new.assigned_craver_id === user.id) {
+            console.log('Order delivered by current user, updating earnings');
+            // Delay slightly to ensure database is fully updated
+            setTimeout(() => {
+              fetchDailyEarnings();
+            }, 500);
           }
         }
       )
@@ -59,19 +65,29 @@ const DailyEarningsTracker: React.FC<DailyEarningsProps> = ({ user }) => {
     try {
       setLoading(true);
       
-      // Get today's date range (start and end of day)
-      const today = new Date();
-      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+      // Get today's date range in local timezone
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      console.log('Fetching earnings for date range:', {
+        start: today.toISOString(),
+        end: tomorrow.toISOString(),
+        userId: user.id
+      });
 
       // Fetch all delivered orders for today
       const { data: deliveredOrders, error } = await supabase
         .from('orders')
-        .select('payout_cents, updated_at, created_at')
+        .select('id, payout_cents, updated_at, created_at, status')
         .eq('assigned_craver_id', user.id)
         .eq('status', 'delivered')
-        .gte('updated_at', startOfDay.toISOString())
-        .lte('updated_at', endOfDay.toISOString());
+        .gte('updated_at', today.toISOString())
+        .lt('updated_at', tomorrow.toISOString())
+        .order('updated_at', { ascending: false });
+
+      console.log('Delivered orders found:', deliveredOrders);
 
       if (error) {
         console.error('Error fetching daily earnings:', error);
