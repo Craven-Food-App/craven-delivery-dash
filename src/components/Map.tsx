@@ -4,6 +4,8 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface Order {
   id: string;
@@ -30,74 +32,37 @@ interface MapProps {
 const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showTokenInput, setShowTokenInput] = useState(false);
+  const [showTokenInput, setShowTokenInput] = useState(true);
   const [manualToken, setManualToken] = useState('');
   const [initialized, setInitialized] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log('Map component mounted');
-    
-    // Check if container exists before initializing
-    if (mapContainer.current && !initialized) {
-      console.log('Container found, initializing map...');
-      setInitialized(true);
-      initializeMap();
-    }
-    
-    return () => {
-      if (map.current) {
-        console.log('Cleaning up map');
-        map.current.remove();
-        map.current = null;
-      }
-    };
+    console.log('Map component mounted, orders:', orders.length);
+    // Don't auto-initialize, wait for user to provide token
   }, []);
 
   useEffect(() => {
-    if (map.current && !loading) {
+    if (map.current && initialized && !loading) {
+      console.log('Updating map markers with orders:', orders.length);
       updateMapMarkers();
     }
-  }, [orders, activeOrder, loading]);
+  }, [orders, activeOrder, initialized, loading]);
 
-  const initializeMap = async (token?: string) => {
-    if (!mapContainer.current) {
-      console.log('Map container not found');
+  const initializeMap = async (token: string) => {
+    if (!mapContainer.current || !token.trim()) {
+      console.log('Missing container or token');
       return;
     }
 
     try {
       setLoading(true);
       setError(null);
-      console.log('Starting map initialization...');
+      console.log('Initializing map with manual token...');
       
-      let mapboxToken = token;
-      
-      if (!mapboxToken) {
-        console.log('Fetching Mapbox token from edge function...');
-        // Try to get Mapbox token from edge function
-        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
-        
-        console.log('Edge function response:', { data, error });
-        
-        if (error) {
-          console.error('Edge function error:', error);
-          throw new Error(`Failed to get Mapbox token: ${error.message}`);
-        }
-        
-        if (!data?.token) {
-          console.error('No token returned:', data);
-          throw new Error('No Mapbox token available');
-        }
-        
-        mapboxToken = data.token;
-        console.log('Mapbox token received successfully');
-      }
-
-      console.log('Initializing map with token...');
-      mapboxgl.accessToken = mapboxToken;
+      mapboxgl.accessToken = token;
       
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
@@ -114,32 +79,81 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
       // Wait for map to load before adding features
       map.current.on('load', () => {
         console.log('Map loaded successfully');
-        addHeatmapLayer();
-        addOrderClusters();
+        addOrderMarkers();
         getUserLocation();
         setLoading(false);
+        setInitialized(true);
       });
 
       map.current.on('error', (e) => {
         console.error('Map error:', e);
-        throw new Error('Map failed to load');
+        setError('Map failed to load. Please check your Mapbox token.');
+        setLoading(false);
       });
 
     } catch (error: any) {
       console.error('Map initialization error:', error);
       setError(error.message || 'Failed to load map');
       setLoading(false);
-      
-      // Show fallback option to enter token manually
-      if (!token) {
-        setShowTokenInput(true);
-        toast({
-          title: "Map Loading Failed",
-          description: "You can enter your Mapbox token manually to continue.",
-          variant: "destructive",
-        });
-      }
     }
+  };
+
+  const addOrderMarkers = () => {
+    if (!map.current) return;
+
+    // Add pending orders as individual markers
+    const pendingOrders = orders.filter(order => order.status === 'pending');
+    
+    pendingOrders.forEach(order => {
+      // Create custom marker element
+      const markerEl = document.createElement('div');
+      markerEl.className = 'order-marker';
+      markerEl.style.width = '40px';
+      markerEl.style.height = '40px';
+      markerEl.style.borderRadius = '50%';
+      markerEl.style.cursor = 'pointer';
+      markerEl.style.border = '3px solid white';
+      markerEl.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+      markerEl.style.display = 'flex';
+      markerEl.style.alignItems = 'center';
+      markerEl.style.justifyContent = 'center';
+      markerEl.style.color = 'white';
+      markerEl.style.fontWeight = 'bold';
+      markerEl.style.fontSize = '12px';
+      
+      // Color based on payout
+      if (order.payout_cents >= 1000) {
+        markerEl.style.backgroundColor = '#ef4444'; // High payout - red
+      } else if (order.payout_cents >= 700) {
+        markerEl.style.backgroundColor = '#f97316'; // Medium payout - orange
+      } else {
+        markerEl.style.backgroundColor = '#eab308'; // Low payout - yellow
+      }
+      
+      markerEl.textContent = `$${(order.payout_cents / 100).toFixed(0)}`;
+
+      // Add click handler
+      markerEl.addEventListener('click', () => {
+        onOrderClick(order);
+      });
+
+      new mapboxgl.Marker(markerEl)
+        .setLngLat([order.pickup_lng, order.pickup_lat])
+        .setPopup(
+          new mapboxgl.Popup().setHTML(`
+            <div class="p-3">
+              <h3 class="font-semibold text-green-600">${order.pickup_name}</h3>
+              <p class="text-sm">${order.pickup_address}</p>
+              <p class="text-lg font-bold text-green-600">$${(order.payout_cents / 100).toFixed(2)}</p>
+              <p class="text-xs text-gray-600">${order.distance_km} km</p>
+              <button onclick="acceptOrder('${order.id}')" class="mt-2 px-3 py-1 bg-green-600 text-white rounded text-sm">
+                Accept Order
+              </button>
+            </div>
+          `)
+        )
+        .addTo(map.current);
+    });
   };
 
   const addHeatmapLayer = () => {
@@ -333,55 +347,16 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
 
   const updateMapMarkers = () => {
     if (!map.current) return;
-
-    // Update hotspot data
-    const hotspotFeatures = orders.filter(order => order.status === 'pending').map(order => ({
-      type: 'Feature' as const,
-      geometry: {
-        type: 'Point' as const,
-        coordinates: [order.pickup_lng, order.pickup_lat]
-      },
-      properties: {
-        payout: order.payout_cents
-      }
-    }));
-
-    const hotspotSource = map.current.getSource('hotspots') as mapboxgl.GeoJSONSource;
-    if (hotspotSource) {
-      hotspotSource.setData({
-        type: 'FeatureCollection',
-        features: hotspotFeatures
-      });
-    }
-
-    // Update order clusters
-    const orderFeatures = orders.filter(order => order.status === 'pending').map(order => ({
-      type: 'Feature' as const,
-      geometry: {
-        type: 'Point' as const,
-        coordinates: [order.pickup_lng, order.pickup_lat]
-      },
-      properties: {
-        id: order.id,
-        payout: order.payout_cents,
-        name: order.pickup_name,
-        address: order.pickup_address
-      }
-    }));
-
-    const ordersSource = map.current.getSource('orders') as mapboxgl.GeoJSONSource;
-    if (ordersSource) {
-      ordersSource.setData({
-        type: 'FeatureCollection',
-        features: orderFeatures
-      });
-    }
-
-    // Add active order markers
-    document.querySelectorAll('.active-order-marker').forEach(el => el.remove());
     
+    // Remove existing order markers
+    document.querySelectorAll('.order-marker').forEach(el => el.remove());
+    
+    // Add new markers
+    addOrderMarkers();
+
+    // Add active order route if exists
     if (activeOrder) {
-      // Pickup marker
+      // Add pickup marker
       const pickupEl = document.createElement('div');
       pickupEl.className = 'active-order-marker';
       pickupEl.style.width = '30px';
@@ -393,18 +368,9 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
 
       new mapboxgl.Marker(pickupEl)
         .setLngLat([activeOrder.pickup_lng, activeOrder.pickup_lat])
-        .setPopup(
-          new mapboxgl.Popup().setHTML(`
-            <div class="p-2">
-              <h3 class="font-semibold text-green-600">Pickup</h3>
-              <p class="text-sm font-medium">${activeOrder.pickup_name}</p>
-              <p class="text-xs text-gray-600">${activeOrder.pickup_address}</p>
-            </div>
-          `)
-        )
         .addTo(map.current);
 
-      // Dropoff marker
+      // Add dropoff marker
       const dropoffEl = document.createElement('div');
       dropoffEl.className = 'active-order-marker';
       dropoffEl.style.width = '30px';
@@ -416,15 +382,6 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
 
       new mapboxgl.Marker(dropoffEl)
         .setLngLat([activeOrder.dropoff_lng, activeOrder.dropoff_lat])
-        .setPopup(
-          new mapboxgl.Popup().setHTML(`
-            <div class="p-2">
-              <h3 class="font-semibold text-purple-600">Dropoff</h3>
-              <p class="text-sm font-medium">${activeOrder.dropoff_name}</p>
-              <p class="text-xs text-gray-600">${activeOrder.dropoff_address}</p>
-            </div>
-          `)
-        )
         .addTo(map.current);
     }
   };
@@ -446,9 +403,6 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
 
           new mapboxgl.Marker(userEl)
             .setLngLat([longitude, latitude])
-            .setPopup(
-              new mapboxgl.Popup().setHTML('<div class="p-2 text-sm">Your Location</div>')
-            )
             .addTo(map.current!);
 
           // Center map on user location
@@ -478,28 +432,15 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
     initializeMap(manualToken);
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full bg-muted/20 rounded-lg">
-        <Loader2 className="h-8 w-8 animate-spin mb-2" />
-        <p className="text-sm text-muted-foreground">Loading map...</p>
-        <button 
-          onClick={() => {
-            setLoading(false);
-            setShowTokenInput(true);
-          }}
-          className="text-xs text-primary hover:underline mt-2"
-        >
-          Having trouble? Click here
-        </button>
-      </div>
-    );
-  }
-
-  if (error || showTokenInput) {
+  if (showTokenInput || loading) {
     return (
       <div className="flex flex-col items-center justify-center h-full bg-muted/20 rounded-lg p-4">
-        {error && <p className="text-sm text-destructive mb-4">{error}</p>}
+        {loading && (
+          <div className="flex flex-col items-center mb-4">
+            <Loader2 className="h-8 w-8 animate-spin mb-2" />
+            <p className="text-sm text-muted-foreground">Loading map...</p>
+          </div>
+        )}
         
         {showTokenInput && (
           <div className="w-full max-w-md space-y-4">
@@ -519,30 +460,21 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
             </div>
             
             <div className="flex gap-2">
-              <input
+              <Input
                 type="text"
                 placeholder="pk.eyJ1Ijoi..."
                 value={manualToken}
                 onChange={(e) => setManualToken(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleManualToken()}
-                className="flex-1 px-3 py-2 border border-input rounded-md text-sm"
               />
-              <button 
-                onClick={handleManualToken}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90"
-              >
+              <Button onClick={handleManualToken}>
                 Load Map
-              </button>
+              </Button>
             </div>
           </div>
         )}
         
-        <button 
-          onClick={() => initializeMap()}
-          className="text-sm text-primary hover:underline mt-4"
-        >
-          Try Again
-        </button>
+        {error && <p className="text-sm text-destructive mt-4">{error}</p>}
       </div>
     );
   }
