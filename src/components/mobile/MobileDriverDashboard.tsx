@@ -209,8 +209,8 @@ export const MobileDriverDashboard: React.FC = () => {
 
       {/* Main Content - only show when offline */}
       {driverState === 'offline' && (
-        <div className="absolute inset-0 z-10 flex flex-col justify-end">
-          <div className="bg-gradient-to-t from-background via-background/95 to-transparent p-4 space-y-6">
+        <div className="absolute inset-0 z-10 flex flex-col justify-end pb-16">
+          <div className="bg-gradient-to-t from-background via-background/95 to-transparent px-4 py-6 space-y-6">
             {/* Vehicle Selector */}
             <VehicleSelector
               selectedVehicle={selectedVehicle}
@@ -225,14 +225,14 @@ export const MobileDriverDashboard: React.FC = () => {
             />
 
             {/* Primary CTA */}
-            <div className="px-4 mb-20">
+            <div className="space-y-3">
               <Button
                 onClick={handleSatisfyCraveNow}
                 className="w-full h-14 text-lg font-semibold bg-gradient-hero hover:shadow-hover"
               >
                 Satisfy Crave'n Now
               </Button>
-              <p className="text-center text-xs text-muted-foreground mt-2">
+              <p className="text-center text-xs text-muted-foreground">
                 Choose when you'll stop before going online
               </p>
             </div>

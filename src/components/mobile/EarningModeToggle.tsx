@@ -13,7 +13,7 @@ export const EarningModeToggle: React.FC<EarningModeToggleProps> = ({
   onModeChange
 }) => {
   return (
-    <div className="px-4">
+    <div className="w-full">
       <h3 className="text-sm font-medium text-muted-foreground mb-3">Earning Mode</h3>
       <div className="flex bg-muted rounded-lg p-1">
         <Button

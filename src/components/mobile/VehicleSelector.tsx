@@ -33,8 +33,8 @@ export const VehicleSelector: React.FC<VehicleSelectorProps> = ({
 }) => {
   return (
     <div className="w-full">
-      <h3 className="text-sm font-medium text-muted-foreground mb-3 px-4">Vehicle</h3>
-      <div className="flex gap-3 px-4 overflow-x-auto">
+      <h3 className="text-sm font-medium text-muted-foreground mb-3">Vehicle</h3>
+      <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         {vehicleOptions.map((vehicle) => {
           const Icon = vehicle.icon;
           const isSelected = selectedVehicle === vehicle.type;
