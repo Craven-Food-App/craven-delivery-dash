@@ -34,17 +34,25 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
   const [error, setError] = useState<string | null>(null);
   const [showTokenInput, setShowTokenInput] = useState(false);
   const [manualToken, setManualToken] = useState('');
+  const [initialized, setInitialized] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Add a small delay to ensure the component is mounted
-    const timer = setTimeout(() => {
+    console.log('Map component mounted');
+    
+    // Check if container exists before initializing
+    if (mapContainer.current && !initialized) {
+      console.log('Container found, initializing map...');
+      setInitialized(true);
       initializeMap();
-    }, 100);
+    }
     
     return () => {
-      clearTimeout(timer);
-      map.current?.remove();
+      if (map.current) {
+        console.log('Cleaning up map');
+        map.current.remove();
+        map.current = null;
+      }
     };
   }, []);
 
