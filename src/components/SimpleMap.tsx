@@ -140,7 +140,7 @@ const SimpleMap: React.FC<SimpleMapProps> = ({ orders, activeOrder, onOrderClick
 
   if (showTokenInput) {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-muted/20 rounded-lg p-6">
+      <div className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center p-6">
         <div className="w-full max-w-md space-y-4">
           <div className="text-center">
             <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -168,6 +168,7 @@ const SimpleMap: React.FC<SimpleMapProps> = ({ orders, activeOrder, onOrderClick
               value={mapboxToken}
               onChange={(e) => setMapboxToken(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleLoadMap()}
+              className="bg-card"
             />
             <Button 
               onClick={handleLoadMap} 
