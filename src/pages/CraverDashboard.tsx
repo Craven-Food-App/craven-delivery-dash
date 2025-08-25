@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import AccessGuard from '@/components/AccessGuard';
 import DasherMap from '@/components/DasherMap';
-import OrderCard from '@/components/OrderCard';
+import ActiveOrderCard from '@/components/ActiveOrderCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -214,30 +214,72 @@ const CraverDashboard: React.FC = () => {
   };
 
   const handleStatusUpdate = async (orderId: string, newStatus: 'picked_up' | 'delivered') => {
-    const { error } = await supabase
-      .from('orders')
-      .update({ status: newStatus })
-      .eq('id', orderId)
-      .eq('assigned_craver_id', user?.id);
+    if (!user) return;
 
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update order status",
-        variant: "destructive",
-      });
-      return;
+    // Immediate UI update for responsiveness
+    setOrders(prevOrders => 
+      prevOrders.map(order => 
+        order.id === orderId ? { ...order, status: newStatus } : order
+      )
+    );
+
+    if (newStatus === 'delivered') {
+      setActiveOrder(null);
+    } else {
+      setActiveOrder(prev => prev ? { ...prev, status: newStatus } : prev);
     }
 
-    const statusMessages = {
-      picked_up: "Order picked up successfully",
-      delivered: "Order delivered successfully! Great job!",
-    };
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: newStatus })
+        .eq('id', orderId)
+        .eq('assigned_craver_id', user.id);
 
-    toast({
-      title: "Status Updated",
-      description: statusMessages[newStatus as keyof typeof statusMessages] || "Order status updated",
-    });
+      if (error) {
+        console.error('Failed to update order status:', error);
+        // Revert UI on error
+        const { data } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('id', orderId)
+          .single();
+        
+        if (data) {
+          setOrders(prevOrders => 
+            prevOrders.map(order => 
+              order.id === orderId ? data : order
+            )
+          );
+          setActiveOrder(data.assigned_craver_id === user.id ? data : null);
+        }
+        
+        toast({
+          title: "Error",
+          description: "Failed to update order status. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const statusMessages = {
+        picked_up: "✅ Order picked up! Navigate to customer.",
+        delivered: "🎉 Order delivered! Great job!",
+      };
+
+      toast({
+        title: "Status Updated",
+        description: statusMessages[newStatus],
+      });
+      
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      toast({
+        title: "Error", 
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const availableOrders = orders.filter(order => order.status === 'pending');
@@ -265,16 +307,9 @@ const CraverDashboard: React.FC = () => {
               {/* Active Order */}
               {activeOrder && (
                 <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2">
-                      <Car className="h-5 w-5" />
-                      Active Delivery
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <OrderCard
+                  <CardContent className="p-4">
+                    <ActiveOrderCard
                       order={activeOrder}
-                      variant="active"
                       onStatusUpdate={handleStatusUpdate}
                     />
                   </CardContent>
@@ -289,7 +324,6 @@ const CraverDashboard: React.FC = () => {
                     Available Orders ({availableOrders.length})
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-0">
                   <ScrollArea className="h-[600px]">
                     <div className="space-y-4 p-4">
                       {availableOrders.length === 0 ? (
@@ -299,11 +333,31 @@ const CraverDashboard: React.FC = () => {
                       ) : (
                         availableOrders.map((order, index) => (
                           <div key={order.id}>
-                            <OrderCard
-                              order={order}
-                              variant="available"
-                              onAccept={handleAcceptOrder}
-                            />
+                            <Card 
+                              className="cursor-pointer hover:shadow-lg transition-all transform hover:scale-[1.02] border-l-4"
+                              style={{
+                                borderLeftColor: order.payout_cents >= 1000 ? '#ef4444' : 
+                                               order.payout_cents >= 700 ? '#f97316' : '#eab308'
+                              }}
+                              onClick={() => handleAcceptOrder(order)}
+                            >
+                              <CardContent className="p-3">
+                                <div className="flex justify-between items-start mb-2">
+                                  <div className="flex-1">
+                                    <h4 className="font-medium text-sm">{order.pickup_name}</h4>
+                                    <p className="text-xs text-muted-foreground">{order.pickup_address}</p>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-lg font-bold text-green-600">
+                                      ${(order.payout_cents / 100).toFixed(2)}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {order.distance_km} km
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
                             {index < availableOrders.length - 1 && (
                               <Separator className="my-4" />
                             )}
@@ -312,7 +366,6 @@ const CraverDashboard: React.FC = () => {
                       )}
                     </div>
                   </ScrollArea>
-                </CardContent>
               </Card>
             </div>
           </div>
