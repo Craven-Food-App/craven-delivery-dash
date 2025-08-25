@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import AccessGuard from '@/components/AccessGuard';
 import DasherMap from '@/components/DasherMap';
 import ActiveOrderCard from '@/components/ActiveOrderCard';
+import DeliveryProximityDetector from '@/components/DeliveryProximityDetector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -282,11 +283,20 @@ const CraverDashboard: React.FC = () => {
     }
   };
 
+  const handleCompleteDelivery = (orderId: string) => {
+    handleStatusUpdate(orderId, 'delivered');
+  };
+
   const availableOrders = orders.filter(order => order.status === 'pending');
 
   return (
     <AccessGuard>
       <div className="min-h-screen bg-background">
+        {/* Delivery Proximity Detector */}
+        <DeliveryProximityDetector 
+          activeOrder={activeOrder}
+          onCompleteDelivery={handleCompleteDelivery}
+        />
         <div className="flex h-screen">
           {/* Map Section */}
           <div className="flex-1 p-4">

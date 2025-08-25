@@ -57,25 +57,11 @@ const ActiveOrderCard: React.FC<ActiveOrderCardProps> = ({ order, onStatusUpdate
         // Fallback to Google Maps web after a delay
         setTimeout(() => {
           window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
-        }, 1500);
+        }, 1000);
       }
     } else {
       // For desktop, open Google Maps in a new tab
       window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
-    }
-    
-    // Also try Waze as an alternative (popular for delivery drivers)
-    if (isMobile) {
-      setTimeout(() => {
-        const wazeUrl = `waze://?ll=${lat},${lng}&navigate=yes`;
-        const wazeWebUrl = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
-        
-        // Try Waze app first, then web version
-        window.location.href = wazeUrl;
-        setTimeout(() => {
-          window.open(wazeWebUrl, '_blank');
-        }, 1000);
-      }, 500);
     }
   };
 
