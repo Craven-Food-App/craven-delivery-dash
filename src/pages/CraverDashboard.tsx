@@ -6,10 +6,13 @@ import DasherMap from '@/components/DasherMap';
 import ActiveOrderCard from '@/components/ActiveOrderCard';
 import DailyEarningsTracker from '@/components/DailyEarningsTracker';
 import DeliveryProximityDetector from '@/components/DeliveryProximityDetector';
+import DriverTools from '@/components/DriverTools';
+import OrderFilters from '@/components/OrderFilters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Car, Package } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Car, Package, Filter, Settings } from 'lucide-react';
 
 interface Order {
   id: string;
@@ -25,12 +28,17 @@ interface Order {
   distance_km: number;
   status: 'pending' | 'assigned' | 'picked_up' | 'delivered' | 'cancelled';
   assigned_craver_id?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 const CraverDashboard: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [user, setUser] = useState(null);
+  const [onlineStatus, setOnlineStatus] = useState(true);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -59,6 +67,7 @@ const CraverDashboard: React.FC = () => {
 
       console.log('Fetched orders:', data);
       setOrders(data || []);
+      setFilteredOrders(data || []);
       
       // Find active order for current user
       const active = data?.find(order => 
@@ -87,11 +96,13 @@ const CraverDashboard: React.FC = () => {
           if (payload.eventType === 'UPDATE') {
             const updatedOrder = payload.new as Order;
             
-            setOrders(prevOrders => 
-              prevOrders.map(order => 
+            setOrders(prevOrders => {
+              const updated = prevOrders.map(order => 
                 order.id === updatedOrder.id ? updatedOrder : order
-              )
-            );
+              );
+              setFilteredOrders(updated);
+              return updated;
+            });
 
             // Update active order if it's the one that changed
             if (updatedOrder.assigned_craver_id === user.id && 
@@ -105,7 +116,11 @@ const CraverDashboard: React.FC = () => {
           
           if (payload.eventType === 'INSERT') {
             const newOrder = payload.new as Order;
-            setOrders(prevOrders => [newOrder, ...prevOrders]);
+            setOrders(prevOrders => {
+              const updated = [newOrder, ...prevOrders];
+              setFilteredOrders(updated);
+              return updated;
+            });
           }
         }
       )
@@ -139,6 +154,7 @@ const CraverDashboard: React.FC = () => {
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
+        setUserLocation({ lat: latitude, lng: longitude });
         updateLocation(latitude, longitude);
       },
       (error) => {
@@ -375,7 +391,15 @@ const CraverDashboard: React.FC = () => {
     handleStatusUpdate(orderId, 'delivered');
   };
 
-  const availableOrders = orders.filter(order => order.status === 'pending');
+  const availableOrders = filteredOrders.filter(order => order.status === 'pending');
+
+  const handleToggleOnlineStatus = (status: boolean) => {
+    setOnlineStatus(status);
+    toast({
+      title: status ? "You're now online!" : "You're now offline",
+      description: status ? "You can now receive new delivery requests." : "You won't receive new orders while offline.",
+    });
+  };
 
   return (
     <AccessGuard>
@@ -401,76 +425,114 @@ const CraverDashboard: React.FC = () => {
 
           {/* Orders Panel */}
           <div className="w-96 border-l bg-muted/10 p-4 flex flex-col">
-            <div className="space-y-4">
-              {/* Daily Earnings Tracker */}
-              <DailyEarningsTracker user={user} />
+            <Tabs defaultValue="orders" className="w-full h-full flex flex-col">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="orders" className="flex items-center gap-1">
+                  <Package className="h-4 w-4" />
+                  Orders
+                </TabsTrigger>
+                <TabsTrigger value="tools" className="flex items-center gap-1">
+                  <Settings className="h-4 w-4" />
+                  Tools
+                </TabsTrigger>
+                <TabsTrigger value="filters" className="flex items-center gap-1">
+                  <Filter className="h-4 w-4" />
+                  Filters
+                </TabsTrigger>
+              </TabsList>
 
-              {/* Active Order */}
-              {activeOrder && (
-                <Card>
-                  <CardContent className="p-4">
-                    <ActiveOrderCard
-                      order={activeOrder}
-                      onStatusUpdate={handleStatusUpdate}
-                    />
+              <TabsContent value="orders" className="flex-1 space-y-4 mt-4">
+                {/* Daily Earnings Tracker */}
+                <DailyEarningsTracker user={user} />
+
+                {/* Active Order */}
+                {activeOrder && (
+                  <Card>
+                    <CardContent className="p-4">
+                      <ActiveOrderCard
+                        order={activeOrder}
+                        onStatusUpdate={handleStatusUpdate}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Available Orders */}
+                <Card className="flex-1">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2">
+                      <Package className="h-5 w-5" />
+                      Available Orders ({availableOrders.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <ScrollArea className="h-[500px]">
+                      <div className="space-y-4 p-4">
+                        {!onlineStatus ? (
+                          <div className="text-center py-8">
+                            <p className="text-muted-foreground mb-4">You're currently offline</p>
+                            <p className="text-sm text-muted-foreground">Turn on your online status to receive orders</p>
+                          </div>
+                        ) : availableOrders.length === 0 ? (
+                          <p className="text-muted-foreground text-center py-8">
+                            No orders available at the moment
+                          </p>
+                        ) : (
+                          availableOrders.map((order, index) => (
+                            <div key={order.id}>
+                              <Card 
+                                className="cursor-pointer hover:shadow-lg transition-all transform hover:scale-[1.02] border-l-4"
+                                style={{
+                                  borderLeftColor: order.payout_cents >= 1000 ? '#ef4444' : 
+                                                 order.payout_cents >= 700 ? '#f97316' : '#eab308'
+                                }}
+                                onClick={() => onlineStatus && handleAcceptOrder(order)}
+                              >
+                                <CardContent className="p-3">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <div className="flex-1">
+                                      <h4 className="font-medium text-sm">{order.pickup_name}</h4>
+                                      <p className="text-xs text-muted-foreground">{order.pickup_address}</p>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-lg font-bold text-green-600">
+                                        ${(order.payout_cents / 100).toFixed(2)}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">
+                                        {order.distance_km} km
+                                      </div>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                              {index < availableOrders.length - 1 && (
+                                <Separator className="my-4" />
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </ScrollArea>
                   </CardContent>
                 </Card>
-              )}
+              </TabsContent>
 
-              {/* Available Orders */}
-              <Card className="flex-1">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2">
-                    <Package className="h-5 w-5" />
-                    Available Orders ({availableOrders.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <ScrollArea className="h-[600px]">
-                    <div className="space-y-4 p-4">
-                      {availableOrders.length === 0 ? (
-                        <p className="text-muted-foreground text-center py-8">
-                          No orders available at the moment
-                        </p>
-                      ) : (
-                        availableOrders.map((order, index) => (
-                          <div key={order.id}>
-                            <Card 
-                              className="cursor-pointer hover:shadow-lg transition-all transform hover:scale-[1.02] border-l-4"
-                              style={{
-                                borderLeftColor: order.payout_cents >= 1000 ? '#ef4444' : 
-                                               order.payout_cents >= 700 ? '#f97316' : '#eab308'
-                              }}
-                              onClick={() => handleAcceptOrder(order)}
-                            >
-                              <CardContent className="p-3">
-                                <div className="flex justify-between items-start mb-2">
-                                  <div className="flex-1">
-                                    <h4 className="font-medium text-sm">{order.pickup_name}</h4>
-                                    <p className="text-xs text-muted-foreground">{order.pickup_address}</p>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="text-lg font-bold text-green-600">
-                                      ${(order.payout_cents / 100).toFixed(2)}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {order.distance_km} km
-                                    </div>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                            {index < availableOrders.length - 1 && (
-                              <Separator className="my-4" />
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            </div>
+              <TabsContent value="tools" className="flex-1 mt-4">
+                <DriverTools 
+                  user={user}
+                  onlineStatus={onlineStatus}
+                  onToggleOnlineStatus={handleToggleOnlineStatus}
+                />
+              </TabsContent>
+
+              <TabsContent value="filters" className="flex-1 mt-4">
+                <OrderFilters
+                  orders={orders}
+                  onFilteredOrdersChange={setFilteredOrders}
+                  userLocation={userLocation}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>
