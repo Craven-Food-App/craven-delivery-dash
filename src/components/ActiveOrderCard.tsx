@@ -27,29 +27,55 @@ interface ActiveOrderCardProps {
 
 const ActiveOrderCard: React.FC<ActiveOrderCardProps> = ({ order, onStatusUpdate }) => {
   const openNavigation = (lat: number, lng: number, address: string) => {
-    // Try Google Maps first (most common)
-    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-    
-    // Check if on mobile for app deep links
     const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isAndroid = /Android/i.test(navigator.userAgent);
     
+    // For mobile devices, try native apps first
     if (isMobile) {
-      // Try to open in Google Maps app, fallback to web
-      const androidIntent = `intent://maps.google.com/maps/dir/?api=1&destination=${lat},${lng}#Intent;scheme=https;package=com.google.android.apps.maps;end`;
-      const iosUrl = `comgooglemaps://?daddr=${lat},${lng}`;
-      
-      if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
-        window.location.href = iosUrl;
-        // Fallback to web after 2 seconds
-        setTimeout(() => window.open(googleMapsUrl, '_blank'), 2000);
-      } else if (navigator.userAgent.includes('Android')) {
-        window.location.href = androidIntent;
-        setTimeout(() => window.open(googleMapsUrl, '_blank'), 2000);
-      } else {
-        window.open(googleMapsUrl, '_blank');
+      if (isIOS) {
+        // Try Apple Maps first (native on iOS)
+        const appleMapsUrl = `http://maps.apple.com/?daddr=${lat},${lng}`;
+        window.location.href = appleMapsUrl;
+        
+        // Fallback to Google Maps after a delay if Apple Maps doesn't open
+        setTimeout(() => {
+          const googleMapsUrl = `comgooglemaps://?daddr=${lat},${lng}`;
+          window.location.href = googleMapsUrl;
+        }, 1000);
+        
+        // Final fallback to web Google Maps
+        setTimeout(() => {
+          window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+        }, 2000);
+        
+      } else if (isAndroid) {
+        // Try Google Maps app (most common on Android)
+        const googleMapsIntent = `geo:${lat},${lng}?q=${lat},${lng}`;
+        window.location.href = googleMapsIntent;
+        
+        // Fallback to Google Maps web after a delay
+        setTimeout(() => {
+          window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+        }, 1500);
       }
     } else {
-      window.open(googleMapsUrl, '_blank');
+      // For desktop, open Google Maps in a new tab
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+    }
+    
+    // Also try Waze as an alternative (popular for delivery drivers)
+    if (isMobile) {
+      setTimeout(() => {
+        const wazeUrl = `waze://?ll=${lat},${lng}&navigate=yes`;
+        const wazeWebUrl = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
+        
+        // Try Waze app first, then web version
+        window.location.href = wazeUrl;
+        setTimeout(() => {
+          window.open(wazeWebUrl, '_blank');
+        }, 1000);
+      }, 500);
     }
   };
 
