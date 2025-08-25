@@ -128,15 +128,99 @@ export type Database = {
         }
         Relationships: []
       }
+      craver_locations: {
+        Row: {
+          lat: number
+          lng: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          lat: number
+          lng: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          lat?: number
+          lng?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          assigned_craver_id: string | null
+          created_at: string
+          distance_km: number
+          dropoff_address: string
+          dropoff_lat: number
+          dropoff_lng: number
+          dropoff_name: string
+          id: string
+          payout_cents: number
+          pickup_address: string
+          pickup_lat: number
+          pickup_lng: number
+          pickup_name: string
+          status: Database["public"]["Enums"]["order_status"]
+          updated_at: string
+        }
+        Insert: {
+          assigned_craver_id?: string | null
+          created_at?: string
+          distance_km: number
+          dropoff_address: string
+          dropoff_lat: number
+          dropoff_lng: number
+          dropoff_name: string
+          id?: string
+          payout_cents: number
+          pickup_address: string
+          pickup_lat: number
+          pickup_lng: number
+          pickup_name: string
+          status?: Database["public"]["Enums"]["order_status"]
+          updated_at?: string
+        }
+        Update: {
+          assigned_craver_id?: string | null
+          created_at?: string
+          distance_km?: number
+          dropoff_address?: string
+          dropoff_lat?: number
+          dropoff_lng?: number
+          dropoff_name?: string
+          id?: string
+          payout_cents?: number
+          pickup_address?: string
+          pickup_lat?: number
+          pickup_lng?: number
+          pickup_name?: string
+          status?: Database["public"]["Enums"]["order_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_approved_craver: {
+        Args: { user_uuid: string }
+        Returns: boolean
+      }
     }
     Enums: {
       application_status: "pending" | "under_review" | "approved" | "rejected"
+      order_status:
+        | "pending"
+        | "assigned"
+        | "picked_up"
+        | "delivered"
+        | "cancelled"
       vehicle_type: "car" | "bike" | "scooter" | "motorcycle" | "walking"
     }
     CompositeTypes: {
@@ -266,6 +350,13 @@ export const Constants = {
   public: {
     Enums: {
       application_status: ["pending", "under_review", "approved", "rejected"],
+      order_status: [
+        "pending",
+        "assigned",
+        "picked_up",
+        "delivered",
+        "cancelled",
+      ],
       vehicle_type: ["car", "bike", "scooter", "motorcycle", "walking"],
     },
   },
