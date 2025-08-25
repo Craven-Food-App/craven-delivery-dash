@@ -45,9 +45,9 @@ const Header = () => {
               variant="ghost" 
               size="sm" 
               className="hidden sm:flex text-primary hover:text-primary hover:bg-primary/10"
-              onClick={() => window.location.href = '/craver/dashboard'}
+              onClick={() => window.location.href = '/admin'}
             >
-              Dashboard
+              Admin
             </Button>
             
             <Button variant="ghost" size="icon" className="relative">
