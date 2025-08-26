@@ -11,6 +11,7 @@ import Header from "@/components/Header";
 import { MenuManagement } from "@/components/restaurant/MenuManagement";
 import { RestaurantOrderManagement } from "@/components/restaurant/RestaurantOrderManagement";
 import { RestaurantSettings } from "@/components/restaurant/RestaurantSettings";
+import { NewOrderAlert } from "@/components/restaurant/NewOrderAlert";
 
 interface Restaurant {
   id: string;
@@ -147,9 +148,12 @@ const RestaurantDashboard = () => {
       
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Restaurant Dashboard</h1>
-            <p className="text-muted-foreground">Manage your restaurant and orders</p>
+          <div className="flex items-center gap-6">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Restaurant Dashboard</h1>
+              <p className="text-muted-foreground">Manage your restaurant and orders</p>
+            </div>
+            <NewOrderAlert restaurantId={restaurant.id} />
           </div>
           <div className="flex gap-2">
             <Badge variant={restaurant.is_active ? "default" : "secondary"}>
