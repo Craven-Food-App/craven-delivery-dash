@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FirecrawlService, MenuItemData } from '@/utils/FirecrawlService';
+import { MenuParser, MenuItemData } from '@/utils/MenuParser';
 import { supabase } from "@/integrations/supabase/client";
-import { Download, ExternalLink, AlertCircle, Check } from 'lucide-react';
+import { Download, FileText, Upload, AlertCircle } from 'lucide-react';
 
 interface MenuImportProps {
   restaurantId: string;
@@ -20,27 +21,19 @@ interface MenuImportProps {
 
 export const MenuImport = ({ restaurantId, onImportComplete, isOpen, onClose }: MenuImportProps) => {
   const { toast } = useToast();
-  const [url, setUrl] = useState('');
-  const [apiKey, setApiKey] = useState(FirecrawlService.getApiKey() || '');
+  const [menuText, setMenuText] = useState('');
+  const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [scrapedItems, setScrapedItems] = useState<MenuItemData[]>([]);
+  const [parsedItems, setParsedItems] = useState<MenuItemData[]>([]);
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
-  const [importStep, setImportStep] = useState<'setup' | 'preview' | 'importing'>('setup');
+  const [importStep, setImportStep] = useState<'input' | 'preview' | 'importing'>('input');
+  const [importType, setImportType] = useState<'text' | 'csv'>('text');
 
-  const handleScrape = async () => {
-    if (!url) {
+  const handleParseText = () => {
+    if (!menuText.trim()) {
       toast({
         title: "Error",
-        description: "Please enter a Cookin.com URL",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!apiKey) {
-      toast({
-        title: "Error",
-        description: "Please enter your Firecrawl API key",
+        description: "Please enter your menu text",
         variant: "destructive",
       });
       return;
@@ -49,39 +42,78 @@ export const MenuImport = ({ restaurantId, onImportComplete, isOpen, onClose }: 
     setIsLoading(true);
     
     try {
-      // Save API key for future use
-      FirecrawlService.saveApiKey(apiKey);
+      const items = MenuParser.parseMenuText(menuText);
       
-      const result = await FirecrawlService.scrapeMenu(url);
-      
-      if (result.success && result.data) {
-        if (result.data.length === 0) {
-          toast({
-            title: "No menu items found",
-            description: "We couldn't extract any menu items from this page. Please check the URL or try a different page.",
-            variant: "destructive",
-          });
-        } else {
-          setScrapedItems(result.data);
-          setSelectedItems(new Set(result.data.map((_, index) => index)));
-          setImportStep('preview');
-          toast({
-            title: "Success",
-            description: `Found ${result.data.length} menu items ready for import`,
-          });
-        }
-      } else {
+      if (items.length === 0) {
         toast({
-          title: "Error",
-          description: result.error || "Failed to scrape menu data",
+          title: "No menu items found",
+          description: "We couldn't parse any menu items from the text. Make sure to include item names and prices (e.g., 'Pizza $12.99').",
           variant: "destructive",
+        });
+      } else {
+        setParsedItems(items);
+        setSelectedItems(new Set(items.map((_, index) => index)));
+        setImportStep('preview');
+        toast({
+          title: "Success",
+          description: `Found ${items.length} menu items ready for import`,
         });
       }
     } catch (error) {
-      console.error('Error scraping menu:', error);
+      console.error('Error parsing menu text:', error);
       toast({
         title: "Error",
-        description: "Failed to scrape menu data",
+        description: "Failed to parse menu data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    setCsvFile(file);
+  };
+
+  const handleParseCSV = async () => {
+    if (!csvFile) {
+      toast({
+        title: "Error",
+        description: "Please select a CSV file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const text = await csvFile.text();
+      const items = MenuParser.parseCSV(text);
+      
+      if (items.length === 0) {
+        toast({
+          title: "No menu items found",
+          description: "We couldn't parse any menu items from the CSV. Make sure your file has Name, Description, and Price columns.",
+          variant: "destructive",
+        });
+      } else {
+        setParsedItems(items);
+        setSelectedItems(new Set(items.map((_, index) => index)));
+        setImportStep('preview');
+        toast({
+          title: "Success",
+          description: `Found ${items.length} menu items ready for import`,
+        });
+      }
+    } catch (error) {
+      console.error('Error parsing CSV:', error);
+      toast({
+        title: "Error",
+        description: "Failed to parse CSV file",
         variant: "destructive",
       });
     } finally {
@@ -90,7 +122,7 @@ export const MenuImport = ({ restaurantId, onImportComplete, isOpen, onClose }: 
   };
 
   const handleImport = async () => {
-    const itemsToImport = scrapedItems.filter((_, index) => selectedItems.has(index));
+    const itemsToImport = parsedItems.filter((_, index) => selectedItems.has(index));
     
     if (itemsToImport.length === 0) {
       toast({
@@ -155,7 +187,7 @@ export const MenuImport = ({ restaurantId, onImportComplete, isOpen, onClose }: 
   };
 
   const selectAll = () => {
-    setSelectedItems(new Set(scrapedItems.map((_, index) => index)));
+    setSelectedItems(new Set(parsedItems.map((_, index) => index)));
   };
 
   const deselectAll = () => {
@@ -163,10 +195,11 @@ export const MenuImport = ({ restaurantId, onImportComplete, isOpen, onClose }: 
   };
 
   const handleClose = () => {
-    setUrl('');
-    setScrapedItems([]);
+    setMenuText('');
+    setCsvFile(null);
+    setParsedItems([]);
     setSelectedItems(new Set());
-    setImportStep('setup');
+    setImportStep('input');
     onClose();
   };
 
@@ -176,64 +209,102 @@ export const MenuImport = ({ restaurantId, onImportComplete, isOpen, onClose }: 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Download className="h-5 w-5" />
-            Import Menu from Cookin.com
+            Import Menu Items
           </DialogTitle>
           <DialogDescription>
-            Scrape and import menu items from your Cookin.com chef profile or any public menu page.
+            Import menu items by copying text from Cookin.com or uploading a CSV file.
           </DialogDescription>
         </DialogHeader>
 
-        {importStep === 'setup' && (
+        {importStep === 'input' && (
           <div className="space-y-4">
-            <div className="bg-muted p-4 rounded-lg">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div className="space-y-2 text-sm">
-                  <p><strong>You'll need a Firecrawl API key to use this feature.</strong></p>
-                  <p>
-                    Get your free API key at{' '}
-                    <a 
-                      href="https://firecrawl.dev" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline inline-flex items-center gap-1"
-                    >
-                      firecrawl.dev <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </p>
+            <Tabs value={importType} onValueChange={(value) => setImportType(value as 'text' | 'csv')}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="text" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Paste Text
+                </TabsTrigger>
+                <TabsTrigger value="csv" className="flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  Upload CSV
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="text" className="space-y-4">
+                <div className="bg-muted p-4 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div className="space-y-2 text-sm">
+                      <p><strong>How to copy from Cookin.com:</strong></p>
+                      <ol className="list-decimal list-inside space-y-1 ml-2">
+                        <li>Go to your Cookin.com chef profile</li>
+                        <li>Select and copy your menu text (Ctrl/Cmd + A, then Ctrl/Cmd + C)</li>
+                        <li>Paste it in the text area below</li>
+                      </ol>
+                      <p className="text-muted-foreground">Make sure items include prices like "Pizza $12.99"</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="firecrawl-api-key">Firecrawl API Key</Label>
-                <Input
-                  id="firecrawl-api-key"
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="fc-..."
-                />
-              </div>
+                <div>
+                  <Label htmlFor="menu-text">Menu Text</Label>
+                  <Textarea
+                    id="menu-text"
+                    value={menuText}
+                    onChange={(e) => setMenuText(e.target.value)}
+                    placeholder="Paste your menu text here...
+Example:
+APPETIZERS
+Garlic Bread $8.99
+Fresh baked bread with garlic butter
 
-              <div>
-                <Label htmlFor="cookin-url">Cookin.com Menu URL</Label>
-                <Input
-                  id="cookin-url"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://my.cookin.com/chef-name"
-                />
-              </div>
-            </div>
+MAIN DISHES  
+Margherita Pizza $18.99
+Fresh mozzarella, basil, tomato sauce"
+                    rows={10}
+                    className="font-mono text-sm"
+                  />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="csv" className="space-y-4">
+                <div className="bg-muted p-4 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div className="space-y-2 text-sm">
+                      <p><strong>CSV Format:</strong></p>
+                      <p>Your CSV should have columns: Name, Description, Price, Category (optional)</p>
+                      <p className="font-mono text-xs bg-background px-2 py-1 rounded">
+                        "Pizza","Margherita pizza","$12.99","Main Dishes"
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="csv-file">Upload CSV File</Label>
+                  <input
+                    id="csv-file"
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileUpload}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  {csvFile && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Selected: {csvFile.name}
+                    </p>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
         )}
 
         {importStep === 'preview' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h4 className="font-semibold">Preview Items ({scrapedItems.length} found)</h4>
+              <h4 className="font-semibold">Preview Items ({parsedItems.length} found)</h4>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={selectAll}>
                   Select All
@@ -245,7 +316,7 @@ export const MenuImport = ({ restaurantId, onImportComplete, isOpen, onClose }: 
             </div>
 
             <div className="space-y-2 max-h-60 overflow-y-auto">
-              {scrapedItems.map((item, index) => (
+              {parsedItems.map((item, index) => (
                 <Card key={index} className={`cursor-pointer transition-colors ${
                   selectedItems.has(index) ? 'ring-2 ring-primary' : ''
                 }`} onClick={() => toggleItemSelection(index)}>
@@ -286,19 +357,25 @@ export const MenuImport = ({ restaurantId, onImportComplete, isOpen, onClose }: 
         )}
 
         <DialogFooter>
-          {importStep === 'setup' && (
+          {importStep === 'input' && (
             <>
               <Button variant="outline" onClick={handleClose}>
                 Cancel
               </Button>
-              <Button onClick={handleScrape} disabled={isLoading}>
-                {isLoading ? 'Scraping...' : 'Scrape Menu'}
-              </Button>
+              {importType === 'text' ? (
+                <Button onClick={handleParseText} disabled={isLoading || !menuText.trim()}>
+                  {isLoading ? 'Parsing...' : 'Parse Menu'}
+                </Button>
+              ) : (
+                <Button onClick={handleParseCSV} disabled={isLoading || !csvFile}>
+                  {isLoading ? 'Parsing...' : 'Parse CSV'}
+                </Button>
+              )}
             </>
           )}
           {importStep === 'preview' && (
             <>
-              <Button variant="outline" onClick={() => setImportStep('setup')}>
+              <Button variant="outline" onClick={() => setImportStep('input')}>
                 Back
               </Button>
               <Button onClick={handleImport} disabled={selectedItems.size === 0}>
