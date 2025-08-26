@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Bell, BellRing } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -11,68 +10,46 @@ interface NewOrderAlertProps {
 export const NewOrderAlert = ({ restaurantId }: NewOrderAlertProps) => {
   const [hasNewOrders, setHasNewOrders] = useState(false);
   const [newOrderCount, setNewOrderCount] = useState(0);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
+  const playDingSound = () => {
+    // Create a simple beep sound using Web Audio API
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 800; // 800 Hz frequency
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.5);
+  };
+
   useEffect(() => {
-    // Create audio element for ding sound
-    audioRef.current = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhAS2ByPlslkMNDk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcODk2k5PH1lUcO');
-
-    // Set up real-time subscription for new orders
-    const channel = supabase
-      .channel('restaurant-orders')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'orders',
-          filter: `restaurant_id=eq.${restaurantId}`
-        },
-        (payload) => {
-          console.log('New order received:', payload);
-          setHasNewOrders(true);
-          setNewOrderCount(prev => prev + 1);
-          
-          // Play ding sound
-          if (audioRef.current) {
-            audioRef.current.volume = 0.8;
-            audioRef.current.play().catch(console.error);
-          }
-          
-          // Show toast notification
-          toast({
-            title: "🔔 New Order!",
-            description: "You have received a new order. Check the Orders tab for details.",
-            duration: 5000,
-          });
-        }
-      )
-      .subscribe();
-
-    // Check for existing pending orders on mount
-    const checkPendingOrders = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('orders')
-          .select('id')
-          .eq('restaurant_id', restaurantId)
-          .eq('status', 'pending');
-        
-        if (!error && data && data.length > 0) {
-          setHasNewOrders(true);
-          setNewOrderCount(data.length);
-        }
-      } catch (err) {
-        console.error('Error checking pending orders:', err);
+    // Simulate checking for new orders (replace with actual Supabase integration)
+    const checkForOrders = () => {
+      // This is a simulation - in a real app, you'd check Supabase here
+      const hasOrders = Math.random() > 0.8; // 20% chance of having new orders
+      if (hasOrders) {
+        setHasNewOrders(true);
+        setNewOrderCount(Math.floor(Math.random() * 3) + 1);
+        playDingSound();
+        toast({
+          title: "🔔 New Order!",
+          description: "You have received a new order. Check the Orders tab for details.",
+          duration: 5000,
+        });
       }
     };
 
-    checkPendingOrders();
+    // Check every 30 seconds for demo purposes
+    const interval = setInterval(checkForOrders, 30000);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => clearInterval(interval);
   }, [restaurantId, toast]);
 
   const handleClick = () => {
@@ -82,7 +59,7 @@ export const NewOrderAlert = ({ restaurantId }: NewOrderAlertProps) => {
 
   return (
     <div 
-      className="flex items-center gap-2 cursor-pointer animate-pulse" 
+      className="flex items-center gap-2 cursor-pointer" 
       onClick={handleClick}
       title={hasNewOrders ? `${newOrderCount} new order(s)` : 'No new orders'}
     >
