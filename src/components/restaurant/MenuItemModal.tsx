@@ -84,12 +84,12 @@ export const MenuItemModal = ({ item, onClose, onAddToCart }: MenuItemModalProps
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-md mx-auto">
+      <DialogContent className="max-w-md mx-auto max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-left">{item.name}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 pb-4">
           {item.image_url && (
             <div className="w-full h-48 rounded-lg overflow-hidden">
               <img 

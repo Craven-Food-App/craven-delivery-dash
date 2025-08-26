@@ -265,19 +265,19 @@ const RestaurantDetail = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6 flex gap-6">
+      <div className="container mx-auto px-4 py-6 flex gap-6 overflow-x-hidden">
         {/* Menu Content */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           {/* Category Navigation */}
           <Card className="mb-6 sticky top-4 z-10">
             <CardContent className="p-4">
-              <div className="flex gap-2 overflow-x-auto">
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
                 {categories.map((category) => (
                   <Button
                     key={category.id}
                     variant="ghost"
                     size="sm"
-                    className="whitespace-nowrap"
+                    className="whitespace-nowrap flex-shrink-0"
                     onClick={() => scrollToCategory(category.id)}
                   >
                     {category.name}
@@ -305,20 +305,22 @@ const RestaurantDetail = () => {
                   {categoryItems.map((item) => (
                     <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
                       <CardContent className="p-0" onClick={() => setSelectedItem(item)}>
-                        <div className="flex">
-                          <div className="flex-1 p-4">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <h3 className="font-semibold text-lg">{item.name}</h3>
-                                  {item.is_vegetarian && <Badge variant="secondary" className="text-xs">Vegetarian</Badge>}
-                                  {item.is_vegan && <Badge variant="secondary" className="text-xs">Vegan</Badge>}
-                                  {item.is_gluten_free && <Badge variant="secondary" className="text-xs">Gluten Free</Badge>}
+                        <div className="flex min-w-0">
+                          <div className="flex-1 p-4 min-w-0">
+                            <div className="flex items-start justify-between min-w-0">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                  <h3 className="font-semibold text-lg break-words">{item.name}</h3>
+                                  <div className="flex gap-1 flex-wrap">
+                                    {item.is_vegetarian && <Badge variant="secondary" className="text-xs">Vegetarian</Badge>}
+                                    {item.is_vegan && <Badge variant="secondary" className="text-xs">Vegan</Badge>}
+                                    {item.is_gluten_free && <Badge variant="secondary" className="text-xs">Gluten Free</Badge>}
+                                  </div>
                                 </div>
-                                <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+                                <p className="text-muted-foreground text-sm mb-3 line-clamp-2 break-words">
                                   {item.description}
                                 </p>
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-between flex-wrap gap-2">
                                   <span className="text-lg font-bold">
                                     ${(item.price_cents / 100).toFixed(2)}
                                   </span>
@@ -328,7 +330,7 @@ const RestaurantDetail = () => {
                                       e.stopPropagation();
                                       setSelectedItem(item);
                                     }}
-                                    className="ml-4"
+                                    className="ml-4 flex-shrink-0"
                                   >
                                     <Plus className="h-4 w-4 mr-1" />
                                     Add
@@ -362,14 +364,16 @@ const RestaurantDetail = () => {
 
       {/* Floating Cart Button */}
       {cart.length > 0 && (
-        <div className="fixed bottom-6 right-6 z-50">
+        <div className="fixed bottom-6 right-6 z-50 max-w-[90vw]">
           <Button
             size="lg"
             onClick={() => setShowCart(true)}
-            className="rounded-full shadow-lg"
+            className="rounded-full shadow-lg text-sm sm:text-base px-3 sm:px-6 py-2 sm:py-3"
           >
-            <ShoppingCart className="h-5 w-5 mr-2" />
-            {cart.reduce((total, item) => total + item.quantity, 0)} items • ${(getCartTotal().total / 100).toFixed(2)}
+            <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+            <span className="truncate">
+              {cart.reduce((total, item) => total + item.quantity, 0)} items • ${(getCartTotal().total / 100).toFixed(2)}
+            </span>
           </Button>
         </div>
       )}

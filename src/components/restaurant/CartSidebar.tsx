@@ -97,7 +97,7 @@ export const CartSidebar = ({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-md flex flex-col">
+      <SheetContent className="w-full sm:max-w-md flex flex-col max-h-screen overflow-hidden">
         <SheetHeader>
           <SheetTitle>Your Cart • {restaurant.name}</SheetTitle>
         </SheetHeader>
