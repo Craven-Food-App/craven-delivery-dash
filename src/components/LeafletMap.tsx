@@ -36,7 +36,10 @@ interface LeafletMapProps {
 const LeafletMap: React.FC<LeafletMapProps> = ({ orders, activeOrder, onOrderClick }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
+  const userLocationMarker = useRef<L.Marker | null>(null);
+  const watchId = useRef<number | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -67,12 +70,92 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ orders, activeOrder, onOrderCli
     };
   }, []);
 
+  // Location tracking effect
+  useEffect(() => {
+    if (!navigator.geolocation || !map.current) return;
+
+    const createUserLocationMarker = (lat: number, lng: number) => {
+      const userIcon = L.divIcon({
+        html: `
+          <div style="
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3b82f6;
+            border: 3px solid white;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
+            animation: pulse 2s infinite;
+          "></div>
+          <style>
+            @keyframes pulse {
+              0% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.6); }
+              50% { box-shadow: 0 0 25px rgba(59, 130, 246, 0.8); }
+              100% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.6); }
+            }
+          </style>
+        `,
+        className: 'user-location-marker',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+      });
+
+      return L.marker([lat, lng], { icon: userIcon });
+    };
+
+    const updateUserLocation = (position: GeolocationPosition) => {
+      const { latitude, longitude } = position.coords;
+      setUserLocation({ lat: latitude, lng: longitude });
+
+      if (!map.current) return;
+
+      // Remove existing user location marker
+      if (userLocationMarker.current) {
+        map.current.removeLayer(userLocationMarker.current);
+      }
+
+      // Add new user location marker
+      userLocationMarker.current = createUserLocationMarker(latitude, longitude);
+      userLocationMarker.current.addTo(map.current);
+
+      // Center on user location only on first load
+      if (!userLocation) {
+        map.current.setView([latitude, longitude], 15);
+      }
+    };
+
+    const handleLocationError = (error: GeolocationPositionError) => {
+      console.warn('Location tracking error:', error.message);
+    };
+
+    // Start watching user location
+    watchId.current = navigator.geolocation.watchPosition(
+      updateUserLocation,
+      handleLocationError,
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 5000
+      }
+    );
+
+    return () => {
+      if (watchId.current !== null) {
+        navigator.geolocation.clearWatch(watchId.current);
+        watchId.current = null;
+      }
+      if (userLocationMarker.current && map.current) {
+        map.current.removeLayer(userLocationMarker.current);
+        userLocationMarker.current = null;
+      }
+    };
+  }, [map.current, userLocation]);
+
   useEffect(() => {
     if (!map.current) return;
 
-    // Clear existing markers
+    // Clear existing order markers (but preserve user location marker)
     map.current.eachLayer((layer) => {
-      if (layer instanceof L.Marker) {
+      if (layer instanceof L.Marker && layer !== userLocationMarker.current) {
         map.current?.removeLayer(layer);
       }
     });
@@ -130,36 +213,6 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ orders, activeOrder, onOrderCli
         </div>
       `);
     });
-
-    // Add user location if available
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        if (!map.current) return;
-
-        const userIcon = L.divIcon({
-          html: `
-            <div style="
-              width: 20px;
-              height: 20px;
-              border-radius: 50%;
-              background: #3b82f6;
-              border: 3px solid white;
-              box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
-            "></div>
-          `,
-          className: 'user-location-marker',
-          iconSize: [20, 20],
-          iconAnchor: [10, 10]
-        });
-
-        L.marker([position.coords.latitude, position.coords.longitude], {
-          icon: userIcon
-        }).addTo(map.current!);
-
-        // Center on user location
-        map.current!.setView([position.coords.latitude, position.coords.longitude], 13);
-      });
-    }
   }, [orders, onOrderClick]);
 
   return (
