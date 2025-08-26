@@ -128,7 +128,7 @@ export const MobileDriverDashboard: React.FC = () => {
       }
       console.log('✅ Driver profile updated successfully');
 
-      // Update location
+      // Update location with fallback
       if (navigator.geolocation) {
         console.log('📍 Getting location...');
         navigator.geolocation.getCurrentPosition(async (position) => {
@@ -146,25 +146,49 @@ export const MobileDriverDashboard: React.FC = () => {
           } else {
             console.log('✅ Location updated successfully');
           }
-        }, (error) => {
+        }, async (error) => {
           console.error('❌ Geolocation error:', error);
-          toast({
-            title: "Location Error",
-            description: "Please enable location permissions to receive orders.",
-            variant: "destructive",
-          });
+          console.log('📍 Using fallback Toledo location...');
+          
+          // Fallback to Toledo coordinates when geolocation fails
+          const { error: locationError } = await supabase
+            .from('craver_locations')
+            .upsert({
+              user_id: user.id,
+              lat: 41.6528, // Toledo coordinates
+              lng: -83.6982
+            });
+
+          if (locationError) {
+            console.error('❌ Fallback location update error:', locationError);
+          } else {
+            console.log('✅ Fallback location updated successfully');
+            toast({
+              title: "Location Set",
+              description: "Using Toledo location for order assignments.",
+            });
+          }
         }, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
+          enableHighAccuracy: false, // Relaxed accuracy for better reliability
+          timeout: 5000,
+          maximumAge: 300000
         });
       } else {
-        console.log('❌ Geolocation not available');
-        toast({
-          title: "Location Not Available",
-          description: "Geolocation is not supported by this browser.",
-          variant: "destructive",
-        });
+        console.log('❌ Geolocation not available, using Toledo fallback');
+        // Fallback location when geolocation is not available
+        const { error: locationError } = await supabase
+          .from('craver_locations')
+          .upsert({
+            user_id: user.id,
+            lat: 41.6528, // Toledo coordinates
+            lng: -83.6982
+          });
+
+        if (locationError) {
+          console.error('❌ Fallback location update error:', locationError);
+        } else {
+          console.log('✅ Fallback location set successfully');
+        }
       }
 
       setEndTime(endTime);
