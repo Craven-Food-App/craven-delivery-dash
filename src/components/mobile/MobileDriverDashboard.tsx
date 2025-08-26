@@ -87,27 +87,8 @@ export const MobileDriverDashboard: React.FC = () => {
     }
   }, [driverState]);
 
-  // Mock offer generation
-  useEffect(() => {
-    if (driverState === 'online_searching') {
-      const offerTimer = setTimeout(() => {
-        const mockOffer: MockOffer = {
-          id: 'offer-' + Date.now(),
-          pickupName: 'Tony Packo\'s Cafe',
-          pickupRating: 4.5,
-          dropoffDistance: 2.3,
-          estimatedTime: 25,
-          estimatedPay: 12.50,
-          itemCount: 3,
-          miles: 4.2,
-        };
-        setCurrentOffer(mockOffer);
-        setDriverState('offer_presented');
-      }, Math.random() * 10000 + 5000); // 5-15 seconds
-
-      return () => clearTimeout(offerTimer);
-    }
-  }, [driverState]);
+  // Remove demo offer logic - this was interfering with real assignments
+  // Real order assignments come through the WebSocket channel in handleGoOnline
 
   const handleSatisfyCraveNow = () => {
     if (!docsStatus[selectedVehicle]) {
