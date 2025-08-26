@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Edit, Trash2, DollarSign } from "lucide-react";
+import { Plus, Edit, Trash2, DollarSign, Upload, X, Image } from "lucide-react";
 
 interface MenuItem {
   id: string;
@@ -62,7 +62,10 @@ export const MenuManagement = ({ restaurantId }: MenuManagementProps) => {
     is_vegan: false,
     is_gluten_free: false,
     allergens: [] as string[],
+    image_url: "",
   });
+
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -130,6 +133,55 @@ export const MenuManagement = ({ restaurantId }: MenuManagementProps) => {
     }
   };
 
+  const uploadImage = async (file: File): Promise<string | null> => {
+    setUploadingImage(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${restaurantId}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('menu-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('menu-images')
+        .getPublicUrl(fileName);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload image",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Error",
+        description: "Please select an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const imageUrl = await uploadImage(file);
+    if (imageUrl) {
+      setNewItem({ ...newItem, image_url: imageUrl });
+    }
+  };
+
   const addMenuItem = async () => {
     try {
       const { error } = await supabase
@@ -156,6 +208,7 @@ export const MenuManagement = ({ restaurantId }: MenuManagementProps) => {
         is_vegan: false,
         is_gluten_free: false,
         allergens: [],
+        image_url: "",
       });
       setIsAddingItem(false);
       fetchData();
@@ -286,6 +339,42 @@ export const MenuManagement = ({ restaurantId }: MenuManagementProps) => {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="item-image">Image</Label>
+                    <div className="flex flex-col gap-2">
+                      <Input
+                        id="item-image"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        disabled={uploadingImage}
+                      />
+                      {uploadingImage && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Upload className="h-4 w-4 animate-spin" />
+                          Uploading image...
+                        </div>
+                      )}
+                      {newItem.image_url && (
+                        <div className="relative">
+                          <img
+                            src={newItem.image_url}
+                            alt="Menu item preview"
+                            className="w-24 h-24 object-cover rounded-md"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                            onClick={() => setNewItem({ ...newItem, image_url: "" })}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <div className="flex gap-4">
                     <div className="flex items-center space-x-2">
                       <Switch
@@ -324,7 +413,20 @@ export const MenuManagement = ({ restaurantId }: MenuManagementProps) => {
             {menuItems.map((item) => (
               <Card key={item.id}>
                 <CardContent className="p-4">
-                  <div className="flex justify-between items-start">
+                  <div className="flex gap-4">
+                    {item.image_url ? (
+                      <div className="flex-shrink-0">
+                        <img
+                          src={item.image_url}
+                          alt={item.name}
+                          className="w-20 h-20 object-cover rounded-md"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex-shrink-0 w-20 h-20 bg-muted rounded-md flex items-center justify-center">
+                        <Image className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <h4 className="font-semibold">{item.name}</h4>
@@ -357,6 +459,153 @@ export const MenuManagement = ({ restaurantId }: MenuManagementProps) => {
               </Card>
             ))}
           </div>
+
+          {/* Edit Item Dialog */}
+          {editingItem && (
+            <Dialog open={!!editingItem} onOpenChange={() => setEditingItem(null)}>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Edit Menu Item</DialogTitle>
+                  <DialogDescription>
+                    Update your menu item details.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-item-name">Name</Label>
+                    <Input
+                      id="edit-item-name"
+                      value={editingItem.name}
+                      onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-item-description">Description</Label>
+                    <Textarea
+                      id="edit-item-description"
+                      value={editingItem.description}
+                      onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-item-price">Price ($)</Label>
+                    <Input
+                      id="edit-item-price"
+                      type="number"
+                      step="0.01"
+                      value={editingItem.price_cents / 100}
+                      onChange={(e) => setEditingItem({ ...editingItem, price_cents: Math.round(parseFloat(e.target.value) * 100) })}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-item-category">Category</Label>
+                    <Select 
+                      value={editingItem.category_id || ""} 
+                      onValueChange={(value) => setEditingItem({ ...editingItem, category_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-item-image">Image</Label>
+                    <div className="flex flex-col gap-2">
+                      <Input
+                        id="edit-item-image"
+                        type="file"
+                        accept="image/*"
+                        onChange={async (event) => {
+                          const file = event.target.files?.[0];
+                          if (!file) return;
+
+                          if (!file.type.startsWith('image/')) {
+                            toast({
+                              title: "Error",
+                              description: "Please select an image file",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+
+                          const imageUrl = await uploadImage(file);
+                          if (imageUrl) {
+                            setEditingItem({ ...editingItem, image_url: imageUrl });
+                          }
+                        }}
+                        disabled={uploadingImage}
+                      />
+                      {uploadingImage && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Upload className="h-4 w-4 animate-spin" />
+                          Uploading image...
+                        </div>
+                      )}
+                      {editingItem.image_url && (
+                        <div className="relative">
+                          <img
+                            src={editingItem.image_url}
+                            alt="Menu item preview"
+                            className="w-24 h-24 object-cover rounded-md"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                            onClick={() => setEditingItem({ ...editingItem, image_url: "" })}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="edit-vegetarian"
+                        checked={editingItem.is_vegetarian}
+                        onCheckedChange={(checked) => setEditingItem({ ...editingItem, is_vegetarian: checked })}
+                      />
+                      <Label htmlFor="edit-vegetarian">Vegetarian</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="edit-vegan"
+                        checked={editingItem.is_vegan}
+                        onCheckedChange={(checked) => setEditingItem({ ...editingItem, is_vegan: checked })}
+                      />
+                      <Label htmlFor="edit-vegan">Vegan</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="edit-gluten-free"
+                        checked={editingItem.is_gluten_free}
+                        onCheckedChange={(checked) => setEditingItem({ ...editingItem, is_gluten_free: checked })}
+                      />
+                      <Label htmlFor="edit-gluten-free">Gluten Free</Label>
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setEditingItem(null)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={() => updateMenuItem(editingItem)}>
+                    Update Item
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </TabsContent>
 
         <TabsContent value="categories" className="space-y-4">
