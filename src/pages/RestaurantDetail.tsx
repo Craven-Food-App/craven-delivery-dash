@@ -50,9 +50,23 @@ interface MenuItem {
   preparation_time: number;
 }
 
+interface Modifier {
+  id: string;
+  name: string;
+  description: string | null;
+  price_cents: number;
+  modifier_type: string;
+  is_required: boolean;
+}
+
+interface SelectedModifier extends Modifier {
+  selected: boolean;
+}
+
 interface CartItem extends MenuItem {
   quantity: number;
   special_instructions?: string;
+  modifiers?: SelectedModifier[];
 }
 
 const RestaurantDetail = () => {
@@ -119,17 +133,28 @@ const RestaurantDetail = () => {
     }
   };
 
-  const addToCart = (item: MenuItem, quantity: number = 1, specialInstructions?: string) => {
-    const existingItem = cart.find(cartItem => cartItem.id === item.id);
+  const addToCart = (item: MenuItem, quantity: number = 1, modifiers: SelectedModifier[] = [], specialInstructions?: string) => {
+    const modifiersKey = modifiers.map(m => m.id).sort().join(',');
+    const existingItem = cart.find(cartItem => 
+      cartItem.id === item.id && 
+      (cartItem.modifiers?.map(m => m.id).sort().join(',') || '') === modifiersKey
+    );
     
     if (existingItem) {
       setCart(cart.map(cartItem => 
-        cartItem.id === item.id 
+        cartItem.id === item.id && 
+        (cartItem.modifiers?.map(m => m.id).sort().join(',') || '') === modifiersKey
           ? { ...cartItem, quantity: cartItem.quantity + quantity, special_instructions: specialInstructions }
           : cartItem
       ));
     } else {
-      setCart([...cart, { ...item, quantity, special_instructions: specialInstructions }]);
+      const newCartItem: CartItem = {
+        ...item,
+        quantity,
+        special_instructions: specialInstructions,
+        modifiers: modifiers.filter(m => m.selected)
+      };
+      setCart([...cart, newCartItem]);
     }
 
     toast({
@@ -149,7 +174,11 @@ const RestaurantDetail = () => {
   };
 
   const getCartTotal = () => {
-    const subtotal = cart.reduce((total, item) => total + (item.price_cents * item.quantity), 0);
+    const subtotal = cart.reduce((total, item) => {
+      const itemTotal = item.price_cents * item.quantity;
+      const modifiersTotal = (item.modifiers || []).reduce((modSum, mod) => modSum + (mod.price_cents * item.quantity), 0);
+      return total + itemTotal + modifiersTotal;
+    }, 0);
     const deliveryFee = restaurant?.delivery_fee_cents || 0;
     const tax = Math.round(subtotal * 0.08); // 8% tax
     return {

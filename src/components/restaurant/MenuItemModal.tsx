@@ -1,10 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Minus, Plus } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MenuItem {
   id: string;
@@ -18,22 +20,67 @@ interface MenuItem {
   preparation_time: number;
 }
 
+interface Modifier {
+  id: string;
+  name: string;
+  description: string | null;
+  price_cents: number;
+  modifier_type: string;
+  is_required: boolean;
+}
+
+interface SelectedModifier extends Modifier {
+  selected: boolean;
+}
+
 interface MenuItemModalProps {
   item: MenuItem;
   onClose: () => void;
-  onAddToCart: (item: MenuItem, quantity: number, specialInstructions?: string) => void;
+  onAddToCart: (item: MenuItem, quantity: number, modifiers: SelectedModifier[], specialInstructions?: string) => void;
 }
 
 export const MenuItemModal = ({ item, onClose, onAddToCart }: MenuItemModalProps) => {
   const [quantity, setQuantity] = useState(1);
   const [specialInstructions, setSpecialInstructions] = useState("");
+  const [modifiers, setModifiers] = useState<SelectedModifier[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchModifiers = async () => {
+      const { data, error } = await supabase
+        .from('menu_item_modifiers')
+        .select('*')
+        .eq('menu_item_id', item.id)
+        .eq('is_available', true)
+        .order('display_order', { ascending: true });
+
+      if (!error && data) {
+        setModifiers(data.map(mod => ({ ...mod, selected: false })));
+      }
+      setLoading(false);
+    };
+
+    fetchModifiers();
+  }, [item.id]);
+
+  const handleModifierToggle = (modifierId: string) => {
+    setModifiers(prev => 
+      prev.map(mod => 
+        mod.id === modifierId 
+          ? { ...mod, selected: !mod.selected }
+          : mod
+      )
+    );
+  };
 
   const handleAddToCart = () => {
-    onAddToCart(item, quantity, specialInstructions);
+    onAddToCart(item, quantity, modifiers.filter(m => m.selected), specialInstructions);
     onClose();
   };
 
-  const totalPrice = (item.price_cents * quantity) / 100;
+  const selectedModifiers = modifiers.filter(m => m.selected);
+  const modifiersPrice = selectedModifiers.reduce((sum, mod) => sum + mod.price_cents, 0);
+  const totalPrice = ((item.price_cents + modifiersPrice) * quantity) / 100;
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -66,6 +113,47 @@ export const MenuItemModal = ({ item, onClose, onAddToCart }: MenuItemModalProps
               Prep time: ~{item.preparation_time} minutes
             </p>
           </div>
+
+          {/* Modifiers Section */}
+          {!loading && modifiers.length > 0 && (
+            <div>
+              <label className="text-sm font-medium mb-3 block">
+                Customize Your Order
+              </label>
+              <div className="space-y-3">
+                {modifiers.map((modifier) => (
+                  <div key={modifier.id} className="flex items-start space-x-3">
+                    <Checkbox
+                      id={modifier.id}
+                      checked={modifier.selected}
+                      onCheckedChange={() => handleModifierToggle(modifier.id)}
+                      className="mt-1"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <label 
+                          htmlFor={modifier.id}
+                          className="text-sm font-medium cursor-pointer"
+                        >
+                          {modifier.name}
+                        </label>
+                        {modifier.price_cents > 0 && (
+                          <span className="text-sm text-muted-foreground">
+                            +${(modifier.price_cents / 100).toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                      {modifier.description && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {modifier.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="text-sm font-medium mb-2 block">

@@ -7,12 +7,26 @@ import { Badge } from "@/components/ui/badge";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+interface Modifier {
+  id: string;
+  name: string;
+  description: string | null;
+  price_cents: number;
+  modifier_type: string;
+  is_required: boolean;
+}
+
+interface SelectedModifier extends Modifier {
+  selected: boolean;
+}
+
 interface CartItem {
   id: string;
   name: string;
   price_cents: number;
   quantity: number;
   special_instructions?: string;
+  modifiers?: SelectedModifier[];
 }
 
 interface Restaurant {
@@ -94,14 +108,26 @@ export const CartSidebar = ({
               <div key={item.id} className="flex items-start gap-3">
                 <div className="flex-1">
                   <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-medium">{item.name}</h4>
-                      {item.special_instructions && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Note: {item.special_instructions}
-                        </p>
-                      )}
-                    </div>
+                     <div>
+                       <h4 className="font-medium">{item.name}</h4>
+                       {item.modifiers && item.modifiers.length > 0 && (
+                         <div className="mt-1">
+                           {item.modifiers.map((modifier) => (
+                             <div key={modifier.id} className="flex items-center justify-between text-sm text-muted-foreground">
+                               <span>• {modifier.name}</span>
+                               {modifier.price_cents > 0 && (
+                                 <span>+${(modifier.price_cents / 100).toFixed(2)}</span>
+                               )}
+                             </div>
+                           ))}
+                         </div>
+                       )}
+                       {item.special_instructions && (
+                         <p className="text-sm text-muted-foreground mt-1">
+                           Note: {item.special_instructions}
+                         </p>
+                       )}
+                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -133,9 +159,9 @@ export const CartSidebar = ({
                         <Plus className="h-3 w-3" />
                       </Button>
                     </div>
-                    <span className="font-medium">
-                      ${((item.price_cents * item.quantity) / 100).toFixed(2)}
-                    </span>
+                     <span className="font-medium">
+                       ${(((item.price_cents + (item.modifiers?.reduce((sum, mod) => sum + mod.price_cents, 0) || 0)) * item.quantity) / 100).toFixed(2)}
+                     </span>
                   </div>
                 </div>
               </div>

@@ -190,6 +190,51 @@ export type Database = {
           },
         ]
       }
+      menu_item_modifiers: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number | null
+          id: string
+          is_available: boolean | null
+          is_required: boolean | null
+          max_selections: number | null
+          menu_item_id: string
+          modifier_type: string
+          name: string
+          price_cents: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_available?: boolean | null
+          is_required?: boolean | null
+          max_selections?: number | null
+          menu_item_id: string
+          modifier_type?: string
+          name: string
+          price_cents?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_available?: boolean | null
+          is_required?: boolean | null
+          max_selections?: number | null
+          menu_item_id?: string
+          modifier_type?: string
+          name?: string
+          price_cents?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       menu_items: {
         Row: {
           allergens: string[] | null
