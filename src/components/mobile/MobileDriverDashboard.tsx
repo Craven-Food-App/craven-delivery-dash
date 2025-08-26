@@ -148,9 +148,23 @@ export const MobileDriverDashboard: React.FC = () => {
           }
         }, (error) => {
           console.error('❌ Geolocation error:', error);
+          toast({
+            title: "Location Error",
+            description: "Please enable location permissions to receive orders.",
+            variant: "destructive",
+          });
+        }, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000
         });
       } else {
         console.log('❌ Geolocation not available');
+        toast({
+          title: "Location Not Available",
+          description: "Geolocation is not supported by this browser.",
+          variant: "destructive",
+        });
       }
 
       setEndTime(endTime);
