@@ -44,8 +44,14 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
           table: 'orders',
           filter: `restaurant_id=eq.${restaurantId}`,
         },
-        () => {
+        (payload) => {
+          console.log('Order update received:', payload);
           fetchOrders();
+          
+          // If a new order is created, trigger auto-assignment
+          if (payload.eventType === 'INSERT' && payload.new) {
+            triggerAutoAssignment(payload.new.id);
+          }
         }
       )
       .subscribe();
@@ -54,6 +60,35 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
       supabase.removeChannel(channel);
     };
   }, [restaurantId]);
+
+  const triggerAutoAssignment = async (orderId: string) => {
+    try {
+      console.log('Triggering auto-assignment for order:', orderId);
+      
+      const { data, error } = await supabase.functions.invoke('auto-assign-orders', {
+        body: { orderId }
+      });
+
+      if (error) {
+        console.error('Auto-assignment error:', error);
+        toast({
+          title: "Assignment Error",
+          description: "Failed to find available drivers. Order will remain pending.",
+          variant: "destructive",
+        });
+      } else {
+        console.log('Auto-assignment result:', data);
+        if (data.success) {
+          toast({
+            title: "Driver Assigned",
+            description: "A driver has been notified about this order.",
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error calling auto-assignment:', error);
+    }
+  };
 
   const fetchOrders = async () => {
     try {
@@ -147,13 +182,58 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
     return <div className="flex justify-center p-8">Loading orders...</div>;
   }
 
+  // Test function to create a sample order
+  const createTestOrder = async () => {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .insert({
+          restaurant_id: restaurantId,
+          pickup_name: 'CMIH Kitchen',
+          pickup_address: '6759 Nebraska Ave, Toledo, OH 43615',
+          pickup_lat: 41.6528,
+          pickup_lng: -83.6982,
+          dropoff_name: 'Test Customer',
+          dropoff_address: '123 Test St, Toledo, OH 43604',
+          dropoff_lat: 41.6639,
+          dropoff_lng: -83.5552,
+          payout_cents: Math.floor(Math.random() * 1000) + 800, // $8-18
+          distance_km: Math.random() * 10 + 2, // 2-12 km
+          status: 'pending'
+        });
+
+      if (error) throw error;
+      
+      toast({
+        title: "Test Order Created",
+        description: "A test order has been created and auto-assignment initiated.",
+      });
+    } catch (error) {
+      console.error('Error creating test order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create test order",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Order Management</h3>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Clock className="h-4 w-4" />
-          Updates in real-time
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={createTestOrder}
+          >
+            Create Test Order
+          </Button>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Clock className="h-4 w-4" />
+            Updates in real-time
+          </div>
         </div>
       </div>
 

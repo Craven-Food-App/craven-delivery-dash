@@ -3,12 +3,14 @@ import { Bell, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { VehicleSelector } from './VehicleSelector';
 import { EarningModeToggle } from './EarningModeToggle';
 import { EndTimeSheet } from './EndTimeSheet';
 import { BottomNavigation } from './BottomNavigation';
 import { OnlineSearchPanel } from './OnlineSearchPanel';
 import { OfferCard } from './OfferCard';
+import { OrderAssignmentModal } from './OrderAssignmentModal';
 import { AccountSection } from './AccountSection';
 import { RatingsSection } from './RatingsSection';
 import { EarningsSection } from './EarningsSection';
@@ -30,6 +32,19 @@ interface MockOffer {
   miles: number;
 }
 
+interface OrderAssignment {
+  assignment_id: string;
+  order_id: string;
+  restaurant_name: string;
+  pickup_address: string;
+  dropoff_address: string;
+  payout_cents: number;
+  distance_km: number;
+  distance_mi: string;
+  expires_at: string;
+  estimated_time: number;
+}
+
 export const MobileDriverDashboard: React.FC = () => {
   const [driverState, setDriverState] = useState<DriverState>('offline');
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleType>('car');
@@ -38,6 +53,7 @@ export const MobileDriverDashboard: React.FC = () => {
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [onlineTime, setOnlineTime] = useState(0);
   const [currentOffer, setCurrentOffer] = useState<MockOffer | null>(null);
+  const [currentAssignment, setCurrentAssignment] = useState<OrderAssignment | null>(null);
   const [currentCity, setCurrentCity] = useState('Toledo');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showEndTimeSheet, setShowEndTimeSheet] = useState(false);
@@ -105,38 +121,103 @@ export const MobileDriverDashboard: React.FC = () => {
     setShowEndTimeSheet(true);
   };
 
-  const handleGoOnline = (endTime: Date, autoExtend: boolean, breakReminder: boolean) => {
-    setEndTime(endTime);
-    setDriverState('online_searching');
-    setShowEndTimeSheet(false);
-    setOnlineTime(0);
-    
-    toast({
-      title: "You're now online!",
-      description: "Looking for delivery offers in your area.",
-    });
+  const handleGoOnline = async (endTime: Date, autoExtend: boolean, breakReminder: boolean) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Update driver status to online
+      await supabase
+        .from('driver_profiles')
+        .upsert({
+          user_id: user.id,
+          status: 'online',
+          is_available: true
+        });
+
+      // Update location
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async (position) => {
+          await supabase
+            .from('craver_locations')
+            .upsert({
+              user_id: user.id,
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            });
+        });
+      }
+
+      setEndTime(endTime);
+      setDriverState('online_searching');
+      setShowEndTimeSheet(false);
+      setOnlineTime(0);
+      
+      toast({
+        title: "You're now online!",
+        description: "Looking for delivery offers in your area.",
+      });
+
+      // Set up real-time order assignment listener
+      const channel = supabase
+        .channel(`driver_${user.id}`)
+        .on('broadcast', { event: 'order_assignment' }, (payload) => {
+          console.log('Received order assignment:', payload);
+          setCurrentAssignment(payload.payload);
+          setDriverState('offer_presented');
+        })
+        .subscribe();
+
+    } catch (error) {
+      console.error('Error going online:', error);
+      toast({
+        title: "Error",
+        description: "Failed to go online. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleAcceptOffer = (offerId: string) => {
+  const handleAcceptAssignment = (assignmentId: string) => {
+    setCurrentAssignment(null);
     setDriverState('on_delivery');
-    setCurrentOffer(null);
     toast({
-      title: "Offer accepted!",
+      title: "Order Accepted!",
       description: "Navigate to pickup location to start your delivery.",
     });
   };
 
-  const handleDeclineOffer = (offerId: string) => {
-    setCurrentOffer(null);
+  const handleDeclineAssignment = (assignmentId: string) => {
+    setCurrentAssignment(null);
     setDriverState('online_searching');
   };
 
-  const handlePause = () => {
-    setDriverState('online_paused');
-    toast({
-      title: "Paused",
-      description: "You won't receive new offers while paused.",
-    });
+  const handleAssignmentExpire = () => {
+    setCurrentAssignment(null);
+    setDriverState('online_searching');
+  };
+
+  const handlePause = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('driver_profiles')
+          .update({ 
+            status: 'paused',
+            is_available: false 
+          })
+          .eq('user_id', user.id);
+      }
+      
+      setDriverState('online_paused');
+      toast({
+        title: "Paused",
+        description: "You won't receive new offers while paused.",
+      });
+    } catch (error) {
+      console.error('Error pausing:', error);
+    }
   };
 
   const formatTime = (date: Date) => {
@@ -284,12 +365,28 @@ export const MobileDriverDashboard: React.FC = () => {
         />
       )}
 
-      {/* Offer Card */}
-      {currentOffer && driverState === 'offer_presented' && (
+      {/* Order Assignment Modal */}
+      {currentAssignment && (
+        <OrderAssignmentModal
+          assignment={currentAssignment}
+          onAccept={handleAcceptAssignment}
+          onDecline={handleDeclineAssignment}
+          onExpire={handleAssignmentExpire}
+        />
+      )}
+
+      {/* Offer Card (Legacy) */}
+      {currentOffer && driverState === 'offer_presented' && !currentAssignment && (
         <OfferCard
           offer={currentOffer}
-          onAccept={handleAcceptOffer}
-          onDecline={handleDeclineOffer}
+          onAccept={(id) => {
+            setDriverState('on_delivery');
+            setCurrentOffer(null);
+          }}
+          onDecline={(id) => {
+            setCurrentOffer(null);
+            setDriverState('online_searching');
+          }}
         />
       )}
 
