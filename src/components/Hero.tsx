@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, MapPin } from "lucide-react";
+import { Search, MapPin, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -141,17 +141,29 @@ const Hero = () => {
             ))}
           </div>
 
-          {/* Restaurant Owner CTA */}
+          {/* Driver CTA Section */}
           <div className="mt-8 pt-6 border-t border-white/20">
-            <p className="text-white/80 mb-3">Own a restaurant?</p>
-            <Button 
-              variant="outline" 
-              size="lg"
-              className="bg-transparent border-white text-white hover:bg-white hover:text-primary"
-              onClick={() => navigate('/restaurant/auth')}
-            >
-              Join as a Restaurant Partner
-            </Button>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button 
+                size="lg"
+                className="bg-gradient-to-r from-secondary to-secondary/80 hover:from-secondary/90 hover:to-secondary/70 text-white font-semibold"
+                onClick={() => navigate('/craver/mobile')}
+              >
+                <Truck className="mr-2 h-4 w-4" />
+                Satisfy Crave Now
+              </Button>
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-white/80 text-sm">Own a restaurant?</p>
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  className="bg-transparent border-white text-white hover:bg-white hover:text-primary"
+                  onClick={() => navigate('/restaurant/auth')}
+                >
+                  Join as a Restaurant Partner
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
