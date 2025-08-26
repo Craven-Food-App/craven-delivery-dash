@@ -304,7 +304,7 @@ const RestaurantDetail = () => {
                 <div className="space-y-4">
                   {categoryItems.map((item) => (
                     <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
-                      <CardContent className="p-0">
+                      <CardContent className="p-0" onClick={() => setSelectedItem(item)}>
                         <div className="flex">
                           <div className="flex-1 p-4">
                             <div className="flex items-start justify-between">
@@ -324,7 +324,10 @@ const RestaurantDetail = () => {
                                   </span>
                                   <Button
                                     size="sm"
-                                    onClick={() => setSelectedItem(item)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedItem(item);
+                                    }}
                                     className="ml-4"
                                   >
                                     <Plus className="h-4 w-4 mr-1" />
