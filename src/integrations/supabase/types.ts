@@ -149,6 +149,42 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_profiles: {
+        Row: {
+          created_at: string | null
+          driver_level: number | null
+          id: string
+          is_available: boolean | null
+          rating: number | null
+          status: Database["public"]["Enums"]["driver_status"] | null
+          total_deliveries: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          driver_level?: number | null
+          id?: string
+          is_available?: boolean | null
+          rating?: number | null
+          status?: Database["public"]["Enums"]["driver_status"] | null
+          total_deliveries?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          driver_level?: number | null
+          id?: string
+          is_available?: boolean | null
+          rating?: number | null
+          status?: Database["public"]["Enums"]["driver_status"] | null
+          total_deliveries?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       menu_categories: {
         Row: {
           created_at: string | null
@@ -309,6 +345,50 @@ export type Database = {
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_assignments: {
+        Row: {
+          assigned_at: string | null
+          created_at: string | null
+          driver_id: string
+          expires_at: string
+          id: string
+          order_id: string
+          response_time_seconds: number | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          created_at?: string | null
+          driver_id: string
+          expires_at: string
+          id?: string
+          order_id: string
+          response_time_seconds?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          created_at?: string | null
+          driver_id?: string
+          expires_at?: string
+          id?: string
+          order_id?: string
+          response_time_seconds?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_assignments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -488,6 +568,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_distance: {
+        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+        Returns: number
+      }
       is_admin: {
         Args: { user_uuid: string }
         Returns: boolean
@@ -499,6 +583,7 @@ export type Database = {
     }
     Enums: {
       application_status: "pending" | "under_review" | "approved" | "rejected"
+      driver_status: "offline" | "online" | "busy" | "paused"
       order_status:
         | "pending"
         | "assigned"
@@ -634,6 +719,7 @@ export const Constants = {
   public: {
     Enums: {
       application_status: ["pending", "under_review", "approved", "rejected"],
+      driver_status: ["offline", "online", "busy", "paused"],
       order_status: [
         "pending",
         "assigned",
