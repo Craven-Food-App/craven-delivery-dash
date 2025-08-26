@@ -104,11 +104,17 @@ export const MobileDriverDashboard: React.FC = () => {
 
   const handleGoOnline = async (endTime: Date, autoExtend: boolean, breakReminder: boolean) => {
     try {
+      console.log('🚗 Starting go online process...');
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.error('❌ No user found');
+        return;
+      }
+      console.log('✅ User found:', user.id);
 
       // Update driver status to online
-      await supabase
+      console.log('🔄 Updating driver profile to online...');
+      const { error: profileError } = await supabase
         .from('driver_profiles')
         .upsert({
           user_id: user.id,
@@ -116,17 +122,35 @@ export const MobileDriverDashboard: React.FC = () => {
           is_available: true
         });
 
+      if (profileError) {
+        console.error('❌ Driver profile update error:', profileError);
+        throw profileError;
+      }
+      console.log('✅ Driver profile updated successfully');
+
       // Update location
       if (navigator.geolocation) {
+        console.log('📍 Getting location...');
         navigator.geolocation.getCurrentPosition(async (position) => {
-          await supabase
+          console.log('📍 Location obtained:', position.coords.latitude, position.coords.longitude);
+          const { error: locationError } = await supabase
             .from('craver_locations')
             .upsert({
               user_id: user.id,
               lat: position.coords.latitude,
               lng: position.coords.longitude
             });
+
+          if (locationError) {
+            console.error('❌ Location update error:', locationError);
+          } else {
+            console.log('✅ Location updated successfully');
+          }
+        }, (error) => {
+          console.error('❌ Geolocation error:', error);
         });
+      } else {
+        console.log('❌ Geolocation not available');
       }
 
       setEndTime(endTime);
@@ -140,17 +164,20 @@ export const MobileDriverDashboard: React.FC = () => {
       });
 
       // Set up real-time order assignment listener
+      console.log('🔔 Setting up real-time listener...');
       const channel = supabase
         .channel(`driver_${user.id}`)
         .on('broadcast', { event: 'order_assignment' }, (payload) => {
-          console.log('Received order assignment:', payload);
+          console.log('📨 Received order assignment:', payload);
           setCurrentAssignment(payload.payload);
           setDriverState('offer_presented');
         })
         .subscribe();
 
+      console.log('✅ Successfully went online!');
+
     } catch (error) {
-      console.error('Error going online:', error);
+      console.error('❌ Error going online:', error);
       toast({
         title: "Error",
         description: "Failed to go online. Please try again.",
