@@ -36,12 +36,12 @@ const App = () => (
           <Route path="/craver/mobile" element={
             <AccessGuard fallback={
               <div className="flex flex-col items-center justify-center min-h-screen p-4">
-                <h1 className="text-2xl font-bold mb-4">Driver Access Required</h1>
+                <h1 className="text-2xl font-bold mb-4">Craver Access Required</h1>
                 <p className="text-muted-foreground text-center mb-4">
-                  You need an approved Craver application to access the driver portal.
+                  You need an approved Craver application to access the mobile portal.
                 </p>
-                <a href="/driver/auth" className="text-primary hover:underline">
-                  Apply to become a driver →
+                <a href="/craver" className="text-primary hover:underline">
+                  Apply to become a Craver →
                 </a>
               </div>
             }>
@@ -51,12 +51,12 @@ const App = () => (
           <Route path="/driver/mobile" element={
             <AccessGuard fallback={
               <div className="flex flex-col items-center justify-center min-h-screen p-4">
-                <h1 className="text-2xl font-bold mb-4">Driver Access Required</h1>
+                <h1 className="text-2xl font-bold mb-4">Craver Access Required</h1>
                 <p className="text-muted-foreground text-center mb-4">
-                  You need an approved Craver application to access the driver portal.
+                  You need an approved Craver application to access the mobile portal.
                 </p>
-                <a href="/driver/auth" className="text-primary hover:underline">
-                  Apply to become a driver →
+                <a href="/craver" className="text-primary hover:underline">
+                  Apply to become a Craver →
                 </a>
               </div>
             }>
