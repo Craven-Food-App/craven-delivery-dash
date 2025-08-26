@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import DriverAuth from "./pages/DriverAuth";
 import CraverHub from "./pages/CraverHub";
 import CraverDashboard from "./pages/CraverDashboard";
 import { MobileDriverDashboard } from "./components/mobile/MobileDriverDashboard";
@@ -15,6 +15,7 @@ import RestaurantRegister from "./pages/RestaurantRegister";
 import RestaurantDashboard from "./pages/RestaurantDashboard";
 import RestaurantAuth from "./pages/RestaurantAuth";
 import RestaurantDetail from "./pages/RestaurantDetail";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/driver/auth" element={<DriverAuth />} />
           <Route path="/craver" element={<CraverHub />} />
           <Route path="/craver/dashboard" element={<CraverDashboard />} />
           <Route path="/craver/mobile" element={<MobileDriverDashboard />} />
