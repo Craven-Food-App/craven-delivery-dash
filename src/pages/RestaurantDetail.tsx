@@ -243,24 +243,24 @@ const RestaurantDetail = () => {
           </div>
         )}
         <div className="absolute inset-0 bg-black/30" />
-        <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-          <div className="container mx-auto">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">{restaurant.name}</h1>
-            <p className="text-lg mb-2">{restaurant.description}</p>
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-1">
-                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                <span>{restaurant.rating.toFixed(1)} ({restaurant.total_reviews} reviews)</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                <span>{restaurant.min_delivery_time}-{restaurant.max_delivery_time} min</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Truck className="h-4 w-4" />
-                <span>${(restaurant.delivery_fee_cents / 100).toFixed(2)} delivery</span>
-              </div>
-            </div>
+      </div>
+
+      {/* Restaurant Info Section - moved below header */}
+      <div className="container mx-auto px-4 py-6">
+        <h1 className="text-3xl md:text-4xl font-bold mb-2">{restaurant.name}</h1>
+        <p className="text-lg mb-4 text-muted-foreground">{restaurant.description}</p>
+        <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-1">
+            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            <span>{restaurant.rating.toFixed(1)} ({restaurant.total_reviews} reviews)</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Clock className="h-4 w-4" />
+            <span>{restaurant.min_delivery_time}-{restaurant.max_delivery_time} min</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Truck className="h-4 w-4" />
+            <span>${(restaurant.delivery_fee_cents / 100).toFixed(2)} delivery</span>
           </div>
         </div>
       </div>
