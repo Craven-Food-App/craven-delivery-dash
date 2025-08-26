@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Bell, BellRing } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NewOrderAlertProps {
   restaurantId: string;
@@ -30,26 +31,34 @@ export const NewOrderAlert = ({ restaurantId }: NewOrderAlertProps) => {
   };
 
   useEffect(() => {
-    // Simulate checking for new orders (replace with actual Supabase integration)
-    const checkForOrders = () => {
-      // This is a simulation - in a real app, you'd check Supabase here
-      const hasOrders = Math.random() > 0.8; // 20% chance of having new orders
-      if (hasOrders) {
-        setHasNewOrders(true);
-        setNewOrderCount(Math.floor(Math.random() * 3) + 1);
-        playDingSound();
-        toast({
-          title: "🔔 New Order!",
-          description: "You have received a new order. Check the Orders tab for details.",
-          duration: 5000,
-        });
-      }
+    // Set up real-time subscription for new orders for this restaurant
+    const channel = supabase
+      .channel('new-orders')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders',
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        (payload) => {
+          console.log('New order received:', payload);
+          setHasNewOrders(true);
+          setNewOrderCount(prev => prev + 1);
+          playDingSound();
+          toast({
+            title: "🔔 New Order!",
+            description: "You have received a new order. Check the Orders tab for details.",
+            duration: 5000,
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
     };
-
-    // Check every 30 seconds for demo purposes
-    const interval = setInterval(checkForOrders, 30000);
-
-    return () => clearInterval(interval);
   }, [restaurantId, toast]);
 
   const handleClick = () => {

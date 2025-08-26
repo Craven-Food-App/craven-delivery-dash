@@ -328,6 +328,7 @@ export type Database = {
           pickup_lat: number
           pickup_lng: number
           pickup_name: string
+          restaurant_id: string | null
           status: Database["public"]["Enums"]["order_status"]
           updated_at: string
         }
@@ -345,6 +346,7 @@ export type Database = {
           pickup_lat: number
           pickup_lng: number
           pickup_name: string
+          restaurant_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           updated_at?: string
         }
@@ -362,10 +364,19 @@ export type Database = {
           pickup_lat?: number
           pickup_lng?: number
           pickup_name?: string
+          restaurant_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       restaurants: {
         Row: {

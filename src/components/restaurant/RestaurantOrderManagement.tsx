@@ -33,7 +33,7 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
   useEffect(() => {
     fetchOrders();
     
-    // Set up real-time subscription for order updates
+    // Set up real-time subscription for order updates for this restaurant
     const channel = supabase
       .channel('restaurant-orders')
       .on(
@@ -42,6 +42,7 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
           event: '*',
           schema: 'public',
           table: 'orders',
+          filter: `restaurant_id=eq.${restaurantId}`,
         },
         () => {
           fetchOrders();
@@ -56,11 +57,11 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
 
   const fetchOrders = async () => {
     try {
-      // For now, we'll fetch all orders since we don't have restaurant-specific orders yet
-      // In a real app, you'd filter by restaurant_id
+      // Fetch orders for this specific restaurant
       const { data, error } = await supabase
         .from("orders")
         .select("*")
+        .eq("restaurant_id", restaurantId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
