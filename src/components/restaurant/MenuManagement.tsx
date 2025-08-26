@@ -139,11 +139,20 @@ export const MenuManagement = ({ restaurantId }: MenuManagementProps) => {
       const fileExt = file.name.split('.').pop();
       const fileName = `${restaurantId}/${Date.now()}.${fileExt}`;
       
-      const { error: uploadError } = await supabase.storage
+      console.log('Attempting to upload:', fileName);
+      console.log('Restaurant ID:', restaurantId);
+      console.log('File size:', file.size);
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('menu-images')
         .upload(fileName, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error details:', uploadError);
+        throw uploadError;
+      }
+      
+      console.log('Upload successful:', uploadData);
 
       const { data } = supabase.storage
         .from('menu-images')
