@@ -1,7 +1,9 @@
 import { Star, Clock, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface RestaurantCardProps {
+  id: string;
   name: string;
   image: string;
   rating: number;
@@ -12,6 +14,7 @@ interface RestaurantCardProps {
 }
 
 const RestaurantCard = ({ 
+  id,
   name, 
   image, 
   rating, 
@@ -20,8 +23,14 @@ const RestaurantCard = ({
   cuisine,
   isPromoted = false 
 }: RestaurantCardProps) => {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate(`/restaurant/${id}`);
+  };
+
   return (
-    <div className="group cursor-pointer">
+    <div className="group cursor-pointer" onClick={handleClick}>
       <div className="bg-card rounded-lg shadow-card hover:shadow-hover transition-all duration-300 transform hover:scale-105 overflow-hidden">
         {/* Image */}
         <div className="relative h-48 overflow-hidden">
