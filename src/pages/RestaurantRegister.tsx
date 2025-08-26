@@ -45,6 +45,15 @@ const RestaurantRegister = () => {
   const form = useForm<RestaurantFormData>({
     resolver: zodResolver(restaurantSchema),
     defaultValues: {
+      name: "",
+      description: "",
+      cuisine_type: "",
+      phone: "",
+      email: "",
+      address: "",
+      city: "",
+      state: "",
+      zip_code: "",
       delivery_fee_cents: 299,
       min_delivery_time: 20,
       max_delivery_time: 40,
@@ -59,11 +68,11 @@ const RestaurantRegister = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        toast({
-          title: "Authentication required",
-          description: "Please sign in to register your restaurant",
-          variant: "destructive"
-        });
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to register your restaurant",
+        variant: "destructive"
+      });
         navigate("/auth");
         return;
       }

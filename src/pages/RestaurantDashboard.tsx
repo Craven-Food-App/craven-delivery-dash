@@ -5,9 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Plus, Store, Menu, Settings, BarChart } from "lucide-react";
 import Header from "@/components/Header";
+import { MenuManagement } from "@/components/restaurant/MenuManagement";
+import { RestaurantOrderManagement } from "@/components/restaurant/RestaurantOrderManagement";
+import { RestaurantSettings } from "@/components/restaurant/RestaurantSettings";
 
 interface Restaurant {
   id: string;
@@ -35,6 +38,7 @@ const RestaurantDashboard = () => {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchRestaurant();
@@ -58,10 +62,10 @@ const RestaurantDashboard = () => {
       if (error) {
         if (error.code === 'PGRST116') {
           // No restaurant found
-          toast({
-            title: "No restaurant found",
-            description: "You haven't registered a restaurant yet. Let's get started!",
-          });
+      toast({
+        title: "No restaurant found",
+        description: "You haven't registered a restaurant yet. Let's get started!",
+      });
           navigate("/restaurant/register");
           return;
         }
@@ -256,69 +260,16 @@ const RestaurantDashboard = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="menu">
-            <Card>
-              <CardHeader>
-                <CardTitle>Menu Management</CardTitle>
-                <CardDescription>Manage your menu items and categories</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Menu className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No menu items yet</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Start building your menu by adding categories and items.
-                  </p>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Menu Item
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="menu" className="space-y-4">
+            <MenuManagement restaurantId={restaurant.id} />
           </TabsContent>
 
-          <TabsContent value="orders">
-            <Card>
-              <CardHeader>
-                <CardTitle>Order Management</CardTitle>
-                <CardDescription>View and manage incoming orders</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <BarChart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No orders yet</h3>
-                  <p className="text-muted-foreground">
-                    When customers place orders, they'll appear here.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="orders" className="space-y-4">
+            <RestaurantOrderManagement restaurantId={restaurant.id} />
           </TabsContent>
 
-          <TabsContent value="settings">
-            <Card>
-              <CardHeader>
-                <CardTitle>Restaurant Settings</CardTitle>
-                <CardDescription>Update your restaurant information and preferences</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Edit Restaurant Information
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Store className="h-4 w-4 mr-2" />
-                    Business Hours
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Menu className="h-4 w-4 mr-2" />
-                    Delivery Settings
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="settings" className="space-y-4">
+            <RestaurantSettings restaurant={restaurant} onUpdate={fetchRestaurant} />
           </TabsContent>
         </Tabs>
       </div>
