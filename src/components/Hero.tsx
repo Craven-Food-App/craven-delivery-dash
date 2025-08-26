@@ -140,6 +140,19 @@ const Hero = () => {
               </Button>
             ))}
           </div>
+
+          {/* Restaurant Owner CTA */}
+          <div className="mt-8 pt-6 border-t border-white/20">
+            <p className="text-white/80 mb-3">Own a restaurant?</p>
+            <Button 
+              variant="outline" 
+              size="lg"
+              className="bg-transparent border-white text-white hover:bg-white hover:text-primary"
+              onClick={() => navigate('/restaurant/auth')}
+            >
+              Join as a Restaurant Partner
+            </Button>
+          </div>
         </div>
       </div>
     </section>

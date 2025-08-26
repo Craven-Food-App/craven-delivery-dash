@@ -13,6 +13,7 @@ import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import RestaurantRegister from "./pages/RestaurantRegister";
 import RestaurantDashboard from "./pages/RestaurantDashboard";
+import RestaurantAuth from "./pages/RestaurantAuth";
 import RestaurantDetail from "./pages/RestaurantDetail";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/craver" element={<CraverHub />} />
           <Route path="/craver/dashboard" element={<CraverDashboard />} />
           <Route path="/craver/mobile" element={<MobileDriverDashboard />} />
+          <Route path="/restaurant/auth" element={<RestaurantAuth />} />
           <Route path="/restaurant/register" element={<RestaurantRegister />} />
           <Route path="/restaurant/dashboard" element={<RestaurantDashboard />} />
           <Route path="/restaurant/:id" element={<RestaurantDetail />} />

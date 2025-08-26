@@ -13,7 +13,7 @@ const Header = () => {
             
             <nav className="hidden md:flex space-x-6">
               <a href="/" className="text-foreground hover:text-primary transition-colors">Restaurants</a>
-              <a href="/restaurant/register" className="text-foreground hover:text-primary transition-colors">Add Your Restaurant</a>
+              <a href="/restaurant/auth" className="text-foreground hover:text-primary transition-colors">Restaurant Login</a>
               <a href="/craver" className="text-foreground hover:text-primary transition-colors">Become a Driver</a>
             </nav>
           </div>
