@@ -116,11 +116,11 @@ export const MobileDriverDashboard: React.FC = () => {
       console.log('🔄 Updating driver profile to online...');
       const { error: profileError } = await supabase
         .from('driver_profiles')
-        .upsert({
-          user_id: user.id,
+        .update({
           status: 'online',
           is_available: true
-        });
+        })
+        .eq('user_id', user.id);
 
       if (profileError) {
         console.error('❌ Driver profile update error:', profileError);
