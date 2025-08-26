@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Star, Clock, Truck, Plus, Minus, ShoppingCart } from "lucide-react";
+import { Star, Clock, Truck, Plus, Minus, ShoppingCart, TrendingUp, Award } from "lucide-react";
 import Header from "@/components/Header";
 import { MenuItemModal } from "@/components/restaurant/MenuItemModal";
 import { CartSidebar } from "@/components/restaurant/CartSidebar";
@@ -48,6 +48,8 @@ interface MenuItem {
   is_gluten_free: boolean;
   category_id: string;
   preparation_time: number;
+  is_featured?: boolean;
+  order_count?: number;
 }
 
 interface Modifier {
@@ -74,6 +76,8 @@ const RestaurantDetail = () => {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [featuredItems, setFeaturedItems] = useState<MenuItem[]>([]);
+  const [popularItems, setPopularItems] = useState<MenuItem[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [showCart, setShowCart] = useState(false);
@@ -121,6 +125,31 @@ const RestaurantDetail = () => {
 
       if (itemsError) throw itemsError;
       setMenuItems(itemsData || []);
+
+      // Fetch featured items
+      const { data: featuredData, error: featuredError } = await supabase
+        .from("menu_items")
+        .select("*")
+        .eq("restaurant_id", id)
+        .eq("is_available", true)
+        .eq("is_featured", true)
+        .limit(6);
+
+      if (featuredError) throw featuredError;
+      setFeaturedItems(featuredData || []);
+
+      // Fetch popular items (top ordered items)
+      const { data: popularData, error: popularError } = await supabase
+        .from("menu_items")
+        .select("*")
+        .eq("restaurant_id", id)
+        .eq("is_available", true)
+        .gt("order_count", 0)
+        .order("order_count", { ascending: false })
+        .limit(6);
+
+      if (popularError) throw popularError;
+      setPopularItems(popularData || []);
 
     } catch (error) {
       console.error("Error fetching restaurant data:", error);
@@ -287,6 +316,136 @@ const RestaurantDetail = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Featured Items Section */}
+          {featuredItems.length > 0 && (
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <Award className="h-5 w-5 text-primary" />
+                <h2 className="text-2xl font-bold">Featured Items</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {featuredItems.map((item) => (
+                  <Card key={`featured-${item.id}`} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
+                    <CardContent className="p-0" onClick={() => setSelectedItem(item)}>
+                      <div className="flex min-w-0">
+                        <div className="flex-1 p-4 min-w-0">
+                          <div className="flex items-start justify-between min-w-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                <h3 className="font-semibold text-lg break-words">{item.name}</h3>
+                                <Badge variant="secondary" className="text-xs bg-primary/20 text-primary">Featured</Badge>
+                                <div className="flex gap-1 flex-wrap">
+                                  {item.is_vegetarian && <Badge variant="secondary" className="text-xs">Vegetarian</Badge>}
+                                  {item.is_vegan && <Badge variant="secondary" className="text-xs">Vegan</Badge>}
+                                  {item.is_gluten_free && <Badge variant="secondary" className="text-xs">Gluten Free</Badge>}
+                                </div>
+                              </div>
+                              <p className="text-muted-foreground text-sm mb-3 line-clamp-2 break-words">
+                                {item.description}
+                              </p>
+                              <div className="flex items-center justify-between flex-wrap gap-2">
+                                <span className="text-lg font-bold">
+                                  ${(item.price_cents / 100).toFixed(2)}
+                                </span>
+                                <Button
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedItem(item);
+                                  }}
+                                  className="ml-4 flex-shrink-0"
+                                >
+                                  <Plus className="h-4 w-4 mr-1" />
+                                  Add
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        {item.image_url && (
+                          <div className="w-24 h-24 md:w-32 md:h-32 flex-shrink-0">
+                            <img 
+                              src={item.image_url} 
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              <Separator className="mt-8" />
+            </div>
+          )}
+
+          {/* Popular Items Section */}
+          {popularItems.length > 0 && (
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                <h2 className="text-2xl font-bold">Most Popular</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {popularItems.map((item) => (
+                  <Card key={`popular-${item.id}`} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
+                    <CardContent className="p-0" onClick={() => setSelectedItem(item)}>
+                      <div className="flex min-w-0">
+                        <div className="flex-1 p-4 min-w-0">
+                          <div className="flex items-start justify-between min-w-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                <h3 className="font-semibold text-lg break-words">{item.name}</h3>
+                                <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700">
+                                  {item.order_count} orders
+                                </Badge>
+                                <div className="flex gap-1 flex-wrap">
+                                  {item.is_vegetarian && <Badge variant="secondary" className="text-xs">Vegetarian</Badge>}
+                                  {item.is_vegan && <Badge variant="secondary" className="text-xs">Vegan</Badge>}
+                                  {item.is_gluten_free && <Badge variant="secondary" className="text-xs">Gluten Free</Badge>}
+                                </div>
+                              </div>
+                              <p className="text-muted-foreground text-sm mb-3 line-clamp-2 break-words">
+                                {item.description}
+                              </p>
+                              <div className="flex items-center justify-between flex-wrap gap-2">
+                                <span className="text-lg font-bold">
+                                  ${(item.price_cents / 100).toFixed(2)}
+                                </span>
+                                <Button
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedItem(item);
+                                  }}
+                                  className="ml-4 flex-shrink-0"
+                                >
+                                  <Plus className="h-4 w-4 mr-1" />
+                                  Add
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        {item.image_url && (
+                          <div className="w-24 h-24 md:w-32 md:h-32 flex-shrink-0">
+                            <img 
+                              src={item.image_url} 
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              <Separator className="mt-8" />
+            </div>
+          )}
 
           {/* Menu Categories and Items */}
           {categories.map((category) => {

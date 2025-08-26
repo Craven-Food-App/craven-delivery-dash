@@ -245,10 +245,12 @@ export type Database = {
           id: string
           image_url: string | null
           is_available: boolean | null
+          is_featured: boolean | null
           is_gluten_free: boolean | null
           is_vegan: boolean | null
           is_vegetarian: boolean | null
           name: string
+          order_count: number | null
           preparation_time: number | null
           price_cents: number
           restaurant_id: string
@@ -263,10 +265,12 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_available?: boolean | null
+          is_featured?: boolean | null
           is_gluten_free?: boolean | null
           is_vegan?: boolean | null
           is_vegetarian?: boolean | null
           name: string
+          order_count?: number | null
           preparation_time?: number | null
           price_cents: number
           restaurant_id: string
@@ -281,10 +285,12 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_available?: boolean | null
+          is_featured?: boolean | null
           is_gluten_free?: boolean | null
           is_vegan?: boolean | null
           is_vegetarian?: boolean | null
           name?: string
+          order_count?: number | null
           preparation_time?: number | null
           price_cents?: number
           restaurant_id?: string
