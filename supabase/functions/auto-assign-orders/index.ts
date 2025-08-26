@@ -48,14 +48,7 @@ serve(async (req) => {
     // Find available drivers within 10 miles, prioritized by rating and level
     const { data: availableDrivers, error: driversError } = await supabase
       .from('driver_profiles')
-      .select(`
-        *,
-        craver_locations!inner(
-          lat,
-          lng,
-          updated_at
-        )
-      `)
+      .select('*')
       .eq('status', 'online')
       .eq('is_available', true)
 
@@ -69,15 +62,25 @@ serve(async (req) => {
     // Calculate distances and prioritize drivers
     const driversWithDistance = []
     for (const driver of availableDrivers) {
-      const location = driver.craver_locations
+      // Get driver location separately
+      const { data: locationData, error: locationError } = await supabase
+        .from('craver_locations')
+        .select('lat, lng, updated_at')
+        .eq('user_id', driver.user_id)
+        .single()
+      
+      if (locationError || !locationData) {
+        console.log('No location found for driver:', driver.user_id)
+        continue
+      }
       
       // Calculate distance using the database function
       const { data: distanceResult } = await supabase
         .rpc('calculate_distance', {
           lat1: restaurant.latitude,
           lng1: restaurant.longitude,
-          lat2: location.lat,
-          lng2: location.lng
+          lat2: locationData.lat,
+          lng2: locationData.lng
         })
 
       const distance = distanceResult || 999
@@ -87,7 +90,7 @@ serve(async (req) => {
         driversWithDistance.push({
           ...driver,
           distance,
-          location,
+          location: locationData,
           priority: calculateDriverPriority(driver.rating, driver.driver_level, distance)
         })
       }
