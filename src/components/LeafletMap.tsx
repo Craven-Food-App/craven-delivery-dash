@@ -72,7 +72,10 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ orders, activeOrder, onOrderCli
 
   // Location tracking effect
   useEffect(() => {
-    if (!navigator.geolocation || !map.current) return;
+    if (!navigator.geolocation || !map.current) {
+      console.log('Geolocation not supported or map not ready');
+      return;
+    }
 
     const createUserLocationMarker = (lat: number, lng: number) => {
       const userIcon = L.divIcon({
@@ -104,6 +107,7 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ orders, activeOrder, onOrderCli
 
     const updateUserLocation = (position: GeolocationPosition) => {
       const { latitude, longitude } = position.coords;
+      console.log('Got user location:', latitude, longitude);
       setUserLocation({ lat: latitude, lng: longitude });
 
       if (!map.current) return;
@@ -117,24 +121,56 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ orders, activeOrder, onOrderCli
       userLocationMarker.current = createUserLocationMarker(latitude, longitude);
       userLocationMarker.current.addTo(map.current);
 
-      // Center on user location only on first load
-      if (!userLocation) {
-        map.current.setView([latitude, longitude], 15);
-      }
+      // Always center on user location when we get it
+      map.current.setView([latitude, longitude], 15);
     };
 
     const handleLocationError = (error: GeolocationPositionError) => {
-      console.warn('Location tracking error:', error.message);
+      console.error('Location tracking error:', error.message, 'Code:', error.code);
+      
+      // Show user-friendly error message based on error type
+      if (error.code === 1) {
+        console.log('Location permission denied by user');
+      } else if (error.code === 2) {
+        console.log('Location unavailable');
+      } else if (error.code === 3) {
+        console.log('Location request timed out');
+      }
     };
 
-    // Start watching user location
+    // First try to get current position immediately
+    navigator.geolocation.getCurrentPosition(
+      updateUserLocation,
+      (error) => {
+        console.log('Initial location request failed, trying with relaxed settings');
+        handleLocationError(error);
+        
+        // Fallback: try with more relaxed settings
+        navigator.geolocation.getCurrentPosition(
+          updateUserLocation,
+          handleLocationError,
+          {
+            enableHighAccuracy: false,
+            timeout: 30000,
+            maximumAge: 60000
+          }
+        );
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 10000
+      }
+    );
+
+    // Then start watching for location changes
     watchId.current = navigator.geolocation.watchPosition(
       updateUserLocation,
       handleLocationError,
       {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 5000
+        enableHighAccuracy: false, // Less strict for continuous tracking
+        timeout: 20000,
+        maximumAge: 30000
       }
     );
 
@@ -148,7 +184,7 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ orders, activeOrder, onOrderCli
         userLocationMarker.current = null;
       }
     };
-  }, [map.current, userLocation]);
+  }, [map.current]);
 
   useEffect(() => {
     if (!map.current) return;
