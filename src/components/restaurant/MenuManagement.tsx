@@ -184,13 +184,16 @@ export const MenuManagement = ({ restaurantId }: MenuManagementProps) => {
 
   const addMenuItem = async () => {
     try {
+      const itemData = {
+        ...newItem,
+        restaurant_id: restaurantId,
+        display_order: menuItems.length,
+        category_id: newItem.category_id || null, // Convert empty string to null
+      };
+      
       const { error } = await supabase
         .from("menu_items")
-        .insert({
-          ...newItem,
-          restaurant_id: restaurantId,
-          display_order: menuItems.length,
-        });
+        .insert(itemData);
 
       if (error) throw error;
 
