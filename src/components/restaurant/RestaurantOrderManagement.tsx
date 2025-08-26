@@ -185,24 +185,36 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
   // Test function to create a sample order
   const createTestOrder = async () => {
     try {
-      const { error } = await supabase
-        .from('orders')
-        .insert({
-          restaurant_id: restaurantId,
-          pickup_name: 'CMIH Kitchen',
-          pickup_address: '6759 Nebraska Ave, Toledo, OH 43615',
-          pickup_lat: 41.6528,
-          pickup_lng: -83.6982,
-          dropoff_name: 'Test Customer',
-          dropoff_address: '123 Test St, Toledo, OH 43604',
-          dropoff_lat: 41.6639,
-          dropoff_lng: -83.5552,
-          payout_cents: Math.floor(Math.random() * 1000) + 800, // $8-18
-          distance_km: Math.random() * 10 + 2, // 2-12 km
-          status: 'pending'
-        });
+      console.log('Creating test order for restaurant:', restaurantId);
+      
+      const orderData = {
+        restaurant_id: restaurantId,
+        pickup_name: 'CMIH Kitchen',
+        pickup_address: '6759 Nebraska Ave, Toledo, OH 43615',
+        pickup_lat: 41.6528,
+        pickup_lng: -83.6982,
+        dropoff_name: 'Test Customer',
+        dropoff_address: '123 Test St, Toledo, OH 43604',
+        dropoff_lat: 41.6639,
+        dropoff_lng: -83.5552,
+        payout_cents: Math.floor(Math.random() * 1000) + 800, // $8-18
+        distance_km: Math.random() * 10 + 2, // 2-12 km
+        status: 'pending' as const
+      };
 
-      if (error) throw error;
+      console.log('Order data:', orderData);
+
+      const { data, error } = await supabase
+        .from('orders')
+        .insert(orderData)
+        .select();
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('Order created successfully:', data);
       
       toast({
         title: "Test Order Created",
@@ -212,7 +224,7 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
       console.error('Error creating test order:', error);
       toast({
         title: "Error",
-        description: "Failed to create test order",
+        description: `Failed to create test order: ${error.message}`,
         variant: "destructive",
       });
     }
