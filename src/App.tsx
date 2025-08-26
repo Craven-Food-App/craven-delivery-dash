@@ -30,6 +30,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/driver/auth" element={<DriverAuth />} />
           <Route path="/craver" element={<CraverHub />} />
+          <Route path="/craver-dashboard" element={<CraverDashboard />} />
           <Route path="/craver/dashboard" element={<CraverDashboard />} />
           <Route path="/craver/mobile" element={<MobileDriverDashboard />} />
           <Route path="/restaurant/auth" element={<RestaurantAuth />} />
