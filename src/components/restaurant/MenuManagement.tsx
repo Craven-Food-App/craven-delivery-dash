@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Edit, Trash2, DollarSign, Upload, X, Image } from "lucide-react";
+import { Plus, Edit, Trash2, DollarSign, Upload, X, Image, Download } from "lucide-react";
+import { MenuImport } from "./MenuImport";
 
 interface MenuItem {
   id: string;
@@ -46,6 +47,7 @@ export const MenuManagement = ({ restaurantId }: MenuManagementProps) => {
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [isImportingMenu, setIsImportingMenu] = useState(false);
   const { toast } = useToast();
 
   const [newCategory, setNewCategory] = useState({
@@ -295,7 +297,12 @@ export const MenuManagement = ({ restaurantId }: MenuManagementProps) => {
         <TabsContent value="items" className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">Menu Items</h3>
-            <Dialog open={isAddingItem} onOpenChange={setIsAddingItem}>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setIsImportingMenu(true)}>
+                <Download className="h-4 w-4 mr-2" />
+                Import from Cookin.com
+              </Button>
+              <Dialog open={isAddingItem} onOpenChange={setIsAddingItem}>
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
@@ -419,7 +426,16 @@ export const MenuManagement = ({ restaurantId }: MenuManagementProps) => {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
+
+          {/* Menu Import Component */}
+          <MenuImport
+            restaurantId={restaurantId}
+            onImportComplete={fetchData}
+            isOpen={isImportingMenu}
+            onClose={() => setIsImportingMenu(false)}
+          />
 
           <div className="grid gap-4">
             {menuItems.map((item) => (
