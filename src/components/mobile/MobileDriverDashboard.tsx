@@ -12,7 +12,7 @@ import { OfferCard } from './OfferCard';
 import { AccountSection } from './AccountSection';
 import { RatingsSection } from './RatingsSection';
 import { EarningsSection } from './EarningsSection';
-import SimpleMap from '@/components/SimpleMap';
+import LeafletMap from '@/components/LeafletMap';
 
 type DriverState = 'offline' | 'setEndTime' | 'online_searching' | 'online_paused' | 'offer_presented' | 'on_delivery';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
@@ -216,7 +216,7 @@ export const MobileDriverDashboard: React.FC = () => {
     <div className="min-h-screen bg-background relative">
       {/* Full-screen map background */}
       <div className="absolute inset-0">
-        <SimpleMap 
+        <LeafletMap 
           orders={[]} 
           activeOrder={null} 
           onOrderClick={() => {}} 
