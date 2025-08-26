@@ -96,9 +96,9 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
     setFiles(prev => ({ ...prev, [field]: file }));
   };
 
-  const uploadDocument = async (field: string, file: File, userId: string): Promise<string | null> => {
+  const uploadDocument = async (field: string, file: File, applicationId: string): Promise<string | null> => {
     const fileExt = file.name.split('.').pop();
-    const fileName = `${userId}/${field}.${fileExt}`;
+    const fileName = `applications/${applicationId}/${field}.${fileExt}`;
     
     const { error } = await supabase.storage
       .from('craver-documents')
@@ -115,20 +115,13 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Authentication Required",
-          description: "Please sign in to submit your application.",
-          variant: "destructive"
-        });
-        return;
-      }
+      // Create anonymous application without requiring auth
+      const applicationId = crypto.randomUUID();
 
       // Upload documents
       const documentPaths: Record<string, string> = {};
       for (const [field, file] of Object.entries(files)) {
-        const path = await uploadDocument(field, file, user.id);
+        const path = await uploadDocument(field, file, applicationId);
         if (path) {
           documentPaths[field] = path;
         }
@@ -138,7 +131,7 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
       const { error } = await supabase
         .from('craver_applications')
         .insert({
-          user_id: user.id,
+          user_id: null, // Allow applications without user accounts
           first_name: data.firstName,
           last_name: data.lastName,
           email: data.email,
