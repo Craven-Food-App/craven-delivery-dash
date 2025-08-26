@@ -15,20 +15,35 @@ interface Restaurant {
   image_url: string;
 }
 
-const RestaurantGrid = () => {
+interface RestaurantGridProps {
+  searchQuery?: string;
+  deliveryAddress?: string;
+}
+
+const RestaurantGrid = ({ searchQuery, deliveryAddress }: RestaurantGridProps = {}) => {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchRestaurants();
-  }, []);
+  }, [searchQuery, deliveryAddress]);
 
   const fetchRestaurants = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("restaurants")
         .select("*")
-        .eq("is_active", true)
+        .eq("is_active", true);
+
+      // Filter by search query if provided
+      if (searchQuery) {
+        query = query.or(`name.ilike.%${searchQuery}%,cuisine_type.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+      }
+
+      // Note: In a real app, you'd filter by location using coordinates
+      // For now, we'll just show all restaurants but indicate we're "searching near" the address
+      
+      const { data, error } = await query
         .order("is_promoted", { ascending: false })
         .order("rating", { ascending: false });
 
@@ -48,7 +63,7 @@ const RestaurantGrid = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-foreground mb-4">
-              Popular Restaurants Near You
+              {searchQuery || deliveryAddress ? "Searching..." : "Popular Restaurants Near You"}
             </h2>
             <p className="text-muted-foreground text-lg">
               Loading restaurants...
@@ -73,19 +88,24 @@ const RestaurantGrid = () => {
   return (
     <section className="py-12 bg-muted/30">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-foreground mb-4">
-            Popular Restaurants Near You
-          </h2>
-          <p className="text-muted-foreground text-lg">
-            Discover the most loved places to eat in your area
-          </p>
-        </div>
+        {!searchQuery && !deliveryAddress && (
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-foreground mb-4">
+              Popular Restaurants Near You
+            </h2>
+            <p className="text-muted-foreground text-lg">
+              Discover the most loved places to eat in your area
+            </p>
+          </div>
+        )}
 
         {restaurants.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground text-lg">
-              No restaurants available right now. Be the first to register your restaurant!
+              {searchQuery 
+                ? `No restaurants found for "${searchQuery}"${deliveryAddress ? ` near ${deliveryAddress}` : ''}`
+                : "No restaurants available right now. Be the first to register your restaurant!"
+              }
             </p>
           </div>
         ) : (
