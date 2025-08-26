@@ -214,14 +214,17 @@ export const MobileDriverDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background relative">
-      {/* Full-screen map background */}
-      <div className="absolute inset-0">
+      {/* Map background - positioned behind content */}
+      <div className="absolute inset-0 z-0">
         <LeafletMap 
           orders={[]} 
           activeOrder={null} 
           onOrderClick={() => {}} 
         />
       </div>
+      
+      {/* Content overlay */}
+      <div className="relative z-10 min-h-screen">
 
       {/* Top Bar */}
       <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-background/80 to-transparent backdrop-blur-sm">
@@ -299,6 +302,7 @@ export const MobileDriverDashboard: React.FC = () => {
 
       {/* Bottom Navigation */}
       <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
     </div>
   );
 };
