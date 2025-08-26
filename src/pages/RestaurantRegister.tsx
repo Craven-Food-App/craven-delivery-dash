@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Upload, X, Image } from "lucide-react";
 import Header from "@/components/Header";
 
 const restaurantSchema = z.object({
@@ -27,7 +27,8 @@ const restaurantSchema = z.object({
   delivery_fee_cents: z.number().min(0).max(999).default(299),
   min_delivery_time: z.number().min(10).max(60).default(20),
   max_delivery_time: z.number().min(20).max(120).default(40),
-  image_url: z.string().url().optional().or(z.literal(""))
+  image_url: z.string().url().optional().or(z.literal("")),
+  logo_url: z.string().url().optional().or(z.literal(""))
 });
 
 type RestaurantFormData = z.infer<typeof restaurantSchema>;
@@ -40,6 +41,7 @@ const cuisineTypes = [
 
 const RestaurantRegister = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const navigate = useNavigate();
 
   const form = useForm<RestaurantFormData>({
@@ -57,9 +59,63 @@ const RestaurantRegister = () => {
       delivery_fee_cents: 299,
       min_delivery_time: 20,
       max_delivery_time: 40,
-      image_url: ""
+      image_url: "",
+      logo_url: ""
     }
   });
+
+  const uploadImage = async (file: File, type: 'image' | 'logo'): Promise<string | null> => {
+    setUploadingImage(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${type}-${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('restaurant-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('restaurant-images')
+        .getPublicUrl(fileName);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload image",
+        variant: "destructive"
+      });
+      return null;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'logo') => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Error",
+        description: "Please select an image file",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const imageUrl = await uploadImage(file, type);
+    if (imageUrl) {
+      const field = type === 'logo' ? 'logo_url' : 'image_url';
+      form.setValue(field, imageUrl);
+    }
+  };
 
   const onSubmit = async (data: RestaurantFormData) => {
     setIsSubmitting(true);
@@ -93,7 +149,8 @@ const RestaurantRegister = () => {
           delivery_fee_cents: data.delivery_fee_cents,
           min_delivery_time: data.min_delivery_time,
           max_delivery_time: data.max_delivery_time,
-          image_url: data.image_url || null
+          image_url: data.image_url || null,
+          logo_url: data.logo_url || null
         });
 
       if (error) {
@@ -292,15 +349,90 @@ const RestaurantRegister = () => {
 
                   <FormField
                     control={form.control}
+                    name="logo_url"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Restaurant Logo</FormLabel>
+                        <div className="flex flex-col gap-2">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageUpload(e, 'logo')}
+                            disabled={uploadingImage}
+                          />
+                          {uploadingImage && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Upload className="h-4 w-4 animate-spin" />
+                              Uploading logo...
+                            </div>
+                          )}
+                          {field.value && (
+                            <div className="relative w-32 h-32">
+                              <img
+                                src={field.value}
+                                alt="Restaurant logo preview"
+                                className="w-full h-full object-cover rounded-md border"
+                              />
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                                onClick={() => field.onChange("")}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                        <FormDescription>
+                          Upload your restaurant logo (square format recommended)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="image_url"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Restaurant Photo URL</FormLabel>
-                        <FormControl>
-                          <Input placeholder="https://example.com/restaurant-photo.jpg" {...field} />
-                        </FormControl>
+                        <FormLabel>Restaurant Photo</FormLabel>
+                        <div className="flex flex-col gap-2">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageUpload(e, 'image')}
+                            disabled={uploadingImage}
+                          />
+                          {uploadingImage && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Upload className="h-4 w-4 animate-spin" />
+                              Uploading image...
+                            </div>
+                          )}
+                          {field.value && (
+                            <div className="relative w-48 h-32">
+                              <img
+                                src={field.value}
+                                alt="Restaurant photo preview"
+                                className="w-full h-full object-cover rounded-md border"
+                              />
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                                onClick={() => field.onChange("")}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                         <FormDescription>
-                          Optional: Add a photo URL to showcase your restaurant
+                          Upload a photo showcasing your restaurant
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -373,7 +505,7 @@ const RestaurantRegister = () => {
                     type="submit" 
                     className="w-full" 
                     size="lg"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || uploadingImage}
                   >
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Register Restaurant

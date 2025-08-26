@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Save, Clock, DollarSign, MapPin } from "lucide-react";
+import { Save, Clock, DollarSign, MapPin, Upload, X, Image } from "lucide-react";
 
 interface Restaurant {
   id: string;
@@ -45,6 +45,7 @@ const cuisineTypes = [
 export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsProps) => {
   const [formData, setFormData] = useState(restaurant);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -58,6 +59,59 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
     }));
   };
 
+  const uploadImage = async (file: File, type: 'image' | 'logo'): Promise<string | null> => {
+    setUploadingImage(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${type}-${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('restaurant-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('restaurant-images')
+        .getPublicUrl(fileName);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload image",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'logo') => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Error",
+        description: "Please select an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const imageUrl = await uploadImage(file, type);
+    if (imageUrl) {
+      const field = type === 'logo' ? 'logo_url' : 'image_url';
+      handleInputChange(field, imageUrl);
+    }
+  };
+
   const saveBasicInfo = async () => {
     setSaving(true);
     try {
@@ -69,6 +123,8 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
           cuisine_type: formData.cuisine_type,
           phone: formData.phone,
           email: formData.email,
+          image_url: formData.image_url,
+          logo_url: formData.logo_url,
         })
         .eq("id", restaurant.id);
 
@@ -191,8 +247,9 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
   return (
     <div className="space-y-6">
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="basic">Basic Info</TabsTrigger>
+          <TabsTrigger value="images">Images</TabsTrigger>
           <TabsTrigger value="address">Address</TabsTrigger>
           <TabsTrigger value="delivery">Delivery</TabsTrigger>
           <TabsTrigger value="status">Status</TabsTrigger>
@@ -266,6 +323,102 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
               <Button onClick={saveBasicInfo} disabled={saving}>
                 <Save className="h-4 w-4 mr-2" />
                 {saving ? "Saving..." : "Save Basic Info"}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="images" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Image className="h-5 w-5" />
+                Restaurant Images
+              </CardTitle>
+              <CardDescription>
+                Upload your restaurant logo and photos
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="restaurant-logo">Restaurant Logo</Label>
+                  <div className="flex flex-col gap-2 mt-2">
+                    <Input
+                      id="restaurant-logo"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, 'logo')}
+                      disabled={uploadingImage}
+                    />
+                    {uploadingImage && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Upload className="h-4 w-4 animate-spin" />
+                        Uploading logo...
+                      </div>
+                    )}
+                    {formData.logo_url && (
+                      <div className="relative w-32 h-32">
+                        <img
+                          src={formData.logo_url}
+                          alt="Restaurant logo"
+                          className="w-full h-full object-cover rounded-md border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                          onClick={() => handleInputChange('logo_url', '')}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="restaurant-image">Restaurant Photo</Label>
+                  <div className="flex flex-col gap-2 mt-2">
+                    <Input
+                      id="restaurant-image"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, 'image')}
+                      disabled={uploadingImage}
+                    />
+                    {uploadingImage && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Upload className="h-4 w-4 animate-spin" />
+                        Uploading image...
+                      </div>
+                    )}
+                    {formData.image_url && (
+                      <div className="relative w-48 h-32">
+                        <img
+                          src={formData.image_url}
+                          alt="Restaurant photo"
+                          className="w-full h-full object-cover rounded-md border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                          onClick={() => handleInputChange('image_url', '')}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <Button onClick={saveBasicInfo} disabled={saving || uploadingImage}>
+                <Save className="h-4 w-4 mr-2" />
+                {saving ? "Saving..." : "Save Images"}
               </Button>
             </CardContent>
           </Card>
