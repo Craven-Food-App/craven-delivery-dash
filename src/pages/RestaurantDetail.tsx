@@ -77,6 +77,7 @@ const RestaurantDetail = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [showCart, setShowCart] = useState(false);
+  const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -179,7 +180,7 @@ const RestaurantDetail = () => {
       const modifiersTotal = (item.modifiers || []).reduce((modSum, mod) => modSum + (mod.price_cents * item.quantity), 0);
       return total + itemTotal + modifiersTotal;
     }, 0);
-    const deliveryFee = restaurant?.delivery_fee_cents || 0;
+    const deliveryFee = deliveryMethod === 'delivery' ? (restaurant?.delivery_fee_cents || 0) : 0;
     const tax = Math.round(subtotal * 0.08); // 8% tax
     return {
       subtotal,
@@ -394,6 +395,8 @@ const RestaurantDetail = () => {
         cart={cart}
         restaurant={restaurant}
         totals={getCartTotal()}
+        deliveryMethod={deliveryMethod}
+        onDeliveryMethodChange={setDeliveryMethod}
         onUpdateQuantity={updateCartItemQuantity}
       />
     </div>

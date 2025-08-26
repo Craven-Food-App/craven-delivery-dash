@@ -4,7 +4,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Minus, Plus, Trash2, Truck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Modifier {
@@ -49,6 +49,8 @@ interface CartSidebarProps {
   cart: CartItem[];
   restaurant: Restaurant;
   totals: CartTotals;
+  deliveryMethod: 'delivery' | 'pickup';
+  onDeliveryMethodChange: (method: 'delivery' | 'pickup') => void;
   onUpdateQuantity: (itemId: string, quantity: number) => void;
 }
 
@@ -58,6 +60,8 @@ export const CartSidebar = ({
   cart, 
   restaurant, 
   totals, 
+  deliveryMethod,
+  onDeliveryMethodChange,
   onUpdateQuantity 
 }: CartSidebarProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -169,16 +173,52 @@ export const CartSidebar = ({
           </div>
         </div>
 
-        <div className="border-t pt-4 space-y-3">
+        <div className="border-t pt-4 space-y-4">
+          {/* Delivery/Pickup Selection */}
+          <div className="space-y-3">
+            <h4 className="font-medium text-sm">Order Type</h4>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant={deliveryMethod === 'delivery' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => onDeliveryMethodChange('delivery')}
+                className="flex flex-col items-center py-3 h-auto"
+              >
+                <Truck className="h-4 w-4 mb-1" />
+                <span className="text-xs">Delivery</span>
+                <span className="text-xs text-muted-foreground">
+                  {restaurant.min_delivery_time}-{restaurant.max_delivery_time} min
+                </span>
+              </Button>
+              <Button
+                variant={deliveryMethod === 'pickup' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => onDeliveryMethodChange('pickup')}
+                className="flex flex-col items-center py-3 h-auto"
+              >
+                <div className="h-4 w-4 mb-1 flex items-center justify-center">
+                  <div className="w-3 h-3 bg-current rounded-full" />
+                </div>
+                <span className="text-xs">Pickup</span>
+                <span className="text-xs text-muted-foreground">
+                  15-25 min
+                </span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Order Summary */}
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Subtotal</span>
               <span>${(totals.subtotal / 100).toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span>Delivery Fee</span>
-              <span>${(totals.deliveryFee / 100).toFixed(2)}</span>
-            </div>
+            {deliveryMethod === 'delivery' && (
+              <div className="flex justify-between text-sm">
+                <span>Delivery Fee</span>
+                <span>${(totals.deliveryFee / 100).toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-sm">
               <span>Tax</span>
               <span>${(totals.tax / 100).toFixed(2)}</span>
@@ -191,7 +231,10 @@ export const CartSidebar = ({
           </div>
 
           <div className="text-sm text-muted-foreground text-center">
-            Estimated delivery: {restaurant.min_delivery_time}-{restaurant.max_delivery_time} minutes
+            {deliveryMethod === 'delivery' 
+              ? `Estimated delivery: ${restaurant.min_delivery_time}-${restaurant.max_delivery_time} minutes`
+              : 'Ready for pickup in 15-25 minutes'
+            }
           </div>
 
           <Button 
