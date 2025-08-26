@@ -11,6 +11,8 @@ import CraverDashboard from "./pages/CraverDashboard";
 import { MobileDriverDashboard } from "./components/mobile/MobileDriverDashboard";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import RestaurantRegister from "./pages/RestaurantRegister";
+import RestaurantDashboard from "./pages/RestaurantDashboard";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +28,8 @@ const App = () => (
           <Route path="/craver" element={<CraverHub />} />
           <Route path="/craver/dashboard" element={<CraverDashboard />} />
           <Route path="/craver/mobile" element={<MobileDriverDashboard />} />
+          <Route path="/restaurant/register" element={<RestaurantRegister />} />
+          <Route path="/restaurant/dashboard" element={<RestaurantDashboard />} />
           <Route path="/admin" element={<Admin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

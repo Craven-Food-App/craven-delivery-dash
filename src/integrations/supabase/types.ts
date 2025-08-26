@@ -149,6 +149,119 @@ export type Database = {
         }
         Relationships: []
       }
+      menu_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          restaurant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          restaurant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          restaurant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_categories_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_items: {
+        Row: {
+          allergens: string[] | null
+          category_id: string | null
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          image_url: string | null
+          is_available: boolean | null
+          is_gluten_free: boolean | null
+          is_vegan: boolean | null
+          is_vegetarian: boolean | null
+          name: string
+          preparation_time: number | null
+          price_cents: number
+          restaurant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          allergens?: string[] | null
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean | null
+          is_gluten_free?: boolean | null
+          is_vegan?: boolean | null
+          is_vegetarian?: boolean | null
+          name: string
+          preparation_time?: number | null
+          price_cents: number
+          restaurant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          allergens?: string[] | null
+          category_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean | null
+          is_gluten_free?: boolean | null
+          is_vegan?: boolean | null
+          is_vegetarian?: boolean | null
+          name?: string
+          preparation_time?: number | null
+          price_cents?: number
+          restaurant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "menu_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_items_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           assigned_craver_id: string | null
@@ -200,6 +313,87 @@ export type Database = {
           pickup_name?: string
           status?: Database["public"]["Enums"]["order_status"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      restaurants: {
+        Row: {
+          address: string
+          city: string
+          created_at: string | null
+          cuisine_type: string
+          delivery_fee_cents: number | null
+          description: string | null
+          email: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          is_promoted: boolean | null
+          latitude: number | null
+          logo_url: string | null
+          longitude: number | null
+          max_delivery_time: number | null
+          min_delivery_time: number | null
+          name: string
+          owner_id: string
+          phone: string | null
+          rating: number | null
+          state: string
+          total_reviews: number | null
+          updated_at: string | null
+          zip_code: string
+        }
+        Insert: {
+          address: string
+          city: string
+          created_at?: string | null
+          cuisine_type: string
+          delivery_fee_cents?: number | null
+          description?: string | null
+          email?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_promoted?: boolean | null
+          latitude?: number | null
+          logo_url?: string | null
+          longitude?: number | null
+          max_delivery_time?: number | null
+          min_delivery_time?: number | null
+          name: string
+          owner_id: string
+          phone?: string | null
+          rating?: number | null
+          state: string
+          total_reviews?: number | null
+          updated_at?: string | null
+          zip_code: string
+        }
+        Update: {
+          address?: string
+          city?: string
+          created_at?: string | null
+          cuisine_type?: string
+          delivery_fee_cents?: number | null
+          description?: string | null
+          email?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_promoted?: boolean | null
+          latitude?: number | null
+          logo_url?: string | null
+          longitude?: number | null
+          max_delivery_time?: number | null
+          min_delivery_time?: number | null
+          name?: string
+          owner_id?: string
+          phone?: string | null
+          rating?: number | null
+          state?: string
+          total_reviews?: number | null
+          updated_at?: string | null
+          zip_code?: string
         }
         Relationships: []
       }

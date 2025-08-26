@@ -7,9 +7,15 @@ const Header = () => {
     <header className="bg-background border-b border-border sticky top-0 z-50 shadow-card">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <div className="flex items-center space-x-4">
+          {/* Logo and Navigation */}
+          <div className="flex items-center space-x-8">
             <h1 className="text-2xl font-bold text-primary">Crave'n</h1>
+            
+            <nav className="hidden md:flex space-x-6">
+              <a href="/" className="text-foreground hover:text-primary transition-colors">Restaurants</a>
+              <a href="/restaurant/register" className="text-foreground hover:text-primary transition-colors">Add Your Restaurant</a>
+              <a href="/craver" className="text-foreground hover:text-primary transition-colors">Become a Driver</a>
+            </nav>
           </div>
 
           {/* Location */}
