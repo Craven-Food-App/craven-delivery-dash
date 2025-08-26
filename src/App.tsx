@@ -8,8 +8,7 @@ import Index from "./pages/Index";
 import DriverAuth from "./pages/DriverAuth";
 import CraverHub from "./pages/CraverHub";
 import CraverDashboard from "./pages/CraverDashboard";
-import { MobileDriverDashboard } from "./components/mobile/MobileDriverDashboard";
-import AccessGuard from "./components/AccessGuard";
+import { MobileAuthFlow } from "./components/mobile/MobileAuthFlow";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import RestaurantRegister from "./pages/RestaurantRegister";
@@ -33,36 +32,8 @@ const App = () => (
           <Route path="/craver" element={<CraverHub />} />
           <Route path="/craver-dashboard" element={<CraverDashboard />} />
           <Route path="/craver/dashboard" element={<CraverDashboard />} />
-          <Route path="/craver/mobile" element={
-            <AccessGuard fallback={
-              <div className="flex flex-col items-center justify-center min-h-screen p-4">
-                <h1 className="text-2xl font-bold mb-4">Craver Access Required</h1>
-                <p className="text-muted-foreground text-center mb-4">
-                  You need an approved Craver application to access the mobile portal.
-                </p>
-                <a href="/craver" className="text-primary hover:underline">
-                  Apply to become a Craver →
-                </a>
-              </div>
-            }>
-              <MobileDriverDashboard />
-            </AccessGuard>
-          } />
-          <Route path="/driver/mobile" element={
-            <AccessGuard fallback={
-              <div className="flex flex-col items-center justify-center min-h-screen p-4">
-                <h1 className="text-2xl font-bold mb-4">Craver Access Required</h1>
-                <p className="text-muted-foreground text-center mb-4">
-                  You need an approved Craver application to access the mobile portal.
-                </p>
-                <a href="/craver" className="text-primary hover:underline">
-                  Apply to become a Craver →
-                </a>
-              </div>
-            }>
-              <MobileDriverDashboard />
-            </AccessGuard>
-          } />
+          <Route path="/craver/mobile" element={<MobileAuthFlow />} />
+          <Route path="/driver/mobile" element={<MobileAuthFlow />} />
           <Route path="/restaurant/auth" element={<RestaurantAuth />} />
           <Route path="/restaurant/register" element={<RestaurantRegister />} />
           <Route path="/restaurant/dashboard" element={<RestaurantDashboard />} />
