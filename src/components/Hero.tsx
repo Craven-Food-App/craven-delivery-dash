@@ -1,9 +1,68 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Search, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 import heroImage from "@/assets/hero-food.jpg";
 
 const Hero = () => {
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleSearch = () => {
+    if (!deliveryAddress.trim()) {
+      toast({
+        title: "Address Required",
+        description: "Please enter your delivery address to continue",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!searchQuery.trim()) {
+      toast({
+        title: "Search Required",
+        description: "Please enter what you're looking for",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Navigate to search results or restaurant listing page
+    navigate(`/?search=${encodeURIComponent(searchQuery)}&address=${encodeURIComponent(deliveryAddress)}`);
+    
+    toast({
+      title: "Searching...",
+      description: `Looking for "${searchQuery}" near ${deliveryAddress}`,
+    });
+  };
+
+  const handleCategoryClick = (category: string) => {
+    setSearchQuery(category);
+    if (deliveryAddress.trim()) {
+      navigate(`/?search=${encodeURIComponent(category)}&address=${encodeURIComponent(deliveryAddress)}`);
+      toast({
+        title: "Searching...",
+        description: `Looking for ${category} near ${deliveryAddress}`,
+      });
+    } else {
+      toast({
+        title: "Address Required",
+        description: "Please enter your delivery address first",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
   return (
     <section className="relative min-h-[500px] bg-gradient-hero overflow-hidden">
       {/* Background Image with Overlay */}
@@ -35,6 +94,9 @@ const Hero = () => {
                 <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/70" />
                 <Input 
                   placeholder="Enter your delivery address"
+                  value={deliveryAddress}
+                  onChange={(e) => setDeliveryAddress(e.target.value)}
+                  onKeyPress={handleKeyPress}
                   className="pl-12 h-14 bg-white/20 border-white/30 text-white placeholder:text-white/70 focus:ring-2 focus:ring-white/50"
                 />
               </div>
@@ -43,11 +105,19 @@ const Hero = () => {
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/70" />
                 <Input 
                   placeholder="Search for restaurants or food"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={handleKeyPress}
                   className="pl-12 h-14 bg-white/20 border-white/30 text-white placeholder:text-white/70 focus:ring-2 focus:ring-white/50"
                 />
               </div>
               
-              <Button variant="hero" size="lg" className="h-14 px-8 font-semibold">
+              <Button 
+                variant="hero" 
+                size="lg" 
+                className="h-14 px-8 font-semibold"
+                onClick={handleSearch}
+              >
                 Find Food
               </Button>
             </div>
@@ -60,7 +130,8 @@ const Hero = () => {
                 key={category}
                 variant="ghost"
                 size="sm"
-                className="bg-white/20 hover:bg-white/30 text-white border-white/30 rounded-full"
+                className="bg-white/20 hover:bg-white/30 text-white border-white/30 rounded-full cursor-pointer transition-all hover:scale-105"
+                onClick={() => handleCategoryClick(category)}
               >
                 {category}
               </Button>
