@@ -11,6 +11,10 @@ const config: CapacitorConfig = {
   plugins: {
     SplashScreen: {
       launchShowDuration: 0
+    },
+    Geolocation: {
+      requestPermission: true,
+      enableHighAccuracy: true
     }
   }
 };

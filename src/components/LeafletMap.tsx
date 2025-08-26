@@ -44,6 +44,8 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ orders, activeOrder, onOrderCli
   useEffect(() => {
     if (!mapContainer.current) return;
 
+    console.log('Initializing map...');
+    
     // Initialize map
     map.current = L.map(mapContainer.current).setView([37.7749, -122.4194], 12);
 
@@ -51,6 +53,26 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ orders, activeOrder, onOrderCli
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map.current);
+
+    // Check if geolocation is available
+    if (!navigator.geolocation) {
+      console.error('Geolocation is not supported by this browser');
+      setMapLoaded(true);
+      return;
+    }
+
+    console.log('Geolocation is available, requesting permission...');
+    
+    // Request permission first
+    navigator.permissions?.query({name: 'geolocation'}).then((result) => {
+      console.log('Geolocation permission status:', result.state);
+      if (result.state === 'denied') {
+        console.error('Geolocation permission denied');
+        alert('Location permission is required for this app to work properly. Please enable location access in your browser settings.');
+      }
+    }).catch((error) => {
+      console.log('Permission query not supported:', error);
+    });
 
     map.current.on('load', () => {
       setMapLoaded(true);
