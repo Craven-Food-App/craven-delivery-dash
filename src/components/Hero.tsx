@@ -22,28 +22,31 @@ const Hero = () => {
       return;
     }
 
-    if (!searchQuery.trim()) {
-      toast({
-        title: "Search Required",
-        description: "Please enter what you're looking for",
-        variant: "destructive",
-      });
-      return;
+    // Navigate with or without search query - address is enough
+    const params = new URLSearchParams();
+    params.set('address', deliveryAddress);
+    if (searchQuery.trim()) {
+      params.set('search', searchQuery);
     }
 
-    // Navigate to search results or restaurant listing page
-    navigate(`/?search=${encodeURIComponent(searchQuery)}&address=${encodeURIComponent(deliveryAddress)}`);
+    navigate(`/?${params.toString()}`);
     
     toast({
       title: "Searching...",
-      description: `Looking for "${searchQuery}" near ${deliveryAddress}`,
+      description: searchQuery.trim() 
+        ? `Looking for "${searchQuery}" near ${deliveryAddress}`
+        : `Finding restaurants near ${deliveryAddress}`,
     });
   };
 
   const handleCategoryClick = (category: string) => {
     setSearchQuery(category);
     if (deliveryAddress.trim()) {
-      navigate(`/?search=${encodeURIComponent(category)}&address=${encodeURIComponent(deliveryAddress)}`);
+      const params = new URLSearchParams();
+      params.set('address', deliveryAddress);
+      params.set('search', category);
+      navigate(`/?${params.toString()}`);
+      
       toast({
         title: "Searching...",
         description: `Looking for ${category} near ${deliveryAddress}`,

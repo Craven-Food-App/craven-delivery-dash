@@ -104,7 +104,9 @@ const RestaurantGrid = ({ searchQuery, deliveryAddress }: RestaurantGridProps = 
             <p className="text-muted-foreground text-lg">
               {searchQuery 
                 ? `No restaurants found for "${searchQuery}"${deliveryAddress ? ` near ${deliveryAddress}` : ''}`
-                : "No restaurants available right now. Be the first to register your restaurant!"
+                : deliveryAddress 
+                  ? `No restaurants found near ${deliveryAddress}`
+                  : "No restaurants available right now. Be the first to register your restaurant!"
               }
             </p>
           </div>

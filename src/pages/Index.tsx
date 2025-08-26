@@ -23,11 +23,14 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <Hero />
-      {searchQuery || deliveryAddress ? (
+        {searchQuery || deliveryAddress ? (
         <div className="container mx-auto px-4 py-8">
           <div className="mb-6">
             <h2 className="text-2xl font-bold mb-2">
-              {searchQuery ? `Searching for "${searchQuery}"` : "Restaurants near you"}
+              {searchQuery 
+                ? `Searching for "${searchQuery}"` 
+                : "Restaurants near you"
+              }
             </h2>
             {deliveryAddress && (
               <p className="text-muted-foreground">
