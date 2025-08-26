@@ -1,8 +1,10 @@
 import { MapPin, Search, User, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
 const Header = () => {
-  return <header className="bg-background border-b border-border sticky top-0 z-50 shadow-card">
+  return (
+    <header className="bg-background border-b border-border sticky top-0 z-50 shadow-card">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo and Navigation */}
@@ -10,9 +12,9 @@ const Header = () => {
             <h1 className="text-2xl font-bold text-primary">Crave'n</h1>
             
             <nav className="hidden md:flex space-x-6">
-              
-              <a href="/restaurant/register" className="text-foreground hover:text-primary transition-colors">Add Your Restaurant</a>
-              
+              <a href="/" className="text-foreground hover:text-primary transition-colors">Restaurants</a>
+              <a href="/restaurant/auth" className="text-foreground hover:text-primary transition-colors">Restaurant Login</a>
+              <a href="/craver" className="text-foreground hover:text-primary transition-colors">Become a Driver</a>
             </nav>
           </div>
 
@@ -27,17 +29,30 @@ const Header = () => {
           <div className="flex-1 max-w-md mx-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search restaurants, cuisines, or dishes" className="pl-10 bg-muted border-0 focus:ring-2 focus:ring-primary/20" />
+              <Input 
+                placeholder="Search restaurants, cuisines, or dishes"
+                className="pl-10 bg-muted border-0 focus:ring-2 focus:ring-primary/20"
+              />
             </div>
           </div>
 
           {/* Actions */}
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm" className="hidden sm:flex text-primary hover:text-primary hover:bg-primary/10" onClick={() => window.location.href = '/craver'}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="hidden sm:flex text-primary hover:text-primary hover:bg-primary/10"
+              onClick={() => window.location.href = '/craver'}
+            >
               Become a Craver
             </Button>
             
-            <Button variant="ghost" size="sm" className="hidden sm:flex text-primary hover:text-primary hover:bg-primary/10" onClick={() => window.location.href = '/admin'}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="hidden sm:flex text-primary hover:text-primary hover:bg-primary/10"
+              onClick={() => window.location.href = '/admin'}
+            >
               Admin
             </Button>
             
@@ -48,13 +63,20 @@ const Header = () => {
               </span>
             </Button>
             
-            <Button variant="outline" size="sm" className="hidden sm:flex" onClick={() => window.location.href = '/auth'}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="hidden sm:flex"
+              onClick={() => window.location.href = '/auth'}
+            >
               <User className="h-4 w-4 mr-2" />
               Sign In
             </Button>
           </div>
         </div>
       </div>
-    </header>;
+    </header>
+  );
 };
+
 export default Header;
