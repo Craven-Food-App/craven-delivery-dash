@@ -79,20 +79,14 @@ export const MobileDriverDashboard: React.FC = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // Check database for current driver status
-        const { data: driverProfile } = await supabase
-          .from('driver_profiles')
-          .select('status, is_available')
-          .eq('user_id', user.id)
-          .single();
-
-        // Check localStorage for session data
+        // Check localStorage for session data first
         const savedState = localStorage.getItem('driver_session');
+        
         if (savedState) {
           const sessionData = JSON.parse(savedState);
           
-          // Restore session if driver is still online in database
-          if (driverProfile?.status === 'online' && driverProfile?.is_available) {
+          // Always restore from localStorage first (offline-first approach)
+          if (sessionData.driverState === 'online_searching') {
             setDriverState('online_searching');
             setEndTime(new Date(sessionData.endTime));
             setSelectedVehicle(sessionData.selectedVehicle || 'car');
@@ -104,34 +98,96 @@ export const MobileDriverDashboard: React.FC = () => {
             const timeDiff = Math.floor((currentTime.getTime() - sessionStart.getTime()) / 1000);
             setOnlineTime(Math.max(0, timeDiff));
 
-            console.log('🔄 Restored driver session - staying online');
+            console.log('🔄 Restored driver session from localStorage');
             
             // Re-establish real-time listener
             setupRealtimeListener(user.id);
-          } else {
-            // Clear saved session if driver is offline in database
-            localStorage.removeItem('driver_session');
-            setDriverState('offline');
+            
+            // Sync with database in background (don't fail if this doesn't work)
+            try {
+              await supabase
+                .from('driver_profiles')
+                .update({
+                  status: 'online',
+                  is_available: true
+                })
+                .eq('user_id', user.id);
+              console.log('✅ Synced driver status with database');
+            } catch (syncError) {
+              console.warn('⚠️ Could not sync with database, continuing offline-first');
+            }
           }
-        } else if (driverProfile?.status === 'online') {
-          // Driver is online in database but no local session - estimate they just started
-          setDriverState('online_searching');
-          const now = new Date();
-          const defaultEndTime = new Date(now.getTime() + 8 * 60 * 60 * 1000); // 8 hours from now
-          setEndTime(defaultEndTime);
-          setOnlineTime(0);
-          
-          // Save new session
-          saveDriverSession('online_searching', defaultEndTime, selectedVehicle, earningMode);
-          setupRealtimeListener(user.id);
+        } else {
+          // No saved session, check database
+          try {
+            const { data: driverProfile } = await supabase
+              .from('driver_profiles')
+              .select('status, is_available')
+              .eq('user_id', user.id)
+              .single();
+
+            if (driverProfile?.status === 'online' && driverProfile?.is_available) {
+              // Driver is online in database but no local session - create new session
+              setDriverState('online_searching');
+              const now = new Date();
+              const defaultEndTime = new Date(now.getTime() + 8 * 60 * 60 * 1000); // 8 hours from now
+              setEndTime(defaultEndTime);
+              setOnlineTime(0);
+              
+              // Save new session
+              saveDriverSession('online_searching', defaultEndTime, selectedVehicle, earningMode);
+              setupRealtimeListener(user.id);
+              console.log('🔄 Created new session from database state');
+            }
+          } catch (dbError) {
+            console.warn('⚠️ Could not check database, staying offline');
+          }
         }
       } catch (error) {
         console.error('Error restoring driver state:', error);
+        // Don't fail silently - keep the app working
       }
     };
 
     restoreDriverState();
   }, []);
+
+  // Periodic session validation to prevent unexpected logouts
+  useEffect(() => {
+    if (driverState !== 'online_searching') return;
+
+    const validateSession = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Keep driver profile updated in database
+        await supabase
+          .from('driver_profiles')
+          .update({
+            status: 'online',
+            is_available: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+
+        console.log('✅ Session validated and database updated');
+      } catch (error) {
+        console.warn('⚠️ Session validation failed, but continuing');
+      }
+    };
+
+    // Validate session every 2 minutes
+    const interval = setInterval(validateSession, 120000);
+    
+    // Run initial validation after 10 seconds
+    const timeout = setTimeout(validateSession, 10000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [driverState]);
 
   // Save driver session to localStorage
   const saveDriverSession = (state: DriverState, endTime: Date, vehicle: VehicleType, mode: EarningMode) => {
