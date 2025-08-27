@@ -91,8 +91,17 @@ export const MobileDriverDashboard: React.FC = () => {
         if (savedState) {
           const sessionData = JSON.parse(savedState);
           
-          // Restore session if driver is still online in database
-          if (driverProfile?.status === 'online' && driverProfile?.is_available) {
+          // Always restore session if there's saved data - keep driver online
+          if (sessionData.driverState === 'online_searching' || driverProfile?.status === 'online') {
+            // Force online status in database to prevent logout
+            await supabase
+              .from('driver_profiles')
+              .update({
+                status: 'online',
+                is_available: true
+              })
+              .eq('user_id', user.id);
+
             setDriverState('online_searching');
             setEndTime(new Date(sessionData.endTime));
             setSelectedVehicle(sessionData.selectedVehicle || 'car');
@@ -104,17 +113,17 @@ export const MobileDriverDashboard: React.FC = () => {
             const timeDiff = Math.floor((currentTime.getTime() - sessionStart.getTime()) / 1000);
             setOnlineTime(Math.max(0, timeDiff));
 
-            console.log('🔄 Restored driver session - staying online');
+            console.log('🔄 Restored driver session - forcing online status');
             
             // Re-establish real-time listener
             setupRealtimeListener(user.id);
           } else {
-            // Clear saved session if driver is offline in database
+            // Only clear session if it was explicitly offline
             localStorage.removeItem('driver_session');
             setDriverState('offline');
           }
         } else if (driverProfile?.status === 'online') {
-          // Driver is online in database but no local session - estimate they just started
+          // Driver is online in database but no local session - keep them online
           setDriverState('online_searching');
           const now = new Date();
           const defaultEndTime = new Date(now.getTime() + 8 * 60 * 60 * 1000); // 8 hours from now
@@ -132,6 +141,33 @@ export const MobileDriverDashboard: React.FC = () => {
 
     restoreDriverState();
   }, []);
+
+  // Periodic status validation to maintain online status
+  useEffect(() => {
+    if (driverState === 'online_searching') {
+      const statusChecker = setInterval(async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+
+          // Ensure driver stays online in database
+          await supabase
+            .from('driver_profiles')
+            .update({
+              status: 'online',
+              is_available: true
+            })
+            .eq('user_id', user.id);
+
+          console.log('✅ Validated online status');
+        } catch (error) {
+          console.error('Error validating status:', error);
+        }
+      }, 30000); // Check every 30 seconds
+
+      return () => clearInterval(statusChecker);
+    }
+  }, [driverState]);
 
   // Save driver session to localStorage
   const saveDriverSession = (state: DriverState, endTime: Date, vehicle: VehicleType, mode: EarningMode) => {
