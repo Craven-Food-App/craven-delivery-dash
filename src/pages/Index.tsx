@@ -93,7 +93,7 @@ const Index = () => {
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button 
                     size="lg" 
-                    onClick={() => navigate('/craver/mobile')}
+                    onClick={() => navigate('/mobile')}
                     className="font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                   >
                     <Truck className="mr-2 h-4 w-4" />

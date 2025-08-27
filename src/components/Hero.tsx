@@ -147,7 +147,7 @@ const Hero = () => {
               <Button 
                 size="lg"
                 className="bg-gradient-to-r from-secondary to-secondary/80 hover:from-secondary/90 hover:to-secondary/70 text-white font-semibold"
-                onClick={() => navigate('/craver/mobile')}
+                onClick={() => navigate('/mobile')}
               >
                 <Truck className="mr-2 h-4 w-4" />
                 Satisfy Crave Now
