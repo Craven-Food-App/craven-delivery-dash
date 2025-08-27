@@ -73,7 +73,7 @@ const CraverHub = () => {
                 Start Earning Today
               </Button>
               <Button variant="outline" size="lg" className="text-lg px-8 py-6">
-                Learn More
+                Login
               </Button>
             </div>
             <div className="mt-8 flex items-center justify-center gap-6 text-sm text-muted-foreground">
