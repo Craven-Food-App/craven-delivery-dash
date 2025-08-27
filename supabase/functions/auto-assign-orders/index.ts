@@ -160,13 +160,17 @@ serve(async (req) => {
         }
 
         // Send notification via Supabase realtime
-        await supabase
-          .channel(`driver_${driver.user_id}`)
-          .send({
-            type: 'broadcast',
-            event: 'order_assignment',
-            payload: notificationPayload
-          })
+        const channel = supabase.channel(`driver_${driver.user_id}`)
+        await channel.subscribe()
+        
+        await channel.send({
+          type: 'broadcast',
+          event: 'order_assignment',
+          payload: notificationPayload
+        })
+        
+        // Clean up the channel
+        await supabase.removeChannel(channel)
 
         console.log('Notification sent to driver:', driver.user_id)
 
