@@ -35,10 +35,39 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
   // Play notification sound when modal opens
   useEffect(() => {
     if (isOpen && assignment) {
-      // Play notification sound
-      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAdAjiMz/LNeSsFJHfD8N+QQAoUXrTp66hVFApBn+DyDmAdAjiMz/LNeSsFJHfD8N+QQAoUXrTp66hVFApBn+DyvmAdAjiMz/LNeSwFJHfD8N+QQAoUXrTp66hVFApBn+DyvmAdAjiMz/LNeSwFJHfD8N+QQAoUXrTp66hVFApBn+DyvmAdAjiMz/LNeSwFJHfD8N+QQAoUXrTp66hVFApBn+DyvmAdAjiMz/LNeSwFJHfD8N+QQAoUXrTp66hVFApBn+DyvmAdAjiMz/LNeSwFJHfD8N+QQAoUXrTp66hVFApBn+DyvmAd');
-      audio.volume = 0.8;
-      audio.play().catch(e => console.log('Could not play notification sound:', e));
+      // Play a longer notification sound with multiple beeps
+      const playNotificationSequence = async () => {
+        try {
+          // Create multiple beep tones for a longer notification
+          const audioContext = new AudioContext();
+          const duration = 0.3; // Each beep duration
+          const gap = 0.15; // Gap between beeps
+          
+          for (let i = 0; i < 3; i++) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // Alternating high and low tones for urgency
+            oscillator.frequency.setValueAtTime(i % 2 === 0 ? 800 : 600, audioContext.currentTime);
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+            
+            const startTime = audioContext.currentTime + (i * (duration + gap));
+            oscillator.start(startTime);
+            oscillator.stop(startTime + duration);
+          }
+        } catch (e) {
+          console.log('Could not play notification sound:', e);
+        }
+      };
+      
+      playNotificationSequence();
     }
   }, [isOpen, assignment]);
 
