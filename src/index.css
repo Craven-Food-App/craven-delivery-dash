@@ -136,4 +136,35 @@ All colors MUST be HSL.
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Mobile app styles */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* Mobile-specific overrides */
+  @media (max-width: 768px) {
+    body {
+      overflow: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Disable text selection for mobile app feel */
+    .mobile-app {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    
+    /* Mobile touch targets */
+    button {
+      min-height: 44px;
+    }
+  }
 }

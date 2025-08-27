@@ -40,76 +40,121 @@ export const OnlineSearchPanel: React.FC<OnlineSearchPanelProps> = ({
   };
 
   return (
-    <div className="absolute bottom-20 left-4 right-4 z-10">
-      <Card className="backdrop-blur-md bg-card/90 border shadow-card">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${isPaused ? 'bg-status-paused' : 'bg-status-online animate-pulse'}`} />
-              <h2 className="text-lg font-semibold">
-                {isPaused ? 'Paused' : 'Online & Ready'}
-              </h2>
+    <div className="flex flex-col h-full">
+      {/* Mobile Header */}
+      <div className="p-4 bg-card border-b border-border/30">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`w-3 h-3 rounded-full ${isPaused ? 'bg-orange-500 animate-pulse' : 'bg-green-500 animate-pulse'}`} />
+            <div>
+              <h1 className="text-lg font-semibold text-foreground">
+                {isPaused ? 'Paused' : 'Looking for orders'}
+              </h1>
+              <p className="text-sm text-muted-foreground">Online since {formatTime(onlineTime)}</p>
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onPause}
-                className="text-xs"
-              >
-                {isPaused ? (
-                  <>
-                    <Play className="h-3 w-3 mr-1" />
-                    Resume
-                  </>
-                ) : (
-                  <>
-                    <Pause className="h-3 w-3 mr-1" />
-                    Pause
-                  </>
-                )}
-              </Button>
-              {onEndNow && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={onEndNow}
-                  className="text-xs"
-                >
-                  End Now
-                </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={isPaused ? "default" : "outline"}
+              size="sm"
+              onClick={onPause}
+              className="rounded-full"
+            >
+              {isPaused ? (
+                <>
+                  <Play className="h-3 w-3 mr-1" />
+                  Resume
+                </>
+              ) : (
+                <>
+                  <Pause className="h-3 w-3 mr-1" />
+                  Pause
+                </>
               )}
+            </Button>
+            {onEndNow && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={onEndNow}
+                className="rounded-full text-xs"
+              >
+                End
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="p-4 space-y-4 flex-1">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-card rounded-2xl p-4 border border-border/30">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-foreground">
+                {formatTime(onlineTime)}
+              </div>
+              <div className="text-sm text-muted-foreground">Online time</div>
             </div>
           </div>
+          <div className="bg-card rounded-2xl p-4 border border-border/30">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">$0.00</div>
+              <div className="text-sm text-muted-foreground">Earned today</div>
+            </div>
+          </div>
+        </div>
 
-          {/* Progress indicator */}
-          <div className="w-full bg-muted rounded-full h-1 mb-3">
-            <div className="bg-primary h-1 rounded-full animate-pulse" style={{ width: '60%' }} />
+        {/* Activity Status */}
+        <div className="bg-card rounded-2xl p-4 border border-border/30">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium text-foreground">Activity</h3>
+            <div className="text-xs text-muted-foreground">
+              Ends {formatEndTime(endTime)}
+            </div>
+          </div>
+          
+          {/* Progress bar */}
+          <div className="w-full bg-muted rounded-full h-2 mb-3">
+            <div className="bg-primary h-2 rounded-full transition-all duration-1000" style={{ width: '60%' }} />
           </div>
 
-          {/* Info line */}
-          <div className="text-xs text-muted-foreground mb-3">
-            Filters: {vehicleType.charAt(0).toUpperCase() + vehicleType.slice(1)}, {earningMode === 'perHour' ? 'Per Hour' : 'Per Offer'} • Ends {formatEndTime(endTime)}
-          </div>
-
-          {/* Mode-specific content */}
+          {/* Mode info */}
           {earningMode === 'perHour' ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-status-online" />
-                <span className="text-sm font-medium">On the clock: {formatTime(onlineTime)}</span>
+                <Clock className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium">Hourly mode</span>
               </div>
-              <div className="bg-status-online/10 text-status-online px-2 py-1 rounded text-xs font-medium">
-                Hourly + tips
+              <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+                ${vehicleType === 'car' ? '15' : '12'}/hr + tips
               </div>
             </div>
           ) : (
-            <div className="text-sm text-muted-foreground text-center">
-              Optimizing for best pay per mile & time
+            <div className="text-center">
+              <div className="text-sm text-muted-foreground">
+                Optimizing for best offers
+              </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* No orders message */}
+        {!isPaused && (
+          <div className="bg-muted/30 rounded-2xl p-4 text-center">
+            <div className="text-muted-foreground text-sm">
+              Looking for nearby orders...
+            </div>
+            <div className="flex justify-center mt-2">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
