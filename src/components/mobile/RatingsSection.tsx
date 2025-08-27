@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
+import { supabase } from '@/integrations/supabase/client';
 
 type DriverTier = 'bronze' | 'silver' | 'gold' | 'platinum';
 
@@ -77,15 +78,116 @@ const getNextTier = (currentTier: DriverTier): DriverTier | null => {
 };
 
 export const RatingsSection: React.FC = () => {
-  const [stats] = useState<RatingStats>({
-    overallRating: 4.6,
-    completionRate: 92,
-    onTimeRate: 88,
-    customerRating: 4.8,
-    totalDeliveries: 247,
-    acceptanceRate: 78,
-    tier: 'gold'
-  });
+  const [stats, setStats] = useState<RatingStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchRatingStats();
+  }, []);
+
+  const fetchRatingStats = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get driver profile
+      const { data: driverProfile } = await supabase
+        .from('driver_profiles')
+        .select('rating, total_deliveries')
+        .eq('user_id', user.id)
+        .single();
+
+      // Get completed orders for calculating rates
+      const { data: completedOrders } = await supabase
+        .from('orders')
+        .select('id, status, created_at')
+        .eq('assigned_craver_id', user.id);
+
+      // Get all order assignments for acceptance rate
+      const { data: assignments } = await supabase
+        .from('order_assignments')
+        .select('status')
+        .eq('driver_id', user.id);
+
+      if (driverProfile) {
+        const totalDeliveries = driverProfile.total_deliveries || 0;
+        const rating = driverProfile.rating || 0;
+        
+        // Calculate completion rate (delivered vs all assigned)
+        const assignedOrders = completedOrders?.length || 0;
+        const deliveredOrders = completedOrders?.filter(o => o.status === 'delivered').length || 0;
+        const completionRate = assignedOrders > 0 ? (deliveredOrders / assignedOrders) * 100 : 100;
+
+        // Calculate acceptance rate (accepted vs offered)
+        const totalAssignments = assignments?.length || 0;
+        const acceptedAssignments = assignments?.filter(a => a.status === 'accepted').length || 0;
+        const acceptanceRate = totalAssignments > 0 ? (acceptedAssignments / totalAssignments) * 100 : 100;
+
+        // Estimate on-time rate (would need actual tracking)
+        const onTimeRate = Math.max(85, Math.min(95, rating * 20)); // Estimate based on rating
+
+        // Determine tier based on performance
+        let tier: DriverTier = 'bronze';
+        if (rating >= 4.7 && completionRate >= 95 && acceptanceRate >= 80 && onTimeRate >= 95) {
+          tier = 'platinum';
+        } else if (rating >= 4.5 && completionRate >= 90 && acceptanceRate >= 75 && onTimeRate >= 90) {
+          tier = 'gold';
+        } else if (rating >= 4.3 && completionRate >= 85 && acceptanceRate >= 70 && onTimeRate >= 88) {
+          tier = 'silver';
+        }
+
+        setStats({
+          overallRating: rating,
+          completionRate: Math.round(completionRate),
+          onTimeRate: Math.round(onTimeRate),
+          customerRating: rating, // Assuming same as overall
+          totalDeliveries: totalDeliveries,
+          acceptanceRate: Math.round(acceptanceRate),
+          tier: tier
+        });
+      } else {
+        // Default stats for new drivers
+        setStats({
+          overallRating: 0,
+          completionRate: 0,
+          onTimeRate: 0,
+          customerRating: 0,
+          totalDeliveries: 0,
+          acceptanceRate: 0,
+          tier: 'bronze'
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching rating stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center pb-16">
+        <div className="text-center">
+          <div className="animate-pulse space-y-4">
+            <div className="h-20 w-64 bg-muted rounded-lg mx-auto"></div>
+            <div className="h-4 w-32 bg-muted rounded mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center pb-16">
+        <div className="text-center">
+          <Star className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h2 className="text-xl font-semibold mb-2">No Rating Data</h2>
+          <p className="text-muted-foreground">Complete deliveries to see your performance stats!</p>
+        </div>
+      </div>
+    );
+  }
 
   const currentTierConfig = tierConfig[stats.tier];
   const nextTier = getNextTier(stats.tier);

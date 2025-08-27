@@ -73,7 +73,7 @@ export const OnlineSearchPanel: React.FC<OnlineSearchPanelProps> = ({
                 <span className="text-sm font-medium">On the clock: {formatTime(onlineTime)}</span>
               </div>
               <div className="bg-status-online/10 text-status-online px-2 py-1 rounded text-xs font-medium">
-                $18/hr + tips
+                Hourly + tips
               </div>
             </div>
           ) : (
