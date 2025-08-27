@@ -520,6 +520,35 @@ export const MobileDriverDashboard: React.FC = () => {
     }
   };
 
+  const handleUnpause = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('driver_profiles')
+          .update({ 
+            status: 'online',
+            is_available: true 
+          })
+          .eq('user_id', user.id);
+      }
+      
+      setDriverState('online_searching');
+      // Restore session
+      if (endTime) {
+        saveDriverSession('online_searching', endTime, selectedVehicle, earningMode);
+        setupRealtimeListener(user.id);
+      }
+      
+      toast({
+        title: "Back Online",
+        description: "You're now receiving offers again.",
+      });
+    } catch (error) {
+      console.error('Error unpausing:', error);
+    }
+  };
+
   const handleEndNow = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -698,6 +727,19 @@ export const MobileDriverDashboard: React.FC = () => {
           onlineTime={onlineTime}
           onPause={handlePause}
           onEndNow={handleEndNow}
+        />
+      )}
+
+      {/* Paused Panel */}
+      {driverState === 'online_paused' && endTime && (
+        <OnlineSearchPanel
+          earningMode={earningMode}
+          vehicleType={selectedVehicle}
+          endTime={endTime}
+          onlineTime={onlineTime}
+          onPause={handleUnpause}
+          onEndNow={handleEndNow}
+          isPaused={true}
         />
       )}
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Pause, Clock } from 'lucide-react';
+import { Pause, Clock, Play } from 'lucide-react';
 
 type EarningMode = 'perHour' | 'perOffer';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
@@ -13,6 +13,7 @@ interface OnlineSearchPanelProps {
   onlineTime?: number; // seconds online
   onPause: () => void;
   onEndNow?: () => void;
+  isPaused?: boolean;
 }
 
 export const OnlineSearchPanel: React.FC<OnlineSearchPanelProps> = ({
@@ -21,7 +22,8 @@ export const OnlineSearchPanel: React.FC<OnlineSearchPanelProps> = ({
   endTime,
   onlineTime = 0,
   onPause,
-  onEndNow
+  onEndNow,
+  isPaused = false
 }) => {
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -43,8 +45,10 @@ export const OnlineSearchPanel: React.FC<OnlineSearchPanelProps> = ({
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-status-online rounded-full animate-pulse" />
-              <h2 className="text-lg font-semibold">Online & Ready</h2>
+              <div className={`w-3 h-3 rounded-full ${isPaused ? 'bg-status-paused' : 'bg-status-online animate-pulse'}`} />
+              <h2 className="text-lg font-semibold">
+                {isPaused ? 'Paused' : 'Online & Ready'}
+              </h2>
             </div>
             <div className="flex gap-2">
               <Button
@@ -53,8 +57,17 @@ export const OnlineSearchPanel: React.FC<OnlineSearchPanelProps> = ({
                 onClick={onPause}
                 className="text-xs"
               >
-                <Pause className="h-3 w-3 mr-1" />
-                Pause
+                {isPaused ? (
+                  <>
+                    <Play className="h-3 w-3 mr-1" />
+                    Resume
+                  </>
+                ) : (
+                  <>
+                    <Pause className="h-3 w-3 mr-1" />
+                    Pause
+                  </>
+                )}
               </Button>
               {onEndNow && (
                 <Button
