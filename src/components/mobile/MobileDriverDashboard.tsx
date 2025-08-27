@@ -91,30 +91,56 @@ export const MobileDriverDashboard: React.FC = () => {
         if (savedState) {
           const sessionData = JSON.parse(savedState);
           
-          // Restore session if driver is still online in database
-          if (driverProfile?.status === 'online' && driverProfile?.is_available) {
+          // Check if session is still valid (not expired)
+          const sessionEndTime = new Date(sessionData.endTime);
+          const now = new Date();
+          const isSessionValid = sessionEndTime > now;
+          
+          // Restore session if driver is still online in database AND session is valid
+          if (driverProfile?.status === 'online' && driverProfile?.is_available && isSessionValid) {
             setDriverState('online_searching');
-            setEndTime(new Date(sessionData.endTime));
+            setEndTime(sessionEndTime);
             setSelectedVehicle(sessionData.selectedVehicle || 'car');
             setEarningMode(sessionData.earningMode || 'perHour');
             
             // Calculate online time from session start
             const sessionStart = new Date(sessionData.sessionStart);
-            const currentTime = new Date();
-            const timeDiff = Math.floor((currentTime.getTime() - sessionStart.getTime()) / 1000);
+            const timeDiff = Math.floor((now.getTime() - sessionStart.getTime()) / 1000);
             setOnlineTime(Math.max(0, timeDiff));
 
             console.log('🔄 Restored driver session - staying online');
             
             // Re-establish real-time listener
             setupRealtimeListener(user.id);
+            
+            // Update database to ensure consistency
+            await supabase
+              .from('driver_profiles')
+              .update({ 
+                status: 'online',
+                is_available: true 
+              })
+              .eq('user_id', user.id);
+              
           } else {
-            // Clear saved session if driver is offline in database
+            // Clear saved session if driver is offline in database or session expired
             localStorage.removeItem('driver_session');
             setDriverState('offline');
+            
+            // Ensure database is updated to offline
+            if (driverProfile?.status !== 'offline') {
+              await supabase
+                .from('driver_profiles')
+                .update({ 
+                  status: 'offline',
+                  is_available: false 
+                })
+                .eq('user_id', user.id);
+            }
           }
         } else if (driverProfile?.status === 'online') {
-          // Driver is online in database but no local session - estimate they just started
+          // Driver is online in database but no local session - they may have refreshed
+          // Keep them online with a default 8-hour session
           setDriverState('online_searching');
           const now = new Date();
           const defaultEndTime = new Date(now.getTime() + 8 * 60 * 60 * 1000); // 8 hours from now
@@ -124,9 +150,17 @@ export const MobileDriverDashboard: React.FC = () => {
           // Save new session
           saveDriverSession('online_searching', defaultEndTime, selectedVehicle, earningMode);
           setupRealtimeListener(user.id);
+          
+          console.log('🔄 Recreated driver session from database state');
+        } else {
+          // Driver is offline or no profile exists
+          setDriverState('offline');
         }
       } catch (error) {
         console.error('Error restoring driver state:', error);
+        // Fallback to offline state on error
+        setDriverState('offline');
+        localStorage.removeItem('driver_session');
       }
     };
 
@@ -338,53 +372,55 @@ export const MobileDriverDashboard: React.FC = () => {
 
   const handleGoOnline = async (endTime: Date, autoExtend: boolean, breakReminder: boolean) => {
     try {
-      console.log('🚗 Starting go online process...');
+      console.log('🟢 Going online...');
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error('❌ No user found');
-        return;
+        throw new Error('Not authenticated');
       }
-      console.log('✅ User found:', user.id);
 
-      // Update driver status to online
-      console.log('🔄 Updating driver profile to online...');
+      // First update database status to online
       const { error: profileError } = await supabase
         .from('driver_profiles')
-        .update({
+        .update({ 
           status: 'online',
-          is_available: true
+          is_available: true 
         })
         .eq('user_id', user.id);
 
       if (profileError) {
-        console.error('❌ Driver profile update error:', profileError);
+        console.error('❌ Profile update error:', profileError);
         throw profileError;
       }
-      console.log('✅ Driver profile updated successfully');
 
-      // Update location with fallback
+      console.log('✅ Driver profile updated to online');
+
+      // Update location
       if (navigator.geolocation) {
         console.log('📍 Getting location...');
         navigator.geolocation.getCurrentPosition(async (position) => {
-          console.log('📍 Location obtained:', position.coords.latitude, position.coords.longitude);
+          const { latitude, longitude } = position.coords;
+          setUserLocation({ lat: latitude, lng: longitude });
+          
           const { error: locationError } = await supabase
             .from('craver_locations')
             .upsert({
               user_id: user.id,
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
+              lat: latitude,
+              lng: longitude
             });
 
           if (locationError) {
             console.error('❌ Location update error:', locationError);
           } else {
             console.log('✅ Location updated successfully');
+            toast({
+              title: "Location Set",
+              description: "Using your current location for order assignments.",
+            });
           }
         }, async (error) => {
           console.error('❌ Geolocation error:', error);
-          console.log('📍 Using fallback Toledo location...');
-          
-          // Fallback to Toledo coordinates when geolocation fails
+          // Fallback to Toledo coordinates
           const { error: locationError } = await supabase
             .from('craver_locations')
             .upsert({
@@ -396,7 +432,7 @@ export const MobileDriverDashboard: React.FC = () => {
           if (locationError) {
             console.error('❌ Fallback location update error:', locationError);
           } else {
-            console.log('✅ Fallback location updated successfully');
+            console.log('✅ Fallback location set successfully');
             toast({
               title: "Location Set",
               description: "Using Toledo location for order assignments.",
@@ -442,6 +478,30 @@ export const MobileDriverDashboard: React.FC = () => {
       setupRealtimeListener(user.id);
 
       console.log('✅ Successfully went online!');
+
+      // Keep driver online by periodically updating database status
+      const keepAliveInterval = setInterval(async () => {
+        try {
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          if (currentUser && (driverState === 'online_searching' || driverState === 'on_delivery')) {
+            await supabase
+              .from('driver_profiles')
+              .update({ 
+                status: 'online',
+                is_available: true 
+              })
+              .eq('user_id', currentUser.id);
+            console.log('💓 Keep-alive ping sent');
+          } else {
+            clearInterval(keepAliveInterval);
+          }
+        } catch (error) {
+          console.error('Keep-alive error:', error);
+        }
+      }, 30000); // Ping every 30 seconds
+
+      // Store interval ID to clear later
+      (window as any).driverKeepAlive = keepAliveInterval;
 
     } catch (error) {
       console.error('❌ Error going online:', error);
@@ -540,6 +600,12 @@ export const MobileDriverDashboard: React.FC = () => {
             is_available: false 
           })
           .eq('user_id', user.id);
+      }
+      
+      // Clear keep-alive interval
+      if ((window as any).driverKeepAlive) {
+        clearInterval((window as any).driverKeepAlive);
+        delete (window as any).driverKeepAlive;
       }
       
       setDriverState('offline');
