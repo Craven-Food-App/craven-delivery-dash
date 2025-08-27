@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Car, DollarSign, Clock, Shield, CheckCircle, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +9,7 @@ import Footer from "@/components/Footer";
 import { CraverApplicationForm } from "@/components/CraverApplicationForm";
 
 const CraverHub = () => {
+  const navigate = useNavigate();
   const [showApplicationForm, setShowApplicationForm] = useState(false);
   const benefits = [
     {
@@ -72,7 +74,12 @@ const CraverHub = () => {
               >
                 Start Earning Today
               </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-6">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="text-lg px-8 py-6"
+                onClick={() => navigate('/driver-auth')}
+              >
                 Login
               </Button>
             </div>
