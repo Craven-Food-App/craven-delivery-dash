@@ -306,45 +306,134 @@ export const MobileDriverDashboard: React.FC = () => {
   useEffect(() => {
     if (driverState !== 'online_searching' && driverState !== 'on_delivery') return;
 
-    const trackLocation = async () => {
-      if (!navigator.geolocation) return;
+    let watchId: number | null = null;
+    let locationInterval: NodeJS.Timeout | null = null;
 
+    const trackLocation = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       const updateLocation = async (position: GeolocationPosition) => {
-        const { latitude, longitude } = position.coords;
-        setUserLocation({ lat: latitude, lng: longitude });
+        try {
+          const { latitude, longitude } = position.coords;
+          setUserLocation({ lat: latitude, lng: longitude });
+          
+          // Update database with new location
+          const { error } = await supabase
+            .from('craver_locations')
+            .upsert({
+              user_id: user.id,
+              lat: latitude,
+              lng: longitude
+            });
+
+          if (error) {
+            console.error('Database location update error:', error);
+          } else {
+            console.log('✅ Location updated successfully:', latitude, longitude);
+          }
+        } catch (error) {
+          console.error('Error updating location:', error);
+        }
+      };
+
+      const handleLocationError = async (error: GeolocationPositionError) => {
+        console.error('Location error:', error.message, 'Code:', error.code);
         
-        // Update database with new location
-        await supabase
-          .from('craver_locations')
-          .upsert({
-            user_id: user.id,
-            lat: latitude,
-            lng: longitude
-          });
+        // Use fallback Toledo location when geolocation fails
+        try {
+          const { error: locationError } = await supabase
+            .from('craver_locations')
+            .upsert({
+              user_id: user.id,
+              lat: 41.6528, // Toledo coordinates
+              lng: -83.6982
+            });
+
+          if (!locationError) {
+            setUserLocation({ lat: 41.6528, lng: -83.6982 });
+            console.log('✅ Using fallback Toledo location for order assignments');
+          }
+        } catch (fallbackError) {
+          console.error('Fallback location update failed:', fallbackError);
+        }
       };
 
-      // Get initial location
-      navigator.geolocation.getCurrentPosition(updateLocation, 
-        (error) => console.error('Location error:', error),
-        { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
-      );
+      if (navigator.geolocation) {
+        // Try to get initial location with relaxed settings
+        navigator.geolocation.getCurrentPosition(
+          updateLocation, 
+          handleLocationError,
+          { 
+            enableHighAccuracy: false, 
+            timeout: 8000, 
+            maximumAge: 600000 // 10 minutes
+          }
+        );
 
-      // Watch location changes
-      const watchId = navigator.geolocation.watchPosition(updateLocation,
-        (error) => console.error('Location tracking error:', error),
-        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
-      );
+        // Set up location watching with very relaxed settings
+        watchId = navigator.geolocation.watchPosition(
+          updateLocation,
+          handleLocationError,
+          { 
+            enableHighAccuracy: false, 
+            timeout: 15000, // Longer timeout
+            maximumAge: 300000 // 5 minutes
+          }
+        );
 
-      return () => {
-        navigator.geolocation.clearWatch(watchId);
-      };
+        // Fallback: Update location every 2 minutes with last known or Toledo coordinates
+        locationInterval = setInterval(async () => {
+          try {
+            if (!userLocation) {
+              // If no location has been set, use Toledo fallback
+              const { error } = await supabase
+                .from('craver_locations')
+                .upsert({
+                  user_id: user.id,
+                  lat: 41.6528,
+                  lng: -83.6982
+                });
+
+              if (!error) {
+                setUserLocation({ lat: 41.6528, lng: -83.6982 });
+                console.log('✅ Fallback location update via interval');
+              }
+            } else {
+              // Refresh current location in database
+              const { error } = await supabase
+                .from('craver_locations')
+                .upsert({
+                  user_id: user.id,
+                  lat: userLocation.lat,
+                  lng: userLocation.lng
+                });
+
+              if (!error) {
+                console.log('✅ Location refreshed via interval');
+              }
+            }
+          } catch (error) {
+            console.error('Interval location update error:', error);
+          }
+        }, 120000); // Every 2 minutes
+      } else {
+        // No geolocation support - use Toledo fallback immediately
+        await handleLocationError(new GeolocationPositionError());
+      }
     };
 
     trackLocation();
-  }, [driverState]);
+
+    return () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+      if (locationInterval) {
+        clearInterval(locationInterval);
+      }
+    };
+  }, [driverState, userLocation]);
 
   // Listen for real-time order assignments when online - consolidated with setupRealtimeListener above
   // This useEffect is now handled by the setupRealtimeListener function called from other places
