@@ -292,45 +292,70 @@ export const MobileDriverDashboard: React.FC = () => {
     trackLocation();
   }, [driverState]);
 
-  // Fetch available orders when online
+  // Continuously scan for orders and trigger auto-assignment when online
   useEffect(() => {
     if (driverState !== 'online_searching') return;
 
-    const fetchOrders = async () => {
-      const { data: orders, error } = await supabase
-        .from('orders')
-        .select(`
-          id,
-          pickup_name,
-          pickup_address, 
-          pickup_lat,
-          pickup_lng,
-          dropoff_name,
-          dropoff_address,
-          dropoff_lat,
-          dropoff_lng,
-          payout_cents,
-          distance_km,
-          status,
-          assigned_craver_id
-        `)
-        .eq('status', 'pending')
-        .is('assigned_craver_id', null);
+    const scanForOrders = async () => {
+      try {
+        console.log('🔍 Scanning for available orders...');
+        
+        const { data: orders, error } = await supabase
+          .from('orders')
+          .select(`
+            id,
+            pickup_name,
+            pickup_address, 
+            pickup_lat,
+            pickup_lng,
+            dropoff_name,
+            dropoff_address,
+            dropoff_lat,
+            dropoff_lng,
+            payout_cents,
+            distance_km,
+            status,
+            assigned_craver_id,
+            restaurant_id
+          `)
+          .eq('status', 'pending')
+          .is('assigned_craver_id', null);
 
-      if (!error && orders) {
-        setAvailableOrders(orders);
+        if (!error && orders) {
+          console.log(`📋 Found ${orders.length} pending orders`);
+          setAvailableOrders(orders);
+          
+          // Trigger auto-assignment for each pending order
+          for (const order of orders) {
+            try {
+              console.log(`🎯 Triggering auto-assignment for order ${order.id}`);
+              
+              const { error: assignError } = await supabase.functions.invoke('auto-assign-orders', {
+                body: { orderId: order.id }
+              });
+              
+              if (assignError) {
+                console.error('Auto-assignment error:', assignError);
+              }
+            } catch (err) {
+              console.error('Error triggering auto-assignment:', err);
+            }
+          }
+        } else if (error) {
+          console.error('Error fetching orders:', error);
+        }
+      } catch (err) {
+        console.error('Error in scanForOrders:', err);
       }
     };
 
-    fetchOrders();
+    // Initial scan
+    scanForOrders();
     
-    // Refresh orders every 30 seconds
-    const interval = setInterval(fetchOrders, 30000);
+    // Scan every 15 seconds for new orders
+    const interval = setInterval(scanForOrders, 15000);
     return () => clearInterval(interval);
   }, [driverState]);
-
-  // Remove demo offer logic - this was interfering with real assignments
-  // Real order assignments come through the WebSocket channel in handleGoOnline
 
   const handleSatisfyCraveNow = () => {
     if (!craverApplication) {
