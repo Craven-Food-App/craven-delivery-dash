@@ -6,7 +6,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Package, MapPin, DollarSign, Clock, User, Navigation, UserCheck } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Package, MapPin, DollarSign, Clock, User, Navigation, UserCheck, Plus, TestTube } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Order {
@@ -40,6 +43,8 @@ const OrderManagement: React.FC = () => {
   const [cravers, setCravers] = useState<Craver[]>([]);
   const [loading, setLoading] = useState(true);
   const [assigningOrders, setAssigningOrders] = useState<Set<string>>(new Set());
+  const [showTestOrderDialog, setShowTestOrderDialog] = useState(false);
+  const [creatingTestOrder, setCreatingTestOrder] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -203,6 +208,91 @@ const OrderManagement: React.FC = () => {
     }
   };
 
+  const createTestOrder = async () => {
+    setCreatingTestOrder(true);
+    
+    try {
+      // Get first restaurant for test order
+      const { data: restaurants, error: restaurantError } = await supabase
+        .from('restaurants')
+        .select('*')
+        .eq('is_active', true)
+        .limit(1);
+
+      if (restaurantError || !restaurants?.length) {
+        toast({
+          title: "Error",
+          description: "No active restaurants found. Please add a restaurant first.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const restaurant = restaurants[0];
+      
+      // Create test order with realistic data
+      const testOrder = {
+        pickup_name: restaurant.name,
+        pickup_address: restaurant.address,
+        pickup_lat: restaurant.latitude || 40.7831,
+        pickup_lng: restaurant.longitude || -73.9712,
+        dropoff_name: "Test Customer",
+        dropoff_address: "123 Test Street, Test City, TC 12345",
+        dropoff_lat: (restaurant.latitude || 40.7831) + (Math.random() - 0.5) * 0.1,
+        dropoff_lng: (restaurant.longitude || -73.9712) + (Math.random() - 0.5) * 0.1,
+        payout_cents: Math.floor(Math.random() * 2000) + 500, // $5-25
+        distance_km: Math.random() * 10 + 2, // 2-12 km
+        status: 'pending' as const,
+        restaurant_id: restaurant.id
+      };
+
+      const { data, error } = await supabase
+        .from('orders')
+        .insert([testOrder])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating test order:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create test order",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Trigger auto-assignment
+      try {
+        await supabase.functions.invoke('auto-assign-orders', {
+          body: { orderId: data.id }
+        });
+        
+        toast({
+          title: "Test Order Created! 🧪",
+          description: `Test order created and auto-assignment triggered. Payout: $${(testOrder.payout_cents / 100).toFixed(2)}`,
+        });
+      } catch (autoAssignError) {
+        console.error('Auto-assignment error:', autoAssignError);
+        toast({
+          title: "Test Order Created! 🧪",
+          description: `Test order created successfully. Payout: $${(testOrder.payout_cents / 100).toFixed(2)}`,
+        });
+      }
+
+      setShowTestOrderDialog(false);
+    } catch (error) {
+      console.error('Error creating test order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create test order",
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingTestOrder(false);
+    }
+  };
+
   const ordersByStatus = {
     pending: orders.filter(order => order.status === 'pending'),
     assigned: orders.filter(order => order.status === 'assigned'),
@@ -292,10 +382,72 @@ const OrderManagement: React.FC = () => {
       {/* Orders List */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            All Orders ({orders.length})
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              All Orders ({orders.length})
+            </CardTitle>
+            
+            <Dialog open={showTestOrderDialog} onOpenChange={setShowTestOrderDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <TestTube className="h-4 w-4" />
+                  Create Test Order
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <TestTube className="h-5 w-5" />
+                    Create Test Order
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    This will create a test order with random pickup/dropoff locations and automatically assign it to available cravers for testing purposes.
+                  </p>
+                  
+                  <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+                    <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Test Order Features:</h4>
+                    <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+                      <li>• Random pickup location from active restaurants</li>
+                      <li>• Random dropoff location within delivery range</li>
+                      <li>• Random payout between $5-25</li>
+                      <li>• Automatic assignment to available cravers</li>
+                      <li>• Full order lifecycle testing (accept → pickup → deliver)</li>
+                    </ul>
+                  </div>
+                  
+                  <div className="flex gap-3 pt-4">
+                    <Button 
+                      onClick={createTestOrder} 
+                      disabled={creatingTestOrder}
+                      className="flex-1"
+                    >
+                      {creatingTestOrder ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create Test Order
+                        </>
+                      )}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowTestOrderDialog(false)}
+                      disabled={creatingTestOrder}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[600px]">

@@ -14,6 +14,7 @@ import { OrderAssignmentModal } from './OrderAssignmentModal';
 import { AccountSection } from './AccountSection';
 import { RatingsSection } from './RatingsSection';
 import { EarningsSection } from './EarningsSection';
+import { DeliveryPanel } from './DeliveryPanel';
 import LeafletMap from '@/components/LeafletMap';
 
 type DriverState = 'offline' | 'setEndTime' | 'online_searching' | 'online_paused' | 'offer_presented' | 'on_delivery';
@@ -69,6 +70,7 @@ export const MobileDriverDashboard: React.FC = () => {
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [currentOrderAssignment, setCurrentOrderAssignment] = useState<any>(null);
+  const [activeDelivery, setActiveDelivery] = useState<any>(null);
   
   const { toast } = useToast();
 
@@ -453,13 +455,50 @@ export const MobileDriverDashboard: React.FC = () => {
     }
   };
 
-  const handleAcceptAssignment = (assignmentId: string) => {
-    setCurrentAssignment(null);
-    setDriverState('on_delivery');
-    toast({
-      title: "Order Accepted!",
-      description: "Navigate to pickup location to start your delivery.",
-    });
+  const handleAcceptAssignment = async (assignmentId: string) => {
+    try {
+      // Update assignment status to accepted
+      const { error: assignmentError } = await supabase
+        .from('order_assignments')
+        .update({ 
+          status: 'accepted',
+          response_time_seconds: Math.floor((Date.now() - new Date(currentOrderAssignment?.expires_at || '').getTime()) / 1000)
+        })
+        .eq('id', assignmentId);
+
+      if (assignmentError) {
+        console.error('Error updating assignment:', assignmentError);
+        throw assignmentError;
+      }
+
+      // Update order status to assigned
+      const { error: orderError } = await supabase
+        .from('orders')
+        .update({ status: 'assigned' })
+        .eq('id', currentOrderAssignment?.order_id);
+
+      if (orderError) {
+        console.error('Error updating order:', orderError);
+        throw orderError;
+      }
+
+      setCurrentAssignment(null);
+      setActiveDelivery(currentOrderAssignment);
+      setDriverState('on_delivery');
+      setShowOrderModal(false);
+      
+      toast({
+        title: "Order Accepted! 🚗",
+        description: "Navigate to pickup location to start your delivery.",
+      });
+    } catch (error) {
+      console.error('Error accepting assignment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to accept order. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDeclineAssignment = (assignmentId: string) => {
@@ -557,6 +596,15 @@ export const MobileDriverDashboard: React.FC = () => {
     } catch (error) {
       console.error('Error going offline:', error);
     }
+  };
+
+  const handleDeliveryComplete = () => {
+    setActiveDelivery(null);
+    setDriverState('online_searching');
+    toast({
+      title: "Ready for next delivery! 🚀",
+      description: "Great work! You're back online and ready for offers.",
+    });
   };
 
   const formatTime = (date: Date) => {
@@ -720,6 +768,14 @@ export const MobileDriverDashboard: React.FC = () => {
           onPause={handleUnpause}
           onEndNow={handleEndNow}
           isPaused={true}
+        />
+      )}
+
+      {/* Active Delivery Panel */}
+      {driverState === 'on_delivery' && activeDelivery && (
+        <DeliveryPanel
+          assignment={activeDelivery}
+          onDeliveryComplete={handleDeliveryComplete}
         />
       )}
 
