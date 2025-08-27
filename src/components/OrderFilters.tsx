@@ -286,7 +286,7 @@ const OrderFilters: React.FC<OrderFiltersProps> = ({
 
             {/* Max Distance */}
             <div className="space-y-2">
-              <Label className="text-sm">Max Distance: {filters.maxDistance} km</Label>
+              <Label className="text-sm">Max Distance: {(filters.maxDistance * 0.621371).toFixed(1)} mi</Label>
               <Slider
                 value={[filters.maxDistance]}
                 onValueChange={([value]) => updateFilter('maxDistance', value)}

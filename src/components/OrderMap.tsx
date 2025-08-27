@@ -118,7 +118,7 @@ const OrderMap: React.FC<OrderMapProps> = ({ orders, activeOrder, onOrderClick }
                           ${(order.payout_cents / 100).toFixed(2)}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {order.distance_km} km
+                          {(order.distance_km * 0.621371).toFixed(1)} mi
                         </div>
                       </div>
                     </div>

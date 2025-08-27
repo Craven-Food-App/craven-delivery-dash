@@ -133,7 +133,7 @@ const ActiveOrderCard: React.FC<ActiveOrderCardProps> = ({ order, onStatusUpdate
           </div>
           <div className="flex items-center gap-2">
             <Navigation className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm">{order.distance_km} km</span>
+            <span className="text-sm">{(order.distance_km * 0.621371).toFixed(1)} mi</span>
           </div>
         </div>
 

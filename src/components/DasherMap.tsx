@@ -118,7 +118,7 @@ const DasherMap: React.FC<DasherMapProps> = ({ orders, activeOrder, onOrderClick
             {/* Order info popup on hover */}
             <div className="absolute bottom-14 left-1/2 transform -translate-x-1/2 bg-black/90 text-white p-2 rounded text-xs whitespace-nowrap opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
               <div className="font-medium">{order.pickup_name}</div>
-              <div className="text-gray-300">${(order.payout_cents / 100).toFixed(2)} • {order.distance_km}km</div>
+              <div className="text-gray-300">${(order.payout_cents / 100).toFixed(2)} • {(order.distance_km * 0.621371).toFixed(1)}mi</div>
               <div className="text-gray-400">Click to accept</div>
             </div>
           </div>

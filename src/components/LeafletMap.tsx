@@ -267,7 +267,7 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ orders, activeOrder, onOrderCli
         <div class="p-2">
           <h3 class="font-semibold text-sm">${order.pickup_name}</h3>
           <p class="text-xs text-gray-600">${order.pickup_address}</p>
-          <p class="text-sm font-medium text-green-600 mt-1">$${payoutAmount} • ${order.distance_km.toFixed(1)}km</p>
+          <p class="text-sm font-medium text-green-600 mt-1">$${payoutAmount} • ${(order.distance_km * 0.621371).toFixed(1)}mi</p>
         </div>
       `);
     });

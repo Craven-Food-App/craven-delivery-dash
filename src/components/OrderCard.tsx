@@ -89,7 +89,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, variant, onAccept, onStatu
           
           <div className="flex items-center gap-1">
             <Clock className="h-4 w-4 text-blue-600" />
-            <span>{order.distance_km.toFixed(1)} km</span>
+            <span>{(order.distance_km * 0.621371).toFixed(1)} mi</span>
           </div>
         </div>
 

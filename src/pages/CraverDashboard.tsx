@@ -564,7 +564,7 @@ const CraverDashboard: React.FC = () => {
                                         ${(order.payout_cents / 100).toFixed(2)}
                                       </div>
                                       <div className="text-xs text-muted-foreground">
-                                        {order.distance_km.toFixed(1)} km
+                                        {(order.distance_km * 0.621371).toFixed(1)} mi
                                       </div>
                                     </div>
                                   </div>
