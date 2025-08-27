@@ -35,36 +35,10 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
   // Play notification sound when modal opens
   useEffect(() => {
     if (isOpen && assignment) {
-      // Create a longer, more noticeable notification sound
-      const audioContext = new AudioContext();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      // Create a sequence of tones for a longer notification
-      const playNotificationSequence = async () => {
-        for (let i = 0; i < 3; i++) {
-          const osc = audioContext.createOscillator();
-          const gain = audioContext.createGain();
-          
-          osc.connect(gain);
-          gain.connect(audioContext.destination);
-          
-          // Alternating tones
-          osc.frequency.setValueAtTime(i % 2 === 0 ? 800 : 600, audioContext.currentTime);
-          osc.type = 'sine';
-          
-          gain.gain.setValueAtTime(0.3, audioContext.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
-          
-          osc.start(audioContext.currentTime + i * 0.5);
-          osc.stop(audioContext.currentTime + i * 0.5 + 0.4);
-          
-          // Wait between tones
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-      };
-      
-      playNotificationSequence().catch(e => console.log('Could not play notification sound:', e));
+      // Play notification sound
+      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAdAjiMz/LNeSsFJHfD8N+QQAoUXrTp66hVFApBn+DyDmAdAjiMz/LNeSsFJHfD8N+QQAoUXrTp66hVFApBn+DyvmAdAjiMz/LNeSwFJHfD8N+QQAoUXrTp66hVFApBn+DyvmAdAjiMz/LNeSwFJHfD8N+QQAoUXrTp66hVFApBn+DyvmAdAjiMz/LNeSwFJHfD8N+QQAoUXrTp66hVFApBn+DyvmAdAjiMz/LNeSwFJHfD8N+QQAoUXrTp66hVFApBn+DyvmAdAjiMz/LNeSwFJHfD8N+QQAoUXrTp66hVFApBn+DyvmAd');
+      audio.volume = 0.8;
+      audio.play().catch(e => console.log('Could not play notification sound:', e));
     }
   }, [isOpen, assignment]);
 
