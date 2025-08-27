@@ -79,115 +79,93 @@ export const MobileDriverDashboard: React.FC = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // Check localStorage for session data first
+        // Check database for current driver status
+        const { data: driverProfile } = await supabase
+          .from('driver_profiles')
+          .select('status, is_available')
+          .eq('user_id', user.id)
+          .single();
+
+        // Check localStorage for session data
         const savedState = localStorage.getItem('driver_session');
-        
         if (savedState) {
           const sessionData = JSON.parse(savedState);
           
-          // Always restore from localStorage first (offline-first approach)
-          if (sessionData.driverState === 'online_searching') {
+          // Check if session is still valid (not expired)
+          const sessionEndTime = new Date(sessionData.endTime);
+          const now = new Date();
+          const isSessionValid = sessionEndTime > now;
+          
+          // Restore session if driver is still online in database AND session is valid
+          if (driverProfile?.status === 'online' && driverProfile?.is_available && isSessionValid) {
             setDriverState('online_searching');
-            setEndTime(new Date(sessionData.endTime));
+            setEndTime(sessionEndTime);
             setSelectedVehicle(sessionData.selectedVehicle || 'car');
             setEarningMode(sessionData.earningMode || 'perHour');
             
             // Calculate online time from session start
             const sessionStart = new Date(sessionData.sessionStart);
-            const currentTime = new Date();
-            const timeDiff = Math.floor((currentTime.getTime() - sessionStart.getTime()) / 1000);
+            const timeDiff = Math.floor((now.getTime() - sessionStart.getTime()) / 1000);
             setOnlineTime(Math.max(0, timeDiff));
 
-            console.log('🔄 Restored driver session from localStorage');
+            console.log('🔄 Restored driver session - staying online');
             
             // Re-establish real-time listener
             setupRealtimeListener(user.id);
             
-            // Sync with database in background (don't fail if this doesn't work)
-            try {
+            // Update database to ensure consistency
+            await supabase
+              .from('driver_profiles')
+              .update({ 
+                status: 'online',
+                is_available: true 
+              })
+              .eq('user_id', user.id);
+              
+          } else {
+            // Clear saved session if driver is offline in database or session expired
+            localStorage.removeItem('driver_session');
+            setDriverState('offline');
+            
+            // Ensure database is updated to offline
+            if (driverProfile?.status !== 'offline') {
               await supabase
                 .from('driver_profiles')
-                .update({
-                  status: 'online',
-                  is_available: true
+                .update({ 
+                  status: 'offline',
+                  is_available: false 
                 })
                 .eq('user_id', user.id);
-              console.log('✅ Synced driver status with database');
-            } catch (syncError) {
-              console.warn('⚠️ Could not sync with database, continuing offline-first');
             }
           }
+        } else if (driverProfile?.status === 'online') {
+          // Driver is online in database but no local session - they may have refreshed
+          // Keep them online with a default 8-hour session
+          setDriverState('online_searching');
+          const now = new Date();
+          const defaultEndTime = new Date(now.getTime() + 8 * 60 * 60 * 1000); // 8 hours from now
+          setEndTime(defaultEndTime);
+          setOnlineTime(0);
+          
+          // Save new session
+          saveDriverSession('online_searching', defaultEndTime, selectedVehicle, earningMode);
+          setupRealtimeListener(user.id);
+          
+          console.log('🔄 Recreated driver session from database state');
         } else {
-          // No saved session, check database
-          try {
-            const { data: driverProfile } = await supabase
-              .from('driver_profiles')
-              .select('status, is_available')
-              .eq('user_id', user.id)
-              .single();
-
-            if (driverProfile?.status === 'online' && driverProfile?.is_available) {
-              // Driver is online in database but no local session - create new session
-              setDriverState('online_searching');
-              const now = new Date();
-              const defaultEndTime = new Date(now.getTime() + 8 * 60 * 60 * 1000); // 8 hours from now
-              setEndTime(defaultEndTime);
-              setOnlineTime(0);
-              
-              // Save new session
-              saveDriverSession('online_searching', defaultEndTime, selectedVehicle, earningMode);
-              setupRealtimeListener(user.id);
-              console.log('🔄 Created new session from database state');
-            }
-          } catch (dbError) {
-            console.warn('⚠️ Could not check database, staying offline');
-          }
+          // Driver is offline or no profile exists
+          setDriverState('offline');
         }
       } catch (error) {
         console.error('Error restoring driver state:', error);
-        // Don't fail silently - keep the app working
+        // Fallback to offline state on error
+        setDriverState('offline');
+        localStorage.removeItem('driver_session');
       }
     };
 
     restoreDriverState();
   }, []);
-
-  // Periodic session validation to prevent unexpected logouts
-  useEffect(() => {
-    if (driverState !== 'online_searching') return;
-
-    const validateSession = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        // Keep driver profile updated in database
-        await supabase
-          .from('driver_profiles')
-          .update({
-            status: 'online',
-            is_available: true,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', user.id);
-
-        console.log('✅ Session validated and database updated');
-      } catch (error) {
-        console.warn('⚠️ Session validation failed, but continuing');
-      }
-    };
-
-    // Validate session every 2 minutes
-    const interval = setInterval(validateSession, 120000);
-    
-    // Run initial validation after 10 seconds
-    const timeout = setTimeout(validateSession, 10000);
-
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
-    };
-  }, [driverState]);
 
   // Save driver session to localStorage
   const saveDriverSession = (state: DriverState, endTime: Date, vehicle: VehicleType, mode: EarningMode) => {
@@ -211,10 +189,32 @@ export const MobileDriverDashboard: React.FC = () => {
   const setupRealtimeListener = (userId: string) => {
     console.log('🔔 Setting up real-time listener for user:', userId);
     
+    // Clean up any existing channel first
+    const existingChannels = supabase.getChannels();
+    existingChannels.forEach(channel => {
+      if (channel.topic.includes(`driver_${userId}`)) {
+        console.log('🧹 Cleaning up existing channel:', channel.topic);
+        supabase.removeChannel(channel);
+      }
+    });
+    
+    const channelName = `driver_${userId}`;
+    console.log('📡 Creating channel:', channelName);
+    
     const channel = supabase
-      .channel(`driver_${userId}`)
+      .channel(channelName, {
+        config: {
+          broadcast: { self: false }
+        }
+      })
       .on('broadcast', { event: 'order_assignment' }, (payload) => {
         console.log('📨 Received order assignment via broadcast:', payload);
+        
+        // Ensure we have valid payload data
+        if (!payload?.payload) {
+          console.error('❌ Invalid payload received:', payload);
+          return;
+        }
         
         // Show order assignment modal
         setCurrentOrderAssignment({
@@ -231,13 +231,31 @@ export const MobileDriverDashboard: React.FC = () => {
         });
         setShowOrderModal(true);
         setDriverState('offer_presented');
+        
+        // Trigger haptic feedback if available
+        if (navigator.vibrate) {
+          navigator.vibrate([200, 100, 200, 100, 200]);
+        }
+        
+        console.log('✅ Order assignment modal displayed');
       })
       .subscribe((status) => {
-        console.log('Real-time subscription status:', status);
+        console.log('📡 Real-time subscription status:', status, 'for channel:', channelName);
+        
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Successfully subscribed to order assignments');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Channel error, attempting to reconnect...');
+          // Retry after a delay
+          setTimeout(() => {
+            setupRealtimeListener(userId);
+          }, 3000);
+        }
       });
 
+    // Store the cleanup function
     return () => {
-      console.log('Cleaning up real-time listener');
+      console.log('🧹 Cleaning up real-time listener for:', channelName);
       supabase.removeChannel(channel);
     };
   };
@@ -328,45 +346,134 @@ export const MobileDriverDashboard: React.FC = () => {
   useEffect(() => {
     if (driverState !== 'online_searching' && driverState !== 'on_delivery') return;
 
-    const trackLocation = async () => {
-      if (!navigator.geolocation) return;
+    let watchId: number | null = null;
+    let locationInterval: NodeJS.Timeout | null = null;
 
+    const trackLocation = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       const updateLocation = async (position: GeolocationPosition) => {
-        const { latitude, longitude } = position.coords;
-        setUserLocation({ lat: latitude, lng: longitude });
+        try {
+          const { latitude, longitude } = position.coords;
+          setUserLocation({ lat: latitude, lng: longitude });
+          
+          // Update database with new location
+          const { error } = await supabase
+            .from('craver_locations')
+            .upsert({
+              user_id: user.id,
+              lat: latitude,
+              lng: longitude
+            });
+
+          if (error) {
+            console.error('Database location update error:', error);
+          } else {
+            console.log('✅ Location updated successfully:', latitude, longitude);
+          }
+        } catch (error) {
+          console.error('Error updating location:', error);
+        }
+      };
+
+      const handleLocationError = async (error: GeolocationPositionError) => {
+        console.error('Location error:', error.message, 'Code:', error.code);
         
-        // Update database with new location
-        await supabase
-          .from('craver_locations')
-          .upsert({
-            user_id: user.id,
-            lat: latitude,
-            lng: longitude
-          });
+        // Use fallback Toledo location when geolocation fails
+        try {
+          const { error: locationError } = await supabase
+            .from('craver_locations')
+            .upsert({
+              user_id: user.id,
+              lat: 41.6528, // Toledo coordinates
+              lng: -83.6982
+            });
+
+          if (!locationError) {
+            setUserLocation({ lat: 41.6528, lng: -83.6982 });
+            console.log('✅ Using fallback Toledo location for order assignments');
+          }
+        } catch (fallbackError) {
+          console.error('Fallback location update failed:', fallbackError);
+        }
       };
 
-      // Get initial location
-      navigator.geolocation.getCurrentPosition(updateLocation, 
-        (error) => console.error('Location error:', error),
-        { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
-      );
+      if (navigator.geolocation) {
+        // Try to get initial location with relaxed settings
+        navigator.geolocation.getCurrentPosition(
+          updateLocation, 
+          handleLocationError,
+          { 
+            enableHighAccuracy: false, 
+            timeout: 8000, 
+            maximumAge: 600000 // 10 minutes
+          }
+        );
 
-      // Watch location changes
-      const watchId = navigator.geolocation.watchPosition(updateLocation,
-        (error) => console.error('Location tracking error:', error),
-        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
-      );
+        // Set up location watching with very relaxed settings
+        watchId = navigator.geolocation.watchPosition(
+          updateLocation,
+          handleLocationError,
+          { 
+            enableHighAccuracy: false, 
+            timeout: 15000, // Longer timeout
+            maximumAge: 300000 // 5 minutes
+          }
+        );
 
-      return () => {
-        navigator.geolocation.clearWatch(watchId);
-      };
+        // Fallback: Update location every 2 minutes with last known or Toledo coordinates
+        locationInterval = setInterval(async () => {
+          try {
+            if (!userLocation) {
+              // If no location has been set, use Toledo fallback
+              const { error } = await supabase
+                .from('craver_locations')
+                .upsert({
+                  user_id: user.id,
+                  lat: 41.6528,
+                  lng: -83.6982
+                });
+
+              if (!error) {
+                setUserLocation({ lat: 41.6528, lng: -83.6982 });
+                console.log('✅ Fallback location update via interval');
+              }
+            } else {
+              // Refresh current location in database
+              const { error } = await supabase
+                .from('craver_locations')
+                .upsert({
+                  user_id: user.id,
+                  lat: userLocation.lat,
+                  lng: userLocation.lng
+                });
+
+              if (!error) {
+                console.log('✅ Location refreshed via interval');
+              }
+            }
+          } catch (error) {
+            console.error('Interval location update error:', error);
+          }
+        }, 120000); // Every 2 minutes
+      } else {
+        // No geolocation support - use Toledo fallback immediately
+        await handleLocationError(new GeolocationPositionError());
+      }
     };
 
     trackLocation();
-  }, [driverState]);
+
+    return () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+      if (locationInterval) {
+        clearInterval(locationInterval);
+      }
+    };
+  }, [driverState, userLocation]);
 
   // Listen for real-time order assignments when online - consolidated with setupRealtimeListener above
   // This useEffect is now handled by the setupRealtimeListener function called from other places
@@ -394,53 +501,55 @@ export const MobileDriverDashboard: React.FC = () => {
 
   const handleGoOnline = async (endTime: Date, autoExtend: boolean, breakReminder: boolean) => {
     try {
-      console.log('🚗 Starting go online process...');
+      console.log('🟢 Going online...');
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error('❌ No user found');
-        return;
+        throw new Error('Not authenticated');
       }
-      console.log('✅ User found:', user.id);
 
-      // Update driver status to online
-      console.log('🔄 Updating driver profile to online...');
+      // First update database status to online
       const { error: profileError } = await supabase
         .from('driver_profiles')
-        .update({
+        .update({ 
           status: 'online',
-          is_available: true
+          is_available: true 
         })
         .eq('user_id', user.id);
 
       if (profileError) {
-        console.error('❌ Driver profile update error:', profileError);
+        console.error('❌ Profile update error:', profileError);
         throw profileError;
       }
-      console.log('✅ Driver profile updated successfully');
 
-      // Update location with fallback
+      console.log('✅ Driver profile updated to online');
+
+      // Update location
       if (navigator.geolocation) {
         console.log('📍 Getting location...');
         navigator.geolocation.getCurrentPosition(async (position) => {
-          console.log('📍 Location obtained:', position.coords.latitude, position.coords.longitude);
+          const { latitude, longitude } = position.coords;
+          setUserLocation({ lat: latitude, lng: longitude });
+          
           const { error: locationError } = await supabase
             .from('craver_locations')
             .upsert({
               user_id: user.id,
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
+              lat: latitude,
+              lng: longitude
             });
 
           if (locationError) {
             console.error('❌ Location update error:', locationError);
           } else {
             console.log('✅ Location updated successfully');
+            toast({
+              title: "Location Set",
+              description: "Using your current location for order assignments.",
+            });
           }
         }, async (error) => {
           console.error('❌ Geolocation error:', error);
-          console.log('📍 Using fallback Toledo location...');
-          
-          // Fallback to Toledo coordinates when geolocation fails
+          // Fallback to Toledo coordinates
           const { error: locationError } = await supabase
             .from('craver_locations')
             .upsert({
@@ -452,7 +561,7 @@ export const MobileDriverDashboard: React.FC = () => {
           if (locationError) {
             console.error('❌ Fallback location update error:', locationError);
           } else {
-            console.log('✅ Fallback location updated successfully');
+            console.log('✅ Fallback location set successfully');
             toast({
               title: "Location Set",
               description: "Using Toledo location for order assignments.",
@@ -498,6 +607,30 @@ export const MobileDriverDashboard: React.FC = () => {
       setupRealtimeListener(user.id);
 
       console.log('✅ Successfully went online!');
+
+      // Keep driver online by periodically updating database status
+      const keepAliveInterval = setInterval(async () => {
+        try {
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          if (currentUser && (driverState === 'online_searching' || driverState === 'on_delivery')) {
+            await supabase
+              .from('driver_profiles')
+              .update({ 
+                status: 'online',
+                is_available: true 
+              })
+              .eq('user_id', currentUser.id);
+            console.log('💓 Keep-alive ping sent');
+          } else {
+            clearInterval(keepAliveInterval);
+          }
+        } catch (error) {
+          console.error('Keep-alive error:', error);
+        }
+      }, 30000); // Ping every 30 seconds
+
+      // Store interval ID to clear later
+      (window as any).driverKeepAlive = keepAliveInterval;
 
     } catch (error) {
       console.error('❌ Error going online:', error);
@@ -596,6 +729,12 @@ export const MobileDriverDashboard: React.FC = () => {
             is_available: false 
           })
           .eq('user_id', user.id);
+      }
+      
+      // Clear keep-alive interval
+      if ((window as any).driverKeepAlive) {
+        clearInterval((window as any).driverKeepAlive);
+        delete (window as any).driverKeepAlive;
       }
       
       setDriverState('offline');
