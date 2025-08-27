@@ -65,6 +65,8 @@ export const MobileDriverDashboard: React.FC = () => {
     walk: false,
     motorcycle: false,
   });
+  const [availableOrders, setAvailableOrders] = useState<any[]>([]);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   
   const { toast } = useToast();
 
@@ -244,6 +246,87 @@ export const MobileDriverDashboard: React.FC = () => {
       }, 1000);
       return () => clearInterval(timer);
     }
+  }, [driverState]);
+
+  // Continuous location tracking when online
+  useEffect(() => {
+    if (driverState !== 'online_searching' && driverState !== 'on_delivery') return;
+
+    const trackLocation = async () => {
+      if (!navigator.geolocation) return;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const updateLocation = async (position: GeolocationPosition) => {
+        const { latitude, longitude } = position.coords;
+        setUserLocation({ lat: latitude, lng: longitude });
+        
+        // Update database with new location
+        await supabase
+          .from('craver_locations')
+          .upsert({
+            user_id: user.id,
+            lat: latitude,
+            lng: longitude
+          });
+      };
+
+      // Get initial location
+      navigator.geolocation.getCurrentPosition(updateLocation, 
+        (error) => console.error('Location error:', error),
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
+      );
+
+      // Watch location changes
+      const watchId = navigator.geolocation.watchPosition(updateLocation,
+        (error) => console.error('Location tracking error:', error),
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+      );
+
+      return () => {
+        navigator.geolocation.clearWatch(watchId);
+      };
+    };
+
+    trackLocation();
+  }, [driverState]);
+
+  // Fetch available orders when online
+  useEffect(() => {
+    if (driverState !== 'online_searching') return;
+
+    const fetchOrders = async () => {
+      const { data: orders, error } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          pickup_name,
+          pickup_address, 
+          pickup_lat,
+          pickup_lng,
+          dropoff_name,
+          dropoff_address,
+          dropoff_lat,
+          dropoff_lng,
+          payout_cents,
+          distance_km,
+          status,
+          assigned_craver_id
+        `)
+        .eq('status', 'pending')
+        .is('assigned_craver_id', null);
+
+      if (!error && orders) {
+        setAvailableOrders(orders);
+      }
+    };
+
+    fetchOrders();
+    
+    // Refresh orders every 30 seconds
+    const interval = setInterval(fetchOrders, 30000);
+    return () => clearInterval(interval);
   }, [driverState]);
 
   // Remove demo offer logic - this was interfering with real assignments
@@ -542,9 +625,14 @@ export const MobileDriverDashboard: React.FC = () => {
       {/* Map background - positioned behind content */}
       <div className="absolute inset-0 z-0">
         <LeafletMap 
-          orders={[]} 
+          orders={driverState === 'online_searching' ? availableOrders : []} 
           activeOrder={null} 
-          onOrderClick={() => {}} 
+          onOrderClick={(order) => {
+            toast({
+              title: `Order from ${order.pickup_name}`,
+              description: `$${(order.payout_cents / 100).toFixed(2)} • ${(order.distance_km * 0.621371).toFixed(1)}mi`,
+            });
+          }} 
         />
       </div>
       
