@@ -154,16 +154,34 @@ export const MobileDriverDashboard: React.FC = () => {
   // Setup real-time listener for order assignments
   const setupRealtimeListener = (userId: string) => {
     console.log('🔔 Setting up real-time listener for user:', userId);
+    
     const channel = supabase
       .channel(`driver_${userId}`)
       .on('broadcast', { event: 'order_assignment' }, (payload) => {
-        console.log('📨 Received order assignment:', payload);
-        setCurrentAssignment(payload.payload);
+        console.log('📨 Received order assignment via broadcast:', payload);
+        
+        // Show order assignment modal
+        setCurrentOrderAssignment({
+          assignment_id: payload.payload.assignment_id,
+          order_id: payload.payload.order_id,
+          restaurant_name: payload.payload.restaurant_name,
+          pickup_address: payload.payload.pickup_address,
+          dropoff_address: payload.payload.dropoff_address,
+          payout_cents: payload.payload.payout_cents,
+          distance_km: payload.payload.distance_km,
+          distance_mi: payload.payload.distance_mi,
+          expires_at: payload.payload.expires_at,
+          estimated_time: payload.payload.estimated_time
+        });
+        setShowOrderModal(true);
         setDriverState('offer_presented');
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Real-time subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up real-time listener');
       supabase.removeChannel(channel);
     };
   };
@@ -294,46 +312,8 @@ export const MobileDriverDashboard: React.FC = () => {
     trackLocation();
   }, [driverState]);
 
-  // Listen for real-time order assignments when online
-  useEffect(() => {
-    if (driverState !== 'online_searching') return;
-
-    const setupListener = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      console.log('🔍 Listening for order assignments...');
-
-      // Subscribe to driver-specific channel for order assignments
-      const channel = supabase
-        .channel(`driver_${user.id}`)
-        .on('broadcast', { event: 'order_assignment' }, (payload) => {
-          console.log('📋 Received order assignment:', payload);
-          
-          // Show order assignment modal
-          setCurrentOrderAssignment({
-            assignment_id: payload.payload.assignment_id,
-            order_id: payload.payload.order_id,
-            restaurant_name: payload.payload.restaurant_name,
-            pickup_address: payload.payload.pickup_address,
-            dropoff_address: payload.payload.dropoff_address,
-            payout_cents: payload.payload.payout_cents,
-            distance_km: payload.payload.distance_km,
-            distance_mi: payload.payload.distance_mi,
-            expires_at: payload.payload.expires_at,
-            estimated_time: payload.payload.estimated_time
-          });
-          setShowOrderModal(true);
-        })
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    };
-
-    setupListener();
-  }, [driverState]);
+  // Listen for real-time order assignments when online - consolidated with setupRealtimeListener above
+  // This useEffect is now handled by the setupRealtimeListener function called from other places
 
   const handleSatisfyCraveNow = () => {
     if (!craverApplication) {
