@@ -189,10 +189,32 @@ export const MobileDriverDashboard: React.FC = () => {
   const setupRealtimeListener = (userId: string) => {
     console.log('🔔 Setting up real-time listener for user:', userId);
     
+    // Clean up any existing channel first
+    const existingChannels = supabase.getChannels();
+    existingChannels.forEach(channel => {
+      if (channel.topic.includes(`driver_${userId}`)) {
+        console.log('🧹 Cleaning up existing channel:', channel.topic);
+        supabase.removeChannel(channel);
+      }
+    });
+    
+    const channelName = `driver_${userId}`;
+    console.log('📡 Creating channel:', channelName);
+    
     const channel = supabase
-      .channel(`driver_${userId}`)
+      .channel(channelName, {
+        config: {
+          broadcast: { self: false }
+        }
+      })
       .on('broadcast', { event: 'order_assignment' }, (payload) => {
         console.log('📨 Received order assignment via broadcast:', payload);
+        
+        // Ensure we have valid payload data
+        if (!payload?.payload) {
+          console.error('❌ Invalid payload received:', payload);
+          return;
+        }
         
         // Show order assignment modal
         setCurrentOrderAssignment({
@@ -209,13 +231,31 @@ export const MobileDriverDashboard: React.FC = () => {
         });
         setShowOrderModal(true);
         setDriverState('offer_presented');
+        
+        // Trigger haptic feedback if available
+        if (navigator.vibrate) {
+          navigator.vibrate([200, 100, 200, 100, 200]);
+        }
+        
+        console.log('✅ Order assignment modal displayed');
       })
       .subscribe((status) => {
-        console.log('Real-time subscription status:', status);
+        console.log('📡 Real-time subscription status:', status, 'for channel:', channelName);
+        
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Successfully subscribed to order assignments');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Channel error, attempting to reconnect...');
+          // Retry after a delay
+          setTimeout(() => {
+            setupRealtimeListener(userId);
+          }, 3000);
+        }
       });
 
+    // Store the cleanup function
     return () => {
-      console.log('Cleaning up real-time listener');
+      console.log('🧹 Cleaning up real-time listener for:', channelName);
       supabase.removeChannel(channel);
     };
   };
