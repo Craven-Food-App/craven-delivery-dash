@@ -160,62 +160,17 @@ serve(async (req) => {
         }
 
         // Send notification via Supabase realtime
-        try {
-          console.log('Sending broadcast to driver:', driver.user_id)
-          
-          // Create and subscribe to the channel first
-          const channelName = `driver_${driver.user_id}`
-          const channel = supabase.channel(channelName)
-          
-          // Subscribe and wait for confirmation
-          await new Promise((resolve, reject) => {
-            channel.subscribe((status) => {
-              console.log('Channel subscription status:', status)
-              if (status === 'SUBSCRIBED') {
-                resolve(status)
-              } else if (status === 'CHANNEL_ERROR') {
-                reject(new Error('Channel subscription failed'))
-              }
-            })
-            
-            // Timeout after 3 seconds
-            setTimeout(() => {
-              reject(new Error('Channel subscription timeout'))
-            }, 3000)
-          })
-
-          // Send the broadcast
-          const broadcastResult = await channel.send({
-            type: 'broadcast',
-            event: 'order_assignment',
-            payload: notificationPayload
-          })
-          
-          console.log('Broadcast result:', broadcastResult)
-          
-          // Keep channel alive for a moment to ensure delivery
-          await new Promise(resolve => setTimeout(resolve, 1000))
-          
-          // Clean up the channel
-          await supabase.removeChannel(channel)
-
-        } catch (notificationError) {
-          console.error('Error sending notification:', notificationError)
-          
-          // Fallback: try simpler broadcast without waiting for subscription
-          try {
-            console.log('Attempting fallback broadcast...')
-            const fallbackChannel = supabase.channel(`driver_${driver.user_id}_fallback`)
-            await fallbackChannel.send({
-              type: 'broadcast', 
-              event: 'order_assignment',
-              payload: notificationPayload
-            })
-            console.log('Fallback broadcast sent')
-          } catch (fallbackError) {
-            console.error('Fallback broadcast also failed:', fallbackError)
-          }
-        }
+        const channel = supabase.channel(`driver_${driver.user_id}`)
+        await channel.subscribe()
+        
+        await channel.send({
+          type: 'broadcast',
+          event: 'order_assignment',
+          payload: notificationPayload
+        })
+        
+        // Clean up the channel
+        await supabase.removeChannel(channel)
 
         console.log('Notification sent to driver:', driver.user_id)
 

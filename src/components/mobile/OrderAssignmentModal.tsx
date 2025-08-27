@@ -32,42 +32,6 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
   const [isAccepting, setIsAccepting] = useState(false);
   const [isDeclining, setIsDeclining] = useState(false);
 
-  // Play notification sound when modal opens
-  useEffect(() => {
-    if (isOpen && assignment) {
-      // Create a longer, more noticeable notification sound
-      const audioContext = new AudioContext();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      // Create a sequence of tones for a longer notification
-      const playNotificationSequence = async () => {
-        for (let i = 0; i < 3; i++) {
-          const osc = audioContext.createOscillator();
-          const gain = audioContext.createGain();
-          
-          osc.connect(gain);
-          gain.connect(audioContext.destination);
-          
-          // Alternating tones
-          osc.frequency.setValueAtTime(i % 2 === 0 ? 800 : 600, audioContext.currentTime);
-          osc.type = 'sine';
-          
-          gain.gain.setValueAtTime(0.3, audioContext.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
-          
-          osc.start(audioContext.currentTime + i * 0.5);
-          osc.stop(audioContext.currentTime + i * 0.5 + 0.4);
-          
-          // Wait between tones
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-      };
-      
-      playNotificationSequence().catch(e => console.log('Could not play notification sound:', e));
-    }
-  }, [isOpen, assignment]);
-
   useEffect(() => {
     if (!isOpen || !assignment) return;
 
@@ -165,7 +129,7 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
   const payout = (assignment.payout_cents / 100).toFixed(2);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-md mx-4 rounded-lg">
         <div className="p-4">
           {/* Header with timer */}
