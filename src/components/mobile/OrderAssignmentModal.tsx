@@ -32,6 +32,16 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
   const [isAccepting, setIsAccepting] = useState(false);
   const [isDeclining, setIsDeclining] = useState(false);
 
+  // Play notification sound when modal opens
+  useEffect(() => {
+    if (isOpen && assignment) {
+      // Play notification sound
+      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAdAjiMz/LNeSsFJHfD8N+QQAoUXrTp66hVFApBn+DyDmAdAjiMz/LNeSsFJHfD8N+QQAoUXrTp66hVFApBn+DyvmAdAjiMz/LNeSwFJHfD8N+QQAoUXrTp66hVFApBn+DyvmAdAjiMz/LNeSwFJHfD8N+QQAoUXrTp66hVFApBn+DyvmAdAjiMz/LNeSwFJHfD8N+QQAoUXrTp66hVFApBn+DyvmAdAjiMz/LNeSwFJHfD8N+QQAoUXrTp66hVFApBn+DyvmAdAjiMz/LNeSwFJHfD8N+QQAoUXrTp66hVFApBn+DyvmAd');
+      audio.volume = 0.8;
+      audio.play().catch(e => console.log('Could not play notification sound:', e));
+    }
+  }, [isOpen, assignment]);
+
   useEffect(() => {
     if (!isOpen || !assignment) return;
 
@@ -129,7 +139,7 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
   const payout = (assignment.payout_cents / 100).toFixed(2);
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => {}}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md mx-4 rounded-lg">
         <div className="p-4">
           {/* Header with timer */}
