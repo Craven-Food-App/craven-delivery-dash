@@ -38,6 +38,7 @@ interface CraverProfile {
 
 export const AccountSection: React.FC = () => {
   const [profile, setProfile] = useState<CraverProfile | null>(null);
+  const [driverStats, setDriverStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState(true);
   const [locationSharing, setLocationSharing] = useState(true);
@@ -52,11 +53,33 @@ export const AccountSection: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Get craver application
       const { data: application } = await supabase
         .from('craver_applications')
         .select('*')
         .eq('user_id', user.id)
         .single();
+
+      // Get driver profile and stats
+      const { data: driverProfile } = await supabase
+        .from('driver_profiles')
+        .select('total_deliveries, rating')
+        .eq('user_id', user.id)
+        .single();
+
+      // Get recent earnings (this week)
+      const weekStart = new Date();
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      weekStart.setHours(0, 0, 0, 0);
+
+      const { data: weekOrders } = await supabase
+        .from('orders')
+        .select('payout_cents')
+        .eq('assigned_craver_id', user.id)
+        .eq('status', 'delivered')
+        .gte('created_at', weekStart.toISOString());
+
+      const weekEarnings = weekOrders?.reduce((sum, order) => sum + order.payout_cents, 0) || 0;
 
       if (application) {
         setProfile({
@@ -71,6 +94,12 @@ export const AccountSection: React.FC = () => {
           vehicle_model: application.vehicle_model,
           vehicle_color: application.vehicle_color,
           profile_photo: application.profile_photo
+        });
+
+        setDriverStats({
+          weekEarnings: weekEarnings / 100,
+          totalDeliveries: driverProfile?.total_deliveries || 0,
+          rating: driverProfile?.rating || 0
         });
       }
     } catch (error) {
@@ -211,21 +240,21 @@ export const AccountSection: React.FC = () => {
           <Card>
             <CardContent className="pt-4 pb-4 text-center">
               <DollarSign className="h-6 w-6 mx-auto mb-2 text-green-500" />
-              <p className="text-2xl font-bold">$247</p>
+              <p className="text-2xl font-bold">${driverStats?.weekEarnings?.toFixed(0) || '0'}</p>
               <p className="text-xs text-muted-foreground">This week</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4 pb-4 text-center">
               <CheckCircle className="h-6 w-6 mx-auto mb-2 text-blue-500" />
-              <p className="text-2xl font-bold">23</p>
+              <p className="text-2xl font-bold">{driverStats?.totalDeliveries || 0}</p>
               <p className="text-xs text-muted-foreground">Deliveries</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4 pb-4 text-center">
               <User className="h-6 w-6 mx-auto mb-2 text-purple-500" />
-              <p className="text-2xl font-bold">4.8</p>
+              <p className="text-2xl font-bold">{driverStats?.rating?.toFixed(1) || '0.0'}</p>
               <p className="text-xs text-muted-foreground">Rating</p>
             </CardContent>
           </Card>

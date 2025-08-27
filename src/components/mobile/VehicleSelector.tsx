@@ -18,12 +18,12 @@ interface VehicleSelectorProps {
   docsStatus: Record<VehicleType, boolean>;
 }
 
-const vehicleOptions: VehicleOption[] = [
-  { type: 'car', icon: Car, label: 'Car', docsComplete: true },
-  { type: 'bike', icon: Bike, label: 'Bike', docsComplete: true },
-  { type: 'scooter', icon: Zap, label: 'Scooter', docsComplete: false },
-  { type: 'walk', icon: PersonStanding, label: 'Walk', docsComplete: true },
-  { type: 'motorcycle', icon: Calendar, label: 'Motorcycle', docsComplete: false },
+const vehicleOptions: Omit<VehicleOption, 'docsComplete'>[] = [
+  { type: 'car', icon: Car, label: 'Car' },
+  { type: 'bike', icon: Bike, label: 'Bike' },
+  { type: 'scooter', icon: Zap, label: 'Scooter' },
+  { type: 'walk', icon: PersonStanding, label: 'Walk' },
+  { type: 'motorcycle', icon: Calendar, label: 'Motorcycle' },
 ];
 
 export const VehicleSelector: React.FC<VehicleSelectorProps> = ({

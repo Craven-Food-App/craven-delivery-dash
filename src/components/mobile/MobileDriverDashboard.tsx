@@ -57,17 +57,80 @@ export const MobileDriverDashboard: React.FC = () => {
   const [currentCity, setCurrentCity] = useState('Toledo');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showEndTimeSheet, setShowEndTimeSheet] = useState(false);
+  const [craverApplication, setCraverApplication] = useState<any>(null);
+  const [docsStatus, setDocsStatus] = useState<Record<VehicleType, boolean>>({
+    car: false,
+    bike: false,
+    scooter: false,
+    walk: false,
+    motorcycle: false,
+  });
   
   const { toast } = useToast();
 
-  // Mock docs status
-  const [docsStatus] = useState<Record<VehicleType, boolean>>({
-    car: true,
-    bike: true,
-    scooter: false,
-    walk: true,
-    motorcycle: false,
-  });
+  // Fetch real craver application data
+  useEffect(() => {
+    const fetchCraverData = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: application, error } = await supabase
+          .from('craver_applications')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'approved')
+          .single();
+
+        if (error) {
+          console.error('Error fetching craver application:', error);
+          return;
+        }
+
+        if (application) {
+          setCraverApplication(application);
+          
+          // Map database vehicle types to frontend types
+          const vehicleTypeMapping: Record<string, VehicleType> = {
+            'car': 'car',
+            'bike': 'bike', 
+            'scooter': 'scooter',
+            'motorcycle': 'motorcycle',
+            'walking': 'walk'
+          };
+          
+          const mappedVehicleType = vehicleTypeMapping[application.vehicle_type] || 'car';
+          setSelectedVehicle(mappedVehicleType);
+          
+          // Set document status based on application data
+          const newDocsStatus: Record<VehicleType, boolean> = {
+            car: false,
+            bike: false,
+            scooter: false,
+            walk: true, // Walking doesn't require documents
+            motorcycle: false,
+          };
+
+          // Check if documents are uploaded for the selected vehicle type
+          if (application.vehicle_type !== 'walking') {
+            const hasRequiredDocs = !!(
+              application.drivers_license_front && 
+              application.drivers_license_back &&
+              (application.vehicle_type === 'bike' || 
+               (application.insurance_document && application.vehicle_registration))
+            );
+            newDocsStatus[mappedVehicleType] = hasRequiredDocs;
+          }
+
+          setDocsStatus(newDocsStatus);
+        }
+      } catch (error) {
+        console.error('Error in fetchCraverData:', error);
+      }
+    };
+
+    fetchCraverData();
+  }, []);
 
   // Update time every minute
   useEffect(() => {
@@ -91,6 +154,15 @@ export const MobileDriverDashboard: React.FC = () => {
   // Real order assignments come through the WebSocket channel in handleGoOnline
 
   const handleSatisfyCraveNow = () => {
+    if (!craverApplication) {
+      toast({
+        title: "Application Required",
+        description: "You need an approved craver application to go online.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!docsStatus[selectedVehicle]) {
       toast({
         title: "Complete vehicle docs",
