@@ -21,12 +21,16 @@ interface OrderAssignmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   assignment: OrderAssignment | null;
+  onAccept?: (assignment: OrderAssignment) => void;
+  onDecline?: (assignment: OrderAssignment) => void;
 }
 
 export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
   isOpen,
   onClose,
-  assignment
+  assignment,
+  onAccept,
+  onDecline
 }) => {
   const [timeLeft, setTimeLeft] = useState(30);
   const [isAccepting, setIsAccepting] = useState(false);
@@ -126,9 +130,13 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
       if (orderError) throw orderError;
 
       console.log('✅ Order accepted successfully');
-      onClose();
       
-      // TODO: Navigate to delivery screen
+      // Notify parent component
+      if (onAccept && assignment) {
+        onAccept(assignment);
+      }
+      
+      onClose();
       
     } catch (error) {
       console.error('Error accepting order:', error);
@@ -154,6 +162,12 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
       if (error) throw error;
 
       console.log('❌ Order declined');
+      
+      // Notify parent component
+      if (onDecline && assignment) {
+        onDecline(assignment);
+      }
+      
       onClose();
       
     } catch (error) {

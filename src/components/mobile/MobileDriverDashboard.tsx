@@ -455,50 +455,8 @@ export const MobileDriverDashboard: React.FC = () => {
     }
   };
 
-  const handleAcceptAssignment = async (assignmentId: string) => {
-    try {
-      // Update assignment status to accepted
-      const { error: assignmentError } = await supabase
-        .from('order_assignments')
-        .update({ 
-          status: 'accepted',
-          response_time_seconds: Math.floor((Date.now() - new Date(currentOrderAssignment?.expires_at || '').getTime()) / 1000)
-        })
-        .eq('id', assignmentId);
-
-      if (assignmentError) {
-        console.error('Error updating assignment:', assignmentError);
-        throw assignmentError;
-      }
-
-      // Update order status to assigned
-      const { error: orderError } = await supabase
-        .from('orders')
-        .update({ status: 'assigned' })
-        .eq('id', currentOrderAssignment?.order_id);
-
-      if (orderError) {
-        console.error('Error updating order:', orderError);
-        throw orderError;
-      }
-
-      setCurrentAssignment(null);
-      setActiveDelivery(currentOrderAssignment);
-      setDriverState('on_delivery');
-      setShowOrderModal(false);
-      
-      toast({
-        title: "Order Accepted! 🚗",
-        description: "Navigate to pickup location to start your delivery.",
-      });
-    } catch (error) {
-      console.error('Error accepting assignment:', error);
-      toast({
-        title: "Error",
-        description: "Failed to accept order. Please try again.",
-        variant: "destructive",
-      });
-    }
+  const handleAcceptAssignment = (assignmentId: string) => {
+    console.log('Order accepted via legacy method');
   };
 
   const handleDeclineAssignment = (assignmentId: string) => {
@@ -785,8 +743,29 @@ export const MobileDriverDashboard: React.FC = () => {
         onClose={() => {
           setShowOrderModal(false);
           setCurrentOrderAssignment(null);
+          setDriverState('online_searching');
         }}
         assignment={currentOrderAssignment}
+        onAccept={(assignment) => {
+          setActiveDelivery({
+            ...assignment,
+            order_id: assignment.order_id,
+            assignment_id: assignment.assignment_id,
+            restaurant_name: assignment.restaurant_name,
+            pickup_address: assignment.pickup_address,
+            dropoff_address: assignment.dropoff_address,
+            payout_cents: assignment.payout_cents,
+            distance_mi: assignment.distance_mi
+          });
+          setDriverState('on_delivery');
+          setShowOrderModal(false);
+          setCurrentOrderAssignment(null);
+        }}
+        onDecline={(assignment) => {
+          setDriverState('online_searching');
+          setShowOrderModal(false);
+          setCurrentOrderAssignment(null);
+        }}
       />
 
       {/* Offer Card (Legacy) */}
