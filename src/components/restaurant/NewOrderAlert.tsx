@@ -31,9 +31,11 @@ export const NewOrderAlert = ({ restaurantId }: NewOrderAlertProps) => {
   };
 
   useEffect(() => {
+    console.log('Setting up real-time subscription for restaurant:', restaurantId);
+    
     // Set up real-time subscription for new orders for this restaurant
     const channel = supabase
-      .channel('new-orders')
+      .channel(`new-orders-${restaurantId}`)
       .on(
         'postgres_changes',
         {
@@ -54,9 +56,12 @@ export const NewOrderAlert = ({ restaurantId }: NewOrderAlertProps) => {
           });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('New order subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up new order subscription');
       supabase.removeChannel(channel);
     };
   }, [restaurantId, toast]);
