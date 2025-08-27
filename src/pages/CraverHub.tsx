@@ -78,7 +78,7 @@ const CraverHub = () => {
                 variant="outline" 
                 size="lg" 
                 className="text-lg px-8 py-6"
-                onClick={() => navigate('/driver-auth')}
+                onClick={() => navigate('/driver/auth')}
               >
                 Login
               </Button>
