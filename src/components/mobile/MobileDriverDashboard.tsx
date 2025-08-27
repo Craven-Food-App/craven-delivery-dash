@@ -68,6 +68,102 @@ export const MobileDriverDashboard: React.FC = () => {
   
   const { toast } = useToast();
 
+  // Restore driver state from localStorage and database on mount
+  useEffect(() => {
+    const restoreDriverState = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Check database for current driver status
+        const { data: driverProfile } = await supabase
+          .from('driver_profiles')
+          .select('status, is_available')
+          .eq('user_id', user.id)
+          .single();
+
+        // Check localStorage for session data
+        const savedState = localStorage.getItem('driver_session');
+        if (savedState) {
+          const sessionData = JSON.parse(savedState);
+          
+          // Restore session if driver is still online in database
+          if (driverProfile?.status === 'online' && driverProfile?.is_available) {
+            setDriverState('online_searching');
+            setEndTime(new Date(sessionData.endTime));
+            setSelectedVehicle(sessionData.selectedVehicle || 'car');
+            setEarningMode(sessionData.earningMode || 'perHour');
+            
+            // Calculate online time from session start
+            const sessionStart = new Date(sessionData.sessionStart);
+            const currentTime = new Date();
+            const timeDiff = Math.floor((currentTime.getTime() - sessionStart.getTime()) / 1000);
+            setOnlineTime(Math.max(0, timeDiff));
+
+            console.log('🔄 Restored driver session - staying online');
+            
+            // Re-establish real-time listener
+            setupRealtimeListener(user.id);
+          } else {
+            // Clear saved session if driver is offline in database
+            localStorage.removeItem('driver_session');
+            setDriverState('offline');
+          }
+        } else if (driverProfile?.status === 'online') {
+          // Driver is online in database but no local session - estimate they just started
+          setDriverState('online_searching');
+          const now = new Date();
+          const defaultEndTime = new Date(now.getTime() + 8 * 60 * 60 * 1000); // 8 hours from now
+          setEndTime(defaultEndTime);
+          setOnlineTime(0);
+          
+          // Save new session
+          saveDriverSession('online_searching', defaultEndTime, selectedVehicle, earningMode);
+          setupRealtimeListener(user.id);
+        }
+      } catch (error) {
+        console.error('Error restoring driver state:', error);
+      }
+    };
+
+    restoreDriverState();
+  }, []);
+
+  // Save driver session to localStorage
+  const saveDriverSession = (state: DriverState, endTime: Date, vehicle: VehicleType, mode: EarningMode) => {
+    if (state === 'online_searching') {
+      const sessionData = {
+        sessionStart: new Date().toISOString(),
+        endTime: endTime.toISOString(),
+        selectedVehicle: vehicle,
+        earningMode: mode,
+        driverState: state
+      };
+      localStorage.setItem('driver_session', JSON.stringify(sessionData));
+      console.log('💾 Saved driver session to localStorage');
+    } else {
+      localStorage.removeItem('driver_session');
+      console.log('🗑️ Removed driver session from localStorage');
+    }
+  };
+
+  // Setup real-time listener for order assignments
+  const setupRealtimeListener = (userId: string) => {
+    console.log('🔔 Setting up real-time listener for user:', userId);
+    const channel = supabase
+      .channel(`driver_${userId}`)
+      .on('broadcast', { event: 'order_assignment' }, (payload) => {
+        console.log('📨 Received order assignment:', payload);
+        setCurrentAssignment(payload.payload);
+        setDriverState('offer_presented');
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
+
   // Fetch real craver application data
   useEffect(() => {
     const fetchCraverData = async () => {
@@ -268,21 +364,16 @@ export const MobileDriverDashboard: React.FC = () => {
       setShowEndTimeSheet(false);
       setOnlineTime(0);
       
+      // Save session to localStorage for persistence
+      saveDriverSession('online_searching', endTime, selectedVehicle, earningMode);
+      
       toast({
         title: "You're now online!",
         description: "Looking for delivery offers in your area.",
       });
 
       // Set up real-time order assignment listener
-      console.log('🔔 Setting up real-time listener...');
-      const channel = supabase
-        .channel(`driver_${user.id}`)
-        .on('broadcast', { event: 'order_assignment' }, (payload) => {
-          console.log('📨 Received order assignment:', payload);
-          setCurrentAssignment(payload.payload);
-          setDriverState('offer_presented');
-        })
-        .subscribe();
+      setupRealtimeListener(user.id);
 
       console.log('✅ Successfully went online!');
 
@@ -329,12 +420,47 @@ export const MobileDriverDashboard: React.FC = () => {
       }
       
       setDriverState('online_paused');
+      // Keep session saved but update state
+      if (endTime) {
+        saveDriverSession('online_paused', endTime, selectedVehicle, earningMode);
+      }
+      
       toast({
         title: "Paused",
         description: "You won't receive new offers while paused.",
       });
     } catch (error) {
       console.error('Error pausing:', error);
+    }
+  };
+
+  const handleEndNow = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('driver_profiles')
+          .update({ 
+            status: 'offline',
+            is_available: false 
+          })
+          .eq('user_id', user.id);
+      }
+      
+      setDriverState('offline');
+      setEndTime(null);
+      setOnlineTime(0);
+      setCurrentAssignment(null);
+      
+      // Clear saved session
+      saveDriverSession('offline', new Date(), selectedVehicle, earningMode);
+      
+      toast({
+        title: "You're now offline",
+        description: "Your driving session has ended.",
+      });
+    } catch (error) {
+      console.error('Error going offline:', error);
     }
   };
 
@@ -480,6 +606,7 @@ export const MobileDriverDashboard: React.FC = () => {
           endTime={endTime}
           onlineTime={onlineTime}
           onPause={handlePause}
+          onEndNow={handleEndNow}
         />
       )}
 

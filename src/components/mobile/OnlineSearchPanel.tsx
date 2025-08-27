@@ -12,6 +12,7 @@ interface OnlineSearchPanelProps {
   endTime: Date;
   onlineTime?: number; // seconds online
   onPause: () => void;
+  onEndNow?: () => void;
 }
 
 export const OnlineSearchPanel: React.FC<OnlineSearchPanelProps> = ({
@@ -19,7 +20,8 @@ export const OnlineSearchPanel: React.FC<OnlineSearchPanelProps> = ({
   vehicleType,
   endTime,
   onlineTime = 0,
-  onPause
+  onPause,
+  onEndNow
 }) => {
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -44,15 +46,27 @@ export const OnlineSearchPanel: React.FC<OnlineSearchPanelProps> = ({
               <div className="w-3 h-3 bg-status-online rounded-full animate-pulse" />
               <h2 className="text-lg font-semibold">Finding offers…</h2>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onPause}
-              className="text-xs"
-            >
-              <Pause className="h-3 w-3 mr-1" />
-              Pause
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onPause}
+                className="text-xs"
+              >
+                <Pause className="h-3 w-3 mr-1" />
+                Pause
+              </Button>
+              {onEndNow && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={onEndNow}
+                  className="text-xs"
+                >
+                  End Now
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Progress indicator */}
