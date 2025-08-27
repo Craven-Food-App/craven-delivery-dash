@@ -46,45 +46,43 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ orders, activeOrder, onOrderCli
 
     console.log('Initializing map...');
     
-    // Initialize map
-    map.current = L.map(mapContainer.current).setView([37.7749, -122.4194], 12);
+    // Initialize map with a default view, we'll update it when we get user location
+    map.current = L.map(mapContainer.current).setView([41.6528, -83.6982], 12); // Toledo as default
 
-    // Add OpenStreetMap tiles (completely free, no API key needed)
+    // Add OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map.current);
 
-    // Check if geolocation is available
-    if (!navigator.geolocation) {
-      console.error('Geolocation is not supported by this browser');
-      setMapLoaded(true);
-      return;
+    setMapLoaded(true);
+
+    // Get user location immediately and center map
+    if (navigator.geolocation) {
+      console.log('Getting initial user location...');
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          console.log('Initial location received:', latitude, longitude);
+          
+          if (map.current) {
+            // Center the map on user's actual location
+            map.current.setView([latitude, longitude], 15);
+            setUserLocation({ lat: latitude, lng: longitude });
+          }
+        },
+        (error) => {
+          console.error('Failed to get initial location:', error);
+          // Stay with Toledo default if location fails
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
     }
 
-    console.log('Geolocation is available, requesting permission...');
-    
-    // Request permission first
-    navigator.permissions?.query({name: 'geolocation'}).then((result) => {
-      console.log('Geolocation permission status:', result.state);
-      if (result.state === 'denied') {
-        console.error('Geolocation permission denied');
-        alert('Location permission is required for this app to work properly. Please enable location access in your browser settings.');
-      }
-    }).catch((error) => {
-      console.log('Permission query not supported:', error);
-    });
-
-    map.current.on('load', () => {
-      setMapLoaded(true);
-    });
-
-    // Set map as loaded after a short delay since Leaflet doesn't have a clear 'load' event
-    const timer = setTimeout(() => {
-      setMapLoaded(true);
-    }, 1000);
-
     return () => {
-      clearTimeout(timer);
       if (map.current) {
         map.current.remove();
         map.current = null;
@@ -92,7 +90,7 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ orders, activeOrder, onOrderCli
     };
   }, []);
 
-  // Location tracking effect
+  // Enhanced location tracking effect
   useEffect(() => {
     if (!navigator.geolocation || !map.current) {
       console.log('Geolocation not supported or map not ready');
@@ -103,33 +101,37 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ orders, activeOrder, onOrderCli
       const userIcon = L.divIcon({
         html: `
           <div style="
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             background: #3b82f6;
-            border: 3px solid white;
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
-            animation: pulse 2s infinite;
+            border: 4px solid white;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+            position: relative;
           "></div>
-          <style>
-            @keyframes pulse {
-              0% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.6); }
-              50% { box-shadow: 0 0 25px rgba(59, 130, 246, 0.8); }
-              100% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.6); }
-            }
-          </style>
+          <div style="
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: white;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+          "></div>
         `,
         className: 'user-location-marker',
-        iconSize: [20, 20],
-        iconAnchor: [10, 10]
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
       });
 
       return L.marker([lat, lng], { icon: userIcon });
     };
 
     const updateUserLocation = (position: GeolocationPosition) => {
-      const { latitude, longitude } = position.coords;
-      console.log('Got user location:', latitude, longitude);
+      const { latitude, longitude, accuracy } = position.coords;
+      console.log(`📍 Location update: ${latitude}, ${longitude} (accuracy: ${accuracy}m)`);
+      
       setUserLocation({ lat: latitude, lng: longitude });
 
       if (!map.current) return;
@@ -143,61 +145,67 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ orders, activeOrder, onOrderCli
       userLocationMarker.current = createUserLocationMarker(latitude, longitude);
       userLocationMarker.current.addTo(map.current);
 
-      // Always center on user location when we get it
-      map.current.setView([latitude, longitude], 15);
+      // Center map on user location with smooth animation
+      map.current.flyTo([latitude, longitude], 16, {
+        duration: 1.0,
+        easeLinearity: 0.5
+      });
+
+      // Add popup to show exact coordinates
+      userLocationMarker.current.bindPopup(`
+        <div class="text-center">
+          <strong>Your Location</strong><br>
+          <small>Lat: ${latitude.toFixed(6)}<br>Lng: ${longitude.toFixed(6)}</small>
+        </div>
+      `);
     };
 
     const handleLocationError = (error: GeolocationPositionError) => {
-      console.error('Location tracking error:', error.message, 'Code:', error.code);
+      console.error('Location error:', error.message);
       
-      // Show user-friendly error message based on error type
-      if (error.code === 1) {
-        console.log('Location permission denied by user');
-      } else if (error.code === 2) {
-        console.log('Location unavailable');
-      } else if (error.code === 3) {
-        console.log('Location request timed out');
+      let errorMessage = 'Unable to get your location. ';
+      switch (error.code) {
+        case 1:
+          errorMessage += 'Location permission was denied. Please enable location access in your browser settings.';
+          break;
+        case 2:
+          errorMessage += 'Location information is unavailable.';
+          break;
+        case 3:
+          errorMessage += 'Location request timed out.';
+          break;
       }
+      
+      console.error(errorMessage);
     };
 
-    // First try to get current position immediately
+    // Get high-accuracy location immediately
+    console.log('🎯 Requesting high-accuracy location...');
     navigator.geolocation.getCurrentPosition(
       updateUserLocation,
-      (error) => {
-        console.log('Initial location request failed, trying with relaxed settings');
-        handleLocationError(error);
-        
-        // Fallback: try with more relaxed settings
-        navigator.geolocation.getCurrentPosition(
-          updateUserLocation,
-          handleLocationError,
-          {
-            enableHighAccuracy: false,
-            timeout: 30000,
-            maximumAge: 60000
-          }
-        );
-      },
+      handleLocationError,
       {
         enableHighAccuracy: true,
         timeout: 15000,
-        maximumAge: 10000
+        maximumAge: 0 // Always get fresh location
       }
     );
 
-    // Then start watching for location changes
+    // Start continuous tracking with high accuracy
+    console.log('🔄 Starting continuous location tracking...');
     watchId.current = navigator.geolocation.watchPosition(
       updateUserLocation,
       handleLocationError,
       {
-        enableHighAccuracy: false, // Less strict for continuous tracking
-        timeout: 20000,
-        maximumAge: 30000
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 5000 // Use cached location if less than 5 seconds old
       }
     );
 
     return () => {
       if (watchId.current !== null) {
+        console.log('🛑 Stopping location tracking');
         navigator.geolocation.clearWatch(watchId.current);
         watchId.current = null;
       }
@@ -206,7 +214,7 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ orders, activeOrder, onOrderCli
         userLocationMarker.current = null;
       }
     };
-  }, [map.current]);
+  }, [mapLoaded]); // Only start tracking after map is loaded
 
   useEffect(() => {
     if (!map.current) return;
