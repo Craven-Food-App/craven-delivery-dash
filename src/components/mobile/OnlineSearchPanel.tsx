@@ -44,7 +44,7 @@ export const OnlineSearchPanel: React.FC<OnlineSearchPanelProps> = ({
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-status-online rounded-full animate-pulse" />
-              <h2 className="text-lg font-semibold">Finding offers…</h2>
+              <h2 className="text-lg font-semibold">Online & Ready</h2>
             </div>
             <div className="flex gap-2">
               <Button

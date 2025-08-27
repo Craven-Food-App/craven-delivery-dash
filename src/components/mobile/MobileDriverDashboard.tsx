@@ -67,6 +67,8 @@ export const MobileDriverDashboard: React.FC = () => {
   });
   const [availableOrders, setAvailableOrders] = useState<any[]>([]);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [currentOrderAssignment, setCurrentOrderAssignment] = useState<any>(null);
   
   const { toast } = useToast();
 
@@ -292,69 +294,45 @@ export const MobileDriverDashboard: React.FC = () => {
     trackLocation();
   }, [driverState]);
 
-  // Continuously scan for orders and trigger auto-assignment when online
+  // Listen for real-time order assignments when online
   useEffect(() => {
     if (driverState !== 'online_searching') return;
 
-    const scanForOrders = async () => {
-      try {
-        console.log('🔍 Scanning for available orders...');
-        
-        const { data: orders, error } = await supabase
-          .from('orders')
-          .select(`
-            id,
-            pickup_name,
-            pickup_address, 
-            pickup_lat,
-            pickup_lng,
-            dropoff_name,
-            dropoff_address,
-            dropoff_lat,
-            dropoff_lng,
-            payout_cents,
-            distance_km,
-            status,
-            assigned_craver_id,
-            restaurant_id
-          `)
-          .eq('status', 'pending')
-          .is('assigned_craver_id', null);
+    const setupListener = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-        if (!error && orders) {
-          console.log(`📋 Found ${orders.length} pending orders`);
-          setAvailableOrders(orders);
+      console.log('🔍 Listening for order assignments...');
+
+      // Subscribe to driver-specific channel for order assignments
+      const channel = supabase
+        .channel(`driver_${user.id}`)
+        .on('broadcast', { event: 'order_assignment' }, (payload) => {
+          console.log('📋 Received order assignment:', payload);
           
-          // Trigger auto-assignment for each pending order
-          for (const order of orders) {
-            try {
-              console.log(`🎯 Triggering auto-assignment for order ${order.id}`);
-              
-              const { error: assignError } = await supabase.functions.invoke('auto-assign-orders', {
-                body: { orderId: order.id }
-              });
-              
-              if (assignError) {
-                console.error('Auto-assignment error:', assignError);
-              }
-            } catch (err) {
-              console.error('Error triggering auto-assignment:', err);
-            }
-          }
-        } else if (error) {
-          console.error('Error fetching orders:', error);
-        }
-      } catch (err) {
-        console.error('Error in scanForOrders:', err);
-      }
+          // Show order assignment modal
+          setCurrentOrderAssignment({
+            assignment_id: payload.payload.assignment_id,
+            order_id: payload.payload.order_id,
+            restaurant_name: payload.payload.restaurant_name,
+            pickup_address: payload.payload.pickup_address,
+            dropoff_address: payload.payload.dropoff_address,
+            payout_cents: payload.payload.payout_cents,
+            distance_km: payload.payload.distance_km,
+            distance_mi: payload.payload.distance_mi,
+            expires_at: payload.payload.expires_at,
+            estimated_time: payload.payload.estimated_time
+          });
+          setShowOrderModal(true);
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     };
 
-    // Initial scan
-    scanForOrders();
-    
-    // Scan every 15 seconds for new orders
-    const interval = setInterval(scanForOrders, 15000);
-    return () => clearInterval(interval);
+    setupListener();
   }, [driverState]);
 
   const handleSatisfyCraveNow = () => {
@@ -724,14 +702,14 @@ export const MobileDriverDashboard: React.FC = () => {
       )}
 
       {/* Order Assignment Modal */}
-      {currentAssignment && (
-        <OrderAssignmentModal
-          assignment={currentAssignment}
-          onAccept={handleAcceptAssignment}
-          onDecline={handleDeclineAssignment}
-          onExpire={handleAssignmentExpire}
-        />
-      )}
+      <OrderAssignmentModal
+        isOpen={showOrderModal}
+        onClose={() => {
+          setShowOrderModal(false);
+          setCurrentOrderAssignment(null);
+        }}
+        assignment={currentOrderAssignment}
+      />
 
       {/* Offer Card (Legacy) */}
       {currentOffer && driverState === 'offer_presented' && !currentAssignment && (
