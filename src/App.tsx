@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import Index from "./pages/Index";
 import DriverAuth from "./pages/DriverAuth";
 import CraverHub from "./pages/CraverHub";
@@ -32,7 +32,6 @@ const App = () => (
           <Route path="/driver/auth" element={<DriverAuth />} />
           <Route path="/craver" element={<CraverHub />} />
           <Route path="/craver-dashboard" element={<CraverDashboard />} />
-          <Route path="/craver/dashboard" element={<CraverDashboard />} />
           <Route path="/craver/mobile" element={
             <AccessGuard fallback={
               <div className="flex flex-col items-center justify-center min-h-screen p-4">
@@ -40,9 +39,9 @@ const App = () => (
                 <p className="text-muted-foreground text-center mb-4">
                   You need an approved Craver application to access the mobile portal.
                 </p>
-                <a href="/craver" className="text-primary hover:underline">
+                <Link to="/craver" className="text-primary hover:underline">
                   Apply to become a Craver →
-                </a>
+                </Link>
               </div>
             }>
               <MobileDriverDashboard />
