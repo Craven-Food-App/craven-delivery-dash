@@ -6,6 +6,8 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Minus, Plus, Trash2, Truck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { CustomerOrderForm } from "./CustomerOrderForm";
 
 interface Modifier {
   id: string;
@@ -34,6 +36,11 @@ interface Restaurant {
   delivery_fee_cents: number;
   min_delivery_time: number;
   max_delivery_time: number;
+  latitude?: number;
+  longitude?: number;
+  address: string;
+  city: string;
+  state: string;
 }
 
 interface CartTotals {
@@ -47,11 +54,12 @@ interface CartSidebarProps {
   isOpen: boolean;
   onClose: () => void;
   cart: CartItem[];
-  restaurant: Restaurant;
+  restaurant: Restaurant & { id: string };
   totals: CartTotals;
   deliveryMethod: 'delivery' | 'pickup';
   onDeliveryMethodChange: (method: 'delivery' | 'pickup') => void;
   onUpdateQuantity: (itemId: string, quantity: number) => void;
+  onOrderComplete: () => void;
 }
 
 export const CartSidebar = ({ 
@@ -62,23 +70,122 @@ export const CartSidebar = ({
   totals, 
   deliveryMethod,
   onDeliveryMethodChange,
-  onUpdateQuantity 
+  onUpdateQuantity,
+  onOrderComplete 
 }: CartSidebarProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showOrderForm, setShowOrderForm] = useState(false);
   const { toast } = useToast();
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
+    setShowOrderForm(true);
+  };
+
+  const handleOrderSubmit = async (customerInfo: any) => {
     setIsProcessing(true);
     
-    // Simulate order processing
-    setTimeout(() => {
+    try {
+      // Create customer order
+      const orderData = {
+        customer_name: customerInfo.name,
+        customer_email: customerInfo.email,
+        customer_phone: customerInfo.phone,
+        restaurant_id: restaurant.id,
+        order_items: cart.map(item => ({
+          id: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price_cents: item.price_cents,
+          modifiers: item.modifiers?.map(mod => ({
+            id: mod.id,
+            name: mod.name,
+            price_cents: mod.price_cents
+          })) || [],
+          special_instructions: item.special_instructions
+        })),
+        subtotal_cents: totals.subtotal,
+        delivery_fee_cents: totals.deliveryFee,
+        tax_cents: totals.tax,
+        total_cents: totals.total,
+        delivery_method: deliveryMethod,
+        delivery_address: customerInfo.deliveryAddress,
+        special_instructions: customerInfo.specialInstructions,
+        order_status: 'pending',
+        payment_status: 'paid', // Assuming payment is handled elsewhere
+        estimated_pickup_time: new Date(Date.now() + restaurant.min_delivery_time * 60000).toISOString(),
+        estimated_delivery_time: deliveryMethod === 'delivery' 
+          ? new Date(Date.now() + restaurant.max_delivery_time * 60000).toISOString() 
+          : null
+      };
+
+      const { data: customerOrder, error: orderError } = await supabase
+        .from('customer_orders')
+        .insert(orderData)
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // For delivery orders, create a delivery order for cravers
+      if (deliveryMethod === 'delivery') {
+        // Calculate approximate coordinates (in real app, use geocoding API)
+        const pickupLat = restaurant.latitude || 40.7128;
+        const pickupLng = restaurant.longitude || -74.0060;
+        const dropoffLat = pickupLat + (Math.random() - 0.5) * 0.01;
+        const dropoffLng = pickupLng + (Math.random() - 0.5) * 0.01;
+        
+        const distance = Math.random() * 8 + 2; // 2-10 km
+        const payout = Math.round((distance * 2.5 + 3) * 100); // $3 base + $2.50/km
+
+        const deliveryOrderData = {
+          customer_order_id: customerOrder.id,
+          pickup_address: `${restaurant.address}, ${restaurant.city}, ${restaurant.state}`,
+          pickup_lat: pickupLat,
+          pickup_lng: pickupLng,
+          dropoff_address: customerInfo.deliveryAddress,
+          dropoff_lat: dropoffLat,
+          dropoff_lng: dropoffLng,
+          distance_km: distance,
+          payout_cents: payout,
+          status: 'pending' as const,
+          restaurant_id: restaurant.id,
+          pickup_name: restaurant.name,
+          dropoff_name: customerInfo.name
+        };
+
+        const { error: deliveryError } = await supabase
+          .from('delivery_orders')
+          .insert(deliveryOrderData);
+
+        if (deliveryError) {
+          console.error('Error creating delivery order:', deliveryError);
+          // Don't fail the customer order if delivery order creation fails
+        }
+      }
+
       toast({
-        title: "Order placed successfully!",
-        description: `Your order from ${restaurant.name} has been confirmed. Estimated delivery: ${restaurant.min_delivery_time}-${restaurant.max_delivery_time} minutes.`,
+        title: "Order placed successfully! 🎉",
+        description: `Order #${customerOrder.id.slice(-8)} has been confirmed. ${
+          deliveryMethod === 'delivery' 
+            ? `Estimated delivery: ${restaurant.min_delivery_time}-${restaurant.max_delivery_time} minutes`
+            : `Ready for pickup in ${restaurant.min_delivery_time}-${restaurant.max_delivery_time} minutes`
+        }`,
       });
-      setIsProcessing(false);
+
+      setShowOrderForm(false);
+      onOrderComplete();
       onClose();
-    }, 2000);
+      
+    } catch (error) {
+      console.error('Error placing order:', error);
+      toast({
+        title: "Error placing order",
+        description: "Please try again or contact the restaurant directly.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (cart.length === 0) {
@@ -246,6 +353,15 @@ export const CartSidebar = ({
             {isProcessing ? "Processing..." : `Place Order • $${(totals.total / 100).toFixed(2)}`}
           </Button>
         </div>
+
+        <CustomerOrderForm
+          isOpen={showOrderForm}
+          onClose={() => setShowOrderForm(false)}
+          onSubmit={handleOrderSubmit}
+          deliveryMethod={deliveryMethod}
+          isProcessing={isProcessing}
+          orderTotal={totals.total}
+        />
       </SheetContent>
     </Sheet>
   );

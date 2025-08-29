@@ -27,6 +27,8 @@ interface Restaurant {
   rating: number;
   total_reviews: number;
   image_url: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface MenuCategory {
@@ -553,10 +555,11 @@ const RestaurantDetail = () => {
         onClose={() => setShowCart(false)}
         cart={cart}
         restaurant={restaurant}
-        totals={getCartTotal()}
-        deliveryMethod={deliveryMethod}
-        onDeliveryMethodChange={setDeliveryMethod}
-        onUpdateQuantity={updateCartItemQuantity}
+          totals={getCartTotal()}
+          deliveryMethod={deliveryMethod}
+          onDeliveryMethodChange={setDeliveryMethod}
+          onUpdateQuantity={updateCartItemQuantity}
+          onOrderComplete={() => setCart([])} // Clear cart after order
       />
     </div>
   );

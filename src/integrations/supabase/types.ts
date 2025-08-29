@@ -149,6 +149,161 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_orders: {
+        Row: {
+          created_at: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string | null
+          delivery_address: string | null
+          delivery_fee_cents: number
+          delivery_lat: number | null
+          delivery_lng: number | null
+          delivery_method: string
+          estimated_delivery_time: string | null
+          estimated_pickup_time: string | null
+          id: string
+          order_items: Json
+          order_status: string
+          payment_status: string
+          restaurant_id: string
+          special_instructions: string | null
+          subtotal_cents: number
+          tax_cents: number
+          total_cents: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          customer_phone?: string | null
+          delivery_address?: string | null
+          delivery_fee_cents?: number
+          delivery_lat?: number | null
+          delivery_lng?: number | null
+          delivery_method: string
+          estimated_delivery_time?: string | null
+          estimated_pickup_time?: string | null
+          id?: string
+          order_items: Json
+          order_status?: string
+          payment_status?: string
+          restaurant_id: string
+          special_instructions?: string | null
+          subtotal_cents: number
+          tax_cents: number
+          total_cents: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string | null
+          delivery_address?: string | null
+          delivery_fee_cents?: number
+          delivery_lat?: number | null
+          delivery_lng?: number | null
+          delivery_method?: string
+          estimated_delivery_time?: string | null
+          estimated_pickup_time?: string | null
+          id?: string
+          order_items?: Json
+          order_status?: string
+          payment_status?: string
+          restaurant_id?: string
+          special_instructions?: string | null
+          subtotal_cents?: number
+          tax_cents?: number
+          total_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_orders_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_orders: {
+        Row: {
+          assigned_craver_id: string | null
+          created_at: string
+          customer_order_id: string
+          distance_km: number
+          dropoff_address: string
+          dropoff_lat: number
+          dropoff_lng: number
+          dropoff_name: string
+          id: string
+          payout_cents: number
+          pickup_address: string
+          pickup_lat: number
+          pickup_lng: number
+          pickup_name: string
+          restaurant_id: string
+          status: Database["public"]["Enums"]["order_status"]
+          updated_at: string
+        }
+        Insert: {
+          assigned_craver_id?: string | null
+          created_at?: string
+          customer_order_id: string
+          distance_km: number
+          dropoff_address: string
+          dropoff_lat: number
+          dropoff_lng: number
+          dropoff_name: string
+          id?: string
+          payout_cents: number
+          pickup_address: string
+          pickup_lat: number
+          pickup_lng: number
+          pickup_name: string
+          restaurant_id: string
+          status?: Database["public"]["Enums"]["order_status"]
+          updated_at?: string
+        }
+        Update: {
+          assigned_craver_id?: string | null
+          created_at?: string
+          customer_order_id?: string
+          distance_km?: number
+          dropoff_address?: string
+          dropoff_lat?: number
+          dropoff_lng?: number
+          dropoff_name?: string
+          id?: string
+          payout_cents?: number
+          pickup_address?: string
+          pickup_lat?: number
+          pickup_lng?: number
+          pickup_name?: string
+          restaurant_id?: string
+          status?: Database["public"]["Enums"]["order_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_orders_customer_order_id_fkey"
+            columns: ["customer_order_id"]
+            isOneToOne: false
+            referencedRelation: "customer_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_orders_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       driver_profiles: {
         Row: {
           created_at: string | null

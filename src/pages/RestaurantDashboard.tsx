@@ -9,9 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Store, Menu, Settings, BarChart } from "lucide-react";
 import Header from "@/components/Header";
 import { MenuManagement } from "@/components/restaurant/MenuManagement";
-import { RestaurantOrderManagement } from "@/components/restaurant/RestaurantOrderManagement";
 import { RestaurantSettings } from "@/components/restaurant/RestaurantSettings";
 import { NewOrderAlert } from "@/components/restaurant/NewOrderAlert";
+import { RestaurantCustomerOrderManagement } from "@/components/restaurant/RestaurantCustomerOrderManagement";
 
 interface Restaurant {
   id: string;
@@ -269,7 +269,7 @@ const RestaurantDashboard = () => {
           </TabsContent>
 
           <TabsContent value="orders" className="space-y-4">
-            <RestaurantOrderManagement restaurantId={restaurant.id} />
+            <RestaurantCustomerOrderManagement restaurantId={restaurant.id} />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-4">
