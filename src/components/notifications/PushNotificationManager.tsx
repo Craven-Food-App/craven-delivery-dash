@@ -1,0 +1,227 @@
+import React, { useEffect, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Bell, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  notification_type: string;
+  is_read: boolean;
+  created_at: string;
+  order_id?: string;
+}
+
+interface PushNotificationManagerProps {
+  userId: string;
+}
+
+const PushNotificationManager = ({ userId }: PushNotificationManagerProps) => {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (!userId) return;
+
+    // Fetch existing notifications
+    const fetchNotifications = async () => {
+      const { data, error } = await supabase
+        .from('order_notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error('Error fetching notifications:', error);
+        return;
+      }
+
+      setNotifications(data || []);
+      setUnreadCount(data?.filter(n => !n.is_read).length || 0);
+    };
+
+    fetchNotifications();
+
+    // Set up real-time subscription for push notifications
+    const channel = supabase
+      .channel(`user_notifications_${userId}`)
+      .on('broadcast', { event: 'push_notification' }, (payload) => {
+        const { title, message, data } = payload.payload;
+        
+        // Show toast notification
+        toast({
+          title,
+          description: message,
+          duration: 5000,
+        });
+
+        // Add to notifications list
+        const newNotification: Notification = {
+          id: crypto.randomUUID(),
+          title,
+          message,
+          notification_type: data?.type || 'general',
+          is_read: false,
+          created_at: new Date().toISOString(),
+          order_id: data?.orderId,
+        };
+
+        setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
+        setUnreadCount(prev => prev + 1);
+      })
+      .subscribe();
+
+    // Also listen for database changes
+    const dbChannel = supabase
+      .channel('notification_changes')
+      .on('postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'order_notifications',
+          filter: `user_id=eq.${userId}`
+        },
+        (payload) => {
+          const newNotification = payload.new as Notification;
+          setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
+          setUnreadCount(prev => prev + 1);
+          
+          toast({
+            title: newNotification.title,
+            description: newNotification.message,
+            duration: 5000,
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+      dbChannel.unsubscribe();
+    };
+  }, [userId, toast]);
+
+  const markAsRead = async (notificationId: string) => {
+    const { error } = await supabase
+      .from('order_notifications')
+      .update({ is_read: true })
+      .eq('id', notificationId);
+
+    if (!error) {
+      setNotifications(prev =>
+        prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    }
+  };
+
+  const markAllAsRead = async () => {
+    const { error } = await supabase
+      .from('order_notifications')
+      .update({ is_read: true })
+      .eq('user_id', userId)
+      .eq('is_read', false);
+
+    if (!error) {
+      setNotifications(prev =>
+        prev.map(n => ({ ...n, is_read: true }))
+      );
+      setUnreadCount(0);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setShowNotifications(!showNotifications)}
+        className="relative"
+      >
+        <Bell className="h-5 w-5" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
+      </Button>
+
+      {showNotifications && (
+        <div className="absolute right-0 top-full mt-2 w-80 bg-background border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+          <div className="p-4 border-b flex items-center justify-between">
+            <h3 className="font-semibold">Notifications</h3>
+            <div className="flex items-center gap-2">
+              {unreadCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={markAllAsRead}
+                  className="text-xs"
+                >
+                  Mark all read
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowNotifications(false)}
+                className="h-6 w-6"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="p-2">
+            {notifications.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8 text-sm">
+                No notifications yet
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {notifications.map((notification) => (
+                  <Card
+                    key={notification.id}
+                    className={`cursor-pointer transition-colors ${
+                      !notification.is_read ? 'bg-blue-50 border-blue-200' : ''
+                    }`}
+                    onClick={() => {
+                      if (!notification.is_read) {
+                        markAsRead(notification.id);
+                      }
+                    }}
+                  >
+                    <CardContent className="p-3">
+                      <div className="space-y-1">
+                        <div className="flex items-start justify-between">
+                          <h4 className="font-medium text-sm">{notification.title}</h4>
+                          {!notification.is_read && (
+                            <div className="h-2 w-2 bg-blue-500 rounded-full mt-1"></div>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {notification.message}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(notification.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default PushNotificationManager;

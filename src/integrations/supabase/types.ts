@@ -168,6 +168,8 @@ export type Database = {
           payment_status: string
           restaurant_id: string
           special_instructions: string | null
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
           subtotal_cents: number
           tax_cents: number
           total_cents: number
@@ -191,6 +193,8 @@ export type Database = {
           payment_status?: string
           restaurant_id: string
           special_instructions?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
           subtotal_cents: number
           tax_cents: number
           total_cents: number
@@ -214,6 +218,8 @@ export type Database = {
           payment_status?: string
           restaurant_id?: string
           special_instructions?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
           subtotal_cents?: number
           tax_cents?: number
           total_cents?: number
@@ -547,6 +553,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      order_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string
+          notification_type: string
+          order_id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          notification_type: string
+          order_id: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          notification_type?: string
+          order_id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       orders: {
         Row: {

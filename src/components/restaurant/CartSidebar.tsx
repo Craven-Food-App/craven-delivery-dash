@@ -85,7 +85,7 @@ export const CartSidebar = ({
     setIsProcessing(true);
     
     try {
-      // Create customer order
+      // Create customer order with pending payment
       const orderData = {
         customer_name: customerInfo.name,
         customer_email: customerInfo.email,
@@ -111,13 +111,14 @@ export const CartSidebar = ({
         delivery_address: customerInfo.deliveryAddress,
         special_instructions: customerInfo.specialInstructions,
         order_status: 'pending',
-        payment_status: 'paid', // Assuming payment is handled elsewhere
+        payment_status: 'pending',
         estimated_pickup_time: new Date(Date.now() + restaurant.min_delivery_time * 60000).toISOString(),
         estimated_delivery_time: deliveryMethod === 'delivery' 
           ? new Date(Date.now() + restaurant.max_delivery_time * 60000).toISOString() 
           : null
       };
 
+      // Create customer order
       const { data: customerOrder, error: orderError } = await supabase
         .from('customer_orders')
         .insert(orderData)
@@ -126,18 +127,34 @@ export const CartSidebar = ({
 
       if (orderError) throw orderError;
 
-      // For delivery orders, create a delivery order for cravers
+      // Create Stripe payment session
+      const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-payment', {
+        body: {
+          orderTotal: totals.total,
+          customerInfo,
+          orderId: customerOrder.id
+        }
+      });
+
+      if (paymentError) throw paymentError;
+
+      // Store session ID for later verification
+      await supabase
+        .from('customer_orders')
+        .update({ stripe_session_id: paymentData.session_id })
+        .eq('id', customerOrder.id);
+
+      // For delivery orders, create delivery order entry
       if (deliveryMethod === 'delivery') {
-        // Calculate approximate coordinates (in real app, use geocoding API)
         const pickupLat = restaurant.latitude || 40.7128;
         const pickupLng = restaurant.longitude || -74.0060;
         const dropoffLat = pickupLat + (Math.random() - 0.5) * 0.01;
         const dropoffLng = pickupLng + (Math.random() - 0.5) * 0.01;
         
-        const distance = Math.random() * 8 + 2; // 2-10 km
-        const payout = Math.round((distance * 2.5 + 3) * 100); // $3 base + $2.50/km
+        const distance = Math.random() * 8 + 2;
+        const payout = Math.round((distance * 2.5 + 3) * 100);
 
-        const deliveryOrderData = {
+        await supabase.from('delivery_orders').insert({
           customer_order_id: customerOrder.id,
           pickup_address: `${restaurant.address}, ${restaurant.city}, ${restaurant.state}`,
           pickup_lat: pickupLat,
@@ -147,34 +164,15 @@ export const CartSidebar = ({
           dropoff_lng: dropoffLng,
           distance_km: distance,
           payout_cents: payout,
-          status: 'pending' as const,
+          status: 'pending',
           restaurant_id: restaurant.id,
           pickup_name: restaurant.name,
           dropoff_name: customerInfo.name
-        };
-
-        const { error: deliveryError } = await supabase
-          .from('delivery_orders')
-          .insert(deliveryOrderData);
-
-        if (deliveryError) {
-          console.error('Error creating delivery order:', deliveryError);
-          // Don't fail the customer order if delivery order creation fails
-        }
+        });
       }
 
-      toast({
-        title: "Order placed successfully! 🎉",
-        description: `Order #${customerOrder.id.slice(-8)} has been confirmed. ${
-          deliveryMethod === 'delivery' 
-            ? `Estimated delivery: ${restaurant.min_delivery_time}-${restaurant.max_delivery_time} minutes`
-            : `Ready for pickup in ${restaurant.min_delivery_time}-${restaurant.max_delivery_time} minutes`
-        }`,
-      });
-
-      setShowOrderForm(false);
-      onOrderComplete();
-      onClose();
+      // Redirect to Stripe Checkout
+      window.location.href = paymentData.url;
       
     } catch (error) {
       console.error('Error placing order:', error);
