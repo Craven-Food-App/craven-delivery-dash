@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import DriverAuth from "./pages/DriverAuth";
 import CraverHub from "./pages/CraverHub";
 import CraverDashboard from "./pages/CraverDashboard";
+import CustomerDashboard from "./pages/CustomerDashboard";
 import { MobileDriverDashboard } from "./components/mobile/MobileDriverDashboard";
 import AccessGuard from "./components/AccessGuard";
 import Auth from "./pages/Auth";
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/driver/auth" element={<DriverAuth />} />
           <Route path="/craver" element={<CraverHub />} />
           <Route path="/craver-dashboard" element={<CraverDashboard />} />
+          <Route path="/customer-dashboard" element={<CustomerDashboard />} />
           <Route path="/mobile" element={
             <AccessGuard fallback={
               <div className="flex flex-col items-center justify-center min-h-screen p-4">

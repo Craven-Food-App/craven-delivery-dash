@@ -235,6 +235,51 @@ export type Database = {
           },
         ]
       }
+      delivery_addresses: {
+        Row: {
+          city: string
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          label: string
+          latitude: number | null
+          longitude: number | null
+          state: string
+          street_address: string
+          updated_at: string | null
+          user_id: string
+          zip_code: string
+        }
+        Insert: {
+          city: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          label?: string
+          latitude?: number | null
+          longitude?: number | null
+          state: string
+          street_address: string
+          updated_at?: string | null
+          user_id: string
+          zip_code: string
+        }
+        Update: {
+          city?: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          label?: string
+          latitude?: number | null
+          longitude?: number | null
+          state?: string
+          street_address?: string
+          updated_at?: string | null
+          user_id?: string
+          zip_code?: string
+        }
+        Relationships: []
+      }
       delivery_orders: {
         Row: {
           assigned_craver_id: string | null
@@ -306,6 +351,50 @@ export type Database = {
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_earnings: {
+        Row: {
+          amount_cents: number
+          driver_id: string
+          earned_at: string | null
+          id: string
+          order_id: string | null
+          paid_out_at: string | null
+          payout_method: string | null
+          tip_cents: number | null
+          total_cents: number | null
+        }
+        Insert: {
+          amount_cents: number
+          driver_id: string
+          earned_at?: string | null
+          id?: string
+          order_id?: string | null
+          paid_out_at?: string | null
+          payout_method?: string | null
+          tip_cents?: number | null
+          total_cents?: number | null
+        }
+        Update: {
+          amount_cents?: number
+          driver_id?: string
+          earned_at?: string | null
+          id?: string
+          order_id?: string | null
+          paid_out_at?: string | null
+          payout_method?: string | null
+          tip_cents?: number | null
+          total_cents?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_earnings_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "customer_orders"
             referencedColumns: ["id"]
           },
         ]
@@ -554,6 +643,53 @@ export type Database = {
           },
         ]
       }
+      order_feedback: {
+        Row: {
+          comments: string | null
+          created_at: string | null
+          customer_id: string | null
+          delivery_time_rating: number | null
+          driver_id: string | null
+          driver_rating: number | null
+          food_quality_rating: number | null
+          id: string
+          order_id: string
+          restaurant_rating: number | null
+        }
+        Insert: {
+          comments?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          delivery_time_rating?: number | null
+          driver_id?: string | null
+          driver_rating?: number | null
+          food_quality_rating?: number | null
+          id?: string
+          order_id: string
+          restaurant_rating?: number | null
+        }
+        Update: {
+          comments?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          delivery_time_rating?: number | null
+          driver_id?: string | null
+          driver_rating?: number | null
+          food_quality_rating?: number | null
+          id?: string
+          order_id?: string
+          restaurant_rating?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_feedback_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "customer_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_notifications: {
         Row: {
           created_at: string
@@ -652,6 +788,48 @@ export type Database = {
           },
         ]
       }
+      payment_methods: {
+        Row: {
+          brand: string | null
+          created_at: string | null
+          exp_month: number | null
+          exp_year: number | null
+          id: string
+          is_default: boolean | null
+          last4: string | null
+          provider: string
+          stripe_payment_method_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string | null
+          exp_month?: number | null
+          exp_year?: number | null
+          id?: string
+          is_default?: boolean | null
+          last4?: string | null
+          provider?: string
+          stripe_payment_method_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string | null
+          exp_month?: number | null
+          exp_year?: number | null
+          id?: string
+          is_default?: boolean | null
+          last4?: string | null
+          provider?: string
+          stripe_payment_method_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       restaurants: {
         Row: {
           address: string
@@ -730,6 +908,45 @@ export type Database = {
           total_reviews?: number | null
           updated_at?: string | null
           zip_code?: string
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          preferences: Json | null
+          role: string
+          settings: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          preferences?: Json | null
+          role?: string
+          settings?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          preferences?: Json | null
+          role?: string
+          settings?: Json | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
