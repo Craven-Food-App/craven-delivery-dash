@@ -14,7 +14,575 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      craver_applications: {
+        Row: {
+          background_check: boolean | null
+          city: string
+          created_at: string | null
+          date_of_birth: string
+          drivers_license: string
+          email: string
+          first_name: string
+          id: string
+          insurance_policy: string
+          insurance_provider: string
+          last_name: string
+          license_plate: string
+          phone: string
+          profile_photo: string | null
+          state: string
+          status: string | null
+          street_address: string
+          updated_at: string | null
+          user_id: string | null
+          vehicle_color: string
+          vehicle_inspection: boolean | null
+          vehicle_make: string
+          vehicle_model: string
+          vehicle_type: string
+          vehicle_year: number
+          zip_code: string
+        }
+        Insert: {
+          background_check?: boolean | null
+          city: string
+          created_at?: string | null
+          date_of_birth: string
+          drivers_license: string
+          email: string
+          first_name: string
+          id?: string
+          insurance_policy: string
+          insurance_provider: string
+          last_name: string
+          license_plate: string
+          phone: string
+          profile_photo?: string | null
+          state: string
+          status?: string | null
+          street_address: string
+          updated_at?: string | null
+          user_id?: string | null
+          vehicle_color: string
+          vehicle_inspection?: boolean | null
+          vehicle_make: string
+          vehicle_model: string
+          vehicle_type: string
+          vehicle_year: number
+          zip_code: string
+        }
+        Update: {
+          background_check?: boolean | null
+          city?: string
+          created_at?: string | null
+          date_of_birth?: string
+          drivers_license?: string
+          email?: string
+          first_name?: string
+          id?: string
+          insurance_policy?: string
+          insurance_provider?: string
+          last_name?: string
+          license_plate?: string
+          phone?: string
+          profile_photo?: string | null
+          state?: string
+          status?: string | null
+          street_address?: string
+          updated_at?: string | null
+          user_id?: string | null
+          vehicle_color?: string
+          vehicle_inspection?: boolean | null
+          vehicle_make?: string
+          vehicle_model?: string
+          vehicle_type?: string
+          vehicle_year?: number
+          zip_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "craver_applications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_addresses: {
+        Row: {
+          city: string
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          label: string | null
+          state: string
+          street_address: string
+          user_id: string | null
+          zip_code: string
+        }
+        Insert: {
+          city: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          label?: string | null
+          state: string
+          street_address: string
+          user_id?: string | null
+          zip_code: string
+        }
+        Update: {
+          city?: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          label?: string | null
+          state?: string
+          street_address?: string
+          user_id?: string | null
+          zip_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_addresses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_earnings: {
+        Row: {
+          amount_cents: number
+          driver_id: string | null
+          earned_at: string | null
+          id: string
+          order_id: string | null
+          payout_cents: number
+          tip_cents: number | null
+          total_cents: number
+          updated_at: string | null
+        }
+        Insert: {
+          amount_cents: number
+          driver_id?: string | null
+          earned_at?: string | null
+          id?: string
+          order_id?: string | null
+          payout_cents: number
+          tip_cents?: number | null
+          total_cents: number
+          updated_at?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          driver_id?: string | null
+          earned_at?: string | null
+          id?: string
+          order_id?: string | null
+          payout_cents?: number
+          tip_cents?: number | null
+          total_cents?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_earnings_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_earnings_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_profiles: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_available: boolean | null
+          license_plate: string | null
+          rating: number | null
+          status: string | null
+          total_deliveries: number | null
+          updated_at: string | null
+          user_id: string | null
+          vehicle_make: string | null
+          vehicle_model: string | null
+          vehicle_type: string | null
+          vehicle_year: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_available?: boolean | null
+          license_plate?: string | null
+          rating?: number | null
+          status?: string | null
+          total_deliveries?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          vehicle_make?: string | null
+          vehicle_model?: string | null
+          vehicle_type?: string | null
+          vehicle_year?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_available?: boolean | null
+          license_plate?: string | null
+          rating?: number | null
+          status?: string | null
+          total_deliveries?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          vehicle_make?: string | null
+          vehicle_model?: string | null
+          vehicle_type?: string | null
+          vehicle_year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_feedback: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          customer_id: string | null
+          driver_id: string | null
+          feedback_type: string | null
+          id: string
+          order_id: string | null
+          rating: number | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          driver_id?: string | null
+          feedback_type?: string | null
+          id?: string
+          order_id?: string | null
+          rating?: number | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          driver_id?: string | null
+          feedback_type?: string | null
+          id?: string
+          order_id?: string | null
+          rating?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_feedback_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_feedback_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_feedback_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string | null
+          customer_id: string | null
+          delivery_address: Json | null
+          delivery_fee_cents: number | null
+          driver_id: string | null
+          estimated_delivery_time: string | null
+          id: string
+          order_status: string | null
+          restaurant_id: string | null
+          subtotal_cents: number
+          tax_cents: number | null
+          tip_cents: number | null
+          total_cents: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id?: string | null
+          delivery_address?: Json | null
+          delivery_fee_cents?: number | null
+          driver_id?: string | null
+          estimated_delivery_time?: string | null
+          id?: string
+          order_status?: string | null
+          restaurant_id?: string | null
+          subtotal_cents: number
+          tax_cents?: number | null
+          tip_cents?: number | null
+          total_cents: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string | null
+          delivery_address?: Json | null
+          delivery_fee_cents?: number | null
+          driver_id?: string | null
+          estimated_delivery_time?: string | null
+          id?: string
+          order_status?: string | null
+          restaurant_id?: string | null
+          subtotal_cents?: number
+          tax_cents?: number | null
+          tip_cents?: number | null
+          total_cents?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_methods: {
+        Row: {
+          brand: string | null
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          last4: string | null
+          provider: string
+          token: string
+          user_id: string | null
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          last4?: string | null
+          provider: string
+          token: string
+          user_id?: string | null
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          last4?: string | null
+          provider?: string
+          token?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_methods_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurants: {
+        Row: {
+          address: string
+          created_at: string | null
+          cuisine_type: string | null
+          delivery_fee_cents: number | null
+          description: string | null
+          estimated_delivery_time: number | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          minimum_order_cents: number | null
+          name: string
+          phone: string | null
+          rating: number | null
+        }
+        Insert: {
+          address: string
+          created_at?: string | null
+          cuisine_type?: string | null
+          delivery_fee_cents?: number | null
+          description?: string | null
+          estimated_delivery_time?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          minimum_order_cents?: number | null
+          name: string
+          phone?: string | null
+          rating?: number | null
+        }
+        Update: {
+          address?: string
+          created_at?: string | null
+          cuisine_type?: string | null
+          delivery_fee_cents?: number | null
+          description?: string | null
+          estimated_delivery_time?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          minimum_order_cents?: number | null
+          name?: string
+          phone?: string | null
+          rating?: number | null
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          preferences: Json | null
+          role: string | null
+          settings: Json | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          preferences?: Json | null
+          role?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          preferences?: Json | null
+          role?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          password_hash: string
+          phone: string | null
+          role: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          password_hash: string
+          phone?: string | null
+          role: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          password_hash?: string
+          phone?: string | null
+          role?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
