@@ -65,7 +65,7 @@ const OrderManagement: React.FC = () => {
           return;
         }
 
-        setOrders(data || []);
+        setOrders((data || []) as any);
       } catch (error) {
         console.error('Error fetching orders:', error);
       }

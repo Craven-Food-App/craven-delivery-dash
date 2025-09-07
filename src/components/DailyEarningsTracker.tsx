@@ -77,15 +77,14 @@ const DailyEarningsTracker: React.FC<DailyEarningsProps> = ({ user }) => {
         userId: user.id
       });
 
-      // Fetch all delivered orders for today
-      const { data: deliveredOrders, error } = await supabase
-        .from('orders')
-        .select('id, payout_cents, updated_at, created_at, status')
-        .eq('assigned_craver_id', user.id)
-        .eq('status', 'delivered')
-        .gte('updated_at', today.toISOString())
-        .lt('updated_at', tomorrow.toISOString())
-        .order('updated_at', { ascending: false });
+      // Fetch all delivered orders for today from driver_earnings
+      const { data: deliveredOrders, error } = await (supabase as any)
+        .from('driver_earnings')
+        .select('id, total_cents, earned_at')
+        .eq('driver_id', user.id)
+        .gte('earned_at', today.toISOString())
+        .lt('earned_at', tomorrow.toISOString())
+        .order('earned_at', { ascending: false });
 
       console.log('Delivered orders found:', deliveredOrders);
 
@@ -96,13 +95,13 @@ const DailyEarningsTracker: React.FC<DailyEarningsProps> = ({ user }) => {
 
       // Calculate stats
       const completedOrders = deliveredOrders?.length || 0;
-      const totalEarnings = deliveredOrders?.reduce((sum, order) => sum + order.payout_cents, 0) || 0;
+      const totalEarnings = deliveredOrders?.reduce((sum: number, order: any) => sum + (order.total_cents || 0), 0) || 0;
       const averagePerOrder = completedOrders > 0 ? totalEarnings / completedOrders : 0;
       
       // Calculate approximate hours worked (from first order to last order)
       let hoursWorked = 0;
       if (deliveredOrders && deliveredOrders.length > 0) {
-        const times = deliveredOrders.map(order => new Date(order.updated_at).getTime());
+        const times = deliveredOrders.map((order: any) => new Date(order.earned_at).getTime());
         const earliest = Math.min(...times);
         const latest = Math.max(...times);
         hoursWorked = (latest - earliest) / (1000 * 60 * 60); // Convert to hours

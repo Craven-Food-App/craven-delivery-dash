@@ -95,7 +95,7 @@ const ApplicationReview: React.FC = () => {
         throw error;
       }
 
-      setApplications(data || []);
+      setApplications((data || []) as any);
     } catch (error) {
       console.error('Error fetching applications:', error);
       toast({

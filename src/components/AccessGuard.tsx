@@ -22,7 +22,7 @@ const AccessGuard: React.FC<AccessGuardProps> = ({ children, fallback }) => {
 
       setUser(user);
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('craver_applications')
         .select('status')
         .eq('user_id', user.id)

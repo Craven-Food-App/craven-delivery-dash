@@ -128,7 +128,7 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
       }
 
       // Submit application
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('craver_applications')
         .insert({
           user_id: null, // Allow applications without user accounts

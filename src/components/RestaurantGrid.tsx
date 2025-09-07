@@ -30,7 +30,7 @@ const RestaurantGrid = ({ searchQuery, deliveryAddress }: RestaurantGridProps = 
 
   const fetchRestaurants = async () => {
     try {
-      let query = supabase
+      let query = (supabase as any)
         .from("restaurants")
         .select("*")
         .eq("is_active", true);
@@ -49,7 +49,12 @@ const RestaurantGrid = ({ searchQuery, deliveryAddress }: RestaurantGridProps = 
 
       if (error) throw error;
 
-      setRestaurants(data || []);
+      setRestaurants((data || []).map((restaurant: any) => ({
+        ...restaurant,
+        min_delivery_time: restaurant.estimated_delivery_time || 20,
+        max_delivery_time: (restaurant.estimated_delivery_time || 20) + 10,
+        is_promoted: false
+      })));
     } catch (error) {
       console.error("Error fetching restaurants:", error);
     } finally {

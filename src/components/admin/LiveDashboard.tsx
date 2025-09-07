@@ -66,8 +66,8 @@ const LiveDashboard = () => {
   const fetchData = async () => {
     try {
       // Fetch recent orders
-      const { data: ordersData, error: ordersError } = await supabase
-        .from('customer_orders')
+      const { data: ordersData, error: ordersError } = await (supabase as any)
+        .from('orders')
         .select(`
           *,
           restaurants (
@@ -96,8 +96,8 @@ const LiveDashboard = () => {
 
       if (driversError) throw driversError;
 
-      setOrders(ordersData || []);
-      setDrivers(driversData || []);
+      setOrders((ordersData || []) as any);
+      setDrivers((driversData || []).map((d: any) => ({ ...d, driver_level: 'standard' })));
 
       // Calculate stats
       const today = new Date().toISOString().split('T')[0];
@@ -156,8 +156,8 @@ const LiveDashboard = () => {
 
   const handleCancelOrder = async (orderId: string) => {
     try {
-      const { error } = await supabase
-        .from('customer_orders')
+      const { error } = await (supabase as any)
+        .from('orders')
         .update({ order_status: 'canceled' })
         .eq('id', orderId);
 

@@ -22,7 +22,7 @@ const AdminAccessGuard: React.FC<AdminAccessGuardProps> = ({ children, fallback 
 
       setUser(user);
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
