@@ -24,7 +24,7 @@ export const DeliveryPanel: React.FC<DeliveryPanelProps> = ({
     try {
       const { error } = await supabase
         .from('orders')
-        .update({ status: 'picked_up' })
+        .update({ order_status: 'picked_up' })
         .eq('id', assignment.order_id);
 
       if (error) {
@@ -54,7 +54,7 @@ export const DeliveryPanel: React.FC<DeliveryPanelProps> = ({
     try {
       const { error } = await supabase
         .from('orders')
-        .update({ status: 'delivered' })
+        .update({ order_status: 'delivered' })
         .eq('id', assignment.order_id);
 
       if (error) {
