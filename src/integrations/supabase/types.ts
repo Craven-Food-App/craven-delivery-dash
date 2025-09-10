@@ -432,48 +432,75 @@ export type Database = {
       restaurants: {
         Row: {
           address: string
+          city: string | null
           created_at: string | null
           cuisine_type: string | null
           delivery_fee_cents: number | null
           description: string | null
+          email: string | null
           estimated_delivery_time: number | null
           id: string
           image_url: string | null
           is_active: boolean | null
+          logo_url: string | null
+          max_delivery_time: number | null
+          min_delivery_time: number | null
           minimum_order_cents: number | null
           name: string
+          owner_id: string | null
           phone: string | null
           rating: number | null
+          state: string | null
+          updated_at: string | null
+          zip_code: string | null
         }
         Insert: {
           address: string
+          city?: string | null
           created_at?: string | null
           cuisine_type?: string | null
           delivery_fee_cents?: number | null
           description?: string | null
+          email?: string | null
           estimated_delivery_time?: number | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          logo_url?: string | null
+          max_delivery_time?: number | null
+          min_delivery_time?: number | null
           minimum_order_cents?: number | null
           name: string
+          owner_id?: string | null
           phone?: string | null
           rating?: number | null
+          state?: string | null
+          updated_at?: string | null
+          zip_code?: string | null
         }
         Update: {
           address?: string
+          city?: string | null
           created_at?: string | null
           cuisine_type?: string | null
           delivery_fee_cents?: number | null
           description?: string | null
+          email?: string | null
           estimated_delivery_time?: number | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          logo_url?: string | null
+          max_delivery_time?: number | null
+          min_delivery_time?: number | null
           minimum_order_cents?: number | null
           name?: string
+          owner_id?: string | null
           phone?: string | null
           rating?: number | null
+          state?: string | null
+          updated_at?: string | null
+          zip_code?: string | null
         }
         Relationships: []
       }
@@ -561,6 +588,7 @@ export type Database = {
           password_hash: string
           phone: string | null
           role: string
+          Role: string | null
           updated_at: string | null
         }
         Insert: {
@@ -570,6 +598,7 @@ export type Database = {
           password_hash: string
           phone?: string | null
           role: string
+          Role?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -579,6 +608,7 @@ export type Database = {
           password_hash?: string
           phone?: string | null
           role?: string
+          Role?: string | null
           updated_at?: string | null
         }
         Relationships: []

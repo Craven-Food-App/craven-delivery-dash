@@ -26,7 +26,7 @@ const RestaurantCard = ({
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate(`/restaurant/${id}`);
+    navigate(`/restaurant/${id}/menu`);
   };
 
   return (

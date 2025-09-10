@@ -68,16 +68,39 @@ const RestaurantRegister = () => {
     setUploadingImage(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to upload images",
+          variant: "destructive"
+        });
+        return null;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 5MB",
+          variant: "destructive"
+        });
+        return null;
+      }
 
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${type}-${Date.now()}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from('restaurant-images')
-        .upload(fileName, file);
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
 
       const { data } = supabase.storage
         .from('restaurant-images')
@@ -87,8 +110,8 @@ const RestaurantRegister = () => {
     } catch (error) {
       console.error('Error uploading image:', error);
       toast({
-        title: "Error",
-        description: "Failed to upload image",
+        title: "Upload failed",
+        description: error?.message || "Failed to upload image. Please try again.",
         variant: "destructive"
       });
       return null;
@@ -124,14 +147,17 @@ const RestaurantRegister = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to register your restaurant",
-        variant: "destructive"
-      });
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to register your restaurant",
+          variant: "destructive"
+        });
         navigate("/auth");
         return;
       }
+
+      console.log('Submitting restaurant data:', data);
+      console.log('User ID:', user.id);
 
       const { error } = await supabase
         .from("restaurants")
@@ -150,10 +176,13 @@ const RestaurantRegister = () => {
           min_delivery_time: data.min_delivery_time,
           max_delivery_time: data.max_delivery_time,
           image_url: data.image_url || null,
-          logo_url: data.logo_url || null
+          logo_url: data.logo_url || null,
+          is_active: true,
+          rating: 5.0
         });
 
       if (error) {
+        console.error('Database error:', error);
         throw error;
       }
 

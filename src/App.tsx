@@ -17,6 +17,7 @@ import RestaurantRegister from "./pages/RestaurantRegister";
 import RestaurantDashboard from "./pages/RestaurantDashboard";
 import RestaurantAuth from "./pages/RestaurantAuth";
 import RestaurantDetail from "./pages/RestaurantDetail";
+import RestaurantMenuPage from "./components/restaurant/RestaurantMenuPage";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCanceled from "./pages/PaymentCanceled";
 import NotFound from "./pages/NotFound";
@@ -55,6 +56,7 @@ const App = () => (
           <Route path="/restaurant/register" element={<RestaurantRegister />} />
           <Route path="/restaurant/dashboard" element={<RestaurantDashboard />} />
           <Route path="/restaurant/:id" element={<RestaurantDetail />} />
+          <Route path="/restaurant/:id/menu" element={<RestaurantMenuPage />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/payment-canceled" element={<PaymentCanceled />} />
