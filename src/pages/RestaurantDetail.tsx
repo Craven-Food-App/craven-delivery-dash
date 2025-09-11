@@ -100,7 +100,7 @@ const RestaurantDetail = () => {
       const { data: restaurantData, error: restaurantError } = await supabase
         .from("restaurants")
         .select("*")
-        .eq("id", id)
+        .eq("id", id!)
         .eq("is_active", true)
         .single();
 
@@ -111,7 +111,7 @@ const RestaurantDetail = () => {
       const { data: categoriesData, error: categoriesError } = await supabase
         .from("menu_categories")
         .select("*")
-        .eq("restaurant_id", id)
+        .eq("restaurant_id", id!)
         .eq("is_active", true)
         .order("display_order");
 
@@ -122,7 +122,7 @@ const RestaurantDetail = () => {
       const { data: itemsData, error: itemsError } = await supabase
         .from("menu_items")
         .select("*")
-        .eq("restaurant_id", id)
+        .eq("restaurant_id", id!)
         .eq("is_available", true)
         .order("display_order");
 
@@ -133,7 +133,7 @@ const RestaurantDetail = () => {
       const { data: featuredData, error: featuredError } = await supabase
         .from("menu_items")
         .select("*")
-        .eq("restaurant_id", id)
+        .eq("restaurant_id", id!)
         .eq("is_available", true)
         .eq("is_featured", true)
         .limit(6);
@@ -145,7 +145,7 @@ const RestaurantDetail = () => {
       const { data: popularData, error: popularError } = await supabase
         .from("menu_items")
         .select("*")
-        .eq("restaurant_id", id)
+        .eq("restaurant_id", id!)
         .eq("is_available", true)
         .gt("order_count", 0)
         .order("order_count", { ascending: false })

@@ -69,8 +69,8 @@ const RestaurantMenuPage = () => {
       const { data, error } = await supabase
         .from('restaurants')
         .select('*')
-        .eq('id', id)
-        .single();
+        .eq('id', id!)
+        .maybeSingle();
 
       if (error) throw error;
       setRestaurant(data);
@@ -86,42 +86,53 @@ const RestaurantMenuPage = () => {
 
   const fetchMenuItems = async () => {
     try {
-      // Mock data for now - replace with actual menu items query when table exists
-      const mockItems: MenuItem[] = [
-        {
-          id: '1',
-          name: 'Margherita Pizza',
-          description: 'Fresh tomatoes, mozzarella, basil, and olive oil',
-          price_cents: 1899,
-          category: 'Pizza',
-          is_available: true,
-          image_url: 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=400',
-          dietary_info: ['Vegetarian']
-        },
-        {
-          id: '2', 
-          name: 'Pepperoni Pizza',
-          description: 'Tomato sauce, mozzarella, pepperoni',
-          price_cents: 2199,
-          category: 'Pizza',
-          is_available: true,
-          image_url: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400'
-        },
-        {
-          id: '3',
-          name: 'Caesar Salad',
-          description: 'Romaine lettuce, parmesan, croutons, caesar dressing',
-          price_cents: 1299,
-          category: 'Salads',
-          is_available: true,
-          image_url: 'https://images.unsplash.com/photo-1551248429-40975aa4de74?w=400',
-          dietary_info: ['Vegetarian']
-        }
-      ];
-      setMenuItems(mockItems);
+      // Fetch real menu items from the database
+      const { data: items, error } = await supabase
+        .from('menu_items')
+        .select(`
+          id,
+          name,
+          description,
+          price_cents,
+          image_url,
+          is_available,
+          is_vegetarian,
+          is_vegan,
+          is_gluten_free,
+          category_id,
+          menu_categories!inner(name)
+        `)
+        .eq('restaurant_id', id)
+        .eq('is_available', true)
+        .order('display_order');
+
+      if (error) throw error;
+
+      // Transform the data to match our interface
+      const transformedItems: MenuItem[] = (items || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        description: item.description || '',
+        price_cents: item.price_cents,
+        image_url: item.image_url,
+        category: item.menu_categories?.name || 'Uncategorized',
+        is_available: item.is_available,
+        dietary_info: [
+          ...(item.is_vegetarian ? ['Vegetarian'] : []),
+          ...(item.is_vegan ? ['Vegan'] : []),
+          ...(item.is_gluten_free ? ['Gluten Free'] : [])
+        ].filter(Boolean)
+      }));
+
+      setMenuItems(transformedItems);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching menu items:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load menu items",
+        variant: "destructive"
+      });
       setLoading(false);
     }
   };
