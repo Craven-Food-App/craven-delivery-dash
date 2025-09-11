@@ -6,9 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { User, Package, MapPin, CreditCard, Clock, Star } from "lucide-react";
+import { User, Package, MapPin, CreditCard, Clock, Star, Heart, Plus } from "lucide-react";
 import Header from "@/components/Header";
 import { AccountSection } from "@/components/account/AccountSection";
+import RestaurantGrid from "@/components/RestaurantGrid";
 
 interface Order {
   id: string;
@@ -25,10 +26,20 @@ interface Restaurant {
   image_url?: string;
 }
 
+interface FavoriteRestaurant {
+  id: string;
+  name: string;
+  image_url?: string;
+  cuisine_type?: string;
+  rating: number;
+  delivery_fee_cents: number;
+}
+
 const CustomerDashboard = () => {
   const [user, setUser] = useState(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [restaurants, setRestaurants] = useState<Record<string, Restaurant>>({});
+  const [favorites, setFavorites] = useState<FavoriteRestaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -74,6 +85,34 @@ const CustomerDashboard = () => {
         });
         setRestaurants(restaurantsMap);
       }
+
+      // For now, set empty favorites since the table might not exist yet
+      // TODO: Uncomment when customer_favorites table is available
+      // const { data: favoritesData, error: favoritesError } = await supabase
+      //   .from("customer_favorites")
+      //   .select(`
+      //     restaurant_id,
+      //     restaurants (
+      //       id,
+      //       name,
+      //       image_url,
+      //       cuisine_type,
+      //       rating,
+      //       delivery_fee_cents
+      //     )
+      //   `)
+      //   .eq("customer_id", user.id);
+
+      // if (favoritesError) {
+      //   console.error("Error fetching favorites:", favoritesError);
+      // } else if (favoritesData) {
+      //   const formattedFavorites = favoritesData
+      //     .filter(fav => fav.restaurants)
+      //     .map(fav => fav.restaurants as FavoriteRestaurant);
+      //   setFavorites(formattedFavorites);
+      // }
+      
+      setFavorites([]);
     } catch (error) {
       console.error("Error fetching user data:", error);
       toast({
@@ -114,6 +153,29 @@ const CustomerDashboard = () => {
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
+    });
+  };
+
+  const handleViewOrderDetails = (orderId: string) => {
+    toast({
+      title: "Order Details",
+      description: `Viewing details for order ${orderId.slice(0, 8)}`,
+    });
+  };
+
+  const handleTrackOrder = (orderId: string) => {
+    toast({
+      title: "Order Tracking",
+      description: `Tracking order ${orderId.slice(0, 8)}`,
+    });
+  };
+
+  const removeFavorite = async (restaurantId: string) => {
+    // TODO: Implement when customer_favorites table is available
+    setFavorites(prev => prev.filter(fav => fav.id !== restaurantId));
+    toast({
+      title: "Removed from favorites",
+      description: "Restaurant removed from your favorites"
     });
   };
 
@@ -199,7 +261,11 @@ const CustomerDashboard = () => {
                             >
                               {getStatusText(order.order_status)}
                             </Badge>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewOrderDetails(order.id)}
+                            >
                               View Details
                             </Button>
                           </div>
@@ -265,7 +331,11 @@ const CustomerDashboard = () => {
                             </div>
                             <div className="flex justify-between items-center">
                               <p className="font-medium">{formatPrice(order.total_cents)}</p>
-                              <Button variant="outline" size="sm">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleTrackOrder(order.id)}
+                              >
                                 Track Order
                               </Button>
                             </div>
@@ -282,18 +352,76 @@ const CustomerDashboard = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Star className="h-5 w-5" />
+                  <Heart className="h-5 w-5" />
                   Favorite Restaurants
                 </CardTitle>
                 <CardDescription>Your saved restaurants</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <Star className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-4">No favorites yet</p>
-                  <Button onClick={() => navigate("/")}>
-                    Explore Restaurants
-                  </Button>
+                {favorites.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground mb-4">No favorites yet</p>
+                    <Button onClick={() => navigate("/")}>
+                      Explore Restaurants
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {favorites.map((restaurant) => (
+                      <Card key={restaurant.id} className="relative group">
+                        <CardContent className="p-4">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => removeFavorite(restaurant.id)}
+                          >
+                            <Heart className="h-4 w-4 fill-current text-red-500" />
+                          </Button>
+                          
+                          {restaurant.image_url && (
+                            <img
+                              src={restaurant.image_url}
+                              alt={restaurant.name}
+                              className="w-full h-32 object-cover rounded-lg mb-3"
+                            />
+                          )}
+                          
+                          <h3 className="font-semibold mb-1">{restaurant.name}</h3>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {restaurant.cuisine_type}
+                          </p>
+                          
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-1">
+                              <Star className="h-4 w-4 fill-current text-yellow-500" />
+                              <span>{restaurant.rating}</span>
+                            </div>
+                            <span>${(restaurant.delivery_fee_cents / 100).toFixed(2)} delivery</span>
+                          </div>
+                          
+                          <Button 
+                            className="w-full mt-3" 
+                            size="sm"
+                            onClick={() => navigate(`/restaurant/${restaurant.id}`)}
+                          >
+                            Order Now
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+                
+                <div className="mt-6">
+                  <Card className="border-dashed">
+                    <CardContent className="p-6 text-center">
+                      <Plus className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-muted-foreground mb-4">Discover more restaurants</p>
+                      <RestaurantGrid />
+                    </CardContent>
+                  </Card>
                 </div>
               </CardContent>
             </Card>

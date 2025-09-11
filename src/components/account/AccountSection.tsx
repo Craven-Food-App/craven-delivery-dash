@@ -73,10 +73,22 @@ export const AccountSection = () => {
         .from('user_profiles')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (profileData) {
         setProfile(profileData);
+      } else {
+        // Create a default profile if none exists
+        const defaultProfile: UserProfile = {
+          id: user.id,
+          full_name: user.email || '',
+          phone: null,
+          avatar_url: null,
+          role: 'customer',
+          preferences: {},
+          settings: {}
+        };
+        setProfile(defaultProfile);
       }
 
       // Fetch payment methods
@@ -141,14 +153,32 @@ export const AccountSection = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-    const { error } = await (supabase as any)
-      .from('user_profiles')
-      .upsert({
-          user_id: user.id,
-          ...updates
-        });
+      // First check if profile exists
+      const { data: existingProfile } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
 
-      if (error) throw error;
+      let result;
+      if (existingProfile) {
+        // Update existing profile
+        result = await supabase
+          .from('user_profiles')
+          .update(updates)
+          .eq('user_id', user.id);
+      } else {
+        // Create new profile
+        result = await supabase
+          .from('user_profiles')
+          .insert({
+            user_id: user.id,
+            role: 'customer',
+            ...updates
+          });
+      }
+
+      if (result.error) throw result.error;
 
       setProfile(prev => prev ? { ...prev, ...updates } : null);
       toast({
