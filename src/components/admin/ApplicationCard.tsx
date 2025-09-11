@@ -36,21 +36,14 @@ interface Application {
   vehicle_year: number;
   vehicle_color: string;
   license_plate: string;
-  license_number: string;
-  license_state: string;
-  license_expiry: string;
-  ssn_last_four: string;
-  bank_account_type: string;
-  routing_number: string;
-  account_number_last_four: string;
+  drivers_license: string;
+  insurance_policy: string;
+  insurance_provider: string;
+  background_check: boolean;
+  vehicle_inspection: boolean;
   status: 'pending' | 'under_review' | 'approved' | 'rejected';
-  submitted_at: string;
-  reviewed_at?: string;
-  reviewer_notes?: string;
-  drivers_license_front?: string;
-  drivers_license_back?: string;
-  insurance_document?: string;
-  vehicle_registration?: string;
+  created_at: string;
+  updated_at: string;
   profile_photo?: string;
 }
 
@@ -67,7 +60,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
   onReject, 
   onViewDocument 
 }) => {
-  const [reviewNotes, setReviewNotes] = React.useState(application.reviewer_notes || '');
+  const [reviewNotes, setReviewNotes] = React.useState('');
 
   const getStatusBadge = (status: string) => {
     const statusMap = {
@@ -102,7 +95,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
           {getStatusBadge(application.status)}
         </div>
         <div className="text-sm text-muted-foreground">
-          Submitted: {formatApplicationDate(application.submitted_at)}
+          Submitted: {formatApplicationDate(application.created_at)}
         </div>
       </CardHeader>
       
@@ -165,45 +158,23 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => handleViewDocument(application.drivers_license_front, 'Driver License Front')}
-              disabled={!application.drivers_license_front}
+              onClick={() => handleViewDocument(application.drivers_license, 'Drivers License')}
+              disabled={!application.drivers_license}
               className="flex items-center gap-1"
             >
               <Eye className="h-3 w-3" />
-              DL Front
+              License
             </Button>
             
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => handleViewDocument(application.drivers_license_back, 'Driver License Back')}
-              disabled={!application.drivers_license_back}
-              className="flex items-center gap-1"
-            >
-              <Eye className="h-3 w-3" />
-              DL Back
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => handleViewDocument(application.insurance_document, 'Insurance')}
-              disabled={!application.insurance_document}
+              onClick={() => handleViewDocument(application.insurance_policy, 'Insurance Policy')}
+              disabled={!application.insurance_policy}
               className="flex items-center gap-1"
             >
               <Eye className="h-3 w-3" />
               Insurance
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => handleViewDocument(application.vehicle_registration, 'Registration')}
-              disabled={!application.vehicle_registration}
-              className="flex items-center gap-1"
-            >
-              <Eye className="h-3 w-3" />
-              Registration
             </Button>
           </div>
         </div>
@@ -240,19 +211,6 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
                 Reject
               </Button>
             </div>
-          </div>
-        )}
-
-        {/* Review History */}
-        {application.status !== 'pending' && application.reviewer_notes && (
-          <div className="border-t pt-4">
-            <h4 className="font-semibold mb-2">Review Notes</h4>
-            <p className="text-sm text-muted-foreground">{application.reviewer_notes}</p>
-            {application.reviewed_at && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Reviewed: {formatApplicationDate(application.reviewed_at)}
-              </p>
-            )}
           </div>
         )}
       </CardContent>

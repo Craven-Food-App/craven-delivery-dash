@@ -28,21 +28,14 @@ interface Application {
   vehicle_year: number;
   vehicle_color: string;
   license_plate: string;
-  license_number: string;
-  license_state: string;
-  license_expiry: string;
-  ssn_last_four: string;
-  bank_account_type: string;
-  routing_number: string;
-  account_number_last_four: string;
+  drivers_license: string;
+  insurance_policy: string;
+  insurance_provider: string;
+  background_check: boolean;
+  vehicle_inspection: boolean;
   status: 'pending' | 'under_review' | 'approved' | 'rejected';
-  submitted_at: string;
-  reviewed_at?: string;
-  reviewer_notes?: string;
-  drivers_license_front?: string;
-  drivers_license_back?: string;
-  insurance_document?: string;
-  vehicle_registration?: string;
+  created_at: string;
+  updated_at: string;
   profile_photo?: string;
 }
 
@@ -90,7 +83,7 @@ const ApplicationReview: React.FC = () => {
       const { data, error } = await supabase
         .from('craver_applications')
         .select('*')
-        .order('submitted_at', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) {
         throw error;
