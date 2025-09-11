@@ -38,7 +38,7 @@ const MenuImportTool: React.FC<MenuImportToolProps> = ({ restaurantId, onItemsIm
       return;
     }
 
-    if (extractedItems.length === 0) return;
+    setLoading(true);
     try {
       const result = await WebScrapingService.parseMenuFromUrl(url);
       
