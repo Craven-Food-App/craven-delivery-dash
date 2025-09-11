@@ -10,6 +10,7 @@ import { Star, Clock, MapPin, Heart, ShoppingCart, Plus, Minus, ArrowLeft, Searc
 import { Input } from '@/components/ui/input';
 import MenuItemCard from './MenuItemCard';
 import CartSummary from './CartSummary';
+import { MenuItemModal } from './MenuItemModal';
 
 interface MenuItem {
   id: string;
@@ -54,6 +55,7 @@ const RestaurantMenuPage = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -135,32 +137,46 @@ const RestaurantMenuPage = () => {
     return matchesCategory && matchesSearch;
   });
 
-  const addToCart = (itemId: string) => {
-    const item = menuItems.find(i => i.id === itemId);
+  const addToCart = (item: MenuItem, quantity: number = 1, modifiers: any[] = [], specialInstructions?: string) => {
     if (!item) return;
     
+    const modifiersPrice = modifiers.reduce((sum, mod) => sum + mod.price_cents, 0);
+    const itemTotalPrice = item.price_cents + modifiersPrice;
+    
     setCart(prev => {
-      const existing = prev.find(cartItem => cartItem.id === item.id);
+      const cartItemId = `${item.id}-${JSON.stringify(modifiers.map(m => m.id).sort())}`;
+      const existing = prev.find(cartItem => cartItem.id === cartItemId);
+      
       if (existing) {
         return prev.map(cartItem =>
-          cartItem.id === item.id
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
+          cartItem.id === cartItemId
+            ? { ...cartItem, quantity: cartItem.quantity + quantity }
             : cartItem
         );
       }
+      
       return [...prev, {
-        id: item.id,
+        id: cartItemId,
         name: item.name,
-        price_cents: item.price_cents,
-        quantity: 1,
-        image_url: item.image_url
+        price_cents: itemTotalPrice,
+        quantity,
+        image_url: item.image_url,
+        modifiers: modifiers.map(m => ({ name: m.name, price_cents: m.price_cents })),
+        special_instructions: specialInstructions
       }];
     });
     
     toast({
       title: "Added to cart",
-      description: `${item.name} has been added to your cart`
+      description: `${item.name}${modifiers.length > 0 ? ' with customizations' : ''} has been added to your cart`
     });
+  };
+
+  // Keep the old addToCart for backwards compatibility with MenuItemCard
+  const addToCartSimple = (itemId: string) => {
+    const item = menuItems.find(i => i.id === itemId);
+    if (!item) return;
+    addToCart(item, 1, [], '');
   };
 
   const updateQuantity = (id: string, delta: number) => {
@@ -384,7 +400,8 @@ const RestaurantMenuPage = () => {
                   <MenuItemCard
                     key={item.id}
                     {...item}
-                    onAddToCart={addToCart}
+                    onAddToCart={() => addToCartSimple(item.id)}
+                    onCustomize={(item) => setSelectedItem(item)}
                   />
                 ))
               )}
@@ -405,6 +422,31 @@ const RestaurantMenuPage = () => {
           </div>
         </div>
       </div>
+      
+      {/* Menu Item Customization Modal */}
+      {selectedItem && (
+        <MenuItemModal
+          item={{
+            id: selectedItem.id,
+            name: selectedItem.name,
+            description: selectedItem.description || '',
+            price_cents: selectedItem.price_cents,
+            image_url: selectedItem.image_url || '',
+            is_vegetarian: selectedItem.dietary_info?.includes('Vegetarian') || false,
+            is_vegan: selectedItem.dietary_info?.includes('Vegan') || false,
+            is_gluten_free: selectedItem.dietary_info?.includes('Gluten Free') || false,
+            preparation_time: 15
+          }}
+          onClose={() => setSelectedItem(null)}
+          onAddToCart={(item, quantity, modifiers, specialInstructions) => {
+            const menuItem = {
+              ...selectedItem,
+              ...item
+            };
+            addToCart(menuItem, quantity, modifiers, specialInstructions);
+          }}
+        />
+      )}
     </div>
   );
 };

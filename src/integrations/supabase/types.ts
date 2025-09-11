@@ -301,8 +301,54 @@ export type Database = {
           },
         ]
       }
+      menu_item_modifiers: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          is_available: boolean
+          is_required: boolean
+          max_selections: number | null
+          menu_item_id: string
+          modifier_type: string
+          name: string
+          price_cents: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_available?: boolean
+          is_required?: boolean
+          max_selections?: number | null
+          menu_item_id: string
+          modifier_type?: string
+          name: string
+          price_cents?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_available?: boolean
+          is_required?: boolean
+          max_selections?: number | null
+          menu_item_id?: string
+          modifier_type?: string
+          name?: string
+          price_cents?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       menu_items: {
         Row: {
+          allergens: string[] | null
           category_id: string | null
           created_at: string
           description: string | null
@@ -316,11 +362,14 @@ export type Database = {
           is_vegetarian: boolean
           name: string
           order_count: number
+          preparation_time: number | null
           price_cents: number
           restaurant_id: string
+          spice_level: string | null
           updated_at: string
         }
         Insert: {
+          allergens?: string[] | null
           category_id?: string | null
           created_at?: string
           description?: string | null
@@ -334,11 +383,14 @@ export type Database = {
           is_vegetarian?: boolean
           name: string
           order_count?: number
+          preparation_time?: number | null
           price_cents: number
           restaurant_id: string
+          spice_level?: string | null
           updated_at?: string
         }
         Update: {
+          allergens?: string[] | null
           category_id?: string | null
           created_at?: string
           description?: string | null
@@ -352,8 +404,10 @@ export type Database = {
           is_vegetarian?: boolean
           name?: string
           order_count?: number
+          preparation_time?: number | null
           price_cents?: number
           restaurant_id?: string
+          spice_level?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -427,6 +481,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      order_item_modifiers: {
+        Row: {
+          created_at: string
+          id: string
+          modifier_id: string
+          modifier_name: string
+          modifier_price_cents: number
+          order_item_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          modifier_id: string
+          modifier_name: string
+          modifier_price_cents?: number
+          order_item_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          modifier_id?: string
+          modifier_name?: string
+          modifier_price_cents?: number
+          order_item_id?: string
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          menu_item_id: string
+          order_id: string
+          price_cents: number
+          quantity: number
+          special_instructions: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          menu_item_id: string
+          order_id: string
+          price_cents: number
+          quantity?: number
+          special_instructions?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          menu_item_id?: string
+          order_id?: string
+          price_cents?: number
+          quantity?: number
+          special_instructions?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       orders: {
         Row: {

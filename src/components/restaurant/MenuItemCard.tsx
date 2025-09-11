@@ -14,6 +14,7 @@ interface MenuItemCardProps {
   is_available: boolean;
   dietary_info?: string[];
   onAddToCart: (id: string) => void;
+  onCustomize?: (item: any) => void;
 }
 
 const MenuItemCard = ({
@@ -25,7 +26,8 @@ const MenuItemCard = ({
   category,
   is_available,
   dietary_info,
-  onAddToCart
+  onAddToCart,
+  onCustomize
 }: MenuItemCardProps) => {
   const formatPrice = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
@@ -70,15 +72,32 @@ const MenuItemCard = ({
                 {formatPrice(price_cents)}
               </span>
               
-              <Button 
-                onClick={() => onAddToCart(id)}
-                disabled={!is_available}
-                size="sm"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md transition-all duration-200"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                {is_available ? 'Add' : 'Unavailable'}
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => onAddToCart(id)}
+                  disabled={!is_available}
+                  size="sm"
+                  variant="outline"
+                  className="border-primary/20 hover:bg-primary/10 text-primary hover:text-primary"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Quick Add
+                </Button>
+                
+                {onCustomize && (
+                  <Button 
+                    onClick={() => onCustomize({
+                      id, name, description, price_cents, image_url, 
+                      category, is_available, dietary_info
+                    })}
+                    disabled={!is_available}
+                    size="sm"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md transition-all duration-200"
+                  >
+                    Customize
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
           
