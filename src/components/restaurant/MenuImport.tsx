@@ -137,33 +137,60 @@ export const MenuImport = ({ restaurantId, onImportComplete, isOpen, onClose }: 
     setImportStep('importing');
     
     try {
-      const importPromises = itemsToImport.map(async (item, index) => {
-        const menuItemData = {
-          restaurant_id: restaurantId,
-          name: item.name,
-          description: item.description,
-          price_cents: Math.round(item.price * 100),
-          is_vegetarian: item.dietary?.vegetarian || false,
-          is_vegan: item.dietary?.vegan || false,
-          is_gluten_free: item.dietary?.glutenFree || false,
-          is_available: true,
-          display_order: index,
-          category_id: null, // TODO: Map categories if needed
-        };
+      // Remove duplicates from selected items
+      const uniqueItems = itemsToImport.filter((item, index, self) => 
+        index === self.findIndex(i => i.name.toLowerCase() === item.name.toLowerCase())
+      );
 
-        const { error } = await supabase
-          .from('menu_items')
-          .insert(menuItemData);
+      // Check for existing items in database
+      const { data: existingItems } = await supabase
+        .from('menu_items')
+        .select('name')
+        .eq('restaurant_id', restaurantId);
 
-        if (error) throw error;
-      });
+      const existingNames = new Set(existingItems?.map(item => item.name.toLowerCase()) || []);
+      const newItems = uniqueItems.filter(item => !existingNames.has(item.name.toLowerCase()));
 
-      await Promise.all(importPromises);
+      if (newItems.length === 0) {
+        toast({
+          title: "No New Items",
+          description: "All selected items already exist in your menu"
+        });
+        setImportStep('preview');
+        return;
+      }
 
-      toast({
-        title: "Success",
-        description: `Successfully imported ${itemsToImport.length} menu items`,
-      });
+      // Batch insert new items only
+      const menuItemsData = newItems.map((item, index) => ({
+        restaurant_id: restaurantId,
+        name: item.name,
+        description: item.description,
+        price_cents: Math.round(item.price * 100),
+        is_vegetarian: item.dietary?.vegetarian || false,
+        is_vegan: item.dietary?.vegan || false,
+        is_gluten_free: item.dietary?.glutenFree || false,
+        is_available: true,
+        display_order: index,
+        category_id: null, // TODO: Map categories if needed
+      }));
+
+      const { error } = await supabase
+        .from('menu_items')
+        .insert(menuItemsData);
+
+      if (error) throw error;
+
+      if (newItems.length !== uniqueItems.length) {
+        toast({
+          title: "Some Items Skipped",
+          description: `${uniqueItems.length - newItems.length} items already exist. Imported ${newItems.length} new items.`,
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: `Successfully imported ${newItems.length} new menu items`,
+        });
+      }
 
       onImportComplete();
       handleClose();

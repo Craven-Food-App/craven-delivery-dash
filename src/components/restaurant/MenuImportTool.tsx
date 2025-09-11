@@ -76,12 +76,50 @@ const MenuImportTool: React.FC<MenuImportToolProps> = ({ restaurantId, onItemsIm
       description: `Loaded ${sampleItems.length} sample ${type} menu items`
     });
   };
-    const handleImportItems = async () => {
+  const handleImportItems = async () => {
+    if (loading) return; // Prevent multiple submissions
 
     setLoading(true);
     try {
+      // Remove duplicates from extracted items first
+      const uniqueItems = extractedItems.filter((item, index, self) => 
+        index === self.findIndex(i => i.name.toLowerCase() === item.name.toLowerCase())
+      );
+
+      if (uniqueItems.length !== extractedItems.length) {
+        toast({
+          title: "Duplicates Removed",
+          description: `Removed ${extractedItems.length - uniqueItems.length} duplicate items`
+        });
+      }
+
+      // Check for existing items in database
+      const { data: existingItems } = await supabase
+        .from('menu_items')
+        .select('name')
+        .eq('restaurant_id', restaurantId);
+
+      const existingNames = new Set(existingItems?.map(item => item.name.toLowerCase()) || []);
+      const newItems = uniqueItems.filter(item => !existingNames.has(item.name.toLowerCase()));
+
+      if (newItems.length === 0) {
+        toast({
+          title: "No New Items",
+          description: "All items already exist in your menu"
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (newItems.length !== uniqueItems.length) {
+        toast({
+          title: "Existing Items Skipped",
+          description: `${uniqueItems.length - newItems.length} items already exist and will be skipped`
+        });
+      }
+
       // Create categories first
-      const categories = [...new Set(extractedItems.map(item => item.category))];
+      const categories = [...new Set(newItems.map(item => item.category))];
       const categoryMap: Record<string, string> = {};
 
       for (const categoryName of categories) {
@@ -90,7 +128,7 @@ const MenuImportTool: React.FC<MenuImportToolProps> = ({ restaurantId, onItemsIm
           .select('id')
           .eq('restaurant_id', restaurantId)
           .eq('name', categoryName)
-          .single();
+          .maybeSingle();
 
         if (existingCategory) {
           categoryMap[categoryName] = existingCategory.id;
@@ -110,8 +148,8 @@ const MenuImportTool: React.FC<MenuImportToolProps> = ({ restaurantId, onItemsIm
         }
       }
 
-      // Import menu items
-      const itemsToInsert = extractedItems.map((item, index) => ({
+      // Import only new menu items
+      const itemsToInsert = newItems.map((item, index) => ({
         restaurant_id: restaurantId,
         category_id: categoryMap[item.category],
         name: item.name,
@@ -129,7 +167,7 @@ const MenuImportTool: React.FC<MenuImportToolProps> = ({ restaurantId, onItemsIm
 
       toast({
         title: "Success",
-        description: `Imported ${extractedItems.length} menu items successfully`
+        description: `Imported ${newItems.length} new menu items successfully`
       });
 
       setExtractedItems([]);
