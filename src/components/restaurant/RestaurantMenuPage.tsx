@@ -175,12 +175,55 @@ const RestaurantMenuPage = () => {
     });
   };
 
-  const handleCheckout = () => {
-    toast({
-      title: "Checkout",
-      description: "Proceeding to checkout..."
-    });
-    // Add checkout logic here
+  const handleCheckout = async () => {
+    if (cart.length === 0) {
+      toast({
+        title: "Cart is empty",
+        description: "Add items before checkout",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const subtotal = cart.reduce((sum, item) => sum + item.price_cents * item.quantity, 0);
+      const deliveryFee = restaurant?.delivery_fee_cents || 0;
+      const total = subtotal + deliveryFee;
+
+      // Try to use logged-in user email, fallback to guest
+      const { data: { user } } = await supabase.auth.getUser();
+      const email = user?.email || 'guest@example.com';
+      const customerInfo = {
+        name: user?.email?.split('@')[0] || 'Guest',
+        email,
+        phone: '',
+        deliveryAddress: '',
+        specialInstructions: ''
+      };
+
+      const orderId = (self?.crypto && 'randomUUID' in self.crypto) ? self.crypto.randomUUID() : `order_${Date.now()}`;
+
+      const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: {
+          orderTotal: total,
+          customerInfo,
+          orderId
+        }
+      });
+
+      if (error) throw error;
+      if (!data?.url) throw new Error('No checkout URL returned');
+
+      // Open Stripe checkout in a new tab
+      window.open(data.url, '_blank');
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast({
+        title: 'Checkout failed',
+        description: 'Please try again.',
+        variant: 'destructive'
+      });
+    }
   };
 
   const formatPrice = (cents: number) => `$${(cents / 100).toFixed(2)}`;
