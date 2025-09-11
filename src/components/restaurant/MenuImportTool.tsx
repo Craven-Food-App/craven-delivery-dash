@@ -4,8 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Globe, Plus, X } from "lucide-react";
-import { FirecrawlService } from '@/utils/FirecrawlService';
+import { Loader2, Globe, Plus, X, Upload, FileText } from "lucide-react";
+import { WebScrapingService } from '@/utils/WebScrapingService';
 import { supabase } from '@/integrations/supabase/client';
 
 interface MenuImportToolProps {
@@ -25,27 +25,8 @@ const MenuImportTool: React.FC<MenuImportToolProps> = ({ restaurantId, onItemsIm
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [extractedItems, setExtractedItems] = useState<ExtractedMenuItem[]>([]);
-  const [apiKey, setApiKey] = useState('');
-  const [showApiKeyInput, setShowApiKeyInput] = useState(!FirecrawlService.getApiKey());
+  const [showSampleOptions, setShowSampleOptions] = useState(false);
   const { toast } = useToast();
-
-  const handleSaveApiKey = () => {
-    if (!apiKey.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid API key",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    FirecrawlService.saveApiKey(apiKey);
-    setShowApiKeyInput(false);
-    toast({
-      title: "Success",
-      description: "Firecrawl API key saved successfully"
-    });
-  };
 
   const handleExtractMenu = async () => {
     if (!url.trim()) {
@@ -57,14 +38,9 @@ const MenuImportTool: React.FC<MenuImportToolProps> = ({ restaurantId, onItemsIm
       return;
     }
 
-    if (!FirecrawlService.getApiKey()) {
-      setShowApiKeyInput(true);
-      return;
-    }
-
-    setLoading(true);
+    if (extractedItems.length === 0) return;
     try {
-      const result = await FirecrawlService.parseMenuFromUrl(url);
+      const result = await WebScrapingService.parseMenuFromUrl(url);
       
       if (result.success && result.menuItems) {
         setExtractedItems(result.menuItems);
@@ -91,8 +67,16 @@ const MenuImportTool: React.FC<MenuImportToolProps> = ({ restaurantId, onItemsIm
     }
   };
 
-  const handleImportItems = async () => {
-    if (extractedItems.length === 0) return;
+  const handleLoadSampleMenu = (type: string) => {
+    const sampleItems = WebScrapingService.generateSampleMenuItems(type);
+    setExtractedItems(sampleItems);
+    setShowSampleOptions(false);
+    toast({
+      title: "Sample Menu Loaded",
+      description: `Loaded ${sampleItems.length} sample ${type} menu items`
+    });
+  };
+    const handleImportItems = async () => {
 
     setLoading(true);
     try {
@@ -167,56 +151,16 @@ const MenuImportTool: React.FC<MenuImportToolProps> = ({ restaurantId, onItemsIm
     setExtractedItems(prev => prev.filter((_, i) => i !== index));
   };
 
-  if (showApiKeyInput) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5" />
-            Set up Firecrawl API
-          </CardTitle>
-          <CardDescription>
-            Enter your Firecrawl API key to enable website menu extraction.
-            <a 
-              href="https://firecrawl.dev/app/api-keys" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-primary hover:underline ml-1"
-            >
-              Get your API key here →
-            </a>
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Input
-            type="password"
-            placeholder="Enter your Firecrawl API key"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-          />
-          <div className="flex gap-2">
-            <Button onClick={handleSaveApiKey} disabled={!apiKey.trim()}>
-              Save API Key
-            </Button>
-            <Button variant="outline" onClick={() => setShowApiKeyInput(false)}>
-              Cancel
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Globe className="h-5 w-5" />
-            Import Menu from Website
+            Import Menu Items
           </CardTitle>
           <CardDescription>
-            Extract menu items from any restaurant website automatically
+            Extract menu items from a website URL or load sample menu items
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -229,21 +173,44 @@ const MenuImportTool: React.FC<MenuImportToolProps> = ({ restaurantId, onItemsIm
             />
             <Button onClick={handleExtractMenu} disabled={loading || !url.trim()}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Extract Menu
+              <Globe className="mr-2 h-4 w-4" />
+              Extract
             </Button>
           </div>
           
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">
-              API Key: {FirecrawlService.getApiKey() ? '••••••••' : 'Not set'}
-            </span>
-            <Button 
-              variant="link" 
-              size="sm"
-              onClick={() => setShowApiKeyInput(true)}
-            >
-              Update API Key
-            </Button>
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground mb-2">Or try sample menu items</p>
+            <div className="flex gap-2 justify-center flex-wrap">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleLoadSampleMenu('italian')}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Italian Sample
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleLoadSampleMenu('mexican')}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Mexican Sample
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleLoadSampleMenu('general')}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                General Sample
+              </Button>
+            </div>
+          </div>
+          
+          <div className="text-xs text-muted-foreground p-3 bg-muted rounded-lg">
+            <strong>Note:</strong> Due to browser security restrictions, direct website scraping may not work for all sites. 
+            CORS policies prevent access to many external websites. Try the sample menus to see how the import feature works.
           </div>
         </CardContent>
       </Card>
