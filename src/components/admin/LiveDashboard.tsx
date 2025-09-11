@@ -22,24 +22,19 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface Order {
   id: string;
-  customer_name: string;
-  customer_phone: string;
+  customer_id: string;
+  driver_id?: string;
+  restaurant_id: string;
   total_cents: number;
   order_status: string;
-  payment_status: string;
-  delivery_method: string;
-  delivery_address?: string;
   created_at: string;
+  delivery_address?: any;
   restaurants: {
     name: string;
     address: string;
+    city: string;
+    state: string;
   };
-  delivery_orders?: {
-    assigned_craver_id: string;
-    status: string;
-    distance_km: number;
-    payout_cents: number;
-  }[];
 }
 
 interface Driver {
@@ -76,12 +71,6 @@ const LiveDashboard = () => {
             address,
             city,
             state
-          ),
-          delivery_orders (
-            assigned_craver_id,
-            status,
-            distance_km,
-            payout_cents
           )
         `)
         .order('created_at', { ascending: false })
@@ -344,12 +333,9 @@ const LiveDashboard = () => {
                             <Badge className={getStatusColor(order.order_status)}>
                               {order.order_status.replace('_', ' ')}
                             </Badge>
-                            <Badge variant="outline">
-                              {order.delivery_method}
-                            </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            {order.customer_name} • {order.restaurants.name}
+                            Order from {order.restaurants.name}
                           </p>
                           <p className="text-sm font-medium">${(order.total_cents / 100).toFixed(2)}</p>
                         </div>
@@ -358,39 +344,14 @@ const LiveDashboard = () => {
                         </div>
                       </div>
 
-                      {order.delivery_method === 'delivery' && (
+                      {order.delivery_address && (
                         <div className="flex items-center gap-2 text-sm">
                           <MapPin className="h-4 w-4" />
-                          <span className="truncate">{order.delivery_address}</span>
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="h-4 w-4" />
-                        <span>{order.customer_phone}</span>
-                      </div>
-
-                      {order.delivery_orders && order.delivery_orders.length > 0 && (
-                        <div className="bg-muted p-3 rounded-lg">
-                          <p className="text-sm font-medium mb-2">Delivery Info</p>
-                          {order.delivery_orders.map((delivery, index) => (
-                            <div key={index} className="text-sm space-y-1">
-                              <div className="flex justify-between">
-                                <span>Status:</span>
-                                <Badge className={getStatusColor(delivery.status)}>
-                                  {delivery.status}
-                                </Badge>
-                              </div>
-                              <div className="flex justify-between">
-                                <span>Distance:</span>
-                                <span>{delivery.distance_km.toFixed(1)} km</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span>Payout:</span>
-                                <span>${(delivery.payout_cents / 100).toFixed(2)}</span>
-                              </div>
-                            </div>
-                          ))}
+                          <span className="truncate">
+                            {typeof order.delivery_address === 'object' 
+                              ? `${order.delivery_address.street_address}, ${order.delivery_address.city}` 
+                              : order.delivery_address}
+                          </span>
                         </div>
                       )}
 
