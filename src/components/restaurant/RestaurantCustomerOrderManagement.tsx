@@ -43,13 +43,13 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
     
     // Set up real-time subscription for new orders
     const subscription = supabase
-      .channel('customer_orders_changes')
+      .channel('orders_changes')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'customer_orders',
+          table: 'orders',
           filter: `restaurant_id=eq.${restaurantId}`,
         },
         () => {
@@ -66,13 +66,46 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
   const fetchOrders = async () => {
     try {
       const { data, error } = await supabase
-        .from('customer_orders')
-        .select('*')
+        .from('orders')
+        .select(`
+          *,
+          order_items (
+            id,
+            menu_item_id,
+            quantity,
+            price_cents,
+            special_instructions,
+            menu_items (name),
+            order_item_modifiers (
+              modifier_name,
+              modifier_price_cents
+            )
+          )
+        `)
         .eq('restaurant_id', restaurantId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setOrders((data || []) as CustomerOrder[]);
+      
+      // Transform the data to match our interface
+      const transformedOrders = (data || []).map(order => ({
+        ...order,
+        customer_name: 'Customer', // Will need to get from user profile if needed
+        customer_email: 'customer@example.com', // Will need to get from user profile if needed  
+        customer_phone: '', // Will need to get from user profile if needed
+        order_items: order.order_items?.map((item: any) => ({
+          ...item,
+          name: item.menu_items?.name || 'Unknown Item',
+          modifiers: item.order_item_modifiers?.map((mod: any) => ({
+            name: mod.modifier_name,
+            price_cents: mod.modifier_price_cents
+          })) || []
+        })) || [],
+        delivery_method: 'delivery' as const, // Default value
+        payment_status: 'paid' as const // Default value
+      }));
+      
+      setOrders(transformedOrders as CustomerOrder[]);
     } catch (error) {
       console.error('Error fetching orders:', error);
       toast({
@@ -88,7 +121,7 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
   const updateOrderStatus = async (orderId: string, newStatus: CustomerOrder['order_status']) => {
     try {
       const { error } = await supabase
-        .from('customer_orders')
+        .from('orders')
         .update({ order_status: newStatus })
         .eq('id', orderId);
 
