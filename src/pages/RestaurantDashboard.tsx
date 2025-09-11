@@ -11,6 +11,8 @@ import { Plus, Store, Menu, Settings, BarChart } from "lucide-react";
 import Header from "@/components/Header";
 import { MenuManagement } from "@/components/restaurant/MenuManagement";
 import { RestaurantSettings } from "@/components/restaurant/RestaurantSettings";
+import MenuImportTool from "@/components/restaurant/MenuImportTool";
+import RestaurantHours from "@/components/restaurant/RestaurantHours";
 import { NewOrderAlert } from "@/components/restaurant/NewOrderAlert";
 import { RestaurantCustomerOrderManagement } from "@/components/restaurant/RestaurantCustomerOrderManagement";
 
@@ -266,6 +268,7 @@ const RestaurantDashboard = () => {
           </TabsContent>
 
           <TabsContent value="menu" className="space-y-4">
+            <MenuImportTool restaurantId={restaurant.id} onItemsImported={fetchRestaurant} />
             <MenuManagement restaurantId={restaurant.id} />
           </TabsContent>
 
@@ -274,6 +277,7 @@ const RestaurantDashboard = () => {
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-4">
+            <RestaurantHours restaurantId={restaurant.id} />
             <RestaurantSettings restaurant={restaurant} onUpdate={fetchRestaurant} />
           </TabsContent>
         </Tabs>

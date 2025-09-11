@@ -1,5 +1,5 @@
 import React from 'react';
-import { CustomerDashboard as CustomerDashboardComponent } from '@/components/customer/CustomerDashboard';
+import CustomerDashboardComponent from '@/components/account/CustomerDashboard';
 
 const CustomerDashboard = () => {
   return <CustomerDashboardComponent />;

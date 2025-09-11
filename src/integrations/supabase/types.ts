@@ -260,6 +260,119 @@ export type Database = {
           },
         ]
       }
+      menu_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          name: string
+          restaurant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          restaurant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          restaurant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_categories_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_items: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          image_url: string | null
+          is_available: boolean
+          is_featured: boolean
+          is_gluten_free: boolean
+          is_vegan: boolean
+          is_vegetarian: boolean
+          name: string
+          order_count: number
+          price_cents: number
+          restaurant_id: string
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_available?: boolean
+          is_featured?: boolean
+          is_gluten_free?: boolean
+          is_vegan?: boolean
+          is_vegetarian?: boolean
+          name: string
+          order_count?: number
+          price_cents: number
+          restaurant_id: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_available?: boolean
+          is_featured?: boolean
+          is_gluten_free?: boolean
+          is_vegan?: boolean
+          is_vegetarian?: boolean
+          name?: string
+          order_count?: number
+          price_cents?: number
+          restaurant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "menu_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_items_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_feedback: {
         Row: {
           comment: string | null
@@ -429,6 +542,47 @@ export type Database = {
           },
         ]
       }
+      restaurant_hours: {
+        Row: {
+          close_time: string | null
+          created_at: string
+          day_of_week: number
+          id: string
+          is_closed: boolean
+          open_time: string | null
+          restaurant_id: string
+          updated_at: string
+        }
+        Insert: {
+          close_time?: string | null
+          created_at?: string
+          day_of_week: number
+          id?: string
+          is_closed?: boolean
+          open_time?: string | null
+          restaurant_id: string
+          updated_at?: string
+        }
+        Update: {
+          close_time?: string | null
+          created_at?: string
+          day_of_week?: number
+          id?: string
+          is_closed?: boolean
+          open_time?: string | null
+          restaurant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_hours_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurants: {
         Row: {
           address: string
@@ -442,6 +596,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean | null
+          is_promoted: boolean
           logo_url: string | null
           max_delivery_time: number | null
           min_delivery_time: number | null
@@ -451,6 +606,7 @@ export type Database = {
           phone: string | null
           rating: number | null
           state: string | null
+          total_reviews: number
           updated_at: string | null
           zip_code: string | null
         }
@@ -466,6 +622,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          is_promoted?: boolean
           logo_url?: string | null
           max_delivery_time?: number | null
           min_delivery_time?: number | null
@@ -475,6 +632,7 @@ export type Database = {
           phone?: string | null
           rating?: number | null
           state?: string | null
+          total_reviews?: number
           updated_at?: string | null
           zip_code?: string | null
         }
@@ -490,6 +648,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean | null
+          is_promoted?: boolean
           logo_url?: string | null
           max_delivery_time?: number | null
           min_delivery_time?: number | null
@@ -499,6 +658,7 @@ export type Database = {
           phone?: string | null
           rating?: number | null
           state?: string | null
+          total_reviews?: number
           updated_at?: string | null
           zip_code?: string | null
         }
