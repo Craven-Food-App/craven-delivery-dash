@@ -153,12 +153,17 @@ export const AccountSection = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // First check if profile exists
-      const { data: existingProfile } = await supabase
+      // Check if profile exists first
+      const { data: existingProfile, error: checkError } = await supabase
         .from('user_profiles')
-        .select('id')
+        .select('id, user_id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking profile:', checkError);
+        throw checkError;
+      }
 
       let result;
       if (existingProfile) {
@@ -166,30 +171,57 @@ export const AccountSection = () => {
         result = await supabase
           .from('user_profiles')
           .update(updates)
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .select()
+          .single();
       } else {
-        // Create new profile
-        result = await supabase
-          .from('user_profiles')
-          .insert({
-            user_id: user.id,
-            role: 'customer',
-            ...updates
-          });
+        // Create new profile - ensure we have proper auth.users reference
+        try {
+          result = await supabase
+            .from('user_profiles')
+            .insert({
+              user_id: user.id,
+              role: 'customer',
+              preferences: {},
+              settings: {},
+              ...updates
+            })
+            .select()
+            .single();
+        } catch (insertError: any) {
+          // If foreign key constraint fails, the auth.users entry might not exist
+          // This can happen in development - let's handle it gracefully
+          console.error('Insert failed, user might not exist in auth.users:', insertError);
+          throw new Error('Profile creation failed. Please try signing out and back in.');
+        }
       }
 
-      if (result.error) throw result.error;
+      if (result.error) {
+        console.error('Profile operation error:', result.error);
+        throw result.error;
+      }
 
-      setProfile(prev => prev ? { ...prev, ...updates } : null);
+      if (result.data) {
+        setProfile(result.data);
+      }
+
       toast({
         title: "Success",
         description: "Profile updated successfully"
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
+      let errorMessage = "Failed to update profile";
+      
+      if (error.code === '23503') {
+        errorMessage = "Profile update failed. Please try signing out and back in.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to update profile",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -233,9 +265,11 @@ export const AccountSection = () => {
             <div>
               <CardTitle>{profile?.full_name || 'User'}</CardTitle>
               <CardDescription>
-                <Badge variant="secondary" className="mt-1">
-                  {profile?.role || 'customer'}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="mt-1">
+                    {profile?.role || 'customer'}
+                  </Badge>
+                </div>
               </CardDescription>
             </div>
           </div>
