@@ -12,8 +12,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Edit, Trash2, DollarSign, Upload, X, Image, Download } from "lucide-react";
+import { Plus, Edit, Trash2, DollarSign, Upload, X, Image, Download, Settings } from "lucide-react";
 import { MenuImport } from "./MenuImport";
+import { MenuItemModifierManager } from "./MenuItemModifierManager";
 
 interface MenuItem {
   id: string;
@@ -49,6 +50,7 @@ export const MenuManagement = ({ restaurantId }: MenuManagementProps) => {
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [isImportingMenu, setIsImportingMenu] = useState(false);
+  const [managingModifiersFor, setManagingModifiersFor] = useState<{ id: string; name: string } | null>(null);
   const { toast } = useToast();
 
   const [newCategory, setNewCategory] = useState({
@@ -479,6 +481,14 @@ export const MenuManagement = ({ restaurantId }: MenuManagementProps) => {
                         checked={item.is_available}
                         onCheckedChange={(checked) => toggleItemAvailability(item.id, checked)}
                       />
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setManagingModifiersFor({ id: item.id, name: item.name })}
+                        title="Manage Options & Modifiers"
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
                       <Button variant="outline" size="sm" onClick={() => setEditingItem(item)}>
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -698,6 +708,16 @@ export const MenuManagement = ({ restaurantId }: MenuManagementProps) => {
           </div>
         </TabsContent>
       </Tabs>
+      
+      {/* Menu Item Modifier Manager */}
+      {managingModifiersFor && (
+        <MenuItemModifierManager
+          menuItemId={managingModifiersFor.id}
+          menuItemName={managingModifiersFor.name}
+          isOpen={!!managingModifiersFor}
+          onClose={() => setManagingModifiersFor(null)}
+        />
+      )}
     </div>
   );
 };
