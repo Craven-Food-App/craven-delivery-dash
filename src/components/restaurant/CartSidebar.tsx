@@ -87,42 +87,33 @@ export const CartSidebar = ({
     setIsProcessing(true);
     
     try {
-      // Create customer order with pending payment
+      // Get current user if authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Create order with correct schema
       const orderData = {
-        customer_name: customerInfo.name,
-        customer_email: customerInfo.email,
-        customer_phone: customerInfo.phone,
+        customer_id: user?.id || null,
         restaurant_id: restaurant.id,
-        order_items: cart.map(item => ({
-          id: item.id,
-          name: item.name,
-          quantity: item.quantity,
-          price_cents: item.price_cents,
-          modifiers: item.modifiers?.map(mod => ({
-            id: mod.id,
-            name: mod.name,
-            price_cents: mod.price_cents
-          })) || [],
-          special_instructions: item.special_instructions
-        })),
         subtotal_cents: totals.subtotal,
         delivery_fee_cents: totals.deliveryFee,
         tax_cents: totals.tax,
         total_cents: totals.total,
-        delivery_method: deliveryMethod,
-        delivery_address: customerInfo.deliveryAddress,
-        special_instructions: customerInfo.specialInstructions,
         order_status: 'pending',
-        payment_status: 'pending',
-        estimated_pickup_time: new Date(Date.now() + restaurant.min_delivery_time * 60000).toISOString(),
+        delivery_address: deliveryMethod === 'delivery' ? {
+          name: customerInfo.name,
+          email: customerInfo.email,
+          phone: customerInfo.phone,
+          address: customerInfo.deliveryAddress,
+          special_instructions: customerInfo.specialInstructions
+        } : null,
         estimated_delivery_time: deliveryMethod === 'delivery' 
           ? new Date(Date.now() + restaurant.max_delivery_time * 60000).toISOString() 
-          : null
+          : new Date(Date.now() + 20 * 60000).toISOString() // 20 min for pickup
       };
 
-      // Create customer order
-      const { data: customerOrder, error: orderError } = await supabase
-        .from('customer_orders')
+      // Create order
+      const { data: newOrder, error: orderError } = await supabase
+        .from('orders')
         .insert(orderData)
         .select()
         .single();
@@ -134,44 +125,11 @@ export const CartSidebar = ({
         body: {
           orderTotal: totals.total,
           customerInfo,
-          orderId: customerOrder.id
+          orderId: newOrder.id
         }
       });
 
       if (paymentError) throw paymentError;
-
-      // Store session ID for later verification
-      await supabase
-        .from('customer_orders')
-        .update({ stripe_session_id: paymentData.session_id })
-        .eq('id', customerOrder.id);
-
-      // For delivery orders, create delivery order entry
-      if (deliveryMethod === 'delivery') {
-        const pickupLat = restaurant.latitude || 40.7128;
-        const pickupLng = restaurant.longitude || -74.0060;
-        const dropoffLat = pickupLat + (Math.random() - 0.5) * 0.01;
-        const dropoffLng = pickupLng + (Math.random() - 0.5) * 0.01;
-        
-        const distance = Math.random() * 8 + 2;
-        const payout = Math.round((distance * 2.5 + 3) * 100);
-
-        await supabase.from('delivery_orders').insert({
-          customer_order_id: customerOrder.id,
-          pickup_address: `${restaurant.address}, ${restaurant.city}, ${restaurant.state}`,
-          pickup_lat: pickupLat,
-          pickup_lng: pickupLng,
-          dropoff_address: customerInfo.deliveryAddress,
-          dropoff_lat: dropoffLat,
-          dropoff_lng: dropoffLng,
-          distance_km: distance,
-          payout_cents: payout,
-          status: 'pending',
-          restaurant_id: restaurant.id,
-          pickup_name: restaurant.name,
-          dropoff_name: customerInfo.name
-        });
-      }
 
       // Redirect to Stripe Checkout
       window.location.href = paymentData.url;
