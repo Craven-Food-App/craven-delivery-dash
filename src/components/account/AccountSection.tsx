@@ -164,41 +164,61 @@ export const AccountSection = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // For now, just update the local state since there are database constraint issues
-      // This provides immediate user feedback while we work on the backend
-      setProfile(prev => prev ? { ...prev, ...updates } : null);
-      
-      toast({
-        title: "Profile Updated",
-        description: "Your profile changes have been saved locally. Full database sync will be available soon.",
-      });
+      // Check if profile exists first
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('user_profiles')
+        .select('id, user_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      // Attempt to save to database, but don't fail if it doesn't work
-      try {
-        const { data: existingProfile, error: checkError } = await supabase
-          .from('user_profiles')
-          .select('id, user_id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (!checkError && existingProfile) {
-          // Try to update existing profile
-          await supabase
-            .from('user_profiles')
-            .update(updates)
-            .eq('user_id', user.id);
-        }
-      } catch (dbError) {
-        // Silently handle database errors - the local update already succeeded
-        console.log('Database sync pending - changes saved locally');
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking profile:', checkError);
+        throw checkError;
       }
 
+      let result;
+      if (existingProfile) {
+        // Update existing profile
+        result = await supabase
+          .from('user_profiles')
+          .update(updates)
+          .eq('user_id', user.id)
+          .select()
+          .single();
+      } else {
+        // Create new profile
+        result = await supabase
+          .from('user_profiles')
+          .insert({
+            user_id: user.id,
+            role: 'customer',
+            preferences: {},
+            settings: {},
+            ...updates
+          })
+          .select()
+          .single();
+      }
+
+      if (result.error) {
+        console.error('Profile operation error:', result.error);
+        throw result.error;
+      }
+
+      if (result.data) {
+        setProfile(result.data);
+      }
+
+      toast({
+        title: "Success",
+        description: "Profile updated successfully"
+      });
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      
       toast({
-        title: "Profile Updated Locally",
-        description: "Changes saved in your session. Database sync will be available after a future update.",
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive"
       });
     } finally {
       setUpdating(false);
