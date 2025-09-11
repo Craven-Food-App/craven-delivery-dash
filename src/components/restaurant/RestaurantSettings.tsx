@@ -9,7 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Save, Clock, DollarSign, MapPin, Upload, X, Image } from "lucide-react";
+import { Save, Clock, DollarSign, MapPin, Upload, X, Image, Crop, Scissors } from "lucide-react";
+import ImageCropper from "@/components/common/ImageCropper";
+import { removeBackground, loadImage } from "@/utils/BackgroundRemovalService";
 
 interface Restaurant {
   id: string;
@@ -46,6 +48,10 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
   const [formData, setFormData] = useState(restaurant);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [cropperImageSrc, setCropperImageSrc] = useState('');
+  const [cropperImageType, setCropperImageType] = useState<'image' | 'logo'>('logo');
+  const [removingBackground, setRemovingBackground] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -59,13 +65,13 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
     }));
   };
 
-  const uploadImage = async (file: File, type: 'image' | 'logo'): Promise<string | null> => {
+  const uploadImage = async (file: File | Blob, type: 'image' | 'logo'): Promise<string | null> => {
     setUploadingImage(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file instanceof File ? file.name.split('.').pop() : 'png';
       const fileName = `${user.id}/${type}-${Date.now()}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
@@ -92,7 +98,7 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
     }
   };
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'logo') => {
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'logo') => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -105,12 +111,69 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
       return;
     }
 
-    const imageUrl = await uploadImage(file, type);
+    // Create URL for the cropper
+    const imageUrl = URL.createObjectURL(file);
+    setCropperImageSrc(imageUrl);
+    setCropperImageType(type);
+    setCropperOpen(true);
+  };
+
+  const handleCropComplete = async (croppedImageBlob: Blob) => {
+    setCropperOpen(false);
+    
+    const imageUrl = await uploadImage(croppedImageBlob, cropperImageType);
     if (imageUrl) {
-      const field = type === 'logo' ? 'logo_url' : 'image_url';
+      const field = cropperImageType === 'logo' ? 'logo_url' : 'image_url';
       handleInputChange(field, imageUrl);
     }
+    
+    // Clean up the URL
+    URL.revokeObjectURL(cropperImageSrc);
   };
+
+  const handleRemoveBackground = async (type: 'image' | 'logo') => {
+    const currentImageUrl = type === 'logo' ? formData.logo_url : formData.image_url;
+    if (!currentImageUrl) {
+      toast({
+        title: "Error",
+        description: "No image to process",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setRemovingBackground(true);
+    try {
+      // Load the current image
+      const response = await fetch(currentImageUrl);
+      const blob = await response.blob();
+      const imageElement = await loadImage(blob);
+      
+      // Remove background
+      const processedBlob = await removeBackground(imageElement);
+      
+      // Upload the processed image
+      const imageUrl = await uploadImage(processedBlob, type);
+      if (imageUrl) {
+        const field = type === 'logo' ? 'logo_url' : 'image_url';
+        handleInputChange(field, imageUrl);
+        toast({
+          title: "Success",
+          description: "Background removed successfully",
+        });
+      }
+    } catch (error) {
+      console.error('Error removing background:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove background. Make sure your browser supports WebGPU.",
+        variant: "destructive",
+      });
+    } finally {
+      setRemovingBackground(false);
+    }
+  };
+
 
   const saveBasicInfo = async () => {
     setSaving(true);
@@ -348,13 +411,27 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
                       id="restaurant-logo"
                       type="file"
                       accept="image/*"
-                      onChange={(e) => handleImageUpload(e, 'logo')}
-                      disabled={uploadingImage}
+                      onChange={(e) => handleImageSelect(e, 'logo')}
+                      disabled={uploadingImage || removingBackground}
                     />
-                    {uploadingImage && (
+                    <div className="flex gap-2">
+                      {formData.logo_url && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRemoveBackground('logo')}
+                          disabled={uploadingImage || removingBackground}
+                        >
+                          <Scissors className="h-4 w-4 mr-2" />
+                          {removingBackground ? 'Removing...' : 'Remove Background'}
+                        </Button>
+                      )}
+                    </div>
+                    {(uploadingImage || removingBackground) && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Upload className="h-4 w-4 animate-spin" />
-                        Uploading logo...
+                        {uploadingImage ? 'Uploading logo...' : 'Processing image...'}
                       </div>
                     )}
                     {formData.logo_url && (
@@ -385,13 +462,13 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
                       id="restaurant-image"
                       type="file"
                       accept="image/*"
-                      onChange={(e) => handleImageUpload(e, 'image')}
-                      disabled={uploadingImage}
+                      onChange={(e) => handleImageSelect(e, 'image')}
+                      disabled={uploadingImage || removingBackground}
                     />
-                    {uploadingImage && (
+                    {(uploadingImage || removingBackground) && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Upload className="h-4 w-4 animate-spin" />
-                        Uploading image...
+                        {uploadingImage ? 'Uploading image...' : 'Processing image...'}
                       </div>
                     )}
                     {formData.image_url && (
@@ -416,7 +493,7 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
                 </div>
               </div>
 
-              <Button onClick={saveBasicInfo} disabled={saving || uploadingImage}>
+              <Button onClick={saveBasicInfo} disabled={saving || uploadingImage || removingBackground}>
                 <Save className="h-4 w-4 mr-2" />
                 {saving ? "Saving..." : "Save Images"}
               </Button>
@@ -562,6 +639,18 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
           </Card>
         </TabsContent>
       </Tabs>
+
+      <ImageCropper
+        isOpen={cropperOpen}
+        onClose={() => {
+          setCropperOpen(false);
+          URL.revokeObjectURL(cropperImageSrc);
+        }}
+        imageSrc={cropperImageSrc}
+        onCropComplete={handleCropComplete}
+        aspectRatio={cropperImageType === 'logo' ? 1 : undefined}
+        cropShape={cropperImageType === 'logo' ? 'round' : 'rect'}
+      />
     </div>
   );
 };
