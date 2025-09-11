@@ -20,35 +20,37 @@ export class WebScrapingService {
 
   static async parseMenuFromUrl(url: string): Promise<{ success: boolean; menuItems?: ExtractedMenuItem[]; error?: string }> {
     try {
-      // For now, we'll create a simple URL-based menu parser
-      // In a real implementation, you'd want to use a backend service
-      const response = await fetch(url, {
-        mode: 'cors',
-        headers: {
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'User-Agent': 'Mozilla/5.0 (compatible; MenuParser/1.0)'
-        }
-      }).catch(() => null);
+      // Use Supabase edge function to bypass CORS restrictions
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      const { data, error } = await supabase.functions.invoke('scrape-menu', {
+        body: { url }
+      });
 
-      if (!response || !response.ok) {
+      if (error) {
+        console.error('Error calling scrape-menu function:', error);
         return {
           success: false,
-          error: 'Unable to fetch the website. This might be due to CORS restrictions or the website being unavailable.'
+          error: 'Failed to fetch menu from website. Please check the URL and try again.'
         };
       }
 
-      const html = await response.text();
-      const menuItems = this.extractMenuItemsFromHtml(html, url);
-      
+      if (!data.success) {
+        return {
+          success: false,
+          error: data.error || 'Failed to extract menu items from the website.'
+        };
+      }
+
       return {
         success: true,
-        menuItems
+        menuItems: data.menuItems
       };
     } catch (error) {
       console.error('Error parsing menu from URL:', error);
       return {
         success: false,
-        error: 'Failed to parse menu. Due to browser security restrictions, direct website scraping is limited. Please try using the manual entry feature instead.'
+        error: 'Failed to parse menu. Please check the URL and try again.'
       };
     }
   }
