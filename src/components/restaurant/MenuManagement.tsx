@@ -149,7 +149,7 @@ export const MenuManagement = ({ restaurantId }: MenuManagementProps) => {
       console.log('File size:', file.size);
       
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('menu-images')
+        .from('restaurant-images')
         .upload(fileName, file);
 
       if (uploadError) {
@@ -160,7 +160,7 @@ export const MenuManagement = ({ restaurantId }: MenuManagementProps) => {
       console.log('Upload successful:', uploadData);
 
       const { data } = supabase.storage
-        .from('menu-images')
+        .from('restaurant-images')
         .getPublicUrl(fileName);
 
       return data.publicUrl;
