@@ -14,14 +14,14 @@ const Restaurants = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [location, setLocation] = useState(searchParams.get('location') || '');
-  const [cuisineFilter, setCuisineFilter] = useState(searchParams.get('cuisine') || '');
+  const [cuisineFilter, setCuisineFilter] = useState(searchParams.get('cuisine') || 'all');
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'rating');
 
   useEffect(() => {
     const params = new URLSearchParams();
     if (searchQuery) params.set('search', searchQuery);
     if (location) params.set('location', location);
-    if (cuisineFilter) params.set('cuisine', cuisineFilter);
+    if (cuisineFilter && cuisineFilter !== 'all') params.set('cuisine', cuisineFilter);
     if (sortBy !== 'rating') params.set('sort', sortBy);
     
     setSearchParams(params);
@@ -122,7 +122,7 @@ const Restaurants = () => {
                   {cuisineTypes.map((cuisine) => (
                     <SelectItem 
                       key={cuisine} 
-                      value={cuisine === 'All Cuisines' ? '' : cuisine}
+                      value={cuisine === 'All Cuisines' ? 'all' : cuisine}
                     >
                       {cuisine}
                     </SelectItem>
