@@ -269,8 +269,8 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
               <ShoppingCart className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">McDonald's Style POS</h1>
-              <p className="text-sm text-muted-foreground">Order Management System</p>
+              <h1 className="text-xl font-bold">POS</h1>
+              <p className="text-sm text-muted-foreground">Point of Sale System</p>
             </div>
           </div>
           
