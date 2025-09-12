@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CraverApplicationForm } from "@/components/CraverApplicationForm";
+import CraverRoutineVideo from "@/components/CraverRoutineVideo";
 
 const CraverHub = () => {
   const navigate = useNavigate();
@@ -125,8 +126,22 @@ const CraverHub = () => {
         </div>
       </section>
 
-      {/* Earnings Section */}
+      {/* How It Works Video Section */}
       <section className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">See How It Works</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Follow a typical Craver's routine from login to earning money. 
+              It's simple, flexible, and rewarding.
+            </p>
+          </div>
+          <CraverRoutineVideo />
+        </div>
+      </section>
+
+      {/* Earnings Section */}
+      <section className="py-16 bg-muted/20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
@@ -161,7 +176,7 @@ const CraverHub = () => {
       </section>
 
       {/* Requirements Section */}
-      <section className="py-16 bg-muted/20">
+      <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-12">
