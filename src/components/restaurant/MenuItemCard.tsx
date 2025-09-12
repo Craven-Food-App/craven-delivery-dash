@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Heart } from 'lucide-react';
+import { useFavorites } from '@/hooks/useFavorites';
 
 interface MenuItemCardProps {
   id: string;
@@ -13,6 +14,7 @@ interface MenuItemCardProps {
   category: string;
   is_available: boolean;
   dietary_info?: string[];
+  restaurantId?: string;
   onAddToCart: (id: string) => void;
   onCustomize?: (item: any) => void;
 }
@@ -26,10 +28,12 @@ const MenuItemCard = ({
   category,
   is_available,
   dietary_info,
+  restaurantId,
   onAddToCart,
   onCustomize
 }: MenuItemCardProps) => {
   const formatPrice = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+  const { toggleFavorite, isFavorite } = useFavorites();
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 border-border/50 group">
@@ -40,13 +44,20 @@ const MenuItemCard = ({
               <h3 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
                 {name}
               </h3>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
-              >
-                <Heart className="h-4 w-4" />
-              </Button>
+              {restaurantId && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => toggleFavorite(restaurantId)}
+                  className={`transition-colors ${
+                    isFavorite(restaurantId) 
+                      ? 'text-red-500 hover:text-red-600' 
+                      : 'text-muted-foreground hover:text-red-500'
+                  }`}
+                >
+                  <Heart className={`h-4 w-4 ${isFavorite(restaurantId) ? 'fill-current' : ''}`} />
+                </Button>
+              )}
             </div>
             
             <p className="text-muted-foreground leading-relaxed text-sm">

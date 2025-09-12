@@ -98,7 +98,7 @@ const Header = () => {
               <h1 className="text-2xl font-bold text-primary">Crave'n</h1>
               
               <nav className="hidden md:flex space-x-6">
-                <a href="/" className="text-foreground hover:text-primary transition-colors">Restaurants</a>
+                <a href="/restaurants" className="text-foreground hover:text-primary transition-colors">Restaurants</a>
                 <a href="/craver" className="text-foreground hover:text-primary transition-colors">Become a Driver</a>
                 {user && (
                   <a href="/customer-dashboard" className="text-foreground hover:text-primary transition-colors">My Orders</a>

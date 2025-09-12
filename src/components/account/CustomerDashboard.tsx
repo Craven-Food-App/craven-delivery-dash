@@ -86,33 +86,33 @@ const CustomerDashboard = () => {
         setRestaurants(restaurantsMap);
       }
 
-      // For now, set empty favorites since the table might not exist yet
-      // TODO: Uncomment when customer_favorites table is available
-      // const { data: favoritesData, error: favoritesError } = await supabase
-      //   .from("customer_favorites")
-      //   .select(`
-      //     restaurant_id,
-      //     restaurants (
-      //       id,
-      //       name,
-      //       image_url,
-      //       cuisine_type,
-      //       rating,
-      //       delivery_fee_cents
-      //     )
-      //   `)
-      //   .eq("customer_id", user.id);
+      // Fetch favorites
+      const { data: favoritesData, error: favoritesError } = await supabase
+        .from("customer_favorites")
+        .select(`
+          restaurant_id,
+          restaurants (
+            id,
+            name,
+            image_url,
+            cuisine_type,
+            rating,
+            delivery_fee_cents
+          )
+        `)
+        .eq("customer_id", user.id);
 
-      // if (favoritesError) {
-      //   console.error("Error fetching favorites:", favoritesError);
-      // } else if (favoritesData) {
-      //   const formattedFavorites = favoritesData
-      //     .filter(fav => fav.restaurants)
-      //     .map(fav => fav.restaurants as FavoriteRestaurant);
-      //   setFavorites(formattedFavorites);
-      // }
-      
-      setFavorites([]);
+      if (favoritesError) {
+        console.error("Error fetching favorites:", favoritesError);
+        setFavorites([]);
+      } else if (favoritesData) {
+        const formattedFavorites = favoritesData
+          .filter(fav => fav.restaurants)
+          .map(fav => fav.restaurants as FavoriteRestaurant);
+        setFavorites(formattedFavorites);
+      } else {
+        setFavorites([]);
+      }
     } catch (error) {
       console.error("Error fetching user data:", error);
       toast({
@@ -171,12 +171,28 @@ const CustomerDashboard = () => {
   };
 
   const removeFavorite = async (restaurantId: string) => {
-    // TODO: Implement when customer_favorites table is available
-    setFavorites(prev => prev.filter(fav => fav.id !== restaurantId));
-    toast({
-      title: "Removed from favorites",
-      description: "Restaurant removed from your favorites"
-    });
+    try {
+      const { error } = await supabase
+        .from("customer_favorites")
+        .delete()
+        .eq("customer_id", user?.id)
+        .eq("restaurant_id", restaurantId);
+
+      if (error) throw error;
+
+      setFavorites(prev => prev.filter(fav => fav.id !== restaurantId));
+      toast({
+        title: "Removed from favorites",
+        description: "Restaurant removed from your favorites"
+      });
+    } catch (error) {
+      console.error("Error removing favorite:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove from favorites",
+        variant: "destructive"
+      });
+    }
   };
 
   if (loading) {

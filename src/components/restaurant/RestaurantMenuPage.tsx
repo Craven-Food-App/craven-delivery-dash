@@ -6,11 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { Star, Clock, MapPin, Heart, ShoppingCart, Plus, Minus, ArrowLeft, Search, Filter } from 'lucide-react';
+import { Star, Clock, MapPin, Heart, ShoppingCart, Plus, Minus, ArrowLeft, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import MenuItemCard from './MenuItemCard';
 import CartSummary from './CartSummary';
 import { MenuItemModal } from './MenuItemModal';
+import MenuFilters, { FilterOptions } from './MenuFilters';
 
 interface MenuItem {
   id: string;
@@ -56,6 +57,13 @@ const RestaurantMenuPage = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [filters, setFilters] = useState<FilterOptions>({
+    priceRange: [0, 50],
+    dietary: { vegetarian: false, vegan: false, glutenFree: false },
+    availability: true,
+    rating: 0,
+    preparationTime: 60,
+  });
 
   useEffect(() => {
     if (id) {
@@ -145,7 +153,18 @@ const RestaurantMenuPage = () => {
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.category.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    
+    // Apply filters
+    const matchesPrice = item.price_cents >= filters.priceRange[0] * 100 && 
+                        (filters.priceRange[1] >= 50 || item.price_cents <= filters.priceRange[1] * 100);
+    
+    const matchesDietary = (!filters.dietary.vegetarian || item.dietary_info?.includes('Vegetarian')) &&
+                          (!filters.dietary.vegan || item.dietary_info?.includes('Vegan')) &&
+                          (!filters.dietary.glutenFree || item.dietary_info?.includes('Gluten Free'));
+    
+    const matchesAvailability = !filters.availability || item.is_available;
+    
+    return matchesCategory && matchesSearch && matchesPrice && matchesDietary && matchesAvailability;
   });
 
   const addToCart = (item: MenuItem, quantity: number = 1, modifiers: any[] = [], specialInstructions?: string) => {
@@ -230,19 +249,46 @@ const RestaurantMenuPage = () => {
 
       const orderId = (self?.crypto && 'randomUUID' in self.crypto) ? self.crypto.randomUUID() : `order_${Date.now()}`;
 
-      const { data, error } = await supabase.functions.invoke('create-payment', {
-        body: {
-          orderTotal: total,
-          customerInfo,
-          orderId
-        }
-      });
+      // For CashApp demo, we'll simulate the flow
+      // In production, you would show PaymentOptions component and handle accordingly
+      const isCashAppDemo = Math.random() > 0.5; // 50% chance to demo CashApp
+      
+      if (isCashAppDemo) {
+        const { data, error } = await supabase.functions.invoke('create-cashapp-payment', {
+          body: {
+            orderTotal: total,
+            customerInfo,
+            orderId
+          }
+        });
 
-      if (error) throw error;
-      if (!data?.url) throw new Error('No checkout URL returned');
+        if (error) throw error;
 
-      // Open Stripe checkout in a new tab
-      window.open(data.url, '_blank');
+        toast({
+          title: 'CashApp Payment',
+          description: 'Redirecting to CashApp...',
+        });
+
+        // In a real app, you would redirect to CashApp or show QR code
+        setTimeout(() => {
+          window.location.href = data.paymentData.redirectUrl;
+        }, 2000);
+      } else {
+        // Use Stripe payment
+        const { data, error } = await supabase.functions.invoke('create-payment', {
+          body: {
+            orderTotal: total,
+            customerInfo,
+            orderId
+          }
+        });
+
+        if (error) throw error;
+        if (!data?.url) throw new Error('No checkout URL returned');
+
+        // Open Stripe checkout in a new tab
+        window.open(data.url, '_blank');
+      }
     } catch (error) {
       console.error('Checkout error:', error);
       toast({
@@ -376,10 +422,10 @@ const RestaurantMenuPage = () => {
                 />
               </div>
               
-              <Button variant="outline" size="sm" className="flex items-center gap-2 bg-background/50 backdrop-blur-sm">
-                <Filter className="h-4 w-4" />
-                Filters
-              </Button>
+              <MenuFilters 
+                onFiltersChange={setFilters}
+                className="bg-background/50 backdrop-blur-sm"
+              />
             </div>
 
             {/* Category Filter */}
@@ -411,6 +457,7 @@ const RestaurantMenuPage = () => {
                   <MenuItemCard
                     key={item.id}
                     {...item}
+                    restaurantId={restaurant?.id}
                     onAddToCart={() => addToCartSimple(item.id)}
                     onCustomize={(item) => setSelectedItem(item)}
                   />

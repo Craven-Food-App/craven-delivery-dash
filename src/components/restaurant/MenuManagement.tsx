@@ -265,6 +265,33 @@ export const MenuManagement = ({ restaurantId }: MenuManagementProps) => {
     }
   };
 
+  const deleteMenuItem = async (itemId: string) => {
+    if (!confirm("Are you sure you want to delete this menu item?")) return;
+    
+    try {
+      const { error } = await supabase
+        .from("menu_items")
+        .delete()
+        .eq("id", itemId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Menu item deleted successfully",
+      });
+
+      fetchData();
+    } catch (error) {
+      console.error("Error deleting menu item:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete menu item",
+        variant: "destructive",
+      });
+    }
+  };
+
   const toggleItemAvailability = async (itemId: string, isAvailable: boolean) => {
     try {
       const { error } = await supabase
@@ -488,6 +515,22 @@ export const MenuManagement = ({ restaurantId }: MenuManagementProps) => {
                         title="Manage Options & Modifiers"
                       >
                         <Settings className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setEditingItem(item)}
+                        title="Edit Item"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        onClick={() => deleteMenuItem(item.id)}
+                        title="Delete Item"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                       <Button variant="outline" size="sm" onClick={() => setEditingItem(item)}>
                         <Edit className="h-4 w-4" />
