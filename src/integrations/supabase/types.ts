@@ -677,6 +677,42 @@ export type Database = {
           },
         ]
       }
+      restaurant_employees: {
+        Row: {
+          created_at: string
+          employee_id: string
+          full_name: string
+          id: string
+          is_active: boolean
+          pin_code: string
+          restaurant_id: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          full_name: string
+          id?: string
+          is_active?: boolean
+          pin_code: string
+          restaurant_id: string
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          pin_code?: string
+          restaurant_id?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       restaurant_hours: {
         Row: {
           close_time: string | null
