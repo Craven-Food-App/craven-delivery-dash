@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Car, DollarSign, Clock, Shield, CheckCircle, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CraverApplicationForm } from "@/components/CraverApplicationForm";
 import CraverRoutineVideo from "@/components/CraverRoutineVideo";
+import { DocumentVerificationService } from "@/utils/DocumentVerificationService";
 
 const CraverHub = () => {
   const navigate = useNavigate();

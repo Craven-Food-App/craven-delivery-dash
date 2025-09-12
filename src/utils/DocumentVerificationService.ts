@@ -6,16 +6,34 @@ export class DocumentVerificationService {
 
   // Initialize OCR pipeline
   private static async getOCRPipeline() {
-    if (!this.ocrPipeline) {
-      this.ocrPipeline = await pipeline('image-to-text', 'Xenova/trocr-base-printed');
+    if (this.ocrPipeline) return this.ocrPipeline;
+    try {
+      // Try WebGPU first for significant speedups on supported devices
+      this.ocrPipeline = await pipeline('image-to-text', 'Xenova/trocr-base-printed', {
+        device: 'webgpu'
+      });
+    } catch (err) {
+      console.warn('WebGPU unavailable, falling back to WASM', err);
+      this.ocrPipeline = await pipeline('image-to-text', 'Xenova/trocr-base-printed', {
+        device: 'wasm'
+      });
     }
     return this.ocrPipeline;
+  }
+
+  // Allow preloading from UI to make verification feel instant
+  static async preload() {
+    try {
+      await this.getOCRPipeline();
+    } catch (e) {
+      console.error('OCR preload failed:', e);
+    }
   }
 
   // Extract text from image using OCR
   static async extractText(imageFile: File): Promise<string> {
     try {
-      const pipeline = await this.getOCRPipeline();
+      const ocr = await this.getOCRPipeline();
       
       // Convert file to data URL
       const reader = new FileReader();
@@ -25,8 +43,11 @@ export class DocumentVerificationService {
         reader.readAsDataURL(imageFile);
       });
 
-      const result = await pipeline(dataUrl);
-      return result.generated_text || '';
+      const result: any = await ocr(dataUrl);
+      const text = Array.isArray(result)
+        ? (result.map((r: any) => r?.generated_text).filter(Boolean).join(' ') || '')
+        : (result?.generated_text || '');
+      return text;
     } catch (error) {
       console.error('OCR extraction error:', error);
       return '';
