@@ -84,11 +84,16 @@ const AddressManager: React.FC<AddressManagerProps> = ({
     }
 
     try {
+      console.log('Attempting to save address for user:', userId);
+      console.log('Form data:', formData);
+      
       const addressData = {
         user_id: userId,
         ...formData,
         is_default: addresses.length === 0 // First address is default
       };
+
+      console.log('Address data to save:', addressData);
 
       if (editingAddress) {
         const { error } = await supabase

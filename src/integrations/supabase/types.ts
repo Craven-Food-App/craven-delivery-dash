@@ -172,15 +172,7 @@ export type Database = {
           user_id?: string | null
           zip_code?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "delivery_addresses_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       driver_earnings: {
         Row: {
