@@ -108,7 +108,10 @@ const Header = () => {
             {/* Location/Address Selector */}
             <div className="hidden md:flex">
               {user ? (
-                <AddressSelector userId={user.id} onAddressChange={setSelectedAddress} />
+                <AddressSelector 
+                  userId={user.id} 
+                  onAddressChange={(address) => setSelectedAddress(address)} 
+                />
               ) : (
                 <div className="flex items-center space-x-2 text-muted-foreground">
                   <MapPin className="h-4 w-4" />
