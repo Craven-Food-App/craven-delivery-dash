@@ -16,16 +16,18 @@ interface Restaurant {
 interface RestaurantGridProps {
   searchQuery?: string;
   deliveryAddress?: string;
+  cuisineFilter?: string;
 }
 const RestaurantGrid = ({
   searchQuery,
-  deliveryAddress
+  deliveryAddress,
+  cuisineFilter
 }: RestaurantGridProps = {}) => {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     fetchRestaurants();
-  }, [searchQuery, deliveryAddress]);
+  }, [searchQuery, deliveryAddress, cuisineFilter]);
   const fetchRestaurants = async () => {
     try {
       let query = (supabase as any).from("restaurants").select("*").eq("is_active", true);
@@ -33,6 +35,11 @@ const RestaurantGrid = ({
       // Filter by search query if provided
       if (searchQuery) {
         query = query.or(`name.ilike.%${searchQuery}%,cuisine_type.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
+      }
+
+      // Filter by cuisine if provided and not 'all'
+      if (cuisineFilter && cuisineFilter !== 'all') {
+        query = query.eq('cuisine_type', cuisineFilter);
       }
 
       // Note: In a real app, you'd filter by location using coordinates

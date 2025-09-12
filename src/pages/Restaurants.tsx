@@ -286,7 +286,11 @@ const Restaurants = () => {
             </div>}
 
           {/* Restaurant Grid */}
-          <RestaurantGrid searchQuery={searchQuery} deliveryAddress={location} />
+          <RestaurantGrid 
+            searchQuery={searchQuery} 
+            deliveryAddress={location} 
+            cuisineFilter={cuisineFilter}
+          />
         </div>
       </section>
 
