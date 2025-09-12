@@ -67,7 +67,7 @@ const RestaurantGrid = ({
     }
   };
   if (loading) {
-    return <section className="py-12 bg-muted/30">
+    return <section className="py-6 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-foreground mb-4">
@@ -90,7 +90,7 @@ const RestaurantGrid = ({
     cuisine: restaurant.cuisine_type,
     isPromoted: restaurant.is_promoted
   });
-  return <section className="py-12 bg-muted/30">
+  return <section className="py-6 bg-muted/30">
       <div className="container mx-auto px-4">
         {!searchQuery && !deliveryAddress && <div className="text-center mb-8">
             
