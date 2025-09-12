@@ -152,8 +152,7 @@ const Hero = () => {
                 <Truck className="mr-2 h-4 w-4" />
                 Satisfy Crave Now
               </Button>
-              <div className="flex flex-col items-center gap-2">
-                <p className="text-white/80 text-sm">Own a restaurant?</p>
+              <div className="flex items-center gap-2">
                 <Button 
                   variant="outline" 
                   size="lg"
@@ -162,6 +161,7 @@ const Hero = () => {
                 >
                   MAKE'M CRAVE
                 </Button>
+                <p className="text-white/80 text-sm">Own a restaurant?</p>
               </div>
             </div>
           </div>
