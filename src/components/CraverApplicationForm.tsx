@@ -13,7 +13,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { DocumentVerificationService } from "@/utils/DocumentVerificationService";
+
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const states = [
@@ -152,50 +152,6 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
 
   const handleFileUpload = async (field: string, file: File) => {
     setFiles(prev => ({ ...prev, [field]: file }));
-    
-    // Start verification for specific document types
-    if (field === 'driversLicenseFront' || field === 'insuranceDocument') {
-      setVerificationLoading(prev => ({ ...prev, [field]: true }));
-      
-      try {
-        let result;
-        if (field === 'driversLicenseFront') {
-          result = await DocumentVerificationService.verifyDriversLicense(file, {
-            firstName: data.firstName,
-            lastName: data.lastName,
-            dateOfBirth: data.dateOfBirth || new Date()
-          });
-        } else if (field === 'insuranceDocument') {
-          result = await DocumentVerificationService.verifyInsurance(file);
-        }
-        
-        if (result) {
-          setVerificationResults(prev => ({ ...prev, [field]: result }));
-          
-          if (!result.isValid) {
-            toast({
-              title: "Document Verification Issues",
-              description: result.issues.join(', '),
-              variant: "destructive"
-            });
-          } else {
-            toast({
-              title: "Document Verified",
-              description: `Document verified with ${result.confidence}% confidence`,
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Verification error:', error);
-        toast({
-          title: "Verification Error",
-          description: "Could not verify document. Please ensure it's clear and readable.",
-          variant: "destructive"
-        });
-      } finally {
-        setVerificationLoading(prev => ({ ...prev, [field]: false }));
-      }
-    }
   };
 
   const uploadDocument = async (field: string, file: File, applicationId: string): Promise<string | null> => {
@@ -253,11 +209,11 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
           state: data.state,
           zip_code: data.zipCode,
           vehicle_type: data.vehicleType as any,
-          vehicle_make: data.vehicleMake,
-          vehicle_model: data.vehicleModel,
-          vehicle_year: parseInt(data.vehicleYear),
-          vehicle_color: data.vehicleColor,
-          license_plate: data.licensePlate,
+          vehicle_make: (data.vehicleType && data.vehicleType !== 'walking') ? (data.vehicleMake || 'N/A') : 'N/A',
+          vehicle_model: (data.vehicleType && data.vehicleType !== 'walking') ? (data.vehicleModel || 'N/A') : 'N/A',
+          vehicle_year: (data.vehicleType && data.vehicleType !== 'walking') ? (parseInt(data.vehicleYear) || 0) : 0,
+          vehicle_color: (data.vehicleType && data.vehicleType !== 'walking') ? (data.vehicleColor || 'N/A') : 'N/A',
+          license_plate: (data.vehicleType && data.vehicleType !== 'walking') ? (data.licensePlate || 'N/A') : 'N/A',
           license_number: data.licenseNumber,
           license_state: data.licenseState,
           license_expiry: data.licenseExpiry?.toISOString().split('T')[0],
@@ -266,12 +222,12 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
           routing_number: data.routingNumber,
           account_number_last_four: data.accountNumberLastFour,
           // Required doc fields expected by admin & DB
-          drivers_license: documentPaths.driversLicenseFront || documentPaths.driversLicenseBack || '',
+          drivers_license: documentPaths.driversLicenseFront || documentPaths.driversLicenseBack || 'pending-upload',
           drivers_license_front: documentPaths.driversLicenseFront,
           drivers_license_back: documentPaths.driversLicenseBack,
           insurance_document: documentPaths.insuranceDocument,
-          insurance_policy: documentPaths.insuranceDocument || '',
-          insurance_provider: '',
+          insurance_policy: documentPaths.insuranceDocument || 'N/A',
+          insurance_provider: 'N/A',
           vehicle_registration: documentPaths.vehicleRegistration,
           profile_photo: documentPaths.profilePhoto
         });
@@ -316,9 +272,6 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
   };
 
   const FileUploadField: React.FC<{ field: string; label: string; required?: boolean }> = ({ field, label, required = false }) => {
-    const isVerifying = verificationLoading[field];
-    const verificationResult = verificationResults[field];
-    
     return (
       <div className="space-y-2">
         <Label htmlFor={field}>{label} {required && <span className="text-destructive">*</span>}</Label>
@@ -343,30 +296,6 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
               </div>
             )}
           </label>
-          
-          {isVerifying && (
-            <div className="mt-2 text-sm text-muted-foreground">
-              Verifying document...
-            </div>
-          )}
-          
-          {verificationResult && (
-            <Alert className={`mt-2 ${verificationResult.isValid ? 'border-green-500' : 'border-destructive'}`}>
-              <div className="flex items-center gap-2">
-                {verificationResult.isValid ? (
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                ) : (
-                  <AlertCircle className="h-4 w-4 text-destructive" />
-                )}
-                <AlertDescription className="text-sm">
-                  {verificationResult.isValid 
-                    ? `Verified (${verificationResult.confidence}% confidence)`
-                    : verificationResult.issues.join(', ')
-                  }
-                </AlertDescription>
-              </div>
-            </Alert>
-          )}
         </div>
       </div>
     );

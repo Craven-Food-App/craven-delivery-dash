@@ -8,7 +8,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CraverApplicationForm } from "@/components/CraverApplicationForm";
 import CraverRoutineVideo from "@/components/CraverRoutineVideo";
-import { DocumentVerificationService } from "@/utils/DocumentVerificationService";
+
 
 const CraverHub = () => {
   const navigate = useNavigate();
@@ -50,10 +50,6 @@ const CraverHub = () => {
     { time: "Weekend Peak", hours: "Fri-Sun Evenings", rate: "$22-30/hour" }
   ];
 
-  // Preload OCR for faster verification
-  useEffect(() => {
-    DocumentVerificationService.preload();
-  }, []);
 
   return (
     <div className="min-h-screen bg-background">
