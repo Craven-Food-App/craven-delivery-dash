@@ -16,20 +16,30 @@ export type Database = {
     Tables: {
       craver_applications: {
         Row: {
+          account_number_last_four: string | null
           background_check: boolean | null
+          bank_account_type: string | null
           city: string
           created_at: string | null
           date_of_birth: string
           drivers_license: string
+          drivers_license_back: string | null
+          drivers_license_front: string | null
           email: string
           first_name: string
           id: string
+          insurance_document: string | null
           insurance_policy: string
           insurance_provider: string
           last_name: string
+          license_expiry: string | null
+          license_number: string | null
           license_plate: string
+          license_state: string | null
           phone: string
           profile_photo: string | null
+          routing_number: string | null
+          ssn_last_four: string | null
           state: string
           status: string | null
           street_address: string
@@ -39,25 +49,36 @@ export type Database = {
           vehicle_inspection: boolean | null
           vehicle_make: string
           vehicle_model: string
+          vehicle_registration: string | null
           vehicle_type: string
           vehicle_year: number
           zip_code: string
         }
         Insert: {
+          account_number_last_four?: string | null
           background_check?: boolean | null
+          bank_account_type?: string | null
           city: string
           created_at?: string | null
           date_of_birth: string
           drivers_license: string
+          drivers_license_back?: string | null
+          drivers_license_front?: string | null
           email: string
           first_name: string
           id?: string
+          insurance_document?: string | null
           insurance_policy: string
           insurance_provider: string
           last_name: string
+          license_expiry?: string | null
+          license_number?: string | null
           license_plate: string
+          license_state?: string | null
           phone: string
           profile_photo?: string | null
+          routing_number?: string | null
+          ssn_last_four?: string | null
           state: string
           status?: string | null
           street_address: string
@@ -67,25 +88,36 @@ export type Database = {
           vehicle_inspection?: boolean | null
           vehicle_make: string
           vehicle_model: string
+          vehicle_registration?: string | null
           vehicle_type: string
           vehicle_year: number
           zip_code: string
         }
         Update: {
+          account_number_last_four?: string | null
           background_check?: boolean | null
+          bank_account_type?: string | null
           city?: string
           created_at?: string | null
           date_of_birth?: string
           drivers_license?: string
+          drivers_license_back?: string | null
+          drivers_license_front?: string | null
           email?: string
           first_name?: string
           id?: string
+          insurance_document?: string | null
           insurance_policy?: string
           insurance_provider?: string
           last_name?: string
+          license_expiry?: string | null
+          license_number?: string | null
           license_plate?: string
+          license_state?: string | null
           phone?: string
           profile_photo?: string | null
+          routing_number?: string | null
+          ssn_last_four?: string | null
           state?: string
           status?: string | null
           street_address?: string
@@ -95,6 +127,7 @@ export type Database = {
           vehicle_inspection?: boolean | null
           vehicle_make?: string
           vehicle_model?: string
+          vehicle_registration?: string | null
           vehicle_type?: string
           vehicle_year?: number
           zip_code?: string

@@ -8,11 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Upload, CheckCircle, AlertCircle } from "lucide-react";
+import { CalendarIcon, Upload, CheckCircle, AlertCircle, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { DocumentVerificationService } from "@/utils/DocumentVerificationService";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const states = [
   "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
@@ -84,6 +86,8 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
     accountNumberLastFour: ""
   });
   const [files, setFiles] = useState<Record<string, File>>({});
+  const [verificationResults, setVerificationResults] = useState<Record<string, any>>({});
+  const [verificationLoading, setVerificationLoading] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
   const totalSteps = 5;
@@ -93,8 +97,52 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
     setData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleFileUpload = (field: string, file: File) => {
+  const handleFileUpload = async (field: string, file: File) => {
     setFiles(prev => ({ ...prev, [field]: file }));
+    
+    // Start verification for specific document types
+    if (field === 'driversLicenseFront' || field === 'insuranceDocument') {
+      setVerificationLoading(prev => ({ ...prev, [field]: true }));
+      
+      try {
+        let result;
+        if (field === 'driversLicenseFront') {
+          result = await DocumentVerificationService.verifyDriversLicense(file, {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            dateOfBirth: data.dateOfBirth || new Date()
+          });
+        } else if (field === 'insuranceDocument') {
+          result = await DocumentVerificationService.verifyInsurance(file);
+        }
+        
+        if (result) {
+          setVerificationResults(prev => ({ ...prev, [field]: result }));
+          
+          if (!result.isValid) {
+            toast({
+              title: "Document Verification Issues",
+              description: result.issues.join(', '),
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Document Verified",
+              description: `Document verified with ${result.confidence}% confidence`,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Verification error:', error);
+        toast({
+          title: "Verification Error",
+          description: "Could not verify document. Please ensure it's clear and readable.",
+          variant: "destructive"
+        });
+      } finally {
+        setVerificationLoading(prev => ({ ...prev, [field]: false }));
+      }
+    }
   };
 
   const uploadDocument = async (field: string, file: File, applicationId: string): Promise<string | null> => {
@@ -201,33 +249,62 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
     }
   };
 
-  const FileUploadField: React.FC<{ field: string; label: string; required?: boolean }> = ({ field, label, required = false }) => (
-    <div className="space-y-2">
-      <Label htmlFor={field}>{label} {required && <span className="text-destructive">*</span>}</Label>
-      <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
-        <input
-          id={field}
-          type="file"
-          accept="image/*,.pdf"
-          onChange={(e) => e.target.files?.[0] && handleFileUpload(field, e.target.files[0])}
-          className="hidden"
-        />
-        <label htmlFor={field} className="cursor-pointer">
-          {files[field] ? (
-            <div className="flex items-center justify-center gap-2 text-green-600">
-              <CheckCircle className="h-4 w-4" />
-              <span className="text-sm">{files[field].name}</span>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center gap-2 text-muted-foreground">
-              <Upload className="h-4 w-4" />
-              <span className="text-sm">Click to upload</span>
+  const FileUploadField: React.FC<{ field: string; label: string; required?: boolean }> = ({ field, label, required = false }) => {
+    const isVerifying = verificationLoading[field];
+    const verificationResult = verificationResults[field];
+    
+    return (
+      <div className="space-y-2">
+        <Label htmlFor={field}>{label} {required && <span className="text-destructive">*</span>}</Label>
+        <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
+          <input
+            id={field}
+            type="file"
+            accept="image/*,.pdf"
+            onChange={(e) => e.target.files?.[0] && handleFileUpload(field, e.target.files[0])}
+            className="hidden"
+          />
+          <label htmlFor={field} className="cursor-pointer">
+            {files[field] ? (
+              <div className="flex items-center justify-center gap-2 text-green-600">
+                <CheckCircle className="h-4 w-4" />
+                <span className="text-sm">{files[field].name}</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                <Upload className="h-4 w-4" />
+                <span className="text-sm">Click to upload</span>
+              </div>
+            )}
+          </label>
+          
+          {isVerifying && (
+            <div className="mt-2 text-sm text-muted-foreground">
+              Verifying document...
             </div>
           )}
-        </label>
+          
+          {verificationResult && (
+            <Alert className={`mt-2 ${verificationResult.isValid ? 'border-green-500' : 'border-destructive'}`}>
+              <div className="flex items-center gap-2">
+                {verificationResult.isValid ? (
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 text-destructive" />
+                )}
+                <AlertDescription className="text-sm">
+                  {verificationResult.isValid 
+                    ? `Verified (${verificationResult.confidence}% confidence)`
+                    : verificationResult.issues.join(', ')
+                  }
+                </AlertDescription>
+              </div>
+            </Alert>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderStep = () => {
     switch (currentStep) {
