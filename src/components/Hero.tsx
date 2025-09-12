@@ -160,7 +160,7 @@ const Hero = () => {
                   className="bg-transparent border-white text-white hover:bg-white hover:text-primary"
                   onClick={() => navigate('/restaurant/auth')}
                 >
-                  Join as a Restaurant Partner
+                  MAKE'M CRAVE
                 </Button>
               </div>
             </div>
