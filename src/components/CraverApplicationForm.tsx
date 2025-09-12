@@ -265,9 +265,13 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
           bank_account_type: data.bankAccountType,
           routing_number: data.routingNumber,
           account_number_last_four: data.accountNumberLastFour,
+          // Required doc fields expected by admin & DB
+          drivers_license: documentPaths.driversLicenseFront || documentPaths.driversLicenseBack || '',
           drivers_license_front: documentPaths.driversLicenseFront,
           drivers_license_back: documentPaths.driversLicenseBack,
           insurance_document: documentPaths.insuranceDocument,
+          insurance_policy: documentPaths.insuranceDocument || '',
+          insurance_provider: '',
           vehicle_registration: documentPaths.vehicleRegistration,
           profile_photo: documentPaths.profilePhoto
         });
@@ -305,7 +309,7 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
       case 4:
         return !!(data.ssnLastFour && data.bankAccountType);
       case 5:
-        return Object.keys(files).length >= 2; // At least license front and profile photo
+        return Boolean(files['driversLicenseFront'] && files['profilePhoto']);
       default:
         return false;
     }
