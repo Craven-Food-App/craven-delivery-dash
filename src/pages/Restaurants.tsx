@@ -32,20 +32,20 @@ const Restaurants = () => {
   };
 
   const cuisineTypes = [
-    'All Cuisines',
-    'American',
-    'Italian',
-    'Chinese',
-    'Mexican',
-    'Indian',
-    'Japanese',
-    'Thai',
-    'Mediterranean',
-    'Fast Food',
-    'Pizza',
-    'Burgers',
-    'Seafood',
-    'Vegetarian'
+    { name: 'All Cuisines', value: 'all', color: 'bg-primary', emoji: '🍽️' },
+    { name: 'American', value: 'American', color: 'bg-red-500', emoji: '🇺🇸' },
+    { name: 'Italian', value: 'Italian', color: 'bg-green-500', emoji: '🍝' },
+    { name: 'Chinese', value: 'Chinese', color: 'bg-yellow-500', emoji: '🥢' },
+    { name: 'Mexican', value: 'Mexican', color: 'bg-orange-500', emoji: '🌮' },
+    { name: 'Indian', value: 'Indian', color: 'bg-amber-500', emoji: '🍛' },
+    { name: 'Japanese', value: 'Japanese', color: 'bg-pink-500', emoji: '🍣' },
+    { name: 'Thai', value: 'Thai', color: 'bg-lime-500', emoji: '🌶️' },
+    { name: 'Mediterranean', value: 'Mediterranean', color: 'bg-blue-500', emoji: '🫒' },
+    { name: 'Fast Food', value: 'Fast Food', color: 'bg-purple-500', emoji: '🍟' },
+    { name: 'Pizza', value: 'Pizza', color: 'bg-red-600', emoji: '🍕' },
+    { name: 'Burgers', value: 'Burgers', color: 'bg-yellow-600', emoji: '🍔' },
+    { name: 'Seafood', value: 'Seafood', color: 'bg-cyan-500', emoji: '🦐' },
+    { name: 'Vegetarian', value: 'Vegetarian', color: 'bg-emerald-500', emoji: '🥗' }
   ];
 
   return (
@@ -57,7 +57,7 @@ const Restaurants = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              Discover Amazing Restaurants
+              What Are You Crave'n
             </h1>
             <p className="text-xl text-muted-foreground mb-8">
               Find your next favorite meal from the best restaurants in your area
@@ -107,29 +107,43 @@ const Restaurants = () => {
         </div>
       </section>
 
+      {/* Cuisine Bubbles Section */}
+      <section className="py-6 bg-muted/20 border-y border-border/50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-xl font-semibold text-foreground mb-4 text-center">
+            Choose Your Craving
+          </h2>
+          <div className="flex flex-wrap justify-center gap-3 mb-4">
+            {cuisineTypes.map((cuisine) => (
+              <button
+                key={cuisine.value}
+                onClick={() => setCuisineFilter(cuisine.value)}
+                className={`
+                  relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium
+                  transition-all duration-300 hover-scale border-2
+                  ${cuisineFilter === cuisine.value 
+                    ? `${cuisine.color} text-white border-white shadow-lg` 
+                    : 'bg-background text-foreground border-border hover:border-primary/50'
+                  }
+                `}
+              >
+                <span className="text-lg">{cuisine.emoji}</span>
+                <span>{cuisine.name}</span>
+                {cuisineFilter === cuisine.value && (
+                  <div className="absolute inset-0 rounded-full bg-white/20 animate-pulse" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Filters and Results */}
       <section className="py-8">
         <div className="container mx-auto px-4">
           {/* Filter Bar */}
           <div className="flex flex-col lg:flex-row gap-4 mb-8 p-4 bg-muted/30 rounded-xl border border-border/50">
-            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Cuisine Filter */}
-              <Select value={cuisineFilter} onValueChange={setCuisineFilter}>
-                <SelectTrigger className="bg-background border-border/50">
-                  <SelectValue placeholder="All Cuisines" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cuisineTypes.map((cuisine) => (
-                    <SelectItem 
-                      key={cuisine} 
-                      value={cuisine === 'All Cuisines' ? 'all' : cuisine}
-                    >
-                      {cuisine}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Sort By */}
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="bg-background border-border/50">
@@ -171,31 +185,81 @@ const Restaurants = () => {
             </div>
           </div>
 
-          {/* Promoted Restaurants Section */}
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <h2 className="text-2xl font-bold text-foreground">Featured Restaurants</h2>
-              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                Promoted
+          {/* Popular Restaurants Near You Section */}
+          <div className="mb-8 animate-fade-in">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-3xl font-bold text-foreground mb-2">
+                  Popular Restaurants Near You
+                </h2>
+                <p className="text-muted-foreground">
+                  Top-rated spots that locals can't stop talking about
+                </p>
+              </div>
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 pulse">
+                🔥 Trending
               </Badge>
             </div>
-            <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">
-                      Special Offers Available
-                    </h3>
-                    <p className="text-muted-foreground">
-                      Discover restaurants with exclusive deals and promotions
-                    </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {/* Promotional Cards */}
+              <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-secondary/10 hover-scale">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+                      <span className="text-2xl">🍕</span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">Pizza Palace</h3>
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm text-muted-foreground">4.8 (300+ reviews)</span>
+                      </div>
+                    </div>
                   </div>
-                  <Badge variant="default" className="bg-primary text-primary-foreground">
-                    🎉 Limited Time
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
+                  <Badge variant="destructive" className="mb-2">30% OFF</Badge>
+                  <p className="text-sm text-muted-foreground">Free delivery on orders over $25</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-green-500/20 bg-gradient-to-br from-green-500/10 to-emerald-500/10 hover-scale">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
+                      <span className="text-2xl">🥗</span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">Fresh Bowl</h3>
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm text-muted-foreground">4.9 (150+ reviews)</span>
+                      </div>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="bg-green-500/20 text-green-700 mb-2">Healthy Choice</Badge>
+                  <p className="text-sm text-muted-foreground">Farm-to-table ingredients</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-orange-500/20 bg-gradient-to-br from-orange-500/10 to-yellow-500/10 hover-scale">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center">
+                      <span className="text-2xl">🌮</span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">Taco Fiesta</h3>
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm text-muted-foreground">4.7 (250+ reviews)</span>
+                      </div>
+                    </div>
+                  </div>
+                  <Badge variant="default" className="bg-orange-500 text-white mb-2">🆕 New</Badge>
+                  <p className="text-sm text-muted-foreground">Authentic Mexican flavors</p>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {/* Results Header */}
