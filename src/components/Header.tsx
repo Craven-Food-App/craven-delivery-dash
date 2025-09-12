@@ -100,9 +100,6 @@ const Header = () => {
               <nav className="hidden md:flex space-x-6">
                 <a href="/restaurants" className="text-foreground hover:text-primary transition-colors">Restaurants</a>
                 <a href="/craver" className="text-foreground hover:text-primary transition-colors">Become a Driver</a>
-                {user && (
-                  <a href="/customer-dashboard" className="text-foreground hover:text-primary transition-colors">My Orders</a>
-                )}
               </nav>
             </div>
 
@@ -158,7 +155,7 @@ const Header = () => {
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuItem onClick={() => window.location.href = '/customer-dashboard'}>
                       <User className="mr-2 h-4 w-4" />
-                      <span>Profile & Orders</span>
+                      <span>My Orders</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>
