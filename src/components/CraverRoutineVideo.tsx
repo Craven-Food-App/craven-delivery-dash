@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause } from 'lucide-react';
+import { Play, Pause, Car, MapPin, Camera, CameraIcon, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const CraverRoutineVideo = () => {
@@ -33,18 +33,28 @@ const CraverRoutineVideo = () => {
       duration: 2000
     },
     {
+      title: "Get in Car & Drive",
+      description: "Driver gets in vehicle and starts GPS navigation",
+      duration: 3000
+    },
+    {
       title: "Pick Up Order",
       description: "Navigate to restaurant and collect food",
       duration: 3000
     },
     {
-      title: "Drop Off Order",
-      description: "Deliver to customer's location",
+      title: "Drive to Customer",
+      description: "Follow GPS to customer location",
       duration: 3000
     },
     {
+      title: "Get Out & Deliver",
+      description: "Driver exits vehicle and walks to door",
+      duration: 2500
+    },
+    {
       title: "Take Photo",
-      description: "Capture proof of delivery",
+      description: "Capture proof of delivery on doorstep",
       duration: 2500
     },
     {
@@ -80,14 +90,14 @@ const CraverRoutineVideo = () => {
   };
 
   return (
-    <div className="relative w-full max-w-4xl mx-auto bg-gradient-to-br from-background via-muted/20 to-primary/5 rounded-2xl overflow-hidden shadow-elegant">
+    <div className="relative w-full max-w-lg mx-auto bg-gradient-to-br from-background via-muted/20 to-primary/5 rounded-2xl overflow-hidden shadow-elegant">
       {/* Video Container */}
-      <div className="relative aspect-video bg-gradient-to-b from-muted/30 to-background">
+      <div className="relative aspect-[9/16] bg-gradient-to-b from-muted/30 to-background">
         {/* Phone Screen Animation */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="relative">
+        <div className="absolute inset-0 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-xs">
             {/* Phone Frame */}
-            <div className="w-64 h-[450px] bg-foreground rounded-[2.5rem] p-2 shadow-glow">
+            <div className="w-full aspect-[9/19.5] bg-foreground rounded-[2.5rem] p-2 shadow-glow">
               <div className="w-full h-full bg-background rounded-[2rem] overflow-hidden relative">
                 
                 {/* Status Bar */}
@@ -97,9 +107,9 @@ const CraverRoutineVideo = () => {
                 </div>
 
                 {/* App Content based on current step */}
-                <div className="flex-1 p-4">
+                <div className="flex-1 p-4 h-[calc(100%-2rem)]">
                   {currentStep === 0 && (
-                    <div className={`transition-all duration-1000 ${isPlaying ? 'animate-fade-in' : ''}`}>
+                    <div className={`transition-all duration-1000 ${isPlaying ? 'animate-fade-in' : ''} h-full`}>
                       <div className="text-center mt-20">
                         <div className="w-16 h-16 bg-primary rounded-full mx-auto mb-4 flex items-center justify-center">
                           <span className="text-white font-bold text-xl">C</span>
@@ -117,7 +127,7 @@ const CraverRoutineVideo = () => {
                   )}
 
                   {currentStep === 1 && (
-                    <div className={`transition-all duration-1000 ${isPlaying ? 'animate-fade-in' : ''}`}>
+                    <div className={`transition-all duration-1000 ${isPlaying ? 'animate-fade-in' : ''} h-full`}>
                       <div className="mt-8">
                         <h3 className="text-lg font-semibold mb-6">Choose Your Hours</h3>
                         <div className="space-y-4">
@@ -138,7 +148,7 @@ const CraverRoutineVideo = () => {
                   )}
 
                   {currentStep === 2 && (
-                    <div className={`transition-all duration-1000 ${isPlaying ? 'animate-fade-in' : ''}`}>
+                    <div className={`transition-all duration-1000 ${isPlaying ? 'animate-fade-in' : ''} h-full`}>
                       <div className="text-center mt-16">
                         <div className="w-20 h-20 bg-green-500 rounded-full mx-auto mb-4 flex items-center justify-center animate-pulse">
                           <div className="w-3 h-3 bg-white rounded-full"></div>
@@ -153,7 +163,7 @@ const CraverRoutineVideo = () => {
                   )}
 
                   {currentStep === 3 && (
-                    <div className={`transition-all duration-1000 ${isPlaying ? 'animate-scale-in' : ''}`}>
+                    <div className={`transition-all duration-1000 ${isPlaying ? 'animate-scale-in' : ''} h-full`}>
                       <div className="bg-gradient-to-r from-primary to-secondary p-4 rounded-lg text-white mt-8">
                         <div className="flex items-center justify-between mb-3">
                           <h3 className="font-semibold">New Order!</h3>
@@ -178,7 +188,7 @@ const CraverRoutineVideo = () => {
                   )}
 
                   {currentStep === 4 && (
-                    <div className={`transition-all duration-1000 ${isPlaying ? 'animate-fade-in' : ''}`}>
+                    <div className={`transition-all duration-1000 ${isPlaying ? 'animate-fade-in' : ''} h-full`}>
                       <div className="mt-8">
                         <div className="bg-green-500 text-white p-3 rounded-lg mb-4 text-center">
                           ✅ Order Accepted!
@@ -190,10 +200,7 @@ const CraverRoutineVideo = () => {
                           </div>
                           <div className="flex items-center justify-between text-sm">
                             <span>Status:</span>
-                            <span className="text-primary font-medium">En Route to Restaurant</span>
-                          </div>
-                          <div className="h-10 bg-primary rounded flex items-center justify-center">
-                            <span className="text-white font-medium">Navigate</span>
+                            <span className="text-primary font-medium">Getting in Car</span>
                           </div>
                         </div>
                       </div>
@@ -201,7 +208,48 @@ const CraverRoutineVideo = () => {
                   )}
 
                   {currentStep === 5 && (
-                    <div className={`transition-all duration-1000 ${isPlaying ? 'animate-fade-in' : ''}`}>
+                    <div className={`transition-all duration-1000 ${isPlaying ? 'animate-fade-in' : ''} h-full`}>
+                      <div className="mt-8">
+                        <div className="text-center mb-6">
+                          <div className="relative">
+                            {/* Animated car with driver */}
+                            <div className="w-16 h-16 mx-auto mb-2 relative">
+                              <div className={`absolute inset-0 text-4xl transition-transform duration-1000 ${isPlaying ? 'animate-bounce' : ''}`}>
+                                🚗
+                              </div>
+                              <div className="absolute -top-1 left-1 text-sm">👤</div>
+                            </div>
+                            <h3 className="font-semibold">Getting in Car</h3>
+                          </div>
+                          {/* GPS Route visualization */}
+                          <div className="bg-blue-50 p-3 rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Navigation className="h-4 w-4 text-blue-600" />
+                              <span className="text-sm font-medium">GPS Navigation</span>
+                            </div>
+                            <div className="relative h-20 bg-white rounded border-2 border-dashed border-blue-200">
+                              <div className="absolute top-2 left-2 w-2 h-2 bg-green-500 rounded-full"></div>
+                              <div className="absolute bottom-2 right-2 w-2 h-2 bg-red-500 rounded-full"></div>
+                              <svg className="absolute inset-0 w-full h-full">
+                                <path 
+                                  d="M 10 10 Q 40 40 70 10" 
+                                  stroke="#3b82f6" 
+                                  strokeWidth="2" 
+                                  fill="none"
+                                  strokeDasharray="4,2"
+                                  className={isPlaying ? 'animate-pulse' : ''}
+                                />
+                              </svg>
+                            </div>
+                            <div className="text-xs text-blue-600 mt-1">Route to restaurant</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {currentStep === 6 && (
+                    <div className={`transition-all duration-1000 ${isPlaying ? 'animate-fade-in' : ''} h-full`}>
                       <div className="mt-8">
                         <div className="text-center mb-6">
                           <div className="w-16 h-16 bg-orange-500 rounded-full mx-auto mb-2 flex items-center justify-center">
@@ -222,49 +270,30 @@ const CraverRoutineVideo = () => {
                     </div>
                   )}
 
-                  {currentStep === 6 && (
-                    <div className={`transition-all duration-1000 ${isPlaying ? 'animate-fade-in' : ''}`}>
-                      <div className="mt-8">
-                        <div className="text-center mb-6">
-                          <div className="w-16 h-16 bg-blue-500 rounded-full mx-auto mb-2 flex items-center justify-center animate-pulse">
-                            🚗
-                          </div>
-                          <h3 className="font-semibold">En Route to Customer</h3>
-                        </div>
-                        <div className="space-y-3">
-                          <div className="p-3 bg-blue-100 rounded">
-                            <div className="text-sm font-medium">Mike Johnson</div>
-                            <div className="text-xs text-muted-foreground">456 Oak Avenue</div>
-                            <div className="text-xs text-muted-foreground">ETA: 8 minutes</div>
-                          </div>
-                          <div className="h-10 bg-blue-500 rounded flex items-center justify-center">
-                            <span className="text-white font-medium">Navigate to Customer</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   {currentStep === 7 && (
-                    <div className={`transition-all duration-1000 ${isPlaying ? 'animate-fade-in' : ''}`}>
+                    <div className={`transition-all duration-1000 ${isPlaying ? 'animate-fade-in' : ''} h-full`}>
                       <div className="mt-8">
                         <div className="text-center mb-6">
-                          <div className="w-16 h-16 bg-purple-500 rounded-full mx-auto mb-2 flex items-center justify-center">
-                            📸
-                          </div>
-                          <h3 className="font-semibold">Take Delivery Photo</h3>
-                        </div>
-                        <div className="space-y-3">
-                          <div className="aspect-square bg-muted rounded-lg flex items-center justify-center border-2 border-dashed">
-                            <div className="text-center">
-                              <div className="w-12 h-12 bg-purple-200 rounded-full mx-auto mb-2 flex items-center justify-center">
-                                📦
-                              </div>
-                              <div className="text-xs text-muted-foreground">Order on porch</div>
+                          {/* Animated driving scene */}
+                          <div className="relative">
+                            <div className={`w-16 h-16 mx-auto mb-2 text-4xl transition-transform duration-500 ${isPlaying ? 'animate-pulse translate-x-2' : ''}`}>
+                              🚗💨
                             </div>
+                            <h3 className="font-semibold">Driving to Customer</h3>
                           </div>
-                          <div className="h-10 bg-purple-500 rounded flex items-center justify-center">
-                            <span className="text-white font-medium">Capture Photo</span>
+                          {/* Enhanced GPS */}
+                          <div className="bg-blue-50 p-3 rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <MapPin className="h-4 w-4 text-blue-600" />
+                                <span className="text-sm font-medium">ETA: 8 minutes</span>
+                              </div>
+                              <div className="text-xs text-blue-600">2.1 miles</div>
+                            </div>
+                            <div className="space-y-1 text-xs">
+                              <div className="text-muted-foreground">456 Oak Avenue</div>
+                              <div className="text-blue-600">Turn right on Main St in 0.3 mi</div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -272,7 +301,66 @@ const CraverRoutineVideo = () => {
                   )}
 
                   {currentStep === 8 && (
-                    <div className={`transition-all duration-1000 ${isPlaying ? 'animate-scale-in' : ''}`}>
+                    <div className={`transition-all duration-1000 ${isPlaying ? 'animate-fade-in' : ''} h-full`}>
+                      <div className="mt-8">
+                        <div className="text-center mb-6">
+                          {/* Driver getting out animation */}
+                          <div className="relative">
+                            <div className="flex items-center justify-center gap-2 mb-2">
+                              <div className="text-2xl">🚗</div>
+                              <div className={`text-2xl transition-transform duration-1000 ${isPlaying ? 'translate-x-4' : ''}`}>🚶‍♂️</div>
+                            </div>
+                            <h3 className="font-semibold">Walking to Door</h3>
+                          </div>
+                          <div className="space-y-3">
+                            <div className="p-3 bg-blue-100 rounded">
+                              <div className="text-sm font-medium">Mike Johnson</div>
+                              <div className="text-xs text-muted-foreground">456 Oak Avenue</div>
+                              <div className="text-xs text-blue-600">Arrived at destination</div>
+                            </div>
+                            <div className="bg-green-100 p-2 rounded text-xs text-green-700">
+                              🏠 At customer's door
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {currentStep === 9 && (
+                    <div className={`transition-all duration-1000 ${isPlaying ? 'animate-fade-in' : ''} h-full`}>
+                      <div className="mt-8">
+                        <div className="text-center mb-6">
+                          {/* Camera with flash effect */}
+                          <div className="relative">
+                            <div className={`w-16 h-16 bg-purple-500 rounded-full mx-auto mb-2 flex items-center justify-center ${isPlaying ? 'animate-ping' : ''}`}>
+                              <Camera className="h-8 w-8 text-white" />
+                            </div>
+                            {isPlaying && (
+                              <div className="absolute inset-0 bg-white/80 rounded-full animate-pulse"></div>
+                            )}
+                            <h3 className="font-semibold">Taking Photo</h3>
+                          </div>
+                          <div className="space-y-3">
+                            {/* Photo preview with food on doorstep */}
+                            <div className="relative aspect-square bg-muted rounded-lg border-2 border-dashed overflow-hidden">
+                              <div className="absolute inset-0 bg-gradient-to-b from-sky-200 to-green-200"></div>
+                              <div className="absolute bottom-4 left-4 text-2xl">🏠</div>
+                              <div className="absolute bottom-4 right-4 text-xl">🍕📦</div>
+                              <div className="absolute top-2 right-2 text-xs bg-white/80 px-1 rounded">📸</div>
+                            </div>
+                            <div className="h-10 bg-purple-500 rounded flex items-center justify-center">
+                              <CameraIcon className="h-4 w-4 text-white mr-2" />
+                              <span className="text-white font-medium">Capture Photo</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {currentStep === 10 && (
+                    <div className={`transition-all duration-1000 ${isPlaying ? 'animate-scale-in' : ''} h-full`}>
                       <div className="mt-8 text-center">
                         <div className="w-20 h-20 bg-green-500 rounded-full mx-auto mb-4 flex items-center justify-center">
                           ✅
@@ -304,9 +392,18 @@ const CraverRoutineVideo = () => {
                 )}
                 
                 {/* Money animation */}
-                {currentStep === 8 && (
+                {currentStep === 10 && (
                   <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 animate-bounce">
                     💰
+                  </div>
+                )}
+
+                {/* GPS signal */}
+                {(currentStep === 5 || currentStep === 7) && (
+                  <div className="absolute -top-4 -left-4">
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center animate-pulse">
+                      <span className="text-white text-xs">GPS</span>
+                    </div>
                   </div>
                 )}
               </>

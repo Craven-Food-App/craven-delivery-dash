@@ -50,6 +50,11 @@ const CraverHub = () => {
     { time: "Weekend Peak", hours: "Fri-Sun Evenings", rate: "$22-30/hour" }
   ];
 
+  // Preload OCR for faster verification
+  useEffect(() => {
+    DocumentVerificationService.preload();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -57,43 +62,51 @@ const CraverHub = () => {
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-primary/10 via-background to-secondary/5 py-20">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="flex items-center justify-center mb-6">
-              <Car className="h-12 w-12 text-primary mr-4" />
-              <h1 className="text-4xl md:text-6xl font-bold text-foreground">
-                Become a <span className="text-primary">Craver</span>
-              </h1>
-            </div>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Deliver delicious food and earn great money on your own schedule. 
-              Join thousands of Cravers making a difference in their communities.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
-                className="text-lg px-8 py-6"
-                onClick={() => setShowApplicationForm(true)}
-              >
-                Start Earning Today
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="text-lg px-8 py-6"
-                onClick={() => navigate('/driver/auth')}
-              >
-                Login
-              </Button>
-            </div>
-            <div className="mt-8 flex items-center justify-center gap-6 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                <span>4.8/5 Craver Rating</span>
+          <div className="grid lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
+            {/* Left side - Text content */}
+            <div className="space-y-8">
+              <div className="flex items-center mb-6">
+                <Car className="h-12 w-12 text-primary mr-4" />
+                <h1 className="text-4xl md:text-6xl font-bold text-foreground">
+                  Become a <span className="text-primary">Craver</span>
+                </h1>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>50,000+ Active Cravers</span>
+              <p className="text-xl text-muted-foreground max-w-2xl">
+                Deliver delicious food and earn great money on your own schedule. 
+                Join thousands of Cravers making a difference in their communities.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button 
+                  size="lg" 
+                  className="text-lg px-8 py-6"
+                  onClick={() => setShowApplicationForm(true)}
+                >
+                  Start Earning Today
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="text-lg px-8 py-6"
+                  onClick={() => navigate('/driver/auth')}
+                >
+                  Login
+                </Button>
               </div>
+              <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  <span>4.8/5 Craver Rating</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span>50,000+ Active Cravers</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Right side - Enhanced video animation */}
+            <div className="lg:pl-8">
+              <CraverRoutineVideo />
             </div>
           </div>
         </div>
@@ -127,19 +140,6 @@ const CraverHub = () => {
         </div>
       </section>
 
-      {/* How It Works Video Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">See How It Works</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Follow a typical Craver's routine from login to earning money. 
-              It's simple, flexible, and rewarding.
-            </p>
-          </div>
-          <CraverRoutineVideo />
-        </div>
-      </section>
 
       {/* Earnings Section */}
       <section className="py-16 bg-muted/20">

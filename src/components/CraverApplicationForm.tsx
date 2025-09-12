@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -88,7 +88,60 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
   const [files, setFiles] = useState<Record<string, File>>({});
   const [verificationResults, setVerificationResults] = useState<Record<string, any>>({});
   const [verificationLoading, setVerificationLoading] = useState<Record<string, boolean>>({});
+  const [user, setUser] = useState(null);
   const { toast } = useToast();
+
+  // Check authentication and prefill data on mount
+  useEffect(() => {
+    const checkAuthAndPrefill = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to apply as a Craver.",
+          variant: "destructive"
+        });
+        onClose();
+        return;
+      }
+
+      setUser(session.user);
+
+      // Prefill user data from profile and addresses
+      try {
+        const [profileResponse, addressResponse] = await Promise.all([
+          supabase.from('user_profiles').select('*').eq('user_id', session.user.id).single(),
+          supabase.from('delivery_addresses').select('*').eq('user_id', session.user.id).eq('is_default', true).single()
+        ]);
+
+        const profile = profileResponse.data;
+        const address = addressResponse.data;
+
+        if (profile || address) {
+          setData(prev => ({
+            ...prev,
+            firstName: profile?.full_name?.split(' ')[0] || prev.firstName,
+            lastName: profile?.full_name?.split(' ').slice(1).join(' ') || prev.lastName,
+            email: session.user.email || prev.email,
+            phone: profile?.phone || prev.phone,
+            streetAddress: address?.street_address || prev.streetAddress,
+            city: address?.city || prev.city,
+            state: address?.state || prev.state,
+            zipCode: address?.zip_code || prev.zipCode,
+          }));
+
+          toast({
+            title: "Information Pre-filled",
+            description: "We've filled in your information from your profile and saved addresses.",
+          });
+        }
+      } catch (error) {
+        console.log('No existing profile/address data to prefill');
+      }
+    };
+
+    checkAuthAndPrefill();
+  }, []);
 
   const totalSteps = 5;
   const progress = (currentStep / totalSteps) * 100;
@@ -162,9 +215,18 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
   };
 
   const handleSubmit = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to submit your application.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      // Create anonymous application without requiring auth
+      // Create application with authenticated user
       const applicationId = crypto.randomUUID();
 
       // Upload documents
@@ -176,11 +238,11 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
         }
       }
 
-      // Submit application
-      const { error } = await (supabase as any)
+      // Submit application with user_id
+      const { error } = await supabase
         .from('craver_applications')
         .insert({
-          user_id: null, // Allow applications without user accounts
+          user_id: user.id, // Set authenticated user's ID
           first_name: data.firstName,
           last_name: data.lastName,
           email: data.email,
