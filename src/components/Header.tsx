@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { MapPin, Search, User, ShoppingCart, ChevronDown, LogOut } from "lucide-react";
+import cravenLogo from "@/assets/craven-logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -82,7 +83,7 @@ const Header = () => {
       <header className="bg-background border-b border-border sticky top-0 z-50 shadow-card">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <h1 className="text-2xl font-bold text-primary">Crave'n</h1>
+            <img src={cravenLogo} alt="Crave'n" className="h-8" />
             <div className="animate-pulse">Loading...</div>
           </div>
         </div>
@@ -97,7 +98,7 @@ const Header = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo and Navigation */}
             <div className="flex items-center space-x-8">
-              <h1 className="text-2xl font-bold text-primary">Crave'n</h1>
+              <img src={cravenLogo} alt="Crave'n" className="h-8" />
               
               <nav className="hidden md:flex space-x-6">
                 <a href="/restaurants" className="text-foreground hover:text-primary transition-colors">Restaurants</a>

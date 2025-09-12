@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2 } from 'lucide-react';
+import cravenLogo from "@/assets/craven-logo.png";
 
 const Auth: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -197,6 +198,9 @@ const Auth: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <img src={cravenLogo} alt="Crave'n" className="h-12" />
+          </div>
           <CardTitle className="text-2xl font-bold">Welcome to Crave'n</CardTitle>
           <CardDescription>Sign in to your account or create a new one</CardDescription>
         </CardHeader>

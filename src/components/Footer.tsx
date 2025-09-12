@@ -1,5 +1,6 @@
 import { Facebook, Twitter, Instagram, Smartphone, Mail, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import cravenLogo from "@/assets/craven-logo.png";
 
 const Footer = () => {
   return (
@@ -8,7 +9,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="space-y-4">
-            <h3 className="text-2xl font-bold text-primary">Crave'n</h3>
+            <img src={cravenLogo} alt="Crave'n" className="h-8 mb-2" />
             <p className="text-muted">
               Your favorite food, delivered fast. We bring the best restaurants right to your doorstep.
             </p>

@@ -5,6 +5,7 @@ import LiveDashboard from '@/components/admin/LiveDashboard';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Shield, BarChart3, Users } from 'lucide-react';
+import cravenLogo from "@/assets/craven-logo.png";
 
 const Admin: React.FC = () => {
   return (
@@ -15,9 +16,9 @@ const Admin: React.FC = () => {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Shield className="h-6 w-6" />
+                <img src={cravenLogo} alt="Crave'n" className="h-6" />
                 <div>
-                  <h1 className="text-xl font-bold">Crave'n Admin Portal</h1>
+                  <h1 className="text-xl font-bold">Admin Portal</h1>
                   <p className="text-sm opacity-90">Corporate Administration Dashboard</p>
                 </div>
               </div>
