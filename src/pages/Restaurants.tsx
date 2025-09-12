@@ -9,47 +9,95 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search, MapPin, Filter, Star, Clock } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
 const Restaurants = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [location, setLocation] = useState(searchParams.get('location') || '');
   const [cuisineFilter, setCuisineFilter] = useState(searchParams.get('cuisine') || 'all');
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'rating');
-
   useEffect(() => {
     const params = new URLSearchParams();
     if (searchQuery) params.set('search', searchQuery);
     if (location) params.set('location', location);
     if (cuisineFilter && cuisineFilter !== 'all') params.set('cuisine', cuisineFilter);
     if (sortBy !== 'rating') params.set('sort', sortBy);
-    
     setSearchParams(params);
   }, [searchQuery, location, cuisineFilter, sortBy, setSearchParams]);
-
   const handleSearch = () => {
     // Search is handled by the useEffect above
   };
-
-  const cuisineTypes = [
-    { name: 'All Cuisines', value: 'all', color: 'bg-primary', emoji: '🍽️' },
-    { name: 'American', value: 'American', color: 'bg-red-500', emoji: '🇺🇸' },
-    { name: 'Italian', value: 'Italian', color: 'bg-green-500', emoji: '🍝' },
-    { name: 'Chinese', value: 'Chinese', color: 'bg-yellow-500', emoji: '🥢' },
-    { name: 'Mexican', value: 'Mexican', color: 'bg-orange-500', emoji: '🌮' },
-    { name: 'Indian', value: 'Indian', color: 'bg-amber-500', emoji: '🍛' },
-    { name: 'Japanese', value: 'Japanese', color: 'bg-pink-500', emoji: '🍣' },
-    { name: 'Thai', value: 'Thai', color: 'bg-lime-500', emoji: '🌶️' },
-    { name: 'Mediterranean', value: 'Mediterranean', color: 'bg-blue-500', emoji: '🫒' },
-    { name: 'Fast Food', value: 'Fast Food', color: 'bg-purple-500', emoji: '🍟' },
-    { name: 'Pizza', value: 'Pizza', color: 'bg-red-600', emoji: '🍕' },
-    { name: 'Burgers', value: 'Burgers', color: 'bg-yellow-600', emoji: '🍔' },
-    { name: 'Seafood', value: 'Seafood', color: 'bg-cyan-500', emoji: '🦐' },
-    { name: 'Vegetarian', value: 'Vegetarian', color: 'bg-emerald-500', emoji: '🥗' }
-  ];
-
-  return (
-    <div className="min-h-screen bg-background">
+  const cuisineTypes = [{
+    name: 'All Cuisines',
+    value: 'all',
+    color: 'bg-primary',
+    emoji: '🍽️'
+  }, {
+    name: 'American',
+    value: 'American',
+    color: 'bg-red-500',
+    emoji: '🇺🇸'
+  }, {
+    name: 'Italian',
+    value: 'Italian',
+    color: 'bg-green-500',
+    emoji: '🍝'
+  }, {
+    name: 'Chinese',
+    value: 'Chinese',
+    color: 'bg-yellow-500',
+    emoji: '🥢'
+  }, {
+    name: 'Mexican',
+    value: 'Mexican',
+    color: 'bg-orange-500',
+    emoji: '🌮'
+  }, {
+    name: 'Indian',
+    value: 'Indian',
+    color: 'bg-amber-500',
+    emoji: '🍛'
+  }, {
+    name: 'Japanese',
+    value: 'Japanese',
+    color: 'bg-pink-500',
+    emoji: '🍣'
+  }, {
+    name: 'Thai',
+    value: 'Thai',
+    color: 'bg-lime-500',
+    emoji: '🌶️'
+  }, {
+    name: 'Mediterranean',
+    value: 'Mediterranean',
+    color: 'bg-blue-500',
+    emoji: '🫒'
+  }, {
+    name: 'Fast Food',
+    value: 'Fast Food',
+    color: 'bg-purple-500',
+    emoji: '🍟'
+  }, {
+    name: 'Pizza',
+    value: 'Pizza',
+    color: 'bg-red-600',
+    emoji: '🍕'
+  }, {
+    name: 'Burgers',
+    value: 'Burgers',
+    color: 'bg-yellow-600',
+    emoji: '🍔'
+  }, {
+    name: 'Seafood',
+    value: 'Seafood',
+    color: 'bg-cyan-500',
+    emoji: '🦐'
+  }, {
+    name: 'Vegetarian',
+    value: 'Vegetarian',
+    color: 'bg-emerald-500',
+    emoji: '🥗'
+  }];
+  return <div className="min-h-screen bg-background">
       <Header />
       
       {/* Hero Section */}
@@ -59,9 +107,7 @@ const Restaurants = () => {
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
               What Are You Crave'n
             </h1>
-            <p className="text-xl text-muted-foreground mb-8">
-              Find your next favorite meal from the best restaurants in your area
-            </p>
+            
             
             {/* Search Section */}
             <Card className="border-border/50 shadow-lg">
@@ -70,33 +116,18 @@ const Restaurants = () => {
                   {/* Search Input */}
                   <div className="md:col-span-5 relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search restaurants, dishes, or cuisines..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 h-12 border-border/50 focus:ring-2 focus:ring-primary/20"
-                      onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                    />
+                    <Input placeholder="Search restaurants, dishes, or cuisines..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10 h-12 border-border/50 focus:ring-2 focus:ring-primary/20" onKeyPress={e => e.key === 'Enter' && handleSearch()} />
                   </div>
                   
                   {/* Location Input */}
                   <div className="md:col-span-4 relative">
                     <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Enter your address..."
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      className="pl-10 h-12 border-border/50 focus:ring-2 focus:ring-primary/20"
-                      onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                    />
+                    <Input placeholder="Enter your address..." value={location} onChange={e => setLocation(e.target.value)} className="pl-10 h-12 border-border/50 focus:ring-2 focus:ring-primary/20" onKeyPress={e => e.key === 'Enter' && handleSearch()} />
                   </div>
                   
                   {/* Search Button */}
                   <div className="md:col-span-3">
-                    <Button 
-                      onClick={handleSearch}
-                      className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-                    >
+                    <Button onClick={handleSearch} className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
                       Find Restaurants
                     </Button>
                   </div>
@@ -110,30 +141,17 @@ const Restaurants = () => {
       {/* Cuisine Bubbles Section */}
       <section className="py-6 bg-muted/20 border-y border-border/50">
         <div className="container mx-auto px-4">
-          <h2 className="text-xl font-semibold text-foreground mb-4 text-center">
-            Choose Your Craving
-          </h2>
+          
           <div className="flex flex-wrap justify-center gap-3 mb-4">
-            {cuisineTypes.map((cuisine) => (
-              <button
-                key={cuisine.value}
-                onClick={() => setCuisineFilter(cuisine.value)}
-                className={`
+            {cuisineTypes.map(cuisine => <button key={cuisine.value} onClick={() => setCuisineFilter(cuisine.value)} className={`
                   relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium
                   transition-all duration-300 hover-scale border-2
-                  ${cuisineFilter === cuisine.value 
-                    ? `${cuisine.color} text-white border-white shadow-lg` 
-                    : 'bg-background text-foreground border-border hover:border-primary/50'
-                  }
-                `}
-              >
+                  ${cuisineFilter === cuisine.value ? `${cuisine.color} text-white border-white shadow-lg` : 'bg-background text-foreground border-border hover:border-primary/50'}
+                `}>
                 <span className="text-lg">{cuisine.emoji}</span>
                 <span>{cuisine.name}</span>
-                {cuisineFilter === cuisine.value && (
-                  <div className="absolute inset-0 rounded-full bg-white/20 animate-pulse" />
-                )}
-              </button>
-            ))}
+                {cuisineFilter === cuisine.value && <div className="absolute inset-0 rounded-full bg-white/20 animate-pulse" />}
+              </button>)}
           </div>
         </div>
       </section>
@@ -189,12 +207,8 @@ const Restaurants = () => {
           <div className="mb-8 animate-fade-in">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-3xl font-bold text-foreground mb-2">
-                  Popular Restaurants Near You
-                </h2>
-                <p className="text-muted-foreground">
-                  Top-rated spots that locals can't stop talking about
-                </p>
+                
+                
               </div>
               <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 pulse">
                 🔥 Trending
@@ -263,31 +277,22 @@ const Restaurants = () => {
           </div>
 
           {/* Results Header */}
-          {(searchQuery || location || cuisineFilter) && (
-            <div className="mb-6">
+          {(searchQuery || location || cuisineFilter) && <div className="mb-6">
               <h2 className="text-2xl font-bold text-foreground mb-2">
                 {searchQuery ? `Results for "${searchQuery}"` : 'Restaurants Near You'}
               </h2>
-              {location && (
-                <p className="text-muted-foreground flex items-center gap-2">
+              {location && <p className="text-muted-foreground flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
                   Delivering to: {location}
-                </p>
-              )}
-            </div>
-          )}
+                </p>}
+            </div>}
 
           {/* Restaurant Grid */}
-          <RestaurantGrid 
-            searchQuery={searchQuery}
-            deliveryAddress={location}
-          />
+          <RestaurantGrid searchQuery={searchQuery} deliveryAddress={location} />
         </div>
       </section>
 
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default Restaurants;
