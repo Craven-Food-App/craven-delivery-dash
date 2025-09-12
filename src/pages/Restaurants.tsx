@@ -101,13 +101,12 @@ const Restaurants = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary/10 via-background to-secondary/5 py-12 border-b border-border/50">
+      <section className="bg-gradient-to-br from-primary/10 via-background to-secondary/5 py-8 border-b border-border/50">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
               What Are You Crave'n
             </h1>
-            
             
             {/* Search Section */}
             <Card className="border-border/50 shadow-lg">
@@ -139,10 +138,9 @@ const Restaurants = () => {
       </section>
 
       {/* Cuisine Bubbles Section */}
-      <section className="py-6 bg-muted/20 border-y border-border/50">
+      <section className="py-4 bg-muted/20 border-y border-border/50">
         <div className="container mx-auto px-4">
-          
-          <div className="flex flex-wrap justify-center gap-3 mb-4">
+          <div className="flex flex-wrap justify-center gap-3">
             {cuisineTypes.map(cuisine => <button key={cuisine.value} onClick={() => setCuisineFilter(cuisine.value)} className={`
                   relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium
                   transition-all duration-300 hover-scale border-2
@@ -157,10 +155,10 @@ const Restaurants = () => {
       </section>
 
       {/* Filters and Results */}
-      <section className="py-8">
+      <section className="py-6">
         <div className="container mx-auto px-4">
           {/* Filter Bar */}
-          <div className="flex flex-col lg:flex-row gap-4 mb-8 p-4 bg-muted/30 rounded-xl border border-border/50">
+          <div className="flex flex-col lg:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-xl border border-border/50">
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Sort By */}
               <Select value={sortBy} onValueChange={setSortBy}>
@@ -204,8 +202,8 @@ const Restaurants = () => {
           </div>
 
           {/* Popular Restaurants Near You Section */}
-          <div className="mb-8 animate-fade-in">
-            <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 animate-fade-in">
+            <div className="flex items-center justify-between mb-4">
               <div>
                 
                 
@@ -215,7 +213,7 @@ const Restaurants = () => {
               </Badge>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
               {/* Promotional Cards */}
               <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-secondary/10 hover-scale">
                 <CardContent className="p-6">
@@ -277,7 +275,7 @@ const Restaurants = () => {
           </div>
 
           {/* Results Header */}
-          {(searchQuery || location || cuisineFilter) && <div className="mb-6">
+          {(searchQuery || location || cuisineFilter) && <div className="mb-4">
               <h2 className="text-2xl font-bold text-foreground mb-2">
                 {searchQuery ? `Results for "${searchQuery}"` : 'Restaurants Near You'}
               </h2>
