@@ -124,7 +124,7 @@ const Header = () => {
                 <div className="flex items-center space-x-2 text-muted-foreground">
                   <MapPin className="h-4 w-4" />
                   <span className="text-sm">Deliver to</span>
-                  <span className="text-sm font-medium text-foreground">Current Location</span>
+                  <span className="text-xs font-medium text-foreground">Current Location</span>
                 </div>
               )}
             </div>

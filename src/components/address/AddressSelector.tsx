@@ -105,7 +105,7 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({ userId, onAddressChan
             <MapPin className="h-4 w-4 text-muted-foreground" />
             <div className="text-left overflow-hidden">
               <div className="text-xs text-muted-foreground">Delivering to</div>
-              <div className="text-sm font-medium truncate">
+              <div className="text-xs font-medium truncate">
                 {selectedAddress ? `${selectedAddress.street_address}, ${selectedAddress.city}` : 'Select Address'}
               </div>
             </div>
