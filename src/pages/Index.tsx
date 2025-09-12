@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
-import CategorySection from "@/components/CategorySection";
 import RestaurantGrid from "@/components/RestaurantGrid";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -45,7 +44,6 @@ const Index = () => {
         </div>
       ) : (
         <>
-          <CategorySection />
           <RestaurantGrid />
           
           {/* Restaurant Partner Section */}
