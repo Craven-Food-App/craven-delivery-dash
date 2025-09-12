@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import RestaurantGrid from '@/components/RestaurantGrid';
 import { AccountSection } from '@/components/account/AccountSection';
+import AddressManager from '@/components/address/AddressManager';
 import { Package, MapPin, Clock, Star, ShoppingBag, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -22,8 +23,10 @@ export const CustomerDashboard = () => {
   const { toast } = useToast();
   const [activeOrders, setActiveOrders] = useState<ActiveOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
+    getCurrentUser();
     fetchActiveOrders();
     
     // Set up real-time subscription for order updates
@@ -45,6 +48,11 @@ export const CustomerDashboard = () => {
       subscription.unsubscribe();
     };
   }, []);
+
+  const getCurrentUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setUser(user);
+  };
 
   const fetchActiveOrders = async () => {
     try {
@@ -100,7 +108,7 @@ export const CustomerDashboard = () => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6">
         <Tabs defaultValue="browse" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="browse" className="flex items-center gap-2">
               <ShoppingBag className="h-4 w-4" />
               Browse
@@ -108,6 +116,10 @@ export const CustomerDashboard = () => {
             <TabsTrigger value="orders" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               My Orders
+            </TabsTrigger>
+            <TabsTrigger value="addresses" className="flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              Addresses
             </TabsTrigger>
             <TabsTrigger value="account" className="flex items-center gap-2">
               <User className="h-4 w-4" />
@@ -232,6 +244,23 @@ export const CustomerDashboard = () => {
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="addresses" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Delivery Addresses
+                </CardTitle>
+                <CardDescription>
+                  Manage your delivery addresses (up to 3)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {user && <AddressManager userId={user.id} />}
               </CardContent>
             </Card>
           </TabsContent>

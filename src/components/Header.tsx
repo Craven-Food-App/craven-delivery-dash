@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import AuthModal from "./auth/AuthModal";
+import AddressSelector from "./address/AddressSelector";
 
 interface User {
   id: string;
@@ -34,7 +35,7 @@ const Header = () => {
   const [loading, setLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [cartItems, setCartItems] = useState(0);
-  const [userAddress, setUserAddress] = useState<string>("Current Location");
+  const [selectedAddress, setSelectedAddress] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -44,13 +45,6 @@ const Header = () => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-        
-        // Fetch user address when user logs in
-        if (session?.user) {
-          fetchUserAddress(session.user.id);
-        } else {
-          setUserAddress("Current Location");
-        }
       }
     );
 
@@ -59,36 +53,10 @@ const Header = () => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-      
-      // Fetch user address if user exists
-      if (session?.user) {
-        fetchUserAddress(session.user.id);
-      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
-
-  const fetchUserAddress = async (userId: string) => {
-    try {
-      const { data: address, error } = await supabase
-        .from('delivery_addresses')
-        .select('street_address, city, state')
-        .eq('user_id', userId)
-        .eq('is_default', true)
-        .single();
-      
-      if (error || !address) {
-        setUserAddress("Current Location");
-        return;
-      }
-      
-      setUserAddress(`${address.street_address}, ${address.city}, ${address.state}`);
-    } catch (error) {
-      console.error('Error fetching user address:', error);
-      setUserAddress("Current Location");
-    }
-  };
 
   const handleSignOut = async () => {
     try {
@@ -137,11 +105,17 @@ const Header = () => {
               </nav>
             </div>
 
-            {/* Location */}
-            <div className="hidden md:flex items-center space-x-2 text-muted-foreground">
-              <MapPin className="h-4 w-4" />
-              <span className="text-sm">Delivering to</span>
-              <span className="text-sm font-medium text-foreground">{userAddress}</span>
+            {/* Location/Address Selector */}
+            <div className="hidden md:flex">
+              {user ? (
+                <AddressSelector userId={user.id} onAddressChange={setSelectedAddress} />
+              ) : (
+                <div className="flex items-center space-x-2 text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  <span className="text-sm">Deliver to</span>
+                  <span className="text-sm font-medium text-foreground">Current Location</span>
+                </div>
+              )}
             </div>
 
             {/* Search Bar */}
