@@ -101,32 +101,44 @@ const Restaurants = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary/10 via-background to-secondary/5 py-8 border-b border-border/50">
+      <section className="bg-gradient-to-br from-primary/10 via-background to-secondary/5 py-6 md:py-8 border-b border-border/50">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 md:mb-6">
               What Are You Crave'n
             </h1>
             
             {/* Search Section */}
             <Card className="border-border/50 shadow-lg">
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+              <CardContent className="p-4 md:p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4">
                   {/* Search Input */}
-                  <div className="md:col-span-5 relative">
+                  <div className="lg:col-span-5 relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search restaurants, dishes, or cuisines..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10 h-12 border-border/50 focus:ring-2 focus:ring-primary/20" onKeyPress={e => e.key === 'Enter' && handleSearch()} />
+                    <Input 
+                      placeholder="Search restaurants, dishes..." 
+                      value={searchQuery} 
+                      onChange={e => setSearchQuery(e.target.value)} 
+                      className="pl-10 h-11 md:h-12 border-border/50 focus:ring-2 focus:ring-primary/20 text-base" 
+                      onKeyPress={e => e.key === 'Enter' && handleSearch()} 
+                    />
                   </div>
                   
                   {/* Location Input */}
-                  <div className="md:col-span-4 relative">
+                  <div className="lg:col-span-4 relative">
                     <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Enter your address..." value={location} onChange={e => setLocation(e.target.value)} className="pl-10 h-12 border-border/50 focus:ring-2 focus:ring-primary/20" onKeyPress={e => e.key === 'Enter' && handleSearch()} />
+                    <Input 
+                      placeholder="Enter your address..." 
+                      value={location} 
+                      onChange={e => setLocation(e.target.value)} 
+                      className="pl-10 h-11 md:h-12 border-border/50 focus:ring-2 focus:ring-primary/20 text-base" 
+                      onKeyPress={e => e.key === 'Enter' && handleSearch()} 
+                    />
                   </div>
                   
                   {/* Search Button */}
-                  <div className="md:col-span-3">
-                    <Button onClick={handleSearch} className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
+                  <div className="lg:col-span-3">
+                    <Button onClick={handleSearch} className="w-full h-11 md:h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base">
                       Find Restaurants
                     </Button>
                   </div>
@@ -138,16 +150,16 @@ const Restaurants = () => {
       </section>
 
       {/* Cuisine Bubbles Section */}
-      <section className="py-4 bg-muted/20 border-y border-border/50">
+      <section className="py-3 md:py-4 bg-muted/20 border-y border-border/50">
         <div className="container mx-auto px-4">
-          <div className="flex flex-wrap justify-center gap-3">
+          <div className="flex flex-wrap justify-center gap-2 md:gap-3">
             {cuisineTypes.map(cuisine => <button key={cuisine.value} onClick={() => setCuisineFilter(cuisine.value)} className={`
-                  relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium
-                  transition-all duration-300 hover-scale border-2
+                  relative flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 rounded-full text-xs md:text-sm font-medium
+                  transition-all duration-300 hover-scale border-2 min-h-[44px] touch-manipulation
                   ${cuisineFilter === cuisine.value ? `${cuisine.color} text-white border-white shadow-lg` : 'bg-background text-foreground border-border hover:border-primary/50'}
                 `}>
-                <span className="text-lg">{cuisine.emoji}</span>
-                <span>{cuisine.name}</span>
+                <span className="text-base md:text-lg">{cuisine.emoji}</span>
+                <span className="whitespace-nowrap">{cuisine.name}</span>
                 {cuisineFilter === cuisine.value && <div className="absolute inset-0 rounded-full bg-white/20 animate-pulse" />}
               </button>)}
           </div>
@@ -158,11 +170,11 @@ const Restaurants = () => {
       <section className="py-6">
         <div className="container mx-auto px-4">
           {/* Filter Bar */}
-          <div className="flex flex-col lg:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-xl border border-border/50">
-            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="flex flex-col lg:flex-row gap-3 md:gap-4 mb-4 md:mb-6 p-3 md:p-4 bg-muted/30 rounded-xl border border-border/50">
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
               {/* Sort By */}
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="bg-background border-border/50">
+                <SelectTrigger className="bg-background border-border/50 h-11 md:h-10">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -194,7 +206,7 @@ const Restaurants = () => {
               </Select>
 
               {/* Additional Filters Button */}
-              <Button variant="outline" className="flex items-center gap-2 border-border/50">
+              <Button variant="outline" className="flex items-center gap-2 border-border/50 h-11 md:h-10 touch-manipulation">
                 <Filter className="h-4 w-4" />
                 More Filters
               </Button>
@@ -213,7 +225,7 @@ const Restaurants = () => {
               </Badge>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
               {/* Promotional Cards */}
               <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-secondary/10 hover-scale">
                 <CardContent className="p-6">

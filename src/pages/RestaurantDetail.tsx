@@ -263,7 +263,7 @@ const RestaurantDetail = () => {
       <Header />
       
       {/* Restaurant Header */}
-      <div className="relative h-64 md:h-80">
+      <div className="relative h-48 md:h-64 lg:h-80">
         {restaurant.image_url ? (
           <img 
             src={restaurant.image_url} 
@@ -278,11 +278,11 @@ const RestaurantDetail = () => {
         <div className="absolute inset-0 bg-black/30" />
       </div>
 
-      {/* Restaurant Info Section - moved below header */}
-      <div className="container mx-auto px-4 py-6">
-        <h1 className="text-3xl md:text-4xl font-bold mb-2">{restaurant.name}</h1>
-        <p className="text-lg mb-4 text-muted-foreground">{restaurant.description}</p>
-        <div className="flex items-center gap-4 text-sm">
+      {/* Restaurant Info Section */}
+      <div className="container mx-auto px-4 py-4 md:py-6">
+        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">{restaurant.name}</h1>
+        <p className="text-base md:text-lg mb-4 text-muted-foreground">{restaurant.description}</p>
+        <div className="flex flex-wrap items-center gap-3 md:gap-4 text-sm">
           <div className="flex items-center gap-1">
             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
             <span>{restaurant.rating.toFixed(1)} ({restaurant.total_reviews} reviews)</span>
@@ -298,19 +298,19 @@ const RestaurantDetail = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6 flex gap-6 overflow-x-hidden">
+      <div className="container mx-auto px-4 pb-4 md:pb-6 flex gap-4 md:gap-6 overflow-x-hidden">
         {/* Menu Content */}
         <div className="flex-1 min-w-0">
           {/* Category Navigation */}
-          <Card className="mb-6 sticky top-4 z-10">
-            <CardContent className="p-4">
+          <Card className="mb-4 md:mb-6 sticky top-4 z-10">
+            <CardContent className="p-3 md:p-4">
               <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
                 {categories.map((category) => (
                   <Button
                     key={category.id}
                     variant="ghost"
                     size="sm"
-                    className="whitespace-nowrap flex-shrink-0"
+                    className="whitespace-nowrap flex-shrink-0 text-sm md:text-base h-9 md:h-10 px-3 md:px-4 touch-manipulation"
                     onClick={() => scrollToCategory(category.id)}
                   >
                     {category.name}
@@ -327,16 +327,16 @@ const RestaurantDetail = () => {
                 <Award className="h-5 w-5 text-primary" />
                 <h2 className="text-2xl font-bold">Featured Items</h2>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 {featuredItems.map((item) => (
-                  <Card key={`featured-${item.id}`} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
+                  <Card key={`featured-${item.id}`} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer touch-manipulation">
                     <CardContent className="p-0" onClick={() => setSelectedItem(item)}>
                       <div className="flex min-w-0">
-                        <div className="flex-1 p-4 min-w-0">
+                        <div className="flex-1 p-3 md:p-4 min-w-0">
                           <div className="flex items-start justify-between min-w-0">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                <h3 className="font-semibold text-lg break-words">{item.name}</h3>
+                                <h3 className="font-semibold text-base md:text-lg break-words">{item.name}</h3>
                                 <Badge variant="secondary" className="text-xs bg-primary/20 text-primary">Featured</Badge>
                                 <div className="flex gap-1 flex-wrap">
                                   {item.is_vegetarian && <Badge variant="secondary" className="text-xs">Vegetarian</Badge>}
@@ -357,7 +357,7 @@ const RestaurantDetail = () => {
                                     e.stopPropagation();
                                     setSelectedItem(item);
                                   }}
-                                  className="ml-4 flex-shrink-0"
+                                  className="ml-4 flex-shrink-0 h-9 px-3 touch-manipulation"
                                 >
                                   <Plus className="h-4 w-4 mr-1" />
                                   Add
@@ -367,7 +367,7 @@ const RestaurantDetail = () => {
                           </div>
                         </div>
                         {item.image_url && (
-                          <div className="w-24 h-24 md:w-32 md:h-32 flex-shrink-0">
+                          <div className="w-20 h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 flex-shrink-0">
                             <img 
                               src={item.image_url} 
                               alt={item.name}
@@ -391,16 +391,16 @@ const RestaurantDetail = () => {
                 <TrendingUp className="h-5 w-5 text-primary" />
                 <h2 className="text-2xl font-bold">Most Popular</h2>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 {popularItems.map((item) => (
-                  <Card key={`popular-${item.id}`} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
+                  <Card key={`popular-${item.id}`} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer touch-manipulation">
                     <CardContent className="p-0" onClick={() => setSelectedItem(item)}>
                       <div className="flex min-w-0">
-                        <div className="flex-1 p-4 min-w-0">
+                        <div className="flex-1 p-3 md:p-4 min-w-0">
                           <div className="flex items-start justify-between min-w-0">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                <h3 className="font-semibold text-lg break-words">{item.name}</h3>
+                                <h3 className="font-semibold text-base md:text-lg break-words">{item.name}</h3>
                                 <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700">
                                   {item.order_count} orders
                                 </Badge>
@@ -423,7 +423,7 @@ const RestaurantDetail = () => {
                                     e.stopPropagation();
                                     setSelectedItem(item);
                                   }}
-                                  className="ml-4 flex-shrink-0"
+                                  className="ml-4 flex-shrink-0 h-9 px-3 touch-manipulation"
                                 >
                                   <Plus className="h-4 w-4 mr-1" />
                                   Add
@@ -433,7 +433,7 @@ const RestaurantDetail = () => {
                           </div>
                         </div>
                         {item.image_url && (
-                          <div className="w-24 h-24 md:w-32 md:h-32 flex-shrink-0">
+                          <div className="w-20 h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 flex-shrink-0">
                             <img 
                               src={item.image_url} 
                               alt={item.name}

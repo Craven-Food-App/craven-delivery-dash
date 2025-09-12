@@ -139,6 +139,10 @@ All colors MUST be HSL.
 
   /* Mobile app styles */
   @media (max-width: 768px) {
+    html {
+      font-size: 16px; /* Prevent zoom on iOS */
+    }
+
     body {
       overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
@@ -146,6 +150,33 @@ All colors MUST be HSL.
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       user-select: none;
+    }
+
+    /* Better button sizing for touch */
+    button, [role="button"], .touch-manipulation {
+      min-height: 44px;
+      min-width: 44px;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Improved text inputs on mobile */
+    input[type="text"], 
+    input[type="email"], 
+    input[type="password"], 
+    input[type="search"], 
+    textarea, 
+    select {
+      font-size: 16px; /* Prevents zoom on iOS */
+      -webkit-appearance: none;
+      border-radius: 0.5rem;
+      min-height: 44px;
+    }
+
+    /* Better container padding */
+    .container {
+      padding-left: 1rem;
+      padding-right: 1rem;
     }
 
     /* iOS safe area support */
@@ -174,14 +205,80 @@ All colors MUST be HSL.
     }
 
     /* Touch feedback */
-    button, [role="button"] {
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-    }
-
     button:active, [role="button"]:active {
       transform: scale(0.98);
       transition: transform 0.1s ease;
+    }
+
+    /* Better scrolling performance */
+    .overflow-x-auto, .overflow-y-auto {
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .overflow-x-auto::-webkit-scrollbar,
+    .overflow-y-auto::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Better focus states for accessibility */
+    button:focus-visible, 
+    input:focus-visible, 
+    select:focus-visible, 
+    textarea:focus-visible {
+      outline: 2px solid hsl(var(--primary));
+      outline-offset: 2px;
+    }
+
+    /* Improved spacing for mobile */
+    .space-y-4 > * + * {
+      margin-top: 1rem;
+    }
+
+    .space-y-6 > * + * {
+      margin-top: 1.5rem;
+    }
+
+    /* Better card interactions */
+    .hover\:shadow-lg:hover {
+      transform: none;
+      box-shadow: var(--shadow-card);
+    }
+
+    /* Mobile-first form styling */
+    .btn-mobile {
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      font-weight: 500;
+      min-height: 44px;
+      border-radius: 0.5rem;
+      touch-action: manipulation;
+    }
+
+    /* Better mobile text sizing */
+    h1 {
+      line-height: 1.2;
+    }
+
+    h2, h3 {
+      line-height: 1.3;
+    }
+
+    /* Improve mobile grid layouts */
+    .grid {
+      gap: 0.75rem;
+    }
+
+    /* Better mobile modal positioning */
+    .fixed {
+      position: fixed;
+    }
+
+    /* Ensure proper z-index stacking on mobile */
+    .sticky {
+      position: sticky;
+      z-index: 10;
     }
   }
 }

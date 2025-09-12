@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { MapPin, Search, User, ShoppingCart, ChevronDown, LogOut } from "lucide-react";
+import { MapPin, Search, User, ShoppingCart, ChevronDown, LogOut, Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import cravenLogo from "@/assets/craven-logo.png";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ const Header = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [cartItems, setCartItems] = useState(0);
   const [selectedAddress, setSelectedAddress] = useState<any>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -99,20 +100,21 @@ const Header = () => {
       <header className="bg-background border-b border-border sticky top-0 z-50 shadow-card">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            {/* Logo and Navigation */}
-            <div className="flex items-center space-x-8">
+            {/* Logo */}
+            <div className="flex items-center">
               <Link to="/">
                 <img src={cravenLogo} alt="Crave'n" className="h-8" />
               </Link>
-              
-              <nav className="hidden md:flex space-x-6">
-                <a href="/restaurants" className="text-foreground hover:text-primary transition-colors">Restaurants</a>
-                <a href="/craver" className="text-foreground hover:text-primary transition-colors">Become a Driver</a>
-              </nav>
             </div>
 
-            {/* Location/Address Selector */}
-            <div className="hidden md:flex">
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex space-x-6">
+              <a href="/restaurants" className="text-foreground hover:text-primary transition-colors">Restaurants</a>
+              <a href="/craver" className="text-foreground hover:text-primary transition-colors">Become a Driver</a>
+            </nav>
+
+            {/* Desktop Location/Address Selector */}
+            <div className="hidden lg:flex">
               {user ? (
                 <AddressSelector 
                   userId={user.id} 
@@ -127,9 +129,9 @@ const Header = () => {
               )}
             </div>
 
-            {/* Search Bar */}
-            <div className="flex-1 max-w-md mx-4">
-              <div className="relative">
+            {/* Desktop Search Bar */}
+            <div className="hidden md:flex flex-1 max-w-md mx-4">
+              <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
                   placeholder="Search restaurants, cuisines, or dishes"
@@ -138,12 +140,12 @@ const Header = () => {
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center space-x-4">
+            {/* Desktop Actions */}
+            <div className="hidden md:flex items-center space-x-2">
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="hidden sm:flex text-primary hover:text-primary hover:bg-primary/10"
+                className="text-primary hover:text-primary hover:bg-primary/10"
                 onClick={() => window.location.href = '/admin'}
               >
                 Admin
@@ -165,7 +167,7 @@ const Header = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="flex items-center gap-2">
                       <User className="h-4 w-4" />
-                      <span className="hidden sm:inline">{user.email}</span>
+                      <span className="hidden lg:inline">{user.email}</span>
                       <ChevronDown className="h-3 w-3" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -186,7 +188,7 @@ const Header = () => {
                   <DialogTrigger asChild>
                     <Button variant="outline" size="sm" className="flex items-center gap-2">
                       <User className="h-4 w-4" />
-                      <span>Sign In</span>
+                      <span className="hidden lg:inline">Sign In</span>
                       <ChevronDown className="h-3 w-3" />
                     </Button>
                   </DialogTrigger>
@@ -199,7 +201,122 @@ const Header = () => {
                 </Dialog>
               )}
             </div>
+
+            {/* Mobile Actions */}
+            <div className="flex md:hidden items-center space-x-2">
+              {user && (
+                <Button variant="ghost" size="icon" className="relative">
+                  <ShoppingCart className="h-5 w-5" />
+                  {cartItems > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {cartItems}
+                    </span>
+                  )}
+                </Button>
+              )}
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="md:hidden"
+              >
+                {isMobileMenuOpen ? (
+                  <X className="h-5 w-5" />
+                ) : (
+                  <Menu className="h-5 w-5" />
+                )}
+              </Button>
+            </div>
           </div>
+
+          {/* Mobile Menu */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden border-t border-border bg-background">
+              <div className="px-4 py-4 space-y-4">
+                {/* Mobile Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Search restaurants..."
+                    className="pl-10 bg-muted border-0 focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+
+                {/* Mobile Location */}
+                {user ? (
+                  <AddressSelector 
+                    userId={user.id} 
+                    onAddressChange={(address) => setSelectedAddress(address)} 
+                  />
+                ) : (
+                  <div className="flex items-center space-x-2 text-muted-foreground p-3 bg-muted rounded-lg">
+                    <MapPin className="h-4 w-4" />
+                    <span className="text-sm">Current Location</span>
+                  </div>
+                )}
+
+                {/* Mobile Navigation */}
+                <div className="space-y-2">
+                  <a 
+                    href="/restaurants" 
+                    className="block px-3 py-2 text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Restaurants
+                  </a>
+                  <a 
+                    href="/craver" 
+                    className="block px-3 py-2 text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Become a Driver
+                  </a>
+                  <a 
+                    href="/admin" 
+                    className="block px-3 py-2 text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Admin
+                  </a>
+                </div>
+
+                {/* Mobile Auth */}
+                <div className="pt-4 border-t border-border">
+                  {user ? (
+                    <div className="space-y-2">
+                      <a 
+                        href="/customer-dashboard" 
+                        className="block px-3 py-2 text-foreground hover:bg-muted rounded-lg transition-colors"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        My Orders
+                      </a>
+                      <button 
+                        onClick={() => {
+                          handleSignOut();
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="block w-full text-left px-3 py-2 text-foreground hover:bg-muted rounded-lg transition-colors"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  ) : (
+                    <Button 
+                      onClick={() => {
+                        setIsAuthModalOpen(true);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full"
+                    >
+                      Sign In
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </header>
     </>

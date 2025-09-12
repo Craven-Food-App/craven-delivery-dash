@@ -79,20 +79,20 @@ const Hero = () => {
       </div>
 
       {/* Content */}
-      <div className="relative container mx-auto px-4 py-20 text-center text-white">
+      <div className="relative container mx-auto px-4 py-12 md:py-20 text-center text-white">
         <div className="max-w-3xl mx-auto animate-fade-in">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 leading-tight">
             Your favorite food,
             <span className="block text-primary-glow">delivered fast</span>
           </h1>
           
-          <p className="text-xl md:text-2xl mb-8 opacity-90">
+          <p className="text-lg md:text-xl lg:text-2xl mb-6 md:mb-8 opacity-90">
             Discover the best restaurants near you and get your cravings delivered in minutes
           </p>
 
           {/* Search Section */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-8">
-            <div className="flex flex-col md:flex-row gap-4 max-w-2xl mx-auto">
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 md:p-6 mb-6 md:mb-8">
+            <div className="flex flex-col md:flex-row gap-3 md:gap-4 max-w-2xl mx-auto">
               <div className="flex-1 relative">
                 <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/70" />
                 <Input 
@@ -100,7 +100,7 @@ const Hero = () => {
                   value={deliveryAddress}
                   onChange={(e) => setDeliveryAddress(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  className="pl-12 h-14 bg-white/20 border-white/30 text-white placeholder:text-white/70 focus:ring-2 focus:ring-white/50"
+                  className="pl-12 h-12 md:h-14 bg-white/20 border-white/30 text-white placeholder:text-white/70 focus:ring-2 focus:ring-white/50 text-base"
                 />
               </div>
               
@@ -111,14 +111,14 @@ const Hero = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  className="pl-12 h-14 bg-white/20 border-white/30 text-white placeholder:text-white/70 focus:ring-2 focus:ring-white/50"
+                  className="pl-12 h-12 md:h-14 bg-white/20 border-white/30 text-white placeholder:text-white/70 focus:ring-2 focus:ring-white/50 text-base"
                 />
               </div>
               
               <Button 
                 variant="hero" 
                 size="lg" 
-                className="h-14 px-8 font-semibold"
+                className="h-12 md:h-14 px-6 md:px-8 font-semibold text-base touch-manipulation"
                 onClick={handleSearch}
               >
                 Find Food
@@ -127,9 +127,9 @@ const Hero = () => {
           </div>
 
           {/* Category Grid */}
-          <div className="mb-8">
-            <h3 className="text-2xl font-bold text-white mb-6">What are you craving?</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 max-w-4xl mx-auto">
+          <div className="mb-6 md:mb-8">
+            <h3 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6">What are you craving?</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 max-w-4xl mx-auto">
               {[
                 {
                   name: "Fast Food",
@@ -164,11 +164,11 @@ const Hero = () => {
               ].map((category, index) => (
                 <div 
                   key={category.name} 
-                  className="group cursor-pointer animate-fade-in"
+                  className="group cursor-pointer animate-fade-in touch-manipulation"
                   style={{ animationDelay: `${index * 50}ms` }}
                   onClick={() => handleCategoryClick(category.name)}
                 >
-                  <div className="relative overflow-hidden rounded-lg aspect-square mb-2 shadow-card hover:shadow-hover transition-all duration-300 transform hover:scale-105">
+                  <div className="relative overflow-hidden rounded-lg aspect-square mb-2 shadow-card hover:shadow-hover transition-all duration-300 transform hover:scale-105 min-h-[80px]">
                     <img 
                       src={category.image} 
                       alt={category.name}
@@ -176,7 +176,7 @@ const Hero = () => {
                     />
                     <div className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-60 group-hover:opacity-40 transition-opacity`}></div>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-white font-semibold text-sm text-center px-2 drop-shadow-lg">
+                      <span className="text-white font-semibold text-xs md:text-sm text-center px-2 drop-shadow-lg">
                         {category.name}
                       </span>
                     </div>
@@ -187,21 +187,21 @@ const Hero = () => {
           </div>
 
           {/* Driver CTA Section */}
-          <div className="mt-8 pt-6 border-t border-white/20">
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-white/20">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4">
               <Button 
                 size="lg"
-                className="bg-gradient-to-r from-secondary to-secondary/80 hover:from-secondary/90 hover:to-secondary/70 text-white font-semibold"
+                className="bg-gradient-to-r from-secondary to-secondary/80 hover:from-secondary/90 hover:to-secondary/70 text-white font-semibold h-12 px-6 touch-manipulation"
                 onClick={() => navigate('/mobile')}
               >
                 <Truck className="mr-2 h-4 w-4" />
                 Satisfy Crave Now
               </Button>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-center gap-2">
                 <Button 
                   variant="outline" 
                   size="lg"
-                  className="bg-transparent border-white text-white hover:bg-white hover:text-primary"
+                  className="bg-transparent border-white text-white hover:bg-white hover:text-primary h-12 px-6 touch-manipulation"
                   onClick={() => navigate('/restaurant/auth')}
                 >
                   MAKE'M CRAVE
