@@ -966,7 +966,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      make_user_active_driver: {
+        Args: { target_user_id: string; vehicle_info?: Json }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
