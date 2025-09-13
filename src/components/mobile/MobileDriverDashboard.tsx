@@ -16,7 +16,7 @@ import { AccountSection } from './AccountSection';
 import { RatingsSection } from './RatingsSection';
 import { EarningsSection } from './EarningsSection';
 import { DeliveryPanel } from './DeliveryPanel';
-import LeafletMap from '@/components/LeafletMap';
+import MapboxMap from '@/components/Map';
 
 type DriverState = 'offline' | 'setEndTime' | 'online_searching' | 'online_paused' | 'offer_presented' | 'on_delivery';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
@@ -643,7 +643,7 @@ export const MobileDriverDashboard: React.FC = () => {
     <div className="min-h-screen bg-background relative">
       {/* Map background - positioned behind content */}
       <div className="absolute inset-0 z-0">
-        <LeafletMap 
+        <MapboxMap 
           orders={driverState === 'online_searching' ? availableOrders : []} 
           activeOrder={null} 
           onOrderClick={(order) => {

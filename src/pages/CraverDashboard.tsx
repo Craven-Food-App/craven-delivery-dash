@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import AccessGuard from '@/components/AccessGuard';
-import DasherMap from '@/components/DasherMap';
+import MapboxMap from '@/components/Map';
 import ActiveOrderCard from '@/components/ActiveOrderCard';
 import DailyEarningsTracker from '@/components/DailyEarningsTracker';
 import DeliveryProximityDetector from '@/components/DeliveryProximityDetector';
@@ -447,7 +447,7 @@ const CraverDashboard: React.FC = () => {
         <div className="flex h-screen">
           {/* Map Section */}
           <div className="flex-1 p-4">
-            <DasherMap 
+            <MapboxMap 
               orders={filteredOrders}
               activeOrder={activeOrder}
               onOrderClick={(order) => {
