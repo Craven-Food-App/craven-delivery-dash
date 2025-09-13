@@ -37,6 +37,7 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
   const [showTokenInput, setShowTokenInput] = useState(true);
   const [manualToken, setManualToken] = useState('');
   const [initialized, setInitialized] = useState(false);
+  const [fetchedToken, setFetchedToken] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -48,22 +49,29 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
         if (error) throw error as any;
         const token = (data as any)?.token;
         if (token) {
+          setFetchedToken(token);
           setShowTokenInput(false);
-          await initializeMap(token);
         } else {
           console.warn('No Mapbox token returned; falling back to manual input');
           setShowTokenInput(true);
-          setLoading(false);
         }
       } catch (err: any) {
         console.warn('Failed to fetch Mapbox token from Edge Function:', err?.message || err);
         setShowTokenInput(true);
+      } finally {
         setLoading(false);
       }
     };
 
     fetchToken();
   }, []);
+
+  // Initialize map once container and token are ready
+  useEffect(() => {
+    if (mapContainer.current && fetchedToken && !initialized && !map.current) {
+      initializeMap(fetchedToken);
+    }
+  }, [fetchedToken, initialized]);
 
   useEffect(() => {
     if (map.current && initialized && !loading) {
@@ -450,7 +458,7 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
     }
     
     setShowTokenInput(false);
-    initializeMap(manualToken);
+    setFetchedToken(manualToken);
   };
 
   if (showTokenInput || loading) {

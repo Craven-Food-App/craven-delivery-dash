@@ -446,7 +446,7 @@ const CraverDashboard: React.FC = () => {
         
         <div className="flex h-screen">
           {/* Map Section */}
-          <div className="flex-1 p-4">
+          <div className="flex-1 p-4 h-full">
             <MapboxMap 
               orders={filteredOrders}
               activeOrder={activeOrder}
