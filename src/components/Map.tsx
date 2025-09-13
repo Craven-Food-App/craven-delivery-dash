@@ -40,8 +40,29 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log('Map component mounted, orders:', orders.length);
-    // Don't auto-initialize, wait for user to provide token
+    // Try to fetch Mapbox token from Supabase Edge Function automatically
+    const fetchToken = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase.functions.invoke('get-mapbox-token', { body: {} });
+        if (error) throw error as any;
+        const token = (data as any)?.token;
+        if (token) {
+          setShowTokenInput(false);
+          await initializeMap(token);
+        } else {
+          console.warn('No Mapbox token returned; falling back to manual input');
+          setShowTokenInput(true);
+          setLoading(false);
+        }
+      } catch (err: any) {
+        console.warn('Failed to fetch Mapbox token from Edge Function:', err?.message || err);
+        setShowTokenInput(true);
+        setLoading(false);
+      }
+    };
+
+    fetchToken();
   }, []);
 
   useEffect(() => {
