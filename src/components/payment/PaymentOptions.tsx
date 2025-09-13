@@ -5,15 +5,19 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { CreditCard, Smartphone, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import CashAppPayment from './CashAppPayment';
 
 interface PaymentOptionsProps {
   orderTotal: number;
+  orderId: string;
   onPaymentMethod: (method: 'stripe' | 'cashapp') => void;
+  onPaymentComplete: () => void;
   onClose: () => void;
 }
 
-const PaymentOptions = ({ orderTotal, onPaymentMethod, onClose }: PaymentOptionsProps) => {
+const PaymentOptions = ({ orderTotal, orderId, onPaymentMethod, onPaymentComplete, onClose }: PaymentOptionsProps) => {
   const [selectedMethod, setSelectedMethod] = useState<'stripe' | 'cashapp' | null>(null);
+  const [showCashApp, setShowCashApp] = useState(false);
   const { toast } = useToast();
 
   const formatPrice = (cents: number) => `$${(cents / 100).toFixed(2)}`;
@@ -22,15 +26,22 @@ const PaymentOptions = ({ orderTotal, onPaymentMethod, onClose }: PaymentOptions
     setSelectedMethod(method);
     
     if (method === 'cashapp') {
-      // For CashApp, show instructions
-      toast({
-        title: 'CashApp Payment',
-        description: 'You will be redirected to complete payment via CashApp',
-      });
+      setShowCashApp(true);
+    } else {
+      onPaymentMethod(method);
     }
-    
-    onPaymentMethod(method);
   };
+
+  if (showCashApp) {
+    return (
+      <CashAppPayment
+        orderTotal={orderTotal}
+        orderId={orderId}
+        onPaymentComplete={onPaymentComplete}
+        onCancel={() => setShowCashApp(false)}
+      />
+    );
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto">

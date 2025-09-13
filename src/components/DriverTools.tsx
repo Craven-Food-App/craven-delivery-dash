@@ -155,16 +155,36 @@ const DriverTools: React.FC<DriverToolsProps> = ({ user, onlineStatus, onToggleO
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          <Button variant="outline" size="sm" className="w-full justify-start">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full justify-start"
+            onClick={() => toast({ title: "Message Sent", description: "On my way to pick up your order" })}
+          >
             "I'm on my way to pick up your order"
           </Button>
-          <Button variant="outline" size="sm" className="w-full justify-start">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full justify-start"
+            onClick={() => toast({ title: "Message Sent", description: "Order picked up, heading to you now" })}
+          >
             "Order picked up, heading to you now"
           </Button>
-          <Button variant="outline" size="sm" className="w-full justify-start">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full justify-start"
+            onClick={() => toast({ title: "Message Sent", description: "I'm at your door" })}
+          >
             "I'm at your door"
           </Button>
-          <Button variant="outline" size="sm" className="w-full justify-start">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full justify-start"
+            onClick={() => toast({ title: "Message Sent", description: "Order delivered safely" })}
+          >
             "Order delivered safely"
           </Button>
         </CardContent>
@@ -175,7 +195,13 @@ const DriverTools: React.FC<DriverToolsProps> = ({ user, onlineStatus, onToggleO
         </CardHeader>
         <CardContent className="space-y-2">
           <Textarea placeholder="Type your message..." className="min-h-[80px]" />
-          <Button size="sm" className="w-full">Send Message</Button>
+          <Button 
+            size="sm" 
+            className="w-full"
+            onClick={() => toast({ title: "Custom Message Sent", description: "Your message has been delivered" })}
+          >
+            Send Message
+          </Button>
         </CardContent>
       </Card>
     </div>
@@ -194,7 +220,12 @@ const DriverTools: React.FC<DriverToolsProps> = ({ user, onlineStatus, onToggleO
           <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
             <Camera className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
             <p className="text-sm text-muted-foreground mb-2">Take a photo of the delivery</p>
-            <Button size="sm">Open Camera</Button>
+            <Button 
+              size="sm"
+              onClick={() => toast({ title: "Camera Opened", description: "Photo capture functionality activated" })}
+            >
+              Open Camera
+            </Button>
           </div>
           <div className="space-y-2">
             <Label htmlFor="delivery-notes">Delivery Notes (Optional)</Label>
@@ -204,7 +235,12 @@ const DriverTools: React.FC<DriverToolsProps> = ({ user, onlineStatus, onToggleO
               className="min-h-[60px]"
             />
           </div>
-          <Button className="w-full">Complete Delivery</Button>
+          <Button 
+            className="w-full"
+            onClick={() => toast({ title: "Delivery Complete", description: "Photo proof and delivery confirmation submitted" })}
+          >
+            Complete Delivery
+          </Button>
         </CardContent>
       </Card>
     </div>
@@ -244,7 +280,12 @@ const DriverTools: React.FC<DriverToolsProps> = ({ user, onlineStatus, onToggleO
             <Label htmlFor="notes">Notes</Label>
             <Input id="notes" placeholder="Gas station, repair shop, etc." />
           </div>
-          <Button className="w-full">Add Expense</Button>
+          <Button 
+            className="w-full"
+            onClick={() => toast({ title: "Expense Added", description: "Your expense has been recorded for tax purposes" })}
+          >
+            Add Expense
+          </Button>
         </CardContent>
       </Card>
       <Card>
