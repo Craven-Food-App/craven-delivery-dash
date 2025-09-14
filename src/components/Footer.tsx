@@ -31,10 +31,10 @@ const Footer = () => {
           <div className="space-y-4">
             <h4 className="text-lg font-semibold">Company</h4>
             <ul className="space-y-2 text-muted">
-              <li><a href="#" className="hover:text-primary transition-colors">About Us</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Careers</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Press</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
+              <li><a href="/about" className="hover:text-primary transition-colors">About Us</a></li>
+              <li><a href="/careers" className="hover:text-primary transition-colors">Careers</a></li>
+              <li><a href="/press" className="hover:text-primary transition-colors">Press</a></li>
+              <li><a href="/blog" className="hover:text-primary transition-colors">Blog</a></li>
             </ul>
           </div>
 
@@ -42,10 +42,10 @@ const Footer = () => {
           <div className="space-y-4">
             <h4 className="text-lg font-semibold">Support</h4>
             <ul className="space-y-2 text-muted">
-              <li><a href="#" className="hover:text-primary transition-colors">Help Center</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Safety</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Contact Us</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Partner with us</a></li>
+              <li><a href="/help" className="hover:text-primary transition-colors">Help Center</a></li>
+              <li><a href="/safety" className="hover:text-primary transition-colors">Safety</a></li>
+              <li><a href="/contact" className="hover:text-primary transition-colors">Contact Us</a></li>
+              <li><a href="/partner" className="hover:text-primary transition-colors">Partner with us</a></li>
             </ul>
           </div>
 
