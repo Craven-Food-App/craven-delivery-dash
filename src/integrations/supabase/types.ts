@@ -14,6 +14,103 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_conversations: {
+        Row: {
+          admin_id: string | null
+          created_at: string
+          customer_id: string | null
+          driver_id: string | null
+          id: string
+          metadata: Json | null
+          order_id: string | null
+          priority: string
+          status: string
+          subject: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          admin_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          driver_id?: string | null
+          id?: string
+          metadata?: Json | null
+          order_id?: string | null
+          priority?: string
+          status?: string
+          subject?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          admin_id?: string | null
+          created_at?: string
+          customer_id?: string | null
+          driver_id?: string | null
+          id?: string
+          metadata?: Json | null
+          order_id?: string | null
+          priority?: string
+          status?: string
+          subject?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_conversations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          is_read: boolean
+          message_type: string
+          metadata: Json | null
+          sender_id: string | null
+          sender_type: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message_type?: string
+          metadata?: Json | null
+          sender_id?: string | null
+          sender_type: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message_type?: string
+          metadata?: Json | null
+          sender_id?: string | null
+          sender_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       craver_applications: {
         Row: {
           account_number_last_four: string | null
