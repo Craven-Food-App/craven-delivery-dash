@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -15,6 +15,7 @@ const Restaurants = () => {
   const [location, setLocation] = useState(searchParams.get('location') || '');
   const [cuisineFilter, setCuisineFilter] = useState(searchParams.get('cuisine') || 'all');
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'rating');
+  const resultsRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const params = new URLSearchParams();
     if (searchQuery) params.set('search', searchQuery);
@@ -24,7 +25,8 @@ const Restaurants = () => {
     setSearchParams(params);
   }, [searchQuery, location, cuisineFilter, sortBy, setSearchParams]);
   const handleSearch = () => {
-    // Search is handled by the useEffect above
+    // Scroll to results
+    resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
   const cuisineTypes = [{
     name: 'All Cuisines',
@@ -167,7 +169,7 @@ const Restaurants = () => {
       </section>
 
       {/* Filters and Results */}
-      <section className="py-6">
+      <section className="py-6" ref={resultsRef}>
         <div className="container mx-auto px-4">
           {/* Filter Bar */}
           <div className="flex flex-col lg:flex-row gap-3 md:gap-4 mb-4 md:mb-6 p-3 md:p-4 bg-muted/30 rounded-xl border border-border/50">

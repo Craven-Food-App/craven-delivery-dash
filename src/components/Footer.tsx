@@ -1,6 +1,7 @@
 import { Facebook, Twitter, Instagram, Smartphone, Mail, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import cravenLogo from "@/assets/craven-logo.png";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
@@ -10,7 +11,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <img src={cravenLogo} alt="Crave'n" className="h-8 mb-2" />
-            <p className="text-muted">
+            <p className="text-muted-foreground">
               Your favorite food, delivered fast. We bring the best restaurants right to your doorstep.
             </p>
             
@@ -30,22 +31,22 @@ const Footer = () => {
           {/* Company */}
           <div className="space-y-4">
             <h4 className="text-lg font-semibold">Company</h4>
-            <ul className="space-y-2 text-muted">
-              <li><a href="/about" className="hover:text-primary transition-colors">About Us</a></li>
-              <li><a href="/careers" className="hover:text-primary transition-colors">Careers</a></li>
-              <li><a href="/press" className="hover:text-primary transition-colors">Press</a></li>
-              <li><a href="/blog" className="hover:text-primary transition-colors">Blog</a></li>
+            <ul className="space-y-2 text-muted-foreground">
+              <li><Link to="/about" className="hover:text-primary transition-colors">About Us</Link></li>
+              <li><Link to="/careers" className="hover:text-primary transition-colors">Careers</Link></li>
+              <li><Link to="/restaurants" className="hover:text-primary transition-colors">Restaurants</Link></li>
+              <li><Link to="/craver" className="hover:text-primary transition-colors">Become a Driver</Link></li>
             </ul>
           </div>
 
           {/* Support */}
           <div className="space-y-4">
             <h4 className="text-lg font-semibold">Support</h4>
-            <ul className="space-y-2 text-muted">
-              <li><a href="/help" className="hover:text-primary transition-colors">Help Center</a></li>
-              <li><a href="/safety" className="hover:text-primary transition-colors">Safety</a></li>
-              <li><a href="/contact" className="hover:text-primary transition-colors">Contact Us</a></li>
-              <li><a href="/partner" className="hover:text-primary transition-colors">Partner with us</a></li>
+            <ul className="space-y-2 text-muted-foreground">
+              <li><Link to="/help" className="hover:text-primary transition-colors">Help Center</Link></li>
+              <li><Link to="/safety" className="hover:text-primary transition-colors">Safety</Link></li>
+              <li><Link to="/contact" className="hover:text-primary transition-colors">Contact Us</Link></li>
+              <li><Link to="/partner" className="hover:text-primary transition-colors">Partner with us</Link></li>
             </ul>
           </div>
 
@@ -53,15 +54,15 @@ const Footer = () => {
           <div className="space-y-4">
             <h4 className="text-lg font-semibold">Get in Touch</h4>
             <div className="space-y-3">
-              <div className="flex items-center space-x-3 text-muted">
+              <div className="flex items-center space-x-3 text-muted-foreground">
                 <Smartphone className="h-4 w-4" />
                 <span>1-800-CRAVE-N</span>
               </div>
-              <div className="flex items-center space-x-3 text-muted">
+              <div className="flex items-center space-x-3 text-muted-foreground">
                 <Mail className="h-4 w-4" />
                 <span>support@craven.com</span>
               </div>
-              <div className="flex items-center space-x-3 text-muted">
+              <div className="flex items-center space-x-3 text-muted-foreground">
                 <MapPin className="h-4 w-4" />
                 <span>Available in 100+ cities</span>
               </div>

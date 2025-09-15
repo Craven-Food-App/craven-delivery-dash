@@ -10,6 +10,7 @@ import { Star, Clock, MapPin, Heart, ShoppingCart, Plus, Minus, ArrowLeft, Searc
 import { Input } from '@/components/ui/input';
 import MenuItemCard from './MenuItemCard';
 import CartSummary from './CartSummary';
+import { CartSidebar } from './CartSidebar';
 import { MenuItemModal } from './MenuItemModal';
 import MenuFilters, { FilterOptions } from './MenuFilters';
 
@@ -57,6 +58,7 @@ const RestaurantMenuPage = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
   const [filters, setFilters] = useState<FilterOptions>({
     priceRange: [0, 50],
     dietary: { vegetarian: false, vegan: false, glutenFree: false },
@@ -301,6 +303,14 @@ const RestaurantMenuPage = () => {
 
   const formatPrice = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
+  const computeTotals = () => {
+    const subtotal = cart.reduce((sum, item) => sum + item.price_cents * item.quantity, 0);
+    const tax = Math.round(subtotal * 0.08);
+    const deliveryFee = deliveryMethod === 'delivery' ? (restaurant?.delivery_fee_cents || 0) : 0;
+    const total = subtotal + tax + deliveryFee;
+    return { subtotal, tax, deliveryFee, total };
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -478,6 +488,31 @@ const RestaurantMenuPage = () => {
               />
             </div>
           </div>
+
+          {/* Mobile Cart Drawer */}
+          {isCartOpen && (
+            <div className="lg:hidden">
+              <CartSidebar
+                isOpen={isCartOpen}
+                onClose={() => setIsCartOpen(false)}
+                cart={cart as any}
+                restaurant={{ ...(restaurant as any) }}
+                totals={computeTotals() as any}
+                deliveryMethod={deliveryMethod}
+                onDeliveryMethodChange={setDeliveryMethod}
+                onUpdateQuantity={(itemId, quantity) => {
+                  setCart(prev => prev
+                    .map(item => item.id === itemId ? { ...item, quantity } : item)
+                    .filter(item => item.quantity > 0)
+                  );
+                }}
+                onOrderComplete={() => {
+                  setCart([]);
+                  setIsCartOpen(false);
+                }}
+              />
+            </div>
+          )
         </div>
       </div>
       

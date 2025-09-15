@@ -22,6 +22,13 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCanceled from "./pages/PaymentCanceled";
 import NotFound from "./pages/NotFound";
 import Restaurants from "./pages/Restaurants";
+import HelpCenter from "./pages/HelpCenter";
+import Safety from "./pages/Safety";
+import ContactUs from "./pages/ContactUs";
+import PartnerWithUs from "./pages/PartnerWithUs";
+import AboutUs from "./pages/AboutUs";
+import Careers from "./pages/Careers";
+import ChatButton from "./components/chat/ChatButton";
 
 const queryClient = new QueryClient();
 
@@ -62,9 +69,23 @@ const App = () => (
           <Route path="/admin" element={<Admin />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/payment-canceled" element={<PaymentCanceled />} />
+
+          {/* Footer pages */}
+          <Route path="/help" element={<HelpCenter />} />
+          <Route path="/safety" element={<Safety />} />
+          <Route path="/contact" element={<ContactUs />} />
+          <Route path="/partner" element={<PartnerWithUs />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/careers" element={<Careers />} />
+
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+
+        {/* Floating global chat button */}
+        <div className="fixed bottom-4 right-4 z-50">
+          <ChatButton type="customer_support" userType="customer" variant="default" />
+        </div>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
