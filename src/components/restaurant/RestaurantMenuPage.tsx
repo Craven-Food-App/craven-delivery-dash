@@ -512,7 +512,7 @@ const RestaurantMenuPage = () => {
                 }}
               />
             </div>
-          )
+          )}
         </div>
       </div>
       
