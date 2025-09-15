@@ -891,6 +891,7 @@ export type Database = {
           created_at: string | null
           cuisine_type: string | null
           delivery_fee_cents: number | null
+          delivery_radius_miles: number | null
           description: string | null
           email: string | null
           estimated_delivery_time: number | null
@@ -898,7 +899,9 @@ export type Database = {
           image_url: string | null
           is_active: boolean | null
           is_promoted: boolean
+          latitude: number | null
           logo_url: string | null
+          longitude: number | null
           max_delivery_time: number | null
           min_delivery_time: number | null
           minimum_order_cents: number | null
@@ -917,6 +920,7 @@ export type Database = {
           created_at?: string | null
           cuisine_type?: string | null
           delivery_fee_cents?: number | null
+          delivery_radius_miles?: number | null
           description?: string | null
           email?: string | null
           estimated_delivery_time?: number | null
@@ -924,7 +928,9 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean | null
           is_promoted?: boolean
+          latitude?: number | null
           logo_url?: string | null
+          longitude?: number | null
           max_delivery_time?: number | null
           min_delivery_time?: number | null
           minimum_order_cents?: number | null
@@ -943,6 +949,7 @@ export type Database = {
           created_at?: string | null
           cuisine_type?: string | null
           delivery_fee_cents?: number | null
+          delivery_radius_miles?: number | null
           description?: string | null
           email?: string | null
           estimated_delivery_time?: number | null
@@ -950,7 +957,9 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean | null
           is_promoted?: boolean
+          latitude?: number | null
           logo_url?: string | null
+          longitude?: number | null
           max_delivery_time?: number | null
           min_delivery_time?: number | null
           minimum_order_cents?: number | null

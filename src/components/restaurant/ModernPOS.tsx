@@ -54,6 +54,8 @@ interface ModernPOSProps {
 
 export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, onLogout }) => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     name: '',
@@ -68,16 +70,39 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
   const { toast } = useToast();
 
   useEffect(() => {
+    fetchMenuCategories();
     fetchMenuItems();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, [restaurantId]);
 
+  const fetchMenuCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('menu_categories')
+        .select('id, name')
+        .eq('restaurant_id', restaurantId)
+        .eq('is_active', true)
+        .order('display_order');
+
+      if (error) throw error;
+      setCategories([
+        { id: 'all', name: 'All Items' },
+        ...(data || [])
+      ]);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
   const fetchMenuItems = async () => {
     try {
       const { data, error } = await supabase
         .from('menu_items')
-        .select('*')
+        .select(`
+          *,
+          menu_categories!left(name)
+        `)
         .eq('restaurant_id', restaurantId)
         .eq('is_available', true)
         .order('name');
@@ -96,10 +121,12 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
     }
   };
 
-  const filteredMenuItems = menuItems.filter(item =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredMenuItems = menuItems.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || item.category_id === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   const addToCart = (item: MenuItem) => {
     const existingItem = cart.find(cartItem => cartItem.id === item.id);
@@ -305,6 +332,25 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-12 h-12 text-lg border-0 bg-muted/50"
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Category Tabs */}
+          <Card className="border-0 shadow-lg bg-card/95 backdrop-blur-sm">
+            <CardContent className="p-4">
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {categories.map((category) => (
+                  <Button
+                    key={category.id}
+                    variant={selectedCategory === category.id ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedCategory(category.id)}
+                    className="whitespace-nowrap min-w-fit"
+                  >
+                    {category.name}
+                  </Button>
+                ))}
               </div>
             </CardContent>
           </Card>

@@ -12,6 +12,9 @@ interface Restaurant {
   is_promoted: boolean;
   rating: number;
   image_url: string;
+  delivery_radius_miles?: number;
+  latitude?: number;
+  longitude?: number;
 }
 interface RestaurantGridProps {
   searchQuery?: string;
@@ -25,41 +28,99 @@ const RestaurantGrid = ({
 }: RestaurantGridProps = {}) => {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+
+  // Get user's current location for delivery radius filtering
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.log('Location access denied or unavailable:', error);
+        }
+      );
+    }
+  }, []);
+  // Helper function to calculate distance between two points
+  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const R = 3959; // Earth's radius in miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
   useEffect(() => {
     fetchRestaurants();
-  }, [searchQuery, deliveryAddress, cuisineFilter]);
+  }, [searchQuery, deliveryAddress, cuisineFilter, userLocation]);
   const fetchRestaurants = async () => {
     try {
-      let query = (supabase as any).from("restaurants").select("*").eq("is_active", true);
-
-      // Filter by search query if provided
-      if (searchQuery) {
-        query = query.or(`name.ilike.%${searchQuery}%,cuisine_type.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
-      }
+      let query = (supabase as any)
+        .from("restaurants")
+        .select(`
+          *,
+          delivery_radius_miles,
+          latitude,
+          longitude
+        `)
+        .eq("is_active", true);
 
       // Filter by cuisine if provided and not 'all'
       if (cuisineFilter && cuisineFilter !== 'all') {
         query = query.eq('cuisine_type', cuisineFilter);
       }
 
-      // Note: In a real app, you'd filter by location using coordinates
-      // For now, we'll just show all restaurants but indicate we're "searching near" the address
-
-      const {
-        data,
-        error
-      } = await query.order("is_promoted", {
-        ascending: false
-      }).order("rating", {
-        ascending: false
-      });
+      const { data, error } = await query
+        .order("is_promoted", { ascending: false })
+        .order("rating", { ascending: false });
+      
       if (error) throw error;
-      setRestaurants((data || []).map((restaurant: any) => ({
+      
+      let filteredData = (data || []).map((restaurant: any) => ({
         ...restaurant,
-        min_delivery_time: restaurant.estimated_delivery_time || 20,
-        max_delivery_time: (restaurant.estimated_delivery_time || 20) + 10,
-        is_promoted: false
-      })));
+        min_delivery_time: restaurant.min_delivery_time || 20,
+        max_delivery_time: restaurant.max_delivery_time || 30,
+        is_promoted: restaurant.is_promoted || false
+      }));
+
+      // Filter by search query if provided
+      if (searchQuery) {
+        filteredData = filteredData.filter((restaurant: Restaurant) =>
+          restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          restaurant.cuisine_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          restaurant.description.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
+
+      // Filter by delivery radius if user location is available
+      if (userLocation && filteredData.length > 0) {
+        filteredData = filteredData.filter((restaurant: Restaurant) => {
+          if (!restaurant.latitude || !restaurant.longitude || !restaurant.delivery_radius_miles) {
+            return true; // Include restaurants without location data
+          }
+
+          // Calculate distance using Haversine formula
+          const distance = calculateDistance(
+            userLocation.lat, 
+            userLocation.lng, 
+            restaurant.latitude, 
+            restaurant.longitude
+          );
+          
+          return distance <= restaurant.delivery_radius_miles;
+        });
+      }
+
+      setRestaurants(filteredData);
     } catch (error) {
       console.error("Error fetching restaurants:", error);
     } finally {
