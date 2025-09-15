@@ -75,7 +75,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       return;
     }
 
-    setConversation(data);
+        setConversation(data as Conversation);
   };
 
   const createSupportConversation = async () => {
@@ -107,7 +107,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       return;
     }
 
-    setConversation(data);
+    setConversation(data as Conversation);
     window.history.replaceState(null, '', `?chat=${data.id}`);
   };
 
@@ -125,7 +125,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       return;
     }
 
-    setMessages(data);
+    setMessages(data as Message[]);
   };
 
   const subscribeToMessages = () => {

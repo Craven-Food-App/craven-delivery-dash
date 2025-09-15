@@ -50,7 +50,7 @@ const ChatPortal: React.FC = () => {
         variant: "destructive",
       });
     } else {
-      setConversations(data || []);
+      setConversations((data || []) as Conversation[]);
     }
     setLoading(false);
   };

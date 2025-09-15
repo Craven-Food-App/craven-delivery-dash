@@ -107,7 +107,7 @@ const HelpCenter = () => {
             <ChatButton
               type="customer_support"
               userType={userType}
-              variant="secondary"
+              variant="outline"
               className="bg-white/10 hover:bg-white/20 text-white border-white/20"
             >
               <MessageCircle className="h-4 w-4 mr-2" />
@@ -145,7 +145,7 @@ const HelpCenter = () => {
             <CardContent className="p-6 text-center">
               <Clock className="h-8 w-8 mx-auto mb-3 text-primary" />
               <h3 className="font-semibold mb-2">Average Response Time</h3>
-              <p className="text-2xl font-bold text-primary">< 2 minutes</p>
+              <p className="text-2xl font-bold text-primary">&lt; 2 minutes</p>
               <p className="text-sm text-muted-foreground">Live chat support</p>
             </CardContent>
           </Card>
