@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Star, Clock, MapPin, Heart, ShoppingCart, Plus, Minus, ArrowLeft, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import MenuItemCard from './MenuItemCard';
@@ -13,6 +14,7 @@ import CartSummary from './CartSummary';
 import { CartSidebar } from './CartSidebar';
 import { MenuItemModal } from './MenuItemModal';
 import MenuFilters, { FilterOptions } from './MenuFilters';
+import MobileBottomNav from '@/components/mobile/MobileBottomNav';
 
 interface MenuItem {
   id: string;
@@ -50,6 +52,7 @@ interface CartItem {
 const RestaurantMenuPage = () => {
   const { id } = useParams();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -59,6 +62,7 @@ const RestaurantMenuPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
+  const [user, setUser] = useState(null);
   const [filters, setFilters] = useState<FilterOptions>({
     priceRange: [0, 50],
     dietary: { vegetarian: false, vegan: false, glutenFree: false },
@@ -73,6 +77,14 @@ const RestaurantMenuPage = () => {
       fetchMenuItems();
     }
   }, [id]);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
+  }, []);
 
   const fetchRestaurantData = async () => {
     try {
@@ -439,14 +451,14 @@ const RestaurantMenuPage = () => {
             </div>
 
             {/* Category Filter */}
-            <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
+            <div className="flex md:flex-wrap gap-2 mb-8 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
               {categories.map((category) => (
                 <Button
                   key={category}
                   variant={selectedCategory === category ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSelectedCategory(category)}
-                  className="whitespace-nowrap capitalize"
+                  className="whitespace-nowrap capitalize flex-shrink-0 min-w-fit"
                 >
                   {category === 'all' ? 'All Items' : category}
                 </Button>
@@ -540,6 +552,12 @@ const RestaurantMenuPage = () => {
           }}
         />
       )}
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav 
+        cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
+        user={user}
+      />
     </div>
   );
 };

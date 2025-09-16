@@ -202,7 +202,7 @@ const Header = () => {
               )}
             </div>
 
-            {/* Mobile Actions */}
+            {/* Mobile Actions - Hide burger menu, let bottom nav handle it */}
             <div className="flex md:hidden items-center space-x-2">
               {user && (
                 <Button variant="ghost" size="icon" className="relative">
@@ -214,109 +214,8 @@ const Header = () => {
                   )}
                 </Button>
               )}
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden"
-              >
-                {isMobileMenuOpen ? (
-                  <X className="h-5 w-5" />
-                ) : (
-                  <Menu className="h-5 w-5" />
-                )}
-              </Button>
             </div>
           </div>
-
-          {/* Mobile Menu */}
-          {isMobileMenuOpen && (
-            <div className="md:hidden border-t border-border bg-background">
-              <div className="px-4 py-4 space-y-4">
-                {/* Mobile Search */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Search restaurants..."
-                    className="pl-10 bg-muted border-0 focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-
-                {/* Mobile Location */}
-                {user ? (
-                  <AddressSelector 
-                    userId={user.id} 
-                    onAddressChange={(address) => setSelectedAddress(address)} 
-                  />
-                ) : (
-                  <div className="flex items-center space-x-2 text-muted-foreground p-3 bg-muted rounded-lg">
-                    <MapPin className="h-4 w-4" />
-                    <span className="text-sm">Current Location</span>
-                  </div>
-                )}
-
-                {/* Mobile Navigation */}
-                <div className="space-y-2">
-                  <a 
-                    href="/restaurants" 
-                    className="block px-3 py-2 text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Restaurants
-                  </a>
-                  <a 
-                    href="/craver" 
-                    className="block px-3 py-2 text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Become a Driver
-                  </a>
-                  <a 
-                    href="/admin" 
-                    className="block px-3 py-2 text-primary hover:bg-primary/5 rounded-lg transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Admin
-                  </a>
-                </div>
-
-                {/* Mobile Auth */}
-                <div className="pt-4 border-t border-border">
-                  {user ? (
-                    <div className="space-y-2">
-                      <a 
-                        href="/customer-dashboard" 
-                        className="block px-3 py-2 text-foreground hover:bg-muted rounded-lg transition-colors"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        My Orders
-                      </a>
-                      <button 
-                        onClick={() => {
-                          handleSignOut();
-                          setIsMobileMenuOpen(false);
-                        }}
-                        className="block w-full text-left px-3 py-2 text-foreground hover:bg-muted rounded-lg transition-colors"
-                      >
-                        Sign Out
-                      </button>
-                    </div>
-                  ) : (
-                    <Button 
-                      onClick={() => {
-                        setIsAuthModalOpen(true);
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="w-full"
-                    >
-                      Sign In
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </header>
     </>

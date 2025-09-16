@@ -82,9 +82,17 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
 
-        {/* Floating global chat button */}
-        <div className="fixed bottom-4 right-4 z-50">
-          <ChatButton type="customer_support" userType="customer" variant="default" />
+        {/* Desktop Floating Chat Button */}
+        <div className="fixed bottom-6 right-6 z-50 hidden md:block">
+          <ChatButton
+            type="customer_support"
+            userType="customer"
+            variant="default"
+            size="lg"
+            className="rounded-full w-14 h-14 shadow-lg bg-primary hover:bg-primary/90"
+          >
+            <span className="sr-only">Chat Support</span>
+          </ChatButton>
         </div>
       </BrowserRouter>
     </TooltipProvider>

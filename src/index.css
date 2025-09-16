@@ -280,5 +280,25 @@ All colors MUST be HSL.
       position: sticky;
       z-index: 10;
     }
+
+    /* Text clamp utilities */
+    .line-clamp-1 {
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 1;
+    }
+
+    .line-clamp-2 {
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    /* Mobile responsive padding */
+    body {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
   }
 }
