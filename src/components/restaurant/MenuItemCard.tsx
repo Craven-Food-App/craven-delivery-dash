@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Heart } from 'lucide-react';
-import { useFavorites } from '@/hooks/useFavorites';
+
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MenuItemCardProps {
@@ -18,6 +18,8 @@ interface MenuItemCardProps {
   restaurantId?: string;
   onAddToCart: (id: string) => void;
   onCustomize?: (item: any) => void;
+  onToggleFavorite?: () => void;
+  isFavorite?: boolean;
 }
 
 const MenuItemCard = ({
@@ -31,10 +33,11 @@ const MenuItemCard = ({
   dietary_info,
   restaurantId,
   onAddToCart,
-  onCustomize
+  onCustomize,
+  onToggleFavorite,
+  isFavorite = false
 }: MenuItemCardProps) => {
   const formatPrice = (cents: number) => `$${(cents / 100).toFixed(2)}`;
-  const { toggleFavorite, isFavorite } = useFavorites();
   const isMobile = useIsMobile();
 
   // Mobile compact layout
@@ -67,18 +70,18 @@ const MenuItemCard = ({
                     {name}
                   </h3>
                 </button>
-                {restaurantId && (
+                {onToggleFavorite && (
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    onClick={() => toggleFavorite(restaurantId)}
+                    onClick={onToggleFavorite}
                     className={`transition-colors p-1 ${
-                      isFavorite(restaurantId) 
+                      isFavorite 
                         ? 'text-red-500 hover:text-red-600' 
                         : 'text-muted-foreground hover:text-red-500'
                     }`}
                   >
-                    <Heart className={`h-4 w-4 ${isFavorite(restaurantId) ? 'fill-current' : ''}`} />
+                    <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
                   </Button>
                 )}
               </div>
@@ -127,18 +130,18 @@ const MenuItemCard = ({
                   {name}
                 </h3>
               </button>
-              {restaurantId && (
+              {onToggleFavorite && (
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => toggleFavorite(restaurantId)}
+                  onClick={onToggleFavorite}
                   className={`transition-colors ${
-                    isFavorite(restaurantId) 
+                    isFavorite 
                       ? 'text-red-500 hover:text-red-600' 
                       : 'text-muted-foreground hover:text-red-500'
                   }`}
                 >
-                  <Heart className={`h-4 w-4 ${isFavorite(restaurantId) ? 'fill-current' : ''}`} />
+                  <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
                 </Button>
               )}
             </div>

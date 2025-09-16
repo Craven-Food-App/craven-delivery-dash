@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useMenuItemFavorites } from '@/hooks/useMenuItemFavorites';
 import { Star, Clock, MapPin, Heart, ShoppingCart, Plus, Minus, ArrowLeft, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import MenuItemCard from './MenuItemCard';
@@ -63,6 +64,12 @@ const RestaurantMenuPage = () => {
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
   const [user, setUser] = useState(null);
+  
+  // Category scrolling refs
+  const categoryRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  
+  // Menu item favorites  
+  const { toggleFavorite, isFavorite } = useMenuItemFavorites();
   const [filters, setFilters] = useState<FilterOptions>({
     priceRange: [0, 50],
     dietary: { vegetarian: false, vegan: false, glutenFree: false },
@@ -457,7 +464,16 @@ const RestaurantMenuPage = () => {
                   key={category}
                   variant={selectedCategory === category ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setSelectedCategory(category)}
+                  onClick={() => {
+                    setSelectedCategory(category);
+                    // Scroll to category section
+                    if (category !== 'all' && categoryRefs.current[category]) {
+                      categoryRefs.current[category]?.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                      });
+                    }
+                  }}
                   className="whitespace-nowrap capitalize flex-shrink-0 min-w-fit"
                 >
                   {category === 'all' ? 'All Items' : category}
@@ -466,7 +482,7 @@ const RestaurantMenuPage = () => {
             </div>
 
             {/* Menu Items */}
-            <div className="space-y-4">
+            <div className="space-y-8">
               {filteredItems.length === 0 ? (
                 <Card className="p-12 text-center border-border/50">
                   <p className="text-muted-foreground text-lg mb-2">No items found</p>
@@ -474,16 +490,46 @@ const RestaurantMenuPage = () => {
                     Try adjusting your search or category filter
                   </p>
                 </Card>
+              ) : selectedCategory === 'all' ? (
+                // Group by category when showing all items
+                categories.filter(cat => cat !== 'all').map((category) => {
+                  const categoryItems = filteredItems.filter(item => item.category.toLowerCase() === category.toLowerCase());
+                  if (categoryItems.length === 0) return null;
+                  
+                  return (
+                    <div key={category} ref={el => categoryRefs.current[category] = el}>
+                      <h2 className="text-2xl font-bold mb-4 capitalize">{category}</h2>
+                      <div className="space-y-4">
+                        {categoryItems.map((item) => (
+                          <MenuItemCard
+                            key={item.id}
+                            {...item}
+                            restaurantId={restaurant?.id}
+                            onAddToCart={() => addToCartSimple(item.id)}
+                            onCustomize={(item) => setSelectedItem(item)}
+                            onToggleFavorite={() => toggleFavorite(item.id)}
+                            isFavorite={isFavorite(item.id)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })
               ) : (
-                filteredItems.map((item) => (
-                  <MenuItemCard
-                    key={item.id}
-                    {...item}
-                    restaurantId={restaurant?.id}
-                    onAddToCart={() => addToCartSimple(item.id)}
-                    onCustomize={(item) => setSelectedItem(item)}
-                  />
-                ))
+                // Show filtered items for specific category
+                <div className="space-y-4">
+                  {filteredItems.map((item) => (
+                    <MenuItemCard
+                      key={item.id}
+                      {...item}
+                      restaurantId={restaurant?.id}
+                      onAddToCart={() => addToCartSimple(item.id)}
+                      onCustomize={(item) => setSelectedItem(item)}
+                      onToggleFavorite={() => toggleFavorite(item.id)}
+                      isFavorite={isFavorite(item.id)}
+                    />
+                  ))}
+                </div>
               )}
             </div>
           </div>

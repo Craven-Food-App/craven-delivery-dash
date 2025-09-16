@@ -452,6 +452,27 @@ export type Database = {
           },
         ]
       }
+      menu_item_favorites: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          menu_item_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          menu_item_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          menu_item_id?: string
+        }
+        Relationships: []
+      }
       menu_item_modifiers: {
         Row: {
           created_at: string

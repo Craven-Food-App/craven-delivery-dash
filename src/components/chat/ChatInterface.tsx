@@ -183,14 +183,37 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       return;
     }
 
+    const messageContent = newMessage.trim();
     setNewMessage('');
 
-    // Trigger AI response for support conversations
-    if (conversation.type.includes('support')) {
+    // Check if user typed "representative" to escalate to admin
+    const isRepresentativeRequest = messageContent.toLowerCase().includes('representative');
+
+    // If user requested representative, update conversation priority and notify admins
+    if (isRepresentativeRequest) {
+      await supabase
+        .from('chat_conversations')
+        .update({ 
+          priority: 'high',
+          subject: 'Representative Requested - ' + (conversation?.subject || 'Support Request')
+        })
+        .eq('id', conversation.id);
+
+      // Add system message indicating escalation
+      await supabase
+        .from('chat_messages')
+        .insert({
+          conversation_id: conversation.id,
+          sender_type: 'ai',
+          content: 'Your request has been escalated to our support team. A representative will assist you shortly.',
+          message_type: 'text'
+        });
+    } else if (conversation.type.includes('support')) {
+      // Trigger AI response for support conversations only if not escalated
       try {
         await supabase.functions.invoke('ai-chat-support', {
           body: {
-            message: newMessage,
+            message: messageContent,
             conversationId: conversation.id,
             userId: user.id,
           },
