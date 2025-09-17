@@ -10,6 +10,7 @@ import { User, Package, MapPin, CreditCard, Clock, Star, Heart, Plus } from "luc
 import Header from "@/components/Header";
 import { AccountSection } from "@/components/account/AccountSection";
 import RestaurantGrid from "@/components/RestaurantGrid";
+import OrderTrackingModal from "@/components/OrderTrackingModal";
 
 interface Order {
   id: string;
@@ -41,6 +42,7 @@ const CustomerDashboard = () => {
   const [restaurants, setRestaurants] = useState<Record<string, Restaurant>>({});
   const [favorites, setFavorites] = useState<FavoriteRestaurant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -164,10 +166,7 @@ const CustomerDashboard = () => {
   };
 
   const handleTrackOrder = (orderId: string) => {
-    toast({
-      title: "Order Tracking",
-      description: `Tracking order ${orderId.slice(0, 8)}`,
-    });
+    setTrackingOrderId(orderId);
   };
 
   const removeFavorite = async (restaurantId: string) => {
@@ -448,6 +447,13 @@ const CustomerDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Order Tracking Modal */}
+      <OrderTrackingModal 
+        isOpen={trackingOrderId !== null}
+        onClose={() => setTrackingOrderId(null)}
+        orderId={trackingOrderId || ''}
+      />
     </div>
   );
 };
