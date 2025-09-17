@@ -11,6 +11,7 @@ import Header from "@/components/Header";
 import { AccountSection } from "@/components/account/AccountSection";
 import RestaurantGrid from "@/components/RestaurantGrid";
 import OrderTrackingModal from "@/components/OrderTrackingModal";
+import OrderDetailsModal from "@/components/OrderDetailsModal";
 
 interface Order {
   id: string;
@@ -43,6 +44,7 @@ const CustomerDashboard = () => {
   const [favorites, setFavorites] = useState<FavoriteRestaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
+  const [detailsOrderId, setDetailsOrderId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -159,10 +161,7 @@ const CustomerDashboard = () => {
   };
 
   const handleViewOrderDetails = (orderId: string) => {
-    toast({
-      title: "Order Details",
-      description: `Viewing details for order ${orderId.slice(0, 8)}`,
-    });
+    setDetailsOrderId(orderId);
   };
 
   const handleTrackOrder = (orderId: string) => {
@@ -453,6 +452,13 @@ const CustomerDashboard = () => {
         isOpen={trackingOrderId !== null}
         onClose={() => setTrackingOrderId(null)}
         orderId={trackingOrderId || ''}
+      />
+
+      {/* Order Details Modal */}
+      <OrderDetailsModal 
+        isOpen={detailsOrderId !== null}
+        onClose={() => setDetailsOrderId(null)}
+        orderId={detailsOrderId || ''}
       />
     </div>
   );

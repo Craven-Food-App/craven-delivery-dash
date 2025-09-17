@@ -457,28 +457,35 @@ const RestaurantMenuPage = () => {
               />
             </div>
 
-            {/* Category Filter */}
-            <div className="flex md:flex-wrap gap-2 mb-8 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
-              {categories.map((category) => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setSelectedCategory(category);
-                    // Scroll to category section
-                    if (category !== 'all' && categoryRefs.current[category]) {
-                      categoryRefs.current[category]?.scrollIntoView({ 
-                        behavior: 'smooth', 
-                        block: 'start' 
-                      });
-                    }
-                  }}
-                  className="whitespace-nowrap capitalize flex-shrink-0 min-w-fit"
-                >
-                  {category === 'all' ? 'All Items' : category}
-                </Button>
-              ))}
+            {/* Floating Category Navigation */}
+            <div className="sticky top-20 z-10 bg-background/95 backdrop-blur-md border-b border-border/50 -mx-4 px-4 py-4 mb-8">
+              <div className="flex md:flex-wrap gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
+                {categories.map((category) => (
+                  <Button
+                    key={category}
+                    variant={selectedCategory === category ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setSelectedCategory(category);
+                      // Smooth scroll to category section
+                      if (category !== 'all' && categoryRefs.current[category]) {
+                        const element = categoryRefs.current[category];
+                        const offset = 140; // Account for sticky header
+                        const elementPosition = element?.offsetTop || 0;
+                        const offsetPosition = elementPosition - offset;
+                        
+                        window.scrollTo({
+                          top: offsetPosition,
+                          behavior: 'smooth'
+                        });
+                      }
+                    }}
+                    className="whitespace-nowrap capitalize flex-shrink-0 min-w-fit transition-all duration-200 hover:scale-105"
+                  >
+                    {category === 'all' ? 'All Items' : category}
+                  </Button>
+                ))}
+              </div>
             </div>
 
             {/* Menu Items */}
