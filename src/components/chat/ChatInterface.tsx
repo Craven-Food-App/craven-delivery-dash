@@ -155,75 +155,97 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const sendMessage = async () => {
     if (!newMessage.trim() || !conversation) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    setLoading(true);
-
-    const messageData = {
-      conversation_id: conversation.id,
-      sender_id: user.id,
-      sender_type: currentUserType,
-      content: newMessage.trim(),
-      message_type: 'text' as const,
-    };
-
-    const { error } = await supabase
-      .from('chat_messages')
-      .insert(messageData);
-
-    if (error) {
-      console.error('Error sending message:', error);
-      toast({
-        title: "Error",
-        description: "Failed to send message",
-        variant: "destructive",
-      });
-      setLoading(false);
-      return;
-    }
-
     const messageContent = newMessage.trim();
     setNewMessage('');
+    setLoading(true);
 
-    // Check if user typed "representative" to escalate to admin
-    const isRepresentativeRequest = messageContent.toLowerCase().includes('representative');
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
 
-    // If user requested representative, update conversation priority and notify admins
-    if (isRepresentativeRequest) {
-      await supabase
-        .from('chat_conversations')
-        .update({ 
-          priority: 'high',
-          subject: 'Representative Requested - ' + (conversation?.subject || 'Support Request')
-        })
-        .eq('id', conversation.id);
-
-      // Add system message indicating escalation
-      await supabase
+      // Create the message
+      const { error } = await supabase
         .from('chat_messages')
         .insert({
           conversation_id: conversation.id,
-          sender_type: 'ai',
-          content: 'Your request has been escalated to our support team. A representative will assist you shortly.',
+          sender_id: user.id,
+          sender_type: currentUserType,
+          content: messageContent,
           message_type: 'text'
         });
-    } else if (conversation.type.includes('support')) {
-      // Trigger AI response for support conversations only if not escalated
-      try {
-        await supabase.functions.invoke('ai-chat-support', {
-          body: {
-            message: messageContent,
-            conversationId: conversation.id,
-            userId: user.id,
-          },
-        });
-      } catch (error) {
-        console.error('Error getting AI response:', error);
-      }
-    }
 
-    setLoading(false);
+      if (error) throw error;
+
+      // Check if user is asking for representative and escalate
+      const needsRepresentative = messageContent.toLowerCase().includes('representative') || 
+                                 messageContent.toLowerCase().includes('human') ||
+                                 messageContent.toLowerCase().includes('agent') ||
+                                 messageContent.toLowerCase().includes('speak to someone') ||
+                                 messageContent.toLowerCase().includes('talk to someone');
+
+      if (needsRepresentative && conversationType === 'customer_support') {
+        await supabase
+          .from('chat_conversations')
+          .update({ 
+            priority: 'high',
+            status: 'active',
+            subject: 'Customer requesting representative - URGENT'
+          })
+          .eq('id', conversation.id);
+
+        // Add escalation message
+        await supabase
+          .from('chat_messages')
+          .insert({
+            conversation_id: conversation.id,
+            sender_type: 'ai',
+            content: 'Your request has been escalated to our support team. A representative will assist you shortly.',
+            message_type: 'text'
+          });
+
+        toast({
+          title: "Escalated to representative",
+          description: "Your request has been escalated to a human representative. They will respond shortly.",
+        });
+      }
+
+      // Trigger AI response for support conversations (unless escalated)
+      if (conversationType === 'customer_support' && currentUserType === 'customer' && !needsRepresentative) {
+        try {
+          await supabase.functions.invoke('ai-chat-support', {
+            body: {
+              message: messageContent,
+              conversationId: conversation.id,
+              userId: user.id
+            }
+          });
+        } catch (aiError) {
+          console.error('AI response error:', aiError);
+          // Show fallback message if AI fails
+          setTimeout(async () => {
+            await supabase
+              .from('chat_messages')
+              .insert({
+                conversation_id: conversation.id,
+                sender_id: null,
+                sender_type: 'ai',
+                content: "I'm having trouble processing your request right now. Please try again or ask to speak to a representative for immediate assistance.",
+                message_type: 'text'
+              });
+          }, 1000);
+        }
+      }
+
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

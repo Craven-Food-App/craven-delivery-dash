@@ -176,7 +176,7 @@ const LiveDashboard = () => {
     const ordersSubscription = supabase
       .channel('admin_orders')
       .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'customer_orders' },
+        { event: '*', schema: 'public', table: 'orders' },
         () => fetchData()
       )
       .subscribe();

@@ -2,9 +2,10 @@ import React from 'react';
 import AdminAccessGuard from '@/components/AdminAccessGuard';
 import ApplicationReview from '@/components/admin/ApplicationReview';
 import LiveDashboard from '@/components/admin/LiveDashboard';
+import ChatPortal from '@/components/admin/ChatPortal';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Shield, BarChart3, Users } from 'lucide-react';
+import { ArrowLeft, Shield, BarChart3, Users, MessageCircle } from 'lucide-react';
 import cravenLogo from "@/assets/craven-logo.png";
 
 const Admin: React.FC = () => {
@@ -39,10 +40,14 @@ const Admin: React.FC = () => {
         {/* Main Content */}
         <main className="container mx-auto px-4 py-6">
           <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsList className="grid w-full grid-cols-3 mb-6">
               <TabsTrigger value="dashboard" className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4" />
                 Live Dashboard
+              </TabsTrigger>
+              <TabsTrigger value="chat" className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4" />
+                Chat Support
               </TabsTrigger>
               <TabsTrigger value="applications" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
@@ -52,6 +57,10 @@ const Admin: React.FC = () => {
             
             <TabsContent value="dashboard" className="space-y-4">
               <LiveDashboard />
+            </TabsContent>
+            
+            <TabsContent value="chat" className="space-y-4">
+              <ChatPortal />
             </TabsContent>
             
             <TabsContent value="applications" className="space-y-4">
