@@ -10,7 +10,7 @@ import { User, Package, MapPin, CreditCard, Clock, Star, Heart, Plus } from "luc
 import Header from "@/components/Header";
 import { AccountSection } from "@/components/account/AccountSection";
 import RestaurantGrid from "@/components/RestaurantGrid";
-import OrderTrackingModal from "@/components/OrderTrackingModal";
+import OrderTrackingBox from "@/components/OrderTrackingBox";
 import OrderDetailsModal from "@/components/OrderDetailsModal";
 
 interface Order {
@@ -447,12 +447,13 @@ const CustomerDashboard = () => {
         </Tabs>
       </div>
 
-      {/* Order Tracking Modal */}
-      <OrderTrackingModal 
-        isOpen={trackingOrderId !== null}
-        onClose={() => setTrackingOrderId(null)}
-        orderId={trackingOrderId || ''}
-      />
+      {/* Order Tracking Box */}
+      {trackingOrderId && (
+        <OrderTrackingBox 
+          orderId={trackingOrderId}
+          onClose={() => setTrackingOrderId(null)}
+        />
+      )}
 
       {/* Order Details Modal */}
       <OrderDetailsModal 
