@@ -10,6 +10,7 @@ import AddressManager from '@/components/address/AddressManager';
 import { Package, MapPin, Clock, Star, ShoppingBag, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import ChatButton from '@/components/chat/ChatButton';
 
 interface ActiveOrder {
   id: string;
@@ -178,6 +179,26 @@ export const CustomerDashboard = () => {
               </CardHeader>
               <CardContent>
                 <RestaurantGrid />
+              </CardContent>
+            </Card>
+            
+            {/* Customer Support Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Need Help?</CardTitle>
+                <CardDescription>
+                  Get instant support from our AI assistant
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChatButton
+                  type="customer_support"
+                  userType="customer"
+                  variant="outline"
+                  className="w-full"
+                >
+                  Contact Support
+                </ChatButton>
               </CardContent>
             </Card>
           </TabsContent>

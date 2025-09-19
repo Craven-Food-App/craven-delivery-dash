@@ -65,6 +65,8 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
 
   const fetchOrders = async () => {
     try {
+      console.log('Fetching orders for restaurant:', restaurantId);
+      
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -80,19 +82,28 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
               modifier_name,
               modifier_price_cents
             )
+          ),
+          user_profiles!customer_id (
+            full_name,
+            phone
           )
         `)
         .eq('restaurant_id', restaurantId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+      
+      console.log('Raw orders data:', data);
       
       // Transform the data to match our interface
       const transformedOrders = (data || []).map(order => ({
         ...order,
-        customer_name: 'Customer', // Will need to get from user profile if needed
-        customer_email: 'customer@example.com', // Will need to get from user profile if needed  
-        customer_phone: '', // Will need to get from user profile if needed
+        customer_name: order.user_profiles?.full_name || 'Customer', 
+        customer_email: '', // Email not available in user_profiles
+        customer_phone: order.user_profiles?.phone || '',
         order_items: order.order_items?.map((item: any) => ({
           ...item,
           name: item.menu_items?.name || 'Unknown Item',
@@ -101,10 +112,11 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
             price_cents: mod.modifier_price_cents
           })) || []
         })) || [],
-        delivery_method: 'delivery' as const, // Default value
+        delivery_method: order.delivery_address ? 'delivery' as const : 'pickup' as const,
         payment_status: 'paid' as const // Default value
       }));
       
+      console.log('Transformed orders:', transformedOrders);
       setOrders(transformedOrders as CustomerOrder[]);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -341,13 +353,22 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
                         )}
                         
                         {order.order_status === 'pending' && (
-                          <Button
-                            variant="destructive"
-                            onClick={() => updateOrderStatus(order.id, 'cancelled')}
-                            size="sm"
-                          >
-                            Cancel Order
-                          </Button>
+                          <>
+                            <Button
+                              onClick={() => updateOrderStatus(order.id, 'confirmed')}
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              Confirm Order
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={() => updateOrderStatus(order.id, 'cancelled')}
+                              size="sm"
+                            >
+                              Cancel Order
+                            </Button>
+                          </>
                         )}
                       </div>
                     </>

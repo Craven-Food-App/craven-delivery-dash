@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import ChatButton from '@/components/chat/ChatButton';
 import { VehicleSelector } from './VehicleSelector';
 import { EarningModeToggle } from './EarningModeToggle';
 import { EndTimeSheet } from './EndTimeSheet';
@@ -600,10 +601,26 @@ export const MobileDriverDashboard: React.FC = () => {
 
   if (activeTab === 'account') {
     return (
-      <>
-        <AccountSection />
+      <div className="min-h-screen bg-background pb-16">
+        <div className="p-4 space-y-4">
+          <AccountSection />
+          
+          {/* Driver Support Section */}
+          <div className="bg-white rounded-lg p-4 shadow-sm border">
+            <h3 className="font-medium mb-3">Need Help?</h3>
+            <ChatButton
+              type="driver_support"
+              userType="driver"
+              variant="outline"
+              className="w-full"
+              size="sm"
+            >
+              Contact Driver Support
+            </ChatButton>
+          </div>
+        </div>
         <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      </>
+      </div>
     );
   }
 
