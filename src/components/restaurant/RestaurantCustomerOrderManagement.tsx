@@ -67,54 +67,63 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
     try {
       console.log('Fetching orders for restaurant:', restaurantId);
       
-      const { data, error } = await supabase
+      // First fetch orders without nested relationships
+      const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
-        .select(`
-          *,
-          order_items (
-            id,
-            menu_item_id,
-            quantity,
-            price_cents,
-            special_instructions,
-            menu_items (name),
-            order_item_modifiers (
-              modifier_name,
-              modifier_price_cents
-            )
-          ),
-          user_profiles!customer_id (
-            full_name,
-            phone
-          )
-        `)
+        .select('*')
         .eq('restaurant_id', restaurantId)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Database error:', error);
-        throw error;
+      if (ordersError) {
+        console.error('Orders fetch error:', ordersError);
+        throw ordersError;
       }
       
-      console.log('Raw orders data:', data);
-      
-      // Transform the data to match our interface
-      const transformedOrders = (data || []).map(order => ({
-        ...order,
-        customer_name: order.user_profiles?.full_name || 'Customer', 
-        customer_email: '', // Email not available in user_profiles
-        customer_phone: order.user_profiles?.phone || '',
-        order_items: order.order_items?.map((item: any) => ({
-          ...item,
-          name: item.menu_items?.name || 'Unknown Item',
-          modifiers: item.order_item_modifiers?.map((mod: any) => ({
-            name: mod.modifier_name,
-            price_cents: mod.modifier_price_cents
-          })) || []
-        })) || [],
-        delivery_method: order.delivery_address ? 'delivery' as const : 'pickup' as const,
-        payment_status: 'paid' as const // Default value
-      }));
+      console.log('Orders data:', ordersData);
+
+      if (!ordersData || ordersData.length === 0) {
+        setOrders([]);
+        return;
+      }
+
+      // Fetch order items separately for each order
+      const transformedOrders = await Promise.all(
+        ordersData.map(async (order) => {
+          // Fetch order items for this order
+          const { data: orderItems } = await supabase
+            .from('order_items')
+            .select(`
+              id,
+              menu_item_id,
+              quantity,
+              price_cents,
+              special_instructions,
+              menu_items (name)
+            `)
+            .eq('order_id', order.id);
+
+          // Fetch customer profile
+          const { data: customerProfile } = await supabase
+            .from('user_profiles')
+            .select('full_name, phone')
+            .eq('user_id', order.customer_id)
+            .single();
+
+          return {
+            ...order,
+            customer_name: customerProfile?.full_name || 'Customer',
+            customer_email: '', // Email not available in user_profiles
+            customer_phone: customerProfile?.phone || '',
+            order_items: orderItems?.map((item: any) => ({
+              ...item,
+              name: item.menu_items?.name || 'Unknown Item',
+              modifiers: [] // Simplified for now
+            })) || [],
+            delivery_method: order.delivery_address ? 'delivery' as const : 'pickup' as const,
+            payment_status: 'paid' as const
+          };
+        })
+      );
       
       console.log('Transformed orders:', transformedOrders);
       setOrders(transformedOrders as CustomerOrder[]);
@@ -122,7 +131,7 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
       console.error('Error fetching orders:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch orders",
+        description: "Failed to fetch orders. Check console for details.",
         variant: "destructive",
       });
     } finally {
