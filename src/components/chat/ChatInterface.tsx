@@ -63,6 +63,29 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [conversationId, conversationType]);
 
+  // Add greeting message for new support conversations
+  useEffect(() => {
+    if (conversation && messages.length === 0 && conversationType.includes('support')) {
+      const addGreetingMessage = async () => {
+        const greetingMessage = currentUserType === 'customer' 
+          ? "Hello! Welcome to Crave'n support. How can I help you today? Type your question or ask to speak with a representative for immediate assistance."
+          : "Hello! Welcome to driver support. How can I assist you today?";
+
+        await supabase
+          .from('chat_messages')
+          .insert({
+            conversation_id: conversation.id,
+            sender_type: 'ai',
+            content: greetingMessage,
+            message_type: 'text'
+          });
+      };
+
+      // Add slight delay to ensure conversation is created
+      setTimeout(addGreetingMessage, 500);
+    }
+  }, [conversation, messages.length, conversationType, currentUserType]);
+
   const loadConversation = async () => {
     const { data, error } = await supabase
       .from('chat_conversations')

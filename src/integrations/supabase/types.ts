@@ -828,6 +828,44 @@ export type Database = {
           },
         ]
       }
+      restaurant_employee_roles: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          permissions: Json | null
+          restaurant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          permissions?: Json | null
+          restaurant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          permissions?: Json | null
+          restaurant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_employee_roles_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_employees: {
         Row: {
           created_at: string
@@ -838,6 +876,7 @@ export type Database = {
           pin_code: string
           restaurant_id: string
           role: string
+          role_id: string | null
           updated_at: string
         }
         Insert: {
@@ -849,6 +888,7 @@ export type Database = {
           pin_code: string
           restaurant_id: string
           role?: string
+          role_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -860,9 +900,18 @@ export type Database = {
           pin_code?: string
           restaurant_id?: string
           role?: string
+          role_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_employees_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_employee_roles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       restaurant_hours: {
         Row: {
