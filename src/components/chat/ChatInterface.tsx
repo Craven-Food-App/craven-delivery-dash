@@ -57,9 +57,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }, [messages]);
 
   useEffect(() => {
-    if (conversationId) {
-      // Load and subscribe using provided conversationId
-      loadConversationById(conversationId);
+    // Check URL for conversation ID first
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlConversationId = urlParams.get('chat');
+    
+    if (conversationId || urlConversationId) {
+      // Load and subscribe using provided or URL conversationId
+      loadConversationById(conversationId || urlConversationId!);
     } else if (!initializedRef.current && conversationType.includes('support')) {
       // Create a new support conversation once
       initializedRef.current = true;
@@ -155,6 +159,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
     setConversation(data as Conversation);
     window.history.replaceState(null, '', `?chat=${data.id}`);
+    // Load messages and subscribe after creating conversation
+    await loadMessagesById(data.id);
+    subscribeToMessagesById(data.id);
   };
 
   const loadMessages = async () => {
@@ -202,6 +209,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (!newMessage.trim() || !conversation) return;
 
     const messageContent = newMessage.trim();
+    const tempMessage: Message = {
+      id: `temp-${Date.now()}`,
+      content: messageContent,
+      sender_type: currentUserType,
+      created_at: new Date().toISOString(),
+      sender_id: undefined
+    };
+    
+    // Optimistically add message to UI
+    setMessages(prev => [...prev, tempMessage]);
     setNewMessage('');
     setLoading(true);
 

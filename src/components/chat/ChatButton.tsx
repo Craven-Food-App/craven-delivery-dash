@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { MessageCircle } from 'lucide-react';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ChatInterface from './ChatInterface';
 
 interface ChatButtonProps {
@@ -49,6 +49,9 @@ const ChatButton: React.FC<ChatButtonProps> = ({
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{getButtonText()}</DialogTitle>
+        </DialogHeader>
         <ChatInterface
           conversationId={conversationId}
           conversationType={type}
