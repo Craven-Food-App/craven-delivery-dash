@@ -44,6 +44,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const channelRef = useRef<any>(null);
+  const initializedRef = useRef(false);
+
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -55,42 +58,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   useEffect(() => {
     if (conversationId) {
-      loadConversation();
-      loadMessages();
-      subscribeToMessages();
-    } else if (conversationType.includes('support')) {
+      // Load and subscribe using provided conversationId
+      loadConversationById(conversationId);
+    } else if (!initializedRef.current && conversationType.includes('support')) {
+      // Create a new support conversation once
+      initializedRef.current = true;
       createSupportConversation();
     }
   }, [conversationId, conversationType]);
 
-  // Add greeting message for new support conversations
-  useEffect(() => {
-    if (conversation && messages.length === 0 && conversationType.includes('support')) {
-      const addGreetingMessage = async () => {
-        const greetingMessage = currentUserType === 'customer' 
-          ? "Hello! Welcome to Crave'n support. How can I help you today? Type your question or ask to speak with a representative for immediate assistance."
-          : "Hello! Welcome to driver support. How can I assist you today?";
 
-        await supabase
-          .from('chat_messages')
-          .insert({
-            conversation_id: conversation.id,
-            sender_type: 'ai',
-            content: greetingMessage,
-            message_type: 'text'
-          });
-      };
-
-      // Add slight delay to ensure conversation is created
-      setTimeout(addGreetingMessage, 500);
-    }
-  }, [conversation, messages.length, conversationType, currentUserType]);
-
-  const loadConversation = async () => {
+  const loadConversationById = async (id: string) => {
     const { data, error } = await supabase
       .from('chat_conversations')
       .select('*')
-      .eq('id', conversationId)
+      .eq('id', id)
       .single();
 
     if (error) {
@@ -98,9 +80,50 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       return;
     }
 
-        setConversation(data as Conversation);
+    setConversation(data as Conversation);
+    // After setting, load messages and subscribe
+    await loadMessagesById(id);
+    subscribeToMessagesById(id);
   };
 
+  const loadMessagesById = async (id: string) => {
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('conversation_id', id)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error loading messages:', error);
+      return;
+    }
+
+    setMessages(data as Message[]);
+  };
+
+  const subscribeToMessagesById = (id: string) => {
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+
+    const channel = supabase
+      .channel(`chat_messages_${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `conversation_id=eq.${id}`,
+        },
+        (payload) => {
+          setMessages(prev => [...prev, payload.new as Message]);
+        }
+      )
+      .subscribe();
+
+    channelRef.current = channel;
+  };
   const createSupportConversation = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
