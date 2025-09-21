@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +38,7 @@ interface FavoriteRestaurant {
 }
 
 const CustomerDashboard = () => {
+  const [searchParams] = useSearchParams();
   const [user, setUser] = useState(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [restaurants, setRestaurants] = useState<Record<string, Restaurant>>({});
@@ -47,6 +48,9 @@ const CustomerDashboard = () => {
   const [detailsOrderId, setDetailsOrderId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Get the tab from URL parameters, default to "orders"
+  const tabFromUrl = searchParams.get('tab') || 'orders';
 
   useEffect(() => {
     fetchUserData();
@@ -216,7 +220,7 @@ const CustomerDashboard = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="orders" className="space-y-6">
+        <Tabs defaultValue={tabFromUrl} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="active">Active Orders</TabsTrigger>

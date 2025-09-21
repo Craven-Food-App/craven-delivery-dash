@@ -20,8 +20,8 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ cartCount = 0, user }
   const tabs = [
     { id: 'home', label: 'Home', icon: Home, path: '/' },
     { id: 'restaurants', label: 'Search', icon: Search, path: '/restaurants' },
-    { id: 'orders', label: 'Orders', icon: ShoppingCart, path: '/customer-dashboard' },
-    { id: 'profile', label: 'Profile', icon: User, path: user ? '/customer-dashboard' : '/auth' },
+    { id: 'orders', label: 'Orders', icon: ShoppingCart, path: user ? '/customer-dashboard?tab=orders' : '/auth' },
+    { id: 'profile', label: 'Profile', icon: User, path: user ? '/customer-dashboard?tab=account' : '/auth' },
   ];
 
   return (
