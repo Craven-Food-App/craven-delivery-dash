@@ -121,10 +121,28 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           filter: `conversation_id=eq.${id}`,
         },
         (payload) => {
-          setMessages(prev => [...prev, payload.new as Message]);
+          const newMessage = payload.new as Message;
+          console.log('New message received via subscription:', newMessage);
+          
+          // Only add message if it's not a temporary optimistic message
+          setMessages(prev => {
+            const hasMessage = prev.some(msg => msg.id === newMessage.id);
+            if (hasMessage) return prev;
+            
+            // Remove any temporary messages from the same sender if this is the real message
+            const filteredPrev = prev.filter(msg => 
+              !msg.id.startsWith('temp-') || 
+              msg.sender_type !== newMessage.sender_type ||
+              Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) > 5000
+            );
+            
+            return [...filteredPrev, newMessage];
+          });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Subscription status:', status, 'for conversation:', id);
+      });
 
     channelRef.current = channel;
   };
@@ -222,6 +240,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setNewMessage('');
     setLoading(true);
 
+    console.log('Sending message:', messageContent, 'to conversation:', conversation.id);
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
@@ -275,13 +295,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       // Trigger AI response for support conversations (unless escalated)
       if (conversationType === 'customer_support' && currentUserType === 'customer' && !needsRepresentative) {
         try {
-          await supabase.functions.invoke('ai-chat-support', {
+          console.log('Calling AI chat support function...');
+          const { data: functionResponse, error: functionError } = await supabase.functions.invoke('ai-chat-support', {
             body: {
               message: messageContent,
               conversationId: conversation.id,
               userId: user.id
             }
           });
+          
+          if (functionError) {
+            console.error('AI function error:', functionError);
+          } else {
+            console.log('AI function response:', functionResponse);
+          }
         } catch (aiError) {
           console.error('AI response error:', aiError);
           // Show fallback message if AI fails
@@ -343,6 +370,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         return 'User';
     }
   };
+
+  // Cleanup subscription on unmount
+  useEffect(() => {
+    return () => {
+      if (channelRef.current) {
+        console.log('Cleaning up chat subscription');
+        supabase.removeChannel(channelRef.current);
+      }
+    };
+  }, []);
 
   if (!conversation) {
     return (
