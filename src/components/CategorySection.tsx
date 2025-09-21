@@ -56,28 +56,30 @@ const CategorySection = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-          {categories.map((category, index) => (
-            <div 
-              key={category.name} 
-              className="group cursor-pointer animate-fade-in"
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              <div className="relative overflow-hidden rounded-lg aspect-square mb-2 shadow-card hover:shadow-hover transition-all duration-300 transform hover:scale-105">
-                <img 
-                  src={category.image} 
-                  alt={category.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-                <div className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-60 group-hover:opacity-40 transition-opacity`}></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-white font-semibold text-sm text-center px-2">
-                    {category.name}
-                  </span>
+        <div className="overflow-x-auto scrollbar-hide pb-4">
+          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-8 gap-3 min-w-max">
+            {categories.map((category, index) => (
+              <div 
+                key={category.name} 
+                className="group cursor-pointer animate-fade-in min-w-[80px] flex-shrink-0"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div className="relative overflow-hidden rounded-lg aspect-square mb-2 shadow-card hover:shadow-hover transition-all duration-300 transform hover:scale-105">
+                  <img 
+                    src={category.image} 
+                    alt={category.name}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  <div className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-60 group-hover:opacity-40 transition-opacity`}></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-white font-semibold text-xs sm:text-sm text-center px-2">
+                      {category.name}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         <div className="text-center mt-8">

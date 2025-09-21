@@ -121,7 +121,6 @@ const Index = () => {
         </>
       )}
       <Footer />
-      <MobileBottomNav />
     </div>
   );
 };
