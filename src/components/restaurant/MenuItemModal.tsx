@@ -17,7 +17,9 @@ interface MenuItem {
   name: string;
   description: string;
   price_cents: number;
-  image_url: string;
+  image_url?: string;
+  category_id?: string;
+  is_available: boolean;
   is_vegetarian: boolean;
   is_vegan: boolean;
   is_gluten_free: boolean;

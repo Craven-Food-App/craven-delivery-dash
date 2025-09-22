@@ -116,12 +116,16 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ restaura
         return;
       }
 
+      // Get the selected role to include the role name
+      const selectedRole = roles.find(r => r.id === newEmployee.role_id);
+
       const employeeData = {
         restaurant_id: restaurantId,
         employee_id: newEmployee.employee_id || generateEmployeeId(),
         full_name: newEmployee.full_name,
         pin_code: newEmployee.pin_code || generatePinCode(),
         role_id: newEmployee.role_id,
+        role: selectedRole?.name || 'cashier',
         is_active: true
       };
 
@@ -153,6 +157,9 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ restaura
     if (!editingEmployee) return;
 
     try {
+      // Get the selected role to update the role name field as well
+      const selectedRole = roles.find(r => r.id === editingEmployee.role_id);
+      
       const { error } = await supabase
         .from('restaurant_employees')
         .update({
@@ -160,6 +167,7 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ restaura
           employee_id: editingEmployee.employee_id,
           pin_code: editingEmployee.pin_code,
           role_id: editingEmployee.role_id,
+          role: selectedRole?.name || editingEmployee.role,
           is_active: editingEmployee.is_active
         })
         .eq('id', editingEmployee.id);

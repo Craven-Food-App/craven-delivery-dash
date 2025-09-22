@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Minus, Trash2, Search, ShoppingCart, User, MapPin, CreditCard, LogOut, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { MenuItemModal } from './MenuItemModal';
 
 interface MenuItem {
   id: string;
@@ -20,11 +21,22 @@ interface MenuItem {
   image_url?: string;
   category_id?: string;
   is_available: boolean;
+  is_vegetarian: boolean;
+  is_vegan: boolean;
+  is_gluten_free: boolean;
+  preparation_time: number;
 }
 
 interface CartItem extends MenuItem {
   quantity: number;
   special_instructions?: string;
+  modifiers?: SelectedModifier[];
+}
+
+interface SelectedModifier {
+  id: string;
+  name: string;
+  price_cents: number;
 }
 
 interface CustomerInfo {
@@ -67,6 +79,7 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -128,18 +141,24 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
     return matchesSearch && matchesCategory;
   });
 
-  const addToCart = (item: MenuItem) => {
-    const existingItem = cart.find(cartItem => cartItem.id === item.id);
+  const addToCart = (item: MenuItem, quantity: number = 1, modifiers: SelectedModifier[] = [], specialInstructions?: string) => {
+    const cartItem: CartItem = {
+      ...item,
+      quantity,
+      special_instructions: specialInstructions,
+      modifiers
+    };
     
-    if (existingItem) {
-      setCart(cart.map(cartItem =>
-        cartItem.id === item.id
-          ? { ...cartItem, quantity: cartItem.quantity + 1 }
-          : cartItem
-      ));
-    } else {
-      setCart([...cart, { ...item, quantity: 1 }]);
-    }
+    setCart(prevCart => [...prevCart, cartItem]);
+    
+    toast({
+      title: "Added to cart",
+      description: `${quantity}x ${item.name} added to cart`,
+    });
+  };
+
+  const quickAddToCart = (item: MenuItem) => {
+    setSelectedMenuItem(item);
   };
 
   const updateQuantity = (itemId: string, quantity: number) => {
@@ -159,7 +178,11 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
   };
 
   const calculateTotals = () => {
-    const subtotal = cart.reduce((sum, item) => sum + (item.price_cents * item.quantity), 0);
+    const subtotal = cart.reduce((sum, item) => {
+      const itemPrice = item.price_cents;
+      const modifiersPrice = item.modifiers?.reduce((modSum, mod) => modSum + mod.price_cents, 0) || 0;
+      return sum + ((itemPrice + modifiersPrice) * item.quantity);
+    }, 0);
     const tax = Math.round(subtotal * 0.08); // 8% tax
     const deliveryFee = orderType === 'delivery' ? 299 : 0; // $2.99 delivery fee
     const total = subtotal + tax + deliveryFee;
@@ -362,7 +385,7 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
                 <Card 
                   key={item.id} 
                   className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-0 shadow-lg bg-card/95 backdrop-blur-sm overflow-hidden hover:scale-105"
-                  onClick={() => addToCart(item)}
+                  onClick={() => quickAddToCart(item)}
                 >
                   <div className="aspect-square bg-gradient-to-br from-primary/10 to-accent/10 relative overflow-hidden">
                     {item.image_url ? (
@@ -579,6 +602,14 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
           </Card>
         </div>
       </div>
+
+      {selectedMenuItem && (
+        <MenuItemModal
+          item={selectedMenuItem}
+          onClose={() => setSelectedMenuItem(null)}
+          onAddToCart={addToCart}
+        />
+      )}
     </div>
   );
 };

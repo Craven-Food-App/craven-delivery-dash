@@ -590,6 +590,8 @@ const RestaurantMenuPage = () => {
             description: selectedItem.description || '',
             price_cents: selectedItem.price_cents,
             image_url: selectedItem.image_url || '',
+            category_id: selectedItem.category || undefined,
+            is_available: selectedItem.is_available ?? true,
             is_vegetarian: selectedItem.dietary_info?.includes('Vegetarian') || false,
             is_vegan: selectedItem.dietary_info?.includes('Vegan') || false,
             is_gluten_free: selectedItem.dietary_info?.includes('Gluten Free') || false,
