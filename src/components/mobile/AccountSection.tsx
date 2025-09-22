@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -166,165 +167,196 @@ export const AccountSection: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background pb-16">
-      <div className="max-w-md mx-auto p-4 space-y-4">
-        {/* Profile Header */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={profile?.profile_photo} />
-                <AvatarFallback>
-                  {profile?.first_name?.[0]}{profile?.last_name?.[0]}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <h2 className="text-xl font-semibold">
-                  {profile?.first_name} {profile?.last_name}
-                </h2>
-                <p className="text-sm text-muted-foreground">{profile?.email}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge className={`${getStatusColor(profile?.status || 'pending')} text-white`}>
-                    {getStatusIcon(profile?.status || 'pending')}
-                    <span className="ml-1 capitalize">{profile?.status}</span>
-                  </Badge>
-                </div>
-              </div>
-              <Button variant="ghost" size="sm">
-                <Edit className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="max-w-md mx-auto p-4">
+        <div className="border-l bg-muted/10 p-4 flex flex-col h-[calc(100vh-8rem)]">
+          <Tabs defaultValue="profile" className="w-full h-full flex flex-col">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="profile" className="flex items-center gap-1">
+                <User className="h-4 w-4" />
+                Profile
+              </TabsTrigger>
+              <TabsTrigger value="tools" className="flex items-center gap-1">
+                <Settings className="h-4 w-4" />
+                Tools
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="flex items-center gap-1">
+                <Bell className="h-4 w-4" />
+                Settings
+              </TabsTrigger>
+            </TabsList>
 
-        {/* Vehicle Information */}
-        {profile?.vehicle_type && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Car className="h-5 w-5" />
-                Vehicle Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Type</p>
-                  <p className="font-medium capitalize">{profile.vehicle_type}</p>
-                </div>
-                {profile.vehicle_make && (
-                  <div>
-                    <p className="text-muted-foreground">Make</p>
-                    <p className="font-medium">{profile.vehicle_make}</p>
-                  </div>
-                )}
-              </div>
-              {profile.vehicle_model && (
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Model</p>
-                    <p className="font-medium">{profile.vehicle_model}</p>
-                  </div>
-                  {profile.vehicle_color && (
-                    <div>
-                      <p className="text-muted-foreground">Color</p>
-                      <p className="font-medium">{profile.vehicle_color}</p>
+            <TabsContent value="profile" className="flex-1 space-y-4 mt-4">
+              {/* Profile Header */}
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center space-x-4">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src={profile?.profile_photo} />
+                      <AvatarFallback>
+                        {profile?.first_name?.[0]}{profile?.last_name?.[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <h2 className="text-xl font-semibold">
+                        {profile?.first_name} {profile?.last_name}
+                      </h2>
+                      <p className="text-sm text-muted-foreground">{profile?.email}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge className={`${getStatusColor(profile?.status || 'pending')} text-white`}>
+                          {getStatusIcon(profile?.status || 'pending')}
+                          <span className="ml-1 capitalize">{profile?.status}</span>
+                        </Badge>
+                      </div>
                     </div>
-                  )}
-                </div>
+                    <Button variant="ghost" size="sm">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Vehicle Information */}
+              {profile?.vehicle_type && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Car className="h-5 w-5" />
+                      Vehicle Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Type</p>
+                        <p className="font-medium capitalize">{profile.vehicle_type}</p>
+                      </div>
+                      {profile.vehicle_make && (
+                        <div>
+                          <p className="text-muted-foreground">Make</p>
+                          <p className="font-medium">{profile.vehicle_make}</p>
+                        </div>
+                      )}
+                    </div>
+                    {profile.vehicle_model && (
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Model</p>
+                          <p className="font-medium">{profile.vehicle_model}</p>
+                        </div>
+                        {profile.vehicle_color && (
+                          <div>
+                            <p className="text-muted-foreground">Color</p>
+                            <p className="font-medium">{profile.vehicle_color}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               )}
-            </CardContent>
-          </Card>
-        )}
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-3">
-          <Card>
-            <CardContent className="pt-4 pb-4 text-center">
-              <DollarSign className="h-6 w-6 mx-auto mb-2 text-green-500" />
-              <p className="text-2xl font-bold">${driverStats?.weekEarnings?.toFixed(0) || '0'}</p>
-              <p className="text-xs text-muted-foreground">This week</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-4 text-center">
-              <CheckCircle className="h-6 w-6 mx-auto mb-2 text-blue-500" />
-              <p className="text-2xl font-bold">{driverStats?.totalDeliveries || 0}</p>
-              <p className="text-xs text-muted-foreground">Deliveries</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-4 text-center">
-              <User className="h-6 w-6 mx-auto mb-2 text-purple-500" />
-              <p className="text-2xl font-bold">{driverStats?.rating?.toFixed(1) || '0.0'}</p>
-              <p className="text-xs text-muted-foreground">Rating</p>
-            </CardContent>
-          </Card>
+              {/* Quick Stats */}
+              <div className="grid grid-cols-3 gap-3">
+                <Card>
+                  <CardContent className="pt-4 pb-4 text-center">
+                    <DollarSign className="h-6 w-6 mx-auto mb-2 text-green-500" />
+                    <p className="text-2xl font-bold">${driverStats?.weekEarnings?.toFixed(0) || '0'}</p>
+                    <p className="text-xs text-muted-foreground">This week</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4 pb-4 text-center">
+                    <CheckCircle className="h-6 w-6 mx-auto mb-2 text-blue-500" />
+                    <p className="text-2xl font-bold">{driverStats?.totalDeliveries || 0}</p>
+                    <p className="text-xs text-muted-foreground">Deliveries</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4 pb-4 text-center">
+                    <User className="h-6 w-6 mx-auto mb-2 text-purple-500" />
+                    <p className="text-2xl font-bold">{driverStats?.rating?.toFixed(1) || '0.0'}</p>
+                    <p className="text-xs text-muted-foreground">Rating</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="tools" className="flex-1 space-y-4 mt-4">
+              {/* Quick Actions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    Driver Tools
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button variant="outline" className="w-full justify-start" size="sm">
+                    <CreditCard className="h-4 w-4 mr-3" />
+                    Payment Methods
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start" size="sm">
+                    <FileText className="h-4 w-4 mr-3" />
+                    Documents
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start" size="sm">
+                    <Shield className="h-4 w-4 mr-3" />
+                    Safety Center
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Sign Out */}
+              <Card>
+                <CardContent className="pt-6">
+                  <Button 
+                    variant="destructive" 
+                    className="w-full" 
+                    onClick={handleSignOut}
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="settings" className="flex-1 space-y-4 mt-4">
+              {/* Settings */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    App Settings
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Bell className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Push notifications</span>
+                    </div>
+                    <Switch 
+                      checked={notifications} 
+                      onCheckedChange={setNotifications}
+                    />
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Shield className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Location sharing</span>
+                    </div>
+                    <Switch 
+                      checked={locationSharing} 
+                      onCheckedChange={setLocationSharing}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
-
-        {/* Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Settings
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Bell className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">Push notifications</span>
-              </div>
-              <Switch 
-                checked={notifications} 
-                onCheckedChange={setNotifications}
-              />
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Shield className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">Location sharing</span>
-              </div>
-              <Switch 
-                checked={locationSharing} 
-                onCheckedChange={setLocationSharing}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Quick Actions */}
-        <Card>
-          <CardContent className="pt-6 space-y-3">
-            <Button variant="outline" className="w-full justify-start" size="sm">
-              <CreditCard className="h-4 w-4 mr-3" />
-              Payment Methods
-            </Button>
-            <Button variant="outline" className="w-full justify-start" size="sm">
-              <FileText className="h-4 w-4 mr-3" />
-              Documents
-            </Button>
-            <Button variant="outline" className="w-full justify-start" size="sm">
-              <Shield className="h-4 w-4 mr-3" />
-              Safety Center
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Sign Out */}
-        <Card>
-          <CardContent className="pt-6">
-            <Button 
-              variant="destructive" 
-              className="w-full" 
-              onClick={handleSignOut}
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
