@@ -1,66 +1,164 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Clock, Plus, Minus } from 'lucide-react';
+
 interface EndTimeSheetProps {
   isOpen: boolean;
   onClose: () => void;
   onGoOnline: (endTime: Date, autoExtend: boolean, breakReminder: boolean) => void;
 }
+
 export const EndTimeSheet: React.FC<EndTimeSheetProps> = ({
   isOpen,
   onClose,
   onGoOnline
 }) => {
-  const [selectedHours, setSelectedHours] = useState<number | null>(null);
-  const [customTime, setCustomTime] = useState('');
+  const [selectedHours, setSelectedHours] = useState<number>(4);
+  const [selectedMinutes, setSelectedMinutes] = useState<number>(0);
   const [autoExtend, setAutoExtend] = useState(true);
   const [breakReminder, setBreakReminder] = useState(true);
+
   if (!isOpen) return null;
-  const handleQuickSelect = (hours: number) => {
-    setSelectedHours(hours);
-    setCustomTime('');
+
+  const quickHours = [1, 2, 3, 4, 6, 8, 12];
+
+  const adjustHours = (increment: number) => {
+    setSelectedHours(prev => Math.max(1, Math.min(12, prev + increment)));
   };
+
+  const adjustMinutes = (increment: number) => {
+    setSelectedMinutes(prev => {
+      const newValue = prev + increment;
+      if (newValue < 0) return 45;
+      if (newValue > 45) return 0;
+      return newValue;
+    });
+  };
+
+  const formatDuration = () => {
+    const hours = selectedHours;
+    const minutes = selectedMinutes;
+    if (hours === 0) return `${minutes}m`;
+    if (minutes === 0) return `${hours}h`;
+    return `${hours}h ${minutes}m`;
+  };
+
+  const getEndTimeDisplay = () => {
+    const endTime = new Date();
+    endTime.setHours(endTime.getHours() + selectedHours);
+    endTime.setMinutes(endTime.getMinutes() + selectedMinutes);
+    return endTime.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
+
   const handleGoOnline = () => {
-    let endTime: Date;
-    if (selectedHours) {
-      endTime = new Date();
-      endTime.setHours(endTime.getHours() + selectedHours);
-    } else if (customTime) {
-      const [time, period] = customTime.split(' ');
-      const [hours, minutes] = time.split(':').map(Number);
-      endTime = new Date();
-      endTime.setHours(period === 'PM' && hours !== 12 ? hours + 12 : hours === 12 && period === 'AM' ? 0 : hours);
-      endTime.setMinutes(minutes);
-    } else {
-      // Default to end of day
-      endTime = new Date();
-      endTime.setHours(23, 59, 59);
-    }
+    const endTime = new Date();
+    endTime.setHours(endTime.getHours() + selectedHours);
+    endTime.setMinutes(endTime.getMinutes() + selectedMinutes);
     onGoOnline(endTime, autoExtend, breakReminder);
   };
-  return <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
+
+  return (
+    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
       <div className="fixed bottom-0 left-0 right-0 p-4">
-        <Card className="w-full animate-slide-up py-0">
-          <CardHeader className="py-0">
-            <CardTitle className="text-lg py-0">How long do you want to drive?</CardTitle>
+        <Card className="w-full animate-slide-up">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xl flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              How long do you want to drive?
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Quick Duration Chips */}
-            
-
-            {/* Custom Time Input */}
-            <div className="space-y-2">
-              
-              <Input id="custom-time" placeholder="10:30 PM" value={customTime} onChange={e => {
-              setCustomTime(e.target.value);
-              setSelectedHours(null);
-            }} />
+            {/* Quick Duration Options */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Quick Select</Label>
+              <div className="flex flex-wrap gap-2">
+                {quickHours.map((hours) => (
+                  <Button
+                    key={hours}
+                    variant={selectedHours === hours && selectedMinutes === 0 ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      setSelectedHours(hours);
+                      setSelectedMinutes(0);
+                    }}
+                    className="text-xs"
+                  >
+                    {hours}h
+                  </Button>
+                ))}
+              </div>
             </div>
 
-            {/* Toggles */}
+            {/* Time Selector */}
+            <div className="space-y-4">
+              <Label className="text-sm font-medium">Custom Duration</Label>
+              <div className="flex items-center justify-center gap-4 p-4 bg-muted/50 rounded-lg">
+                <div className="text-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => adjustHours(1)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                  <div className="my-2 text-2xl font-bold">{selectedHours}</div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => adjustHours(-1)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <div className="text-xs text-muted-foreground mt-1">hours</div>
+                </div>
+                
+                <div className="text-2xl font-bold">:</div>
+                
+                <div className="text-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => adjustMinutes(15)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                  <div className="my-2 text-2xl font-bold">{selectedMinutes.toString().padStart(2, '0')}</div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => adjustMinutes(-15)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <div className="text-xs text-muted-foreground mt-1">mins</div>
+                </div>
+              </div>
+              
+              {/* Duration Preview */}
+              <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium">Duration: {formatDuration()}</p>
+                  <p className="text-xs text-muted-foreground">End time: {getEndTimeDisplay()}</p>
+                </div>
+                <Badge variant="secondary">
+                  {formatDuration()}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Settings */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label htmlFor="auto-extend" className="text-sm">
@@ -82,12 +180,13 @@ export const EndTimeSheet: React.FC<EndTimeSheetProps> = ({
               <Button variant="outline" onClick={onClose} className="flex-1">
                 Cancel
               </Button>
-              <Button onClick={handleGoOnline} className="flex-1">
+              <Button onClick={handleGoOnline} className="flex-1 bg-green-600 hover:bg-green-700">
                 Go Online
               </Button>
             </div>
           </CardContent>
         </Card>
       </div>
-    </div>;
+    </div>
+  );
 };

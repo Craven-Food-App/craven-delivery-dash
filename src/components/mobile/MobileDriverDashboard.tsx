@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import ChatButton from '@/components/chat/ChatButton';
-import { VehicleSelector } from './VehicleSelector';
 import { EarningModeToggle } from './EarningModeToggle';
 import { EndTimeSheet } from './EndTimeSheet';
 import { BottomNavigation } from './BottomNavigation';
@@ -693,13 +692,6 @@ export const MobileDriverDashboard: React.FC = () => {
       {driverState === 'offline' && (
         <div className="absolute inset-0 z-10 flex flex-col justify-end pb-16">
           <div className="bg-gradient-to-t from-background via-background/95 to-transparent px-4 py-6 space-y-6">
-            {/* Vehicle Selector */}
-            <VehicleSelector
-              selectedVehicle={selectedVehicle}
-              onVehicleSelect={setSelectedVehicle}
-              docsStatus={docsStatus}
-            />
-
             {/* Earning Mode Toggle */}
             <EarningModeToggle
               mode={earningMode}
@@ -710,9 +702,9 @@ export const MobileDriverDashboard: React.FC = () => {
             <div className="space-y-3">
               <Button
                 onClick={handleSatisfyCraveNow}
-                className="w-full h-14 text-lg font-semibold bg-gradient-hero hover:shadow-hover"
+                className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg"
               >
-                Satisfy Crave'n Now
+                🚀 Satisfy Crave'n Now
               </Button>
               <p className="text-center text-xs text-muted-foreground">
                 Choose when you'll stop before going online
@@ -730,7 +722,7 @@ export const MobileDriverDashboard: React.FC = () => {
           endTime={endTime}
           onlineTime={onlineTime}
           onPause={handlePause}
-          onEndNow={handleEndNow}
+          onEnd={handleEndNow}
         />
       )}
 
@@ -742,8 +734,7 @@ export const MobileDriverDashboard: React.FC = () => {
           endTime={endTime}
           onlineTime={onlineTime}
           onPause={handleUnpause}
-          onEndNow={handleEndNow}
-          isPaused={true}
+          onEnd={handleEndNow}
         />
       )}
 

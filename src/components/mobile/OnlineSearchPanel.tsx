@@ -1,7 +1,9 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Pause, Clock, Play } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Pause, Play, Square, Clock, DollarSign, MapPin, Zap } from 'lucide-react';
 
 type EarningMode = 'perHour' | 'perOffer';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
@@ -9,29 +11,27 @@ type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
 interface OnlineSearchPanelProps {
   earningMode: EarningMode;
   vehicleType: VehicleType;
-  endTime: Date;
-  onlineTime?: number; // seconds online
+  endTime: Date | null;
+  onlineTime: number;
   onPause: () => void;
-  onEndNow?: () => void;
-  isPaused?: boolean;
+  onEnd: () => void;
 }
 
 export const OnlineSearchPanel: React.FC<OnlineSearchPanelProps> = ({
   earningMode,
   vehicleType,
   endTime,
-  onlineTime = 0,
+  onlineTime,
   onPause,
-  onEndNow,
-  isPaused = false
+  onEnd
 }) => {
-  const formatTime = (seconds: number) => {
+  const formatTime = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     return `${hours}:${minutes.toString().padStart(2, '0')}`;
   };
 
-  const formatEndTime = (date: Date) => {
+  const formatEndTime = (date: Date): string => {
     return date.toLocaleTimeString('en-US', { 
       hour: 'numeric', 
       minute: '2-digit',
@@ -39,77 +39,141 @@ export const OnlineSearchPanel: React.FC<OnlineSearchPanelProps> = ({
     });
   };
 
+  const getProgress = (): number => {
+    if (!endTime) return 0;
+    const now = new Date();
+    const start = new Date(now.getTime() - onlineTime * 1000);
+    const total = endTime.getTime() - start.getTime();
+    const elapsed = now.getTime() - start.getTime();
+    return Math.min((elapsed / total) * 100, 100);
+  };
+
+  const getVehicleIcon = () => {
+    switch(vehicleType) {
+      case 'car': return '🚗';
+      case 'bike': return '🚲';
+      case 'scooter': return '🛴';
+      case 'motorcycle': return '🏍️';
+      case 'walk': return '🚶';
+      default: return '🚗';
+    }
+  };
+
   return (
-    <div className="absolute bottom-20 left-4 right-4 z-10">
-      <Card className="backdrop-blur-md bg-card/90 border shadow-card">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${isPaused ? 'bg-status-paused' : 'bg-status-online animate-pulse'}`} />
-              <h2 className="text-lg font-semibold">
-                {isPaused ? 'Paused' : 'Online & Ready'}
-              </h2>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onPause}
-                className="text-xs"
-              >
-                {isPaused ? (
-                  <>
-                    <Play className="h-3 w-3 mr-1" />
-                    Resume
-                  </>
-                ) : (
-                  <>
-                    <Pause className="h-3 w-3 mr-1" />
-                    Pause
-                  </>
-                )}
-              </Button>
-              {onEndNow && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={onEndNow}
-                  className="text-xs"
-                >
-                  End Now
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Progress indicator */}
-          <div className="w-full bg-muted rounded-full h-1 mb-3">
-            <div className="bg-primary h-1 rounded-full animate-pulse" style={{ width: '60%' }} />
-          </div>
-
-          {/* Info line */}
-          <div className="text-xs text-muted-foreground mb-3">
-            Filters: {vehicleType.charAt(0).toUpperCase() + vehicleType.slice(1)}, {earningMode === 'perHour' ? 'Per Hour' : 'Per Offer'} • Ends {formatEndTime(endTime)}
-          </div>
-
-          {/* Mode-specific content */}
-          {earningMode === 'perHour' ? (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-status-online" />
-                <span className="text-sm font-medium">On the clock: {formatTime(onlineTime)}</span>
+    <div className="absolute bottom-20 left-4 right-4 z-10 space-y-4">
+      {/* Main Status Card */}
+      <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 backdrop-blur-md">
+        <CardContent className="p-6">
+          {/* Status Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
+                <div className="absolute inset-0 w-4 h-4 bg-green-500/30 rounded-full animate-ping"></div>
               </div>
-              <div className="bg-status-online/10 text-status-online px-2 py-1 rounded text-xs font-medium">
-                Hourly + tips
+              <div>
+                <h3 className="font-bold text-lg text-green-800">Online & Ready</h3>
+                <p className="text-sm text-green-600">Searching for delivery offers</p>
               </div>
             </div>
-          ) : (
-            <div className="text-sm text-muted-foreground text-center">
-              Optimizing for best pay per mile & time
+            <div className="text-2xl">{getVehicleIcon()}</div>
+          </div>
+
+          {/* Time Display */}
+          <div className="text-center mb-6">
+            <div className="text-4xl font-bold text-green-700 mb-2">
+              {formatTime(onlineTime)}
+            </div>
+            {endTime && (
+              <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                <span className="text-sm">Until {formatEndTime(endTime)}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Progress Bar */}
+          {endTime && (
+            <div className="mb-6">
+              <Progress value={getProgress()} className="h-3 bg-green-100" />
+              <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                <span>Session progress</span>
+                <span>{Math.round(getProgress())}%</span>
+              </div>
             </div>
           )}
+
+          {/* Earning Mode Display */}
+          <div className="flex items-center justify-center gap-3 mb-6 p-3 bg-white/50 rounded-lg">
+            {earningMode === 'perHour' ? (
+              <>
+                <DollarSign className="h-5 w-5 text-green-600" />
+                <div className="text-center">
+                  <div className="font-semibold text-green-800">$18/hour</div>
+                  <div className="text-xs text-muted-foreground">+ 100% of tips</div>
+                </div>
+              </>
+            ) : (
+              <>
+                <Zap className="h-5 w-5 text-blue-600" />
+                <div className="text-center">
+                  <div className="font-semibold text-blue-800">Per Offer Mode</div>
+                  <div className="text-xs text-muted-foreground">Higher earning potential</div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <Button 
+              variant="outline" 
+              onClick={onPause} 
+              className="flex-1 border-green-200 hover:bg-green-50" 
+              size="lg"
+            >
+              <Pause className="h-4 w-4 mr-2" />
+              Pause
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={onEnd} 
+              className="flex-1" 
+              size="lg"
+            >
+              <Square className="h-4 w-4 mr-2" />
+              End Session
+            </Button>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-3 gap-3">
+        <Card className="bg-blue-50 border-blue-200 backdrop-blur-md">
+          <CardContent className="p-3 text-center">
+            <MapPin className="h-5 w-5 mx-auto mb-1 text-blue-600" />
+            <div className="text-lg font-bold text-blue-800">0</div>
+            <div className="text-xs text-muted-foreground">Offers</div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-purple-50 border-purple-200 backdrop-blur-md">
+          <CardContent className="p-3 text-center">
+            <DollarSign className="h-5 w-5 mx-auto mb-1 text-purple-600" />
+            <div className="text-lg font-bold text-purple-800">$0</div>
+            <div className="text-xs text-muted-foreground">Earned</div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-orange-50 border-orange-200 backdrop-blur-md">
+          <CardContent className="p-3 text-center">
+            <Clock className="h-5 w-5 mx-auto mb-1 text-orange-600" />
+            <div className="text-lg font-bold text-orange-800">0</div>
+            <div className="text-xs text-muted-foreground">Deliveries</div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

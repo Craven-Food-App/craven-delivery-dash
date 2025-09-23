@@ -14,6 +14,7 @@ import {
   Edit,
   LogOut
 } from 'lucide-react';
+import { VehicleSelector } from './VehicleSelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +24,8 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+
+type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
 
 interface CraverProfile {
   id: string;
@@ -44,6 +47,14 @@ export const AccountSection: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState(true);
   const [locationSharing, setLocationSharing] = useState(true);
+  const [selectedVehicle, setSelectedVehicle] = useState<VehicleType>('car');
+  const [docsStatus, setDocsStatus] = useState<Record<VehicleType, boolean>>({
+    car: false,
+    bike: false,
+    scooter: false,
+    walk: false,
+    motorcycle: false,
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -103,6 +114,39 @@ export const AccountSection: React.FC = () => {
           totalDeliveries: driverProfile?.total_deliveries || 0,
           rating: driverProfile?.rating || 0
         });
+
+        // Map vehicle type and set docs status
+        const vehicleTypeMapping: Record<string, VehicleType> = {
+          'car': 'car',
+          'bike': 'bike',
+          'scooter': 'scooter',
+          'motorcycle': 'motorcycle',
+          'walking': 'walk'
+        };
+        
+        const mappedVehicleType = vehicleTypeMapping[application.vehicle_type] || 'car';
+        setSelectedVehicle(mappedVehicleType);
+
+        // Set document status based on application data
+        const newDocsStatus: Record<VehicleType, boolean> = {
+          car: false,
+          bike: false,
+          scooter: false,
+          walk: true,
+          motorcycle: false,
+        };
+
+        if (application.vehicle_type !== 'walking') {
+          const hasRequiredDocs = !!(
+            application.drivers_license_front && 
+            application.drivers_license_back &&
+            (application.vehicle_type === 'bike' || 
+             (application.insurance_document && application.vehicle_registration))
+          );
+          newDocsStatus[mappedVehicleType] = hasRequiredDocs;
+        }
+
+        setDocsStatus(newDocsStatus);
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -215,13 +259,30 @@ export const AccountSection: React.FC = () => {
                 </CardContent>
               </Card>
 
+              {/* Vehicle Selector */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Car className="h-5 w-5" />
+                    Active Vehicle
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <VehicleSelector 
+                    selectedVehicle={selectedVehicle}
+                    onVehicleSelect={setSelectedVehicle}
+                    docsStatus={docsStatus}
+                  />
+                </CardContent>
+              </Card>
+
               {/* Vehicle Information */}
               {profile?.vehicle_type && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Car className="h-5 w-5" />
-                      Vehicle Information
+                      Vehicle Details
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
