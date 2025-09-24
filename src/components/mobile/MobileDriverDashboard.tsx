@@ -674,35 +674,50 @@ export const MobileDriverDashboard: React.FC = () => {
       {/* Content overlay */}
       <div className="relative z-10 min-h-screen">
 
-      {/* Top Bar */}
-      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-background/80 to-transparent backdrop-blur-sm">
-        <Badge className={`${getStatusColor()} px-3 py-1`}>
-          {getStatusText()}
-        </Badge>
-        
-        <div className="flex items-center gap-1 text-sm font-medium">
-          <MapPin className="h-4 w-4" />
-          <span>{currentCity} • {formatTime(currentTime)}</span>
+      {/* Compact Top Status Bar */}
+      <div className="absolute top-0 left-0 right-0 z-10 bg-background/95 backdrop-blur-sm shadow-sm">
+        <div className="flex items-center justify-between p-3">
+          <div className="flex items-center gap-2">
+            <Badge className={`${getStatusColor()} px-2 py-1 text-xs`}>
+              {getStatusText()}
+            </Badge>
+            {driverState === 'online_searching' && (
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-xs font-medium text-green-700">SEARCHING</span>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="text-xs text-muted-foreground">
+              {currentCity} • {formatTime(currentTime)}
+            </div>
+            <Bell className="h-4 w-4 text-foreground" />
+          </div>
         </div>
         
-        <Bell className="h-5 w-5 text-foreground" />
+        {/* Debug State Display */}
+        <div className="px-3 pb-2 text-xs text-muted-foreground border-t">
+          State: {driverState} | Vehicle: {selectedVehicle} | Mode: {earningMode}
+        </div>
       </div>
 
       {/* Main Content - only show when offline */}
       {driverState === 'offline' && (
-        <div className="absolute inset-0 z-10 flex flex-col justify-end pb-16">
-          <div className="bg-gradient-to-t from-background via-background/95 to-transparent px-4 py-6 space-y-6">
-            {/* Earning Mode Toggle */}
+        <div className="absolute bottom-0 left-0 right-0 z-10 pb-16">
+          <div className="bg-gradient-to-t from-background via-background/95 to-transparent px-4 py-6 space-y-4">
+            {/* Earning Mode Toggle - Compact */}
             <EarningModeToggle
               mode={earningMode}
               onModeChange={setEarningMode}
             />
 
-            {/* Primary CTA */}
-            <div className="space-y-3">
+            {/* Primary CTA - Smaller */}
+            <div className="space-y-2">
               <Button
                 onClick={handleSatisfyCraveNow}
-                className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg"
+                className="w-full h-12 text-base font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg"
               >
                 🚀 Satisfy Crave'n Now
               </Button>
