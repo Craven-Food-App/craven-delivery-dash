@@ -15,7 +15,7 @@ import { OrderAssignmentModal } from './OrderAssignmentModal';
 import { AccountSection } from './AccountSection';
 import { RatingsSection } from './RatingsSection';
 import { EarningsSection } from './EarningsSection';
-import { DeliveryPanel } from './DeliveryPanel';
+import { ActiveDeliveryFlow } from './ActiveDeliveryFlow';
 import MapboxMap from '@/components/Map';
 
 type DriverState = 'offline' | 'setEndTime' | 'online_searching' | 'online_paused' | 'offer_presented' | 'on_delivery';
@@ -674,34 +674,25 @@ export const MobileDriverDashboard: React.FC = () => {
       {/* Content overlay */}
       <div className="relative z-10 min-h-screen">
 
-      {/* Compact Top Status Bar */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-background/95 backdrop-blur-sm shadow-sm">
-        <div className="flex items-center justify-between p-3">
-          <div className="flex items-center gap-2">
-            <Badge className={`${getStatusColor()} px-2 py-1 text-xs`}>
-              {getStatusText()}
-            </Badge>
-            {driverState === 'online_searching' && (
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-xs font-medium text-green-700">SEARCHING</span>
-              </div>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <div className="text-xs text-muted-foreground">
-              {currentCity} • {formatTime(currentTime)}
+      {/* Clean Header - Only for Offline State */}
+      {driverState === 'offline' && (
+        <div className="absolute top-0 left-0 right-0 z-10 bg-background/95 backdrop-blur-sm shadow-sm">
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="px-3 py-1">
+                Offline
+              </Badge>
             </div>
-            <Bell className="h-4 w-4 text-foreground" />
+            
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-muted-foreground">
+                {currentCity} • {formatTime(currentTime)}
+              </div>
+              <Bell className="h-5 w-5 text-foreground" />
+            </div>
           </div>
         </div>
-        
-        {/* Debug State Display */}
-        <div className="px-3 pb-2 text-xs text-muted-foreground border-t">
-          State: {driverState} | Vehicle: {selectedVehicle} | Mode: {earningMode}
-        </div>
-      </div>
+      )}
 
       {/* Main Content - only show when offline */}
       {driverState === 'offline' && (
@@ -753,11 +744,27 @@ export const MobileDriverDashboard: React.FC = () => {
         />
       )}
 
-      {/* Active Delivery Panel */}
+      {/* Active Delivery Flow */}
       {driverState === 'on_delivery' && activeDelivery && (
-        <DeliveryPanel
-          assignment={activeDelivery}
-          onDeliveryComplete={handleDeliveryComplete}
+        <ActiveDeliveryFlow
+          orderDetails={{
+            restaurant_name: activeDelivery.restaurant_name || 'Restaurant',
+            pickup_address: activeDelivery.pickup_address || 'Pickup Address',
+            dropoff_address: activeDelivery.dropoff_address || 'Delivery Address',
+            customer_name: activeDelivery.customer_name,
+            customer_phone: activeDelivery.customer_phone,
+            delivery_notes: activeDelivery.delivery_notes,
+            payout_cents: activeDelivery.payout_cents || 0,
+            estimated_time: activeDelivery.estimated_time || 30
+          }}
+          onCompleteDelivery={() => {
+            setActiveDelivery(null);
+            setDriverState('online_searching');
+            toast({
+              title: "Delivery Complete!",
+              description: "Great job! Looking for your next order.",
+            });
+          }}
         />
       )}
 

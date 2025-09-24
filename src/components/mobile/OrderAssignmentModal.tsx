@@ -184,84 +184,71 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md mx-4 rounded-lg">
-        <div className="p-4">
-          {/* Header with timer */}
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold">New Delivery Offer</h2>
-            <div className="flex items-center gap-2 bg-destructive text-destructive-foreground px-3 py-1 rounded-full">
-              <Clock className="h-4 w-4" />
-              <span className="font-bold">{timeLeft}s</span>
+      <DialogContent className="sm:max-w-md mx-4 rounded-3xl p-0 border-4 border-orange-400 bg-gradient-to-b from-orange-50 to-white shadow-2xl animate-pulse">
+        {/* Urgent Header */}
+        <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-4 rounded-t-2xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-white rounded-full animate-bounce"></div>
+              <h2 className="text-xl font-bold">🚨 NEW DELIVERY OFFER</h2>
             </div>
+            <div className="bg-white/20 px-3 py-1 rounded-full">
+              <span className="font-bold text-lg">{timeLeft}s</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Prominent Earnings Display */}
+          <div className="text-center bg-green-500 text-white p-6 rounded-2xl shadow-lg">
+            <div className="text-sm opacity-90 mb-1">Total Estimated Earnings</div>
+            <div className="text-5xl font-bold">${payout}</div>
+            <div className="text-sm opacity-90">Including tip estimate</div>
           </div>
 
           {/* Restaurant Info */}
-          <div className="mb-4">
-            <h3 className="font-semibold text-lg">{assignment.restaurant_name}</h3>
+          <div className="text-center border-b pb-4">
+            <h3 className="text-2xl font-bold text-gray-800">{assignment.restaurant_name}</h3>
+            <p className="text-gray-600 font-medium">{assignment.pickup_address}</p>
           </div>
 
-          {/* Pickup & Dropoff */}
-          <div className="space-y-3 mb-4">
-            <div className="flex items-start gap-3">
-              <div className="w-3 h-3 bg-primary rounded-full mt-2" />
-              <div>
-                <p className="text-sm text-muted-foreground">Pickup</p>
-                <p className="font-medium">{assignment.pickup_address}</p>
-              </div>
+          {/* Delivery Details Grid */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-blue-50 p-4 rounded-xl text-center border-2 border-blue-200">
+              <div className="text-blue-600 font-bold text-xl">{assignment.distance_mi} mi</div>
+              <div className="text-sm text-blue-700">Distance</div>
             </div>
-            
-            <div className="flex items-start gap-3">
-              <MapPin className="h-4 w-4 text-destructive mt-1" />
-              <div>
-                <p className="text-sm text-muted-foreground">Dropoff</p>
-                <p className="font-medium">{assignment.dropoff_address}</p>
-              </div>
+            <div className="bg-purple-50 p-4 rounded-xl text-center border-2 border-purple-200">
+              <div className="text-purple-600 font-bold text-xl">{assignment.estimated_time} min</div>
+              <div className="text-sm text-purple-700">Est. Time</div>
             </div>
           </div>
 
-          {/* Order Details */}
-          <div className="grid grid-cols-3 gap-4 mb-6 p-3 bg-accent rounded-lg">
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-1 mb-1">
-                <DollarSign className="h-4 w-4 text-success" />
-                <span className="font-bold text-lg text-success">${payout}</span>
-              </div>
-              <p className="text-xs text-muted-foreground">Payout</p>
+          {/* Dropoff Location */}
+          <div className="bg-gray-50 p-4 rounded-xl">
+            <div className="flex items-center gap-2 mb-2">
+              <MapPin className="h-5 w-5 text-red-500" />
+              <span className="font-semibold text-gray-700">Drop-off Location:</span>
             </div>
-            
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-1 mb-1">
-                <Route className="h-4 w-4" />
-                <span className="font-bold">{assignment.distance_mi} mi</span>
-              </div>
-              <p className="text-xs text-muted-foreground">Distance</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-1 mb-1">
-                <Clock className="h-4 w-4" />
-                <span className="font-bold">{assignment.estimated_time} min</span>
-              </div>
-              <p className="text-xs text-muted-foreground">Est. Time</p>
-            </div>
+            <p className="text-gray-800 font-medium">{assignment.dropoff_address}</p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3">
+          {/* Large Action Buttons */}
+          <div className="flex gap-3 pt-4">
             <Button 
               variant="outline" 
-              className="flex-1" 
+              className="flex-1 h-16 text-lg font-bold border-2 border-red-300 text-red-600 hover:bg-red-50" 
               onClick={handleDecline}
               disabled={isDeclining || isAccepting}
             >
-              {isDeclining ? 'Declining...' : 'Decline'}
+              {isDeclining ? 'Declining...' : '❌ DECLINE'}
             </Button>
             <Button 
-              className="flex-1 bg-success hover:bg-success/90" 
+              className="flex-1 h-16 text-lg font-bold bg-green-500 hover:bg-green-600 text-white shadow-lg" 
               onClick={handleAccept}
               disabled={isAccepting || isDeclining}
             >
-              {isAccepting ? 'Accepting...' : 'Accept'}
+              {isAccepting ? 'Accepting...' : '✅ ACCEPT OFFER'}
             </Button>
           </div>
         </div>
