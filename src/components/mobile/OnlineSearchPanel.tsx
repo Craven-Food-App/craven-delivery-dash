@@ -60,120 +60,87 @@ export const OnlineSearchPanel: React.FC<OnlineSearchPanelProps> = ({
   };
 
   return (
-    <div className="absolute bottom-20 left-4 right-4 z-10 space-y-4">
-      {/* Main Status Card */}
-      <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 backdrop-blur-md">
-        <CardContent className="p-6">
-          {/* Status Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
-                <div className="absolute inset-0 w-4 h-4 bg-green-500/30 rounded-full animate-ping"></div>
-              </div>
-              <div>
-                <h3 className="font-bold text-lg text-green-800">Online & Ready</h3>
-                <p className="text-sm text-green-600">Searching for delivery offers</p>
-              </div>
-            </div>
-            <div className="text-2xl">{getVehicleIcon()}</div>
-          </div>
-
-          {/* Time Display */}
-          <div className="text-center mb-6">
-            <div className="text-4xl font-bold text-green-700 mb-2">
-              {formatTime(onlineTime)}
-            </div>
-            {endTime && (
-              <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                <span className="text-sm">Until {formatEndTime(endTime)}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Progress Bar */}
-          {endTime && (
-            <div className="mb-6">
-              <Progress value={getProgress()} className="h-3 bg-green-100" />
-              <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                <span>Session progress</span>
-                <span>{Math.round(getProgress())}%</span>
-              </div>
-            </div>
-          )}
-
-          {/* Earning Mode Display */}
-          <div className="flex items-center justify-center gap-3 mb-6 p-3 bg-white/50 rounded-lg">
-            {earningMode === 'perHour' ? (
-              <>
-                <DollarSign className="h-5 w-5 text-green-600" />
-                <div className="text-center">
-                  <div className="font-semibold text-green-800">$18/hour</div>
-                  <div className="text-xs text-muted-foreground">+ 100% of tips</div>
+    <>
+      {/* Compact Status Bar - Top */}
+      <div className="absolute top-4 left-4 right-4 z-10">
+        <Card className="bg-background/95 backdrop-blur-sm border-0 shadow-lg">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <div className="absolute inset-0 w-2 h-2 bg-green-500/30 rounded-full animate-ping"></div>
                 </div>
-              </>
-            ) : (
-              <>
-                <Zap className="h-5 w-5 text-blue-600" />
-                <div className="text-center">
-                  <div className="font-semibold text-blue-800">Per Offer Mode</div>
-                  <div className="text-xs text-muted-foreground">Higher earning potential</div>
+                <span className="text-sm font-medium text-green-700">ONLINE</span>
+                <span className="text-xl">{getVehicleIcon()}</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <div className="text-lg font-bold">{formatTime(onlineTime)}</div>
+                  {endTime && (
+                    <div className="text-xs text-muted-foreground">
+                      Until {formatEndTime(endTime)}
+                    </div>
+                  )}
                 </div>
-              </>
-            )}
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            <Button 
-              variant="outline" 
-              onClick={onPause} 
-              className="flex-1 border-green-200 hover:bg-green-50" 
-              size="lg"
-            >
-              <Pause className="h-4 w-4 mr-2" />
-              Pause
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={onEnd} 
-              className="flex-1" 
-              size="lg"
-            >
-              <Square className="h-4 w-4 mr-2" />
-              End Session
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <Card className="bg-blue-50 border-blue-200 backdrop-blur-md">
-          <CardContent className="p-3 text-center">
-            <MapPin className="h-5 w-5 mx-auto mb-1 text-blue-600" />
-            <div className="text-lg font-bold text-blue-800">0</div>
-            <div className="text-xs text-muted-foreground">Offers</div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-purple-50 border-purple-200 backdrop-blur-md">
-          <CardContent className="p-3 text-center">
-            <DollarSign className="h-5 w-5 mx-auto mb-1 text-purple-600" />
-            <div className="text-lg font-bold text-purple-800">$0</div>
-            <div className="text-xs text-muted-foreground">Earned</div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-orange-50 border-orange-200 backdrop-blur-md">
-          <CardContent className="p-3 text-center">
-            <Clock className="h-5 w-5 mx-auto mb-1 text-orange-600" />
-            <div className="text-lg font-bold text-orange-800">0</div>
-            <div className="text-xs text-muted-foreground">Deliveries</div>
+                {earningMode === 'perHour' ? (
+                  <div className="text-right">
+                    <div className="text-sm font-semibold text-green-600">$18/hr</div>
+                    <div className="text-xs text-muted-foreground">+ tips</div>
+                  </div>
+                ) : (
+                  <div className="text-right">
+                    <div className="text-sm font-semibold text-blue-600">Per Offer</div>
+                    <div className="text-xs text-muted-foreground">High pay</div>
+                  </div>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
-    </div>
+
+      {/* Floating Action Button - Bottom Right */}
+      <div className="absolute bottom-20 right-4 z-10 flex flex-col gap-2">
+        <Button 
+          onClick={onPause} 
+          size="sm"
+          variant="outline"
+          className="h-12 w-12 rounded-full bg-background/95 backdrop-blur-sm border-0 shadow-lg"
+        >
+          <Pause className="h-5 w-5" />
+        </Button>
+        <Button 
+          onClick={onEnd} 
+          size="sm"
+          variant="destructive"
+          className="h-12 w-12 rounded-full shadow-lg"
+        >
+          <Square className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Minimal Stats Bar - Bottom */}
+      <div className="absolute bottom-20 left-4 z-10">
+        <Card className="bg-background/95 backdrop-blur-sm border-0 shadow-lg">
+          <CardContent className="p-2">
+            <div className="flex items-center gap-4 text-xs">
+              <div className="flex items-center gap-1">
+                <MapPin className="h-3 w-3 text-blue-500" />
+                <span className="font-medium">0</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <DollarSign className="h-3 w-3 text-green-500" />
+                <span className="font-medium">$0</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Clock className="h-3 w-3 text-orange-500" />
+                <span className="font-medium">0</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 };
