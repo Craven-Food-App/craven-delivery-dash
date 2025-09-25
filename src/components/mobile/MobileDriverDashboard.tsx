@@ -1,38 +1,15 @@
-// @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Bell, MapPin } from 'lucide-react';
+import { MapPin, Settings, Pause, Play, Square, Clock, Car, DollarSign } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import ChatButton from '@/components/chat/ChatButton';
-import { EarningModeToggle } from './EarningModeToggle';
-import { EndTimeSheet } from './EndTimeSheet';
-import { BottomNavigation } from './BottomNavigation';
-import { OnlineSearchPanel } from './OnlineSearchPanel';
-import { OfferCard } from './OfferCard';
 import { OrderAssignmentModal } from './OrderAssignmentModal';
-import { AccountSection } from './AccountSection';
-import { RatingsSection } from './RatingsSection';
-import { EarningsSection } from './EarningsSection';
-import { ActiveDeliveryFlow } from './ActiveDeliveryFlow';
 import MapboxMap from '@/components/Map';
 
-type DriverState = 'offline' | 'setEndTime' | 'online_searching' | 'online_paused' | 'offer_presented' | 'on_delivery';
+type DriverState = 'offline' | 'online_searching' | 'online_paused' | 'on_delivery';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
 type EarningMode = 'perHour' | 'perOffer';
-type TabType = 'main' | 'schedule' | 'account' | 'ratings' | 'earnings';
-
-interface MockOffer {
-  id: string;
-  pickupName: string;
-  pickupRating: number;
-  dropoffDistance: number;
-  estimatedTime: number;
-  estimatedPay: number;
-  itemCount: number;
-  miles: number;
-}
 
 interface OrderAssignment {
   assignment_id: string;
@@ -51,119 +28,22 @@ export const MobileDriverDashboard: React.FC = () => {
   const [driverState, setDriverState] = useState<DriverState>('offline');
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleType>('car');
   const [earningMode, setEarningMode] = useState<EarningMode>('perHour');
-  const [activeTab, setActiveTab] = useState<TabType>('main');
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [onlineTime, setOnlineTime] = useState(0);
-  const [currentOffer, setCurrentOffer] = useState<MockOffer | null>(null);
-  const [currentAssignment, setCurrentAssignment] = useState<OrderAssignment | null>(null);
   const [currentCity, setCurrentCity] = useState('Toledo');
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [showEndTimeSheet, setShowEndTimeSheet] = useState(false);
-  const [craverApplication, setCraverApplication] = useState<any>(null);
-  const [docsStatus, setDocsStatus] = useState<Record<VehicleType, boolean>>({
-    car: false,
-    bike: false,
-    scooter: false,
-    walk: false,
-    motorcycle: false,
-  });
-  const [availableOrders, setAvailableOrders] = useState<any[]>([]);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
-  const [currentOrderAssignment, setCurrentOrderAssignment] = useState<any>(null);
-  const [activeDelivery, setActiveDelivery] = useState<any>(null);
+  const [currentOrderAssignment, setCurrentOrderAssignment] = useState<OrderAssignment | null>(null);
+  const [todayEarnings, setTodayEarnings] = useState(0);
+  const [tripCount, setTripCount] = useState(0);
   
   const { toast } = useToast();
 
-  // Restore driver state from localStorage and database on mount
-  useEffect(() => {
-    const restoreDriverState = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        // Check database for current driver status
-        const { data: driverProfile } = await supabase
-          .from('driver_profiles')
-          .select('status, is_available')
-          .eq('user_id', user.id)
-          .single();
-
-        // Check localStorage for session data
-        const savedState = localStorage.getItem('driver_session');
-        if (savedState) {
-          const sessionData = JSON.parse(savedState);
-          
-          // Restore session if driver is still online in database
-          if (driverProfile?.status === 'online' && driverProfile?.is_available) {
-            setDriverState('online_searching');
-            setEndTime(new Date(sessionData.endTime));
-            setSelectedVehicle(sessionData.selectedVehicle || 'car');
-            setEarningMode(sessionData.earningMode || 'perHour');
-            
-            // Calculate online time from session start
-            const sessionStart = new Date(sessionData.sessionStart);
-            const currentTime = new Date();
-            const timeDiff = Math.floor((currentTime.getTime() - sessionStart.getTime()) / 1000);
-            setOnlineTime(Math.max(0, timeDiff));
-
-            console.log('🔄 Restored driver session - staying online');
-            
-            // Re-establish real-time listener
-            setupRealtimeListener(user.id);
-          } else {
-            // Clear saved session if driver is offline in database
-            localStorage.removeItem('driver_session');
-            setDriverState('offline');
-          }
-        } else if (driverProfile?.status === 'online') {
-          // Driver is online in database but no local session - estimate they just started
-          setDriverState('online_searching');
-          const now = new Date();
-          const defaultEndTime = new Date(now.getTime() + 8 * 60 * 60 * 1000); // 8 hours from now
-          setEndTime(defaultEndTime);
-          setOnlineTime(0);
-          
-          // Save new session
-          saveDriverSession('online_searching', defaultEndTime, selectedVehicle, earningMode);
-          setupRealtimeListener(user.id);
-        }
-      } catch (error) {
-        console.error('Error restoring driver state:', error);
-      }
-    };
-
-    restoreDriverState();
-  }, []);
-
-  // Save driver session to localStorage
-  const saveDriverSession = (state: DriverState, endTime: Date, vehicle: VehicleType, mode: EarningMode) => {
-    if (state === 'online_searching') {
-      const sessionData = {
-        sessionStart: new Date().toISOString(),
-        endTime: endTime.toISOString(),
-        selectedVehicle: vehicle,
-        earningMode: mode,
-        driverState: state
-      };
-      localStorage.setItem('driver_session', JSON.stringify(sessionData));
-      console.log('💾 Saved driver session to localStorage');
-    } else {
-      localStorage.removeItem('driver_session');
-      console.log('🗑️ Removed driver session from localStorage');
-    }
-  };
-
   // Setup real-time listener for order assignments
   const setupRealtimeListener = (userId: string) => {
-    console.log('🔔 Setting up real-time listener for user:', userId);
-    
     const channel = supabase
       .channel(`driver_${userId}`)
       .on('broadcast', { event: 'order_assignment' }, (payload) => {
-        console.log('📨 Received order assignment via broadcast:', payload);
-        
-        // Show order assignment modal
         setCurrentOrderAssignment({
           assignment_id: payload.payload.assignment_id,
           order_id: payload.payload.order_id,
@@ -177,89 +57,11 @@ export const MobileDriverDashboard: React.FC = () => {
           estimated_time: payload.payload.estimated_time
         });
         setShowOrderModal(true);
-        setDriverState('offer_presented');
       })
-      .subscribe((status) => {
-        console.log('Real-time subscription status:', status);
-      });
+      .subscribe();
 
-    return () => {
-      console.log('Cleaning up real-time listener');
-      supabase.removeChannel(channel);
-    };
+    return () => supabase.removeChannel(channel);
   };
-
-  // Fetch real craver application data
-  useEffect(() => {
-    const fetchCraverData = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { data: application, error } = await supabase
-          .from('craver_applications')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('status', 'approved')
-          .single();
-
-        if (error) {
-          console.error('Error fetching craver application:', error);
-          return;
-        }
-
-        if (application) {
-          setCraverApplication(application);
-          
-          // Map database vehicle types to frontend types
-          const vehicleTypeMapping: Record<string, VehicleType> = {
-            'car': 'car',
-            'bike': 'bike', 
-            'scooter': 'scooter',
-            'motorcycle': 'motorcycle',
-            'walking': 'walk'
-          };
-          
-          const mappedVehicleType = vehicleTypeMapping[application.vehicle_type] || 'car';
-          setSelectedVehicle(mappedVehicleType);
-          
-          // Set document status based on application data
-          const newDocsStatus: Record<VehicleType, boolean> = {
-            car: false,
-            bike: false,
-            scooter: false,
-            walk: true, // Walking doesn't require documents
-            motorcycle: false,
-          };
-
-          // Check if documents are uploaded for the selected vehicle type
-          if (application.vehicle_type !== 'walking') {
-            const hasRequiredDocs = !!(
-              application.drivers_license_front && 
-              application.drivers_license_back &&
-              (application.vehicle_type === 'bike' || 
-               (application.insurance_document && application.vehicle_registration))
-            );
-            newDocsStatus[mappedVehicleType] = hasRequiredDocs;
-          }
-
-          setDocsStatus(newDocsStatus);
-        }
-      } catch (error) {
-        console.error('Error in fetchCraverData:', error);
-      }
-    };
-
-    fetchCraverData();
-  }, []);
-
-  // Update time every minute
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Track online time
   useEffect(() => {
@@ -271,87 +73,12 @@ export const MobileDriverDashboard: React.FC = () => {
     }
   }, [driverState]);
 
-  // Continuous location tracking when online
-  useEffect(() => {
-    if (driverState !== 'online_searching' && driverState !== 'on_delivery') return;
-
-    const trackLocation = async () => {
-      if (!navigator.geolocation) return;
-
+  const handleGoOnline = async () => {
+    try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const updateLocation = async (position: GeolocationPosition) => {
-        const { latitude, longitude } = position.coords;
-        setUserLocation({ lat: latitude, lng: longitude });
-        
-        // Update database with new location
-        await supabase
-          .from('craver_locations')
-          .upsert({
-            user_id: user.id,
-            lat: latitude,
-            lng: longitude
-          });
-      };
-
-      // Get initial location
-      navigator.geolocation.getCurrentPosition(updateLocation, 
-        (error) => console.error('Location error:', error),
-        { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
-      );
-
-      // Watch location changes
-      const watchId = navigator.geolocation.watchPosition(updateLocation,
-        (error) => console.error('Location tracking error:', error),
-        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
-      );
-
-      return () => {
-        navigator.geolocation.clearWatch(watchId);
-      };
-    };
-
-    trackLocation();
-  }, [driverState]);
-
-  // Listen for real-time order assignments when online - consolidated with setupRealtimeListener above
-  // This useEffect is now handled by the setupRealtimeListener function called from other places
-
-  const handleSatisfyCraveNow = () => {
-    if (!craverApplication) {
-      toast({
-        title: "Application Required",
-        description: "You need an approved craver application to go online.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!docsStatus[selectedVehicle]) {
-      toast({
-        title: "Complete vehicle docs",
-        description: "You need to complete documents for your selected vehicle before going online.",
-        variant: "destructive",
-      });
-      return;
-    }
-    setShowEndTimeSheet(true);
-  };
-
-  const handleGoOnline = async (endTime: Date, autoExtend: boolean, breakReminder: boolean) => {
-    try {
-      console.log('🚗 Starting go online process...');
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('❌ No user found');
-        return;
-      }
-      console.log('✅ User found:', user.id);
-
-      // Update driver status to online
-      console.log('🔄 Updating driver profile to online...');
-      const { error: profileError } = await supabase
+      await supabase
         .from('driver_profiles')
         .update({
           status: 'online',
@@ -359,115 +86,54 @@ export const MobileDriverDashboard: React.FC = () => {
         })
         .eq('user_id', user.id);
 
-      if (profileError) {
-        console.error('❌ Driver profile update error:', profileError);
-        throw profileError;
-      }
-      console.log('✅ Driver profile updated successfully');
-
-      // Update location with fallback
+      // Get location
       if (navigator.geolocation) {
-        console.log('📍 Getting location...');
         navigator.geolocation.getCurrentPosition(async (position) => {
-          console.log('📍 Location obtained:', position.coords.latitude, position.coords.longitude);
-          const { error: locationError } = await supabase
-            .from('craver_locations')
-            .upsert({
-              user_id: user.id,
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            });
-
-          if (locationError) {
-            console.error('❌ Location update error:', locationError);
-          } else {
-            console.log('✅ Location updated successfully');
-          }
-        }, async (error) => {
-          console.error('❌ Geolocation error:', error);
-          console.log('📍 Using fallback Toledo location...');
-          
-          // Fallback to Toledo coordinates when geolocation fails
-          const { error: locationError } = await supabase
-            .from('craver_locations')
-            .upsert({
-              user_id: user.id,
-              lat: 41.6528, // Toledo coordinates
-              lng: -83.6982
-            });
-
-          if (locationError) {
-            console.error('❌ Fallback location update error:', locationError);
-          } else {
-            console.log('✅ Fallback location updated successfully');
-            toast({
-              title: "Location Set",
-              description: "Using Toledo location for order assignments.",
-            });
-          }
-        }, {
-          enableHighAccuracy: false, // Relaxed accuracy for better reliability
-          timeout: 5000,
-          maximumAge: 300000
+          setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
         });
-      } else {
-        console.log('❌ Geolocation not available, using Toledo fallback');
-        // Fallback location when geolocation is not available
-        const { error: locationError } = await supabase
-          .from('craver_locations')
-          .upsert({
-            user_id: user.id,
-            lat: 41.6528, // Toledo coordinates
-            lng: -83.6982
-          });
-
-        if (locationError) {
-          console.error('❌ Fallback location update error:', locationError);
-        } else {
-          console.log('✅ Fallback location set successfully');
-        }
       }
 
-      setEndTime(endTime);
+      const now = new Date();
+      const defaultEndTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+      setEndTime(defaultEndTime);
       setDriverState('online_searching');
-      setShowEndTimeSheet(false);
       setOnlineTime(0);
       
-      // Save session to localStorage for persistence
-      saveDriverSession('online_searching', endTime, selectedVehicle, earningMode);
+      setupRealtimeListener(user.id);
       
       toast({
-        title: "You're now online!",
-        description: "Looking for delivery offers in your area.",
+        title: "You're online!",
+        description: "Looking for delivery offers...",
       });
-
-      // Set up real-time order assignment listener
-      setupRealtimeListener(user.id);
-
-      console.log('✅ Successfully went online!');
 
     } catch (error) {
-      console.error('❌ Error going online:', error);
-      toast({
-        title: "Error",
-        description: "Failed to go online. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Error going online:', error);
     }
   };
 
-  const handleAcceptAssignment = (assignmentId: string) => {
-    console.log('Order accepted via legacy method');
-  };
-
-  const handleDeclineAssignment = (assignmentId: string) => {
-    setCurrentAssignment(null);
-    setDriverState('online_searching');
-  };
-
-  const handleAssignmentExpire = () => {
-    setCurrentAssignment(null);
-    setDriverState('online_searching');
+  const handleGoOffline = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('driver_profiles')
+          .update({ 
+            status: 'offline',
+            is_available: false 
+          })
+          .eq('user_id', user.id);
+      }
+      
+      setDriverState('offline');
+      setOnlineTime(0);
+      
+      toast({
+        title: "You're offline",
+        description: "You won't receive delivery offers.",
+      });
+    } catch (error) {
+      console.error('Error going offline:', error);
+    }
   };
 
   const handlePause = async () => {
@@ -484,14 +150,10 @@ export const MobileDriverDashboard: React.FC = () => {
       }
       
       setDriverState('online_paused');
-      // Keep session saved but update state
-      if (endTime) {
-        saveDriverSession('online_paused', endTime, selectedVehicle, earningMode);
-      }
       
       toast({
         title: "Paused",
-        description: "You won't receive new offers while paused.",
+        description: "You won't receive offers while paused.",
       });
     } catch (error) {
       console.error('Error pausing:', error);
@@ -512,261 +174,215 @@ export const MobileDriverDashboard: React.FC = () => {
       }
       
       setDriverState('online_searching');
-      // Restore session
-      if (endTime) {
-        saveDriverSession('online_searching', endTime, selectedVehicle, earningMode);
-        setupRealtimeListener(user.id);
-      }
       
       toast({
-        title: "Back Online",
-        description: "You're now receiving offers again.",
+        title: "Back online",
+        description: "Looking for delivery offers...",
       });
     } catch (error) {
       console.error('Error unpausing:', error);
     }
   };
 
-  const handleEndNow = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase
-          .from('driver_profiles')
-          .update({ 
-            status: 'offline',
-            is_available: false 
-          })
-          .eq('user_id', user.id);
-      }
-      
-      setDriverState('offline');
-      setEndTime(null);
-      setOnlineTime(0);
-      setCurrentAssignment(null);
-      
-      // Clear saved session
-      saveDriverSession('offline', new Date(), selectedVehicle, earningMode);
-      
-      toast({
-        title: "You're now offline",
-        description: "Your driving session has ended.",
-      });
-    } catch (error) {
-      console.error('Error going offline:', error);
+  const formatTime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${hours}:${minutes.toString().padStart(2, '0')}`;
+  };
+
+  const getVehicleIcon = () => {
+    switch(selectedVehicle) {
+      case 'car': return '🚗';
+      case 'bike': return '🚲';
+      case 'scooter': return '🛴';
+      case 'motorcycle': return '🏍️';
+      case 'walk': return '🚶';
+      default: return '🚗';
     }
   };
-
-  const handleDeliveryComplete = () => {
-    setActiveDelivery(null);
-    setDriverState('online_searching');
-    toast({
-      title: "Ready for next delivery! 🚀",
-      description: "Great work! You're back online and ready for offers.",
-    });
-  };
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit',
-      hour12: true 
-    });
-  };
-
-  const getStatusColor = () => {
-    switch (driverState) {
-      case 'online_searching':
-      case 'on_delivery':
-        return 'bg-status-online text-white';
-      case 'online_paused':
-        return 'bg-status-paused text-white';
-      default:
-        return 'bg-status-offline text-white';
-    }
-  };
-
-  const getStatusText = () => {
-    switch (driverState) {
-      case 'online_searching':
-      case 'on_delivery':
-        return 'Online';
-      case 'online_paused':
-        return 'Paused';
-      default:
-        return 'Offline';
-    }
-  };
-
-  if (activeTab === 'account') {
-    return (
-      <div className="min-h-screen bg-background pb-16">
-        <div className="p-4 space-y-4">
-          <AccountSection />
-          
-          {/* Driver Support Section */}
-          <div className="bg-white rounded-lg p-4 shadow-sm border">
-            <h3 className="font-medium mb-3">Need Help?</h3>
-            <ChatButton
-              type="driver_support"
-              userType="driver"
-              variant="outline"
-              className="w-full"
-              size="sm"
-            >
-              Contact Driver Support
-            </ChatButton>
-          </div>
-        </div>
-        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      </div>
-    );
-  }
-
-  if (activeTab === 'ratings') {
-    return (
-      <>
-        <RatingsSection />
-        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      </>
-    );
-  }
-
-  if (activeTab === 'earnings') {
-    return (
-      <>
-        <EarningsSection />
-        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      </>
-    );
-  }
-
-  if (activeTab !== 'main') {
-    return (
-      <div className="min-h-screen bg-background pb-16">
-        <div className="flex items-center justify-center h-[calc(100vh-4rem)] text-muted-foreground">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold mb-2 capitalize">{activeTab}</h2>
-            <p className="text-sm">Coming soon...</p>
-          </div>
-        </div>
-        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-background relative">
-      {/* Map background - positioned behind content */}
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Full Screen Map Background */}
       <div className="absolute inset-0 z-0">
         <MapboxMap 
-          orders={driverState === 'online_searching' ? availableOrders : []} 
+          orders={[]} 
           activeOrder={null} 
-          onOrderClick={(order) => {
-            toast({
-              title: `Order from ${order.pickup_name}`,
-              description: `$${(order.payout_cents / 100).toFixed(2)} • ${(order.distance_km * 0.621371).toFixed(1)}mi`,
-            });
-          }} 
+          onOrderClick={() => {}} 
         />
       </div>
       
-      {/* Content overlay */}
-      <div className="relative z-10 min-h-screen">
+      {/* Status Bar - Top */}
+      {driverState !== 'offline' && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20">
+          <div className={`flex items-center gap-2 px-6 py-3 rounded-full shadow-lg ${
+            driverState === 'online_searching' ? 'bg-green-500 text-white' :
+            driverState === 'online_paused' ? 'bg-yellow-500 text-white' :
+            'bg-blue-500 text-white'
+          }`}>
+            <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+            <span className="font-semibold">
+              {driverState === 'online_searching' ? 'Online' :
+               driverState === 'online_paused' ? 'Paused' :
+               'On Delivery'}
+            </span>
+          </div>
+        </div>
+      )}
 
-      {/* Clean Header - Only for Offline State */}
-      {driverState === 'offline' && (
-        <div className="absolute top-0 left-0 right-0 z-10 bg-background/95 backdrop-blur-sm shadow-sm">
-          <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="px-3 py-1">
-                Offline
-              </Badge>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="text-sm text-muted-foreground">
-                {currentCity} • {formatTime(currentTime)}
+      {/* Main Content Overlay */}
+      <div className="absolute inset-0 z-10">
+        
+        {/* OFFLINE STATE */}
+        {driverState === 'offline' && (
+          <>
+            {/* Header */}
+            <div className="absolute top-0 left-0 right-0 bg-background/95 backdrop-blur-sm shadow-sm">
+              <div className="flex items-center justify-between p-4">
+                <Badge variant="outline" className="text-orange-600 border-orange-600">
+                  Offline
+                </Badge>
+                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                  <span>{currentCity}</span>
+                  <Settings className="h-5 w-5" />
+                </div>
               </div>
-              <Bell className="h-5 w-5 text-foreground" />
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* Main Content - only show when offline */}
-      {driverState === 'offline' && (
-        <div className="absolute bottom-0 left-0 right-0 z-10 pb-16">
-          <div className="bg-gradient-to-t from-background via-background/95 to-transparent px-4 py-6 space-y-4">
-            {/* Earning Mode Toggle - Compact */}
-            <EarningModeToggle
-              mode={earningMode}
-              onModeChange={setEarningMode}
-            />
+            {/* Offline Controls - Bottom */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background/95 to-transparent px-4 py-8">
+              {/* Earnings Display */}
+              <div className="bg-background/95 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-border/20 mb-6">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-orange-600 mb-2">
+                    ${todayEarnings.toFixed(2)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Today's Earnings • {tripCount} trips
+                  </div>
+                </div>
+              </div>
 
-            {/* Primary CTA - Smaller */}
-            <div className="space-y-2">
+              {/* Go Online Button */}
               <Button
-                onClick={handleSatisfyCraveNow}
-                className="w-full h-12 text-base font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg"
+                onClick={handleGoOnline}
+                className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg rounded-xl"
               >
-                🚀 Satisfy Crave'n Now
+                Go Online
               </Button>
-              <p className="text-center text-xs text-muted-foreground">
-                Choose when you'll stop before going online
-              </p>
+              
+              <div className="text-center mt-3">
+                <div className="text-sm text-muted-foreground">
+                  {getVehicleIcon()} {selectedVehicle.charAt(0).toUpperCase() + selectedVehicle.slice(1)} • {earningMode === 'perHour' ? '$18/hr + tips' : 'Per delivery'}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
 
-      {/* Online Search Panel */}
-      {driverState === 'online_searching' && endTime && (
-        <OnlineSearchPanel
-          earningMode={earningMode}
-          vehicleType={selectedVehicle}
-          endTime={endTime}
-          onlineTime={onlineTime}
-          onPause={handlePause}
-          onEnd={handleEndNow}
-        />
-      )}
+        {/* ONLINE SEARCHING STATE */}
+        {driverState === 'online_searching' && (
+          <>
+            {/* Earnings Display - Center */}
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+              <div className="bg-background/95 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-border/20 text-center">
+                <div className="text-4xl font-bold text-green-600 mb-2">
+                  ${todayEarnings.toFixed(2)}
+                </div>
+                <div className="text-sm text-muted-foreground mb-4">
+                  Today's Earnings
+                </div>
+                <div className="text-2xl font-bold text-foreground">
+                  {formatTime(onlineTime)}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Time Online
+                </div>
+              </div>
+            </div>
 
-      {/* Paused Panel */}
-      {driverState === 'online_paused' && endTime && (
-        <OnlineSearchPanel
-          earningMode={earningMode}
-          vehicleType={selectedVehicle}
-          endTime={endTime}
-          onlineTime={onlineTime}
-          onPause={handleUnpause}
-          onEnd={handleEndNow}
-        />
-      )}
+            {/* Controls - Bottom */}
+            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
+              <Button 
+                onClick={handleGoOffline}
+                variant="outline"
+                className="bg-background/95 backdrop-blur-sm border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 px-12 py-4 text-lg font-semibold rounded-xl shadow-lg"
+              >
+                Go Offline
+              </Button>
+            </div>
 
-      {/* Active Delivery Flow */}
-      {driverState === 'on_delivery' && activeDelivery && (
-        <ActiveDeliveryFlow
-          orderDetails={{
-            restaurant_name: activeDelivery.restaurant_name || 'Restaurant',
-            pickup_address: activeDelivery.pickup_address || 'Pickup Address',
-            dropoff_address: activeDelivery.dropoff_address || 'Delivery Address',
-            customer_name: activeDelivery.customer_name,
-            customer_phone: activeDelivery.customer_phone,
-            delivery_notes: activeDelivery.delivery_notes,
-            payout_cents: activeDelivery.payout_cents || 0,
-            estimated_time: activeDelivery.estimated_time || 30
-          }}
-          onCompleteDelivery={() => {
-            setActiveDelivery(null);
-            setDriverState('online_searching');
-            toast({
-              title: "Delivery Complete!",
-              description: "Great job! Looking for your next order.",
-            });
-          }}
-        />
-      )}
+            {/* Pause Button - Top Right */}
+            <div className="absolute top-6 right-6">
+              <Button 
+                onClick={handlePause}
+                variant="ghost"
+                size="sm"
+                className="bg-background/80 backdrop-blur-sm border border-border/20 rounded-full p-3 shadow-lg hover:bg-background/90"
+              >
+                <Pause className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Vehicle Info - Bottom Left */}
+            <div className="absolute bottom-6 left-6">
+              <div className="bg-background/80 backdrop-blur-sm rounded-lg px-4 py-2 shadow-md border border-border/20">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span className="text-lg">{getVehicleIcon()}</span>
+                  <span className="capitalize">{selectedVehicle}</span>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* PAUSED STATE */}
+        {driverState === 'online_paused' && (
+          <>
+            {/* Paused Message - Center */}
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+              <div className="bg-background/95 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-border/20 text-center">
+                <div className="text-6xl mb-4">⏸️</div>
+                <div className="text-2xl font-bold text-foreground mb-2">
+                  Delivery Paused
+                </div>
+                <div className="text-sm text-muted-foreground mb-6">
+                  You won't receive new offers
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="text-3xl font-bold text-green-600">
+                    ${todayEarnings.toFixed(2)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Today's Earnings • {formatTime(onlineTime)} online
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Resume/Stop Controls - Bottom */}
+            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-4">
+              <Button 
+                onClick={handleUnpause}
+                className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg"
+              >
+                <Play className="h-5 w-5 mr-2" />
+                Resume
+              </Button>
+              <Button 
+                onClick={handleGoOffline}
+                variant="outline"
+                className="bg-background/95 backdrop-blur-sm border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 px-8 py-4 text-lg font-semibold rounded-xl shadow-lg"
+              >
+                <Square className="h-5 w-5 mr-2" />
+                Stop
+              </Button>
+            </div>
+          </>
+        )}
+
+      </div>
 
       {/* Order Assignment Modal */}
       <OrderAssignmentModal
@@ -774,56 +390,22 @@ export const MobileDriverDashboard: React.FC = () => {
         onClose={() => {
           setShowOrderModal(false);
           setCurrentOrderAssignment(null);
-          setDriverState('online_searching');
         }}
         assignment={currentOrderAssignment}
         onAccept={(assignment) => {
-          setActiveDelivery({
-            ...assignment,
-            order_id: assignment.order_id,
-            assignment_id: assignment.assignment_id,
-            restaurant_name: assignment.restaurant_name,
-            pickup_address: assignment.pickup_address,
-            dropoff_address: assignment.dropoff_address,
-            payout_cents: assignment.payout_cents,
-            distance_mi: assignment.distance_mi
-          });
           setDriverState('on_delivery');
           setShowOrderModal(false);
           setCurrentOrderAssignment(null);
+          toast({
+            title: "Order Accepted!",
+            description: "Navigate to the restaurant to pick up the order.",
+          });
         }}
         onDecline={(assignment) => {
-          setDriverState('online_searching');
           setShowOrderModal(false);
           setCurrentOrderAssignment(null);
         }}
       />
-
-      {/* Offer Card (Legacy) */}
-      {currentOffer && driverState === 'offer_presented' && !currentAssignment && (
-        <OfferCard
-          offer={currentOffer}
-          onAccept={(id) => {
-            setDriverState('on_delivery');
-            setCurrentOffer(null);
-          }}
-          onDecline={(id) => {
-            setCurrentOffer(null);
-            setDriverState('online_searching');
-          }}
-        />
-      )}
-
-      {/* End Time Sheet */}
-      <EndTimeSheet
-        isOpen={showEndTimeSheet}
-        onClose={() => setShowEndTimeSheet(false)}
-        onGoOnline={handleGoOnline}
-      />
-
-      {/* Bottom Navigation */}
-      <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      </div>
     </div>
   );
 };
