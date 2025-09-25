@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Settings, Pause, Play, Square, Clock, Car, DollarSign } from 'lucide-react';
+import { MapPin, Settings, Pause, Play, Square, Clock, Car, DollarSign, Calendar, Bell, User, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { OrderAssignmentModal } from './OrderAssignmentModal';
+import { ScheduleSection } from './ScheduleSection';
+import { EarningsSection } from './EarningsSection';
+import { BottomNavigation } from './BottomNavigation';
+import { ActiveDeliveryFlow } from './ActiveDeliveryFlow';
+import { PushNotificationSetup } from './PushNotificationSetup';
 import MapboxMap from '@/components/Map';
 
 type DriverState = 'offline' | 'online_searching' | 'online_paused' | 'on_delivery';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
 type EarningMode = 'perHour' | 'perOffer';
+type TabType = 'home' | 'schedule' | 'earnings' | 'notifications' | 'account';
 
 interface OrderAssignment {
   assignment_id: string;
@@ -28,14 +35,17 @@ export const MobileDriverDashboard: React.FC = () => {
   const [driverState, setDriverState] = useState<DriverState>('offline');
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleType>('car');
   const [earningMode, setEarningMode] = useState<EarningMode>('perHour');
+  const [activeTab, setActiveTab] = useState<TabType>('home');
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [onlineTime, setOnlineTime] = useState(0);
   const [currentCity, setCurrentCity] = useState('Toledo');
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [currentOrderAssignment, setCurrentOrderAssignment] = useState<OrderAssignment | null>(null);
+  const [activeDelivery, setActiveDelivery] = useState<any>(null);
   const [todayEarnings, setTodayEarnings] = useState(0);
   const [tripCount, setTripCount] = useState(0);
+  const [isAvailable, setIsAvailable] = useState(false);
   
   const { toast } = useToast();
 
@@ -201,6 +211,49 @@ export const MobileDriverDashboard: React.FC = () => {
     }
   };
 
+  // Render different tabs
+  if (activeTab === 'schedule') {
+    return (
+      <>
+        <ScheduleSection />
+        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      </>
+    );
+  }
+
+  if (activeTab === 'earnings') {
+    return (
+      <>
+        <EarningsSection />
+        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      </>
+    );
+  }
+
+  if (activeTab === 'notifications') {
+    return (
+      <>
+        <PushNotificationSetup />
+        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      </>
+    );
+  }
+
+  if (activeTab === 'account') {
+    return (
+      <>
+        <div className="min-h-screen bg-background pb-16 p-4">
+          <div className="text-center py-20">
+            <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Account Settings</h2>
+            <p className="text-muted-foreground">Profile and account management coming soon</p>
+          </div>
+        </div>
+        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      </>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Full Screen Map Background */}
@@ -236,12 +289,26 @@ export const MobileDriverDashboard: React.FC = () => {
         {/* OFFLINE STATE */}
         {driverState === 'offline' && (
           <>
-            {/* Header */}
+            {/* Header with Availability Toggle */}
             <div className="absolute top-0 left-0 right-0 bg-background/95 backdrop-blur-sm shadow-sm">
               <div className="flex items-center justify-between p-4">
-                <Badge variant="outline" className="text-orange-600 border-orange-600">
-                  Offline
-                </Badge>
+                <div className="flex items-center gap-3">
+                  <Badge variant="outline" className="text-orange-600 border-orange-600">
+                    Offline
+                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Available</span>
+                    <Switch
+                      checked={isAvailable}
+                      onCheckedChange={(checked) => {
+                        setIsAvailable(checked);
+                        if (checked) {
+                          handleGoOnline();
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
                 <div className="flex items-center gap-3 text-sm text-muted-foreground">
                   <span>{currentCity}</span>
                   <Settings className="h-5 w-5" />
@@ -249,26 +316,31 @@ export const MobileDriverDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Offline Controls - Bottom */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background/95 to-transparent px-4 py-8">
-              {/* Earnings Display */}
-              <div className="bg-background/95 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-border/20 mb-6">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-orange-600 mb-2">
-                    ${todayEarnings.toFixed(2)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Today's Earnings • {tripCount} trips
-                  </div>
+            {/* Quick Stats */}
+            <div className="absolute top-20 left-4 right-4 z-10">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-background/90 backdrop-blur-sm rounded-xl p-3 text-center border border-border/20">
+                  <div className="text-lg font-bold text-green-600">${todayEarnings.toFixed(2)}</div>
+                  <div className="text-xs text-muted-foreground">Today</div>
+                </div>
+                <div className="bg-background/90 backdrop-blur-sm rounded-xl p-3 text-center border border-border/20">
+                  <div className="text-lg font-bold">{tripCount}</div>
+                  <div className="text-xs text-muted-foreground">Trips</div>
+                </div>
+                <div className="bg-background/90 backdrop-blur-sm rounded-xl p-3 text-center border border-border/20">
+                  <div className="text-lg font-bold">{formatTime(onlineTime)}</div>
+                  <div className="text-xs text-muted-foreground">Online</div>
                 </div>
               </div>
+            </div>
 
-              {/* Go Online Button */}
+            {/* Main Action Button - Bottom */}
+            <div className="absolute bottom-20 left-4 right-4 z-10">
               <Button
                 onClick={handleGoOnline}
-                className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg rounded-xl"
+                className="w-full h-16 text-xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg rounded-2xl"
               >
-                Go Online
+                🚀 Go Online
               </Button>
               
               <div className="text-center mt-3">
@@ -302,7 +374,7 @@ export const MobileDriverDashboard: React.FC = () => {
             </div>
 
             {/* Controls - Bottom */}
-            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
+            <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2">
               <Button 
                 onClick={handleGoOffline}
                 variant="outline"
@@ -362,7 +434,7 @@ export const MobileDriverDashboard: React.FC = () => {
             </div>
 
             {/* Resume/Stop Controls - Bottom */}
-            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-4">
+            <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 flex gap-4">
               <Button 
                 onClick={handleUnpause}
                 className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg"
@@ -382,6 +454,30 @@ export const MobileDriverDashboard: React.FC = () => {
           </>
         )}
 
+        {/* ON DELIVERY STATE */}
+        {driverState === 'on_delivery' && activeDelivery && (
+          <ActiveDeliveryFlow
+            orderDetails={{
+              restaurant_name: activeDelivery.restaurant_name || 'Restaurant',
+              pickup_address: activeDelivery.pickup_address || 'Pickup Address',
+              dropoff_address: activeDelivery.dropoff_address || 'Delivery Address',
+              customer_name: activeDelivery.customer_name,
+              customer_phone: activeDelivery.customer_phone,
+              delivery_notes: activeDelivery.delivery_notes,
+              payout_cents: activeDelivery.payout_cents || 0,
+              estimated_time: activeDelivery.estimated_time || 30
+            }}
+            onCompleteDelivery={() => {
+              setActiveDelivery(null);
+              setDriverState('online_searching');
+              toast({
+                title: "Delivery Complete!",
+                description: "Great job! Looking for your next order.",
+              });
+            }}
+          />
+        )}
+
       </div>
 
       {/* Order Assignment Modal */}
@@ -393,19 +489,28 @@ export const MobileDriverDashboard: React.FC = () => {
         }}
         assignment={currentOrderAssignment}
         onAccept={(assignment) => {
+          setActiveDelivery({
+            ...assignment,
+            order_id: assignment.order_id,
+            assignment_id: assignment.assignment_id,
+            restaurant_name: assignment.restaurant_name,
+            pickup_address: assignment.pickup_address,
+            dropoff_address: assignment.dropoff_address,
+            payout_cents: assignment.payout_cents,
+            distance_mi: assignment.distance_mi
+          });
           setDriverState('on_delivery');
           setShowOrderModal(false);
           setCurrentOrderAssignment(null);
-          toast({
-            title: "Order Accepted!",
-            description: "Navigate to the restaurant to pick up the order.",
-          });
         }}
         onDecline={(assignment) => {
           setShowOrderModal(false);
           setCurrentOrderAssignment(null);
         }}
       />
+
+      {/* Bottom Navigation */}
+      <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   );
 };

@@ -1,8 +1,8 @@
 import React from 'react';
-import { Home, Calendar, User, Star, DollarSign } from 'lucide-react';
+import { Home, Calendar, User, Bell, DollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type TabType = 'main' | 'schedule' | 'account' | 'ratings' | 'earnings';
+type TabType = 'home' | 'schedule' | 'earnings' | 'notifications' | 'account';
 
 interface BottomNavigationProps {
   activeTab: TabType;
@@ -10,11 +10,11 @@ interface BottomNavigationProps {
 }
 
 const tabs = [
-  { id: 'main' as const, label: 'Main', icon: Home },
+  { id: 'home' as const, label: 'Home', icon: Home },
   { id: 'schedule' as const, label: 'Schedule', icon: Calendar },
-  { id: 'account' as const, label: 'Account', icon: User },
-  { id: 'ratings' as const, label: 'Ratings', icon: Star },
   { id: 'earnings' as const, label: 'Earnings', icon: DollarSign },
+  { id: 'notifications' as const, label: 'Alerts', icon: Bell },
+  { id: 'account' as const, label: 'Account', icon: User },
 ];
 
 export const BottomNavigation: React.FC<BottomNavigationProps> = ({
