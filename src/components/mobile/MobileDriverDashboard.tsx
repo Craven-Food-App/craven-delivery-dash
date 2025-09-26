@@ -337,7 +337,7 @@ export const MobileDriverDashboard: React.FC = () => {
             </div>
 
             {/* Content Container */}
-            <div className="flex flex-col justify-end h-full px-4 pb-4 space-y-4">
+            <div className="flex flex-col justify-end h-full px-4 pb-7 space-y-4">
               {/* Main Action Button */}
               <Button onClick={handleGoOnline} className="w-full h-12 text-lg font-bold bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg rounded-2xl">
                 CRAVE NOW
@@ -432,7 +432,7 @@ export const MobileDriverDashboard: React.FC = () => {
             </div>
 
             {/* Popular Times Chart - Bottom */}
-            <div className="absolute bottom-4 left-4 right-4 z-20">
+            <div className="absolute bottom-7 left-4 right-4 z-20">
               <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/10">
                 <div className="flex items-center justify-between mb-3">
                   <div>
