@@ -338,13 +338,15 @@ export const MobileDriverDashboard: React.FC = () => {
 
             {/* Content Container */}
             <div className="flex flex-col justify-end h-full px-4 pb-7 space-y-4 pointer-events-auto">
-              {/* Main Action Button */}
-              <Button onClick={handleGoOnline} className="w-full h-12 text-lg font-bold bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg rounded-2xl">
-                CRAVE NOW
-              </Button>
-
-              {/* Popular Times Chart */}
+              {/* Popular Times Chart with CRAVE NOW Button */}
               <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/10">
+                {/* Main Action Button - Centered at top */}
+                <div className="flex justify-center mb-4">
+                  <Button onClick={handleGoOnline} className="w-full h-12 text-lg font-bold bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg rounded-2xl">
+                    CRAVE NOW
+                  </Button>
+                </div>
+                
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <h3 className="text-base font-semibold text-foreground">Popular offer times: Today</h3>
