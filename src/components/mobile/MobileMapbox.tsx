@@ -118,11 +118,21 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
         dragPan: true,
         keyboard: true,
         doubleClickZoom: true,
-        touchZoomRotate: true
+        touchZoomRotate: true,
+        cooperativeGestures: false,
+        pitchWithRotate: true,
+        bearingSnap: 7
       });
 
+      // Explicitly enable interactions (safety on some mobile browsers/iframes)
+      map.current.dragPan.enable();
+      map.current.scrollZoom.enable();
+      map.current.keyboard.enable();
+      map.current.doubleClickZoom.enable();
+      map.current.touchZoomRotate.enable();
+
       // Add navigation controls
-      map.current.addControl(new window.mapboxgl.NavigationControl(), 'top-right');
+      map.current.addControl(new window.mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
 
       // Handle map load events
       map.current.on('load', () => {
@@ -269,6 +279,36 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
             )}
           </div>
         )}
+      </div>
+
+      {/* Map Controls: zoom and recenter */}
+      <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-2 pointer-events-auto">
+        <button
+          onClick={() => map.current && map.current.zoomIn()}
+          className="p-3 rounded-full shadow-lg border bg-card text-foreground hover:bg-accent transition"
+          aria-label="Zoom in"
+        >
+          +
+        </button>
+        <button
+          onClick={() => map.current && map.current.zoomOut()}
+          className="p-3 rounded-full shadow-lg border bg-card text-foreground hover:bg-accent transition"
+          aria-label="Zoom out"
+        >
+          −
+        </button>
+        <button
+          onClick={() => {
+            if (location && map.current) {
+              const { longitude, latitude } = location;
+              map.current.flyTo({ center: [longitude, latitude], zoom: 15, duration: 800, bearing: 0 });
+            }
+          }}
+          className="p-3 rounded-full shadow-lg border bg-primary text-primary-foreground hover:opacity-90 transition"
+          aria-label="Snap to current location"
+        >
+          ⊙
+        </button>
       </div>
 
       <div 

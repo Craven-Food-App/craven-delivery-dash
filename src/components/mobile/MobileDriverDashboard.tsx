@@ -354,13 +354,13 @@ export const MobileDriverDashboard: React.FC = () => {
       )}
 
       {/* Main Content Overlay - Constrained above bottom nav */}
-      <div className="absolute inset-0 bottom-20 z-10 flex flex-col">
+      <div className="absolute inset-0 bottom-20 z-10 flex flex-col pointer-events-none">
         
         {/* OFFLINE STATE */}
         {driverState === 'offline' && (
           <>
             {/* Change Zone Button - Top Left */}
-            <div className="absolute top-4 left-4 z-20">
+            <div className="absolute top-4 left-4 z-20 pointer-events-auto">
               <Button 
                 variant="secondary" 
                 className="bg-card/95 backdrop-blur-sm text-foreground border border-border/20 shadow-sm rounded-xl px-3 py-2 text-sm font-medium"
@@ -423,7 +423,7 @@ export const MobileDriverDashboard: React.FC = () => {
         {driverState === 'online_searching' && (
           <>
             {/* Change Zone Button - Top Left */}
-            <div className="absolute top-4 left-4 z-20">
+            <div className="absolute top-4 left-4 z-20 pointer-events-auto">
               <Button 
                 variant="secondary" 
                 className="bg-card/95 backdrop-blur-sm text-foreground border border-border/20 shadow-sm rounded-xl px-3 py-2 text-sm font-medium"
@@ -433,7 +433,7 @@ export const MobileDriverDashboard: React.FC = () => {
             </div>
 
             {/* Pause Button - Top Right */}
-            <div className="absolute top-4 right-4 z-20">
+            <div className="absolute top-4 right-4 z-20 pointer-events-auto">
               <Button 
                 onClick={handlePause}
                 variant="ghost"
