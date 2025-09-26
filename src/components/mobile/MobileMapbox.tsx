@@ -289,8 +289,8 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
         )}
       </div>
 
-      {/* Map Controls: zoom and recenter */}
-      <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-2 pointer-events-auto">
+      {/* Map Controls: zoom and recenter - positioned next to change zone button */}
+      <div className="absolute top-4 left-20 z-20 flex flex-col gap-2 pointer-events-auto">
         <button
           onClick={() => map.current && map.current.zoomIn()}
           className="p-3 rounded-full shadow-lg border bg-card text-foreground hover:bg-accent transition"
