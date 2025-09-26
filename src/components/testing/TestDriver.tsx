@@ -83,7 +83,7 @@ export const TestDriver = () => {
         throw new Error('No restaurants found. Create a test restaurant first.');
       }
 
-      const { error } = await supabase
+      const { data: orderData, error } = await supabase
         .from('orders')
         .insert({
           restaurant_id: restaurants[0].id,
@@ -93,20 +93,51 @@ export const TestDriver = () => {
           delivery_fee_cents: 300,
           tip_cents: 500,
           total_cents: 3500,
+          payout_cents: 800, // Driver payout
+          distance_km: 3.5,
           order_status: 'pending',
+          pickup_address: {
+            street: '123 Restaurant Street',
+            city: 'Test City',
+            state: 'TX',
+            zip: '12345'
+          },
+          dropoff_address: {
+            street: '456 Customer Street',
+            city: 'Test City',
+            state: 'TX',
+            zip: '12345'
+          },
           delivery_address: {
-            street: '123 Test Street',
+            street: '456 Customer Street',
             city: 'Test City',
             state: 'TX',
             zip: '12345'
           }
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Trigger auto-assignment to notify drivers
+      if (orderData) {
+        try {
+          const { error: assignError } = await supabase.functions.invoke('auto-assign-orders', {
+            body: { orderId: orderData.id }
+          });
+          
+          if (assignError) {
+            console.error('Auto-assignment error:', assignError);
+          }
+        } catch (err) {
+          console.error('Failed to trigger auto-assignment:', err);
+        }
+      }
       
       toast({
         title: 'Test order created',
-        description: 'Added a test order ready for pickup',
+        description: 'Added a test order and notified available drivers',
       });
     } catch (error: any) {
       toast({

@@ -97,10 +97,25 @@ export const MobileDriverDashboard: React.FC = () => {
         })
         .eq('user_id', user.id);
 
-      // Get location
+      // Get location and update craver_locations table
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(async (position) => {
-          setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+          const location = { lat: position.coords.latitude, lng: position.coords.longitude };
+          setUserLocation(location);
+          
+          // Update driver location in database for auto-assignment
+          const { error: locationError } = await supabase
+            .from('craver_locations')
+            .upsert({
+              user_id: user.id,
+              lat: location.lat,
+              lng: location.lng,
+              updated_at: new Date().toISOString()
+            });
+
+          if (locationError) {
+            console.error('Error updating driver location:', locationError);
+          }
         });
       }
 
