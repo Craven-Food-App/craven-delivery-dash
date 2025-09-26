@@ -125,10 +125,6 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
-    height: 100vh;
-    height: 100dvh; /* Dynamic viewport height for modern browsers */
-    overflow: hidden;
-    overscroll-behavior: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-text-size-adjust: 100%;
@@ -166,11 +162,7 @@ All colors MUST be HSL.
       position: relative;
     }
 
-    #root {
-      height: 100vh;
-      height: 100dvh;
-      overflow: hidden;
-    }
+    /* Root fills available height, allows scrolling */
 
     /* Better button sizing for touch */
     button, [role="button"], .touch-manipulation {
