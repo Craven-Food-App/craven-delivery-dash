@@ -41,7 +41,10 @@ interface CraverProfile {
   profile_photo?: string;
 }
 
-export const AccountSection: React.FC = () => {
+export const AccountSection: React.FC<{
+  activeTab: 'home' | 'schedule' | 'earnings' | 'notifications' | 'account';
+  onTabChange: (tab: 'home' | 'schedule' | 'earnings' | 'notifications' | 'account') => void;
+}> = ({ activeTab, onTabChange }) => {
   const [profile, setProfile] = useState<CraverProfile | null>(null);
   const [driverStats, setDriverStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -210,7 +213,7 @@ export const AccountSection: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-16">
+    <div className="min-h-screen bg-background pb-20">
       <div className="max-w-md mx-auto p-4">
         <div className="border-l bg-muted/10 p-4 flex flex-col h-[calc(100vh-8rem)]">
           <Tabs defaultValue="profile" className="w-full h-full flex flex-col">
@@ -417,6 +420,32 @@ export const AccountSection: React.FC = () => {
               </Card>
             </TabsContent>
           </Tabs>
+        </div>
+      </div>
+
+      {/* Bottom Navigation - Import and use it */}
+      <div className="fixed bottom-0 left-0 right-0">
+        <div className="bg-card/95 backdrop-blur-sm border-t border-border/50 h-20 shadow-lg">
+          <div className="flex h-full">
+            {[
+              { id: 'home', label: 'Home', icon: '🏠' },
+              { id: 'schedule', label: 'Schedule', icon: '📅' },
+              { id: 'earnings', label: 'Earnings', icon: '💰' },
+              { id: 'notifications', label: 'Alerts', icon: '🔔' },
+              { id: 'account', label: 'Account', icon: '👤' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => onTabChange(tab.id as any)}
+                className={`flex-1 flex flex-col items-center justify-center py-2 px-1 h-full transition-all duration-200 ${
+                  activeTab === tab.id ? 'text-primary' : 'text-muted-foreground/70'
+                }`}
+              >
+                <span className="text-xl mb-1">{tab.icon}</span>
+                <span className="text-xs font-medium">{tab.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

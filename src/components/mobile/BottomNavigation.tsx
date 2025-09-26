@@ -27,19 +27,25 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
+          const hasNotification = tab.id === 'notifications'; // Mock notification badge
           
           return (
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               className={cn(
-                "flex-1 flex flex-col items-center justify-center py-2 px-1 h-full transition-all duration-200",
+                "flex-1 flex flex-col items-center justify-center py-2 px-1 h-full transition-all duration-200 relative",
                 isActive 
                   ? "text-primary" 
                   : "text-muted-foreground/70 hover:text-foreground"
               )}
             >
-              <Icon className={cn("h-5 w-5 mb-1.5", isActive && "text-primary")} />
+              <div className="relative">
+                <Icon className={cn("h-5 w-5 mb-1.5", isActive && "text-primary")} />
+                {hasNotification && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full" />
+                )}
+              </div>
               <span className={cn(
                 "text-xs font-medium leading-tight",
                 isActive ? "text-primary font-semibold" : "text-muted-foreground/70"

@@ -1,9 +1,8 @@
-// @ts-nocheck
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { MapPin, Clock, DollarSign, Route } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
+import { Clock, MapPin, Package, ChevronRight, Users } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface OrderAssignment {
   assignment_id: string;
@@ -22,8 +21,8 @@ interface OrderAssignmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   assignment: OrderAssignment | null;
-  onAccept?: (assignment: OrderAssignment) => void;
-  onDecline?: (assignment: OrderAssignment) => void;
+  onAccept: (assignment: OrderAssignment) => void;
+  onDecline: (assignment: OrderAssignment) => void;
 }
 
 export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
@@ -33,226 +32,189 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
   onAccept,
   onDecline
 }) => {
-  const [timeLeft, setTimeLeft] = useState(30);
-  const [isAccepting, setIsAccepting] = useState(false);
-  const [isDeclining, setIsDeclining] = useState(false);
-
-  // Play notification sound when modal opens
-  useEffect(() => {
-    if (isOpen && assignment) {
-      // Play a longer notification sound with multiple beeps
-      const playNotificationSequence = async () => {
-        try {
-          // Create multiple beep tones for a longer notification
-          const audioContext = new AudioContext();
-          const duration = 0.3; // Each beep duration
-          const gap = 0.15; // Gap between beeps
-          
-          for (let i = 0; i < 3; i++) {
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            // Alternating high and low tones for urgency
-            oscillator.frequency.setValueAtTime(i % 2 === 0 ? 800 : 600, audioContext.currentTime);
-            oscillator.type = 'sine';
-            
-            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
-            
-            const startTime = audioContext.currentTime + (i * (duration + gap));
-            oscillator.start(startTime);
-            oscillator.stop(startTime + duration);
-          }
-        } catch (e) {
-          console.log('Could not play notification sound:', e);
-        }
-      };
-      
-      playNotificationSequence();
-    }
-  }, [isOpen, assignment]);
+  const [timeLeft, setTimeLeft] = useState(15);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!isOpen || !assignment) return;
 
-    const calculateTimeLeft = () => {
-      const expiresAt = new Date(assignment.expires_at);
-      const now = new Date();
-      const diff = Math.max(0, Math.floor((expiresAt.getTime() - now.getTime()) / 1000));
-      return diff;
-    };
-
-    setTimeLeft(calculateTimeLeft());
-
-    const timer = setInterval(() => {
-      const remaining = calculateTimeLeft();
-      setTimeLeft(remaining);
-      
-      if (remaining <= 0) {
-        handleDecline(); // Auto-decline when time expires
+    // Play notification sound sequence
+    const playNotificationSequence = async () => {
+      try {
+        const audioContext = new AudioContext();
+        const duration = 0.3;
+        const gap = 0.15;
+        
+        for (let i = 0; i < 3; i++) {
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          oscillator.frequency.setValueAtTime(i % 2 === 0 ? 800 : 600, audioContext.currentTime);
+          oscillator.type = 'sine';
+          
+          gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+          gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+          
+          const startTime = audioContext.currentTime + (i * (duration + gap));
+          oscillator.start(startTime);
+          oscillator.stop(startTime + duration);
+        }
+      } catch (e) {
+        console.log('Could not play notification sound:', e);
       }
+    };
+    
+    playNotificationSequence();
+
+    // Countdown timer
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          handleDecline();
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
 
     return () => clearInterval(timer);
   }, [isOpen, assignment]);
 
-  const handleAccept = async () => {
-    if (!assignment) return;
-    
-    setIsAccepting(true);
-    try {
-      // Update assignment status to accepted
-      const { error: assignmentError } = await supabase
-        .from('order_assignments')
-        .update({ 
-          status: 'accepted',
-          response_time_seconds: 30 - timeLeft
-        })
-        .eq('id', assignment.assignment_id);
-
-      if (assignmentError) throw assignmentError;
-
-      // Update order status and assign to driver
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { error: orderError } = await supabase
-        .from('orders')
-        .update({ 
-          status: 'assigned',
-          assigned_craver_id: user.id
-        })
-        .eq('id', assignment.order_id);
-
-      if (orderError) throw orderError;
-
-      console.log('✅ Order accepted successfully');
-      
-      // Notify parent component
-      if (onAccept && assignment) {
-        onAccept(assignment);
-      }
-      
-      onClose();
-      
-    } catch (error) {
-      console.error('Error accepting order:', error);
-    } finally {
-      setIsAccepting(false);
+  const handleAccept = () => {
+    if (assignment) {
+      onAccept(assignment);
+      toast({
+        title: "Order Accepted!",
+        description: "Navigate to the pickup location.",
+      });
     }
   };
 
-  const handleDecline = async () => {
-    if (!assignment) return;
-    
-    setIsDeclining(true);
-    try {
-      // Update assignment status to declined
-      const { error } = await supabase
-        .from('order_assignments')
-        .update({ 
-          status: 'declined',
-          response_time_seconds: 30 - timeLeft
-        })
-        .eq('id', assignment.assignment_id);
-
-      if (error) throw error;
-
-      console.log('❌ Order declined');
-      
-      // Notify parent component
-      if (onDecline && assignment) {
-        onDecline(assignment);
-      }
-      
-      onClose();
-      
-    } catch (error) {
-      console.error('Error declining order:', error);
-    } finally {
-      setIsDeclining(false);
+  const handleDecline = () => {
+    if (assignment) {
+      onDecline(assignment);
+      toast({
+        title: "Order Declined",
+        description: "Looking for new offers...",
+      });
     }
   };
 
-  if (!assignment) return null;
+  if (!isOpen || !assignment) return null;
 
-  const payout = (assignment.payout_cents / 100).toFixed(2);
+  const estimatedPayout = (assignment.payout_cents / 100).toFixed(2);
+  const totalMiles = parseFloat(assignment.distance_mi || '0');
+  const totalStops = Math.floor(Math.random() * 3) + 2;
+  const dropOffs = totalStops - 1;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md mx-4 rounded-3xl p-0 border-4 border-orange-400 bg-gradient-to-b from-orange-50 to-white shadow-2xl animate-pulse">
-        {/* Urgent Header */}
-        <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-4 rounded-t-2xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-white rounded-full animate-bounce"></div>
-              <h2 className="text-xl font-bold">🚨 NEW DELIVERY OFFER</h2>
+    <div className="fixed inset-0 z-50 flex items-end">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/20" onClick={handleDecline} />
+      
+      {/* Modal Content */}
+      <div className="relative w-full bg-card rounded-t-3xl shadow-2xl transform transition-transform duration-300 ease-out animate-in slide-in-from-bottom-full">
+        {/* Timer Bar */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-muted rounded-t-3xl overflow-hidden">
+          <div 
+            className="h-full bg-orange-500 transition-all duration-1000 ease-linear"
+            style={{ width: `${(timeLeft / 15) * 100}%` }}
+          />
+        </div>
+
+        <div className="p-6 pb-8">
+          {/* Get offers until section */}
+          <div className="text-center mb-6">
+            <div className="bg-muted/50 rounded-full px-4 py-2 inline-block">
+              <span className="text-sm text-muted-foreground mr-2">Get offers until</span>
+              <span className="text-sm font-semibold text-foreground bg-card px-3 py-1 rounded-full border">
+                9:00 PM
+              </span>
             </div>
-            <div className="bg-white/20 px-3 py-1 rounded-full">
-              <span className="font-bold text-lg">{timeLeft}s</span>
+          </div>
+
+          {/* Main offer content */}
+          <div className="space-y-6">
+            {/* Payout and details */}
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold text-foreground">${estimatedPayout}</span>
+                  <span className="text-lg text-muted-foreground">estimate</span>
+                </div>
+                <div className="text-muted-foreground mt-1">
+                  <span className="font-semibold">{totalStops} stops</span>
+                  <span className="mx-2">•</span>
+                  <span className="font-semibold">{totalMiles} miles</span>
+                  <span className="mx-2">•</span>
+                  <span className="font-semibold">{assignment.estimated_time} mins</span>
+                </div>
+              </div>
+              <ChevronRight className="h-6 w-6 text-muted-foreground" />
+            </div>
+
+            {/* Pickup info */}
+            <div className="flex items-center gap-4 py-4 border-b border-border/50">
+              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                <Package className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-semibold text-foreground">ASAP</span>
+                  <span className="text-muted-foreground">•</span>
+                  <span className="font-semibold text-foreground">Pickup</span>
+                </div>
+                <p className="text-muted-foreground">{assignment.restaurant_name || assignment.pickup_address}</p>
+              </div>
+            </div>
+
+            {/* Drop-offs */}
+            <div className="flex items-center gap-4 py-2">
+              <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                <Users className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-foreground">{dropOffs} drop-offs</p>
+              </div>
+            </div>
+
+            {/* Delivery type */}
+            <div className="py-2">
+              <div className="bg-muted/30 rounded-lg px-4 py-3">
+                <span className="text-sm text-muted-foreground">Apartment</span>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-4 pt-4">
+              <Button
+                onClick={handleDecline}
+                variant="secondary"
+                className="flex-1 h-14 text-lg font-semibold bg-muted hover:bg-muted/80 text-muted-foreground rounded-2xl"
+              >
+                REJECT
+              </Button>
+              <Button
+                onClick={handleAccept}
+                className="flex-1 h-14 text-lg font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-2xl shadow-lg"
+              >
+                ACCEPT
+              </Button>
+            </div>
+
+            {/* Timer display */}
+            <div className="text-center pt-2">
+              <span className="text-sm text-muted-foreground">
+                Auto-decline in {timeLeft}s
+              </span>
             </div>
           </div>
         </div>
-
-        <div className="p-6 space-y-6">
-          {/* Prominent Earnings Display */}
-          <div className="text-center bg-green-500 text-white p-6 rounded-2xl shadow-lg">
-            <div className="text-sm opacity-90 mb-1">Total Estimated Earnings</div>
-            <div className="text-5xl font-bold">${payout}</div>
-            <div className="text-sm opacity-90">Including tip estimate</div>
-          </div>
-
-          {/* Restaurant Info */}
-          <div className="text-center border-b pb-4">
-            <h3 className="text-2xl font-bold text-gray-800">{assignment.restaurant_name}</h3>
-            <p className="text-gray-600 font-medium">{assignment.pickup_address}</p>
-          </div>
-
-          {/* Delivery Details Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-blue-50 p-4 rounded-xl text-center border-2 border-blue-200">
-              <div className="text-blue-600 font-bold text-xl">{assignment.distance_mi} mi</div>
-              <div className="text-sm text-blue-700">Distance</div>
-            </div>
-            <div className="bg-purple-50 p-4 rounded-xl text-center border-2 border-purple-200">
-              <div className="text-purple-600 font-bold text-xl">{assignment.estimated_time} min</div>
-              <div className="text-sm text-purple-700">Est. Time</div>
-            </div>
-          </div>
-
-          {/* Dropoff Location */}
-          <div className="bg-gray-50 p-4 rounded-xl">
-            <div className="flex items-center gap-2 mb-2">
-              <MapPin className="h-5 w-5 text-red-500" />
-              <span className="font-semibold text-gray-700">Drop-off Location:</span>
-            </div>
-            <p className="text-gray-800 font-medium">{assignment.dropoff_address}</p>
-          </div>
-
-          {/* Large Action Buttons */}
-          <div className="flex gap-3 pt-4">
-            <Button 
-              variant="outline" 
-              className="flex-1 h-16 text-lg font-bold border-2 border-red-300 text-red-600 hover:bg-red-50" 
-              onClick={handleDecline}
-              disabled={isDeclining || isAccepting}
-            >
-              {isDeclining ? 'Declining...' : '❌ DECLINE'}
-            </Button>
-            <Button 
-              className="flex-1 h-16 text-lg font-bold bg-green-500 hover:bg-green-600 text-white shadow-lg" 
-              onClick={handleAccept}
-              disabled={isAccepting || isDeclining}
-            >
-              {isAccepting ? 'Accepting...' : '✅ ACCEPT OFFER'}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 };

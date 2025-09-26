@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Settings, Pause, Play, Square, Clock, Car, DollarSign, Calendar, Bell, User, Star } from 'lucide-react';
+import { MapPin, Settings, Pause, Play, Square, Clock, Car, DollarSign, Calendar, Bell, User, Star, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -11,7 +11,7 @@ import { EarningsSection } from './EarningsSection';
 import { BottomNavigation } from './BottomNavigation';
 import { ActiveDeliveryFlow } from './ActiveDeliveryFlow';
 import { PushNotificationSetup } from './PushNotificationSetup';
-import { PopularTimesChart } from './PopularTimesChart';
+import { AccountSection } from './AccountSection';
 import MapboxMap from '@/components/Map';
 
 type DriverState = 'offline' | 'online_searching' | 'online_paused' | 'on_delivery';
@@ -242,16 +242,7 @@ export const MobileDriverDashboard: React.FC = () => {
 
   if (activeTab === 'account') {
     return (
-      <>
-        <div className="min-h-screen bg-background pb-16 p-4">
-          <div className="text-center py-20">
-            <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Account Settings</h2>
-            <p className="text-muted-foreground">Profile and account management coming soon</p>
-          </div>
-        </div>
-        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      </>
+      <AccountSection activeTab={activeTab} onTabChange={setActiveTab} />
     );
   }
 
@@ -312,7 +303,41 @@ export const MobileDriverDashboard: React.FC = () => {
 
             {/* Popular Times Chart */}
             <div className="absolute bottom-16 left-6 right-6 z-20">
-              <PopularTimesChart />
+              <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-border/10">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">Popular offer times: Today</h3>
+                    <p className="text-sm text-muted-foreground">Explore additional days to drive this week.</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </div>
+                
+                <div className="flex items-end justify-between h-24 gap-2">
+                  {[
+                    { time: '6a', value: 25 },
+                    { time: '9a', value: 45 },
+                    { time: '12p', value: 85 },
+                    { time: '3p', value: 60 },
+                    { time: '6p', value: 95 },
+                    { time: '9p', value: 75 },
+                  ].map((data, index) => (
+                    <div key={data.time} className="flex flex-col items-center flex-1">
+                      <div 
+                        className={`w-full rounded-t-sm transition-all duration-300 ${
+                          index === 4 ? 'bg-primary' : 'bg-muted'
+                        }`}
+                        style={{ 
+                          height: `${(data.value / 95) * 100}%`,
+                          minHeight: '8px'
+                        }}
+                      />
+                      <span className="text-xs text-muted-foreground mt-2 font-medium">
+                        {data.time}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </>
         )}
@@ -369,7 +394,41 @@ export const MobileDriverDashboard: React.FC = () => {
 
             {/* Popular Times Chart */}
             <div className="absolute bottom-16 left-6 right-6 z-20">
-              <PopularTimesChart />
+              <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-border/10">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">Popular offer times: Today</h3>
+                    <p className="text-sm text-muted-foreground">Explore additional days to drive this week.</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </div>
+                
+                <div className="flex items-end justify-between h-24 gap-2">
+                  {[
+                    { time: '6a', value: 25 },
+                    { time: '9a', value: 45 },
+                    { time: '12p', value: 85 },
+                    { time: '3p', value: 60 },
+                    { time: '6p', value: 95 },
+                    { time: '9p', value: 75 },
+                  ].map((data, index) => (
+                    <div key={data.time} className="flex flex-col items-center flex-1">
+                      <div 
+                        className={`w-full rounded-t-sm transition-all duration-300 ${
+                          index === 4 ? 'bg-primary' : 'bg-muted'
+                        }`}
+                        style={{ 
+                          height: `${(data.value / 95) * 100}%`,
+                          minHeight: '8px'
+                        }}
+                      />
+                      <span className="text-xs text-muted-foreground mt-2 font-medium">
+                        {data.time}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Pause Button - Top Right */}
