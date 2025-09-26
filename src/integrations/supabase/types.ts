@@ -382,13 +382,54 @@ export type Database = {
           },
         ]
       }
+      driver_location_history: {
+        Row: {
+          accuracy: number | null
+          created_at: string
+          driver_id: string
+          heading: number | null
+          id: string
+          latitude: number
+          longitude: number
+          speed: number | null
+          timestamp: string
+        }
+        Insert: {
+          accuracy?: number | null
+          created_at?: string
+          driver_id: string
+          heading?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          speed?: number | null
+          timestamp?: string
+        }
+        Update: {
+          accuracy?: number | null
+          created_at?: string
+          driver_id?: string
+          heading?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          speed?: number | null
+          timestamp?: string
+        }
+        Relationships: []
+      }
       driver_profiles: {
         Row: {
           created_at: string | null
+          current_latitude: number | null
+          current_longitude: number | null
+          heading: number | null
           id: string
           is_available: boolean | null
+          last_location_update: string | null
           license_plate: string | null
           rating: number | null
+          speed: number | null
           status: string | null
           total_deliveries: number | null
           updated_at: string | null
@@ -400,10 +441,15 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          current_latitude?: number | null
+          current_longitude?: number | null
+          heading?: number | null
           id?: string
           is_available?: boolean | null
+          last_location_update?: string | null
           license_plate?: string | null
           rating?: number | null
+          speed?: number | null
           status?: string | null
           total_deliveries?: number | null
           updated_at?: string | null
@@ -415,10 +461,15 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          current_latitude?: number | null
+          current_longitude?: number | null
+          heading?: number | null
           id?: string
           is_available?: boolean | null
+          last_location_update?: string | null
           license_plate?: string | null
           rating?: number | null
+          speed?: number | null
           status?: string | null
           total_deliveries?: number | null
           updated_at?: string | null
