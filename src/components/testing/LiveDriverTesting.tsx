@@ -193,29 +193,8 @@ export const LiveDriverTesting = () => {
 
       if (orderError) throw orderError;
 
-      // Add test items to the order
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert([
-          {
-            order_id: order.id,
-            menu_item_id: null,
-            name: "🧪 Test Burger",
-            price_cents: 1599,
-            quantity: 1
-          },
-          {
-            order_id: order.id,  
-            menu_item_id: null,
-            name: "🧪 Test Fries",
-            price_cents: 899,
-            quantity: 1
-          }
-        ]);
-
-      if (itemsError) {
-        console.warn('Failed to create order items:', itemsError);
-      }
+      // Skipping order_items insertion for test orders since schema requires valid menu_item_id.
+      // The totals are set directly on the order for testing purposes.
 
       // Manually assign to selected driver
       const { error: assignError } = await supabase
@@ -231,9 +210,9 @@ export const LiveDriverTesting = () => {
       // Send push notification to the driver
       const { error: notificationError } = await supabase.functions.invoke('send-push-notification', {
         body: {
-          driverId: selectedDriver,
+          userId: selectedDriver,
           title: '🧪 Test Order Assignment',
-          body: 'Crave\'N would like to send you a test order for testing purposes. This helps us improve our service!',
+          message: "Crave'N would like to send you a test order for testing purposes. This helps us improve our service!",
           data: {
             orderId: order.id,
             type: 'test_order_assignment',
@@ -246,16 +225,32 @@ export const LiveDriverTesting = () => {
         console.warn('Failed to send push notification:', notificationError);
       }
 
-      // Trigger real-time update
+      // Trigger real-time update to the specific driver's channel so the modal opens immediately
+      const distanceKm = 3.2;
+      const estimatedTime = Math.ceil(distanceKm * 3); // rough estimate
+      const expiresAt = new Date(Date.now() + 30_000).toISOString();
+
       await supabase
-        .channel('order_assignments')
+        .channel(`driver_${selectedDriver}`)
         .send({
           type: 'broadcast',
-          event: 'order_assigned',
+          event: 'order_assignment',
           payload: {
-            orderId: order.id,
-            driverId: selectedDriver,
-            isTestOrder: true
+            assignment_id: `${order.id}-test`,
+            order_id: order.id,
+            restaurant_name: restaurant.name || 'Test Restaurant',
+            pickup_address: {
+              street: restaurant.address || 'Pickup Address',
+              city: restaurant.city || '',
+              state: restaurant.state || '',
+              zip: restaurant.zip_code || ''
+            },
+            dropoff_address: order.delivery_address,
+            payout_cents: 500,
+            distance_km: distanceKm,
+            distance_mi: (distanceKm * 0.621371).toFixed(1),
+            expires_at: expiresAt,
+            estimated_time: estimatedTime
           }
         });
 
