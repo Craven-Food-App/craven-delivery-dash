@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Navigation, Clock, Phone, MessageCircle, Camera, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { DeliveryCamera } from './DeliveryCamera';
+import { supabase } from '@/integrations/supabase/client';
 
-type DeliveryStage = 'navigate_to_restaurant' | 'arrived_at_restaurant' | 'navigate_to_customer' | 'delivered';
+type DeliveryStage = 'navigate_to_restaurant' | 'arrived_at_restaurant' | 'navigate_to_customer' | 'capture_proof' | 'delivered';
 
 interface ActiveDeliveryProps {
   orderDetails: {
@@ -28,6 +30,8 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
 }) => {
   const [currentStage, setCurrentStage] = useState<DeliveryStage>('navigate_to_restaurant');
   const [showPhotoUpload, setShowPhotoUpload] = useState(false);
+  const [deliveryPhoto, setDeliveryPhoto] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const { toast } = useToast();
 
   // Helper function to format address
@@ -59,18 +63,71 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         });
         break;
       case 'navigate_to_customer':
-        console.log('Transitioning to delivered');
-        setCurrentStage('delivered');
+        console.log('Transitioning to capture_proof');
+        setCurrentStage('capture_proof');
         toast({
           title: "Arrived at Customer!",
-          description: "Complete the delivery.",
+          description: "Take a photo to complete delivery.",
         });
         break;
-      case 'delivered':
+      case 'capture_proof':
         console.log('Completing delivery');
         onCompleteDelivery();
         break;
+      case 'delivered':
+        console.log('Delivery already completed');
+        onCompleteDelivery();
+        break;
     }
+  };
+
+  const handlePhotoCapture = async (photoBlob: Blob) => {
+    setIsUploadingPhoto(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Create a unique filename
+      const fileName = `delivery-proof-${Date.now()}.jpg`;
+      const filePath = `${user.id}/${fileName}`;
+
+      // Upload to Supabase storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('craver-documents')
+        .upload(filePath, photoBlob, {
+          contentType: 'image/jpeg',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('craver-documents')
+        .getPublicUrl(filePath);
+
+      setDeliveryPhoto(publicUrl);
+      setCurrentStage('delivered');
+      
+      toast({
+        title: "Photo Uploaded!",
+        description: "Delivery proof captured successfully.",
+      });
+
+      // Complete delivery after successful photo upload
+      setTimeout(() => {
+        onCompleteDelivery();
+      }, 1500);
+
+    } catch (error: any) {
+      console.error('Error uploading photo:', error);
+      toast({
+        title: 'Upload Failed',
+        description: 'Failed to upload delivery photo. Please try again.',
+        variant: 'destructive'
+      });
+    }
+    setIsUploadingPhoto(false);
   };
 
   const renderNavigateToRestaurant = () => (
@@ -217,6 +274,14 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
     </div>
   );
 
+  const renderCaptureProof = () => (
+    <DeliveryCamera
+      onPhotoCapture={handlePhotoCapture}
+      onCancel={() => setCurrentStage('navigate_to_customer')}
+      isUploading={isUploadingPhoto}
+    />
+  );
+
   const renderDeliveredOrder = () => (
     <div className="space-y-4">
       {/* Stage Header */}
@@ -230,48 +295,29 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         <CardContent className="p-4 space-y-4">
           <div className="text-center">
             <h3 className="font-bold text-lg mb-2">Order Delivered!</h3>
-            <p className="text-muted-foreground">Confirm delivery completion</p>
+            <p className="text-muted-foreground">Delivery photo captured successfully</p>
           </div>
 
-          <div className="space-y-3">
-            <Button 
-              onClick={() => setShowPhotoUpload(!showPhotoUpload)}
-              variant="outline" 
-              className="w-full h-12"
-            >
-              <Camera className="h-5 w-5 mr-2" />
-              Take Photo (Optional)
-            </Button>
-            
-            {showPhotoUpload && (
-              <div className="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300 text-center">
-                <Camera className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                <p className="text-sm text-gray-600">Tap to take delivery photo</p>
-              </div>
-            )}
-            
-            <Button 
-              onClick={handleStageComplete}
-              className="w-full h-14 bg-green-500 hover:bg-green-600 text-white font-bold text-lg"
-            >
-              <CheckCircle className="h-6 w-6 mr-2" />
-              Complete Delivery
-            </Button>
-          </div>
+          {deliveryPhoto && (
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200 text-center">
+              <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-600" />
+              <p className="text-sm text-green-700">Proof of delivery uploaded</p>
+            </div>
+          )}
 
           {/* Earnings Display */}
           <div className="bg-green-50 p-4 rounded-lg border border-green-200 text-center">
-            <p className="text-sm text-green-700 mb-1">You've Earned</p>
-            <p className="text-2xl font-bold text-green-600">
-              ${(orderDetails.payout_cents / 100).toFixed(2)}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+             <p className="text-sm text-green-700 mb-1">You've Earned</p>
+             <p className="text-2xl font-bold text-green-600">
+               ${(orderDetails.payout_cents / 100).toFixed(2)}
+             </p>
+           </div>
+         </CardContent>
+       </Card>
+     </div>
+   );
 
-  const getCurrentStageComponent = () => {
+   const getCurrentStageComponent = () => {
     switch (currentStage) {
       case 'navigate_to_restaurant':
         return renderNavigateToRestaurant();
@@ -279,6 +325,8 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         return renderArrivedAtRestaurant();
       case 'navigate_to_customer':
         return renderNavigateToCustomer();
+      case 'capture_proof':
+        return renderCaptureProof();
       case 'delivered':
         return renderDeliveredOrder();
       default:
@@ -294,16 +342,16 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium">Delivery Progress</span>
             <span className="text-xs text-muted-foreground">
-              Step {['navigate_to_restaurant', 'arrived_at_restaurant', 'navigate_to_customer', 'delivered'].indexOf(currentStage) + 1} of 4
+              Step {['navigate_to_restaurant', 'arrived_at_restaurant', 'navigate_to_customer', 'capture_proof', 'delivered'].indexOf(currentStage) + 1} of 5
             </span>
           </div>
           <div className="flex gap-1">
-            {['navigate_to_restaurant', 'arrived_at_restaurant', 'navigate_to_customer', 'delivered'].map((stage, index) => (
+            {['navigate_to_restaurant', 'arrived_at_restaurant', 'navigate_to_customer', 'capture_proof', 'delivered'].map((stage, index) => (
               <div
                 key={stage}
                 className={`flex-1 h-2 rounded-full ${
-                  ['navigate_to_restaurant', 'arrived_at_restaurant', 'navigate_to_customer', 'delivered'].indexOf(currentStage) >= index
-                    ? 'bg-blue-500'
+                  ['navigate_to_restaurant', 'arrived_at_restaurant', 'navigate_to_customer', 'capture_proof', 'delivered'].indexOf(currentStage) >= index
+                    ? 'bg-orange-500'
                     : 'bg-gray-200'
                 }`}
               />
