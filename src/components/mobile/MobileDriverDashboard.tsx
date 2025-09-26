@@ -391,8 +391,8 @@ export const MobileDriverDashboard: React.FC = () => {
         {/* ONLINE SEARCHING STATE */}
         {driverState === 'online_searching' && <>
             {/* Change Zone Button - Top Left */}
-            <div className="absolute top-4 left-4 z-20 pointer-events-auto mx-0 my-[4px] py-0 px-0">
-              <Button variant="secondary" className="bg-card/95 backdrop-blur-sm text-foreground border border-border/20 shadow-sm rounded-xl px-3 py-2 text-sm font-medium mx-0 my-[525px]">
+            <div className="absolute top-4 left-4 z-20 pointer-events-auto py-0 my-[525px] mx-0 px-0">
+              <Button variant="secondary" className="bg-card/95 backdrop-blur-sm text-foreground border border-border/20 shadow-sm rounded-xl px-3 py-2 text-sm font-medium mx-0 my-0">
                 Change zone
               </Button>
             </div>
