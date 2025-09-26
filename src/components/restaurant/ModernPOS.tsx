@@ -291,10 +291,24 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
         // Don't fail the whole order if items fail to insert
       }
 
+      // Trigger auto-assignment for delivery orders to send to drivers
+      if (orderType === 'delivery') {
+        try {
+          console.log('Triggering auto-assignment for POS order:', newOrder.id);
+          await supabase.functions.invoke('auto-assign-orders', {
+            body: { orderId: newOrder.id }
+          });
+          console.log('Auto-assignment triggered successfully');
+        } catch (autoAssignError) {
+          console.error('Auto-assignment error:', autoAssignError);
+          // Don't fail the order if auto-assignment fails
+        }
+      }
+
       toast({
         title: "Order placed successfully!",
         description: `Order #${newOrder.id.slice(-8)} has been created. ${
-          orderType === 'delivery' ? 'Estimated delivery: 45 minutes' : 'Ready for pickup in 20 minutes'
+          orderType === 'delivery' ? 'Auto-assignment triggered for delivery' : 'Ready for pickup in 20 minutes'
         }. Payment: ${paymentMethod.toUpperCase()}`
       });
 

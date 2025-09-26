@@ -120,6 +120,20 @@ export const CartSidebar = ({
 
       if (orderError) throw orderError;
 
+      // Trigger auto-assignment for delivery orders to send to drivers
+      if (deliveryMethod === 'delivery') {
+        try {
+          console.log('Triggering auto-assignment for menu order:', newOrder.id);
+          await supabase.functions.invoke('auto-assign-orders', {
+            body: { orderId: newOrder.id }
+          });
+          console.log('Auto-assignment triggered successfully for menu order');
+        } catch (autoAssignError) {
+          console.error('Auto-assignment error:', autoAssignError);
+          // Don't fail the order if auto-assignment fails
+        }
+      }
+
       // Create Stripe payment session
       const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-payment', {
         body: {
