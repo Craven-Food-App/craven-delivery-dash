@@ -29,7 +29,6 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
   onCompleteDelivery
 }) => {
   const [currentStage, setCurrentStage] = useState<DeliveryStage>('navigate_to_restaurant');
-  const [showPhotoUpload, setShowPhotoUpload] = useState(false);
   const [deliveryPhoto, setDeliveryPhoto] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const { toast } = useToast();
@@ -71,11 +70,8 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         });
         break;
       case 'capture_proof':
-        console.log('Completing delivery');
-        onCompleteDelivery();
-        break;
       case 'delivered':
-        console.log('Delivery already completed');
+        console.log('Completing delivery');
         onCompleteDelivery();
         break;
     }
@@ -93,7 +89,7 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
 
       // Upload to Supabase storage
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('craver-documents')
+        .from('delivery-photos')
         .upload(filePath, photoBlob, {
           contentType: 'image/jpeg',
           upsert: false
@@ -103,7 +99,7 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('craver-documents')
+        .from('delivery-photos')
         .getPublicUrl(filePath);
 
       setDeliveryPhoto(publicUrl);
@@ -191,29 +187,28 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         <p className="opacity-90">Confirm pickup</p>
       </div>
 
-      {/* Restaurant Info */}
+      {/* Restaurant Card */}
       <Card>
         <CardContent className="p-4">
-          <div className="text-center mb-4">
-            <h3 className="font-bold text-xl">{orderDetails.restaurant_name}</h3>
-            <p className="text-muted-foreground">{orderDetails.pickup_address}</p>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+            <div>
+              <h3 className="font-bold text-lg">{orderDetails.restaurant_name}</h3>
+              <p className="text-muted-foreground">{formatAddress(orderDetails.pickup_address)}</p>
+            </div>
           </div>
           
-          <div className="space-y-3">
-            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-              <p className="text-sm text-yellow-800">
-                📋 Show this screen to restaurant staff to confirm pickup
-              </p>
-            </div>
-            
-            <Button 
-              onClick={handleStageComplete}
-              className="w-full h-12 bg-green-500 hover:bg-green-600 text-white font-bold text-lg"
-            >
-              <CheckCircle className="h-5 w-5 mr-2" />
-              Confirm Pickup
-            </Button>
+          <div className="bg-muted/30 rounded-lg p-3 mb-4">
+            <p className="text-sm text-muted-foreground">Order ready for pickup</p>
           </div>
+
+          <Button
+            onClick={handleStageComplete}
+            className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white"
+          >
+            <CheckCircle className="h-5 w-5 mr-2" />
+            Confirm Pickup
+          </Button>
         </CardContent>
       </Card>
     </div>
@@ -224,38 +219,38 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
       {/* Stage Header */}
       <div className="bg-green-500 text-white p-4 rounded-2xl text-center">
         <h2 className="text-xl font-bold">Navigate to Customer</h2>
-        <p className="opacity-90">Deliver your order</p>
+        <p className="opacity-90">Deliver the order</p>
       </div>
 
       {/* Customer Details */}
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-3 mb-3">
-            <MapPin className="h-5 w-5 text-red-500" />
-            <div>
-              <h3 className="font-bold text-lg">{orderDetails.customer_name || 'Customer'}</h3>
-              <p className="text-muted-foreground">{orderDetails.dropoff_address}</p>
+            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+            <div className="flex-1">
+              <h3 className="font-bold text-lg">
+                {orderDetails.customer_name || 'Customer'}
+              </h3>
+              <p className="text-muted-foreground">{formatAddress(orderDetails.dropoff_address)}</p>
             </div>
           </div>
-          
+
           {orderDetails.delivery_notes && (
-            <div className="bg-blue-50 p-3 rounded-lg mb-4 border border-blue-200">
-              <p className="text-sm text-blue-800">
-                <strong>Delivery Notes:</strong> {orderDetails.delivery_notes}
+            <div className="bg-blue-50 p-3 rounded-lg mb-4">
+              <p className="text-sm">
+                <span className="font-semibold">Note:</span> {orderDetails.delivery_notes}
               </p>
             </div>
           )}
-          
-          <div className="flex gap-2">
-            <Button className="flex-1" size="lg">
+
+          <div className="flex gap-2 mt-4">
+            <Button className="flex-1" size="lg" onClick={handleStageComplete}>
               <Navigation className="h-5 w-5 mr-2" />
-              Start Navigation
+              {orderDetails.isTestOrder ? 'Simulate Arrival' : 'Start Navigation'}
             </Button>
-            {orderDetails.customer_phone && (
-              <Button variant="outline" size="lg">
-                <Phone className="h-5 w-5" />
-              </Button>
-            )}
+            <Button variant="outline" size="lg">
+              <Phone className="h-5 w-5" />
+            </Button>
             <Button variant="outline" size="lg">
               <MessageCircle className="h-5 w-5" />
             </Button>
@@ -263,8 +258,8 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         </CardContent>
       </Card>
 
-      {/* Arrival Button */}
-      <Button 
+      {/* Manual Arrival Button */}
+      <Button
         onClick={handleStageComplete}
         variant="outline"
         className="w-full h-12 border-2 border-green-500 text-green-600 hover:bg-green-50"
@@ -286,38 +281,46 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
     <div className="space-y-4">
       {/* Stage Header */}
       <div className="bg-purple-500 text-white p-4 rounded-2xl text-center">
-        <h2 className="text-xl font-bold">Complete Delivery</h2>
-        <p className="opacity-90">Confirm delivery completion</p>
+        <h2 className="text-xl font-bold">Delivery Complete!</h2>
+        <p className="opacity-90">{orderDetails.isTestOrder ? 'Test completed' : 'Great job!'}</p>
       </div>
 
-      {/* Completion Options */}
+      {/* Completion Status */}
       <Card>
         <CardContent className="p-4 space-y-4">
           <div className="text-center">
-            <h3 className="font-bold text-lg mb-2">Order Delivered!</h3>
-            <p className="text-muted-foreground">Delivery photo captured successfully</p>
+            <CheckCircle className="h-12 w-12 mx-auto mb-3 text-green-600" />
+            <h3 className="font-bold text-lg mb-2">
+              {orderDetails.isTestOrder ? 'Test Delivery Complete!' : 'Order Delivered!'}
+            </h3>
+            <p className="text-muted-foreground">
+              {orderDetails.isTestOrder 
+                ? 'Thank you for participating in our test!'
+                : 'Delivery photo captured successfully'
+              }
+            </p>
           </div>
 
           {deliveryPhoto && (
             <div className="bg-green-50 p-4 rounded-lg border border-green-200 text-center">
-              <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-600" />
+              <CheckCircle className="h-6 w-6 mx-auto mb-2 text-green-600" />
               <p className="text-sm text-green-700">Proof of delivery uploaded</p>
             </div>
           )}
 
           {/* Earnings Display */}
           <div className="bg-green-50 p-4 rounded-lg border border-green-200 text-center">
-             <p className="text-sm text-green-700 mb-1">You've Earned</p>
-             <p className="text-2xl font-bold text-green-600">
-               ${(orderDetails.payout_cents / 100).toFixed(2)}
-             </p>
-           </div>
-         </CardContent>
-       </Card>
-     </div>
-   );
+            <p className="text-sm text-green-700 mb-1">You've Earned</p>
+            <p className="text-2xl font-bold text-green-600">
+              ${(orderDetails.payout_cents / 100).toFixed(2)}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
-   const getCurrentStageComponent = () => {
+  const getCurrentStageComponent = () => {
     switch (currentStage) {
       case 'navigate_to_restaurant':
         return renderNavigateToRestaurant();
