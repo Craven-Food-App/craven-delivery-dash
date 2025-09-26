@@ -213,8 +213,7 @@ export const LiveDriverTesting = () => {
         .from('orders')
         .update({
           driver_id: selectedDriver,
-          order_status: 'assigned',
-          assigned_at: new Date().toISOString()
+          order_status: 'assigned'
         })
         .eq('id', order.id);
 
