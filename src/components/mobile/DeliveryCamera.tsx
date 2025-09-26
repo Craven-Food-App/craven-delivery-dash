@@ -35,34 +35,88 @@ export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
         throw new Error('Camera not supported in this browser');
       }
 
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
+      // iOS-optimized camera constraints
+      const constraints = {
         video: {
-          facingMode: 'environment', // Use back camera if available
-          width: { ideal: 1280, max: 1920 },
-          height: { ideal: 720, max: 1080 }
-        }
-      });
+          facingMode: 'environment', // Use back camera
+          width: { ideal: 1920, max: 1920, min: 640 },
+          height: { ideal: 1080, max: 1080, min: 480 },
+          frameRate: { ideal: 30, max: 30 },
+          aspectRatio: { ideal: 16/9 }
+        },
+        audio: false // Explicitly disable audio for faster initialization
+      };
+
+      console.log('Requesting camera with constraints:', constraints);
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       
       console.log('Camera stream obtained:', mediaStream);
+      console.log('Video tracks:', mediaStream.getVideoTracks());
       
-      if (videoRef.current) {
+      if (videoRef.current && mediaStream) {
+        // Set video properties before assigning stream
+        videoRef.current.playsInline = true;
+        videoRef.current.muted = true;
+        videoRef.current.autoplay = true;
+        
+        // For iOS Safari compatibility
+        videoRef.current.setAttribute('playsinline', 'true');
+        videoRef.current.setAttribute('webkit-playsinline', 'true');
+        
+        // Assign stream and handle loading
         videoRef.current.srcObject = mediaStream;
         
-        // Wait for video to load
-        videoRef.current.onloadedmetadata = () => {
-          console.log('Video metadata loaded');
-          setIsCameraActive(true);
-          setIsLoading(false);
-        };
+        // Create promise to handle video loading
+        const videoLoadPromise = new Promise((resolve, reject) => {
+          const video = videoRef.current;
+          if (!video) {
+            reject(new Error('Video element not available'));
+            return;
+          }
+
+          const onLoadedMetadata = () => {
+            console.log('Video metadata loaded successfully');
+            console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
+            video.removeEventListener('loadedmetadata', onLoadedMetadata);
+            video.removeEventListener('error', onError);
+            resolve(true);
+          };
+
+          const onError = (error: any) => {
+            console.error('Video loading error:', error);
+            video.removeEventListener('loadedmetadata', onLoadedMetadata);
+            video.removeEventListener('error', onError);
+            reject(error);
+          };
+
+          video.addEventListener('loadedmetadata', onLoadedMetadata);
+          video.addEventListener('error', onError);
+          
+          // Timeout fallback for iOS
+          setTimeout(() => {
+            if (video.readyState >= 2) { // HAVE_CURRENT_DATA
+              console.log('Video ready via timeout fallback');
+              video.removeEventListener('loadedmetadata', onLoadedMetadata);
+              video.removeEventListener('error', onError);
+              resolve(true);
+            }
+          }, 2000);
+        });
+
+        // Wait for video to be ready
+        await videoLoadPromise;
         
-        // Handle video errors
-        videoRef.current.onerror = (error) => {
-          console.error('Video error:', error);
-          setCameraError('Error loading camera feed');
-          setIsLoading(false);
-        };
+        // Ensure video is playing
+        try {
+          await videoRef.current.play();
+          console.log('Video playback started');
+        } catch (playError) {
+          console.warn('Video play failed, but continuing:', playError);
+        }
         
         setStream(mediaStream);
+        setIsCameraActive(true);
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
@@ -87,26 +141,60 @@ export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
   }, [stream]);
 
   const capturePhoto = useCallback(() => {
-    if (!videoRef.current || !canvasRef.current) return;
+    if (!videoRef.current || !canvasRef.current || !isCameraActive) {
+      console.error('Video or canvas not ready for capture');
+      return;
+    }
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
 
-    if (!context) return;
+    if (!context || video.readyState < 2) {
+      console.error('Context not available or video not ready');
+      toast({
+        title: 'Camera Error',
+        description: 'Camera not ready. Please wait a moment and try again.',
+        variant: 'destructive'
+      });
+      return;
+    }
 
-    // Set canvas dimensions to match video
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    try {
+      // Set canvas dimensions to match video
+      canvas.width = video.videoWidth || 1280;
+      canvas.height = video.videoHeight || 720;
 
-    // Draw video frame to canvas
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      console.log('Capturing photo at dimensions:', canvas.width, 'x', canvas.height);
 
-    // Convert to data URL
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-    setCapturedPhoto(dataUrl);
-    stopCamera();
-  }, [stopCamera]);
+      // Clear canvas first
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw video frame to canvas (flip horizontally back to normal)
+      context.save();
+      context.scale(-1, 1);
+      context.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+      context.restore();
+
+      // Convert to data URL with high quality
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      
+      if (dataUrl && dataUrl !== 'data:,') {
+        setCapturedPhoto(dataUrl);
+        stopCamera();
+        console.log('Photo captured successfully');
+      } else {
+        throw new Error('Failed to capture photo data');
+      }
+    } catch (error) {
+      console.error('Error capturing photo:', error);
+      toast({
+        title: 'Capture Error',
+        description: 'Failed to capture photo. Please try again.',
+        variant: 'destructive'
+      });
+    }
+  }, [isCameraActive, stopCamera, toast]);
 
   const retakePhoto = useCallback(() => {
     setCapturedPhoto(null);
@@ -128,8 +216,15 @@ export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
   }, [capturedPhoto, onPhotoCapture]);
 
   React.useEffect(() => {
-    startCamera();
-    return () => stopCamera();
+    // Add small delay for iOS to ensure proper initialization
+    const initTimer = setTimeout(() => {
+      startCamera();
+    }, 100);
+    
+    return () => {
+      clearTimeout(initTimer);
+      stopCamera();
+    };
   }, [startCamera, stopCamera]);
 
   return (
@@ -172,7 +267,24 @@ export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
                       playsInline
                       muted
                       className="w-full h-full object-cover bg-black"
-                      style={{ transform: 'scaleX(-1)' }} // Mirror for better UX
+                      style={{ 
+                        transform: 'scaleX(-1)', // Mirror for better UX
+                        objectFit: 'cover'
+                      }}
+                      onLoadedData={() => {
+                        console.log('Video data loaded');
+                        if (!isCameraActive) {
+                          setIsCameraActive(true);
+                          setIsLoading(false);
+                        }
+                      }}
+                      onCanPlay={() => {
+                        console.log('Video can play');
+                        if (!isCameraActive) {
+                          setIsCameraActive(true);
+                          setIsLoading(false);
+                        }
+                      }}
                     />
                     {isCameraActive && (
                       <div className="absolute inset-0 pointer-events-none">
