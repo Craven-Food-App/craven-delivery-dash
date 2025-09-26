@@ -40,11 +40,18 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
   };
 
   const handleStageComplete = () => {
+    console.log('handleStageComplete called, current stage:', currentStage);
     switch (currentStage) {
       case 'navigate_to_restaurant':
+        console.log('Transitioning to arrived_at_restaurant');
         setCurrentStage('arrived_at_restaurant');
+        toast({
+          title: "Arrived at Restaurant!",
+          description: "Ready to pick up the order.",
+        });
         break;
       case 'arrived_at_restaurant':
+        console.log('Transitioning to navigate_to_customer');
         setCurrentStage('navigate_to_customer');
         toast({
           title: "Order Picked Up!",
@@ -52,9 +59,15 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         });
         break;
       case 'navigate_to_customer':
+        console.log('Transitioning to delivered');
         setCurrentStage('delivered');
+        toast({
+          title: "Arrived at Customer!",
+          description: "Complete the delivery.",
+        });
         break;
       case 'delivered':
+        console.log('Completing delivery');
         onCompleteDelivery();
         break;
     }
