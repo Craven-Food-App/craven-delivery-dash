@@ -15,7 +15,7 @@ import { NotificationPreferences } from './NotificationPreferences';
 import { AccountSection } from './AccountSection';
 import { TestCompletionModal } from './TestCompletionModal';
 import { useNotificationSettings } from '@/hooks/useNotificationSettings';
-import MapboxMap from '@/components/Map';
+import { MobileMapbox } from './MobileMapbox';
 
 type DriverState = 'offline' | 'online_searching' | 'online_paused' | 'on_delivery';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
@@ -332,11 +332,7 @@ export const MobileDriverDashboard: React.FC = () => {
     <div className="h-screen bg-background relative overflow-hidden">
       {/* Full Screen Map Background - Constrained above bottom nav */}
       <div className="absolute inset-0 bottom-20 z-0">
-        <MapboxMap 
-          orders={[]} 
-          activeOrder={null} 
-          onOrderClick={() => {}} 
-        />
+        <MobileMapbox />
       </div>
       
       {/* Status Bar - Top */}
