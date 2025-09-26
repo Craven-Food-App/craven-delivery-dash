@@ -15,7 +15,9 @@ import {
   Settings,
   PiggyBank,
   Users,
-  Award
+  Award,
+  HelpCircle,
+  Info
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +25,19 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
+
+interface DailyEarnings {
+  day: string;
+  date: number;
+  amount: number;
+}
+
+interface WeeklyEarnings {
+  weekStart: string;
+  weekEnd: string;
+  total: number;
+  isCurrentWeek: boolean;
+}
 
 interface EarningsData {
   today: {
@@ -33,13 +48,16 @@ interface EarningsData {
     tips: number;
     bonuses: number;
   };
-  week: {
+  currentWeek: {
     total: number;
     deliveries: number;
     activeTime: string;
     goal: number;
     daysWorked: number;
+    dailyEarnings: DailyEarnings[];
+    weekRange: string;
   };
+  weeklyHistory: WeeklyEarnings[];
   lifetime: {
     total: number;
     deliveries: number;
@@ -95,9 +113,24 @@ export const EarningsSection: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (!completedOrders || completedOrders.length === 0) {
+        const emptyDailyEarnings = Array.from({ length: 7 }, (_, i) => ({
+          day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
+          date: new Date().getDate() - new Date().getDay() + i,
+          amount: 0
+        }));
+        
         setEarningsData({
           today: { total: 0, deliveries: 0, activeTime: '0h 0m', basePay: 0, tips: 0, bonuses: 0 },
-          week: { total: 0, deliveries: 0, activeTime: '0h 0m', goal: 500, daysWorked: 0 },
+          currentWeek: { 
+            total: 0, 
+            deliveries: 0, 
+            activeTime: '0h 0m', 
+            goal: 500, 
+            daysWorked: 0,
+            dailyEarnings: emptyDailyEarnings,
+            weekRange: 'Current Week'
+          },
+          weeklyHistory: [],
           lifetime: { total: 0, deliveries: 0, totalTime: '0h 0m', avgPerDelivery: 0 },
           instantPay: { available: 0, dailyLimit: 500, used: 0 }
         });
@@ -113,13 +146,58 @@ export const EarningsSection: React.FC = () => {
       );
       const todayTotal = todayOrders.reduce((sum, order) => sum + order.payout_cents, 0) / 100;
 
-      // Calculate this week's earnings
+      // Calculate this week's earnings and daily breakdown
       const weekStart = new Date(today);
       weekStart.setDate(today.getDate() - today.getDay());
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      
       const weekOrders = completedOrders.filter(order => 
-        new Date(order.created_at) >= weekStart
+        new Date(order.created_at) >= weekStart && new Date(order.created_at) <= weekEnd
       );
       const weekTotal = weekOrders.reduce((sum, order) => sum + order.payout_cents, 0) / 100;
+
+      // Create daily earnings breakdown for current week
+      const dailyEarnings = Array.from({ length: 7 }, (_, i) => {
+        const day = new Date(weekStart);
+        day.setDate(weekStart.getDate() + i);
+        const dayOrders = weekOrders.filter(order => {
+          const orderDate = new Date(order.created_at);
+          return orderDate.toDateString() === day.toDateString();
+        });
+        const dayTotal = dayOrders.reduce((sum, order) => sum + order.payout_cents, 0) / 100;
+        
+        return {
+          day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
+          date: day.getDate(),
+          amount: dayTotal
+        };
+      });
+
+      // Calculate weekly history (last 8 weeks)
+      const weeklyHistory = [];
+      for (let i = 1; i <= 8; i++) {
+        const historyWeekStart = new Date(weekStart);
+        historyWeekStart.setDate(weekStart.getDate() - (i * 7));
+        const historyWeekEnd = new Date(historyWeekStart);
+        historyWeekEnd.setDate(historyWeekStart.getDate() + 6);
+        
+        const historyWeekOrders = completedOrders.filter(order => {
+          const orderDate = new Date(order.created_at);
+          return orderDate >= historyWeekStart && orderDate <= historyWeekEnd;
+        });
+        
+        const historyWeekTotal = historyWeekOrders.reduce((sum, order) => sum + order.payout_cents, 0) / 100;
+        
+        if (historyWeekTotal > 0) {
+          weeklyHistory.push({
+            weekStart: historyWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            weekEnd: historyWeekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            total: historyWeekTotal,
+            isCurrentWeek: false
+          });
+        }
+      }
 
       // Calculate lifetime earnings
       const lifetimeTotal = completedOrders.reduce((sum, order) => sum + order.payout_cents, 0) / 100;
@@ -142,15 +220,18 @@ export const EarningsSection: React.FC = () => {
           activeTime: `${todayOrders.length * 0.5}h ${(todayOrders.length * 30) % 60}m`,
           ...todayBreakdown
         },
-        week: {
+        currentWeek: {
           total: weekTotal,
           deliveries: weekOrders.length,
           activeTime: `${Math.floor(weekOrders.length * 0.5)}h ${(weekOrders.length * 30) % 60}m`,
           goal: 500,
           daysWorked: new Set(weekOrders.map(o => 
             new Date(o.created_at).toDateString()
-          )).size
+          )).size,
+          dailyEarnings: dailyEarnings,
+          weekRange: `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
         },
+        weeklyHistory: weeklyHistory,
         lifetime: {
           total: lifetimeTotal,
           deliveries: lifetimeDeliveries,
@@ -218,194 +299,139 @@ export const EarningsSection: React.FC = () => {
     );
   }
 
-  const weekProgress = earningsData.week.goal > 0 ? (earningsData.week.total / earningsData.week.goal) * 100 : 0;
+  const maxWeeklyEarning = Math.max(...earningsData.currentWeek.dailyEarnings.map(d => d.amount));
 
   return (
     <div className="min-h-screen bg-background pb-16">
-      <div className="max-w-md mx-auto p-4 space-y-4">
-        
-        {/* Today's Earnings Header */}
-        <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-green-100 text-sm">Today's Earnings</p>
-              <h1 className="text-4xl font-bold">${earningsData.today.total.toFixed(2)}</h1>
-              <div className="flex justify-center items-center gap-4 mt-3 text-green-100">
-                <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  <span className="text-sm">{earningsData.today.activeTime}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Target className="h-4 w-4" />
-                  <span className="text-sm">{earningsData.today.deliveries} deliveries</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-3">
-          <Button 
-            className="h-16 flex flex-col items-center justify-center gap-1"
-            variant="outline"
-          >
-            <Zap className="h-5 w-5 text-yellow-500" />
-            <span className="text-xs">Instant Pay</span>
-            <span className="text-xs font-bold">${earningsData.instantPay.available.toFixed(2)}</span>
-          </Button>
-          <Button 
-            className="h-16 flex flex-col items-center justify-center gap-1"
-            variant="outline"
-          >
-            <CreditCard className="h-5 w-5 text-blue-500" />
-            <span className="text-xs">Payment</span>
-            <span className="text-xs">Methods</span>
-          </Button>
+      {/* Earnings Header with Gradient Background */}
+      <div className="bg-gradient-to-b from-blue-600 to-blue-700 text-white">
+        <div className="flex items-center justify-between p-4 pt-12">
+          <h1 className="text-xl font-semibold">Earnings</h1>
+          <HelpCircle className="h-6 w-6" />
         </div>
+        
+        <div className="px-4 pb-6">
+          <p className="text-blue-100 text-center mb-6">Confirmed Earnings for Current Week</p>
+          
+          {/* Daily Earnings Bar Chart */}
+          <div className="flex items-end justify-center gap-2 mb-6 h-32">
+            {earningsData.currentWeek.dailyEarnings.map((day, index) => {
+              const height = maxWeeklyEarning > 0 ? (day.amount / maxWeeklyEarning) * 100 : 0;
+              const isToday = day.date === new Date().getDate();
+              
+              return (
+                <div key={index} className="flex flex-col items-center">
+                  <div className="relative flex flex-col items-center mb-2">
+                    {day.amount > 0 && (
+                      <span className="text-white text-xs font-medium mb-1">
+                        ${day.amount.toFixed(2)}
+                      </span>
+                    )}
+                    <div 
+                      className={`w-8 ${day.amount > 0 ? 'bg-green-400' : 'bg-blue-500/30'} rounded-t transition-all duration-300`}
+                      style={{ height: `${Math.max(height, day.amount > 0 ? 20 : 8)}px` }}
+                    />
+                  </div>
+                  <div className="text-center">
+                    <div className={`text-xs ${isToday ? 'text-white font-semibold' : 'text-blue-200'}`}>
+                      {day.day}
+                    </div>
+                    <div className={`text-xs ${isToday ? 'text-white font-semibold' : 'text-blue-200'}`}>
+                      {day.date}
+                    </div>
+                  </div>
+                  {isToday && (
+                    <div className="w-0.5 h-16 bg-white/60 mt-2" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
+        {/* Current Week Summary */}
+        <div className="bg-blue-800/50 mx-4 rounded-lg p-4 mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-blue-100 text-sm">Current Week</p>
+              <p className="text-white font-medium">{earningsData.currentWeek.weekRange}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-blue-100 text-sm">Confirmed Earnings</p>
+              <p className="text-green-400 text-xl font-bold">${earningsData.currentWeek.total.toFixed(2)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        {/* Weekly Progress */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                This Week
-              </div>
-              <Badge variant="secondary">{earningsData.week.daysWorked} days</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-2xl font-bold">${earningsData.week.total.toFixed(2)}</span>
-              <span className="text-sm text-muted-foreground">of ${earningsData.week.goal} goal</span>
-            </div>
-            <Progress value={weekProgress} className="h-2" />
-            <div className="grid grid-cols-3 gap-4 text-center text-sm">
-              <div>
-                <p className="text-muted-foreground">Deliveries</p>
-                <p className="font-semibold">{earningsData.week.deliveries}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Active Time</p>
-                <p className="font-semibold">{earningsData.week.activeTime}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Avg/Hour</p>
-                <p className="font-semibold">
-                  ${earningsData.week.deliveries > 0 ? (earningsData.week.total / (earningsData.week.deliveries * 0.5)).toFixed(2) : '0.00'}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Earnings Breakdown */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <PiggyBank className="h-5 w-5" />
-              Today's Breakdown
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-sm">Base Pay</span>
-              </div>
-              <span className="font-semibold">${earningsData.today.basePay.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm">Tips</span>
-              </div>
-              <span className="font-semibold">${earningsData.today.tips.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                <span className="text-sm">Bonuses</span>
-              </div>
-              <span className="font-semibold">${earningsData.today.bonuses.toFixed(2)}</span>
-            </div>
-            <Separator />
-            <div className="flex justify-between items-center font-semibold">
-              <span>Total</span>
-              <span>${earningsData.today.total.toFixed(2)}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Recent Deliveries */}
-        {deliveryHistory.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
+      {/* White Background Content */}
+      <div className="bg-white">
+        {/* Weekly Earnings Summary */}
+        <div className="p-4">
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Weekly Earnings Summary</h2>
+            <Info className="h-4 w-4 text-blue-500" />
+          </div>
+          <p className="text-sm text-gray-600 mb-6">
+            For more details about your earnings, including when you can expect to get them, you can visit the Crave'n portal.
+          </p>
+          
+          {/* Year Header */}
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">2025</h3>
+          
+          {/* Weekly History */}
+          <div className="space-y-4">
+            {earningsData.weeklyHistory.map((week, index) => (
+              <div key={index} className="flex items-center justify-between py-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-blue-600 font-medium">
+                    {week.weekStart} - {week.weekEnd}
+                  </span>
+                </div>
                 <div className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Recent Deliveries
+                  <span className="text-lg font-semibold text-gray-900">
+                    ${week.total.toFixed(2)}
+                  </span>
+                  <ChevronRight className="h-5 w-5 text-gray-400" />
                 </div>
-                <Button variant="ghost" size="sm">
-                  View All
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {deliveryHistory.map((delivery) => (
-                <div key={delivery.id} className="border rounded-lg p-3 space-y-2">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium">{delivery.restaurant}</p>
-                      <p className="text-xs text-muted-foreground">{delivery.date}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-green-600">${delivery.earnings.toFixed(2)}</p>
-                      <p className="text-xs text-muted-foreground">{delivery.distance.toFixed(1)} mi • {delivery.time}</p>
-                    </div>
-                  </div>
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Base: ${delivery.basePay.toFixed(2)}</span>
-                    <span>Tip: ${delivery.tip.toFixed(2)}</span>
-                    {delivery.bonus > 0 && <span>Bonus: ${delivery.bonus.toFixed(2)}</span>}
-                  </div>
+              </div>
+            ))}
+            
+            {/* Empty weeks with dashes */}
+            {Array.from({ length: Math.max(0, 6 - earningsData.weeklyHistory.length) }, (_, i) => (
+              <div key={`empty-${i}`} className="flex items-center justify-between py-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-blue-600 font-medium">
+                    Week {earningsData.weeklyHistory.length + i + 1}
+                  </span>
                 </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Lifetime Stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="h-5 w-5" />
-              Lifetime Stats
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div>
-                <p className="text-2xl font-bold">${earningsData.lifetime.total.toFixed(2)}</p>
-                <p className="text-xs text-muted-foreground">Total Earned</p>
+                <span className="text-lg font-semibold text-gray-900">-</span>
               </div>
-              <div>
-                <p className="text-2xl font-bold">{earningsData.lifetime.deliveries}</p>
-                <p className="text-xs text-muted-foreground">Deliveries</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{earningsData.lifetime.totalTime}</p>
-                <p className="text-xs text-muted-foreground">Active Time</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">${earningsData.lifetime.avgPerDelivery.toFixed(2)}</p>
-                <p className="text-xs text-muted-foreground">Avg/Delivery</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            ))}
+          </div>
+        </div>
+        
+        {/* Quick Actions */}
+        <div className="p-4 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <Button 
+              className="h-16 flex flex-col items-center justify-center gap-1"
+              variant="outline"
+            >
+              <Zap className="h-5 w-5 text-yellow-500" />
+              <span className="text-xs">Instant Pay</span>
+              <span className="text-xs font-bold">${earningsData.instantPay.available.toFixed(2)}</span>
+            </Button>
+            <Button 
+              className="h-16 flex flex-col items-center justify-center gap-1"
+              variant="outline"
+            >
+              <CreditCard className="h-5 w-5 text-blue-500" />
+              <span className="text-xs">Payment</span>
+              <span className="text-xs">Methods</span>
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
