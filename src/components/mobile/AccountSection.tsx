@@ -9,6 +9,11 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { ProfileSection } from './ProfileSection';
+import { PaymentMethodsSection } from './PaymentMethodsSection';
+import { AppSettingsSection } from './AppSettingsSection';
+import { VehicleManagementSection } from './VehicleManagementSection';
+import { SafeDrivingSection } from './SafeDrivingSection';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
 interface CraverProfile {
   id: string;
@@ -35,6 +40,7 @@ export const AccountSection: React.FC<{
   const [loading, setLoading] = useState(true);
   const [isReferralEligible, setIsReferralEligible] = useState(false);
   const [driverStartDate, setDriverStartDate] = useState<Date | null>(null);
+  const [currentSection, setCurrentSection] = useState<'main' | 'profile' | 'payments' | 'settings' | 'vehicle' | 'safety'>('main');
   const [notifications, setNotifications] = useState(true);
   const [locationSharing, setLocationSharing] = useState(true);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleType>('car');
@@ -191,38 +197,23 @@ export const AccountSection: React.FC<{
   };
 
   const handleProfileClick = () => {
-    toast({
-      title: "Profile Settings",
-      description: "Edit your personal information and preferences.",
-    });
+    setCurrentSection('profile');
   };
 
   const handlePaymentMethodsClick = () => {
-    toast({
-      title: "Payment Methods",
-      description: "Manage your payment methods and earnings.",
-    });
+    setCurrentSection('payments');
   };
 
   const handleAppSettingsClick = () => {
-    toast({
-      title: "App Settings",
-      description: "Customize your app preferences and notifications.",
-    });
+    setCurrentSection('settings');
   };
 
   const handleVehicleManagementClick = () => {
-    toast({
-      title: "Vehicle Management",
-      description: "Update your vehicle information and documents.",
-    });
+    setCurrentSection('vehicle');
   };
 
   const handleSafeDrivingClick = () => {
-    toast({
-      title: "Safe Driving Features",
-      description: "Configure safety settings and driving assistance.",
-    });
+    setCurrentSection('safety');
   };
   if (loading) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
@@ -235,7 +226,28 @@ export const AccountSection: React.FC<{
         </div>
       </div>;
   }
-  return <div className="min-h-screen bg-background pb-20">
+
+  // Render sub-sections
+  if (currentSection === 'profile') {
+    return <ProfileSection onBack={() => setCurrentSection('main')} />;
+  }
+
+  if (currentSection === 'payments') {
+    return <PaymentMethodsSection onBack={() => setCurrentSection('main')} />;
+  }
+
+  if (currentSection === 'settings') {
+    return <AppSettingsSection onBack={() => setCurrentSection('main')} />;
+  }
+
+  if (currentSection === 'vehicle') {
+    return <VehicleManagementSection onBack={() => setCurrentSection('main')} />;
+  }
+
+  if (currentSection === 'safety') {
+    return <SafeDrivingSection onBack={() => setCurrentSection('main')} />;
+  }
+  return <div className="min-h-screen bg-background pb-20 overflow-y-auto">
       <div className="max-w-md mx-auto">
         {/* Header */}
         <div className="bg-background border-b border-border/50 px-4 py-3">
