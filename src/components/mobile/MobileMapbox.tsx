@@ -254,7 +254,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
       </div>
 
       {/* Map Controls: zoom and recenter - positioned next to change zone button */}
-      <div className="absolute top-4 left-32 z-20 flex flex-row gap-2 pointer-events-auto mx-[1100px]">
+      <div className="absolute top-4 left-32 z-20 flex flex-row gap-2 pointer-events-auto px-[5px] py-0 my-[520px] mx-[159px]">
         
         
         <button onClick={() => {
@@ -272,7 +272,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
           setIsAutoCentering(true); // Re-enable auto-centering
         }
       }} className={`p-3 rounded-full shadow-lg border transition ${isAutoCentering ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground hover:bg-accent'}`} aria-label="Center on my location">
-          <Crosshair className="h-4 w-4" />
+          <Crosshair className="h-4 w-4 my-[5px] py-0" />
         </button>
       </div>
 
