@@ -84,8 +84,8 @@ export const LiveDriverTesting = () => {
         return;
       }
 
-      // Get user profiles for the drivers
-      const driverUserIds = drivers.map(d => d.user_id);
+      // Get user profiles for the drivers (use unique user_ids to avoid duplicates)
+      const driverUserIds = [...new Set(drivers.map(d => d.user_id))];
       const { data: profiles, error: profilesError } = await supabase
         .from('user_profiles')
         .select('user_id, full_name')
@@ -101,25 +101,34 @@ export const LiveDriverTesting = () => {
 
       if (locationsError) throw locationsError;
 
-      // Combine the data
-      const combinedDrivers: OnlineDriver[] = drivers.map(driver => {
-        const profile = profiles?.find(p => p.user_id === driver.user_id);
-        const location = locations?.find(l => l.user_id === driver.user_id);
-        
-        return {
-          id: driver.id,
-          user_id: driver.user_id,
-          full_name: profile?.full_name || 'Unknown Driver',
-          vehicle_type: driver.vehicle_type,
-          vehicle_make: driver.vehicle_make,
-          vehicle_model: driver.vehicle_model,
-          current_latitude: location?.lat || null,
-          current_longitude: location?.lng || null,
-          is_available: driver.is_available,
-          status: driver.status,
-          rating: driver.rating || 5.0
-        };
-      });
+      // Combine the data and remove duplicates by user_id
+      const seenUserIds = new Set();
+      const combinedDrivers: OnlineDriver[] = drivers
+        .filter(driver => {
+          if (seenUserIds.has(driver.user_id)) {
+            return false;
+          }
+          seenUserIds.add(driver.user_id);
+          return true;
+        })
+        .map(driver => {
+          const profile = profiles?.find(p => p.user_id === driver.user_id);
+          const location = locations?.find(l => l.user_id === driver.user_id);
+          
+          return {
+            id: driver.id,
+            user_id: driver.user_id,
+            full_name: profile?.full_name || 'Unknown Driver',
+            vehicle_type: driver.vehicle_type,
+            vehicle_make: driver.vehicle_make,
+            vehicle_model: driver.vehicle_model,
+            current_latitude: location?.lat || null,
+            current_longitude: location?.lng || null,
+            is_available: driver.is_available,
+            status: driver.status,
+            rating: driver.rating || 5.0
+          };
+        });
 
       setOnlineDrivers(combinedDrivers);
     } catch (error: any) {
@@ -213,7 +222,7 @@ export const LiveDriverTesting = () => {
         .from('orders')
         .update({
           driver_id: selectedDriver,
-          order_status: 'assigned'
+          order_status: 'confirmed'
         })
         .eq('id', order.id);
 
