@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { playNotificationSound } from '@/utils/audioUtils';
 
 interface NotificationSetting {
   id: string;
@@ -73,33 +74,19 @@ export const useNotificationSettings = () => {
 
     try {
       console.log('Playing notification:', selectedSetting.name);
-      
-      for (let i = 0; i < selectedSetting.repeat_count; i++) {
-        // Create and play audio
-        const audio = new Audio(selectedSetting.sound_file);
-        audio.volume = 1.0; // Full volume
-        
-        try {
-          await audio.play();
-          console.log(`Playing notification ${i + 1}/${selectedSetting.repeat_count}`);
-        } catch (audioError) {
-          console.error('Error playing audio:', audioError);
-          // Continue with next repetition even if current fails
-        }
-        
-        // Wait for repeat interval if not the last repetition
-        if (i < selectedSetting.repeat_count - 1) {
-          await new Promise(resolve => setTimeout(resolve, selectedSetting.repeat_interval_ms));
-        }
-      }
-    } catch (error) {
-      console.error('Error in notification playback:', error);
+      await playNotificationSound(
+        selectedSetting.sound_file,
+        selectedSetting.repeat_count,
+        selectedSetting.repeat_interval_ms
+      );
+    } catch (err) {
+      console.error('Notification sound failed, fallback played:', err);
     } finally {
-      // Set playing to false after duration
       setTimeout(() => {
         setIsPlaying(false);
       }, selectedSetting.duration_ms);
     }
+  }, [selectedSetting, isPlaying]);
   }, [selectedSetting, isPlaying]);
 
   const stopNotification = useCallback(() => {

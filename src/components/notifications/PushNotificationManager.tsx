@@ -55,7 +55,7 @@ const PushNotificationManager = ({ userId }: PushNotificationManagerProps) => {
       .on('broadcast', { event: 'push_notification' }, (payload) => {
         const { title, message, data } = payload.payload;
         
-        // Show toast notification
+        // Show toast notification and play in-app sound
         toast({
           title,
           description: message,

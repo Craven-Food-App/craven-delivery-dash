@@ -29,106 +29,92 @@ export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
     setIsLoading(true);
     setCameraError(null);
     
-    try {
-      // Check if navigator.mediaDevices is available
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Camera not supported in this browser');
-      }
-
-      // iOS-optimized camera constraints
-      const constraints = {
-        video: {
-          facingMode: 'environment', // Use back camera
-          width: { ideal: 1920, max: 1920, min: 640 },
-          height: { ideal: 1080, max: 1080, min: 480 },
-          frameRate: { ideal: 30, max: 30 },
-          aspectRatio: { ideal: 16/9 }
-        },
-        audio: false // Explicitly disable audio for faster initialization
-      };
-
+    const tryStart = async (videoConstraints: MediaStreamConstraints['video']) => {
+      const constraints: MediaStreamConstraints = { video: videoConstraints, audio: false };
       console.log('Requesting camera with constraints:', constraints);
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-      
       console.log('Camera stream obtained:', mediaStream);
-      console.log('Video tracks:', mediaStream.getVideoTracks());
-      
-      if (videoRef.current && mediaStream) {
-        // Set video properties before assigning stream
-        videoRef.current.playsInline = true;
-        videoRef.current.muted = true;
-        videoRef.current.autoplay = true;
-        
-        // For iOS Safari compatibility
-        videoRef.current.setAttribute('playsinline', 'true');
-        videoRef.current.setAttribute('webkit-playsinline', 'true');
-        
-        // Assign stream and handle loading
-        videoRef.current.srcObject = mediaStream;
-        
-        // Create promise to handle video loading
-        const videoLoadPromise = new Promise((resolve, reject) => {
-          const video = videoRef.current;
-          if (!video) {
-            reject(new Error('Video element not available'));
-            return;
-          }
+      if (!videoRef.current) return mediaStream;
 
-          const onLoadedMetadata = () => {
-            console.log('Video metadata loaded successfully');
-            console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
+      const video = videoRef.current;
+      video.playsInline = true;
+      video.muted = true;
+      video.autoplay = true;
+      video.setAttribute('playsinline', 'true');
+      video.setAttribute('webkit-playsinline', 'true');
+      video.srcObject = mediaStream;
+
+      await new Promise((resolve, reject) => {
+        const onLoadedMetadata = () => {
+          video.removeEventListener('loadedmetadata', onLoadedMetadata);
+          video.removeEventListener('error', onError);
+          resolve(true);
+        };
+        const onError = (e: any) => {
+          video.removeEventListener('loadedmetadata', onLoadedMetadata);
+          video.removeEventListener('error', onError);
+          reject(e);
+        };
+        video.addEventListener('loadedmetadata', onLoadedMetadata);
+        video.addEventListener('error', onError);
+        setTimeout(() => {
+          if (video.readyState >= 2) {
             video.removeEventListener('loadedmetadata', onLoadedMetadata);
             video.removeEventListener('error', onError);
             resolve(true);
-          };
+          }
+        }, 1500);
+      });
 
-          const onError = (error: any) => {
-            console.error('Video loading error:', error);
-            video.removeEventListener('loadedmetadata', onLoadedMetadata);
-            video.removeEventListener('error', onError);
-            reject(error);
-          };
+      try {
+        await video.play();
+      } catch (e) {
+        console.warn('Video play failed, continuing:', e);
+      }
 
-          video.addEventListener('loadedmetadata', onLoadedMetadata);
-          video.addEventListener('error', onError);
-          
-          // Timeout fallback for iOS
-          setTimeout(() => {
-            if (video.readyState >= 2) { // HAVE_CURRENT_DATA
-              console.log('Video ready via timeout fallback');
-              video.removeEventListener('loadedmetadata', onLoadedMetadata);
-              video.removeEventListener('error', onError);
-              resolve(true);
-            }
-          }, 2000);
-        });
+      return mediaStream;
+    };
 
-        // Wait for video to be ready
-        await videoLoadPromise;
-        
-        // Ensure video is playing
-        try {
-          await videoRef.current.play();
-          console.log('Video playback started');
-        } catch (playError) {
-          console.warn('Video play failed, but continuing:', playError);
-        }
-        
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Camera not supported in this browser');
+      }
+
+      // Primary high-quality constraints
+      const primaryVideo: MediaStreamConstraints['video'] = {
+        facingMode: 'environment',
+        width: { ideal: 1920, max: 1920, min: 640 },
+        height: { ideal: 1080, max: 1080, min: 480 },
+        frameRate: { ideal: 30, max: 30 },
+        aspectRatio: { ideal: 16/9 },
+      };
+
+      let mediaStream = await tryStart(primaryVideo);
+      setStream(mediaStream);
+      setIsCameraActive(true);
+      setIsLoading(false);
+    } catch (err1) {
+      console.warn('Primary camera start failed, retrying with relaxed constraints:', err1);
+      try {
+        // Relaxed constraints for iOS stability
+        const fallbackVideo: MediaStreamConstraints['video'] = {
+          facingMode: { ideal: 'environment' },
+        };
+        const mediaStream = await tryStart(fallbackVideo);
         setStream(mediaStream);
         setIsCameraActive(true);
         setIsLoading(false);
+      } catch (err2) {
+        console.error('Fallback camera start failed:', err2);
+        const errorMessage = err2 instanceof Error ? err2.message : 'Unknown camera error';
+        setCameraError(errorMessage);
+        setIsLoading(false);
+        toast({
+          title: 'Camera Error',
+          description: `Unable to access camera: ${errorMessage}`,
+          variant: 'destructive'
+        });
       }
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown camera error';
-      setCameraError(errorMessage);
-      setIsLoading(false);
-      
-      toast({
-        title: 'Camera Error',
-        description: `Unable to access camera: ${errorMessage}`,
-        variant: 'destructive'
-      });
     }
   }, [toast]);
 
@@ -286,6 +272,14 @@ export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
                         }
                       }}
                     />
+                    {!isCameraActive && !cameraError && (
+                      <div className="w-full h-full absolute inset-0 flex items-center justify-center text-white bg-black/50">
+                        <div className="flex flex-col items-center">
+                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
+                          <p>Starting camera...</p>
+                        </div>
+                      </div>
+                    )}
                     {isCameraActive && (
                       <div className="absolute inset-0 pointer-events-none">
                         <div className="absolute inset-4 border-2 border-white/50 rounded-lg" />
