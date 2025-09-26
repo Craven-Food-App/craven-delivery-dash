@@ -29,6 +29,7 @@ import ContactUs from "./pages/ContactUs";
 import PartnerWithUs from "./pages/PartnerWithUs";
 import AboutUs from "./pages/AboutUs";
 import Careers from "./pages/Careers";
+import Testing from "./pages/Testing";
 import ChatButton from "./components/chat/ChatButton";
 
 const queryClient = new QueryClient();
@@ -78,6 +79,7 @@ const App = () => (
           <Route path="/partner" element={<PartnerWithUs />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/careers" element={<Careers />} />
+          <Route path="/testing" element={<Testing />} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
