@@ -11,8 +11,10 @@ import { EarningsSection } from './EarningsSection';
 import { BottomNavigation } from './BottomNavigation';
 import { ActiveDeliveryFlow } from './ActiveDeliveryFlow';
 import { PushNotificationSetup } from './PushNotificationSetup';
+import { NotificationPreferences } from './NotificationPreferences';
 import { AccountSection } from './AccountSection';
 import { TestCompletionModal } from './TestCompletionModal';
+import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import MapboxMap from '@/components/Map';
 
 type DriverState = 'offline' | 'online_searching' | 'online_paused' | 'on_delivery';
@@ -52,6 +54,7 @@ export const MobileDriverDashboard: React.FC = () => {
   const [showTestCompletionModal, setShowTestCompletionModal] = useState(false);
   
   const { toast } = useToast();
+  const { playNotification } = useNotificationSettings();
 
   // Setup real-time listener for order assignments (broadcast + DB changes)
   const setupRealtimeListener = (userId: string) => {
@@ -72,6 +75,15 @@ export const MobileDriverDashboard: React.FC = () => {
           isTestOrder: payload.payload.isTestOrder // Add test order flag
         });
         setShowOrderModal(true);
+        
+        // Play notification sound
+        playNotification();
+        
+        // Show toast notification
+        toast({
+          title: "New Order Available!",
+          description: `${payload.payload.restaurant_name} - $${(payload.payload.payout_cents / 100).toFixed(2)}`,
+        });
       })
       .subscribe();
 
@@ -102,8 +114,17 @@ export const MobileDriverDashboard: React.FC = () => {
             distance_mi: ((Number(order.distance_km) || 0) * 0.621371).toFixed(1),
             expires_at: assignment.expires_at,
             estimated_time: Math.ceil((Number(order.distance_km) || 0) * 2.5)
-          })
-          setShowOrderModal(true)
+          });
+          setShowOrderModal(true);
+          
+          // Play notification sound
+          playNotification();
+          
+          // Show toast notification
+          toast({
+            title: "New Order Available!",
+            description: `$${((order.payout_cents || 0) / 100).toFixed(2)} - ${((Number(order.distance_km) || 0) * 0.621371).toFixed(1)} miles`,
+          });
         }
       })
       .subscribe();
@@ -289,7 +310,10 @@ export const MobileDriverDashboard: React.FC = () => {
   if (activeTab === 'notifications') {
     return (
       <>
-        <PushNotificationSetup />
+        <div className="space-y-4 p-4">
+          <NotificationPreferences />
+          <PushNotificationSetup />
+        </div>
         <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
       </>
     );

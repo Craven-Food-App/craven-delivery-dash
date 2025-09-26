@@ -626,6 +626,48 @@ export type Database = {
           },
         ]
       }
+      notification_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_ms: number
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          repeat_count: number
+          repeat_interval_ms: number
+          sound_file: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_ms?: number
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          repeat_count?: number
+          repeat_interval_ms?: number
+          sound_file: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_ms?: number
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          repeat_count?: number
+          repeat_interval_ms?: number
+          sound_file?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_assignments: {
         Row: {
           created_at: string
@@ -1109,6 +1151,41 @@ export type Database = {
           zip_code?: string | null
         }
         Relationships: []
+      }
+      user_notification_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean
+          notification_setting_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          notification_setting_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          notification_setting_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_notification_preferences_notification_setting_id_fkey"
+            columns: ["notification_setting_id"]
+            isOneToOne: false
+            referencedRelation: "notification_settings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_profiles: {
         Row: {
