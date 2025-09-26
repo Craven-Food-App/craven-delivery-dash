@@ -320,55 +320,68 @@ export const MobileDriverDashboard: React.FC = () => {
         {/* ONLINE SEARCHING STATE */}
         {driverState === 'online_searching' && (
           <>
-            {/* Earnings Display - Center */}
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <div className="bg-background/95 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-border/20 text-center">
-                <div className="text-4xl font-bold text-green-600 mb-2">
-                  ${todayEarnings.toFixed(2)}
+            {/* Change Zone Button - Top Left */}
+            <div className="absolute top-4 left-4 z-20">
+              <Button 
+                variant="secondary" 
+                className="bg-card/95 backdrop-blur-sm text-foreground border border-border/20 shadow-sm rounded-xl px-4 py-2 text-sm font-medium"
+              >
+                Change zone
+              </Button>
+            </div>
+
+            {/* Get Offers Until Section */}
+            <div className="absolute top-1/3 left-6 right-6 z-20">
+              <div className="text-center mb-6">
+                <div className="bg-card/95 backdrop-blur-sm rounded-full px-6 py-3 shadow-sm border border-border/20 inline-block">
+                  <span className="text-sm text-muted-foreground mr-2">Get offers until</span>
+                  <span className="text-sm font-semibold text-foreground bg-muted/50 px-3 py-1 rounded-full">
+                    {endTime ? endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '11:00 PM'}
+                  </span>
                 </div>
-                <div className="text-sm text-muted-foreground mb-4">
-                  Today's Earnings
-                </div>
-                <div className="text-2xl font-bold text-foreground">
-                  {formatTime(onlineTime)}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Time Online
+              </div>
+
+              {/* Still Searching Section */}
+              <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-border/20">
+                <div className="flex items-center justify-between">
+                  <span className="text-lg text-foreground font-medium">Still searching...</span>
+                  <div className="w-8 h-8">
+                    <svg className="animate-spin w-full h-full" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75 text-primary"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Controls - Bottom */}
-            <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2">
-              <Button 
-                onClick={handleGoOffline}
-                variant="outline"
-                className="bg-background/95 backdrop-blur-sm border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 px-12 py-4 text-lg font-semibold rounded-xl shadow-lg"
-              >
-                Go Offline
-              </Button>
+            {/* Popular Times Chart */}
+            <div className="absolute bottom-16 left-6 right-6 z-20">
+              <PopularTimesChart />
             </div>
 
             {/* Pause Button - Top Right */}
-            <div className="absolute top-6 right-6">
+            <div className="absolute top-4 right-4 z-20">
               <Button 
                 onClick={handlePause}
                 variant="ghost"
                 size="sm"
-                className="bg-background/80 backdrop-blur-sm border border-border/20 rounded-full p-3 shadow-lg hover:bg-background/90"
+                className="bg-card/80 backdrop-blur-sm border border-border/20 rounded-full p-3 shadow-sm hover:bg-card/90"
               >
                 <Pause className="h-5 w-5" />
               </Button>
-            </div>
-
-            {/* Vehicle Info - Bottom Left */}
-            <div className="absolute bottom-6 left-6">
-              <div className="bg-background/80 backdrop-blur-sm rounded-lg px-4 py-2 shadow-md border border-border/20">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span className="text-lg">{getVehicleIcon()}</span>
-                  <span className="capitalize">{selectedVehicle}</span>
-                </div>
-              </div>
             </div>
           </>
         )}
