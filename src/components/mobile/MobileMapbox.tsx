@@ -27,12 +27,12 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
       console.log('Initializing Mapbox map...');
       
       // Set the access token
-      window.mapboxgl.accessToken = 'pk.eyJ1IjoiY3JhdmUtbiIsImEiOiJjbWZpbXN4NmUwMG0wMmpxNDNkc2lmNWhiIn0._lEfvdpBUJpz-RYDV02ZAA';
+      window.mapboxgl.accessToken = 'pk.eyJ1IjoiY3JhdmUtbiIsImEiOiJjbWVxb21qbTQyNTRnMm1vaHg5bDZwcmw2In0.aOsYrL2B0cjfcCGW1jHAdw';
 
       // Create the map instance
       map.current = new window.mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
+        style: 'mapbox://styles/crave-n/cmfinp8y2004m01qvb7kwbqol',
         center: [-74.5, 40], // Starting position: [longitude, latitude]
         zoom: 9 // Starting zoom level
       });
