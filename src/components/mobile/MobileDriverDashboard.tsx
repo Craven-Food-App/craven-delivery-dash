@@ -11,6 +11,7 @@ import { EarningsSection } from './EarningsSection';
 import { BottomNavigation } from './BottomNavigation';
 import { ActiveDeliveryFlow } from './ActiveDeliveryFlow';
 import { PushNotificationSetup } from './PushNotificationSetup';
+import { PopularTimesChart } from './PopularTimesChart';
 import MapboxMap from '@/components/Map';
 
 type DriverState = 'offline' | 'online_searching' | 'online_paused' | 'on_delivery';
@@ -289,65 +290,29 @@ export const MobileDriverDashboard: React.FC = () => {
         {/* OFFLINE STATE */}
         {driverState === 'offline' && (
           <>
-            {/* Header with Availability Toggle */}
-            <div className="absolute top-0 left-0 right-0 bg-background/95 backdrop-blur-sm shadow-sm">
-              <div className="flex items-center justify-between p-4">
-                <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="text-orange-600 border-orange-600">
-                    Offline
-                  </Badge>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Available</span>
-                    <Switch
-                      checked={isAvailable}
-                      onCheckedChange={(checked) => {
-                        setIsAvailable(checked);
-                        if (checked) {
-                          handleGoOnline();
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <span>{currentCity}</span>
-                  <Settings className="h-5 w-5" />
-                </div>
-              </div>
+            {/* Change Zone Button - Top Left */}
+            <div className="absolute top-4 left-4 z-20">
+              <Button 
+                variant="secondary" 
+                className="bg-card/95 backdrop-blur-sm text-foreground border border-border/20 shadow-sm rounded-xl px-4 py-2 text-sm font-medium"
+              >
+                Change zone
+              </Button>
             </div>
 
-            {/* Quick Stats */}
-            <div className="absolute top-20 left-4 right-4 z-10">
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-background/90 backdrop-blur-sm rounded-xl p-3 text-center border border-border/20">
-                  <div className="text-lg font-bold text-green-600">${todayEarnings.toFixed(2)}</div>
-                  <div className="text-xs text-muted-foreground">Today</div>
-                </div>
-                <div className="bg-background/90 backdrop-blur-sm rounded-xl p-3 text-center border border-border/20">
-                  <div className="text-lg font-bold">{tripCount}</div>
-                  <div className="text-xs text-muted-foreground">Trips</div>
-                </div>
-                <div className="bg-background/90 backdrop-blur-sm rounded-xl p-3 text-center border border-border/20">
-                  <div className="text-lg font-bold">{formatTime(onlineTime)}</div>
-                  <div className="text-xs text-muted-foreground">Online</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Main Action Button - Bottom */}
-            <div className="absolute bottom-20 left-4 right-4 z-10">
+            {/* Main Action Button - Large Orange Button */}
+            <div className="absolute bottom-80 left-6 right-6 z-20">
               <Button
                 onClick={handleGoOnline}
-                className="w-full h-16 text-xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg rounded-2xl"
+                className="w-full h-14 text-xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg rounded-2xl"
               >
-                🚀 Go Online
+                CRAVE NOW
               </Button>
-              
-              <div className="text-center mt-3">
-                <div className="text-sm text-muted-foreground">
-                  {getVehicleIcon()} {selectedVehicle.charAt(0).toUpperCase() + selectedVehicle.slice(1)} • {earningMode === 'perHour' ? '$18/hr + tips' : 'Per delivery'}
-                </div>
-              </div>
+            </div>
+
+            {/* Popular Times Chart */}
+            <div className="absolute bottom-16 left-6 right-6 z-20">
+              <PopularTimesChart />
             </div>
           </>
         )}
