@@ -239,6 +239,33 @@ export type Database = {
           },
         ]
       }
+      craver_locations: {
+        Row: {
+          created_at: string
+          id: string
+          lat: number
+          lng: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lat: number
+          lng: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lat?: number
+          lng?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       customer_favorites: {
         Row: {
           created_at: string
@@ -599,6 +626,44 @@ export type Database = {
           },
         ]
       }
+      order_assignments: {
+        Row: {
+          created_at: string
+          driver_id: string
+          expires_at: string
+          id: string
+          order_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          driver_id: string
+          expires_at: string
+          id?: string
+          order_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          driver_id?: string
+          expires_at?: string
+          id?: string
+          order_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_assignments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_feedback: {
         Row: {
           comment: string | null
@@ -716,14 +781,19 @@ export type Database = {
       }
       orders: {
         Row: {
+          assigned_craver_id: string | null
           created_at: string | null
           customer_id: string | null
           delivery_address: Json | null
           delivery_fee_cents: number | null
+          distance_km: number | null
           driver_id: string | null
+          dropoff_address: Json | null
           estimated_delivery_time: string | null
           id: string
           order_status: string | null
+          payout_cents: number | null
+          pickup_address: Json | null
           restaurant_id: string | null
           subtotal_cents: number
           tax_cents: number | null
@@ -732,14 +802,19 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          assigned_craver_id?: string | null
           created_at?: string | null
           customer_id?: string | null
           delivery_address?: Json | null
           delivery_fee_cents?: number | null
+          distance_km?: number | null
           driver_id?: string | null
+          dropoff_address?: Json | null
           estimated_delivery_time?: string | null
           id?: string
           order_status?: string | null
+          payout_cents?: number | null
+          pickup_address?: Json | null
           restaurant_id?: string | null
           subtotal_cents: number
           tax_cents?: number | null
@@ -748,14 +823,19 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          assigned_craver_id?: string | null
           created_at?: string | null
           customer_id?: string | null
           delivery_address?: Json | null
           delivery_fee_cents?: number | null
+          distance_km?: number | null
           driver_id?: string | null
+          dropoff_address?: Json | null
           estimated_delivery_time?: string | null
           id?: string
           order_status?: string | null
+          payout_cents?: number | null
+          pickup_address?: Json | null
           restaurant_id?: string | null
           subtotal_cents?: number
           tax_cents?: number | null
@@ -1142,6 +1222,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_distance: {
+        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+        Returns: number
+      }
       make_user_active_driver: {
         Args: { target_user_id: string; vehicle_info?: Json }
         Returns: undefined
