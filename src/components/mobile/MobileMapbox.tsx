@@ -236,7 +236,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
           <div className="bg-red-100 border border-red-300 rounded-lg p-3 text-xs shadow-lg max-w-48">
             <div className="text-red-600 font-medium mb-1">GPS Error</div>
             <div className="text-red-500 text-xs">{gpsError}</div>
-            {gpsError.includes('permission') && (
+            {gpsError && gpsError.includes('permission') && (
               <button
                 onClick={() => {
                   console.log('Requesting location permission...');
