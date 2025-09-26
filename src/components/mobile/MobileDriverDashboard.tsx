@@ -399,7 +399,7 @@ export const MobileDriverDashboard: React.FC = () => {
 
             {/* Pause Button - Top Right */}
             <div className="absolute top-4 right-7 z-20 pointer-events-auto">
-              <Button onClick={handlePause} variant="ghost" size="sm" className="bg-card/80 backdrop-blur-sm border border-border/20 rounded-full p-2 shadow-sm hover:bg-card/90">
+              <Button onClick={handlePause} variant="ghost" size="sm" className="bg-card/80 backdrop-blur-sm border border-border/20 rounded-full p-2 shadow-sm hover:bg-card/90 mx-[41px]">
                 <Pause className="h-4 w-4" />
               </Button>
             </div>
