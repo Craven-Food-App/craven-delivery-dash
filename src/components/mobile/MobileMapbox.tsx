@@ -127,6 +127,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
       // Handle map load events
       map.current.on('load', () => {
         console.log('Map loaded successfully');
+        console.log('Map interactive state:', map.current.dragPan.isEnabled(), map.current.scrollZoom.isEnabled());
         setIsLoading(false);
         setError(null);
       });
@@ -136,6 +137,12 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
         setError('Failed to load map');
         setIsLoading(false);
       });
+
+      // Debug map interactions
+      map.current.on('dragstart', () => console.log('Map drag started'));
+      map.current.on('dragend', () => console.log('Map drag ended'));
+      map.current.on('zoomstart', () => console.log('Map zoom started'));
+      map.current.on('zoomend', () => console.log('Map zoom ended'));
 
     } catch (err: any) {
       console.error('Error initializing map:', err);
@@ -211,7 +218,8 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
       )}
       
       {/* GPS Controls */}
-      <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
+      <div className="absolute top-4 left-4 z-10 flex flex-col gap-2 pointer-events-auto"
+           style={{ maxWidth: '200px' }}>
         <button
           onClick={isTracking ? stopTracking : startTracking}
           className={`p-3 rounded-full shadow-lg border-2 ${
@@ -269,8 +277,12 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
         style={{ 
           minHeight: '100%',
           height: '100%',
-          width: '100%'
+          width: '100%',
+          position: 'relative',
+          zIndex: 1
         }}
+        onTouchStart={() => console.log('Map container touch start')}
+        onMouseDown={() => console.log('Map container mouse down')}
       />
     </div>
   );
