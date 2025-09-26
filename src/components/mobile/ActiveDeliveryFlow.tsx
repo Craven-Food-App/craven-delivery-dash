@@ -10,13 +10,14 @@ type DeliveryStage = 'navigate_to_restaurant' | 'arrived_at_restaurant' | 'navig
 interface ActiveDeliveryProps {
   orderDetails: {
     restaurant_name: string;
-    pickup_address: string;
-    dropoff_address: string;
+    pickup_address: any; // can be string or address object
+    dropoff_address: any; // can be string or address object
     customer_name?: string;
     customer_phone?: string;
     delivery_notes?: string;
     payout_cents: number;
     estimated_time: number;
+    isTestOrder?: boolean; // Add test order flag
   };
   onCompleteDelivery: () => void;
 }
@@ -28,6 +29,15 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
   const [currentStage, setCurrentStage] = useState<DeliveryStage>('navigate_to_restaurant');
   const [showPhotoUpload, setShowPhotoUpload] = useState(false);
   const { toast } = useToast();
+
+  // Helper function to format address
+  const formatAddress = (address: any) => {
+    if (typeof address === 'string') return address;
+    if (typeof address === 'object' && address) {
+      return `${address.street || ''} ${address.city || ''} ${address.state || ''} ${address.zip || ''}`.trim();
+    }
+    return 'Address not available';
+  };
 
   const handleStageComplete = () => {
     switch (currentStage) {
@@ -52,6 +62,19 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
 
   const renderNavigateToRestaurant = () => (
     <div className="space-y-4">
+      {/* Test Order Alert */}
+      {orderDetails.isTestOrder && (
+        <div className="p-4 bg-orange-100 border border-orange-300 rounded-xl">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-lg">🧪</span>
+            <span className="font-bold text-orange-800">Test Delivery</span>
+          </div>
+          <p className="text-sm text-orange-700">
+            This is a simulated delivery for testing purposes. Go through the normal flow to complete the test.
+          </p>
+        </div>
+      )}
+
       {/* Stage Header */}
       <div className="bg-blue-500 text-white p-4 rounded-2xl text-center">
         <h2 className="text-xl font-bold">Navigate to Restaurant</h2>
@@ -65,13 +88,13 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
             <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
             <div>
               <h3 className="font-bold text-lg">{orderDetails.restaurant_name}</h3>
-              <p className="text-muted-foreground">{orderDetails.pickup_address}</p>
+              <p className="text-muted-foreground">{formatAddress(orderDetails.pickup_address)}</p>
             </div>
           </div>
           <div className="flex gap-2 mt-4">
-            <Button className="flex-1" size="lg">
+            <Button className="flex-1" size="lg" onClick={handleStageComplete}>
               <Navigation className="h-5 w-5 mr-2" />
-              Start Navigation
+              {orderDetails.isTestOrder ? 'Simulate Navigation' : 'Start Navigation'}
             </Button>
             <Button variant="outline" size="lg">
               <Phone className="h-5 w-5" />

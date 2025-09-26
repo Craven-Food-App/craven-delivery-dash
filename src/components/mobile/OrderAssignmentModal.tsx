@@ -8,13 +8,14 @@ interface OrderAssignment {
   assignment_id: string;
   order_id: string;
   restaurant_name: string;
-  pickup_address: string;
-  dropoff_address: string;
+  pickup_address: any; // JSON address object or string
+  dropoff_address: any; // JSON address object or string
   payout_cents: number;
   distance_km: number;
   distance_mi: string;
   expires_at: string;
   estimated_time: number;
+  isTestOrder?: boolean; // Add test order flag
 }
 
 interface OrderAssignmentModalProps {
@@ -127,6 +128,20 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
         </div>
 
         <div className="p-6 pb-8">
+          {/* Test Order Alert */}
+          {assignment.isTestOrder && (
+            <div className="mb-4 p-4 bg-orange-100 border border-orange-300 rounded-xl">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">🧪</span>
+                <span className="font-bold text-orange-800">Test Order</span>
+              </div>
+              <p className="text-sm text-orange-700">
+                This is a test order from Crave'N for testing purposes. 
+                Thank you for helping us improve our service!
+              </p>
+            </div>
+          )}
+
           {/* Get offers until section */}
           <div className="text-center mb-6">
             <div className="bg-muted/50 rounded-full px-4 py-2 inline-block">
@@ -168,7 +183,12 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
                   <span className="text-muted-foreground">•</span>
                   <span className="font-semibold text-foreground">Pickup</span>
                 </div>
-                <p className="text-muted-foreground">{assignment.restaurant_name || assignment.pickup_address}</p>
+                <p className="text-muted-foreground">
+                  {typeof assignment.pickup_address === 'string' 
+                    ? assignment.pickup_address 
+                    : `${assignment.pickup_address?.street || ''} ${assignment.pickup_address?.city || ''}`.trim()
+                  }
+                </p>
               </div>
             </div>
 

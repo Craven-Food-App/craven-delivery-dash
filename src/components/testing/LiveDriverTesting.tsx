@@ -240,17 +240,18 @@ export const LiveDriverTesting = () => {
             order_id: order.id,
             restaurant_name: restaurant.name || 'Test Restaurant',
             pickup_address: {
-              street: restaurant.address || 'Pickup Address',
-              city: restaurant.city || '',
-              state: restaurant.state || '',
-              zip: restaurant.zip_code || ''
+              street: restaurant.address || 'Test Pickup Address',
+              city: restaurant.city || 'Test City',
+              state: restaurant.state || 'TS',
+              zip: restaurant.zip_code || '12345'
             },
             dropoff_address: order.delivery_address,
             payout_cents: 500,
             distance_km: distanceKm,
             distance_mi: (distanceKm * 0.621371).toFixed(1),
             expires_at: expiresAt,
-            estimated_time: estimatedTime
+            estimated_time: estimatedTime,
+            isTestOrder: true // Add test order flag
           }
         });
 

@@ -12,6 +12,7 @@ import { BottomNavigation } from './BottomNavigation';
 import { ActiveDeliveryFlow } from './ActiveDeliveryFlow';
 import { PushNotificationSetup } from './PushNotificationSetup';
 import { AccountSection } from './AccountSection';
+import { TestCompletionModal } from './TestCompletionModal';
 import MapboxMap from '@/components/Map';
 
 type DriverState = 'offline' | 'online_searching' | 'online_paused' | 'on_delivery';
@@ -30,6 +31,7 @@ interface OrderAssignment {
   distance_mi: string;
   expires_at: string;
   estimated_time: number;
+  isTestOrder?: boolean; // Add test order flag
 }
 
 export const MobileDriverDashboard: React.FC = () => {
@@ -47,6 +49,7 @@ export const MobileDriverDashboard: React.FC = () => {
   const [todayEarnings, setTodayEarnings] = useState(0);
   const [tripCount, setTripCount] = useState(0);
   const [isAvailable, setIsAvailable] = useState(false);
+  const [showTestCompletionModal, setShowTestCompletionModal] = useState(false);
   
   const { toast } = useToast();
 
@@ -65,7 +68,8 @@ export const MobileDriverDashboard: React.FC = () => {
           distance_km: payload.payload.distance_km,
           distance_mi: payload.payload.distance_mi,
           expires_at: payload.payload.expires_at,
-          estimated_time: payload.payload.estimated_time
+          estimated_time: payload.payload.estimated_time,
+          isTestOrder: payload.payload.isTestOrder // Add test order flag
         });
         setShowOrderModal(true);
       })
@@ -556,14 +560,22 @@ export const MobileDriverDashboard: React.FC = () => {
               customer_phone: activeDelivery.customer_phone,
               delivery_notes: activeDelivery.delivery_notes,
               payout_cents: activeDelivery.payout_cents || 0,
-              estimated_time: activeDelivery.estimated_time || 30
+              estimated_time: activeDelivery.estimated_time || 30,
+              isTestOrder: activeDelivery.isTestOrder // Pass through test order flag
             }}
             onCompleteDelivery={() => {
+              // Check if this was a test order
+              if (activeDelivery?.isTestOrder) {
+                setShowTestCompletionModal(true);
+              }
+              
               setActiveDelivery(null);
               setDriverState('online_searching');
               toast({
                 title: "Delivery Complete!",
-                description: "Great job! Looking for your next order.",
+                description: activeDelivery?.isTestOrder 
+                  ? "Test delivery completed successfully!" 
+                  : "Great job! Looking for your next order.",
               });
             }}
           />
@@ -588,7 +600,8 @@ export const MobileDriverDashboard: React.FC = () => {
             pickup_address: assignment.pickup_address,
             dropoff_address: assignment.dropoff_address,
             payout_cents: assignment.payout_cents,
-            distance_mi: assignment.distance_mi
+            distance_mi: assignment.distance_mi,
+            isTestOrder: assignment.isTestOrder // Pass through test order flag
           });
           setDriverState('on_delivery');
           setShowOrderModal(false);
@@ -602,6 +615,12 @@ export const MobileDriverDashboard: React.FC = () => {
 
       {/* Bottom Navigation */}
       <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Test Completion Modal */}
+      <TestCompletionModal
+        isOpen={showTestCompletionModal}
+        onClose={() => setShowTestCompletionModal(false)}
+      />
     </div>
   );
 };
