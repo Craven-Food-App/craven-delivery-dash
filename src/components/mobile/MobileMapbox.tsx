@@ -19,7 +19,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const { location, isTracking, startTracking, stopTracking } = useDriverLocation();
+  const { location, isTracking, error: gpsError, startTracking, stopTracking } = useDriverLocation();
 
   // Update driver marker on map
   const updateDriverMarker = (lng: number, lat: number, heading?: number) => {
@@ -109,7 +109,16 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
         container: mapContainer.current,
         style: 'mapbox://styles/crave-n/cmfinp8y2004m01qvb7kwbqol',
         center: [-74.5, 40], // Starting position: [longitude, latitude]
-        zoom: 9 // Starting zoom level
+        zoom: 9, // Starting zoom level
+        // Enable all interactions
+        interactive: true,
+        scrollZoom: true,
+        boxZoom: true,
+        dragRotate: true,
+        dragPan: true,
+        keyboard: true,
+        doubleClickZoom: true,
+        touchZoomRotate: true
       });
 
       // Add navigation controls
@@ -222,6 +231,24 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
             </svg>
           )}
         </button>
+        
+        {gpsError && (
+          <div className="bg-red-100 border border-red-300 rounded-lg p-3 text-xs shadow-lg max-w-48">
+            <div className="text-red-600 font-medium mb-1">GPS Error</div>
+            <div className="text-red-500 text-xs">{gpsError}</div>
+            {gpsError.includes('permission') && (
+              <button
+                onClick={() => {
+                  console.log('Requesting location permission...');
+                  startTracking();
+                }}
+                className="mt-2 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+              >
+                Try Again
+              </button>
+            )}
+          </div>
+        )}
         
         {location && (
           <div className="bg-white/90 backdrop-blur-sm rounded-lg p-2 text-xs shadow-lg">

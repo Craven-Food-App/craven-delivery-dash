@@ -74,13 +74,33 @@ export const useDriverLocation = (): UseDriverLocationReturn => {
       return;
     }
 
+    // Request permission explicitly first
+    if ('permissions' in navigator) {
+      navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+        console.log('Geolocation permission status:', result.state);
+        if (result.state === 'denied') {
+          setError('GPS permission denied. Please enable location access in your browser settings.');
+          toast.error('GPS permission denied - check browser settings');
+          return;
+        }
+        startLocationTracking();
+      }).catch(() => {
+        // Fallback if permissions API is not available
+        startLocationTracking();
+      });
+    } else {
+      startLocationTracking();
+    }
+  };
+
+  const startLocationTracking = () => {
     setIsTracking(true);
     setError(null);
 
     const options: PositionOptions = {
       enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 5000
+      timeout: 15000, // Increased timeout
+      maximumAge: 10000 // Allow slightly older positions
     };
 
     // Get initial position
@@ -99,9 +119,32 @@ export const useDriverLocation = (): UseDriverLocationReturn => {
         toast.success('GPS location found');
       },
       (err) => {
-        console.error('Error getting initial position:', err);
-        setError(`Location error: ${err.message}`);
-        toast.error('Failed to get GPS location');
+        console.error('Error getting initial position:', {
+          code: err.code,
+          message: err.message,
+          PERMISSION_DENIED: err.PERMISSION_DENIED,
+          POSITION_UNAVAILABLE: err.POSITION_UNAVAILABLE,
+          TIMEOUT: err.TIMEOUT
+        });
+        
+        let errorMessage = 'Location error: ';
+        switch(err.code) {
+          case err.PERMISSION_DENIED:
+            errorMessage += 'GPS permission denied. Please allow location access.';
+            break;
+          case err.POSITION_UNAVAILABLE:
+            errorMessage += 'GPS position unavailable. Check your device settings.';
+            break;
+          case err.TIMEOUT:
+            errorMessage += 'GPS request timed out. Trying again...';
+            break;
+          default:
+            errorMessage += err.message || 'Unknown error';
+        }
+        
+        setError(errorMessage);
+        toast.error(errorMessage);
+        setIsTracking(false);
       },
       options
     );
@@ -121,12 +164,27 @@ export const useDriverLocation = (): UseDriverLocationReturn => {
         console.log('Location updated:', locationData);
       },
       (err) => {
-        console.error('Error watching position:', err);
-        setError(`Location tracking error: ${err.message}`);
+        console.error('Error watching position:', {
+          code: err.code,
+          message: err.message,
+          PERMISSION_DENIED: err.PERMISSION_DENIED,
+          POSITION_UNAVAILABLE: err.POSITION_UNAVAILABLE,
+          TIMEOUT: err.TIMEOUT
+        });
         
-        // Don't stop tracking for minor errors, just log them
+        // Don't stop tracking for timeouts, but handle other errors
         if (err.code === err.TIMEOUT) {
           console.log('Location timeout, continuing...');
+          return;
+        }
+        
+        if (err.code === err.PERMISSION_DENIED) {
+          setError('GPS permission denied. Please allow location access.');
+          toast.error('GPS permission denied');
+          setIsTracking(false);
+        } else if (err.code === err.POSITION_UNAVAILABLE) {
+          setError('GPS position unavailable. Check your device settings.');
+          toast.error('GPS unavailable');
         }
       },
       options
