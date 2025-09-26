@@ -33,6 +33,8 @@ export const AccountSection: React.FC<{
   const [profile, setProfile] = useState<CraverProfile | null>(null);
   const [driverStats, setDriverStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isReferralEligible, setIsReferralEligible] = useState(false);
+  const [driverStartDate, setDriverStartDate] = useState<Date | null>(null);
   const [notifications, setNotifications] = useState(true);
   const [locationSharing, setLocationSharing] = useState(true);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleType>('car');
@@ -95,6 +97,14 @@ export const AccountSection: React.FC<{
           totalDeliveries: driverProfile?.total_deliveries || 0,
           rating: driverProfile?.rating || 0
         });
+
+        // Calculate referral eligibility
+        const totalDeliveries = driverProfile?.total_deliveries || 0;
+        const startDate = new Date(application.created_at);
+        const daysSinceStart = Math.floor((new Date().getTime() - startDate.getTime()) / (1000 * 3600 * 24));
+        
+        setDriverStartDate(startDate);
+        setIsReferralEligible(totalDeliveries >= 30 && daysSinceStart >= 30);
 
         // Map vehicle type and set docs status
         const vehicleTypeMapping: Record<string, VehicleType> = {
@@ -164,6 +174,56 @@ export const AccountSection: React.FC<{
         return <AlertCircle className="h-4 w-4" />;
     }
   };
+
+  const handleReferralClick = () => {
+    if (isReferralEligible) {
+      toast({
+        title: "Referral Program",
+        description: "Refer friends and earn rewards! Feature coming soon.",
+      });
+    } else {
+      toast({
+        title: "Not Eligible Yet",
+        description: "Complete 30 deliveries and be active for 30 days to become eligible.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleProfileClick = () => {
+    toast({
+      title: "Profile Settings",
+      description: "Edit your personal information and preferences.",
+    });
+  };
+
+  const handlePaymentMethodsClick = () => {
+    toast({
+      title: "Payment Methods",
+      description: "Manage your payment methods and earnings.",
+    });
+  };
+
+  const handleAppSettingsClick = () => {
+    toast({
+      title: "App Settings",
+      description: "Customize your app preferences and notifications.",
+    });
+  };
+
+  const handleVehicleManagementClick = () => {
+    toast({
+      title: "Vehicle Management",
+      description: "Update your vehicle information and documents.",
+    });
+  };
+
+  const handleSafeDrivingClick = () => {
+    toast({
+      title: "Safe Driving Features",
+      description: "Configure safety settings and driving assistance.",
+    });
+  };
   if (loading) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -222,98 +282,112 @@ export const AccountSection: React.FC<{
         {/* Menu Items */}
         <div className="space-y-0">
           {/* Refer a friend */}
-          <div className="px-4 py-4 bg-background border-b border-border/30">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <UserPlus className="h-5 w-5 text-primary" />
+          <button onClick={handleReferralClick} className="w-full">
+            <div className="px-4 py-4 bg-background border-b border-border/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <UserPlus className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-medium text-foreground">Refer a friend to satisfy a Cave'n</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {isReferralEligible ? 'Eligible' : 'Currently ineligible'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-medium text-foreground">Refer a friend to satisfy a Cave'n</h3>
-                  <p className="text-sm text-muted-foreground">Currently ineligible</p>
-                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </div>
-          </div>
+          </button>
 
           {/* Profile */}
-          <div className="px-4 py-4 bg-background border-b border-border/30">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <button onClick={handleProfileClick} className="w-full">
+            <div className="px-4 py-4 bg-background border-b border-border/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-foreground">Profile</h3>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-medium text-foreground">Profile</h3>
-                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </div>
-          </div>
+          </button>
 
           {/* Payment methods */}
-          <div className="px-4 py-4 bg-background border-b border-border/30">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                  <Wallet className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+          <button onClick={handlePaymentMethodsClick} className="w-full">
+            <div className="px-4 py-4 bg-background border-b border-border/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                    <Wallet className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-foreground">Payment methods</h3>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-medium text-foreground">Payment methods</h3>
-                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </div>
-          </div>
+          </button>
 
           {/* Craver Red Card */}
           
 
           {/* App Settings */}
-          <div className="px-4 py-4 bg-background border-b border-border/30">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                  <Settings className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+          <button onClick={handleAppSettingsClick} className="w-full">
+            <div className="px-4 py-4 bg-background border-b border-border/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                    <Settings className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-foreground">App Settings</h3>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-medium text-foreground">App Settings</h3>
-                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </div>
-          </div>
+          </button>
 
           {/* Vehicle management */}
-          <div className="px-4 py-4 bg-background border-b border-border/30">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <Car className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <button onClick={handleVehicleManagementClick} className="w-full">
+            <div className="px-4 py-4 bg-background border-b border-border/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <Car className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-foreground">Vehicle management</h3>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-medium text-foreground">Vehicle management</h3>
-                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </div>
-          </div>
+          </button>
 
           {/* Safe driving features */}
-          <div className="px-4 py-4 bg-background border-b border-border/30">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                  <Shield className="h-5 w-5 text-green-600 dark:text-green-400" />
+          <button onClick={handleSafeDrivingClick} className="w-full">
+            <div className="px-4 py-4 bg-background border-b border-border/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                    <Shield className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-foreground">Safe driving features</h3>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-medium text-foreground">Safe driving features</h3>
-                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </div>
-          </div>
+          </button>
 
           {/* Log Out */}
           <div className="px-4 py-4 bg-background">
