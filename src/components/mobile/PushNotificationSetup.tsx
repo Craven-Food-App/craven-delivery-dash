@@ -68,8 +68,33 @@ export const PushNotificationSetup: React.FC = () => {
   }, []);
 
   const checkNotificationSupport = () => {
-    const supported = 'Notification' in window && 'serviceWorker' in navigator;
-    const permission = supported ? Notification.permission : 'denied';
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isIOSSafari = isIOS && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS/.test(navigator.userAgent);
+    const hasCapacitor = !!(window as any).Capacitor;
+    
+    // Check for basic notification API support
+    const hasNotificationAPI = 'Notification' in window;
+    const hasServiceWorker = 'serviceWorker' in navigator;
+    const hasPushManager = 'PushManager' in window;
+    
+    // iOS Safari has limited push notification support
+    let supported = false;
+    let limitedSupport = false;
+    
+    if (hasCapacitor) {
+      // Native app via Capacitor - full support
+      supported = true;
+    } else if (isIOSSafari) {
+      // iOS Safari - limited support, requires iOS 16.4+
+      const iosVersion = parseFloat((navigator.userAgent.match(/OS (\d+)_(\d+)/) || [])[1] + '.' + (navigator.userAgent.match(/OS (\d+)_(\d+)/) || [])[2]);
+      supported = iosVersion >= 16.4 && hasNotificationAPI && hasPushManager;
+      limitedSupport = hasNotificationAPI && !hasPushManager;
+    } else {
+      // Other browsers
+      supported = hasNotificationAPI && hasServiceWorker && hasPushManager;
+    }
+    
+    const permission = supported || limitedSupport ? Notification.permission : 'denied';
     
     setPermissionStatus({
       permission,
@@ -327,11 +352,32 @@ export const PushNotificationSetup: React.FC = () => {
             )}
 
             {!permissionStatus.supported && (
-              <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                <AlertTriangle className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
-                <p className="text-sm text-yellow-800">
-                  Push notifications are not supported on this device or browser.
-                </p>
+              <div className="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
+                <AlertTriangle className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-orange-800">
+                    Limited Notification Support
+                  </p>
+                  <p className="text-xs text-orange-700">
+                    {/iPad|iPhone|iPod/.test(navigator.userAgent) ? (
+                      <>
+                        iOS Safari has limited push notification support. For the best experience, 
+                        install the Crave'N app from the App Store or use "Add to Home Screen" 
+                        for enhanced notifications.
+                      </>
+                    ) : (
+                      'Push notifications are not supported on this browser. Try using Chrome, Firefox, or Safari.'
+                    )}
+                  </p>
+                  {/iPad|iPhone|iPod/.test(navigator.userAgent) && (
+                    <div className="mt-3 p-2 bg-orange-100 rounded border">
+                      <p className="text-xs text-orange-800">
+                        <strong>Alternative:</strong> You can still receive notifications through:
+                        • SMS updates • Email alerts • In-app notifications
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </CardContent>
@@ -516,17 +562,25 @@ export const PushNotificationSetup: React.FC = () => {
         </Card>
 
         {/* Tips */}
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-orange-50 border-orange-200">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
-              <Smartphone className="h-5 w-5 text-blue-600 mt-0.5" />
+              <Smartphone className="h-5 w-5 text-primary mt-0.5" />
               <div>
-                <p className="font-medium text-sm text-blue-800">Pro Tips</p>
-                <ul className="text-xs text-blue-700 mt-1 space-y-1">
+                <p className="font-medium text-sm text-orange-800">Pro Tips</p>
+                <ul className="text-xs text-orange-700 mt-1 space-y-1">
                   <li>• Keep notifications enabled for the best earning opportunities</li>
                   <li>• Test notifications regularly to ensure they're working</li>
                   <li>• Critical notifications will bypass quiet hours</li>
-                  <li>• Check your phone's battery optimization settings</li>
+                  {/iPad|iPhone|iPod/.test(navigator.userAgent) ? (
+                    <>
+                      <li>• On iOS: Use &quot;Add to Home Screen&quot; for better notifications</li>
+                      <li>• Enable location access for delivery proximity alerts</li>
+                      <li>• Check Settings &gt; Notifications &gt; Safari for web notification settings</li>
+                    </>
+                  ) : (
+                    <li>• Check your phone&apos;s battery optimization settings</li>
+                  )}
                 </ul>
               </div>
             </div>
