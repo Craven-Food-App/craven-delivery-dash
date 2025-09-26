@@ -337,7 +337,7 @@ export const MobileDriverDashboard: React.FC = () => {
             </div>
 
             {/* Content Container */}
-            <div className="flex flex-col justify-end h-full px-4 pb-7 space-y-4">
+            <div className="flex flex-col justify-end h-full px-4 pb-7 space-y-4 pointer-events-auto">
               {/* Main Action Button */}
               <Button onClick={handleGoOnline} className="w-full h-12 text-lg font-bold bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg rounded-2xl">
                 CRAVE NOW
