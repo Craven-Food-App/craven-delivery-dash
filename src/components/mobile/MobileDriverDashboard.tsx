@@ -23,8 +23,8 @@ interface OrderAssignment {
   assignment_id: string;
   order_id: string;
   restaurant_name: string;
-  pickup_address: string;
-  dropoff_address: string;
+  pickup_address: any; // JSON address object
+  dropoff_address: any; // JSON address object
   payout_cents: number;
   distance_km: number;
   distance_mi: string;
@@ -50,9 +50,9 @@ export const MobileDriverDashboard: React.FC = () => {
   
   const { toast } = useToast();
 
-  // Setup real-time listener for order assignments
+  // Setup real-time listener for order assignments (broadcast + DB changes)
   const setupRealtimeListener = (userId: string) => {
-    const channel = supabase
+    const broadcastChannel = supabase
       .channel(`driver_${userId}`)
       .on('broadcast', { event: 'order_assignment' }, (payload) => {
         setCurrentOrderAssignment({
@@ -71,7 +71,43 @@ export const MobileDriverDashboard: React.FC = () => {
       })
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    const dbChannel = supabase
+      .channel(`order_assignments_${userId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'order_assignments',
+        filter: `driver_id=eq.${userId}`
+      }, async (payload: any) => {
+        const assignment = payload.new as { id: string, order_id: string, expires_at: string }
+        // Fetch order summary to populate modal
+        const { data: order } = await supabase
+          .from('orders')
+          .select('pickup_address, dropoff_address, payout_cents, distance_km')
+          .eq('id', assignment.order_id)
+          .maybeSingle();
+        if (order) {
+          setCurrentOrderAssignment({
+            assignment_id: assignment.id,
+            order_id: assignment.order_id,
+            restaurant_name: 'New Order',
+            pickup_address: order.pickup_address,
+            dropoff_address: order.dropoff_address,
+            payout_cents: order.payout_cents || 0,
+            distance_km: Number(order.distance_km) || 0,
+            distance_mi: ((Number(order.distance_km) || 0) * 0.621371).toFixed(1),
+            expires_at: assignment.expires_at,
+            estimated_time: Math.ceil((Number(order.distance_km) || 0) * 2.5)
+          })
+          setShowOrderModal(true)
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(broadcastChannel);
+      supabase.removeChannel(dbChannel);
+    }
   };
 
   // Track online time
