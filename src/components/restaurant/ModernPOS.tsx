@@ -228,17 +228,27 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
     try {
       const totals = calculateTotals();
 
-      // Create order record using the orders table with proper structure
+      // Ensure user is authenticated for RLS (orders.customer_id = auth.uid())
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Not signed in",
+          description: "Please sign in to place an order.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Create order record using allowed columns on orders table
       const orderData = {
+        customer_id: user.id,
         restaurant_id: restaurantId,
         subtotal_cents: totals.subtotal,
         delivery_fee_cents: totals.deliveryFee,
         tax_cents: totals.tax,
         total_cents: totals.total,
-        order_status: paymentMethod === 'cash' ? 'confirmed' : 'pending_payment',
-        payment_status: paymentMethod === 'cash' ? 'paid' : 'pending',
-        payment_method: paymentMethod,
-        order_type: orderType,
+        order_status: paymentMethod === 'cash' ? 'confirmed' : 'pending',
         delivery_address: orderType === 'delivery' ? {
           name: customerInfo.name,
           phone: customerInfo.phone,
@@ -249,12 +259,7 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
           zip_code: customerInfo.zip_code || '',
           special_instructions: customerInfo.special_instructions || ''
         } : null,
-        estimated_delivery_time: new Date(Date.now() + (orderType === 'delivery' ? 45 : 20) * 60000).toISOString(),
-        customer_info: {
-          name: customerInfo.name,
-          phone: customerInfo.phone,
-          email: customerInfo.email || null
-        }
+        estimated_delivery_time: new Date(Date.now() + (orderType === 'delivery' ? 45 : 20) * 60000).toISOString()
       };
 
       const { data: newOrder, error: orderError } = await supabase
@@ -274,8 +279,7 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
         menu_item_id: item.id,
         quantity: item.quantity,
         price_cents: item.price_cents + (item.modifiers?.reduce((sum, mod) => sum + mod.price_cents, 0) || 0),
-        special_instructions: item.special_instructions || null,
-        modifiers: item.modifiers || []
+        special_instructions: item.special_instructions || null
       }));
 
       const { error: itemsError } = await supabase
