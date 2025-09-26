@@ -44,13 +44,23 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
 
   const handleStageComplete = () => {
     console.log('handleStageComplete called, current stage:', currentStage);
+    
+    // Add GPS skip logic for testing
+    if (orderDetails.isTestOrder) {
+      toast({
+        title: "GPS Skipped",
+        description: "Test mode: Skipping GPS requirements",
+        duration: 2000
+      });
+    }
+    
     switch (currentStage) {
       case 'navigate_to_restaurant':
         console.log('Transitioning to arrived_at_restaurant');
         setCurrentStage('arrived_at_restaurant');
         toast({
           title: "Arrived at Restaurant!",
-          description: "Ready to pick up the order.",
+          description: orderDetails.isTestOrder ? "Test: Simulated arrival at pickup location" : "Ready to pick up the order.",
         });
         break;
       case 'arrived_at_restaurant':
@@ -58,7 +68,7 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         setCurrentStage('navigate_to_customer');
         toast({
           title: "Order Picked Up!",
-          description: "Navigate to customer for delivery.",
+          description: orderDetails.isTestOrder ? "Test: Simulated order pickup" : "Navigate to customer for delivery.",
         });
         break;
       case 'navigate_to_customer':
@@ -66,14 +76,33 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         setCurrentStage('capture_proof');
         toast({
           title: "Arrived at Customer!",
-          description: "Take a photo to complete delivery.",
+          description: orderDetails.isTestOrder ? "Test: Simulated arrival at customer" : "Take a photo to complete delivery.",
         });
         break;
       case 'capture_proof':
       case 'delivered':
         console.log('Completing delivery');
+        if (orderDetails.isTestOrder) {
+          toast({
+            title: "Test Complete!",
+            description: "Thank you for testing the delivery flow",
+            duration: 3000
+          });
+        }
         onCompleteDelivery();
         break;
+    }
+  };
+
+  // Add GPS skip function for testing
+  const handleSkipGPS = () => {
+    if (orderDetails.isTestOrder) {
+      toast({
+        title: "GPS Skipped",
+        description: "Proceeding to next step for testing",
+        duration: 2000
+      });
+      handleStageComplete();
     }
   };
 
@@ -158,16 +187,52 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
             </div>
           </div>
           <div className="flex gap-2 mt-4">
-            <Button className="flex-1" size="lg" onClick={handleStageComplete}>
+            <Button 
+              className="flex-1" 
+              size="lg" 
+              onClick={handleStageComplete}
+            >
               <Navigation className="h-5 w-5 mr-2" />
               {orderDetails.isTestOrder ? 'Simulate Navigation' : 'Start Navigation'}
             </Button>
+            {orderDetails.isTestOrder && (
+              <Button 
+                variant="secondary" 
+                size="lg" 
+                onClick={handleSkipGPS}
+                className="px-3"
+              >
+                ⚡ Skip
+              </Button>
+            )}
             <Button variant="outline" size="lg">
               <Phone className="h-5 w-5" />
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Test Mode GPS Skip */}
+      {orderDetails.isTestOrder && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-orange-800">Test Mode Active</p>
+                <p className="text-sm text-orange-600">GPS requirements are skippable</p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleSkipGPS}
+                className="border-orange-300 text-orange-700 hover:bg-orange-100"
+              >
+                Skip to Arrival
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ETA */}
       <div className="text-center">
@@ -244,10 +309,24 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
           )}
 
           <div className="flex gap-2 mt-4">
-            <Button className="flex-1" size="lg" onClick={handleStageComplete}>
+            <Button 
+              className="flex-1" 
+              size="lg" 
+              onClick={handleStageComplete}
+            >
               <Navigation className="h-5 w-5 mr-2" />
               {orderDetails.isTestOrder ? 'Simulate Arrival' : 'Start Navigation'}
             </Button>
+            {orderDetails.isTestOrder && (
+              <Button 
+                variant="secondary" 
+                size="lg" 
+                onClick={handleSkipGPS}
+                className="px-3"
+              >
+                ⚡ Skip
+              </Button>
+            )}
             <Button variant="outline" size="lg">
               <Phone className="h-5 w-5" />
             </Button>
@@ -258,23 +337,84 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         </CardContent>
       </Card>
 
-      {/* Manual Arrival Button */}
+      {/* Manual Arrival Button - Enhanced for Testing */}
       <Button
         onClick={handleStageComplete}
         variant="outline"
         className="w-full h-12 border-2 border-green-500 text-green-600 hover:bg-green-50"
       >
-        I've Arrived at Customer
+        {orderDetails.isTestOrder ? '🧪 Test: I\'ve Arrived at Customer' : 'I\'ve Arrived at Customer'}
       </Button>
+
+      {/* Additional Test Controls */}
+      {orderDetails.isTestOrder && (
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-green-800">Test Navigation</p>
+                <p className="text-sm text-green-600">Skip GPS tracking for testing</p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleSkipGPS}
+                className="border-green-300 text-green-700 hover:bg-green-100"
+              >
+                Skip to Customer
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 
   const renderCaptureProof = () => (
-    <DeliveryCamera
-      onPhotoCapture={handlePhotoCapture}
-      onCancel={() => setCurrentStage('navigate_to_customer')}
-      isUploading={isUploadingPhoto}
-    />
+    <div className="space-y-4">
+      {/* Test Order Skip Option */}
+      {orderDetails.isTestOrder && (
+        <Card className="border-purple-200 bg-purple-50">
+          <CardContent className="p-4">
+            <div className="text-center space-y-3">
+              <div className="text-2xl">🧪</div>
+              <h3 className="font-bold text-purple-800">Test Mode: Photo Capture</h3>
+              <p className="text-sm text-purple-600">
+                You can skip photo capture for testing or proceed normally
+              </p>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    toast({
+                      title: "Photo Skipped",
+                      description: "Test completed without photo capture",
+                      duration: 2000
+                    });
+                    onCompleteDelivery();
+                  }}
+                  className="flex-1 border-purple-300 text-purple-700 hover:bg-purple-100"
+                >
+                  Skip Photo & Complete
+                </Button>
+                <Button 
+                  onClick={() => setCurrentStage('delivered')}
+                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  Take Photo
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      <DeliveryCamera
+        onPhotoCapture={handlePhotoCapture}
+        onCancel={() => setCurrentStage('navigate_to_customer')}
+        isUploading={isUploadingPhoto}
+      />
+    </div>
   );
 
   const renderDeliveredOrder = () => (
@@ -340,8 +480,8 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
   return (
     <div className="absolute inset-0 z-10 bg-background">
       {/* Progress Indicator */}
-      <div className="absolute top-4 left-4 right-4 z-20">
-        <div className="bg-background/95 backdrop-blur-sm p-3 rounded-xl shadow-lg">
+      <div className="absolute top-4 left-4 right-4 z-20 pointer-events-none">
+        <div className="bg-background/95 backdrop-blur-sm p-3 rounded-xl shadow-lg pointer-events-auto">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium">Delivery Progress</span>
             <span className="text-xs text-muted-foreground">
@@ -365,7 +505,9 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
 
       {/* Main Content */}
       <div className="pt-24 pb-6 px-4 h-full overflow-y-auto">
-        {getCurrentStageComponent()}
+        <div className="relative z-0">
+          {getCurrentStageComponent()}
+        </div>
       </div>
     </div>
   );
