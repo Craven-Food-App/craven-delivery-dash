@@ -404,21 +404,21 @@ export const MobileDriverDashboard: React.FC = () => {
               </Button>
             </div>
 
-            {/* Content Container */}
-            <div className="flex flex-col justify-center h-full px-4 space-y-4">
-              {/* Get Offers Until Section */}
-              <div className="text-center">
-                <div className="bg-card/95 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm border border-border/20 inline-block">
-                  <span className="text-xs text-muted-foreground mr-2">Get offers until</span>
-                  <span className="text-xs font-semibold text-foreground bg-muted/50 px-2 py-1 rounded-full">
-                    {endTime ? endTime.toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                }) : '11:00 PM'}
-                  </span>
-                </div>
+            {/* Get Offers Until Section - Top */}
+            <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20">
+              <div className="bg-card/95 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm border border-border/20">
+                <span className="text-xs text-muted-foreground mr-2">Get offers until</span>
+                <span className="text-xs font-semibold text-foreground bg-muted/50 px-2 py-1 rounded-full">
+                  {endTime ? endTime.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit'
+              }) : '11:00 PM'}
+                </span>
               </div>
+            </div>
 
+            {/* Bottom Content - Still Searching + Popular Times */}
+            <div className="absolute bottom-7 left-4 right-4 z-20 space-y-3">
               {/* Still Searching Section */}
               <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/20">
                 <div className="flex items-center justify-between">
@@ -431,10 +431,8 @@ export const MobileDriverDashboard: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Popular Times Chart - Bottom */}
-            <div className="absolute bottom-7 left-4 right-4 z-20">
+              {/* Popular Times Chart */}
               <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/10">
                 <div className="flex items-center justify-between mb-3">
                   <div>
