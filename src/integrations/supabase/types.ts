@@ -812,6 +812,39 @@ export type Database = {
           },
         ]
       }
+      order_heat_map: {
+        Row: {
+          created_at: string
+          id: string
+          intensity: number
+          lat: number
+          lng: number
+          location_type: string
+          time_window: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          intensity?: number
+          lat: number
+          lng: number
+          location_type?: string
+          time_window?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          intensity?: number
+          lat?: number
+          lng?: number
+          location_type?: string
+          time_window?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       order_item_modifiers: {
         Row: {
           created_at: string
@@ -1414,6 +1447,10 @@ export type Database = {
       }
       make_user_active_driver: {
         Args: { target_user_id: string; vehicle_info?: Json }
+        Returns: undefined
+      }
+      update_order_heat_map: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
     }
