@@ -19,6 +19,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
   const driverMarker = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAutoCentering, setIsAutoCentering] = useState(true);
   
   const { location, isTracking, error: gpsError, startTracking, stopTracking } = useDriverLocation();
 
@@ -68,13 +69,22 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
     }
   };
 
-  // Handle location updates
+  // Handle location updates with automatic centering
   useEffect(() => {
     if (location && map.current) {
       console.log('Updating driver location on map:', location);
       updateDriverMarker(location.longitude, location.latitude, location.heading);
+      
+      // Auto-center on location if enabled
+      if (isAutoCentering) {
+        map.current.flyTo({ 
+          center: [location.longitude, location.latitude], 
+          zoom: Math.max(map.current.getZoom(), 15),
+          duration: 1000 
+        });
+      }
     }
-  }, [location]);
+  }, [location, isAutoCentering]);
 
   // Auto-start GPS tracking when map loads
   useEffect(() => {
@@ -142,8 +152,12 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
         setIsLoading(false);
       });
 
-      // Debug map interactions
-      map.current.on('dragstart', () => console.log('Map drag started'));
+      // Detect manual map interaction to disable auto-centering
+      map.current.on('dragstart', () => {
+        console.log('Map drag started - disabling auto-centering');
+        setIsAutoCentering(false);
+      });
+      
       map.current.on('dragend', () => console.log('Map drag ended'));
       map.current.on('zoomstart', () => console.log('Map zoom started'));
       map.current.on('zoomend', () => console.log('Map zoom ended'));
@@ -296,9 +310,14 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
             if (location && map.current) {
               const { longitude, latitude } = location;
               map.current.flyTo({ center: [longitude, latitude], zoom: 15, duration: 800, bearing: 0 });
+              setIsAutoCentering(true); // Re-enable auto-centering
             }
           }}
-          className="p-3 rounded-full shadow-lg border bg-primary text-primary-foreground hover:opacity-90 transition"
+          className={`p-3 rounded-full shadow-lg border transition ${
+            isAutoCentering 
+              ? 'bg-primary text-primary-foreground' 
+              : 'bg-card text-foreground hover:bg-accent'
+          }`}
           aria-label="Center on my location"
         >
           <Crosshair className="h-4 w-4" />
