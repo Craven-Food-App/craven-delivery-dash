@@ -304,14 +304,14 @@ export const EarningsSection: React.FC = () => {
   return (
     <div className="min-h-screen bg-background pb-16">
       {/* Earnings Header with Gradient Background */}
-      <div className="bg-gradient-to-b from-blue-600 to-blue-700 text-white">
+      <div className="bg-gradient-to-b from-primary to-primary-glow text-white">
         <div className="flex items-center justify-between p-4 pt-12">
           <h1 className="text-xl font-semibold">Earnings</h1>
           <HelpCircle className="h-6 w-6" />
         </div>
         
         <div className="px-4 pb-6">
-          <p className="text-blue-100 text-center mb-6">Confirmed Earnings for Current Week</p>
+          <p className="text-orange-100 text-center mb-6">Confirmed Earnings for Current Week</p>
           
           {/* Daily Earnings Bar Chart */}
           <div className="flex items-end justify-center gap-2 mb-6 h-32">
@@ -328,15 +328,15 @@ export const EarningsSection: React.FC = () => {
                       </span>
                     )}
                     <div 
-                      className={`w-8 ${day.amount > 0 ? 'bg-green-400' : 'bg-blue-500/30'} rounded-t transition-all duration-300`}
+                      className={`w-8 ${day.amount > 0 ? 'bg-green-400' : 'bg-primary/30'} rounded-t transition-all duration-300`}
                       style={{ height: `${Math.max(height, day.amount > 0 ? 20 : 8)}px` }}
                     />
                   </div>
                   <div className="text-center">
-                    <div className={`text-xs ${isToday ? 'text-white font-semibold' : 'text-blue-200'}`}>
+                    <div className={`text-xs ${isToday ? 'text-white font-semibold' : 'text-orange-200'}`}>
                       {day.day}
                     </div>
-                    <div className={`text-xs ${isToday ? 'text-white font-semibold' : 'text-blue-200'}`}>
+                    <div className={`text-xs ${isToday ? 'text-white font-semibold' : 'text-orange-200'}`}>
                       {day.date}
                     </div>
                   </div>
@@ -350,14 +350,14 @@ export const EarningsSection: React.FC = () => {
         </div>
         
         {/* Current Week Summary */}
-        <div className="bg-blue-800/50 mx-4 rounded-lg p-4 mb-4">
+        <div className="bg-primary/20 mx-4 rounded-lg p-4 mb-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm">Current Week</p>
+              <p className="text-orange-100 text-sm">Current Week</p>
               <p className="text-white font-medium">{earningsData.currentWeek.weekRange}</p>
             </div>
             <div className="text-right">
-              <p className="text-blue-100 text-sm">Confirmed Earnings</p>
+              <p className="text-orange-100 text-sm">Confirmed Earnings</p>
               <p className="text-green-400 text-xl font-bold">${earningsData.currentWeek.total.toFixed(2)}</p>
             </div>
           </div>
@@ -370,7 +370,7 @@ export const EarningsSection: React.FC = () => {
         <div className="p-4">
           <div className="flex items-center gap-2 mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Weekly Earnings Summary</h2>
-            <Info className="h-4 w-4 text-blue-500" />
+            <Info className="h-4 w-4 text-primary" />
           </div>
           <p className="text-sm text-gray-600 mb-6">
             For more details about your earnings, including when you can expect to get them, you can visit the Crave'n portal.
@@ -384,7 +384,7 @@ export const EarningsSection: React.FC = () => {
             {earningsData.weeklyHistory.map((week, index) => (
               <div key={index} className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-3">
-                  <span className="text-blue-600 font-medium">
+                  <span className="text-primary font-medium">
                     {week.weekStart} - {week.weekEnd}
                   </span>
                 </div>
@@ -401,7 +401,7 @@ export const EarningsSection: React.FC = () => {
             {Array.from({ length: Math.max(0, 6 - earningsData.weeklyHistory.length) }, (_, i) => (
               <div key={`empty-${i}`} className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-3">
-                  <span className="text-blue-600 font-medium">
+                  <span className="text-primary font-medium">
                     Week {earningsData.weeklyHistory.length + i + 1}
                   </span>
                 </div>
@@ -426,7 +426,7 @@ export const EarningsSection: React.FC = () => {
               className="h-16 flex flex-col items-center justify-center gap-1"
               variant="outline"
             >
-              <CreditCard className="h-5 w-5 text-blue-500" />
+              <CreditCard className="h-5 w-5 text-primary" />
               <span className="text-xs">Payment</span>
               <span className="text-xs">Methods</span>
             </Button>
