@@ -290,7 +290,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
       </div>
 
       {/* Map Controls: zoom and recenter - positioned next to change zone button */}
-      <div className="absolute top-4 left-20 z-20 flex flex-col gap-2 pointer-events-auto">
+      <div className="absolute top-4 left-20 z-20 flex flex-row gap-2 pointer-events-auto">
         <button
           onClick={() => map.current && map.current.zoomIn()}
           className="p-3 rounded-full shadow-lg border bg-card text-foreground hover:bg-accent transition"
@@ -305,9 +305,6 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
         >
           −
         </button>
-        
-        {/* Separator and center location button */}
-        <div className="w-full h-2"></div>
         <button
           onClick={() => {
             if (location && map.current) {
