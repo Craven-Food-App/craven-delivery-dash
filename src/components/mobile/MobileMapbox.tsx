@@ -305,6 +305,9 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
         >
           −
         </button>
+        
+        {/* Separator and center location button */}
+        <div className="w-full h-2"></div>
         <button
           onClick={() => {
             if (location && map.current) {
