@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, Volume2, Play, Pause } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { playNotificationSound } from '@/utils/audioUtils';
 import {
   Dialog,
   DialogContent,
@@ -182,16 +183,13 @@ export const NotificationSettingsManager: React.FC = () => {
     setPlayingAudio(setting.id);
 
     try {
-      for (let i = 0; i < setting.repeat_count; i++) {
-        const audio = new Audio(setting.sound_file);
-        audio.play();
-        
-        if (i < setting.repeat_count - 1) {
-          await new Promise(resolve => setTimeout(resolve, setting.repeat_interval_ms));
-        }
-      }
+      await playNotificationSound(
+        setting.sound_file,
+        setting.repeat_count,
+        setting.repeat_interval_ms
+      );
     } catch (error) {
-      console.error('Error playing audio:', error);
+      console.error('Error playing notification:', error);
     } finally {
       setTimeout(() => setPlayingAudio(null), setting.duration_ms);
     }
