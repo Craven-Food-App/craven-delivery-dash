@@ -8,6 +8,7 @@ import { TestCustomer } from './TestCustomer';
 import { TestDriver } from './TestDriver';
 import { TestRestaurant } from './TestRestaurant';
 import { TestDataManager } from './TestDataManager';
+import { LiveDriverTesting } from './LiveDriverTesting';
 import { 
   Home, 
   Users, 
@@ -17,7 +18,8 @@ import {
   TestTube,
   ArrowRight,
   Shield,
-  Clock
+  Clock,
+  Zap
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -208,7 +210,7 @@ export const TestingHub = () => {
 
         {/* Testing Tabs */}
         <Tabs defaultValue="customer" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="customer" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Customer Testing
@@ -220,6 +222,10 @@ export const TestingHub = () => {
             <TabsTrigger value="restaurant" className="flex items-center gap-2">
               <Store className="h-4 w-4" />
               Restaurant Testing
+            </TabsTrigger>
+            <TabsTrigger value="live" className="flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              Live Testing
             </TabsTrigger>
             <TabsTrigger value="data" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
@@ -237,6 +243,10 @@ export const TestingHub = () => {
 
           <TabsContent value="restaurant" className="space-y-6">
             <TestRestaurant />
+          </TabsContent>
+
+          <TabsContent value="live" className="space-y-6">
+            <LiveDriverTesting />
           </TabsContent>
 
           <TabsContent value="data" className="space-y-6">
