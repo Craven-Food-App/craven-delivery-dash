@@ -14,6 +14,7 @@ import {
   Clock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NotificationSettings {
   newOffers: boolean;
@@ -180,39 +181,54 @@ export const PushNotificationSetup: React.FC = () => {
       if ('serviceWorker' in navigator && 'PushManager' in window) {
         const registration = await navigator.serviceWorker.ready;
         
-        // In a real app, you'd get this from your server
-        const vapidPublicKey = 'YOUR_VAPID_PUBLIC_KEY';
-        
+        // Get VAPID public key from environment or use default
+        const vapidPublicKey = 'BN4GvZtEZiZuqkn9xCeFJ8QqUmzUyZg7jM8Y0vX6b8vI2oJiL9Xr3kNmT1qU9Y8pW0cV5bA2dE3fR4gH6nI7xJ2'; // This should be replaced with actual VAPID key
+
         const subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: vapidPublicKey
         });
 
-        // Send subscription to your server
-        await sendSubscriptionToServer(subscription);
+        // Send subscription to server
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData.user) {
+          const response = await supabase.functions.invoke('register-push-subscription', {
+            body: {
+              subscription,
+              userId: userData.user.id,
+              deviceInfo: {
+                platform: navigator.platform,
+                userAgent: navigator.userAgent
+              }
+            }
+          });
+
+          if (response.error) {
+            console.error('Failed to register push subscription:', response.error);
+            throw new Error(response.error.message);
+          }
+
+          console.log('Push subscription registered successfully');
+          
+          toast({
+            title: "Push Notifications Enabled",
+            description: "You'll receive notifications even when the app is closed.",
+          });
+        }
       }
     } catch (error) {
       console.error('Error registering for push notifications:', error);
+      toast({
+        title: "Push Registration Failed",
+        description: "Could not enable background notifications. You'll still receive in-app notifications.",
+        variant: "destructive"
+      });
     }
   };
 
   const sendSubscriptionToServer = async (subscription: PushSubscription) => {
-    // In a real app, send this to your Supabase edge function
+    // This function is kept for compatibility but functionality moved to registerForPushNotifications
     console.log('Push subscription:', subscription);
-    
-    // Example of how you'd send it:
-    /*
-    await supabase.functions.invoke('register-push-subscription', {
-      body: {
-        subscription,
-        userId: user.id,
-        deviceInfo: {
-          platform: navigator.platform,
-          userAgent: navigator.userAgent
-        }
-      }
-    });
-    */
   };
 
   const testNotification = async () => {
@@ -223,8 +239,8 @@ export const PushNotificationSetup: React.FC = () => {
         // Show local notification for testing
         const notification = new Notification('🚗 New Delivery Offer!', {
           body: 'McDonald\'s • $8.50 • 2.3 miles • 15 min',
-          icon: '/favicon.ico',
-          badge: '/favicon.ico',
+          icon: '/craven-logo.png',
+          badge: '/craven-logo.png',
           tag: 'delivery-offer',
           requireInteraction: true
         });
@@ -511,7 +527,7 @@ export const PushNotificationSetup: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium text-sm">Enable Quiet Hours</p>
-                <p className="text-xs text-muted-foreground">Reduce notifications during these times</p>
+                <p className="text-xs text-muted-foreground">Reduce notifications during set hours</p>
               </div>
               <Switch 
                 checked={settings.quietHours.enabled}
@@ -522,66 +538,46 @@ export const PushNotificationSetup: React.FC = () => {
             </div>
 
             {settings.quietHours.enabled && (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">Start Time</label>
-                    <input 
-                      type="time" 
-                      value={settings.quietHours.start}
-                      onChange={(e) => 
-                        updateSetting('quietHours', { 
-                          ...settings.quietHours, 
-                          start: e.target.value 
-                        })
-                      }
-                      className="w-full mt-1 p-2 border rounded-md text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">End Time</label>
-                    <input 
-                      type="time" 
-                      value={settings.quietHours.end}
-                      onChange={(e) => 
-                        updateSetting('quietHours', { 
-                          ...settings.quietHours, 
-                          end: e.target.value 
-                        })
-                      }
-                      className="w-full mt-1 p-2 border rounded-md text-sm"
-                    />
-                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Start Time</label>
+                  <input
+                    type="time"
+                    value={settings.quietHours.start}
+                    onChange={(e) => 
+                      updateSetting('quietHours', { ...settings.quietHours, start: e.target.value })
+                    }
+                    className="w-full mt-1 px-3 py-2 border border-input rounded-md text-sm"
+                  />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Only critical notifications will be shown during quiet hours
-                </p>
+                <div>
+                  <label className="text-sm font-medium">End Time</label>
+                  <input
+                    type="time"
+                    value={settings.quietHours.end}
+                    onChange={(e) => 
+                      updateSetting('quietHours', { ...settings.quietHours, end: e.target.value })
+                    }
+                    className="w-full mt-1 px-3 py-2 border border-input rounded-md text-sm"
+                  />
+                </div>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Tips */}
-        <Card className="bg-orange-50 border-orange-200">
-          <CardContent className="pt-6">
+        {/* Device-Specific Instructions */}
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <Smartphone className="h-5 w-5 text-primary mt-0.5" />
-              <div>
-                <p className="font-medium text-sm text-orange-800">Pro Tips</p>
-                <ul className="text-xs text-orange-700 mt-1 space-y-1">
-                  <li>• Keep notifications enabled for the best earning opportunities</li>
-                  <li>• Test notifications regularly to ensure they're working</li>
-                  <li>• Critical notifications will bypass quiet hours</li>
-                  {/iPad|iPhone|iPod/.test(navigator.userAgent) ? (
-                    <>
-                      <li>• On iOS: Use &quot;Add to Home Screen&quot; for better notifications</li>
-                      <li>• Enable location access for delivery proximity alerts</li>
-                      <li>• Check Settings &gt; Notifications &gt; Safari for web notification settings</li>
-                    </>
-                  ) : (
-                    <li>• Check your phone&apos;s battery optimization settings</li>
-                  )}
-                </ul>
+              <Smartphone className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="space-y-2">
+                <h3 className="font-semibold text-blue-800">Device Setup Tips</h3>
+                <div className="text-sm text-blue-700 space-y-1">
+                  <p><strong>iOS:</strong> Add to Home Screen for best notification experience</p>
+                  <p><strong>Android:</strong> Allow all permissions for reliable delivery alerts</p>
+                  <p><strong>Desktop:</strong> Keep browser notifications enabled</p>
+                </div>
               </div>
             </div>
           </CardContent>

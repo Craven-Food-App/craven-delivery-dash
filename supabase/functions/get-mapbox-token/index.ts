@@ -31,7 +31,7 @@ serve(async (req) => {
     console.error('Error getting Mapbox token:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message, 
+        error: (error as Error).message || 'Unknown error', 
         success: false 
       }), 
       {

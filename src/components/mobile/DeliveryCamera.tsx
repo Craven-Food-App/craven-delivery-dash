@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Camera, RotateCcw, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { CameraTapToStart } from './CameraTapToStart';
 
 interface DeliveryCameraProps {
   onPhotoCapture: (photo: Blob) => void;
@@ -201,17 +202,44 @@ export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
     );
   }, [capturedPhoto, onPhotoCapture]);
 
+  // Enhanced camera initialization with iOS tap-to-start fallback
+  const initializeCamera = useCallback(() => {
+    if (!videoRef.current) return;
+    
+    const video = videoRef.current;
+    
+    // Add click handler for iOS tap-to-start
+    const handleTapToStart = async () => {
+      console.log('Tap-to-start camera triggered');
+      if (!isCameraActive && !isLoading) {
+        await startCamera();
+      }
+    };
+    
+    video.addEventListener('click', handleTapToStart);
+    video.addEventListener('touchstart', handleTapToStart);
+    
+    return () => {
+      video.removeEventListener('click', handleTapToStart);
+      video.removeEventListener('touchstart', handleTapToStart);
+    };
+  }, [startCamera, isCameraActive, isLoading]);
+
   React.useEffect(() => {
-    // Add small delay for iOS to ensure proper initialization
+    // Initialize camera with delay for iOS
     const initTimer = setTimeout(() => {
       startCamera();
-    }, 100);
+    }, 200);
+    
+    // Setup tap-to-start for iOS
+    const cleanup = initializeCamera();
     
     return () => {
       clearTimeout(initTimer);
       stopCamera();
+      if (cleanup) cleanup();
     };
-  }, [startCamera, stopCamera]);
+  }, [startCamera, stopCamera, initializeCamera]);
 
   return (
     <div className="space-y-4">
