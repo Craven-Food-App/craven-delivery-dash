@@ -242,7 +242,10 @@ export const MobileDriverDashboard: React.FC = () => {
 
   if (activeTab === 'account') {
     return (
-      <AccountSection activeTab={activeTab} onTabChange={setActiveTab} />
+      <>
+        <AccountSection activeTab={activeTab} onTabChange={setActiveTab} />
+        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      </>
     );
   }
 

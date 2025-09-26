@@ -12,16 +12,21 @@ import {
   CreditCard,
   FileText,
   Edit,
-  LogOut
+  LogOut,
+  ChevronRight,
+  Star,
+  UserPlus,
+  HelpCircle,
+  MessageCircle,
+  Archive,
+  Wallet
 } from 'lucide-react';
-import { VehicleSelector } from './VehicleSelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -214,238 +219,179 @@ export const AccountSection: React.FC<{
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="max-w-md mx-auto p-4">
-        <div className="border-l bg-muted/10 p-4 flex flex-col h-[calc(100vh-8rem)]">
-          <Tabs defaultValue="profile" className="w-full h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="profile" className="flex items-center gap-1">
-                <User className="h-4 w-4" />
-                Profile
-              </TabsTrigger>
-              <TabsTrigger value="tools" className="flex items-center gap-1">
-                <Settings className="h-4 w-4" />
-                Tools
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center gap-1">
-                <Bell className="h-4 w-4" />
-                Settings
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="profile" className="flex-1 space-y-4 mt-4">
-              {/* Profile Header */}
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center space-x-4">
-                    <Avatar className="h-16 w-16">
-                      <AvatarImage src={profile?.profile_photo} />
-                      <AvatarFallback>
-                        {profile?.first_name?.[0]}{profile?.last_name?.[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <h2 className="text-xl font-semibold">
-                        {profile?.first_name} {profile?.last_name}
-                      </h2>
-                      <p className="text-sm text-muted-foreground">{profile?.email}</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge className={`${getStatusColor(profile?.status || 'pending')} text-white`}>
-                          {getStatusIcon(profile?.status || 'pending')}
-                          <span className="ml-1 capitalize">{profile?.status}</span>
-                        </Badge>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Vehicle Selector */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Car className="h-5 w-5" />
-                    Active Vehicle
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <VehicleSelector 
-                    selectedVehicle={selectedVehicle}
-                    onVehicleSelect={setSelectedVehicle}
-                    docsStatus={docsStatus}
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Vehicle Information */}
-              {profile?.vehicle_type && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Car className="h-5 w-5" />
-                      Vehicle Details
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-muted-foreground">Type</p>
-                        <p className="font-medium capitalize">{profile.vehicle_type}</p>
-                      </div>
-                      {profile.vehicle_make && (
-                        <div>
-                          <p className="text-muted-foreground">Make</p>
-                          <p className="font-medium">{profile.vehicle_make}</p>
-                        </div>
-                      )}
-                    </div>
-                    {profile.vehicle_model && (
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">Model</p>
-                          <p className="font-medium">{profile.vehicle_model}</p>
-                        </div>
-                        {profile.vehicle_color && (
-                          <div>
-                            <p className="text-muted-foreground">Color</p>
-                            <p className="font-medium">{profile.vehicle_color}</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Quick Stats */}
-              <div className="grid grid-cols-3 gap-3">
-                <Card>
-                  <CardContent className="pt-4 pb-4 text-center">
-                    <DollarSign className="h-6 w-6 mx-auto mb-2 text-green-500" />
-                    <p className="text-2xl font-bold">${driverStats?.weekEarnings?.toFixed(0) || '0'}</p>
-                    <p className="text-xs text-muted-foreground">This week</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4 pb-4 text-center">
-                    <CheckCircle className="h-6 w-6 mx-auto mb-2 text-blue-500" />
-                    <p className="text-2xl font-bold">{driverStats?.totalDeliveries || 0}</p>
-                    <p className="text-xs text-muted-foreground">Deliveries</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4 pb-4 text-center">
-                    <User className="h-6 w-6 mx-auto mb-2 text-purple-500" />
-                    <p className="text-2xl font-bold">{driverStats?.rating?.toFixed(1) || '0.0'}</p>
-                    <p className="text-xs text-muted-foreground">Rating</p>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="tools" className="flex-1 space-y-4 mt-4">
-              {/* Quick Actions */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Settings className="h-5 w-5" />
-                    Driver Tools
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button variant="outline" className="w-full justify-start" size="sm">
-                    <CreditCard className="h-4 w-4 mr-3" />
-                    Payment Methods
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start" size="sm">
-                    <FileText className="h-4 w-4 mr-3" />
-                    Documents
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start" size="sm">
-                    <Shield className="h-4 w-4 mr-3" />
-                    Safety Center
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Sign Out */}
-              <Card>
-                <CardContent className="pt-6">
-                  <Button 
-                    variant="destructive" 
-                    className="w-full" 
-                    onClick={handleSignOut}
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sign Out
-                  </Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="settings" className="flex-1 space-y-4 mt-4">
-              {/* Settings */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Settings className="h-5 w-5" />
-                    App Settings
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Bell className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">Push notifications</span>
-                    </div>
-                    <Switch 
-                      checked={notifications} 
-                      onCheckedChange={setNotifications}
-                    />
-                  </div>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Shield className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">Location sharing</span>
-                    </div>
-                    <Switch 
-                      checked={locationSharing} 
-                      onCheckedChange={setLocationSharing}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+      <div className="max-w-md mx-auto">
+        {/* Header */}
+        <div className="bg-background border-b border-border/50 px-4 py-3">
+          <h1 className="text-2xl font-bold text-foreground">Account</h1>
         </div>
-      </div>
 
-      {/* Bottom Navigation - Import and use it */}
-      <div className="fixed bottom-0 left-0 right-0">
-        <div className="bg-card/95 backdrop-blur-sm border-t border-border/50 h-20 shadow-lg">
-          <div className="flex h-full">
-            {[
-              { id: 'home', label: 'Home', icon: '🏠' },
-              { id: 'schedule', label: 'Schedule', icon: '📅' },
-              { id: 'earnings', label: 'Earnings', icon: '💰' },
-              { id: 'notifications', label: 'Alerts', icon: '🔔' },
-              { id: 'account', label: 'Account', icon: '👤' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => onTabChange(tab.id as any)}
-                className={`flex-1 flex flex-col items-center justify-center py-2 px-1 h-full transition-all duration-200 ${
-                  activeTab === tab.id ? 'text-primary' : 'text-muted-foreground/70'
-                }`}
-              >
-                <span className="text-xl mb-1">{tab.icon}</span>
-                <span className="text-xs font-medium">{tab.label}</span>
-              </button>
-            ))}
+        {/* Profile Header with Stats */}
+        <div className="px-4 py-6 bg-background">
+          <div className="flex items-center space-x-4 mb-6">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={profile?.profile_photo} />
+              <AvatarFallback className="bg-primary/10 text-primary text-xl font-semibold">
+                {profile?.first_name?.[0]}{profile?.last_name?.[0]}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <h2 className="text-xl font-semibold text-foreground">
+                {profile?.first_name} {profile?.last_name}
+              </h2>
+              <p className="text-sm text-muted-foreground capitalize">Driver</p>
+            </div>
           </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-2xl p-4">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-500">
+                ${driverStats?.weekEarnings?.toFixed(2) || '0.00'}
+              </div>
+              <div className="text-sm text-green-700 dark:text-green-400">Total earnings</div>
+            </div>
+            <div className="bg-orange-50 dark:bg-orange-900/20 rounded-2xl p-4 flex items-center">
+              <Star className="h-6 w-6 text-orange-500 mr-2" />
+              <div>
+                <div className="text-2xl font-bold text-orange-600 dark:text-orange-500">
+                  {driverStats?.rating?.toFixed(1) || '5.0'}
+                </div>
+                <div className="text-sm text-orange-700 dark:text-orange-400">Rating</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Menu Items */}
+        <div className="space-y-0">
+          {/* Refer a friend */}
+          <div className="px-4 py-4 bg-background border-b border-border/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <UserPlus className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-foreground">Refer a friend to dash</h3>
+                  <p className="text-sm text-muted-foreground">Currently ineligible</p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </div>
+
+          {/* Profile */}
+          <div className="px-4 py-4 bg-background border-b border-border/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-foreground">Profile</h3>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </div>
+
+          {/* Payment methods */}
+          <div className="px-4 py-4 bg-background border-b border-border/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                  <Wallet className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-foreground">Payment methods</h3>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </div>
+
+          {/* Craver Red Card */}
+          <div className="px-4 py-4 bg-background border-b border-border/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                  <CreditCard className="h-5 w-5 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-foreground">Craver Red Card</h3>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </div>
+
+          {/* App Settings */}
+          <div className="px-4 py-4 bg-background border-b border-border/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                  <Settings className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-foreground">App Settings</h3>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </div>
+
+          {/* Vehicle management */}
+          <div className="px-4 py-4 bg-background border-b border-border/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <Car className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-foreground">Vehicle management</h3>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </div>
+
+          {/* Safe driving features */}
+          <div className="px-4 py-4 bg-background border-b border-border/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                  <Shield className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-foreground">Safe driving features</h3>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </div>
+
+          {/* Log Out */}
+          <div className="px-4 py-4 bg-background">
+            <button 
+              onClick={handleSignOut}
+              className="flex items-center justify-between w-full"
+            >
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                  <LogOut className="h-5 w-5 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-foreground">Log Out</h3>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </button>
+          </div>
+        </div>
+
+        {/* Version Info */}
+        <div className="px-4 py-8 text-center">
+          <p className="text-sm text-muted-foreground">Version 2.392.0 Build 323526</p>
         </div>
       </div>
     </div>
