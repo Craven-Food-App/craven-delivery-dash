@@ -254,7 +254,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
       </div>
 
       {/* Map Controls: zoom and recenter - positioned next to change zone button */}
-      <div className="absolute top-4 left-32 z-20 flex flex-row gap-2 pointer-events-auto px-[5px] py-0 my-[520px] mx-[159px]">
+      <div className="absolute top-4 left-32 z-20 flex flex-row gap-2 pointer-events-auto py-0 mx-0 my-0 px-0">
         
         
         <button onClick={() => {
