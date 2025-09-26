@@ -16,12 +16,10 @@ import { AccountSection } from './AccountSection';
 import { TestCompletionModal } from './TestCompletionModal';
 import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { MobileMapbox } from './MobileMapbox';
-
 type DriverState = 'offline' | 'online_searching' | 'online_paused' | 'on_delivery';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
 type EarningMode = 'perHour' | 'perOffer';
 type TabType = 'home' | 'schedule' | 'earnings' | 'notifications' | 'account';
-
 interface OrderAssignment {
   assignment_id: string;
   order_id: string;
@@ -35,7 +33,6 @@ interface OrderAssignment {
   estimated_time: number;
   isTestOrder?: boolean; // Add test order flag
 }
-
 export const MobileDriverDashboard: React.FC = () => {
   const [driverState, setDriverState] = useState<DriverState>('offline');
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleType>('car');
@@ -44,7 +41,10 @@ export const MobileDriverDashboard: React.FC = () => {
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [onlineTime, setOnlineTime] = useState(0);
   const [currentCity, setCurrentCity] = useState('Toledo');
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [currentOrderAssignment, setCurrentOrderAssignment] = useState<OrderAssignment | null>(null);
   const [activeDelivery, setActiveDelivery] = useState<any>(null);
@@ -52,87 +52,86 @@ export const MobileDriverDashboard: React.FC = () => {
   const [tripCount, setTripCount] = useState(0);
   const [isAvailable, setIsAvailable] = useState(false);
   const [showTestCompletionModal, setShowTestCompletionModal] = useState(false);
-  
-  const { toast } = useToast();
-  const { playNotification } = useNotificationSettings();
+  const {
+    toast
+  } = useToast();
+  const {
+    playNotification
+  } = useNotificationSettings();
 
   // Setup real-time listener for order assignments (broadcast + DB changes)
   const setupRealtimeListener = (userId: string) => {
-    const broadcastChannel = supabase
-      .channel(`driver_${userId}`)
-      .on('broadcast', { event: 'order_assignment' }, (payload) => {
+    const broadcastChannel = supabase.channel(`driver_${userId}`).on('broadcast', {
+      event: 'order_assignment'
+    }, payload => {
+      setCurrentOrderAssignment({
+        assignment_id: payload.payload.assignment_id,
+        order_id: payload.payload.order_id,
+        restaurant_name: payload.payload.restaurant_name,
+        pickup_address: payload.payload.pickup_address,
+        dropoff_address: payload.payload.dropoff_address,
+        payout_cents: payload.payload.payout_cents,
+        distance_km: payload.payload.distance_km,
+        distance_mi: payload.payload.distance_mi,
+        expires_at: payload.payload.expires_at,
+        estimated_time: payload.payload.estimated_time,
+        isTestOrder: payload.payload.isTestOrder // Add test order flag
+      });
+      setShowOrderModal(true);
+
+      // Play notification sound
+      playNotification();
+
+      // Show toast notification
+      toast({
+        title: "New Order Available!",
+        description: `${payload.payload.restaurant_name} - $${(payload.payload.payout_cents / 100).toFixed(2)}`
+      });
+    }).subscribe();
+    const dbChannel = supabase.channel(`order_assignments_${userId}`).on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'order_assignments',
+      filter: `driver_id=eq.${userId}`
+    }, async (payload: any) => {
+      const assignment = payload.new as {
+        id: string;
+        order_id: string;
+        expires_at: string;
+      };
+      // Fetch order summary to populate modal
+      const {
+        data: order
+      } = await supabase.from('orders').select('pickup_address, dropoff_address, payout_cents, distance_km').eq('id', assignment.order_id).maybeSingle();
+      if (order) {
         setCurrentOrderAssignment({
-          assignment_id: payload.payload.assignment_id,
-          order_id: payload.payload.order_id,
-          restaurant_name: payload.payload.restaurant_name,
-          pickup_address: payload.payload.pickup_address,
-          dropoff_address: payload.payload.dropoff_address,
-          payout_cents: payload.payload.payout_cents,
-          distance_km: payload.payload.distance_km,
-          distance_mi: payload.payload.distance_mi,
-          expires_at: payload.payload.expires_at,
-          estimated_time: payload.payload.estimated_time,
-          isTestOrder: payload.payload.isTestOrder // Add test order flag
+          assignment_id: assignment.id,
+          order_id: assignment.order_id,
+          restaurant_name: 'New Order',
+          pickup_address: order.pickup_address,
+          dropoff_address: order.dropoff_address,
+          payout_cents: order.payout_cents || 0,
+          distance_km: Number(order.distance_km) || 0,
+          distance_mi: ((Number(order.distance_km) || 0) * 0.621371).toFixed(1),
+          expires_at: assignment.expires_at,
+          estimated_time: Math.ceil((Number(order.distance_km) || 0) * 2.5)
         });
         setShowOrderModal(true);
-        
+
         // Play notification sound
         playNotification();
-        
+
         // Show toast notification
         toast({
           title: "New Order Available!",
-          description: `${payload.payload.restaurant_name} - $${(payload.payload.payout_cents / 100).toFixed(2)}`,
+          description: `$${((order.payout_cents || 0) / 100).toFixed(2)} - ${((Number(order.distance_km) || 0) * 0.621371).toFixed(1)} miles`
         });
-      })
-      .subscribe();
-
-    const dbChannel = supabase
-      .channel(`order_assignments_${userId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'order_assignments',
-        filter: `driver_id=eq.${userId}`
-      }, async (payload: any) => {
-        const assignment = payload.new as { id: string, order_id: string, expires_at: string }
-        // Fetch order summary to populate modal
-        const { data: order } = await supabase
-          .from('orders')
-          .select('pickup_address, dropoff_address, payout_cents, distance_km')
-          .eq('id', assignment.order_id)
-          .maybeSingle();
-        if (order) {
-          setCurrentOrderAssignment({
-            assignment_id: assignment.id,
-            order_id: assignment.order_id,
-            restaurant_name: 'New Order',
-            pickup_address: order.pickup_address,
-            dropoff_address: order.dropoff_address,
-            payout_cents: order.payout_cents || 0,
-            distance_km: Number(order.distance_km) || 0,
-            distance_mi: ((Number(order.distance_km) || 0) * 0.621371).toFixed(1),
-            expires_at: assignment.expires_at,
-            estimated_time: Math.ceil((Number(order.distance_km) || 0) * 2.5)
-          });
-          setShowOrderModal(true);
-          
-          // Play notification sound
-          playNotification();
-          
-          // Show toast notification
-          toast({
-            title: "New Order Available!",
-            description: `$${((order.payout_cents || 0) / 100).toFixed(2)} - ${((Number(order.distance_km) || 0) * 0.621371).toFixed(1)} miles`,
-          });
-        }
-      })
-      .subscribe();
-
+      }
+    }).subscribe();
     return () => {
       supabase.removeChannel(broadcastChannel);
       supabase.removeChannel(dbChannel);
-    }
+    };
   };
 
   // Track online time
@@ -144,238 +143,203 @@ export const MobileDriverDashboard: React.FC = () => {
       return () => clearInterval(timer);
     }
   }, [driverState]);
-
   const handleGoOnline = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) return;
-
-      await supabase
-        .from('driver_profiles')
-        .update({
-          status: 'online',
-          is_available: true
-        })
-        .eq('user_id', user.id);
+      await supabase.from('driver_profiles').update({
+        status: 'online',
+        is_available: true
+      }).eq('user_id', user.id);
 
       // Get location and update craver_locations table
       if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(async (position) => {
-          const location = { lat: position.coords.latitude, lng: position.coords.longitude };
+        navigator.geolocation.getCurrentPosition(async position => {
+          const location = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
           setUserLocation(location);
-          
-          // Update driver location in database for auto-assignment
-          const { error: locationError } = await supabase
-            .from('craver_locations')
-            .upsert({
-              user_id: user.id,
-              lat: location.lat,
-              lng: location.lng,
-              updated_at: new Date().toISOString()
-            });
 
+          // Update driver location in database for auto-assignment
+          const {
+            error: locationError
+          } = await supabase.from('craver_locations').upsert({
+            user_id: user.id,
+            lat: location.lat,
+            lng: location.lng,
+            updated_at: new Date().toISOString()
+          });
           if (locationError) {
             console.error('Error updating driver location:', locationError);
           }
         });
       }
-
       const now = new Date();
       const defaultEndTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
       setEndTime(defaultEndTime);
       setDriverState('online_searching');
       setOnlineTime(0);
-      
       setupRealtimeListener(user.id);
-      
       toast({
         title: "You're online!",
-        description: "Looking for delivery offers...",
+        description: "Looking for delivery offers..."
       });
-
     } catch (error) {
       console.error('Error going online:', error);
     }
   };
-
   const handleGoOffline = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (user) {
-        await supabase
-          .from('driver_profiles')
-          .update({ 
-            status: 'offline',
-            is_available: false 
-          })
-          .eq('user_id', user.id);
+        await supabase.from('driver_profiles').update({
+          status: 'offline',
+          is_available: false
+        }).eq('user_id', user.id);
       }
-      
       setDriverState('offline');
       setOnlineTime(0);
-      
       toast({
         title: "You're offline",
-        description: "You won't receive delivery offers.",
+        description: "You won't receive delivery offers."
       });
     } catch (error) {
       console.error('Error going offline:', error);
     }
   };
-
   const handlePause = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (user) {
-        await supabase
-          .from('driver_profiles')
-          .update({ 
-            status: 'paused',
-            is_available: false 
-          })
-          .eq('user_id', user.id);
+        await supabase.from('driver_profiles').update({
+          status: 'paused',
+          is_available: false
+        }).eq('user_id', user.id);
       }
-      
       setDriverState('online_paused');
-      
       toast({
         title: "Paused",
-        description: "You won't receive offers while paused.",
+        description: "You won't receive offers while paused."
       });
     } catch (error) {
       console.error('Error pausing:', error);
     }
   };
-
   const handleUnpause = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (user) {
-        await supabase
-          .from('driver_profiles')
-          .update({ 
-            status: 'online',
-            is_available: true 
-          })
-          .eq('user_id', user.id);
+        await supabase.from('driver_profiles').update({
+          status: 'online',
+          is_available: true
+        }).eq('user_id', user.id);
       }
-      
       setDriverState('online_searching');
-      
       toast({
         title: "Back online",
-        description: "Looking for delivery offers...",
+        description: "Looking for delivery offers..."
       });
     } catch (error) {
       console.error('Error unpausing:', error);
     }
   };
-
   const formatTime = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
+    const minutes = Math.floor(seconds % 3600 / 60);
     return `${hours}:${minutes.toString().padStart(2, '0')}`;
   };
-
   const getVehicleIcon = () => {
-    switch(selectedVehicle) {
-      case 'car': return '🚗';
-      case 'bike': return '🚲';
-      case 'scooter': return '🛴';
-      case 'motorcycle': return '🏍️';
-      case 'walk': return '🚶';
-      default: return '🚗';
+    switch (selectedVehicle) {
+      case 'car':
+        return '🚗';
+      case 'bike':
+        return '🚲';
+      case 'scooter':
+        return '🛴';
+      case 'motorcycle':
+        return '🏍️';
+      case 'walk':
+        return '🚶';
+      default:
+        return '🚗';
     }
   };
 
   // Render different tabs
   if (activeTab === 'schedule') {
-    return (
-      <>
+    return <>
         <ScheduleSection />
         <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      </>
-    );
+      </>;
   }
-
   if (activeTab === 'earnings') {
-    return (
-      <>
+    return <>
         <EarningsSection />
         <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      </>
-    );
+      </>;
   }
-
   if (activeTab === 'notifications') {
-    return (
-      <>
+    return <>
         <div className="space-y-4 p-4">
           <NotificationPreferences />
           <PushNotificationSetup />
         </div>
         <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      </>
-    );
+      </>;
   }
-
   if (activeTab === 'account') {
-    return (
-      <>
+    return <>
         <AccountSection activeTab={activeTab} onTabChange={setActiveTab} />
         <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      </>
-    );
+      </>;
   }
-
-  return (
-    <div className="h-screen bg-background relative overflow-hidden">
+  return <div className="h-screen bg-background relative overflow-hidden">
       {/* Full Screen Map Background - Constrained above bottom nav */}
       <div className="absolute inset-0 bottom-20 z-0">
         <MobileMapbox />
       </div>
       
       {/* Status Bar - Top */}
-      {driverState !== 'offline' && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 px-4">
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-lg ${
-            driverState === 'online_searching' ? 'bg-green-500 text-white' :
-            driverState === 'online_paused' ? 'bg-yellow-500 text-white' :
-            'bg-blue-500 text-white'
-          }`}>
+      {driverState !== 'offline' && <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 px-4">
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-lg ${driverState === 'online_searching' ? 'bg-green-500 text-white' : driverState === 'online_paused' ? 'bg-yellow-500 text-white' : 'bg-blue-500 text-white'}`}>
             <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
             <span className="font-semibold text-sm">
-              {driverState === 'online_searching' ? 'Online' :
-               driverState === 'online_paused' ? 'Paused' :
-               'On Delivery'}
+              {driverState === 'online_searching' ? 'Online' : driverState === 'online_paused' ? 'Paused' : 'On Delivery'}
             </span>
           </div>
-        </div>
-      )}
+        </div>}
 
       {/* Main Content Overlay - Constrained above bottom nav */}
       <div className="absolute inset-0 bottom-20 z-10 flex flex-col pointer-events-none">
         
         {/* OFFLINE STATE */}
-        {driverState === 'offline' && (
-          <>
+        {driverState === 'offline' && <>
             {/* Change Zone Button - Top Left */}
             <div className="absolute top-4 left-4 z-20 pointer-events-auto">
-              <Button 
-                variant="secondary" 
-                className="bg-card/95 backdrop-blur-sm text-foreground border border-border/20 shadow-sm rounded-xl px-3 py-2 text-sm font-medium"
-              >
-                Change zone
-              </Button>
+              
             </div>
 
             {/* Content Container */}
             <div className="flex flex-col justify-end h-full px-4 pb-4 space-y-4">
               {/* Main Action Button */}
-              <Button
-                onClick={handleGoOnline}
-                className="w-full h-12 text-lg font-bold bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg rounded-2xl"
-              >
+              <Button onClick={handleGoOnline} className="w-full h-12 text-lg font-bold bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg rounded-2xl">
                 CRAVE NOW
               </Button>
 
@@ -390,56 +354,50 @@ export const MobileDriverDashboard: React.FC = () => {
                 </div>
                 
                 <div className="flex items-end justify-between h-16 gap-2">
-                  {[
-                    { time: '6a', value: 25 },
-                    { time: '9a', value: 45 },
-                    { time: '12p', value: 85 },
-                    { time: '3p', value: 60 },
-                    { time: '6p', value: 95 },
-                    { time: '9p', value: 75 },
-                  ].map((data, index) => (
-                    <div key={data.time} className="flex flex-col items-center flex-1">
-                      <div 
-                        className={`w-full rounded-t-sm transition-all duration-300 ${
-                          index === 4 ? 'bg-primary' : 'bg-muted'
-                        }`}
-                        style={{ 
-                          height: `${(data.value / 95) * 100}%`,
-                          minHeight: '6px'
-                        }}
-                      />
+                  {[{
+                time: '6a',
+                value: 25
+              }, {
+                time: '9a',
+                value: 45
+              }, {
+                time: '12p',
+                value: 85
+              }, {
+                time: '3p',
+                value: 60
+              }, {
+                time: '6p',
+                value: 95
+              }, {
+                time: '9p',
+                value: 75
+              }].map((data, index) => <div key={data.time} className="flex flex-col items-center flex-1">
+                      <div className={`w-full rounded-t-sm transition-all duration-300 ${index === 4 ? 'bg-primary' : 'bg-muted'}`} style={{
+                  height: `${data.value / 95 * 100}%`,
+                  minHeight: '6px'
+                }} />
                       <span className="text-xs text-muted-foreground mt-1 font-medium">
                         {data.time}
                       </span>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </div>
             </div>
-          </>
-        )}
+          </>}
 
         {/* ONLINE SEARCHING STATE */}
-        {driverState === 'online_searching' && (
-          <>
+        {driverState === 'online_searching' && <>
             {/* Change Zone Button - Top Left */}
             <div className="absolute top-4 left-4 z-20 pointer-events-auto">
-              <Button 
-                variant="secondary" 
-                className="bg-card/95 backdrop-blur-sm text-foreground border border-border/20 shadow-sm rounded-xl px-3 py-2 text-sm font-medium"
-              >
+              <Button variant="secondary" className="bg-card/95 backdrop-blur-sm text-foreground border border-border/20 shadow-sm rounded-xl px-3 py-2 text-sm font-medium">
                 Change zone
               </Button>
             </div>
 
             {/* Pause Button - Top Right */}
             <div className="absolute top-4 right-4 z-20 pointer-events-auto">
-              <Button 
-                onClick={handlePause}
-                variant="ghost"
-                size="sm"
-                className="bg-card/80 backdrop-blur-sm border border-border/20 rounded-full p-2 shadow-sm hover:bg-card/90"
-              >
+              <Button onClick={handlePause} variant="ghost" size="sm" className="bg-card/80 backdrop-blur-sm border border-border/20 rounded-full p-2 shadow-sm hover:bg-card/90">
                 <Pause className="h-4 w-4" />
               </Button>
             </div>
@@ -451,7 +409,10 @@ export const MobileDriverDashboard: React.FC = () => {
                 <div className="bg-card/95 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm border border-border/20 inline-block">
                   <span className="text-xs text-muted-foreground mr-2">Get offers until</span>
                   <span className="text-xs font-semibold text-foreground bg-muted/50 px-2 py-1 rounded-full">
-                    {endTime ? endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '11:00 PM'}
+                    {endTime ? endTime.toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                }) : '11:00 PM'}
                   </span>
                 </div>
               </div>
@@ -462,20 +423,8 @@ export const MobileDriverDashboard: React.FC = () => {
                   <span className="text-base text-foreground font-medium">Still searching...</span>
                   <div className="w-6 h-6">
                     <svg className="animate-spin w-full h-full" viewBox="0 0 24 24">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        fill="none"
-                      />
-                      <path
-                        className="opacity-75 text-primary"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" />
+                      <path className="opacity-75 text-primary" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
                   </div>
                 </div>
@@ -494,38 +443,40 @@ export const MobileDriverDashboard: React.FC = () => {
                 </div>
                 
                 <div className="flex items-end justify-between h-16 gap-2">
-                  {[
-                    { time: '6a', value: 25 },
-                    { time: '9a', value: 45 },
-                    { time: '12p', value: 85 },
-                    { time: '3p', value: 60 },
-                    { time: '6p', value: 95 },
-                    { time: '9p', value: 75 },
-                  ].map((data, index) => (
-                    <div key={data.time} className="flex flex-col items-center flex-1">
-                      <div 
-                        className={`w-full rounded-t-sm transition-all duration-300 ${
-                          index === 4 ? 'bg-primary' : 'bg-muted'
-                        }`}
-                        style={{ 
-                          height: `${(data.value / 95) * 100}%`,
-                          minHeight: '6px'
-                        }}
-                      />
+                  {[{
+                time: '6a',
+                value: 25
+              }, {
+                time: '9a',
+                value: 45
+              }, {
+                time: '12p',
+                value: 85
+              }, {
+                time: '3p',
+                value: 60
+              }, {
+                time: '6p',
+                value: 95
+              }, {
+                time: '9p',
+                value: 75
+              }].map((data, index) => <div key={data.time} className="flex flex-col items-center flex-1">
+                      <div className={`w-full rounded-t-sm transition-all duration-300 ${index === 4 ? 'bg-primary' : 'bg-muted'}`} style={{
+                  height: `${data.value / 95 * 100}%`,
+                  minHeight: '6px'
+                }} />
                       <span className="text-xs text-muted-foreground mt-1 font-medium">
                         {data.time}
                       </span>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </div>
             </div>
-          </>
-        )}
+          </>}
 
         {/* PAUSED STATE */}
-        {driverState === 'online_paused' && (
-          <>
+        {driverState === 'online_paused' && <>
             {/* Paused Message - Center */}
             <div className="flex flex-col justify-center items-center h-full px-4">
               <div className="bg-background/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-border/20 text-center max-w-sm w-full">
@@ -549,98 +500,72 @@ export const MobileDriverDashboard: React.FC = () => {
               
               {/* Resume/Stop Controls */}
               <div className="flex gap-3 mt-6 w-full max-w-sm">
-                <Button 
-                  onClick={handleUnpause}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 text-sm font-semibold rounded-xl shadow-lg"
-                >
+                <Button onClick={handleUnpause} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 text-sm font-semibold rounded-xl shadow-lg">
                   <Play className="h-4 w-4 mr-1" />
                   Resume
                 </Button>
-                <Button 
-                  onClick={handleGoOffline}
-                  variant="outline"
-                  className="flex-1 bg-background/95 backdrop-blur-sm border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 py-3 text-sm font-semibold rounded-xl shadow-lg"
-                >
+                <Button onClick={handleGoOffline} variant="outline" className="flex-1 bg-background/95 backdrop-blur-sm border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 py-3 text-sm font-semibold rounded-xl shadow-lg">
                   <Square className="h-4 w-4 mr-1" />
                   Stop
                 </Button>
               </div>
             </div>
-          </>
-        )}
+          </>}
 
         {/* ON DELIVERY STATE */}
-        {driverState === 'on_delivery' && activeDelivery && (
-          <ActiveDeliveryFlow
-            orderDetails={{
-              restaurant_name: activeDelivery.restaurant_name || 'Restaurant',
-              pickup_address: activeDelivery.pickup_address || 'Pickup Address',
-              dropoff_address: activeDelivery.dropoff_address || 'Delivery Address',
-              customer_name: activeDelivery.customer_name,
-              customer_phone: activeDelivery.customer_phone,
-              delivery_notes: activeDelivery.delivery_notes,
-              payout_cents: activeDelivery.payout_cents || 0,
-              estimated_time: activeDelivery.estimated_time || 30,
-              isTestOrder: activeDelivery.isTestOrder // Pass through test order flag
-            }}
-            onCompleteDelivery={() => {
-              // Check if this was a test order
-              if (activeDelivery?.isTestOrder) {
-                setShowTestCompletionModal(true);
-              }
-              
-              setActiveDelivery(null);
-              setDriverState('online_searching');
-              toast({
-                title: "Delivery Complete!",
-                description: activeDelivery?.isTestOrder 
-                  ? "Test delivery completed successfully!" 
-                  : "Great job! Looking for your next order.",
-              });
-            }}
-          />
-        )}
+        {driverState === 'on_delivery' && activeDelivery && <ActiveDeliveryFlow orderDetails={{
+        restaurant_name: activeDelivery.restaurant_name || 'Restaurant',
+        pickup_address: activeDelivery.pickup_address || 'Pickup Address',
+        dropoff_address: activeDelivery.dropoff_address || 'Delivery Address',
+        customer_name: activeDelivery.customer_name,
+        customer_phone: activeDelivery.customer_phone,
+        delivery_notes: activeDelivery.delivery_notes,
+        payout_cents: activeDelivery.payout_cents || 0,
+        estimated_time: activeDelivery.estimated_time || 30,
+        isTestOrder: activeDelivery.isTestOrder // Pass through test order flag
+      }} onCompleteDelivery={() => {
+        // Check if this was a test order
+        if (activeDelivery?.isTestOrder) {
+          setShowTestCompletionModal(true);
+        }
+        setActiveDelivery(null);
+        setDriverState('online_searching');
+        toast({
+          title: "Delivery Complete!",
+          description: activeDelivery?.isTestOrder ? "Test delivery completed successfully!" : "Great job! Looking for your next order."
+        });
+      }} />}
 
       </div>
 
       {/* Order Assignment Modal */}
-      <OrderAssignmentModal
-        isOpen={showOrderModal}
-        onClose={() => {
-          setShowOrderModal(false);
-          setCurrentOrderAssignment(null);
-        }}
-        assignment={currentOrderAssignment}
-        onAccept={(assignment) => {
-          setActiveDelivery({
-            ...assignment,
-            order_id: assignment.order_id,
-            assignment_id: assignment.assignment_id,
-            restaurant_name: assignment.restaurant_name,
-            pickup_address: assignment.pickup_address,
-            dropoff_address: assignment.dropoff_address,
-            payout_cents: assignment.payout_cents,
-            distance_mi: assignment.distance_mi,
-            isTestOrder: assignment.isTestOrder // Pass through test order flag
-          });
-          setDriverState('on_delivery');
-          setShowOrderModal(false);
-          setCurrentOrderAssignment(null);
-        }}
-        onDecline={(assignment) => {
-          setShowOrderModal(false);
-          setCurrentOrderAssignment(null);
-        }}
-      />
+      <OrderAssignmentModal isOpen={showOrderModal} onClose={() => {
+      setShowOrderModal(false);
+      setCurrentOrderAssignment(null);
+    }} assignment={currentOrderAssignment} onAccept={assignment => {
+      setActiveDelivery({
+        ...assignment,
+        order_id: assignment.order_id,
+        assignment_id: assignment.assignment_id,
+        restaurant_name: assignment.restaurant_name,
+        pickup_address: assignment.pickup_address,
+        dropoff_address: assignment.dropoff_address,
+        payout_cents: assignment.payout_cents,
+        distance_mi: assignment.distance_mi,
+        isTestOrder: assignment.isTestOrder // Pass through test order flag
+      });
+      setDriverState('on_delivery');
+      setShowOrderModal(false);
+      setCurrentOrderAssignment(null);
+    }} onDecline={assignment => {
+      setShowOrderModal(false);
+      setCurrentOrderAssignment(null);
+    }} />
 
       {/* Bottom Navigation */}
       <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Test Completion Modal */}
-      <TestCompletionModal
-        isOpen={showTestCompletionModal}
-        onClose={() => setShowTestCompletionModal(false)}
-      />
-    </div>
-  );
+      <TestCompletionModal isOpen={showTestCompletionModal} onClose={() => setShowTestCompletionModal(false)} />
+    </div>;
 };
