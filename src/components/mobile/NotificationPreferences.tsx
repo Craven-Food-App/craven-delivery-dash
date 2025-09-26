@@ -150,8 +150,5 @@ export const NotificationPreferences: React.FC = () => {
         </CardContent>
       </Card>;
   }
-  return <Card>
-      
-      
-    </Card>;
+  return;
 };
