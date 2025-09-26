@@ -220,7 +220,7 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
               </Button>
               <Button
                 onClick={handleAccept}
-                className="flex-1 h-14 text-lg font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-2xl shadow-lg"
+                className="flex-1 h-14 text-lg font-semibold bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white rounded-2xl shadow-lg"
               >
                 ACCEPT
               </Button>
