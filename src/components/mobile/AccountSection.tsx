@@ -229,7 +229,7 @@ export const AccountSection: React.FC<{
                   <UserPlus className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-foreground">Refer a friend to dash</h3>
+                  <h3 className="font-medium text-foreground">Refer a friend to satisfy a Cave'n</h3>
                   <p className="text-sm text-muted-foreground">Currently ineligible</p>
                 </div>
               </div>
