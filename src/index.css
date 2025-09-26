@@ -125,6 +125,13 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for modern browsers */
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
   }
 
   /* Hide scrollbars for mobile */
@@ -141,6 +148,9 @@ All colors MUST be HSL.
   @media (max-width: 768px) {
     html {
       font-size: 16px; /* Prevent zoom on iOS */
+      height: 100%;
+      height: 100vh;
+      height: 100dvh;
     }
 
     body {
@@ -150,6 +160,16 @@ All colors MUST be HSL.
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       user-select: none;
+      /* Ensure full height */
+      min-height: 100vh;
+      min-height: 100dvh;
+      position: relative;
+    }
+
+    #root {
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
     }
 
     /* Better button sizing for touch */
