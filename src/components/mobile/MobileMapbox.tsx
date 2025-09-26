@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useDriverLocation } from '@/hooks/useDriverLocation';
+import { Crosshair } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -65,13 +66,6 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
         .setLngLat([lng, lat])
         .addTo(map.current);
     }
-
-    // Center the map on driver location
-    map.current.flyTo({
-      center: [lng, lat],
-      zoom: 15,
-      duration: 1000
-    });
   };
 
   // Handle location updates
@@ -305,9 +299,9 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({ className = "" }) =>
             }
           }}
           className="p-3 rounded-full shadow-lg border bg-primary text-primary-foreground hover:opacity-90 transition"
-          aria-label="Snap to current location"
+          aria-label="Center on my location"
         >
-          ⊙
+          <Crosshair className="h-4 w-4" />
         </button>
       </div>
 
