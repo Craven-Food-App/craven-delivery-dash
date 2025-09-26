@@ -1,26 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { 
-  User, 
-  Car, 
-  CheckCircle, 
-  AlertCircle, 
-  DollarSign, 
-  Settings, 
-  Bell,
-  Shield,
-  CreditCard,
-  FileText,
-  Edit,
-  LogOut,
-  ChevronRight,
-  Star,
-  UserPlus,
-  HelpCircle,
-  MessageCircle,
-  Archive,
-  Wallet
-} from 'lucide-react';
+import { User, Car, CheckCircle, AlertCircle, DollarSign, Settings, Bell, Shield, CreditCard, FileText, Edit, LogOut, ChevronRight, Star, UserPlus, HelpCircle, MessageCircle, Archive, Wallet } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,9 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
-
 interface CraverProfile {
   id: string;
   first_name: string;
@@ -45,11 +23,13 @@ interface CraverProfile {
   vehicle_color?: string;
   profile_photo?: string;
 }
-
 export const AccountSection: React.FC<{
   activeTab: 'home' | 'schedule' | 'earnings' | 'notifications' | 'account';
   onTabChange: (tab: 'home' | 'schedule' | 'earnings' | 'notifications' | 'account') => void;
-}> = ({ activeTab, onTabChange }) => {
+}> = ({
+  activeTab,
+  onTabChange
+}) => {
   const [profile, setProfile] = useState<CraverProfile | null>(null);
   const [driverStats, setDriverStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -61,47 +41,41 @@ export const AccountSection: React.FC<{
     bike: false,
     scooter: false,
     walk: false,
-    motorcycle: false,
+    motorcycle: false
   });
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   useEffect(() => {
     fetchProfile();
   }, []);
-
   const fetchProfile = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       // Get craver application
-      const { data: application } = await supabase
-        .from('craver_applications')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+      const {
+        data: application
+      } = await supabase.from('craver_applications').select('*').eq('user_id', user.id).single();
 
       // Get driver profile and stats
-      const { data: driverProfile } = await supabase
-        .from('driver_profiles')
-        .select('total_deliveries, rating')
-        .eq('user_id', user.id)
-        .single();
+      const {
+        data: driverProfile
+      } = await supabase.from('driver_profiles').select('total_deliveries, rating').eq('user_id', user.id).single();
 
       // Get recent earnings (this week)
       const weekStart = new Date();
       weekStart.setDate(weekStart.getDate() - weekStart.getDay());
       weekStart.setHours(0, 0, 0, 0);
-
-      const { data: weekOrders } = await supabase
-        .from('orders')
-        .select('payout_cents')
-        .eq('assigned_craver_id', user.id)
-        .eq('status', 'delivered')
-        .gte('created_at', weekStart.toISOString());
-
+      const {
+        data: weekOrders
+      } = await supabase.from('orders').select('payout_cents').eq('assigned_craver_id', user.id).eq('status', 'delivered').gte('created_at', weekStart.toISOString());
       const weekEarnings = weekOrders?.reduce((sum, order) => sum + order.payout_cents, 0) || 0;
-
       if (application) {
         setProfile({
           id: user.id,
@@ -116,7 +90,6 @@ export const AccountSection: React.FC<{
           vehicle_color: application.vehicle_color,
           profile_photo: application.profile_photo
         });
-
         setDriverStats({
           weekEarnings: weekEarnings / 100,
           totalDeliveries: driverProfile?.total_deliveries || 0,
@@ -131,7 +104,6 @@ export const AccountSection: React.FC<{
           'motorcycle': 'motorcycle',
           'walking': 'walk'
         };
-        
         const mappedVehicleType = vehicleTypeMapping[application.vehicle_type] || 'car';
         setSelectedVehicle(mappedVehicleType);
 
@@ -141,19 +113,12 @@ export const AccountSection: React.FC<{
           bike: false,
           scooter: false,
           walk: true,
-          motorcycle: false,
+          motorcycle: false
         };
-
         if (application.vehicle_type !== 'walking') {
-          const hasRequiredDocs = !!(
-            application.drivers_license_front && 
-            application.drivers_license_back &&
-            (application.vehicle_type === 'bike' || 
-             (application.insurance_document && application.vehicle_registration))
-          );
+          const hasRequiredDocs = !!(application.drivers_license_front && application.drivers_license_back && (application.vehicle_type === 'bike' || application.insurance_document && application.vehicle_registration));
           newDocsStatus[mappedVehicleType] = hasRequiredDocs;
         }
-
         setDocsStatus(newDocsStatus);
       }
     } catch (error) {
@@ -162,7 +127,6 @@ export const AccountSection: React.FC<{
       setLoading(false);
     }
   };
-
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -178,7 +142,6 @@ export const AccountSection: React.FC<{
       });
     }
   };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
@@ -191,7 +154,6 @@ export const AccountSection: React.FC<{
         return 'bg-yellow-500';
     }
   };
-
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved':
@@ -202,10 +164,8 @@ export const AccountSection: React.FC<{
         return <AlertCircle className="h-4 w-4" />;
     }
   };
-
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+    return <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-pulse space-y-4">
             <div className="h-20 w-20 bg-muted rounded-full mx-auto"></div>
@@ -213,12 +173,9 @@ export const AccountSection: React.FC<{
             <div className="h-3 w-24 bg-muted rounded mx-auto"></div>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-background pb-20">
+  return <div className="min-h-screen bg-background pb-20">
       <div className="max-w-md mx-auto">
         {/* Header */}
         <div className="bg-background border-b border-border/50 px-4 py-3">
@@ -311,19 +268,7 @@ export const AccountSection: React.FC<{
           </div>
 
           {/* Craver Red Card */}
-          <div className="px-4 py-4 bg-background border-b border-border/30">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                  <CreditCard className="h-5 w-5 text-red-600 dark:text-red-400" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-foreground">Craver Red Card</h3>
-                </div>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </div>
-          </div>
+          
 
           {/* App Settings */}
           <div className="px-4 py-4 bg-background border-b border-border/30">
@@ -372,10 +317,7 @@ export const AccountSection: React.FC<{
 
           {/* Log Out */}
           <div className="px-4 py-4 bg-background">
-            <button 
-              onClick={handleSignOut}
-              className="flex items-center justify-between w-full"
-            >
+            <button onClick={handleSignOut} className="flex items-center justify-between w-full">
               <div className="flex items-center space-x-4">
                 <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
                   <LogOut className="h-5 w-5 text-red-600 dark:text-red-400" />
@@ -394,6 +336,5 @@ export const AccountSection: React.FC<{
           <p className="text-sm text-muted-foreground">Version 2.392.0 Build 323526</p>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
