@@ -20,28 +20,59 @@ export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const startCamera = useCallback(async () => {
+    console.log('Starting camera...');
+    setIsLoading(true);
+    setCameraError(null);
+    
     try {
+      // Check if navigator.mediaDevices is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera not supported in this browser');
+      }
+
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: 'environment', // Use back camera if available
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 }
         }
       });
       
+      console.log('Camera stream obtained:', mediaStream);
+      
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        
+        // Wait for video to load
+        videoRef.current.onloadedmetadata = () => {
+          console.log('Video metadata loaded');
+          setIsCameraActive(true);
+          setIsLoading(false);
+        };
+        
+        // Handle video errors
+        videoRef.current.onerror = (error) => {
+          console.error('Video error:', error);
+          setCameraError('Error loading camera feed');
+          setIsLoading(false);
+        };
+        
         setStream(mediaStream);
-        setIsCameraActive(true);
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown camera error';
+      setCameraError(errorMessage);
+      setIsLoading(false);
+      
       toast({
         title: 'Camera Error',
-        description: 'Unable to access camera. Please check permissions.',
+        description: `Unable to access camera: ${errorMessage}`,
         variant: 'destructive'
       });
     }
@@ -112,25 +143,48 @@ export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
       {/* Camera/Photo Display */}
       <Card>
         <CardContent className="p-4">
-          <div className="relative aspect-[4/3] bg-gray-100 rounded-lg overflow-hidden">
+          <div className="relative aspect-[4/3] bg-gray-900 rounded-lg overflow-hidden">
             {!capturedPhoto ? (
               <>
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover"
-                />
-                {isCameraActive && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="absolute inset-4 border-2 border-white/50 rounded-lg" />
-                    <div className="absolute top-4 left-4 right-4 text-center">
-                      <p className="text-white text-sm bg-black/50 rounded px-2 py-1 inline-block">
-                        Position the delivery in the frame
-                      </p>
-                    </div>
+                {cameraError ? (
+                  <div className="w-full h-full flex items-center justify-center flex-col text-white">
+                    <Camera className="h-12 w-12 mb-4 opacity-50" />
+                    <p className="text-center px-4">
+                      Camera Error: {cameraError}
+                    </p>
+                    <Button 
+                      onClick={startCamera} 
+                      className="mt-4 bg-orange-600 hover:bg-orange-700"
+                    >
+                      Retry Camera
+                    </Button>
                   </div>
+                ) : isLoading ? (
+                  <div className="w-full h-full flex items-center justify-center flex-col text-white">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
+                    <p>Starting camera...</p>
+                  </div>
+                ) : (
+                  <>
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover bg-black"
+                      style={{ transform: 'scaleX(-1)' }} // Mirror for better UX
+                    />
+                    {isCameraActive && (
+                      <div className="absolute inset-0 pointer-events-none">
+                        <div className="absolute inset-4 border-2 border-white/50 rounded-lg" />
+                        <div className="absolute top-4 left-4 right-4 text-center">
+                          <p className="text-white text-sm bg-black/70 rounded-full px-3 py-2 inline-block">
+                            📦 Position the delivery in the frame
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             ) : (
@@ -191,6 +245,19 @@ export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
 
       {/* Hidden canvas for photo capture */}
       <canvas ref={canvasRef} className="hidden" />
+
+      {/* Instructions for Browser Testing */}
+      <Card className="bg-yellow-50 border-yellow-200">
+        <CardContent className="p-4">
+          <h3 className="font-semibold mb-2 text-yellow-800">📱 Camera Testing Notes:</h3>
+          <ul className="text-sm text-yellow-700 space-y-1">
+            <li>• Camera works best on mobile devices or mobile browsers</li>
+            <li>• In desktop browsers, you may need to grant camera permissions</li>
+            <li>• Make sure your browser supports camera access (HTTPS required)</li>
+            <li>• Some browsers may show a blank screen - try refreshing or using mobile</li>
+          </ul>
+        </CardContent>
+      </Card>
 
       {/* Instructions */}
       <Card>
