@@ -250,9 +250,9 @@ export const MobileDriverDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Full Screen Map Background */}
-      <div className="absolute inset-0 z-0">
+    <div className="h-screen bg-background relative overflow-hidden">
+      {/* Full Screen Map Background - Constrained above bottom nav */}
+      <div className="absolute inset-0 bottom-20 z-0">
         <MapboxMap 
           orders={[]} 
           activeOrder={null} 
@@ -278,8 +278,8 @@ export const MobileDriverDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Main Content Overlay */}
-      <div className="absolute inset-0 z-10">
+      {/* Main Content Overlay - Constrained above bottom nav */}
+      <div className="absolute inset-0 bottom-20 z-10">
         
         {/* OFFLINE STATE */}
         {driverState === 'offline' && (
@@ -295,7 +295,7 @@ export const MobileDriverDashboard: React.FC = () => {
             </div>
 
             {/* Main Action Button - Large Orange Button */}
-            <div className="absolute bottom-80 left-6 right-6 z-20">
+            <div className="absolute bottom-48 left-6 right-6 z-20">
               <Button
                 onClick={handleGoOnline}
                 className="w-full h-14 text-xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg rounded-2xl"
@@ -305,7 +305,7 @@ export const MobileDriverDashboard: React.FC = () => {
             </div>
 
             {/* Popular Times Chart */}
-            <div className="absolute bottom-16 left-6 right-6 z-20">
+            <div className="absolute bottom-6 left-6 right-6 z-20">
               <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-border/10">
                 <div className="flex items-center justify-between mb-4">
                   <div>
@@ -396,7 +396,7 @@ export const MobileDriverDashboard: React.FC = () => {
             </div>
 
             {/* Popular Times Chart */}
-            <div className="absolute bottom-16 left-6 right-6 z-20">
+            <div className="absolute bottom-6 left-6 right-6 z-20">
               <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-border/10">
                 <div className="flex items-center justify-between mb-4">
                   <div>
@@ -452,7 +452,7 @@ export const MobileDriverDashboard: React.FC = () => {
         {driverState === 'online_paused' && (
           <>
             {/* Paused Message - Center */}
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <div className="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
               <div className="bg-background/95 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-border/20 text-center">
                 <div className="text-6xl mb-4">⏸️</div>
                 <div className="text-2xl font-bold text-foreground mb-2">
@@ -474,7 +474,7 @@ export const MobileDriverDashboard: React.FC = () => {
             </div>
 
             {/* Resume/Stop Controls - Bottom */}
-            <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 flex gap-4">
+            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-4">
               <Button 
                 onClick={handleUnpause}
                 className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg"
