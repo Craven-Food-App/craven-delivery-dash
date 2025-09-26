@@ -87,7 +87,6 @@ export const useNotificationSettings = () => {
       }, selectedSetting.duration_ms);
     }
   }, [selectedSetting, isPlaying]);
-  }, [selectedSetting, isPlaying]);
 
   const stopNotification = useCallback(() => {
     setIsPlaying(false);
