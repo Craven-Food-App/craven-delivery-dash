@@ -13,7 +13,7 @@ interface DeliveryCameraProps {
 export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
   onPhotoCapture,
   onCancel,
-  isUploading = false
+  isUploading = false,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -24,7 +24,7 @@ export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // Start camera on user tap
+  // Start camera (tap-to-start)
   const startCamera = useCallback(async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
       const msg = 'Camera not supported';
@@ -36,26 +36,33 @@ export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
     setIsLoading(true);
     setCameraError(null);
 
-    // Stop previous stream if any
-    stream?.getTracks().forEach(track => track.stop());
+    // Stop previous stream
+    stream?.getTracks().forEach((track) => track.stop());
     setStream(null);
 
     try {
-      // Simplified constraints for maximum compatibility
       const constraints = { video: { facingMode: 'environment' }, audio: false };
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      if (videoRef.current) {
-        const video = videoRef.current;
-        video.srcObject = mediaStream;
-        video.playsInline = true;
-        video.muted = true;
-        video.autoplay = true;
-        video.setAttribute('playsinline', 'true');
-        video.setAttribute('webkit-playsinline', 'true'); // iOS
-        await video.play();
-      }
+      if (!videoRef.current) return;
 
+      const video = videoRef.current;
+      video.srcObject = mediaStream;
+      video.playsInline = true;
+      video.muted = true;
+      video.setAttribute('playsinline', 'true');
+      video.setAttribute('webkit-playsinline', 'true');
+
+      // Wait for metadata to load
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(resolve, 2000); // fallback
+        video.onloadedmetadata = () => {
+          clearTimeout(timeout);
+          resolve();
+        };
+      });
+
+      await video.play();
       setStream(mediaStream);
       setIsCameraActive(true);
     } catch (err: any) {
@@ -69,7 +76,7 @@ export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
   }, [stream, toast]);
 
   const stopCamera = useCallback(() => {
-    stream?.getTracks().forEach(track => track.stop());
+    stream?.getTracks().forEach((track) => track.stop());
     setStream(null);
     setIsCameraActive(false);
   }, [stream]);
@@ -84,7 +91,7 @@ export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
     canvas.width = video.videoWidth || 1280;
     canvas.height = video.videoHeight || 720;
 
-    // Mirror for better UX
+    // Mirror for UX if desired
     ctx.save();
     ctx.scale(-1, 1);
     ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
@@ -96,7 +103,7 @@ export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
           const url = URL.createObjectURL(blob);
           setCapturedPhoto(url);
           stopCamera();
-          onPhotoCapture(blob); // directly send blob
+          onPhotoCapture(blob);
         }
       },
       'image/jpeg',
