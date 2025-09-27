@@ -1,9 +1,8 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Camera, RotateCcw, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { CameraTapToStart } from './CameraTapToStart';
 
 interface DeliveryCameraProps {
   onPhotoCapture: (photo: Blob) => void;
@@ -25,221 +24,122 @@ export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  // Start camera with primary and fallback constraints
   const startCamera = useCallback(async () => {
-    console.log('Starting camera...');
+    if (!navigator.mediaDevices?.getUserMedia) {
+      const errMsg = 'Camera not supported in this browser';
+      setCameraError(errMsg);
+      toast({ title: 'Camera Error', description: errMsg, variant: 'destructive' });
+      return;
+    }
+
     setIsLoading(true);
     setCameraError(null);
-    
-    const tryStart = async (videoConstraints: MediaStreamConstraints['video']) => {
-      const constraints: MediaStreamConstraints = { video: videoConstraints, audio: false };
-      console.log('Requesting camera with constraints:', constraints);
+
+    const tryConstraints = async (constraints: MediaStreamConstraints) => {
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-      console.log('Camera stream obtained:', mediaStream);
-      if (!videoRef.current) return mediaStream;
-
-      const video = videoRef.current;
-      video.playsInline = true;
-      video.muted = true;
-      video.autoplay = true;
-      video.setAttribute('playsinline', 'true');
-      video.setAttribute('webkit-playsinline', 'true');
-      video.srcObject = mediaStream;
-
-      await new Promise((resolve, reject) => {
-        const onLoadedMetadata = () => {
-          video.removeEventListener('loadedmetadata', onLoadedMetadata);
-          video.removeEventListener('error', onError);
-          resolve(true);
-        };
-        const onError = (e: any) => {
-          video.removeEventListener('loadedmetadata', onLoadedMetadata);
-          video.removeEventListener('error', onError);
-          reject(e);
-        };
-        video.addEventListener('loadedmetadata', onLoadedMetadata);
-        video.addEventListener('error', onError);
-        setTimeout(() => {
-          if (video.readyState >= 2) {
-            video.removeEventListener('loadedmetadata', onLoadedMetadata);
-            video.removeEventListener('error', onError);
-            resolve(true);
-          }
-        }, 1500);
-      });
-
-      try {
+      if (videoRef.current) {
+        const video = videoRef.current;
+        video.srcObject = mediaStream;
+        video.playsInline = true;
+        video.muted = true;
+        video.autoplay = true;
+        video.setAttribute('playsinline', 'true');
+        video.setAttribute('webkit-playsinline', 'true');
         await video.play();
-      } catch (e) {
-        console.warn('Video play failed, continuing:', e);
       }
-
       return mediaStream;
     };
 
     try {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error('Camera not supported in this browser');
-      }
-
-      // Primary high-quality constraints
-      const primaryVideo: MediaStreamConstraints['video'] = {
-        facingMode: 'environment',
-        width: { ideal: 1920, max: 1920, min: 640 },
-        height: { ideal: 1080, max: 1080, min: 480 },
-        frameRate: { ideal: 30, max: 30 },
-        aspectRatio: { ideal: 16/9 },
+      // High-quality back camera
+      const primaryConstraints = {
+        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false
       };
-
-      let mediaStream = await tryStart(primaryVideo);
+      const mediaStream = await tryConstraints(primaryConstraints);
       setStream(mediaStream);
       setIsCameraActive(true);
-      setIsLoading(false);
     } catch (err1) {
-      console.warn('Primary camera start failed, retrying with relaxed constraints:', err1);
       try {
-        // Relaxed constraints for iOS stability
-        const fallbackVideo: MediaStreamConstraints['video'] = {
-          facingMode: { ideal: 'environment' },
-        };
-        const mediaStream = await tryStart(fallbackVideo);
+        // Fallback: simpler constraints
+        const fallbackConstraints = { video: { facingMode: 'environment' }, audio: false };
+        const mediaStream = await tryConstraints(fallbackConstraints);
         setStream(mediaStream);
         setIsCameraActive(true);
-        setIsLoading(false);
       } catch (err2) {
-        console.error('Fallback camera start failed:', err2);
         const errorMessage = err2 instanceof Error ? err2.message : 'Unknown camera error';
         setCameraError(errorMessage);
-        setIsLoading(false);
-        toast({
-          title: 'Camera Error',
-          description: `Unable to access camera: ${errorMessage}`,
-          variant: 'destructive'
-        });
+        toast({ title: 'Camera Error', description: errorMessage, variant: 'destructive' });
       }
+    } finally {
+      setIsLoading(false);
     }
   }, [toast]);
 
   const stopCamera = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
-      setIsCameraActive(false);
-    }
+    stream?.getTracks().forEach(track => track.stop());
+    setStream(null);
+    setIsCameraActive(false);
   }, [stream]);
 
   const capturePhoto = useCallback(() => {
-    if (!videoRef.current || !canvasRef.current || !isCameraActive) {
-      console.error('Video or canvas not ready for capture');
-      return;
-    }
+    if (!videoRef.current || !canvasRef.current) return;
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    const context = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-    if (!context || video.readyState < 2) {
-      console.error('Context not available or video not ready');
-      toast({
-        title: 'Camera Error',
-        description: 'Camera not ready. Please wait a moment and try again.',
-        variant: 'destructive'
-      });
-      return;
-    }
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
 
-    try {
-      // Set canvas dimensions to match video
-      canvas.width = video.videoWidth || 1280;
-      canvas.height = video.videoHeight || 720;
+    // Optional mirror for better UX
+    ctx.save();
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+    ctx.restore();
 
-      console.log('Capturing photo at dimensions:', canvas.width, 'x', canvas.height);
-
-      // Clear canvas first
-      context.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Draw video frame to canvas (flip horizontally back to normal)
-      context.save();
-      context.scale(-1, 1);
-      context.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
-      context.restore();
-
-      // Convert to data URL with high quality
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-      
-      if (dataUrl && dataUrl !== 'data:,') {
-        setCapturedPhoto(dataUrl);
-        stopCamera();
-        console.log('Photo captured successfully');
-      } else {
-        throw new Error('Failed to capture photo data');
-      }
-    } catch (error) {
-      console.error('Error capturing photo:', error);
-      toast({
-        title: 'Capture Error',
-        description: 'Failed to capture photo. Please try again.',
-        variant: 'destructive'
-      });
-    }
-  }, [isCameraActive, stopCamera, toast]);
+    // Convert to Blob and set preview
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          setCapturedPhoto(url);
+          stopCamera();
+          onPhotoCapture(blob); // send immediately
+        }
+      },
+      'image/jpeg',
+      0.8
+    );
+  }, [stopCamera, onPhotoCapture]);
 
   const retakePhoto = useCallback(() => {
     setCapturedPhoto(null);
     startCamera();
   }, [startCamera]);
 
-  const confirmPhoto = useCallback(() => {
-    if (!capturedPhoto || !canvasRef.current) return;
-
-    canvasRef.current.toBlob(
-      (blob) => {
-        if (blob) {
-          onPhotoCapture(blob);
-        }
-      },
-      'image/jpeg',
-      0.8
-    );
-  }, [capturedPhoto, onPhotoCapture]);
-
-  // Enhanced camera initialization with iOS tap-to-start fallback
-  const initializeCamera = useCallback(() => {
-    if (!videoRef.current) return;
-    
+  // Tap-to-start for iOS
+  useEffect(() => {
     const video = videoRef.current;
-    
-    // Add click handler for iOS tap-to-start
-    const handleTapToStart = async () => {
-      console.log('Tap-to-start camera triggered');
-      if (!isCameraActive && !isLoading) {
-        await startCamera();
-      }
+    if (!video) return;
+    const handleTap = async () => {
+      if (!isCameraActive && !isLoading) await startCamera();
     };
-    
-    video.addEventListener('click', handleTapToStart);
-    video.addEventListener('touchstart', handleTapToStart);
-    
+    video.addEventListener('click', handleTap);
+    video.addEventListener('touchstart', handleTap);
     return () => {
-      video.removeEventListener('click', handleTapToStart);
-      video.removeEventListener('touchstart', handleTapToStart);
+      video.removeEventListener('click', handleTap);
+      video.removeEventListener('touchstart', handleTap);
     };
   }, [startCamera, isCameraActive, isLoading]);
 
-  React.useEffect(() => {
-    // Initialize camera with delay for iOS
-    const initTimer = setTimeout(() => {
-      startCamera();
-    }, 200);
-    
-    // Setup tap-to-start for iOS
-    const cleanup = initializeCamera();
-    
-    return () => {
-      clearTimeout(initTimer);
-      stopCamera();
-      if (cleanup) cleanup();
-    };
-  }, [startCamera, stopCamera, initializeCamera]);
+  useEffect(() => {
+    // Auto-start camera on mount
+    startCamera();
+    return () => stopCamera();
+  }, [startCamera, stopCamera]);
 
   return (
     <div className="space-y-4">
@@ -249,127 +149,63 @@ export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
         <p className="opacity-90">Take a photo to confirm delivery</p>
       </div>
 
-      {/* Camera/Photo Display */}
+      {/* Camera / Photo Display */}
       <Card>
         <CardContent className="p-4">
           <div className="relative aspect-[4/3] bg-gray-900 rounded-lg overflow-hidden">
             {!capturedPhoto ? (
               <>
                 {cameraError ? (
-                  <div className="w-full h-full flex items-center justify-center flex-col text-white">
+                  <div className="w-full h-full flex flex-col items-center justify-center text-white">
                     <Camera className="h-12 w-12 mb-4 opacity-50" />
-                    <p className="text-center px-4">
-                      Camera Error: {cameraError}
-                    </p>
-                    <Button 
-                      onClick={startCamera} 
-                      className="mt-4 bg-orange-600 hover:bg-orange-700"
-                    >
+                    <p className="text-center px-4">Camera Error: {cameraError}</p>
+                    <Button onClick={startCamera} className="mt-4 bg-orange-600 hover:bg-orange-700">
                       Retry Camera
                     </Button>
                   </div>
                 ) : isLoading ? (
-                  <div className="w-full h-full flex items-center justify-center flex-col text-white">
+                  <div className="w-full h-full flex flex-col items-center justify-center text-white">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
                     <p>Starting camera...</p>
                   </div>
                 ) : (
-                  <>
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className="w-full h-full object-cover bg-black"
-                      style={{ 
-                        transform: 'scaleX(-1)', // Mirror for better UX
-                        objectFit: 'cover'
-                      }}
-                      onLoadedData={() => {
-                        console.log('Video data loaded');
-                        if (!isCameraActive) {
-                          setIsCameraActive(true);
-                          setIsLoading(false);
-                        }
-                      }}
-                      onCanPlay={() => {
-                        console.log('Video can play');
-                        if (!isCameraActive) {
-                          setIsCameraActive(true);
-                          setIsLoading(false);
-                        }
-                      }}
-                    />
-                    {!isCameraActive && !cameraError && (
-                      <div className="w-full h-full absolute inset-0 flex items-center justify-center text-white bg-black/50">
-                        <div className="flex flex-col items-center">
-                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
-                          <p>Starting camera...</p>
-                        </div>
-                      </div>
-                    )}
-                    {isCameraActive && (
-                      <div className="absolute inset-0 pointer-events-none">
-                        <div className="absolute inset-4 border-2 border-white/50 rounded-lg" />
-                        <div className="absolute top-4 left-4 right-4 text-center">
-                          <p className="text-white text-sm bg-black/70 rounded-full px-3 py-2 inline-block">
-                            📦 Position the delivery in the frame
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </>
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover bg-black"
+                    style={{ transform: 'scaleX(-1)', objectFit: 'cover' }}
+                  />
                 )}
               </>
             ) : (
-              <img
-                src={capturedPhoto}
-                alt="Captured delivery proof"
-                className="w-full h-full object-cover"
-              />
+              <img src={capturedPhoto} alt="Captured delivery proof" className="w-full h-full object-cover" />
             )}
           </div>
 
-          {/* Camera Controls */}
+          {/* Controls */}
           <div className="flex gap-3 mt-4">
             {!capturedPhoto ? (
               <>
-                <Button
-                  onClick={onCancel}
-                  variant="outline"
-                  className="flex-1"
-                  disabled={isUploading}
-                >
+                <Button onClick={onCancel} variant="outline" className="flex-1" disabled={isUploading}>
                   <X className="h-4 w-4 mr-2" />
                   Cancel
                 </Button>
-                <Button
-                  onClick={capturePhoto}
-                  className="flex-1 bg-orange-600 hover:bg-orange-700"
-                  disabled={!isCameraActive || isUploading}
-                >
+                <Button onClick={capturePhoto} className="flex-1 bg-orange-600 hover:bg-orange-700" disabled={!isCameraActive || isUploading}>
                   <Camera className="h-4 w-4 mr-2" />
                   Capture
                 </Button>
               </>
             ) : (
               <>
-                <Button
-                  onClick={retakePhoto}
-                  variant="outline"
-                  className="flex-1"
-                  disabled={isUploading}
-                >
+                <Button onClick={retakePhoto} variant="outline" className="flex-1" disabled={isUploading}>
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Retake
                 </Button>
-                <Button
-                  onClick={confirmPhoto}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                  disabled={isUploading}
-                >
+                <Button className="flex-1 bg-green-600 hover:bg-green-700" disabled={isUploading}>
                   <Check className="h-4 w-4 mr-2" />
-                  {isUploading ? 'Uploading...' : 'Confirm'}
+                  Confirm
                 </Button>
               </>
             )}
@@ -377,34 +213,8 @@ export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
         </CardContent>
       </Card>
 
-      {/* Hidden canvas for photo capture */}
+      {/* Hidden canvas */}
       <canvas ref={canvasRef} className="hidden" />
-
-      {/* Instructions for Browser Testing */}
-      <Card className="bg-yellow-50 border-yellow-200">
-        <CardContent className="p-4">
-          <h3 className="font-semibold mb-2 text-yellow-800">📱 Camera Testing Notes:</h3>
-          <ul className="text-sm text-yellow-700 space-y-1">
-            <li>• Camera works best on mobile devices or mobile browsers</li>
-            <li>• In desktop browsers, you may need to grant camera permissions</li>
-            <li>• Make sure your browser supports camera access (HTTPS required)</li>
-            <li>• Some browsers may show a blank screen - try refreshing or using mobile</li>
-          </ul>
-        </CardContent>
-      </Card>
-
-      {/* Instructions */}
-      <Card>
-        <CardContent className="p-4">
-          <h3 className="font-semibold mb-2">Photo Tips:</h3>
-          <ul className="text-sm text-muted-foreground space-y-1">
-            <li>• Make sure the delivery location is clearly visible</li>
-            <li>• Include house numbers or apartment details if possible</li>
-            <li>• Ensure the photo is well-lit and not blurry</li>
-            <li>• Take the photo from a reasonable distance</li>
-          </ul>
-        </CardContent>
-      </Card>
     </div>
   );
 };
