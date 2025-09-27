@@ -192,7 +192,7 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
 
   // Estimated payout: percentage of subtotal + projected tip
   const estimatedPayout = (((payoutPercent / 100) * subtotalCents + tipCents) / 100).toFixed(2);
-  const miles = routeMiles ?? parseFloat(assignment.distance_mi || '0') || 0;
+  const miles = routeMiles ?? (parseFloat(assignment.distance_mi || '0') || 0);
   const mins = routeMins ?? assignment.estimated_time;
   const totalStops = Math.floor(Math.random() * 3) + 2;
   const dropOffs = totalStops - 1;
