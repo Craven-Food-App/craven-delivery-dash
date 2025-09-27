@@ -1,114 +1,188 @@
-import React, { useRef, useState, useCallback } from "react";
-import { Camera, X, RotateCcw } from "lucide-react";
+import React, { useRef, useState, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Camera, RotateCcw, Check, X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-interface CravenCameraProps {
+interface DeliveryCameraProps {
   onPhotoCapture: (photo: Blob) => void;
   onCancel: () => void;
+  isUploading?: boolean;
 }
 
-export const CravenCamera: React.FC<CravenCameraProps> = ({
+export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
   onPhotoCapture,
   onCancel,
+  isUploading = false,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [photo, setPhoto] = useState<string | null>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  // Capture photo
-  const takePhoto = useCallback(async () => {
+  // Start camera (tap-to-start)
+  const startCamera = useCallback(async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      const msg = 'Camera not supported';
+      setCameraError(msg);
+      toast({ title: 'Camera Error', description: msg, variant: 'destructive' });
+      return;
+    }
+
+    setIsLoading(true);
+    setCameraError(null);
+
+    // Stop previous stream
+    stream?.getTracks().forEach((track) => track.stop());
+    setStream(null);
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-      });
+      const constraints = { video: { facingMode: 'environment' }, audio: false };
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      const video = videoRef.current!;
-      const canvas = canvasRef.current!;
+      if (!videoRef.current) return;
 
-      video.srcObject = stream;
-      await video.play();
+      const video = videoRef.current;
+      video.srcObject = mediaStream;
+      video.playsInline = true;
+      video.muted = true;
+      video.setAttribute('playsinline', 'true');
+      video.setAttribute('webkit-playsinline', 'true');
 
+      // Wait for metadata to load
       await new Promise<void>((resolve) => {
-        video.onloadedmetadata = () => resolve();
+        const timeout = setTimeout(resolve, 2000); // fallback
+        video.onloadedmetadata = () => {
+          clearTimeout(timeout);
+          resolve();
+        };
       });
 
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      await video.play();
+      setStream(mediaStream);
+      setIsCameraActive(true);
+    } catch (err: any) {
+      console.error('Camera error:', err);
+      const msg = err?.message || 'Unable to access camera';
+      setCameraError(msg);
+      toast({ title: 'Camera Error', description: msg, variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [stream, toast]);
 
-      canvas.toBlob((blob) => {
+  const stopCamera = useCallback(() => {
+    stream?.getTracks().forEach((track) => track.stop());
+    setStream(null);
+    setIsCameraActive(false);
+  }, [stream]);
+
+  const capturePhoto = useCallback(() => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+
+    // Mirror for UX if desired
+    ctx.save();
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+    ctx.restore();
+
+    canvas.toBlob(
+      (blob) => {
         if (blob) {
           const url = URL.createObjectURL(blob);
-          setPhoto(url);
+          setCapturedPhoto(url);
+          stopCamera();
           onPhotoCapture(blob);
         }
-      }, "image/jpeg", 0.9);
+      },
+      'image/jpeg',
+      0.8
+    );
+  }, [stopCamera, onPhotoCapture]);
 
-      // stop stream immediately
-      stream.getTracks().forEach((t) => t.stop());
-    } catch (err) {
-      console.error("Camera error:", err);
-      alert("Unable to access camera.");
-    }
-  }, [onPhotoCapture]);
-
-  const retake = () => setPhoto(null);
+  const retakePhoto = useCallback(() => {
+    setCapturedPhoto(null);
+    startCamera();
+  }, [startCamera]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-orange-600">
-      {/* Camera Preview */}
-      {!photo ? (
-        <>
-          <video
-            ref={videoRef}
-            className="w-full h-full object-cover"
-            autoPlay
-            playsInline
-            muted
-          />
-          {/* Controls Overlay */}
-          <div className="absolute bottom-10 w-full flex justify-center items-center gap-10">
-            <button
-              onClick={onCancel}
-              className="bg-white p-4 rounded-full shadow-lg"
-            >
-              <X className="h-6 w-6 text-black" />
-            </button>
+    <div className="space-y-4">
+      <div className="bg-green-500 text-white p-4 rounded-2xl text-center">
+        <h2 className="text-xl font-bold">Proof of Delivery</h2>
+        <p className="opacity-90">Take a photo to confirm delivery</p>
+      </div>
 
-            <button
-              onClick={takePhoto}
-              className="bg-white p-6 rounded-full border-4 border-orange-500 shadow-lg"
-            >
-              <Camera className="h-6 w-6 text-orange-500" />
-            </button>
-
-            <div className="w-12 h-12" /> {/* empty space for symmetry */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="relative aspect-[4/3] bg-gray-900 rounded-lg overflow-hidden">
+            {!capturedPhoto ? (
+              <>
+                {cameraError ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-white">
+                    <Camera className="h-12 w-12 mb-4 opacity-50" />
+                    <p className="text-center px-4">{cameraError}</p>
+                    <Button onClick={startCamera} className="mt-4 bg-orange-600 hover:bg-orange-700">
+                      Retry Camera
+                    </Button>
+                  </div>
+                ) : !isCameraActive ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-white">
+                    <Button onClick={startCamera} className="bg-orange-600 hover:bg-orange-700 px-6 py-3 rounded-xl">
+                      <Camera className="h-5 w-5 mr-2 inline" />
+                      Start Camera
+                    </Button>
+                  </div>
+                ) : (
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover bg-black"
+                    style={{ transform: 'scaleX(-1)', objectFit: 'cover' }}
+                  />
+                )}
+              </>
+            ) : (
+              <img src={capturedPhoto} alt="Captured delivery proof" className="w-full h-full object-cover" />
+            )}
           </div>
-        </>
-      ) : (
-        <>
-          <img
-            src={photo}
-            alt="Captured"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute bottom-10 w-full flex justify-center items-center gap-10">
-            <button
-              onClick={retake}
-              className="bg-white p-4 rounded-full shadow-lg"
-            >
-              <RotateCcw className="h-6 w-6 text-orange-500" />
-            </button>
 
-            <button
-              onClick={onCancel}
-              className="bg-white p-4 rounded-full shadow-lg"
-            >
-              <X className="h-6 w-6 text-black" />
-            </button>
+          {/* Controls */}
+          <div className="flex gap-3 mt-4">
+            {!capturedPhoto ? (
+              <>
+                <Button onClick={onCancel} variant="outline" className="flex-1" disabled={isUploading}>
+                  <X className="h-4 w-4 mr-2" /> Cancel
+                </Button>
+                <Button onClick={capturePhoto} className="flex-1 bg-orange-600 hover:bg-orange-700" disabled={!isCameraActive || isUploading}>
+                  <Camera className="h-4 w-4 mr-2" /> Capture
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button onClick={retakePhoto} variant="outline" className="flex-1" disabled={isUploading}>
+                  <RotateCcw className="h-4 w-4 mr-2" /> Retake
+                </Button>
+                <Button className="flex-1 bg-green-600 hover:bg-green-700" disabled={isUploading}>
+                  <Check className="h-4 w-4 mr-2" /> Confirm
+                </Button>
+              </>
+            )}
           </div>
-        </>
-      )}
+        </CardContent>
+      </Card>
 
       <canvas ref={canvasRef} className="hidden" />
     </div>
