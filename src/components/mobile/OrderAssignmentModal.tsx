@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, MapPin, Package, ChevronRight, Users } from 'lucide-react';
+import { Clock, ChevronRight, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
+import { supabase } from '@/integrations/supabase/client';
+import cravenC from '@/assets/craven-c.png';
 interface OrderAssignment {
   assignment_id: string;
   order_id: string;
@@ -35,6 +36,88 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
 }) => {
   const [timeLeft, setTimeLeft] = useState(15);
   const { toast } = useToast();
+
+  // Earnings + routing state
+  const [payoutPercent, setPayoutPercent] = useState<number>(70);
+  const [subtotalCents, setSubtotalCents] = useState<number>(0);
+  const [tipCents, setTipCents] = useState<number>(0);
+  const [routeMiles, setRouteMiles] = useState<number | null>(null);
+  const [routeMins, setRouteMins] = useState<number | null>(null);
+  const [locationType, setLocationType] = useState<string | null>(null);
+
+  // Load payout setting + order fields + real distance via Mapbox
+  useEffect(() => {
+    const run = async () => {
+      if (!assignment) return;
+      try {
+        // Payout percent
+        const { data: setting } = await supabase
+          .from('driver_payout_settings')
+          .select('percentage')
+          .eq('is_active', true)
+          .maybeSingle();
+        if (setting?.percentage != null) setPayoutPercent(Number(setting.percentage));
+
+        // Order details for tip/subtotal + dropoff type
+        const { data: order } = await supabase
+          .from('orders')
+          .select('subtotal_cents, tip_cents, dropoff_address, pickup_address')
+          .eq('id', assignment.order_id)
+          .maybeSingle();
+        if (order) {
+          setSubtotalCents(Number(order.subtotal_cents || 0));
+          setTipCents(Number(order.tip_cents || 0));
+          const dAddr: any = order.dropoff_address as any;
+          const pAddr: any = order.pickup_address as any;
+          const type = dAddr?.type || dAddr?.address_type || dAddr?.location_type || null;
+          if (type) setLocationType(String(type));
+
+          // Compute real route using Mapbox if we have coords
+          const p = pAddr;
+          const d = dAddr;
+          const pLat = Number(p?.lat ?? p?.latitude);
+          const pLng = Number(p?.lng ?? p?.longitude);
+          const dLat = Number(d?.lat ?? d?.latitude);
+          const dLng = Number(d?.lng ?? d?.longitude);
+
+          if (!isNaN(pLat) && !isNaN(pLng) && !isNaN(dLat) && !isNaN(dLng)) {
+            // Fetch token
+            const tokRes = await supabase.functions.invoke('get-mapbox-token');
+            const token = (tokRes.data as any)?.token;
+
+            // Try to include driver current position first
+            let originLat: number | null = null;
+            let originLng: number | null = null;
+            try {
+              const position = await new Promise<GeolocationPosition>((resolve, reject) =>
+                navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 5000 })
+              );
+              originLat = position.coords.latitude;
+              originLng = position.coords.longitude;
+            } catch (_) {}
+
+            const coords = originLat && originLng
+              ? `${originLng},${originLat};${pLng},${pLat};${dLng},${dLat}`
+              : `${pLng},${pLat};${dLng},${dLat}`;
+
+            const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}.json?overview=false&access_token=${token}`;
+            const res = await fetch(url);
+            const json = await res.json();
+            const route = json?.routes?.[0];
+            if (route) {
+              const miles = (route.distance / 1609.34);
+              const mins = (route.duration / 60);
+              setRouteMiles(Number(miles.toFixed(1)));
+              setRouteMins(Math.round(mins));
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Estimate prep failed', e);
+      }
+    };
+    if (isOpen) run();
+  }, [isOpen, assignment]);
 
   useEffect(() => {
     if (!isOpen || !assignment) return;
@@ -107,8 +190,10 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
 
   if (!isOpen || !assignment) return null;
 
-  const estimatedPayout = (assignment.payout_cents / 100).toFixed(2);
-  const totalMiles = parseFloat(assignment.distance_mi || '0');
+  // Estimated payout: percentage of subtotal + projected tip
+  const estimatedPayout = (((payoutPercent / 100) * subtotalCents + tipCents) / 100).toFixed(2);
+  const miles = routeMiles ?? parseFloat(assignment.distance_mi || '0') || 0;
+  const mins = routeMins ?? assignment.estimated_time;
   const totalStops = Math.floor(Math.random() * 3) + 2;
   const dropOffs = totalStops - 1;
 
@@ -174,8 +259,8 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
 
             {/* Pickup info */}
             <div className="flex items-center gap-4 py-4 border-b border-border/50">
-              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                <Package className="h-5 w-5 text-white" />
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-muted/60 overflow-hidden">
+                <img src={cravenC} alt="Crave'N" className="w-6 h-6 object-contain" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">

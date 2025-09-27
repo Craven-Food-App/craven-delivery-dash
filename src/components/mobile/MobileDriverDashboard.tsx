@@ -327,7 +327,7 @@ export const MobileDriverDashboard: React.FC = () => {
         </div>}
 
       {/* Main Content Overlay - Constrained above bottom nav */}
-      <div className="absolute inset-0 bottom-20 z-10 flex flex-col pointer-events-none">
+      <div className="absolute inset-0 bottom-20 z-10 flex flex-col">
         
         {/* OFFLINE STATE */}
         {driverState === 'offline' && <>
@@ -525,6 +525,18 @@ export const MobileDriverDashboard: React.FC = () => {
         // Check if this was a test order
         if (activeDelivery?.isTestOrder) {
           setShowTestCompletionModal(true);
+        } else {
+          // Record final driver earnings for real orders
+          (async () => {
+            try {
+              const { data: { user } } = await supabase.auth.getUser();
+              await supabase.functions.invoke('finalize-delivery', {
+                body: { orderId: activeDelivery.order_id, driverId: user?.id }
+              });
+            } catch (e) {
+              console.error('finalize-delivery failed', e);
+            }
+          })();
         }
         setActiveDelivery(null);
         setDriverState('online_searching');

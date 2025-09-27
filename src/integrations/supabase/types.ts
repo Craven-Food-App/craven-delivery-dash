@@ -418,6 +418,33 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_payout_settings: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          percentage: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          percentage?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          percentage?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       driver_profiles: {
         Row: {
           created_at: string | null
