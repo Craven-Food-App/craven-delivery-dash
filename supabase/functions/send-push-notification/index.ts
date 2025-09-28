@@ -6,72 +6,182 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Helper function to send native push notification
+// Helper function to get OAuth2 access token for Firebase V1 API
+async function getAccessToken() {
+  try {
+    const serviceAccountKey = Deno.env.get('FIREBASE_SERVICE_ACCOUNT_KEY');
+    if (!serviceAccountKey) {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY not found in environment');
+    }
+
+    const serviceAccount = JSON.parse(serviceAccountKey);
+    
+    // Create JWT for OAuth2
+    const now = Math.floor(Date.now() / 1000);
+    const jwtHeader = {
+      "alg": "RS256",
+      "typ": "JWT"
+    };
+    
+    const jwtPayload = {
+      "iss": serviceAccount.client_email,
+      "scope": "https://www.googleapis.com/auth/firebase.messaging",
+      "aud": "https://oauth2.googleapis.com/token",
+      "exp": now + 3600,
+      "iat": now
+    };
+
+    // Import crypto for JWT signing
+    const encoder = new TextEncoder();
+    const keyData = serviceAccount.private_key
+      .replace(/-----BEGIN PRIVATE KEY-----/, '')
+      .replace(/-----END PRIVATE KEY-----/, '')
+      .replace(/\s/g, '');
+    
+    const binaryKey = Uint8Array.from(atob(keyData), c => c.charCodeAt(0));
+    
+    const cryptoKey = await crypto.subtle.importKey(
+      "pkcs8",
+      binaryKey,
+      {
+        name: "RSASSA-PKCS1-v1_5",
+        hash: "SHA-256",
+      },
+      false,
+      ["sign"]
+    );
+
+    const headerBase64 = btoa(JSON.stringify(jwtHeader)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    const payloadBase64 = btoa(JSON.stringify(jwtPayload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    const dataToSign = `${headerBase64}.${payloadBase64}`;
+    
+    const signature = await crypto.subtle.sign(
+      "RSASSA-PKCS1-v1_5",
+      cryptoKey,
+      encoder.encode(dataToSign)
+    );
+    
+    const signatureBase64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
+      .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    
+    const jwt = `${dataToSign}.${signatureBase64}`;
+
+    // Exchange JWT for access token
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
+    });
+
+    if (!tokenResponse.ok) {
+      throw new Error(`Failed to get access token: ${await tokenResponse.text()}`);
+    }
+
+    const tokenData = await tokenResponse.json();
+    return tokenData.access_token;
+  } catch (error) {
+    console.error('Error getting access token:', error);
+    throw error;
+  }
+}
+
+// Helper function to send native push notification using Firebase V1 API
 async function sendNativePushNotification(subscription: any, payload: any) {
-  const fcmServerKey = Deno.env.get("FCM_SERVER_KEY");
+  const serviceAccountKey = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_KEY");
   
-  if (!fcmServerKey) {
-    console.warn("FCM server key not configured, skipping native push");
-    return { success: false, error: "FCM server key not configured" };
+  if (!serviceAccountKey) {
+    console.warn("Firebase service account key not configured, skipping native push");
+    return { success: false, error: "Firebase service account key not configured" };
   }
 
   try {
+    // Get access token
+    const accessToken = await getAccessToken();
+    const serviceAccount = JSON.parse(serviceAccountKey);
+    const projectId = serviceAccount.project_id;
+    
     // Extract FCM token from endpoint
-    const fcmToken = subscription.endpoint.replace('fcm:', '');
+    let fcmToken = subscription.endpoint;
+    
+    if (subscription.endpoint.includes('fcm.googleapis.com')) {
+      fcmToken = subscription.endpoint.split('/').pop();
+    } else if (subscription.endpoint.startsWith('fcm:')) {
+      fcmToken = subscription.endpoint.replace('fcm:', '');
+    }
     
     if (!fcmToken || fcmToken === subscription.endpoint) {
       // Fallback to web push if not native
       return sendWebPushNotification(subscription, payload);
     }
 
+    // Firebase V1 API endpoint
+    const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
+    
+    // Construct Firebase V1 payload
     const fcmPayload = {
-      to: fcmToken,
-      notification: {
-        title: payload.title,
-        body: payload.message,
-        icon: payload.icon || '/craven-logo.png',
-        sound: 'default',
-        click_action: "FCM_PLUGIN_ACTIVITY",
-        priority: "high"
-      },
-      data: {
-        ...payload.data,
-        title: payload.title,
-        message: payload.message,
-        sound: 'enabled'
-      },
-      android: {
+      message: {
+        token: fcmToken,
         notification: {
-          channel_id: "craven_notifications",
-          priority: "high",
-          visibility: "public",
-          sound: "default"
+          title: payload.title,
+          body: payload.message,
+          image: '/craven-logo.png'
         },
-        priority: "high"
-      },
-      apns: {
-        payload: {
-          aps: {
-            alert: {
-              title: payload.title,
-              body: payload.message
-            },
-            sound: "default",
-            badge: 1,
-            "content-available": 1
+        data: {
+          ...payload.data,
+          title: payload.title,
+          message: payload.message,
+          sound: 'enabled'
+        },
+        android: {
+          notification: {
+            title: payload.title,
+            body: payload.message,
+            icon: '/craven-logo.png',
+            sound: 'default',
+            priority: 'high',
+            channel_id: 'craven_notifications',
+            visibility: 'public'
+          },
+          priority: 'high'
+        },
+        apns: {
+          payload: {
+            aps: {
+              alert: {
+                title: payload.title,
+                body: payload.message
+              },
+              sound: 'default',
+              badge: 1,
+              'content-available': 1
+            }
+          },
+          headers: {
+            'apns-priority': '10',
+            'apns-push-type': 'alert'
           }
         },
-        headers: {
-          "apns-priority": "10",
-          "apns-push-type": "alert"
+        webpush: {
+          notification: {
+            title: payload.title,
+            body: payload.message,
+            icon: '/craven-logo.png',
+            badge: '/craven-logo.png',
+            tag: 'craven-notification',
+            requireInteraction: true
+          }
         }
       }
     };
 
-    const response = await fetch("https://fcm.googleapis.com/fcm/send", {
+    console.log('Firebase V1 Payload:', JSON.stringify(fcmPayload, null, 2));
+
+    const response = await fetch(fcmUrl, {
       method: "POST",
       headers: {
-        "Authorization": `key=${fcmServerKey}`,
+        "Authorization": `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(fcmPayload),
@@ -80,11 +190,11 @@ async function sendNativePushNotification(subscription: any, payload: any) {
     const result = await response.json();
     
     if (!response.ok) {
-      console.error("FCM error:", result);
-      return { success: false, error: result.error || "FCM send failed" };
+      console.error("Firebase V1 API error:", result);
+      return { success: false, error: result.error?.message || "Firebase V1 send failed" };
     }
 
-    console.log("FCM notification sent successfully:", result);
+    console.log("Firebase V1 notification sent successfully:", result);
     return { success: true, result };
   } catch (error) {
     console.error("Native push error:", error);
