@@ -135,12 +135,17 @@ export const useNavigation = (): UseNavigationReturn => {
 
   const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
     try {
-      // Use Mapbox Geocoding API
-      const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=YOUR_MAPBOX_TOKEN`);
-      const data = await response.json();
+      // Get Mapbox token from edge function  
+      const { data } = await supabase.functions.invoke('get-mapbox-token');
+      if (!data?.token) {
+        throw new Error('Mapbox token not available');
+      }
+
+      const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${data.token}`);
+      const result = await response.json();
       
-      if (data.features && data.features.length > 0) {
-        const [lng, lat] = data.features[0].center;
+      if (result.features && result.features.length > 0) {
+        const [lng, lat] = result.features[0].center;
         return { lat, lng };
       }
       return null;
@@ -152,7 +157,12 @@ export const useNavigation = (): UseNavigationReturn => {
 
   const calculateRoute = async (origin: { lat: number; lng: number }, destination: { lat: number; lng: number }) => {
     try {
-      // Use Mapbox Directions API
+      // Get Mapbox token from edge function
+      const { data } = await supabase.functions.invoke('get-mapbox-token');
+      if (!data?.token) {
+        throw new Error('Mapbox token not available');
+      }
+
       const profile = navigationSettings.avoidHighways ? 'driving-traffic' : 'driving';
       const avoidOptions = [];
       if (navigationSettings.avoidTolls) avoidOptions.push('toll');
@@ -161,13 +171,13 @@ export const useNavigation = (): UseNavigationReturn => {
       const avoidParam = avoidOptions.length > 0 ? `&exclude=${avoidOptions.join(',')}` : '';
       
       const response = await fetch(
-        `https://api.mapbox.com/directions/v5/mapbox/${profile}/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?steps=true&geometries=geojson&access_token=YOUR_MAPBOX_TOKEN${avoidParam}`
+        `https://api.mapbox.com/directions/v5/mapbox/${profile}/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?steps=true&geometries=geojson&access_token=${data.token}${avoidParam}`
       );
       
-      const data = await response.json();
+      const result = await response.json();
       
-      if (data.routes && data.routes.length > 0) {
-        const route = data.routes[0];
+      if (result.routes && result.routes.length > 0) {
+        const route = result.routes[0];
         return {
           geometry: route.geometry,
           duration: route.duration / 60, // Convert to minutes
