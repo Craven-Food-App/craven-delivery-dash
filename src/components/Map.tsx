@@ -98,6 +98,8 @@ const Map: React.FC<MapProps> = ({ orders, activeOrder, onOrderClick }) => {
         style: 'mapbox://styles/mapbox/streets-v12',
         center: [-122.4194, 37.7749], // San Francisco
         zoom: 12,
+        preserveDrawingBuffer: true,
+        antialias: true
       });
 
       map.current.addControl(

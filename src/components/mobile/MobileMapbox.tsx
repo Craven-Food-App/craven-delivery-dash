@@ -109,12 +109,9 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
       // Create the map instance
       map.current = new window.mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/crave-n/cmfinp8y2004m01qvb7kwbqol',
+        style: 'mapbox://styles/mapbox/streets-v12', // Use stable default style
         center: [-74.5, 40],
-        // Starting position: [longitude, latitude]
         zoom: 9,
-        // Starting zoom level
-        // Enable all interactions
         interactive: true,
         scrollZoom: true,
         boxZoom: true,
@@ -125,7 +122,10 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
         touchZoomRotate: true,
         cooperativeGestures: false,
         pitchWithRotate: true,
-        bearingSnap: 7
+        bearingSnap: 7,
+        // Add these to prevent rendering issues
+        preserveDrawingBuffer: true,
+        antialias: true
       });
 
       // Explicitly enable interactions (safety on some mobile browsers/iframes)
@@ -176,13 +176,13 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
 
     // Load Mapbox CSS
     const link = document.createElement('link');
-    link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css';
+    link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
     link.rel = 'stylesheet';
     document.head.appendChild(link);
 
     // Load Mapbox JS
     const script = document.createElement('script');
-    script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js';
+    script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
     script.onload = () => {
       console.log('Mapbox script loaded');
       scriptLoaded.current = true;
