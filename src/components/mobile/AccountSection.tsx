@@ -82,7 +82,7 @@ export const AccountSection: React.FC<{
       weekStart.setHours(0, 0, 0, 0);
       const {
         data: weekOrders
-      } = await supabase.from('orders').select('payout_cents').eq('assigned_craver_id', user.id).eq('status', 'delivered').gte('created_at', weekStart.toISOString());
+      } = await supabase.from('orders').select('payout_cents').eq('assigned_craver_id', user.id).eq('order_status', 'delivered').gte('created_at', weekStart.toISOString());
       const weekEarnings = weekOrders?.reduce((sum, order) => sum + order.payout_cents, 0) || 0;
       if (application) {
         setProfile({

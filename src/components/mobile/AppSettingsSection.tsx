@@ -5,12 +5,14 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigation } from '@/hooks/useNavigation';
 
 interface AppSettingsSectionProps {
   onBack: () => void;
 }
 
 export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ onBack }) => {
+  const { navigationSettings, updateSettings } = useNavigation();
   const [settings, setSettings] = useState({
     pushNotifications: true,
     locationServices: true,
@@ -18,11 +20,7 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ onBack }
     vibration: true,
     darkMode: false,
     language: 'english',
-    distanceUnit: 'miles',
-    navigationProvider: 'mapbox', // mapbox, google, apple, waze
-    voiceGuidance: true,
-    avoidTolls: false,
-    avoidHighways: false
+    distanceUnit: 'miles'
   });
   const { toast } = useToast();
 
@@ -109,24 +107,34 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ onBack }
               <div>
                 <div className="font-medium mb-2">Navigation Provider</div>
                 <Select
-                  value={settings.navigationProvider}
-                  onValueChange={(value) => handleSettingChange('navigationProvider', value)}
+                  value={navigationSettings.provider}
+                  onValueChange={(value) => {
+                    updateSettings({ provider: value as any });
+                    toast({ title: 'Navigation provider updated' });
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    {/* In-app navigation */}
                     <SelectItem value="mapbox">Crave'N Navigation (In-App)</SelectItem>
+                    {/* Google Maps available on all */}
                     <SelectItem value="google">Google Maps</SelectItem>
-                    <SelectItem value="apple">Apple Maps</SelectItem>
-                    <SelectItem value="waze">Waze</SelectItem>
+                    {/* Apple Maps only on iOS */}
+                    {/iPad|iPhone|iPod/.test(navigator.userAgent) && (
+                      <SelectItem value="apple">Apple Maps</SelectItem>
+                    )}
+                    {/* Waze only on Android */}
+                    {/Android/.test(navigator.userAgent) && (
+                      <SelectItem value="waze">Waze</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {settings.navigationProvider === 'mapbox' 
+                  {navigationSettings.provider === 'mapbox' 
                     ? 'Turn-by-turn navigation within the app'
-                    : 'Opens external navigation app'
-                  }
+                    : 'Opens external navigation app'}
                 </p>
               </div>
 
@@ -136,8 +144,8 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ onBack }
                   <div className="text-sm text-muted-foreground">Turn-by-turn voice instructions</div>
                 </div>
                 <Switch
-                  checked={settings.voiceGuidance}
-                  onCheckedChange={(checked) => handleSettingChange('voiceGuidance', checked)}
+                  checked={navigationSettings.voiceGuidance}
+                  onCheckedChange={(checked) => updateSettings({ voiceGuidance: checked })}
                 />
               </div>
 
@@ -147,8 +155,8 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ onBack }
                   <div className="text-sm text-muted-foreground">Route around toll roads</div>
                 </div>
                 <Switch
-                  checked={settings.avoidTolls}
-                  onCheckedChange={(checked) => handleSettingChange('avoidTolls', checked)}
+                  checked={navigationSettings.avoidTolls}
+                  onCheckedChange={(checked) => updateSettings({ avoidTolls: checked })}
                 />
               </div>
 
@@ -158,8 +166,8 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ onBack }
                   <div className="text-sm text-muted-foreground">Use local roads when possible</div>
                 </div>
                 <Switch
-                  checked={settings.avoidHighways}
-                  onCheckedChange={(checked) => handleSettingChange('avoidHighways', checked)}
+                  checked={navigationSettings.avoidHighways}
+                  onCheckedChange={(checked) => updateSettings({ avoidHighways: checked })}
                 />
               </div>
             </CardContent>

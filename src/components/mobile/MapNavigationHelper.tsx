@@ -115,15 +115,17 @@ export const MapNavigationHelper: React.FC<MapNavigationHelperProps> = ({
               </Button>
             )}
 
-            {/* Waze - Popular with drivers */}
-            <Button 
-              onClick={() => openInMaps('waze')}
-              variant="outline"
-              className="flex items-center gap-2 h-12 text-sm border-purple-300 text-purple-700 hover:bg-purple-100"
-            >
-              <Navigation className="h-4 w-4" />
-              Waze
-            </Button>
+            {/* Waze - Popular with drivers (Android only for reliability) */}
+            {isAndroid && (
+              <Button 
+                onClick={() => openInMaps('waze')}
+                variant="outline"
+                className="flex items-center gap-2 h-12 text-sm border-purple-300 text-purple-700 hover:bg-purple-100"
+              >
+                <Navigation className="h-4 w-4" />
+                Waze
+              </Button>
+            )}
 
             {/* Call Button */}
             <Button 

@@ -6,6 +6,7 @@ import { MapPin, Navigation, Clock, Phone, MessageCircle, Camera, CheckCircle } 
 import { useToast } from '@/hooks/use-toast';
 import { DeliveryCamera } from './DeliveryCamera';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigation } from '@/hooks/useNavigation';
 
 type DeliveryStage = 'navigate_to_restaurant' | 'arrived_at_restaurant' | 'navigate_to_customer' | 'capture_proof' | 'delivered';
 
@@ -21,7 +22,7 @@ interface ActiveDeliveryProps {
     estimated_time: number;
     isTestOrder?: boolean; // Add test order flag
   };
-  onCompleteDelivery: () => void;
+  onCompleteDelivery: (photoUrl?: string) => void;
 }
 
 export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
@@ -32,6 +33,7 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
   const [deliveryPhoto, setDeliveryPhoto] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const { toast } = useToast();
+  const { openExternalNavigation } = useNavigation();
 
   // Helper function to format address
   const formatAddress = (address: any) => {
@@ -141,7 +143,7 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
 
       // Complete delivery after successful photo upload
       setTimeout(() => {
-        onCompleteDelivery();
+        onCompleteDelivery(publicUrl);
       }, 1500);
 
     } catch (error: any) {
@@ -190,7 +192,12 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
             <Button 
               className="flex-1" 
               size="lg" 
-              onClick={handleStageComplete}
+              onClick={() => {
+                if (!orderDetails.isTestOrder) {
+                  openExternalNavigation({ address: formatAddress(orderDetails.pickup_address), name: orderDetails.restaurant_name });
+                }
+                handleStageComplete();
+              }}
             >
               <Navigation className="h-5 w-5 mr-2" />
               {orderDetails.isTestOrder ? 'Simulate Navigation' : 'Start Navigation'}

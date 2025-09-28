@@ -72,6 +72,14 @@ export const useNavigation = (): UseNavigationReturn => {
 
   const loadNavigationSettings = async () => {
     try {
+      // 1) Load from localStorage (fast, works offline)
+      const local = localStorage.getItem('craven_nav_settings');
+      if (local) {
+        const parsed = JSON.parse(local);
+        setNavigationSettings(prev => ({ ...prev, ...parsed }));
+      }
+
+      // 2) Attempt to load from Supabase profile (if table exists)
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -79,15 +87,12 @@ export const useNavigation = (): UseNavigationReturn => {
         .from('user_profiles')
         .select('settings')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (profile?.settings && typeof profile.settings === 'object' && profile.settings !== null) {
+      if (profile?.settings && typeof profile.settings === 'object') {
         const settings = profile.settings as any;
         if (settings.navigation) {
-          setNavigationSettings(prev => ({
-            ...prev,
-            ...settings.navigation
-          }));
+          setNavigationSettings(prev => ({ ...prev, ...settings.navigation }));
         }
       }
     } catch (error) {
@@ -97,20 +102,23 @@ export const useNavigation = (): UseNavigationReturn => {
 
   const saveNavigationSettings = async (settings: NavigationSettings) => {
     try {
+      // Persist locally for reliability
+      localStorage.setItem('craven_nav_settings', JSON.stringify(settings));
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get current profile settings
+      // Get current profile settings (if table exists)
       const { data: profile } = await supabase
         .from('user_profiles')
         .select('settings')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      const currentSettings = (profile?.settings && typeof profile.settings === 'object' && profile.settings !== null) 
-        ? profile.settings as any 
+      const currentSettings = (profile?.settings && typeof profile.settings === 'object')
+        ? (profile.settings as any)
         : {};
-      
+
       const updatedSettings = {
         ...currentSettings,
         navigation: settings
