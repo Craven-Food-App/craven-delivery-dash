@@ -42,6 +42,10 @@ interface Restaurant {
   min_delivery_time: number;
   max_delivery_time: number;
   address: string;
+  phone?: string;
+  email?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface CartItem {
@@ -293,6 +297,13 @@ const RestaurantMenuPage = () => {
         tax_cents: tax,
         total_cents: finalTotal,
         order_status: 'pending',
+        pickup_address: {
+          name: restaurant?.name,
+          address: restaurant?.address,
+          phone: restaurant?.phone || restaurant?.email,
+          lat: restaurant?.latitude,
+          lng: restaurant?.longitude
+        },
         delivery_address: deliveryMethod === 'delivery' ? {
           name: customerInfo.name,
           email: customerInfo.email,

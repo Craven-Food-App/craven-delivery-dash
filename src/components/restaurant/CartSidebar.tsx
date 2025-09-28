@@ -149,6 +149,13 @@ export const CartSidebar = ({
         tax_cents: totals.tax,
         total_cents: finalTotal,
         order_status: 'pending',
+        pickup_address: {
+          name: restaurant.name,
+          address: restaurant.address,
+          phone: restaurant.phone || restaurant.email,
+          lat: restaurant.latitude,
+          lng: restaurant.longitude
+        },
         delivery_address: deliveryMethod === 'delivery' ? {
           name: customerInfo.name,
           email: customerInfo.email,
