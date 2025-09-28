@@ -151,39 +151,84 @@ export const EarningsSection: React.FC = () => {
         return;
       }
 
-      // Calculate today's earnings using driver_earnings table
+      // Calculate today's time window and totals
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const todayEarnings = earningsToUse.filter(earning => 
+
+      // Earnings rows for today (if present)
+      const todayEarnings = earningsToUse.filter((earning) =>
         new Date(earning.earned_at) >= today
       );
-      const todayTotal = todayEarnings.reduce((sum, earning) => sum + earning.total_cents, 0) / 100;
 
-      // Calculate this week's earnings and daily breakdown
+      // Orders completed today (fallback when earnings rows are missing)
+      const todayOrders = ordersToUse.filter((order) => {
+        const d = new Date(order.created_at);
+        d.setHours(0, 0, 0, 0);
+        return d >= today;
+      });
+
+      // Today's total, prefer earnings rows, fallback to orders payout
+      const todayTotal = (
+        todayEarnings.length > 0
+          ? todayEarnings.reduce((sum, earning) => sum + (earning.total_cents || 0), 0)
+          : todayOrders.reduce((sum, order) => sum + (order.payout_cents || 0), 0)
+      ) / 100;
+
+      // Calculate this week's range and totals
       const weekStart = new Date(today);
       weekStart.setDate(today.getDate() - today.getDay());
+      weekStart.setHours(0, 0, 0, 0);
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999);
       
-      const weekEarnings = earningsToUse.filter(earning => 
-        new Date(earning.earned_at) >= weekStart && new Date(earning.earned_at) <= weekEnd
-      );
-      const weekTotal = weekEarnings.reduce((sum, earning) => sum + earning.total_cents, 0) / 100;
+      const weekEarnings = earningsToUse.filter((earning) => {
+        const d = new Date(earning.earned_at);
+        return d >= weekStart && d <= weekEnd;
+      });
+
+      // Orders within this week (fallback)
+      const weekOrders = ordersToUse.filter((order) => {
+        const d = new Date(order.created_at);
+        return d >= weekStart && d <= weekEnd;
+      });
+
+      // Weekly total, prefer earnings rows, fallback to orders payout
+      const weekTotal = (
+        weekEarnings.length > 0
+          ? weekEarnings.reduce((sum, earning) => sum + (earning.total_cents || 0), 0)
+          : weekOrders.reduce((sum, order) => sum + (order.payout_cents || 0), 0)
+      ) / 100;
 
       // Create daily earnings breakdown for current week
       const dailyEarnings = Array.from({ length: 7 }, (_, i) => {
         const day = new Date(weekStart);
         day.setDate(weekStart.getDate() + i);
-        const dayEarnings = weekEarnings.filter(earning => {
+        day.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(day);
+        dayEnd.setHours(23, 59, 59, 999);
+
+        // Earnings rows on this day
+        const dayEarnings = weekEarnings.filter((earning) => {
           const earningDate = new Date(earning.earned_at);
-          return earningDate.toDateString() === day.toDateString();
+          return earningDate >= day && earningDate <= dayEnd;
         });
-        const dayTotal = dayEarnings.reduce((sum, earning) => sum + earning.total_cents, 0) / 100;
+
+        // Orders on this day (fallback)
+        const dayOrders = weekOrders.filter((order) => {
+          const orderDate = new Date(order.created_at);
+          return orderDate >= day && orderDate <= dayEnd;
+        });
+
+        const cents =
+          dayEarnings.length > 0
+            ? dayEarnings.reduce((sum, earning) => sum + (earning.total_cents || 0), 0)
+            : dayOrders.reduce((sum, order) => sum + (order.payout_cents || 0), 0);
         
         return {
           day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
           date: day.getDate(),
-          amount: dayTotal
+          amount: cents / 100,
         };
       });
 
@@ -261,7 +306,7 @@ export const EarningsSection: React.FC = () => {
       // Create delivery history from recent orders
       const recentHistory = completedOrders.slice(0, 5).map((order, index) => {
         const orderDate = new Date(order.created_at);
-        const earnings = order.payout_cents / 100;
+        const earnings = (order.payout_cents || 0) / 100;
         const breakdown = estimateBreakdown(earnings);
         
         return {
@@ -269,13 +314,13 @@ export const EarningsSection: React.FC = () => {
           date: orderDate.toLocaleDateString() === today.toLocaleDateString() 
             ? `Today ${orderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
             : orderDate.toLocaleDateString(),
-          restaurant: order.pickup_name || 'Restaurant',
+          restaurant: (order.restaurants && order.restaurants.name) ? order.restaurants.name : 'Restaurant',
           earnings: earnings,
           basePay: breakdown.basePay,
           tip: breakdown.tips,
           bonus: breakdown.bonuses,
-          distance: order.distance_km * 0.621371, // Convert to miles
-          time: `${Math.ceil(order.distance_km * 2)} min`
+          distance: ((order.distance_km || 0) * 0.621371), // Convert to miles
+          time: `${Math.ceil(((order.distance_km || 0) * 2))} min`
         };
       });
 
