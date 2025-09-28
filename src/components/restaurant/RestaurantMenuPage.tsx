@@ -255,7 +255,7 @@ const RestaurantMenuPage = () => {
     try {
       const subtotal = cart.reduce((sum, item) => sum + item.price_cents * item.quantity, 0);
       const deliveryFee = restaurant?.delivery_fee_cents || 0;
-      const total = subtotal + deliveryFee;
+      const orderTotal = subtotal + deliveryFee;
 
       // Try to use logged-in user email, fallback to guest
       const { data: { user } } = await supabase.auth.getUser();
@@ -268,48 +268,22 @@ const RestaurantMenuPage = () => {
         specialInstructions: ''
       };
 
-      const orderId = (self?.crypto && 'randomUUID' in self.crypto) ? self.crypto.randomUUID() : `order_${Date.now()}`;
+      const orderIdUnique = (self?.crypto && 'randomUUID' in self.crypto) ? self.crypto.randomUUID() : `order_${Date.now()}`;
 
-      // For CashApp demo, we'll simulate the flow
-      // In production, you would show PaymentOptions component and handle accordingly
-      const isCashAppDemo = Math.random() > 0.5; // 50% chance to demo CashApp
-      
-      if (isCashAppDemo) {
-        const { data, error } = await supabase.functions.invoke('create-cashapp-payment', {
-          body: {
-            orderTotal: total,
-            customerInfo,
-            orderId
-          }
-        });
+      // For now, directly use Stripe payment (CashApp is available in PaymentOptions component)
+      const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: {
+          orderTotal,
+          customerInfo,
+          orderId: orderIdUnique
+        }
+      });
 
-        if (error) throw error;
+      if (error) throw error;
+      if (!data?.url) throw new Error('No checkout URL returned');
 
-        toast({
-          title: 'CashApp Payment',
-          description: 'Redirecting to CashApp...',
-        });
-
-        // In a real app, you would redirect to CashApp or show QR code
-        setTimeout(() => {
-          window.location.href = data.paymentData.redirectUrl;
-        }, 2000);
-      } else {
-        // Use Stripe payment
-        const { data, error } = await supabase.functions.invoke('create-payment', {
-          body: {
-            orderTotal: total,
-            customerInfo,
-            orderId
-          }
-        });
-
-        if (error) throw error;
-        if (!data?.url) throw new Error('No checkout URL returned');
-
-        // Open Stripe checkout in a new tab
-        window.open(data.url, '_blank');
-      }
+      // Open Stripe checkout in a new tab
+      window.open(data.url, '_blank');
     } catch (error) {
       console.error('Checkout error:', error);
       toast({

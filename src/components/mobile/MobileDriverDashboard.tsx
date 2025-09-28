@@ -16,6 +16,7 @@ import { TestCompletionModal } from './TestCompletionModal';
 import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { MobileMapbox } from './MobileMapbox';
 import { DriveTimeSelector } from './DriveTimeSelector';
+import LoadingScreen from './LoadingScreen';
 type DriverState = 'offline' | 'online_searching' | 'online_paused' | 'on_delivery';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
 type EarningMode = 'perHour' | 'perOffer';
@@ -53,6 +54,7 @@ export const MobileDriverDashboard: React.FC = () => {
   const [isAvailable, setIsAvailable] = useState(false);
   const [showTestCompletionModal, setShowTestCompletionModal] = useState(false);
   const [showTimeSelector, setShowTimeSelector] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const {
     playNotification
   } = useNotificationSettings();
@@ -123,6 +125,13 @@ export const MobileDriverDashboard: React.FC = () => {
   // Check session persistence on component mount
   useEffect(() => {
     checkSessionPersistence();
+    
+    // Simulate loading time for the loading screen
+    const loadingTimer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2500);
+    
+    return () => clearTimeout(loadingTimer);
   }, []);
 
   const checkSessionPersistence = async () => {
@@ -450,7 +459,10 @@ export const MobileDriverDashboard: React.FC = () => {
         <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
       </>;
   }
-  return <div className="h-screen bg-background relative overflow-hidden">
+  return <>
+    <LoadingScreen isLoading={isLoading} />
+    
+    <div className="h-screen bg-background relative overflow-hidden">
       {/* Full Screen Map Background - Constrained above bottom nav */}
       <div className="absolute inset-0 bottom-20 z-0">
         <MobileMapbox />
@@ -726,5 +738,6 @@ export const MobileDriverDashboard: React.FC = () => {
 
       {/* Test Completion Modal */}
       <TestCompletionModal isOpen={showTestCompletionModal} onClose={() => setShowTestCompletionModal(false)} />
-    </div>;
+    </div>
+  </>;
 };
