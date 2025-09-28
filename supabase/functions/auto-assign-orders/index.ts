@@ -217,7 +217,9 @@ async function monitorAssignmentAcceptance(supabase, assignmentId: string, order
     console.log(`Assignment expired, trying next ${remainingDrivers.length} drivers`);
     await assignToNextDriver(supabase, orderId, remainingDrivers);
   } else {
-    console.log(`No more drivers available for order ${orderId}`);
+    console.log(`No remaining drivers in current list, initiating continuous retry for order ${orderId}`);
+    // Start continuous retry cycle instead of giving up
+    await continuousOrderAssignment(supabase, orderId);
   }
   
   return false;
@@ -307,7 +309,139 @@ async function assignToNextDriver(supabase, orderId: string, drivers: any[]) {
     }
   }
   
+  // If we've exhausted this batch of drivers, start continuous retry
+  console.log(`Exhausted current driver batch, starting continuous retry for order ${orderId}`);
+  EdgeRuntime.waitUntil(continuousOrderAssignment(supabase, orderId));
   return false;
+}
+
+// Continuous order assignment - keeps trying until order is accepted or cancelled
+async function continuousOrderAssignment(supabase, orderId: string, searchRadius: number = 10) {
+  const maxSearchRadius = 50; // Max 50 miles
+  const baseRetryInterval = 30000; // 30 seconds between attempts
+  const maxRetries = 120; // 60 minutes total (120 * 30s = 3600s)
+  let retryCount = 0;
+  let currentRadius = searchRadius;
+
+  console.log(`Starting continuous assignment for order ${orderId} with ${currentRadius} mile radius`);
+
+  while (retryCount < maxRetries) {
+    try {
+      // Check if order is still pending
+      const { data: order } = await supabase
+        .from('orders')
+        .select(`*, restaurants!inner(id, name, latitude, longitude)`)
+        .eq('id', orderId)
+        .in('order_status', ['pending', 'confirmed'])
+        .single();
+
+      if (!order) {
+        console.log(`Order ${orderId} no longer pending, stopping continuous assignment`);
+        return;
+      }
+
+      // Check if there's already an accepted assignment
+      const { data: existingAssignment } = await supabase
+        .from('order_assignments')
+        .select('status')
+        .eq('order_id', orderId)
+        .eq('status', 'accepted')
+        .single();
+
+      if (existingAssignment) {
+        console.log(`Order ${orderId} already has accepted assignment, stopping continuous assignment`);
+        return;
+      }
+
+      const restaurant = order.restaurants;
+
+      // Get available drivers with expanded radius
+      const { data: availableDrivers } = await supabase
+        .from('driver_profiles')
+        .select('*')
+        .eq('status', 'online')
+        .eq('is_available', true);
+
+      if (availableDrivers && availableDrivers.length > 0) {
+        // Filter drivers that haven't been tried recently (within last 10 minutes)
+        const tenMinutesAgo = new Date();
+        tenMinutesAgo.setMinutes(tenMinutesAgo.getMinutes() - 10);
+
+        const { data: recentAssignments } = await supabase
+          .from('order_assignments')
+          .select('driver_id')
+          .eq('order_id', orderId)
+          .gte('created_at', tenMinutesAgo.toISOString());
+
+        const recentDriverIds = new Set(recentAssignments?.map(a => a.driver_id) || []);
+
+        // Calculate distance and priority for available drivers
+        const driversWithDistance: any[] = [];
+        for (const driver of availableDrivers) {
+          // Skip drivers tried recently unless we're expanding radius significantly
+          if (recentDriverIds.has(driver.user_id) && currentRadius < 25) continue;
+
+          const { data: locationData } = await supabase
+            .from('craver_locations')
+            .select('lat, lng, updated_at')
+            .eq('user_id', driver.user_id)
+            .single();
+
+          if (!locationData) continue;
+
+          // Calculate distance
+          const hasCoords = restaurant.latitude != null && restaurant.longitude != null;
+          let distanceMiles = 0;
+          if (hasCoords) {
+            const distanceResult = (await supabase.rpc('calculate_distance', {
+              lat1: restaurant.latitude,
+              lng1: restaurant.longitude,
+              lat2: locationData.lat,
+              lng2: locationData.lng
+            })).data;
+            distanceMiles = distanceResult ?? 999;
+            if (distanceMiles > currentRadius) continue;
+          }
+
+          const level = driver.driver_level ?? 1;
+          const priority = calculateDriverPriority(Number(driver.rating) || 5, Number(level), Number(distanceMiles));
+
+          driversWithDistance.push({ ...driver, distance: distanceMiles, location: locationData, priority });
+        }
+
+        if (driversWithDistance.length > 0) {
+          driversWithDistance.sort((a, b) => b.priority - a.priority);
+          console.log(`Found ${driversWithDistance.length} drivers within ${currentRadius} miles for order ${orderId}`);
+          
+          // Try to assign to the best available driver
+          const success = await assignToNextDriver(supabase, orderId, driversWithDistance);
+          if (success) {
+            console.log(`Continuous assignment successful for order ${orderId}`);
+            return;
+          }
+        }
+      }
+
+      // Expand search radius if no drivers found
+      if (currentRadius < maxSearchRadius) {
+        currentRadius = Math.min(currentRadius + 5, maxSearchRadius);
+        console.log(`Expanding search radius to ${currentRadius} miles for order ${orderId}`);
+      }
+
+      retryCount++;
+      console.log(`Continuous assignment attempt ${retryCount} failed for order ${orderId}, retrying in ${baseRetryInterval/1000} seconds`);
+      
+      // Wait before next attempt
+      await new Promise(res => setTimeout(res, baseRetryInterval));
+
+    } catch (error) {
+      console.error(`Continuous assignment error for order ${orderId}:`, error);
+      retryCount++;
+      await new Promise(res => setTimeout(res, baseRetryInterval));
+    }
+  }
+
+  console.log(`Continuous assignment exceeded max retries for order ${orderId}`);
 }
 
 // Driver priority: higher rating/level + closer distance
