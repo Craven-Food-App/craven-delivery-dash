@@ -153,6 +153,10 @@ export const usePromoCode = () => {
           // This will be handled in the cart calculation
           discountCents = 0;
           break;
+        case 'total_free':
+          // Makes everything free - subtotal becomes the discount
+          discountCents = subtotalCents;
+          break;
         case 'bogo':
           // For simplicity, implement as 50% off
           discountCents = Math.round(subtotalCents * 0.5);

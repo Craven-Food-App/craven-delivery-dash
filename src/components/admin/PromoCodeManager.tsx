@@ -282,6 +282,8 @@ export const PromoCodeManager: React.FC = () => {
         return 'Fixed Amount Off';
       case 'free_delivery':
         return 'Free Delivery';
+      case 'total_free':
+        return 'Everything Free';
       case 'bogo':
         return 'Buy One Get One';
       default:
@@ -297,6 +299,8 @@ export const PromoCodeManager: React.FC = () => {
         return `$${((promoCode.discount_amount_cents || 0) / 100).toFixed(2)} off`;
       case 'free_delivery':
         return 'Free delivery';
+      case 'total_free':
+        return 'Everything FREE!';
       case 'bogo':
         return 'Buy 1 Get 1 Free';
       default:
@@ -392,6 +396,7 @@ export const PromoCodeManager: React.FC = () => {
                       <SelectItem value="percentage">Percentage Off</SelectItem>
                       <SelectItem value="fixed_amount">Fixed Amount Off</SelectItem>
                       <SelectItem value="free_delivery">Free Delivery</SelectItem>
+                      <SelectItem value="total_free">Everything Free</SelectItem>
                       <SelectItem value="bogo">Buy One Get One Free</SelectItem>
                     </SelectContent>
                   </Select>

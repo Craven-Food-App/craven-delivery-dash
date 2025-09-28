@@ -48,8 +48,20 @@ const CartSummary = ({
   const formatPrice = (cents: number) => `$${(cents / 100).toFixed(2)}`;
   
   const subtotal = items.reduce((sum, item) => sum + (item.price_cents * item.quantity), 0);
-  const adjustedDeliveryFee = appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery' ? 0 : deliveryFee;
-  const total = subtotal + adjustedDeliveryFee - promoCodeDiscount;
+  
+  // Handle different promo code types
+  let adjustedDeliveryFee = deliveryFee;
+  let finalTotal = subtotal + deliveryFee - promoCodeDiscount;
+  
+  if (appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery') {
+    adjustedDeliveryFee = 0;
+    finalTotal = subtotal - promoCodeDiscount;
+  } else if (appliedPromoCode?.type === 'total_free') {
+    adjustedDeliveryFee = 0;
+    finalTotal = 0;
+  }
+  
+  const total = finalTotal;
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
   if (items.length === 0) {
@@ -143,7 +155,7 @@ const CartSummary = ({
           
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Delivery fee</span>
-            <span className={`font-medium ${appliedPromoCode?.type === 'free_delivery' && adjustedDeliveryFee === 0 ? 'line-through text-muted-foreground' : ''}`}>
+            <span className={`font-medium ${(appliedPromoCode?.type === 'free_delivery' || appliedPromoCode?.type === 'total_free') && adjustedDeliveryFee === 0 ? 'line-through text-muted-foreground' : ''}`}>
               {deliveryFee === 0 ? 'Free' : formatPrice(deliveryFee)}
             </span>
           </div>
@@ -155,7 +167,14 @@ const CartSummary = ({
             </div>
           )}
           
-          {promoCodeDiscount > 0 && appliedPromoCode?.type !== 'free_delivery' && (
+          {appliedPromoCode?.type === 'total_free' && (
+            <div className="flex justify-between text-sm text-primary">
+              <span>Everything FREE!</span>
+              <span>-{formatPrice(subtotal + deliveryFee)}</span>
+            </div>
+          )}
+          
+          {promoCodeDiscount > 0 && appliedPromoCode?.type !== 'free_delivery' && appliedPromoCode?.type !== 'total_free' && (
             <div className="flex justify-between text-sm text-primary">
               <span>Promo discount</span>
               <span>-{formatPrice(promoCodeDiscount)}</span>
