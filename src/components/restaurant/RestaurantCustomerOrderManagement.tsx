@@ -332,12 +332,17 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
                         <Phone className="h-3 w-3" />
                         <span>{order.customer_phone}</span>
                       </div>
-                      {order.delivery_address && (
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-3 w-3" />
-                          <span>{order.delivery_address}</span>
-                        </div>
-                      )}
+                       {order.delivery_address && (
+                         <div className="flex items-center gap-2">
+                           <MapPin className="h-3 w-3" />
+                           <span>
+                             {typeof order.delivery_address === 'string' 
+                               ? order.delivery_address 
+                               : `${order.delivery_address.street}, ${order.delivery_address.city}, ${order.delivery_address.state} ${order.delivery_address.zip}`
+                             }
+                           </span>
+                         </div>
+                       )}
                     </div>
                   </div>
 
