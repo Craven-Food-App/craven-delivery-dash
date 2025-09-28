@@ -1,5 +1,5 @@
 import React from 'react';
-import cravenLogo from '@/assets/craven-loading-logo.png';
+import cravenLogo from '@/assets/craven-c-new.png';
 
 interface LoadingScreenProps {
   isLoading: boolean;
