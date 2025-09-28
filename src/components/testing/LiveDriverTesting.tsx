@@ -46,7 +46,9 @@ export const LiveDriverTesting = () => {
       )
       .subscribe();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchOnlineDrivers = async () => {
