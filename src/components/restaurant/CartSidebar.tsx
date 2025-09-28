@@ -416,14 +416,29 @@ export const CartSidebar = ({
             <div className="flex justify-between font-semibold">
               <span>Total</span>
               <span>
-                {appliedPromoCode?.type === 'total_free' ? (
-                  <span className="text-primary font-bold">FREE!</span>
-                ) : (
-                  `$${((cart.reduce((sum, item) => {
+                {(() => {
+                  const subtotal = cart.reduce((sum, item) => {
                     const modifierPrice = item.modifiers?.reduce((modSum, mod) => modSum + mod.price_cents, 0) || 0;
                     return sum + ((item.price_cents + modifierPrice) * item.quantity);
-                  }, 0) + (appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery' ? 0 : totals.deliveryFee) + totals.tax - (appliedPromoCode?.discount_applied_cents || 0)) / 100).toFixed(2)}`
-                )}
+                  }, 0);
+                  
+                  const promoDiscount = appliedPromoCode?.discount_applied_cents || 0;
+                  let adjustedDeliveryFee = totals.deliveryFee;
+                  
+                  if (appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery') {
+                    adjustedDeliveryFee = 0;
+                  } else if (appliedPromoCode?.type === 'total_free') {
+                    adjustedDeliveryFee = 0;
+                  }
+                  
+                  const finalTotal = appliedPromoCode?.type === 'total_free' ? 0 : subtotal + adjustedDeliveryFee + totals.tax - promoDiscount;
+                  
+                  return finalTotal <= 0 ? (
+                    <span className="text-primary font-bold">FREE!</span>
+                  ) : (
+                    `$${(finalTotal / 100).toFixed(2)}`
+                  );
+                })()}
               </span>
             </div>
           </div>
@@ -441,7 +456,27 @@ export const CartSidebar = ({
             onClick={handleCheckout}
             disabled={isProcessing}
           >
-            {isProcessing ? "Processing..." : appliedPromoCode?.type === 'total_free' ? 'Place Free Order' : `Place Order • $${(totals.total / 100).toFixed(2)}`}
+            {(() => {
+              const subtotal = cart.reduce((sum, item) => {
+                const modifierPrice = item.modifiers?.reduce((modSum, mod) => modSum + mod.price_cents, 0) || 0;
+                return sum + ((item.price_cents + modifierPrice) * item.quantity);
+              }, 0);
+              
+              const promoDiscount = appliedPromoCode?.discount_applied_cents || 0;
+              let adjustedDeliveryFee = totals.deliveryFee;
+              
+              if (appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery') {
+                adjustedDeliveryFee = 0;
+              } else if (appliedPromoCode?.type === 'total_free') {
+                adjustedDeliveryFee = 0;
+              }
+              
+              const finalTotal = appliedPromoCode?.type === 'total_free' ? 0 : subtotal + adjustedDeliveryFee + totals.tax - promoDiscount;
+              
+              if (isProcessing) return "Processing...";
+              if (finalTotal <= 0) return 'Place Free Order';
+              return `Place Order • $${(finalTotal / 100).toFixed(2)}`;
+            })()}
           </Button>
         </div>
 
@@ -451,7 +486,23 @@ export const CartSidebar = ({
           onSubmit={handleOrderSubmit}
           deliveryMethod={deliveryMethod}
           isProcessing={isProcessing}
-          orderTotal={totals.total}
+          orderTotal={(() => {
+            const subtotal = cart.reduce((sum, item) => {
+              const modifierPrice = item.modifiers?.reduce((modSum, mod) => modSum + mod.price_cents, 0) || 0;
+              return sum + ((item.price_cents + modifierPrice) * item.quantity);
+            }, 0);
+            
+            const promoDiscount = appliedPromoCode?.discount_applied_cents || 0;
+            let adjustedDeliveryFee = totals.deliveryFee;
+            
+            if (appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery') {
+              adjustedDeliveryFee = 0;
+            } else if (appliedPromoCode?.type === 'total_free') {
+              adjustedDeliveryFee = 0;
+            }
+            
+            return appliedPromoCode?.type === 'total_free' ? 0 : subtotal + adjustedDeliveryFee + totals.tax - promoDiscount;
+          })()}
         />
       </SheetContent>
     </Sheet>
