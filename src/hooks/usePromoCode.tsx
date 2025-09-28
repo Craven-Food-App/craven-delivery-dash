@@ -165,6 +165,7 @@ export const usePromoCode = () => {
 
       const appliedCode: AppliedPromoCode = {
         ...promoCode,
+        type: (promoCode.type || '').toLowerCase(),
         discount_applied_cents: discountCents
       };
 

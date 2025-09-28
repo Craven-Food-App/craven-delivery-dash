@@ -109,23 +109,26 @@ export const CartSidebar = ({
       // Get current user if authenticated
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Calculate final totals with promo code
+      // Calculate final totals with promo code (robust)
       const subtotal = cart.reduce((sum, item) => {
         const modifierPrice = item.modifiers?.reduce((modSum, mod) => modSum + mod.price_cents, 0) || 0;
         return sum + ((item.price_cents + modifierPrice) * item.quantity);
       }, 0);
       
-      const promoDiscount = appliedPromoCode?.discount_applied_cents || 0;
+      const promoDiscount = appliedPromoCode?.discount_applied_cents ?? 0;
+      const promoType = appliedPromoCode?.type?.toLowerCase();
+      const isTotalFree = promoType === 'total_free' || (subtotal - promoDiscount) <= 0;
+      
       let adjustedDeliveryFee = totals.deliveryFee;
       
       // Handle different promo code types
-      if (appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery') {
+      if (isTotalFree) {
         adjustedDeliveryFee = 0;
-      } else if (appliedPromoCode?.type === 'total_free') {
-        adjustedDeliveryFee = 0; // Everything is free including delivery
+      } else if (promoType === 'free_delivery' && deliveryMethod === 'delivery') {
+        adjustedDeliveryFee = 0;
       }
       
-      const finalTotal = appliedPromoCode?.type === 'total_free' ? 0 : subtotal + adjustedDeliveryFee + totals.tax - promoDiscount;
+      const finalTotal = isTotalFree ? 0 : subtotal + adjustedDeliveryFee + totals.tax - promoDiscount;
       
       console.log('Order submission details:', {
         subtotal,
