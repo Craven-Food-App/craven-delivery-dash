@@ -24,6 +24,9 @@ export const useDriverLocation = (): UseDriverLocationReturn => {
   const [error, setError] = useState<string | null>(null);
   const watchId = useRef<number | null>(null);
   const updateInterval = useRef<NodeJS.Timeout | null>(null);
+  const retryCount = useRef<number>(0);
+  const maxRetries = useRef<number>(3);
+  const isBlockingUI = useRef<boolean>(false);
 
   const updateLocationInDatabase = async (locationData: LocationData) => {
     try {
@@ -126,24 +129,36 @@ export const useDriverLocation = (): UseDriverLocationReturn => {
           TIMEOUT: err.TIMEOUT
         });
         
-        let errorMessage = 'Location error: ';
-        switch(err.code) {
-          case err.PERMISSION_DENIED:
-            errorMessage += 'GPS permission denied. Please allow location access.';
-            break;
-          case err.POSITION_UNAVAILABLE:
-            errorMessage += 'GPS position unavailable. Check your device settings.';
-            break;
-          case err.TIMEOUT:
-            errorMessage += 'GPS request timed out. Trying again...';
-            break;
-          default:
-            errorMessage += err.message || 'Unknown error';
+        retryCount.current += 1;
+        
+        // Stop retrying after max attempts to prevent UI blocking
+        if (retryCount.current >= maxRetries.current) {
+          let errorMessage = 'Location services unavailable. ';
+          switch(err.code) {
+            case err.PERMISSION_DENIED:
+              errorMessage += 'Please enable location access in browser settings.';
+              break;
+            case err.POSITION_UNAVAILABLE:
+              errorMessage += 'GPS hardware not available.';
+              break;
+            case err.TIMEOUT:
+              errorMessage += 'GPS signal weak or unavailable.';
+              break;
+            default:
+              errorMessage += 'Please check your device settings.';
+          }
+          
+          setError(errorMessage);
+          if (!isBlockingUI.current) {
+            toast.error(errorMessage);
+            isBlockingUI.current = true;
+          }
+          setIsTracking(false);
+          return;
         }
         
-        setError(errorMessage);
-        toast.error(errorMessage);
-        setIsTracking(false);
+        // For retries, just log and continue without blocking UI
+        console.log(`GPS retry ${retryCount.current}/${maxRetries.current}`);
       },
       options
     );
@@ -171,19 +186,27 @@ export const useDriverLocation = (): UseDriverLocationReturn => {
           TIMEOUT: err.TIMEOUT
         });
         
-        // Don't stop tracking for timeouts, but handle other errors
+        // Don't stop tracking for timeouts, but limit retries
         if (err.code === err.TIMEOUT) {
           console.log('Location timeout, continuing...');
           return;
         }
         
+        // For critical errors, stop tracking to prevent UI blocking
         if (err.code === err.PERMISSION_DENIED) {
           setError('GPS permission denied. Please allow location access.');
-          toast.error('GPS permission denied');
+          if (!isBlockingUI.current) {
+            toast.error('GPS permission denied');
+            isBlockingUI.current = true;
+          }
           setIsTracking(false);
         } else if (err.code === err.POSITION_UNAVAILABLE) {
           setError('GPS position unavailable. Check your device settings.');
-          toast.error('GPS unavailable');
+          if (!isBlockingUI.current) {
+            toast.error('GPS unavailable');
+            isBlockingUI.current = true;
+          }
+          setIsTracking(false);
         }
       },
       options
@@ -208,6 +231,10 @@ export const useDriverLocation = (): UseDriverLocationReturn => {
       updateInterval.current = null;
     }
 
+    // Reset retry counters
+    retryCount.current = 0;
+    isBlockingUI.current = false;
+    
     setIsTracking(false);
     setLocation(null);
     setError(null);
