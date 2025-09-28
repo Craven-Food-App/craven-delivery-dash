@@ -8,7 +8,7 @@ import MobileBottomNav from "@/components/mobile/MobileBottomNav";
 import Index from "./pages/Index";
 import DriverAuth from "./pages/DriverAuth";
 import CraverHub from "./pages/CraverHub";
-import CraverDashboard from "./pages/CraverDashboard";
+
 import CustomerDashboard from "./pages/CustomerDashboard";
 import { MobileDriverDashboard } from "./components/mobile/MobileDriverDashboard";
 import AccessGuard from "./components/AccessGuard";
@@ -46,7 +46,6 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/driver/auth" element={<DriverAuth />} />
           <Route path="/craver" element={<CraverHub />} />
-          <Route path="/craver-dashboard" element={<CraverDashboard />} />
           <Route path="/customer-dashboard" element={<CustomerDashboard />} />
           <Route path="/mobile" element={
             <AccessGuard fallback={

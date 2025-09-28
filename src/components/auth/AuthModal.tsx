@@ -77,7 +77,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
           if (activeTab === 'restaurant') {
             window.location.href = '/restaurant/dashboard';
           } else if (activeTab === 'driver') {
-            window.location.href = '/craver-dashboard';
+            window.location.href = '/mobile';
           } else {
             window.location.href = '/customer-dashboard';
           }
@@ -102,7 +102,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
       case 'restaurant':
         return '/restaurant/dashboard';
       case 'driver':
-        return '/craver-dashboard';
+        return '/mobile';
       default:
         return '/customer-dashboard';
     }

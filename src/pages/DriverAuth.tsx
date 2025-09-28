@@ -30,7 +30,7 @@ const DriverAuth = () => {
           .single();
         
         if (application) {
-          navigate('/craver-dashboard');
+          navigate('/mobile');
         } else {
           navigate('/craver-hub');
         }
@@ -60,7 +60,7 @@ const DriverAuth = () => {
         .single();
       
       if (application) {
-        navigate('/craver-dashboard');
+        navigate('/mobile');
       } else {
         navigate('/craver-hub');
       }
