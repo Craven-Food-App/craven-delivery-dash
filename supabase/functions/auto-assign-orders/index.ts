@@ -2,6 +2,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.52.0';
 
+declare const EdgeRuntime: {
+  waitUntil(promise: Promise<any>): void;
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -83,7 +87,7 @@ serve(async (req) => {
     for (const driver of driversWithDistance) {
       try {
         const expiresAt = new Date();
-        expiresAt.setSeconds(expiresAt.getSeconds() + 30);
+        expiresAt.setSeconds(expiresAt.getSeconds() + 45);
 
         const { data: assignment } = await supabase
           .from('order_assignments')
@@ -143,8 +147,8 @@ serve(async (req) => {
 
         console.log(`Order assigned to driver: ${driver.user_id} with priority ${driver.priority}`);
 
-        // Monitor acceptance for 30 seconds
-        await waitForAcceptance(supabase, assignment.id, 30_000);
+        // Set up background monitoring without blocking POS response
+        EdgeRuntime.waitUntil(monitorAssignmentAcceptance(supabase, assignment.id, orderId, driversWithDistance.slice(driversWithDistance.indexOf(driver) + 1)));
 
         return new Response(JSON.stringify({
           success: true,
@@ -170,21 +174,139 @@ serve(async (req) => {
   }
 });
 
-// Wait for driver acceptance (checks assignment status periodically)
-async function waitForAcceptance(supabase, assignmentId: string, timeoutMs: number) {
-  const interval = 1000;
-  const maxChecks = timeoutMs / interval;
+// Monitor assignment acceptance in background and handle fallback to next driver
+async function monitorAssignmentAcceptance(supabase, assignmentId: string, orderId: string, remainingDrivers: any[]) {
+  const interval = 2000; // Check every 2 seconds
+  const maxChecks = 22; // 45 seconds total (45/2 = 22.5)
   let checks = 0;
 
   while (checks < maxChecks) {
-    const { data: assignment } = await supabase.from('order_assignments').select('status').eq('id', assignmentId).single();
-    if (assignment?.status === 'accepted') return true;
-    await new Promise(res => setTimeout(res, interval));
-    checks++;
+    try {
+      const { data: assignment } = await supabase
+        .from('order_assignments')
+        .select('status')
+        .eq('id', assignmentId)
+        .single();
+      
+      if (assignment?.status === 'accepted') {
+        console.log(`Assignment ${assignmentId} accepted by driver`);
+        return true;
+      }
+      
+      if (assignment?.status === 'declined') {
+        console.log(`Assignment ${assignmentId} declined, trying next driver`);
+        break;
+      }
+      
+      await new Promise(res => setTimeout(res, interval));
+      checks++;
+    } catch (error) {
+      console.error('Error checking assignment status:', error);
+      break;
+    }
   }
 
   // Mark assignment expired if not accepted
-  await supabase.from('order_assignments').update({ status: 'expired' }).eq('id', assignmentId);
+  await supabase
+    .from('order_assignments')
+    .update({ status: 'expired' })
+    .eq('id', assignmentId);
+
+  // Try next available drivers if any
+  if (remainingDrivers.length > 0) {
+    console.log(`Assignment expired, trying next ${remainingDrivers.length} drivers`);
+    await assignToNextDriver(supabase, orderId, remainingDrivers);
+  } else {
+    console.log(`No more drivers available for order ${orderId}`);
+  }
+  
+  return false;
+}
+
+// Assign order to next available driver in the list
+async function assignToNextDriver(supabase, orderId: string, drivers: any[]) {
+  for (const driver of drivers) {
+    try {
+      const expiresAt = new Date();
+      expiresAt.setSeconds(expiresAt.getSeconds() + 45);
+
+      const { data: assignment } = await supabase
+        .from('order_assignments')
+        .insert({
+          order_id: orderId,
+          driver_id: driver.user_id,
+          status: 'pending',
+          expires_at: expiresAt.toISOString()
+        })
+        .select()
+        .single();
+
+      // Get order and restaurant details for notification
+      const { data: order } = await supabase
+        .from('orders')
+        .select(`*, restaurants!inner(id, name, latitude, longitude)`)
+        .eq('id', orderId)
+        .single();
+
+      if (!order) continue;
+
+      const restaurant = order.restaurants;
+      const notificationPayload = {
+        type: 'order_assignment',
+        assignment_id: assignment.id,
+        order_id: orderId,
+        restaurant_name: restaurant.name,
+        pickup_address: order.pickup_address,
+        dropoff_address: order.dropoff_address,
+        payout_cents: order.payout_cents,
+        distance_km: order.distance_km,
+        distance_mi: (order.distance_km * 0.621371).toFixed(1),
+        expires_at: assignment.expires_at,
+        estimated_time: Math.ceil(order.distance_km * 2.5)
+      };
+
+      // Send notifications
+      const channel = supabase.channel(`driver_${driver.user_id}`);
+      await channel.subscribe();
+      await channel.send({ type: 'broadcast', event: 'order_assignment', payload: notificationPayload });
+
+      const pickupText = typeof order.pickup_address === 'string'
+        ? order.pickup_address
+        : [order.pickup_address?.address, order.pickup_address?.city, order.pickup_address?.state]
+            .filter(Boolean)
+            .join(', ');
+      const title = `New Order: ${restaurant.name || 'Pickup'}`;
+      const message = `Pickup at ${pickupText || 'restaurant'}`;
+
+      const userChannel = supabase.channel(`user_notifications_${driver.user_id}`);
+      await userChannel.subscribe();
+      await userChannel.send({
+        type: 'broadcast',
+        event: 'push_notification',
+        payload: { title, message, data: notificationPayload }
+      });
+
+      await supabase.from('order_notifications').insert({
+        user_id: driver.user_id,
+        order_id: orderId,
+        title,
+        message,
+        notification_type: 'order_assignment'
+      });
+
+      console.log(`Fallback assignment created for driver: ${driver.user_id}`);
+      
+      // Continue monitoring this new assignment
+      const remainingDrivers = drivers.slice(drivers.indexOf(driver) + 1);
+      EdgeRuntime.waitUntil(monitorAssignmentAcceptance(supabase, assignment.id, orderId, remainingDrivers));
+      
+      return true;
+    } catch (error) {
+      console.error(`Failed to assign to driver ${driver.user_id}:`, error);
+      continue;
+    }
+  }
+  
   return false;
 }
 

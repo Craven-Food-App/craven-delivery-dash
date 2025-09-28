@@ -35,7 +35,7 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
   onAccept,
   onDecline
 }) => {
-  const [timeLeft, setTimeLeft] = useState(15);
+  const [timeLeft, setTimeLeft] = useState(45);
   const { toast } = useToast();
 
   // Earnings + routing state
@@ -214,7 +214,7 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
         <div className="absolute top-0 left-0 right-0 h-1 bg-muted rounded-t-3xl overflow-hidden">
           <div 
             className="h-full bg-orange-500 transition-all duration-1000 ease-linear"
-            style={{ width: `${(timeLeft / 15) * 100}%` }}
+            style={{ width: `${(timeLeft / 45) * 100}%` }}
           />
         </div>
         <div className="p-6 pb-8">
