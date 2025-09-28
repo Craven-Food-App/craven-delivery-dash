@@ -202,22 +202,104 @@ const Header = () => {
               )}
             </div>
 
-            {/* Mobile Actions - Hide burger menu, let bottom nav handle it */}
+            {/* Mobile Burger Menu */}
             <div className="flex md:hidden items-center space-x-2">
-              {user && (
-                <Button variant="ghost" size="icon" className="relative">
-                  <ShoppingCart className="h-5 w-5" />
-                  {cartItems > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {cartItems}
-                    </span>
-                  )}
-                </Button>
-              )}
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="text-foreground hover:bg-background"
+              >
+                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </Button>
             </div>
           </div>
         </div>
+
+        {/* Mobile Menu Overlay */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-border shadow-lg z-50">
+            <div className="container mx-auto px-4 py-6 space-y-4">
+              {/* Mobile Navigation */}
+              <nav className="space-y-4">
+                <a 
+                  href="/restaurants" 
+                  className="block text-lg font-semibold text-foreground hover:text-primary"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Restaurants
+                </a>
+                <a 
+                  href="/craver" 
+                  className="block text-lg font-semibold text-foreground hover:text-primary"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Become a Driver
+                </a>
+                <a 
+                  href="/admin" 
+                  className="block text-lg font-semibold text-primary hover:text-primary/80"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Admin
+                </a>
+              </nav>
+
+              {/* Mobile Auth Section */}
+              <div className="pt-4 border-t border-border">
+                {user ? (
+                  <div className="space-y-4">
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start text-lg h-12"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        window.location.href = '/customer-dashboard';
+                      }}
+                    >
+                      <User className="mr-3 h-5 w-5" />
+                      My Orders
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start text-lg h-12 text-red-600 border-red-200 hover:bg-red-50"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        handleSignOut();
+                      }}
+                    >
+                      <LogOut className="mr-3 h-5 w-5" />
+                      Sign Out
+                    </Button>
+                  </div>
+                ) : (
+                  <Button 
+                    variant="default" 
+                    className="w-full text-lg h-12"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      setIsAuthModalOpen(true);
+                    }}
+                  >
+                    <User className="mr-3 h-5 w-5" />
+                    Sign In
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </header>
+
+      {/* Auth Modal */}
+      <Dialog open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Sign In to Crave'n</DialogTitle>
+          </DialogHeader>
+          <AuthModal onClose={() => setIsAuthModalOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
