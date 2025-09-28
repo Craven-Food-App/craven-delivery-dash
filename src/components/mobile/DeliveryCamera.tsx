@@ -4,11 +4,13 @@ import { Camera, X, RotateCcw } from "lucide-react";
 interface DeliveryCameraProps {
   onPhotoCapture: (photo: Blob) => void;
   onCancel: () => void;
+  isUploading?: boolean;
 }
 
 export const DeliveryCamera: React.FC<DeliveryCameraProps> = ({
   onPhotoCapture,
   onCancel,
+  isUploading = false,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
