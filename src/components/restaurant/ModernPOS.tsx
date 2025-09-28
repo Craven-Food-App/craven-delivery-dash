@@ -252,6 +252,71 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
         return;
       }
 
+      // Fetch restaurant information for pickup address
+      const { data: restaurant, error: restaurantError } = await supabase
+        .from('restaurants')
+        .select('id, name, address, city, state, zip_code, latitude, longitude')
+        .eq('id', restaurantId)
+        .single();
+
+      if (restaurantError || !restaurant) {
+        toast({
+          title: "Restaurant not found",
+          description: "Could not load restaurant information.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Create pickup address from restaurant data
+      const pickupAddress = {
+        name: restaurant.name,
+        address: restaurant.address || '',
+        city: restaurant.city || '',
+        state: restaurant.state || '',
+        zip_code: restaurant.zip_code || '',
+        phone: '', // Restaurant phone not needed for pickup
+        email: '',
+        special_instructions: '',
+        ...(restaurant.latitude && restaurant.longitude && {
+          latitude: restaurant.latitude,
+          longitude: restaurant.longitude
+        })
+      };
+
+      // Create dropoff address for delivery orders
+      const dropoffAddress = orderType === 'delivery' ? {
+        name: customerInfo.name,
+        phone: customerInfo.phone,
+        email: customerInfo.email || '',
+        address: customerInfo.address || '',
+        city: customerInfo.city || '',
+        state: customerInfo.state || '',
+        zip_code: customerInfo.zip_code || '',
+        special_instructions: customerInfo.special_instructions || '',
+        ...customerInfo.addressCoordinates && {
+          latitude: customerInfo.addressCoordinates.lat,
+          longitude: customerInfo.addressCoordinates.lng
+        }
+      } : null;
+
+      // Calculate distance for delivery orders
+      let distanceKm = null;
+      if (orderType === 'delivery' && restaurant.latitude && restaurant.longitude && customerInfo.addressCoordinates) {
+        try {
+          const { data: distance } = await supabase.rpc('calculate_distance', {
+            lat1: restaurant.latitude,
+            lng1: restaurant.longitude,
+            lat2: customerInfo.addressCoordinates.lat,
+            lng2: customerInfo.addressCoordinates.lng
+          });
+          distanceKm = distance ? distance * 1.60934 : null; // Convert miles to km
+        } catch (distError) {
+          console.error('Distance calculation error:', distError);
+        }
+      }
+
       // Create order record using allowed columns on orders table
       const orderData = {
         customer_id: user.id,
@@ -261,20 +326,10 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
         tax_cents: totals.tax,
         total_cents: totals.total,
         order_status: paymentMethod === 'cash' ? 'confirmed' : 'pending',
-        delivery_address: orderType === 'delivery' ? {
-          name: customerInfo.name,
-          phone: customerInfo.phone,
-          email: customerInfo.email || '',
-          address: customerInfo.address || '',
-          city: customerInfo.city || '',
-          state: customerInfo.state || '',
-          zip_code: customerInfo.zip_code || '',
-          special_instructions: customerInfo.special_instructions || '',
-          ...customerInfo.addressCoordinates && {
-            latitude: customerInfo.addressCoordinates.lat,
-            longitude: customerInfo.addressCoordinates.lng
-          }
-        } : null,
+        pickup_address: pickupAddress,
+        dropoff_address: dropoffAddress,
+        delivery_address: dropoffAddress, // Legacy field for compatibility
+        distance_km: distanceKm,
         estimated_delivery_time: new Date(Date.now() + (orderType === 'delivery' ? 45 : 20) * 60000).toISOString()
       };
 
