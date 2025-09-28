@@ -74,25 +74,50 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?` +
         `access_token=${mapboxToken}&` +
         `country=US&` + // Limit to US addresses
+        `autocomplete=true&` +
         `types=address,poi&` + // Focus on addresses and points of interest
         `limit=5`
       );
 
       const result = await response.json();
-      
-      if (result.features) {
-        const formatted: AddressSuggestion[] = result.features.map((feature: any) => ({
+
+      let formatted: AddressSuggestion[] = [];
+      if (response.ok && Array.isArray(result?.features)) {
+        formatted = result.features.map((feature: any) => ({
           id: feature.id,
           place_name: feature.place_name,
           center: feature.center,
           place_type: feature.place_type,
           address: feature.place_name
         }));
-        
+      }
+
+      // Fallback: use Nominatim (OpenStreetMap) if Mapbox fails or returns no features
+      if (!formatted.length) {
+        try {
+          const nominatimResp = await fetch(
+            `https://nominatim.openstreetmap.org/search?` +
+            `q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5`
+          );
+          const nomiJson = await nominatimResp.json();
+          if (Array.isArray(nomiJson)) {
+            formatted = nomiJson.map((item: any) => ({
+              id: `nominatim:${item.place_id}`,
+              place_name: item.display_name,
+              center: [Number(item.lon), Number(item.lat)] as [number, number],
+              place_type: ['address'],
+              address: item.display_name
+            }));
+          }
+        } catch (fallbackErr) {
+          console.warn('Nominatim fallback failed:', fallbackErr);
+        }
+      }
+
+      if (formatted.length) {
         setSuggestions(formatted);
         setShowSuggestions(true);
-        
-        // Check if current value matches any suggestion exactly
+
         const exactMatch = formatted.find(s => 
           s.place_name.toLowerCase() === query.toLowerCase()
         );
@@ -106,6 +131,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         }
       } else {
         setSuggestions([]);
+        setShowSuggestions(false);
         setIsValidAddress(false);
         onValidAddress?.(false);
       }
