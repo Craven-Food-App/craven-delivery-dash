@@ -116,8 +116,16 @@ export const CartSidebar = ({
       }, 0);
       
       const promoDiscount = appliedPromoCode?.discount_applied_cents || 0;
-      const adjustedDeliveryFee = appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery' ? 0 : totals.deliveryFee;
-      const finalTotal = subtotal + adjustedDeliveryFee + totals.tax - promoDiscount;
+      let adjustedDeliveryFee = totals.deliveryFee;
+      
+      // Handle different promo code types
+      if (appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery') {
+        adjustedDeliveryFee = 0;
+      } else if (appliedPromoCode?.type === 'total_free') {
+        adjustedDeliveryFee = 0; // Everything is free including delivery
+      }
+      
+      const finalTotal = appliedPromoCode?.type === 'total_free' ? 0 : subtotal + adjustedDeliveryFee + totals.tax - promoDiscount;
       
       // Create order with correct schema
       const orderData = {
@@ -168,7 +176,31 @@ export const CartSidebar = ({
         }
       }
 
-      // Create Stripe payment session
+      // If total is $0.00, skip payment and directly complete the order
+      if (finalTotal <= 0) {
+        // Update order status to confirmed since no payment is needed
+        await supabase
+          .from('orders')
+          .update({ 
+            order_status: 'confirmed',
+            customer_name: customerInfo.name,
+            customer_phone: customerInfo.phone 
+          })
+          .eq('id', newOrder.id);
+
+        // Show success message and redirect
+        toast({
+          title: "Order placed successfully! 🎉",
+          description: "Your free order has been confirmed and sent to the restaurant.",
+        });
+
+        // Close cart and reset form
+        onOrderComplete();
+        setShowOrderForm(false);
+        return;
+      }
+
+      // Create Stripe payment session for non-free orders
       const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-payment', {
         body: {
           orderTotal: finalTotal,
@@ -348,13 +380,13 @@ export const CartSidebar = ({
                 </span>
               </div>
             )}
-            {appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery' && totals.deliveryFee > 0 && (
+            {((appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery') || appliedPromoCode?.type === 'total_free') && totals.deliveryFee > 0 && (
               <div className="flex justify-between text-sm text-primary">
-                <span>Free delivery applied</span>
+                <span>{appliedPromoCode?.type === 'total_free' ? 'Everything FREE!' : 'Free delivery applied'}</span>
                 <span>-${(totals.deliveryFee / 100).toFixed(2)}</span>
               </div>
             )}
-            {appliedPromoCode && appliedPromoCode.type !== 'free_delivery' && appliedPromoCode.discount_applied_cents > 0 && (
+            {appliedPromoCode && appliedPromoCode.type !== 'free_delivery' && appliedPromoCode.type !== 'total_free' && appliedPromoCode.discount_applied_cents > 0 && (
               <div className="flex justify-between text-sm text-primary">
                 <span>Promo discount</span>
                 <span>-${(appliedPromoCode.discount_applied_cents / 100).toFixed(2)}</span>
@@ -367,10 +399,16 @@ export const CartSidebar = ({
             <Separator />
             <div className="flex justify-between font-semibold">
               <span>Total</span>
-              <span>${((cart.reduce((sum, item) => {
-                const modifierPrice = item.modifiers?.reduce((modSum, mod) => modSum + mod.price_cents, 0) || 0;
-                return sum + ((item.price_cents + modifierPrice) * item.quantity);
-              }, 0) + (appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery' ? 0 : totals.deliveryFee) + totals.tax - (appliedPromoCode?.discount_applied_cents || 0)) / 100).toFixed(2)}</span>
+              <span>
+                {appliedPromoCode?.type === 'total_free' ? (
+                  <span className="text-primary font-bold">FREE!</span>
+                ) : (
+                  `$${((cart.reduce((sum, item) => {
+                    const modifierPrice = item.modifiers?.reduce((modSum, mod) => modSum + mod.price_cents, 0) || 0;
+                    return sum + ((item.price_cents + modifierPrice) * item.quantity);
+                  }, 0) + (appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery' ? 0 : totals.deliveryFee) + totals.tax - (appliedPromoCode?.discount_applied_cents || 0)) / 100).toFixed(2)}`
+                )}
+              </span>
             </div>
           </div>
 
@@ -387,7 +425,7 @@ export const CartSidebar = ({
             onClick={handleCheckout}
             disabled={isProcessing}
           >
-            {isProcessing ? "Processing..." : `Place Order • $${(totals.total / 100).toFixed(2)}`}
+            {isProcessing ? "Processing..." : appliedPromoCode?.type === 'total_free' ? 'Place Free Order' : `Place Order • $${(totals.total / 100).toFixed(2)}`}
           </Button>
         </div>
 
