@@ -495,9 +495,9 @@ export const MobileDriverDashboard: React.FC = () => {
             </div>
 
             {/* Content Container */}
-            <div className="flex flex-col justify-end h-full px-4 space-y-4 pointer-events-auto">
+            <div className="flex flex-col justify-end h-full px-4 space-y-4 pointer-events-auto overflow-hidden">
               {/* Popular Times Chart with CRAVE NOW Button */}
-              <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/10">
+              <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/10 overflow-hidden">
                 {/* Main Action Button - Centered at top */}
                 <div className="flex justify-center mb-4">
                   <Button onClick={handleGoOnline} className="w-full h-12 text-lg font-bold bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg rounded-2xl">
@@ -513,7 +513,7 @@ export const MobileDriverDashboard: React.FC = () => {
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
                 
-                <div className="flex items-end justify-between h-16 gap-2">
+                <div className="flex items-end justify-between h-16 gap-2 overflow-hidden">
                   {[{
                 time: '6a',
                 value: 25
@@ -574,9 +574,9 @@ export const MobileDriverDashboard: React.FC = () => {
             </div>
 
             {/* Bottom Content - Still Searching + Popular Times */}
-            <div className="absolute bottom-7 left-4 right-4 z-20 space-y-3">
+            <div className="absolute bottom-7 left-4 right-4 z-20 space-y-3 overflow-hidden">
               {/* Still Searching Section */}
-              <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/20">
+              <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/20 overflow-hidden">
                 <div className="flex items-center justify-between">
                   <span className="text-base text-foreground font-medium">Still searching...</span>
                   <div className="w-6 h-6">
@@ -589,7 +589,7 @@ export const MobileDriverDashboard: React.FC = () => {
               </div>
 
               {/* Popular Times Chart */}
-              <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/10">
+              <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/10 overflow-hidden">
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <h3 className="text-base font-semibold text-foreground">Popular offer times: Today</h3>
@@ -598,7 +598,7 @@ export const MobileDriverDashboard: React.FC = () => {
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
                 
-                <div className="flex items-end justify-between h-16 gap-2">
+                <div className="flex items-end justify-between h-16 gap-2 overflow-hidden">
                   {[{
                 time: '6a',
                 value: 25
@@ -634,8 +634,8 @@ export const MobileDriverDashboard: React.FC = () => {
         {/* PAUSED STATE */}
         {driverState === 'online_paused' && <>
             {/* Paused Message - Center */}
-            <div className="flex flex-col justify-center items-center h-full px-4">
-              <div className="bg-background/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-border/20 text-center max-w-sm w-full">
+            <div className="flex flex-col justify-center items-center h-full px-4 overflow-hidden">
+              <div className="bg-background/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-border/20 text-center max-w-sm w-full overflow-hidden">
                 <div className="text-4xl mb-3">⏸️</div>
                 <div className="text-lg font-bold text-foreground mb-2">
                   Delivery Paused
@@ -655,7 +655,7 @@ export const MobileDriverDashboard: React.FC = () => {
               </div>
               
               {/* Resume/Stop Controls */}
-              <div className="flex gap-3 mt-6 w-full max-w-sm">
+              <div className="flex gap-3 mt-6 w-full max-w-sm overflow-hidden">
                 <Button onClick={handleUnpause} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 text-sm font-semibold rounded-xl shadow-lg">
                   <Play className="h-4 w-4 mr-1" />
                   Resume
