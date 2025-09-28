@@ -125,54 +125,49 @@ export const MobileDriverDashboard: React.FC = () => {
   // Check session persistence on component mount
   useEffect(() => {
     checkSessionPersistence();
-    
+
     // Simulate loading time for the loading screen
     const loadingTimer = setTimeout(() => {
       setIsLoading(false);
     }, 2500);
-    
     return () => clearTimeout(loadingTimer);
   }, []);
-
   const checkSessionPersistence = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       // Check if driver was previously online
-      const { data: session } = await supabase
-        .from('driver_sessions')
-        .select('*')
-        .eq('driver_id', user.id)
-        .maybeSingle();
-
+      const {
+        data: session
+      } = await supabase.from('driver_sessions').select('*').eq('driver_id', user.id).maybeSingle();
       if (session?.is_online && session.session_data) {
         const sessionData = session.session_data as any;
-        
+
         // Check if session is still valid (end time hasn't passed)
         if (sessionData.end_time) {
           const endTime = new Date(sessionData.end_time);
           const now = new Date();
-          
           if (now >= endTime) {
             // Session expired, clear it
-            await supabase
-              .from('driver_sessions')
-              .update({ 
-                is_online: false, 
-                session_data: {} 
-              })
-              .eq('driver_id', user.id);
+            await supabase.from('driver_sessions').update({
+              is_online: false,
+              session_data: {}
+            }).eq('driver_id', user.id);
             return;
           }
-          
+
           // Restore end time
           setEndTime(endTime);
         }
-        
+
         // Auto-restore online state
         setDriverState('online_searching');
-        
+
         // Restore online time if available
         if (sessionData.online_since) {
           const onlineSince = new Date(sessionData.online_since);
@@ -180,31 +175,27 @@ export const MobileDriverDashboard: React.FC = () => {
           const timeOnline = Math.floor((now.getTime() - onlineSince.getTime()) / 1000);
           setOnlineTime(timeOnline > 0 ? timeOnline : 0);
         }
-        
+
         // Update driver profile to online
-        await supabase
-          .from('driver_profiles')
-          .update({
-            status: 'online',
-            is_available: true,
-            last_location_update: new Date().toISOString()
-          })
-          .eq('user_id', user.id);
-        
+        await supabase.from('driver_profiles').update({
+          status: 'online',
+          is_available: true,
+          last_location_update: new Date().toISOString()
+        }).eq('user_id', user.id);
+
         // Update last activity
-        await supabase
-          .from('driver_sessions')
-          .update({ last_activity: new Date().toISOString() })
-          .eq('driver_id', user.id);
-        
+        await supabase.from('driver_sessions').update({
+          last_activity: new Date().toISOString()
+        }).eq('driver_id', user.id);
+
         // Setup realtime listener
         setupRealtimeListener(user.id);
-        
+
         // Show seamless welcome back message
-        const timeMessage = sessionData.end_time 
-          ? ` until ${new Date(sessionData.end_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
-          : '';
-        
+        const timeMessage = sessionData.end_time ? ` until ${new Date(sessionData.end_time).toLocaleTimeString([], {
+          hour: 'numeric',
+          minute: '2-digit'
+        })}` : '';
       }
     } catch (error) {
       console.error('Error checking session persistence:', error);
@@ -228,36 +219,37 @@ export const MobileDriverDashboard: React.FC = () => {
         }
       } = await supabase.auth.getUser();
       if (!user) return;
-      
+
       // Use the database function to ensure driver can go online
-      const { error: ensureError } = await supabase.rpc('ensure_driver_can_go_online', {
+      const {
+        error: ensureError
+      } = await supabase.rpc('ensure_driver_can_go_online', {
         target_user_id: user.id
       });
-
       if (ensureError) {
         console.error('Failed to ensure driver can go online:', ensureError);
         return;
       }
 
       // Create session data with online timestamp
-      const sessionData: Record<string, any> = { 
+      const sessionData: Record<string, any> = {
         online_since: new Date().toISOString()
       };
-      
       if (endTime) {
         sessionData.end_time = endTime.toISOString();
       }
 
       // Update or create driver session for persistence
-      const { error: sessionError } = await supabase
-        .from('driver_sessions')
-        .upsert({
-          driver_id: user.id,
-          is_online: true,
-          last_activity: new Date().toISOString(),
-          session_data: sessionData
-        }, { onConflict: 'driver_id' });
-
+      const {
+        error: sessionError
+      } = await supabase.from('driver_sessions').upsert({
+        driver_id: user.id,
+        is_online: true,
+        last_activity: new Date().toISOString(),
+        session_data: sessionData
+      }, {
+        onConflict: 'driver_id'
+      });
       if (sessionError) {
         console.error('Error updating driver session:', sessionError);
       }
@@ -287,12 +279,11 @@ export const MobileDriverDashboard: React.FC = () => {
       }
       setDriverState('online_searching');
       setOnlineTime(0);
-      
+
       // Only show time selector if no end time is already set
       if (!endTime) {
         setShowTimeSelector(true);
       }
-      
       setupRealtimeListener(user.id);
     } catch (error) {
       console.error('Error going online:', error);
@@ -306,25 +297,26 @@ export const MobileDriverDashboard: React.FC = () => {
         }
       } = await supabase.auth.getUser();
       if (user) {
-        const { error: profileError } = await supabase.from('driver_profiles').update({
+        const {
+          error: profileError
+        } = await supabase.from('driver_profiles').update({
           status: 'offline',
           is_available: false,
           last_location_update: new Date().toISOString()
         }).eq('user_id', user.id);
-        
         if (profileError) {
           console.error('Error updating driver profile:', profileError);
         }
 
         // Clear session data when going offline
-        await supabase
-          .from('driver_sessions')
-          .upsert({
-            driver_id: user.id,
-            is_online: false,
-            last_activity: new Date().toISOString(),
-            session_data: {} // Clear session data
-          }, { onConflict: 'driver_id' });
+        await supabase.from('driver_sessions').upsert({
+          driver_id: user.id,
+          is_online: false,
+          last_activity: new Date().toISOString(),
+          session_data: {} // Clear session data
+        }, {
+          onConflict: 'driver_id'
+        });
       }
       setDriverState('offline');
       setOnlineTime(0);
@@ -341,12 +333,13 @@ export const MobileDriverDashboard: React.FC = () => {
         }
       } = await supabase.auth.getUser();
       if (user) {
-        const { error: profileError } = await supabase.from('driver_profiles').update({
+        const {
+          error: profileError
+        } = await supabase.from('driver_profiles').update({
           status: 'paused',
           is_available: false,
           last_location_update: new Date().toISOString()
         }).eq('user_id', user.id);
-        
         if (profileError) {
           console.error('Error updating driver profile:', profileError);
         }
@@ -364,12 +357,13 @@ export const MobileDriverDashboard: React.FC = () => {
         }
       } = await supabase.auth.getUser();
       if (user) {
-        const { error: profileError } = await supabase.from('driver_profiles').update({
+        const {
+          error: profileError
+        } = await supabase.from('driver_profiles').update({
           status: 'online',
           is_available: true,
           last_location_update: new Date().toISOString()
         }).eq('user_id', user.id);
-        
         if (profileError) {
           console.error('Error updating driver profile:', profileError);
         }
@@ -384,26 +378,25 @@ export const MobileDriverDashboard: React.FC = () => {
     const selectedEnd = new Date(now.getTime() + minutes * 60 * 1000);
     setEndTime(selectedEnd);
     setShowTimeSelector(false);
-    
+
     // Update session with end time
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (user) {
-        const { data: currentSession } = await supabase
-          .from('driver_sessions')
-          .select('session_data')
-          .eq('driver_id', user.id)
-          .maybeSingle();
-        
+        const {
+          data: currentSession
+        } = await supabase.from('driver_sessions').select('session_data').eq('driver_id', user.id).maybeSingle();
         const sessionData: Record<string, any> = {
           ...(currentSession?.session_data as object || {}),
           end_time: selectedEnd.toISOString()
         };
-        
-        await supabase
-          .from('driver_sessions')
-          .update({ session_data: sessionData })
-          .eq('driver_id', user.id);
+        await supabase.from('driver_sessions').update({
+          session_data: sessionData
+        }).eq('driver_id', user.id);
       }
     } catch (error) {
       console.error('Error updating session with end time:', error);
@@ -485,7 +478,9 @@ export const MobileDriverDashboard: React.FC = () => {
         </div>}
 
       {/* Main Content Overlay - Allow for bottom nav space */}
-      <div className="absolute inset-0 z-10 flex flex-col" style={{ paddingBottom: '80px' }}>
+      <div style={{
+        paddingBottom: '80px'
+      }} className="absolute inset-0 z-10 flex flex-col py-0">
         
         {/* OFFLINE STATE */}
         {driverState === 'offline' && <>
@@ -515,28 +510,28 @@ export const MobileDriverDashboard: React.FC = () => {
                 
                 <div className="flex items-end justify-between h-16 gap-2 overflow-hidden">
                   {[{
-                time: '6a',
-                value: 25
-              }, {
-                time: '9a',
-                value: 45
-              }, {
-                time: '12p',
-                value: 85
-              }, {
-                time: '3p',
-                value: 60
-              }, {
-                time: '6p',
-                value: 95
-              }, {
-                time: '9p',
-                value: 75
-              }].map((data, index) => <div key={data.time} className="flex flex-col items-center flex-1">
+                  time: '6a',
+                  value: 25
+                }, {
+                  time: '9a',
+                  value: 45
+                }, {
+                  time: '12p',
+                  value: 85
+                }, {
+                  time: '3p',
+                  value: 60
+                }, {
+                  time: '6p',
+                  value: 95
+                }, {
+                  time: '9p',
+                  value: 75
+                }].map((data, index) => <div key={data.time} className="flex flex-col items-center flex-1">
                       <div className={`w-full rounded-t-sm transition-all duration-300 ${index === 4 ? 'bg-primary' : 'bg-muted'}`} style={{
-                  height: `${data.value / 95 * 100}%`,
-                  minHeight: '6px'
-                }} />
+                    height: `${data.value / 95 * 100}%`,
+                    minHeight: '6px'
+                  }} />
                       <span className="text-xs text-muted-foreground mt-1 font-medium">
                         {data.time}
                       </span>
@@ -554,7 +549,7 @@ export const MobileDriverDashboard: React.FC = () => {
             </div>
 
             {/* Pause Button - Top Right */}
-            <div className="absolute top-4 right-7 z-20 pointer-events-auto">
+            <div className="absolute top-4 right-7 z-20 pointer-events-auto px-0 mx-[28px]">
               <Button onClick={handlePause} variant="ghost" size="sm" className="bg-card/80 backdrop-blur-sm border border-border/20 rounded-full p-2 shadow-sm hover:bg-card/90 mx-[41px]">
                 <Pause className="h-4 w-4" />
               </Button>
@@ -566,9 +561,9 @@ export const MobileDriverDashboard: React.FC = () => {
                 <span className="text-xs text-muted-foreground mr-2">Get offers until</span>
                 <span className="text-xs font-semibold text-foreground bg-muted/50 px-2 py-1 rounded-full">
                   {endTime ? endTime.toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit'
-              }) : '11:00 PM'}
+                  hour: '2-digit',
+                  minute: '2-digit'
+                }) : '11:00 PM'}
                 </span>
               </div>
             </div>
@@ -600,28 +595,28 @@ export const MobileDriverDashboard: React.FC = () => {
                 
                 <div className="flex items-end justify-between h-16 gap-2 overflow-hidden">
                   {[{
-                time: '6a',
-                value: 25
-              }, {
-                time: '9a',
-                value: 45
-              }, {
-                time: '12p',
-                value: 85
-              }, {
-                time: '3p',
-                value: 60
-              }, {
-                time: '6p',
-                value: 95
-              }, {
-                time: '9p',
-                value: 75
-              }].map((data, index) => <div key={data.time} className="flex flex-col items-center flex-1">
+                  time: '6a',
+                  value: 25
+                }, {
+                  time: '9a',
+                  value: 45
+                }, {
+                  time: '12p',
+                  value: 85
+                }, {
+                  time: '3p',
+                  value: 60
+                }, {
+                  time: '6p',
+                  value: 95
+                }, {
+                  time: '9p',
+                  value: 75
+                }].map((data, index) => <div key={data.time} className="flex flex-col items-center flex-1">
                       <div className={`w-full rounded-t-sm transition-all duration-300 ${index === 4 ? 'bg-primary' : 'bg-muted'}`} style={{
-                  height: `${data.value / 95 * 100}%`,
-                  minHeight: '6px'
-                }} />
+                    height: `${data.value / 95 * 100}%`,
+                    minHeight: '6px'
+                  }} />
                       <span className="text-xs text-muted-foreground mt-1 font-medium">
                         {data.time}
                       </span>
@@ -670,80 +665,79 @@ export const MobileDriverDashboard: React.FC = () => {
 
         {/* ON DELIVERY STATE */}
         {driverState === 'on_delivery' && activeDelivery && <ActiveDeliveryFlow orderDetails={{
-        id: activeDelivery.id || activeDelivery.order_id || 'missing-order-id',
-        order_number: activeDelivery.order_number || 'MISSING-ORDER',
-        restaurant_name: activeDelivery.restaurant_name || 'Restaurant',
-        pickup_address: activeDelivery.pickup_address || 'Pickup Address',
-        dropoff_address: activeDelivery.dropoff_address || 'Delivery Address',
-        customer_name: activeDelivery.customer_name || 'Customer',
-        customer_phone: activeDelivery.customer_phone,
-        delivery_notes: activeDelivery.delivery_notes,
-        payout_cents: activeDelivery.payout_cents || 0,
-        subtotal_cents: activeDelivery.subtotal_cents || activeDelivery.payout_cents || 1200,
-        estimated_time: activeDelivery.estimated_time || 30,
-        items: activeDelivery.items && activeDelivery.items.length > 0 
-          ? activeDelivery.items 
-          : [{ name: 'Order Items', quantity: 1, price_cents: activeDelivery.subtotal_cents || 1200 }],
-        isTestOrder: activeDelivery.isTestOrder || false // Only true if explicitly marked as test
-      }} onCompleteDelivery={() => {
-        // Check if this was a test order
-        if (activeDelivery?.isTestOrder) {
-          setShowTestCompletionModal(true);
-        } else {
-          // Record final driver earnings for real orders
-          (async () => {
-            try {
-              const { data: { user } } = await supabase.auth.getUser();
-              await supabase.functions.invoke('finalize-delivery', {
-                body: { orderId: activeDelivery.order_id, driverId: user?.id }
-              });
-            } catch (e) {
-              console.error('finalize-delivery failed', e);
-            }
-          })();
-        }
-        setActiveDelivery(null);
-        setDriverState('online_searching');
-      }} />}
+          id: activeDelivery.id || activeDelivery.order_id || 'missing-order-id',
+          order_number: activeDelivery.order_number || 'MISSING-ORDER',
+          restaurant_name: activeDelivery.restaurant_name || 'Restaurant',
+          pickup_address: activeDelivery.pickup_address || 'Pickup Address',
+          dropoff_address: activeDelivery.dropoff_address || 'Delivery Address',
+          customer_name: activeDelivery.customer_name || 'Customer',
+          customer_phone: activeDelivery.customer_phone,
+          delivery_notes: activeDelivery.delivery_notes,
+          payout_cents: activeDelivery.payout_cents || 0,
+          subtotal_cents: activeDelivery.subtotal_cents || activeDelivery.payout_cents || 1200,
+          estimated_time: activeDelivery.estimated_time || 30,
+          items: activeDelivery.items && activeDelivery.items.length > 0 ? activeDelivery.items : [{
+            name: 'Order Items',
+            quantity: 1,
+            price_cents: activeDelivery.subtotal_cents || 1200
+          }],
+          isTestOrder: activeDelivery.isTestOrder || false // Only true if explicitly marked as test
+        }} onCompleteDelivery={() => {
+          // Check if this was a test order
+          if (activeDelivery?.isTestOrder) {
+            setShowTestCompletionModal(true);
+          } else {
+            // Record final driver earnings for real orders
+            (async () => {
+              try {
+                const {
+                  data: {
+                    user
+                  }
+                } = await supabase.auth.getUser();
+                await supabase.functions.invoke('finalize-delivery', {
+                  body: {
+                    orderId: activeDelivery.order_id,
+                    driverId: user?.id
+                  }
+                });
+              } catch (e) {
+                console.error('finalize-delivery failed', e);
+              }
+            })();
+          }
+          setActiveDelivery(null);
+          setDriverState('online_searching');
+        }} />}
 
       </div>
 
       {/* Order Assignment Modal */}
-      <OrderAssignmentModal
-        isOpen={showOrderModal}
-        onClose={() => {
-          setShowOrderModal(false);
-          setCurrentOrderAssignment(null);
-        }}
-        assignment={currentOrderAssignment}
-        onAccept={assignment => {
-          setActiveDelivery({
-            ...assignment,
-            order_id: assignment.order_id,
-            assignment_id: assignment.assignment_id,
-            restaurant_name: assignment.restaurant_name,
-            pickup_address: assignment.pickup_address,
-            dropoff_address: assignment.dropoff_address,
-            payout_cents: assignment.payout_cents,
-            distance_mi: assignment.distance_mi,
-            isTestOrder: assignment.isTestOrder // Pass through test order flag
-          });
-          setDriverState('on_delivery');
-          setShowOrderModal(false);
-          setCurrentOrderAssignment(null);
-        }}
-        onDecline={() => {
-          setShowOrderModal(false);
-          setCurrentOrderAssignment(null);
-        }}
-      />
+      <OrderAssignmentModal isOpen={showOrderModal} onClose={() => {
+        setShowOrderModal(false);
+        setCurrentOrderAssignment(null);
+      }} assignment={currentOrderAssignment} onAccept={assignment => {
+        setActiveDelivery({
+          ...assignment,
+          order_id: assignment.order_id,
+          assignment_id: assignment.assignment_id,
+          restaurant_name: assignment.restaurant_name,
+          pickup_address: assignment.pickup_address,
+          dropoff_address: assignment.dropoff_address,
+          payout_cents: assignment.payout_cents,
+          distance_mi: assignment.distance_mi,
+          isTestOrder: assignment.isTestOrder // Pass through test order flag
+        });
+        setDriverState('on_delivery');
+        setShowOrderModal(false);
+        setCurrentOrderAssignment(null);
+      }} onDecline={() => {
+        setShowOrderModal(false);
+        setCurrentOrderAssignment(null);
+      }} />
 
       {/* Drive Time Selector */}
-      <DriveTimeSelector
-        open={showTimeSelector}
-        onClose={() => setShowTimeSelector(false)}
-        onSelect={handleSelectDriveTime}
-      />
+      <DriveTimeSelector open={showTimeSelector} onClose={() => setShowTimeSelector(false)} onSelect={handleSelectDriveTime} />
 
       {/* Bottom Navigation */}
       <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
