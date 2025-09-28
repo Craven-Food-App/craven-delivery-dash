@@ -489,7 +489,7 @@ export const MobileDriverDashboard: React.FC = () => {
             </div>
 
             {/* Content Container */}
-            <div className="flex flex-col justify-end h-full px-4 pb-7 space-y-4 pointer-events-auto">
+            <div className="flex flex-col justify-end h-full px-4 space-y-4 pointer-events-auto">
               {/* Popular Times Chart with CRAVE NOW Button */}
               <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/10">
                 {/* Main Action Button - Centered at top */}
