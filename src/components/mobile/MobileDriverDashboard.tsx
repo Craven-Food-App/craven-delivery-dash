@@ -153,21 +153,69 @@ export const MobileDriverDashboard: React.FC = () => {
         .eq('driver_id', user.id)
         .maybeSingle();
 
-      if (session?.is_online) {
-        // Don't auto-restore online state, just show they were online before
-        // The user will need to tap "CRAVE NOW" again to go online
-        toast({
-          title: "Welcome back!",
-          description: "You were online in your last session. Tap CRAVE NOW to resume driving.",
-        });
+      if (session?.is_online && session.session_data) {
+        const sessionData = session.session_data as any;
         
-        // Optionally restore other session data like end time and earnings
-        if (session.session_data && typeof session.session_data === 'object' && 'online_since' in session.session_data) {
-          const onlineSince = new Date(session.session_data.online_since as string);
+        // Check if session is still valid (end time hasn't passed)
+        if (sessionData.end_time) {
+          const endTime = new Date(sessionData.end_time);
+          const now = new Date();
+          
+          if (now >= endTime) {
+            // Session expired, clear it
+            await supabase
+              .from('driver_sessions')
+              .update({ 
+                is_online: false, 
+                session_data: {} 
+              })
+              .eq('driver_id', user.id);
+            return;
+          }
+          
+          // Restore end time
+          setEndTime(endTime);
+        }
+        
+        // Auto-restore online state
+        setDriverState('online_searching');
+        
+        // Restore online time if available
+        if (sessionData.online_since) {
+          const onlineSince = new Date(sessionData.online_since);
           const now = new Date();
           const timeOnline = Math.floor((now.getTime() - onlineSince.getTime()) / 1000);
           setOnlineTime(timeOnline > 0 ? timeOnline : 0);
         }
+        
+        // Update driver profile to online
+        await supabase
+          .from('driver_profiles')
+          .update({
+            status: 'online',
+            is_available: true,
+            last_location_update: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+        
+        // Update last activity
+        await supabase
+          .from('driver_sessions')
+          .update({ last_activity: new Date().toISOString() })
+          .eq('driver_id', user.id);
+        
+        // Setup realtime listener
+        setupRealtimeListener(user.id);
+        
+        // Show seamless welcome back message
+        const timeMessage = sessionData.end_time 
+          ? ` until ${new Date(sessionData.end_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
+          : '';
+        
+        toast({
+          title: "Welcome back!",
+          description: `You're back online${timeMessage}`,
+        });
       }
     } catch (error) {
       console.error('Error checking session persistence:', error);
@@ -204,6 +252,15 @@ export const MobileDriverDashboard: React.FC = () => {
         throw profileError;
       }
 
+      // Create session data with online timestamp
+      const sessionData: Record<string, any> = { 
+        online_since: new Date().toISOString()
+      };
+      
+      if (endTime) {
+        sessionData.end_time = endTime.toISOString();
+      }
+
       // Update or create driver session for persistence
       const { error: sessionError } = await supabase
         .from('driver_sessions')
@@ -211,7 +268,7 @@ export const MobileDriverDashboard: React.FC = () => {
           driver_id: user.id,
           is_online: true,
           last_activity: new Date().toISOString(),
-          session_data: { online_since: new Date().toISOString() }
+          session_data: sessionData
         }, { onConflict: 'driver_id' });
 
       if (sessionError) {
@@ -243,11 +300,16 @@ export const MobileDriverDashboard: React.FC = () => {
       }
       setDriverState('online_searching');
       setOnlineTime(0);
-      setShowTimeSelector(true);
+      
+      // Only show time selector if no end time is already set
+      if (!endTime) {
+        setShowTimeSelector(true);
+      }
+      
       setupRealtimeListener(user.id);
       toast({
         title: "You're online!",
-        description: "Choose how long you want to drive."
+        description: endTime ? `Driving until ${endTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : "Choose how long you want to drive."
       });
     } catch (error) {
       console.error('Error going online:', error);
@@ -271,17 +333,19 @@ export const MobileDriverDashboard: React.FC = () => {
           console.error('Error updating driver profile:', profileError);
         }
 
-        // Update driver session
+        // Clear session data when going offline
         await supabase
           .from('driver_sessions')
           .upsert({
             driver_id: user.id,
             is_online: false,
-            last_activity: new Date().toISOString()
+            last_activity: new Date().toISOString(),
+            session_data: {} // Clear session data
           }, { onConflict: 'driver_id' });
       }
       setDriverState('offline');
       setOnlineTime(0);
+      setEndTime(null); // Clear end time
       toast({
         title: "You're offline",
         description: "You won't receive delivery offers."
@@ -344,11 +408,36 @@ export const MobileDriverDashboard: React.FC = () => {
       console.error('Error unpausing:', error);
     }
   };
-  const handleSelectDriveTime = (minutes: number) => {
+  const handleSelectDriveTime = async (minutes: number) => {
     const now = new Date();
     const selectedEnd = new Date(now.getTime() + minutes * 60 * 1000);
     setEndTime(selectedEnd);
     setShowTimeSelector(false);
+    
+    // Update session with end time
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: currentSession } = await supabase
+          .from('driver_sessions')
+          .select('session_data')
+          .eq('driver_id', user.id)
+          .maybeSingle();
+        
+        const sessionData: Record<string, any> = {
+          ...(currentSession?.session_data as object || {}),
+          end_time: selectedEnd.toISOString()
+        };
+        
+        await supabase
+          .from('driver_sessions')
+          .update({ session_data: sessionData })
+          .eq('driver_id', user.id);
+      }
+    } catch (error) {
+      console.error('Error updating session with end time:', error);
+    }
+    
     toast({
       title: 'Drive time set',
       description: `Ends around ${selectedEnd.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
