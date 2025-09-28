@@ -16,22 +16,33 @@ interface DriveTimeSelectorProps {
   onSelect: (minutes: number) => void;
 }
 
-const TIME_OPTIONS = [
-  { label: '30 min', minutes: 30 },
-  { label: '1 hour', minutes: 60 },
-  { label: '1.5 hours', minutes: 90 },
-  { label: '2 hours', minutes: 120 },
-  { label: '2.5 hours', minutes: 150 },
-  { label: '3 hours', minutes: 180 },
-  { label: '4 hours', minutes: 240 },
-  { label: '5 hours', minutes: 300 },
-  { label: '6 hours', minutes: 360 },
-  { label: '7 hours', minutes: 420 },
-  { label: '8 hours', minutes: 480 },
-];
+// Generate time options starting from current time in 30-minute increments
+const generateTimeOptions = () => {
+  const now = new Date();
+  const options = [];
+  
+  for (let i = 1; i <= 16; i++) { // 30 min to 8 hours in 30-min increments
+    const minutes = i * 30;
+    const endTime = new Date(now.getTime() + minutes * 60 * 1000);
+    const timeString = endTime.toLocaleTimeString([], { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+    
+    options.push({
+      label: timeString,
+      minutes: minutes,
+      endTime: endTime
+    });
+  }
+  
+  return options;
+};
 
 export const DriveTimeSelector: React.FC<DriveTimeSelectorProps> = ({ open, onClose, onSelect }) => {
-  const [selectedIndex, setSelectedIndex] = useState(2); // Default to "2 hours"
+  const [timeOptions] = useState(() => generateTimeOptions());
+  const [selectedIndex, setSelectedIndex] = useState(3); // Default to 2 hours (4th option)
   const scrollRef = useRef<HTMLDivElement>(null);
   const itemHeight = 56; // Height of each item in pixels
 
@@ -51,13 +62,13 @@ export const DriveTimeSelector: React.FC<DriveTimeSelectorProps> = ({ open, onCl
     const centerPosition = scrollTop + containerHeight / 2;
     const newIndex = Math.round(centerPosition / itemHeight);
     
-    if (newIndex >= 0 && newIndex < TIME_OPTIONS.length && newIndex !== selectedIndex) {
+    if (newIndex >= 0 && newIndex < timeOptions.length && newIndex !== selectedIndex) {
       setSelectedIndex(newIndex);
     }
   };
 
   const handleSelect = () => {
-    onSelect(TIME_OPTIONS[selectedIndex].minutes);
+    onSelect(timeOptions[selectedIndex].minutes);
   };
 
   return (
@@ -65,8 +76,8 @@ export const DriveTimeSelector: React.FC<DriveTimeSelectorProps> = ({ open, onCl
       <DrawerContent>
         <div className="mx-auto w-full max-w-md">
           <DrawerHeader>
-            <DrawerTitle>How long do you want to drive?</DrawerTitle>
-            <DrawerDescription>Scroll to select your drive time.</DrawerDescription>
+            <DrawerTitle>When do you want to stop driving?</DrawerTitle>
+            <DrawerDescription>Select your end time.</DrawerDescription>
           </DrawerHeader>
           
           <div className="relative h-64 overflow-hidden">
@@ -80,7 +91,7 @@ export const DriveTimeSelector: React.FC<DriveTimeSelectorProps> = ({ open, onCl
               onScroll={handleScroll}
               style={{ paddingTop: '104px', paddingBottom: '104px' }}
             >
-              {TIME_OPTIONS.map((option, index) => (
+              {timeOptions.map((option, index) => (
                 <div
                   key={option.minutes}
                   className={`h-14 flex items-center justify-center text-lg font-medium transition-colors ${
