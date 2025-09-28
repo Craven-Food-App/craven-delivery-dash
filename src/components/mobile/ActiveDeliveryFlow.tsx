@@ -232,7 +232,7 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
             <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
             <div>
               <h3 className="font-bold text-lg">{orderDetails.restaurant_name}</h3>
-              <p className="text-muted-foreground">{formatAddress(orderDetails.pickup_address)}</p>
+              <p className="text-muted-foreground">{formatAddress(orderDetails.pickup_address, restaurantAddress)}</p>
             </div>
           </div>
           <div className="flex gap-2 mt-4">
@@ -240,10 +240,10 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
               className="flex-1" 
               size="lg" 
               onClick={() => {
-                const restaurantAddress = formatAddress(orderDetails.pickup_address);
-                if (!orderDetails.isTestOrder && restaurantAddress && restaurantAddress !== 'Address not available') {
+                const addr = formatAddress(orderDetails.pickup_address, restaurantAddress);
+                if (!orderDetails.isTestOrder && addr && addr !== 'Address not available') {
                   openExternalNavigation({ 
-                    address: restaurantAddress, 
+                    address: addr, 
                     name: orderDetails.restaurant_name 
                   });
                 }
