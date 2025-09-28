@@ -240,16 +240,19 @@ export const MobileDriverDashboard: React.FC = () => {
       } = await supabase.auth.getUser();
       if (!user) return;
       
-      // Update driver profile
-      const { error: profileError } = await supabase.from('driver_profiles').update({
-        status: 'online',
-        is_available: true,
-        last_location_update: new Date().toISOString()
-      }).eq('user_id', user.id);
+      // Use the database function to ensure driver can go online
+      const { error: ensureError } = await supabase.rpc('ensure_driver_can_go_online', {
+        target_user_id: user.id
+      });
 
-      if (profileError) {
-        console.error('Error updating driver profile:', profileError);
-        throw profileError;
+      if (ensureError) {
+        console.error('Failed to ensure driver can go online:', ensureError);
+        toast({
+          title: "Error",
+          description: ensureError.message || "Failed to go online. Please contact support.",
+          variant: "destructive",
+        });
+        return;
       }
 
       // Create session data with online timestamp
@@ -313,6 +316,11 @@ export const MobileDriverDashboard: React.FC = () => {
       });
     } catch (error) {
       console.error('Error going online:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     }
   };
   const handleGoOffline = async () => {

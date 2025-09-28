@@ -1610,6 +1610,14 @@ export type Database = {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
       }
+      create_driver_profile_from_application: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
+      ensure_driver_can_go_online: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
       make_user_active_driver: {
         Args: { target_user_id: string; vehicle_info?: Json }
         Returns: undefined
