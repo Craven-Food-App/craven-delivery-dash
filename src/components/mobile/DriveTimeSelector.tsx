@@ -16,15 +16,36 @@ interface DriveTimeSelectorProps {
   onSelect: (minutes: number) => void;
 }
 
-// Generate time options starting from current time in 30-minute increments
+// Generate time options starting from next 30-minute increment
 const generateTimeOptions = () => {
   const now = new Date();
   const options = [];
   
-  for (let i = 1; i <= 16; i++) { // 30 min to 8 hours in 30-min increments
-    const minutes = i * 30;
-    const endTime = new Date(now.getTime() + minutes * 60 * 1000);
-    const timeString = endTime.toLocaleTimeString([], { 
+  // Round up to next 30-minute increment
+  const currentMinutes = now.getMinutes();
+  const currentHour = now.getHours();
+  
+  let nextHour = currentHour;
+  let nextMinute = 0;
+  
+  if (currentMinutes > 30) {
+    // If past 30 minutes, go to next hour
+    nextHour += 1;
+    nextMinute = 0;
+  } else if (currentMinutes > 0) {
+    // If past 0 minutes but before 30, go to 30 minutes
+    nextMinute = 30;
+  }
+  
+  // Create 48 time slots (24 hours worth of 30-minute increments)
+  for (let i = 0; i < 48; i++) {
+    const timeSlot = new Date(now);
+    timeSlot.setHours(nextHour, nextMinute, 0, 0);
+    
+    // Calculate minutes from now
+    const minutesFromNow = Math.round((timeSlot.getTime() - now.getTime()) / (1000 * 60));
+    
+    const timeString = timeSlot.toLocaleTimeString([], { 
       hour: 'numeric', 
       minute: '2-digit',
       hour12: true 
@@ -32,9 +53,19 @@ const generateTimeOptions = () => {
     
     options.push({
       label: timeString,
-      minutes: minutes,
-      endTime: endTime
+      minutes: minutesFromNow,
+      endTime: timeSlot
     });
+    
+    // Move to next 30-minute slot
+    nextMinute += 30;
+    if (nextMinute >= 60) {
+      nextMinute = 0;
+      nextHour += 1;
+      if (nextHour >= 24) {
+        nextHour = 0;
+      }
+    }
   }
   
   return options;
@@ -42,7 +73,7 @@ const generateTimeOptions = () => {
 
 export const DriveTimeSelector: React.FC<DriveTimeSelectorProps> = ({ open, onClose, onSelect }) => {
   const [timeOptions] = useState(() => generateTimeOptions());
-  const [selectedIndex, setSelectedIndex] = useState(3); // Default to 2 hours (4th option)
+  const [selectedIndex, setSelectedIndex] = useState(7); // Default to about 4 hours out
   const scrollRef = useRef<HTMLDivElement>(null);
   const itemHeight = 56; // Height of each item in pixels
 
