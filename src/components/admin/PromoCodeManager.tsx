@@ -33,7 +33,7 @@ interface PromoCode {
   code: string;
   name: string;
   description?: string;
-  type: 'percentage' | 'fixed_amount' | 'free_delivery' | 'bogo';
+  type: 'percentage' | 'fixed_amount' | 'free_delivery' | 'bogo' | 'total_free';
   discount_percentage?: number;
   discount_amount_cents?: number;
   minimum_order_cents: number;
@@ -53,7 +53,7 @@ interface PromoCodeFormData {
   code: string;
   name: string;
   description: string;
-  type: 'percentage' | 'fixed_amount' | 'free_delivery' | 'bogo';
+  type: 'percentage' | 'fixed_amount' | 'free_delivery' | 'bogo' | 'total_free';
   discount_percentage: string;
   discount_amount_cents: string;
   minimum_order_cents: string;
