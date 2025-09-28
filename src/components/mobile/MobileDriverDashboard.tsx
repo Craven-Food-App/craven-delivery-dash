@@ -151,7 +151,7 @@ export const MobileDriverDashboard: React.FC = () => {
         .from('driver_sessions')
         .select('*')
         .eq('driver_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (session?.is_online) {
         // Restore online state if session shows driver was online
@@ -205,7 +205,7 @@ export const MobileDriverDashboard: React.FC = () => {
           is_online: true,
           last_activity: new Date().toISOString(),
           session_data: { online_since: new Date().toISOString() }
-        });
+        }, { onConflict: 'driver_id' });
 
       if (sessionError) {
         console.error('Error updating driver session:', sessionError);
@@ -271,7 +271,7 @@ export const MobileDriverDashboard: React.FC = () => {
             driver_id: user.id,
             is_online: false,
             last_activity: new Date().toISOString()
-          });
+          }, { onConflict: 'driver_id' });
       }
       setDriverState('offline');
       setOnlineTime(0);
