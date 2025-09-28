@@ -367,6 +367,36 @@ export type Database = {
           },
         ]
       }
+      daily_payout_batches: {
+        Row: {
+          created_at: string | null
+          id: string
+          payout_date: string
+          processed_at: string | null
+          status: string
+          total_amount: number
+          total_drivers: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          payout_date: string
+          processed_at?: string | null
+          status?: string
+          total_amount?: number
+          total_drivers?: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          payout_date?: string
+          processed_at?: string | null
+          status?: string
+          total_amount?: number
+          total_drivers?: number
+        }
+        Relationships: []
+      }
       delivery_addresses: {
         Row: {
           city: string
@@ -490,6 +520,39 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_payment_methods: {
+        Row: {
+          account_identifier: string
+          created_at: string | null
+          driver_id: string
+          id: string
+          is_primary: boolean | null
+          is_verified: boolean | null
+          payment_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          account_identifier: string
+          created_at?: string | null
+          driver_id: string
+          id?: string
+          is_primary?: boolean | null
+          is_verified?: boolean | null
+          payment_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          account_identifier?: string
+          created_at?: string | null
+          driver_id?: string
+          id?: string
+          is_primary?: boolean | null
+          is_verified?: boolean | null
+          payment_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       driver_payout_settings: {
         Row: {
           created_at: string
@@ -516,6 +579,63 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: []
+      }
+      driver_payouts: {
+        Row: {
+          amount: number
+          batch_id: string
+          created_at: string | null
+          driver_id: string
+          error_message: string | null
+          external_transaction_id: string | null
+          id: string
+          payment_method_id: string
+          processed_at: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          batch_id: string
+          created_at?: string | null
+          driver_id: string
+          error_message?: string | null
+          external_transaction_id?: string | null
+          id?: string
+          payment_method_id: string
+          processed_at?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          batch_id?: string
+          created_at?: string | null
+          driver_id?: string
+          error_message?: string | null
+          external_transaction_id?: string | null
+          id?: string
+          payment_method_id?: string
+          processed_at?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_payouts_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "daily_payout_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_payouts_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "driver_payment_methods"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       driver_profiles: {
         Row: {
@@ -1608,6 +1728,10 @@ export type Database = {
     Functions: {
       calculate_distance: {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+        Returns: number
+      }
+      calculate_driver_daily_earnings: {
+        Args: { target_date: string; target_driver_id: string }
         Returns: number
       }
       create_driver_profile_from_application: {
