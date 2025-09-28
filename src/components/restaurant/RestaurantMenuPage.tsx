@@ -14,6 +14,7 @@ import MenuItemCard from './MenuItemCard';
 import CartSummary from './CartSummary';
 import { CartSidebar } from './CartSidebar';
 import { MenuItemModal } from './MenuItemModal';
+import { CustomerOrderForm } from './CustomerOrderForm';
 import MenuFilters, { FilterOptions } from './MenuFilters';
 import MobileBottomNav from '@/components/mobile/MobileBottomNav';
 import { usePromoCode } from '@/hooks/usePromoCode';
@@ -65,6 +66,8 @@ const RestaurantMenuPage = () => {
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
   const [user, setUser] = useState(null);
+  const [showOrderForm, setShowOrderForm] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   // Category scrolling refs
   const categoryRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -259,46 +262,110 @@ const RestaurantMenuPage = () => {
       });
       return;
     }
+    setShowOrderForm(true);
+  };
 
+  const handleOrderSubmit = async (customerInfo: any) => {
+    setIsProcessing(true);
     try {
-      const subtotal = cart.reduce((sum, item) => sum + item.price_cents * item.quantity, 0);
-      const deliveryFee = restaurant?.delivery_fee_cents || 0;
-      const orderTotal = subtotal + deliveryFee;
-
-      // Try to use logged-in user email, fallback to guest
       const { data: { user } } = await supabase.auth.getUser();
-      const email = user?.email || 'guest@example.com';
-      const customerInfo = {
-        name: user?.email?.split('@')[0] || 'Guest',
-        email,
-        phone: '',
-        deliveryAddress: '',
-        specialInstructions: ''
+
+      const subtotal = cart.reduce((sum, item) => sum + item.price_cents * item.quantity, 0);
+      const tax = Math.round(subtotal * 0.08);
+      const promoDiscount = appliedPromoCode?.discount_applied_cents ?? 0;
+      const promoType = appliedPromoCode?.type?.toLowerCase();
+      const isTotalFree = promoType === 'total_free' || (subtotal - promoDiscount) <= 0;
+
+      let adjustedDeliveryFee = deliveryMethod === 'delivery' ? (restaurant?.delivery_fee_cents || 0) : 0;
+      if (isTotalFree) {
+        adjustedDeliveryFee = 0;
+      } else if (promoType === 'free_delivery' && deliveryMethod === 'delivery') {
+        adjustedDeliveryFee = 0;
+      }
+
+      const finalTotal = isTotalFree ? 0 : subtotal + adjustedDeliveryFee + tax - promoDiscount;
+
+      const orderData: any = {
+        customer_id: user?.id || null,
+        restaurant_id: restaurant?.id,
+        subtotal_cents: subtotal,
+        delivery_fee_cents: adjustedDeliveryFee,
+        tax_cents: tax,
+        total_cents: finalTotal,
+        order_status: 'pending',
+        delivery_address: deliveryMethod === 'delivery' ? {
+          name: customerInfo.name,
+          email: customerInfo.email,
+          phone: customerInfo.phone,
+          address: customerInfo.deliveryAddress,
+          special_instructions: customerInfo.specialInstructions
+        } : null,
+        estimated_delivery_time: deliveryMethod === 'delivery'
+          ? new Date(Date.now() + (restaurant?.max_delivery_time || 30) * 60000).toISOString()
+          : new Date(Date.now() + 20 * 60000).toISOString()
       };
 
-      const orderIdUnique = (self?.crypto && 'randomUUID' in self.crypto) ? self.crypto.randomUUID() : `order_${Date.now()}`;
+      const { data: newOrder, error: orderError } = await supabase
+        .from('orders')
+        .insert(orderData)
+        .select()
+        .single();
 
-      // For now, directly use Stripe payment (CashApp is available in PaymentOptions component)
-      const { data, error } = await supabase.functions.invoke('create-payment', {
+      if (orderError) throw orderError;
+
+      if (appliedPromoCode) {
+        await recordPromoCodeUsage(newOrder.id);
+      }
+
+      if (deliveryMethod === 'delivery') {
+        try {
+          await supabase.functions.invoke('auto-assign-orders', {
+            body: { orderId: newOrder.id }
+          });
+        } catch (autoAssignError) {
+          console.error('Auto-assignment error:', autoAssignError);
+        }
+      }
+
+      if (finalTotal <= 0) {
+        await supabase
+          .from('orders')
+          .update({ 
+            order_status: 'confirmed',
+            customer_name: customerInfo.name,
+            customer_phone: customerInfo.phone 
+          })
+          .eq('id', newOrder.id);
+
+        toast({
+          title: "Order placed successfully! 🎉",
+          description: "Your free order has been confirmed and sent to the restaurant.",
+        });
+
+        setCart([]);
+        setShowOrderForm(false);
+        return;
+      }
+
+      const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-payment', {
         body: {
-          orderTotal,
+          orderTotal: finalTotal,
           customerInfo,
-          orderId: orderIdUnique
+          orderId: newOrder.id
         }
       });
 
-      if (error) throw error;
-      if (!data?.url) throw new Error('No checkout URL returned');
-
-      // Open Stripe checkout in a new tab
-      window.open(data.url, '_blank');
+      if (paymentError) throw paymentError;
+      window.location.href = paymentData.url;
     } catch (error) {
-      console.error('Checkout error:', error);
+      console.error('Error placing order:', error);
       toast({
-        title: 'Checkout failed',
-        description: 'Please try again.',
-        variant: 'destructive'
+        title: "Error placing order",
+        description: "Please try again or contact the restaurant directly.",
+        variant: "destructive",
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -602,6 +669,25 @@ const RestaurantMenuPage = () => {
           }}
         />
       )}
+
+      {/* Checkout Modal */}
+      <CustomerOrderForm
+        isOpen={showOrderForm}
+        onClose={() => setShowOrderForm(false)}
+        onSubmit={handleOrderSubmit}
+        deliveryMethod={deliveryMethod}
+        isProcessing={isProcessing}
+        orderTotal={(() => {
+          const subtotal = cart.reduce((sum, item) => sum + item.price_cents * item.quantity, 0);
+          const tax = Math.round(subtotal * 0.08);
+          const promoDiscount = appliedPromoCode?.discount_applied_cents ?? 0;
+          const promoType = appliedPromoCode?.type?.toLowerCase();
+          const isTotalFree = promoType === 'total_free' || (subtotal - promoDiscount) <= 0;
+          const baseDelivery = deliveryMethod === 'delivery' ? (restaurant?.delivery_fee_cents || 0) : 0;
+          const adjustedDeliveryFee = (isTotalFree || (promoType === 'free_delivery' && deliveryMethod === 'delivery')) ? 0 : baseDelivery;
+          return isTotalFree ? 0 : subtotal + adjustedDeliveryFee + tax - promoDiscount;
+        })()}
+      />
 
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav 
