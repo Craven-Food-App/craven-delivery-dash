@@ -152,7 +152,7 @@ export const OrderMapPreview: React.FC<OrderMapPreviewProps> = ({
       
       {displayRouteInfo && (
         <div className="p-4 border-t">
-          <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center justify-between text-sm mb-3">
             <div className="flex items-center gap-2">
               <Navigation className="h-4 w-4 text-blue-600" />
               <span className="font-medium">{displayRouteInfo.miles} miles</span>
@@ -162,8 +162,18 @@ export const OrderMapPreview: React.FC<OrderMapPreviewProps> = ({
               <span className="text-muted-foreground">{displayRouteInfo.minutes} mins</span>
             </div>
           </div>
+
+          <div className="bg-muted/50 rounded-lg p-3 mb-3">
+            <div className="text-xs text-muted-foreground mb-1">Total Trip Distance</div>
+            <div className="font-semibold text-lg text-foreground">
+              {(parseFloat(displayRouteInfo.miles) * 2).toFixed(1)} miles
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              Includes commute to restaurant + delivery distance
+            </div>
+          </div>
           
-          <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
               <span>Pickup</span>
