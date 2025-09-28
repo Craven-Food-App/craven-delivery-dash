@@ -56,6 +56,17 @@ export const OrderVerificationScreen: React.FC<OrderVerificationProps> = ({
   const [showOrderItems, setShowOrderItems] = useState(false);
   const { toast } = useToast();
 
+  // Calculate payout if not set (70% of delivery fee + base amount)
+  const calculatePayout = () => {
+    if (orderDetails.payout_cents && orderDetails.payout_cents > 0) {
+      return orderDetails.payout_cents;
+    }
+    // Default calculation: 70% of delivery fee + $3 base
+    const deliveryFee = 299; // Default delivery fee in cents
+    const baseAmount = 300; // $3 base in cents
+    return Math.round((deliveryFee * 0.7) + baseAmount);
+  };
+
   const formatAddress = (address: any, fallbackAddress?: string) => {
     if (typeof address === 'string') return address;
     if (typeof address === 'object' && address) {
@@ -306,7 +317,7 @@ export const OrderVerificationScreen: React.FC<OrderVerificationProps> = ({
             <div className="flex items-center justify-center gap-2">
               <DollarSign className="h-5 w-5 text-green-600" />
               <span className="text-green-800 font-semibold text-lg">
-                You'll earn ${(orderDetails.payout_cents / 100).toFixed(2)}
+                You'll earn ${(calculatePayout() / 100).toFixed(2)}
               </span>
             </div>
           </CardContent>
