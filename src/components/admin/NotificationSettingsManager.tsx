@@ -56,15 +56,31 @@ export const NotificationSettingsManager: React.FC = () => {
     if (!newSoundName || !newSoundFile) return;
 
     try {
-      // Upload file to storage bucket (if using storage)
-      const fileUrl = URL.createObjectURL(newSoundFile);
+      // Generate unique filename
+      const fileExtension = newSoundFile.name.split('.').pop() || 'mp3';
+      const fileName = `notification-sounds/${Date.now()}-${newSoundName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.${fileExtension}`;
 
-      // Save to database
+      // Upload file to Supabase storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('craver-documents')
+        .upload(fileName, newSoundFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('craver-documents')
+        .getPublicUrl(fileName);
+
+      // Save to database with permanent URL
       const { data, error } = await supabase
         .from('notification_settings')
         .insert({
           name: newSoundName,
-          sound_file: fileUrl,
+          sound_file: urlData.publicUrl,
           is_default: sounds.length === 0, // First sound becomes default
           description: `Custom sound: ${newSoundName}`,
           duration_ms: 3000,
@@ -89,8 +105,11 @@ export const NotificationSettingsManager: React.FC = () => {
       setNewSoundName('');
       setNewSoundFile(null);
       setIsDialogOpen(false);
+      
+      console.log('Sound uploaded successfully:', urlData.publicUrl);
     } catch (error) {
       console.error('Error adding sound:', error);
+      alert('Failed to upload sound file. Please try again.');
     }
   }, [newSoundName, newSoundFile, sounds.length]);
 

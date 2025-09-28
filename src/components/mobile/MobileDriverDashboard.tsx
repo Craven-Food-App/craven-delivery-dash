@@ -14,6 +14,8 @@ import { NotificationPreferences } from './NotificationPreferences';
 import { AccountSection } from './AccountSection';
 import { TestCompletionModal } from './TestCompletionModal';
 import { useNotificationSettings } from '@/hooks/useNotificationSettings';
+import { useIOSNotifications } from '@/hooks/useIOSNotifications';
+import { IOSNotificationBanner } from './IOSNotificationBanner';
 import { MobileMapbox } from './MobileMapbox';
 import { DriveTimeSelector } from './DriveTimeSelector';
 import LoadingScreen from './LoadingScreen';
@@ -58,6 +60,7 @@ export const MobileDriverDashboard: React.FC = () => {
   const {
     playNotification
   } = useNotificationSettings();
+  const { showNotification, notifications: iosNotifications, dismissNotification } = useIOSNotifications();
 
   // Setup real-time listener for order assignments (broadcast + DB changes)
   const setupRealtimeListener = (userId: string) => {
@@ -78,6 +81,22 @@ export const MobileDriverDashboard: React.FC = () => {
         isTestOrder: payload.payload.isTestOrder // Add test order flag
       });
       setShowOrderModal(true);
+
+      // Show iOS notification
+      const pickup = typeof payload.payload.pickup_address === 'string'
+        ? payload.payload.pickup_address
+        : payload.payload.pickup_address && typeof payload.payload.pickup_address === 'object'
+          ? [
+              (payload.payload.pickup_address as any).address, 
+              (payload.payload.pickup_address as any).city, 
+              (payload.payload.pickup_address as any).state
+            ].filter(Boolean).join(', ')
+          : 'restaurant';
+      showNotification(
+        `New Order: ${payload.payload.restaurant_name || 'Pickup'}`,
+        `Pickup at ${pickup}`,
+        8000
+      );
 
       // Play notification sound
       playNotification();
@@ -111,6 +130,22 @@ export const MobileDriverDashboard: React.FC = () => {
           estimated_time: Math.ceil((Number(order.distance_km) || 0) * 2.5)
         });
         setShowOrderModal(true);
+
+        // Show iOS notification
+        const pickup = typeof order.pickup_address === 'string'
+          ? order.pickup_address
+          : order.pickup_address && typeof order.pickup_address === 'object' && order.pickup_address !== null
+            ? [
+                (order.pickup_address as any).address, 
+                (order.pickup_address as any).city, 
+                (order.pickup_address as any).state
+              ].filter(Boolean).join(', ')
+            : 'restaurant';
+        showNotification(
+          'New Order Available',
+          `Pickup at ${pickup}`,
+          8000
+        );
 
         // Play notification sound
         playNotification();
@@ -459,6 +494,17 @@ export const MobileDriverDashboard: React.FC = () => {
       </>;
   }
   return <>
+    {/* iOS Notification Banners */}
+    {iosNotifications.map((notification) => (
+      <IOSNotificationBanner
+        key={notification.id}
+        title={notification.title}
+        message={notification.message}
+        duration={notification.duration}
+        onDismiss={() => dismissNotification(notification.id)}
+      />
+    ))}
+    
     <LoadingScreen isLoading={isLoading} />
     
     <div className="h-screen bg-background relative">

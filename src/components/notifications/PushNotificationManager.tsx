@@ -1,11 +1,12 @@
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Bell, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { playNotificationSound } from '@/utils/audioUtils';
+import { useIOSNotifications } from '@/hooks/useIOSNotifications';
+import { IOSNotificationBanner } from '@/components/mobile/IOSNotificationBanner';
 
 interface Notification {
   id: string;
@@ -25,7 +26,7 @@ const PushNotificationManager = ({ userId }: PushNotificationManagerProps) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
-  const { toast } = useToast();
+  const { showNotification, notifications: iosNotifications, dismissNotification } = useIOSNotifications();
 
   useEffect(() => {
     if (!userId) return;
@@ -56,8 +57,33 @@ const PushNotificationManager = ({ userId }: PushNotificationManagerProps) => {
       .on('broadcast', { event: 'push_notification' }, async (payload) => {
         const { title, message, data } = payload.payload || {};
 
-        toast({ title, description: message, duration: 5000 });
-        try { await playNotificationSound('/notification.mp3', 2, 300); } catch {}
+        // Show iOS-style notification instead of toast
+        showNotification(title || 'Notification', message || '', 5000);
+        
+        // Get and play the default notification sound
+        try {
+          const { data: defaultSetting } = await supabase
+            .from('notification_settings')
+            .select('*')
+            .eq('is_default', true)
+            .eq('is_active', true)
+            .single();
+            
+          if (defaultSetting) {
+            await playNotificationSound(
+              defaultSetting.sound_file,
+              defaultSetting.repeat_count,
+              defaultSetting.repeat_interval_ms
+            );
+          } else {
+            // Fallback to built-in notification sound
+            await playNotificationSound('/notification.mp3', 2, 300);
+          }
+        } catch (error) {
+          console.error('Error playing notification sound:', error);
+          // Fallback to built-in sound
+          try { await playNotificationSound('/notification.mp3', 2, 300); } catch {}
+        }
 
         const newNotification: Notification = {
           id: crypto.randomUUID(),
@@ -85,8 +111,33 @@ const PushNotificationManager = ({ userId }: PushNotificationManagerProps) => {
         const title = `New Order: ${data.restaurant_name || 'Pickup'}`;
         const message = `Pickup at ${pickup || 'restaurant'}`;
 
-        toast({ title, description: message, duration: 5000 });
-        try { await playNotificationSound('/notification.mp3', 2, 300); } catch {}
+        // Show iOS-style notification instead of toast
+        showNotification(title, message, 8000); // Longer duration for order assignments
+        
+        // Get and play the default notification sound
+        try {
+          const { data: defaultSetting } = await supabase
+            .from('notification_settings')
+            .select('*')
+            .eq('is_default', true)
+            .eq('is_active', true)
+            .single();
+            
+          if (defaultSetting) {
+            await playNotificationSound(
+              defaultSetting.sound_file,
+              defaultSetting.repeat_count,
+              defaultSetting.repeat_interval_ms
+            );
+          } else {
+            // Fallback to built-in notification sound
+            await playNotificationSound('/notification.mp3', 2, 300);
+          }
+        } catch (error) {
+          console.error('Error playing notification sound:', error);
+          // Fallback to built-in sound
+          try { await playNotificationSound('/notification.mp3', 2, 300); } catch {}
+        }
 
         const newNotification: Notification = {
           id: crypto.randomUUID(),
@@ -112,11 +163,33 @@ const PushNotificationManager = ({ userId }: PushNotificationManagerProps) => {
           table: 'order_notifications',
           filter: `user_id=eq.${userId}`
         },
-        (payload) => {
+        async (payload) => {
           const newNotification = payload.new as Notification;
           setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
           setUnreadCount(prev => prev + 1);
-          toast({ title: newNotification.title, description: newNotification.message, duration: 5000 });
+          
+          // Show iOS-style notification instead of toast
+          showNotification(newNotification.title, newNotification.message, 5000);
+          
+          // Play default notification sound
+          try {
+            const { data: defaultSetting } = await supabase
+              .from('notification_settings')
+              .select('*')
+              .eq('is_default', true)
+              .eq('is_active', true)
+              .single();
+              
+            if (defaultSetting) {
+              await playNotificationSound(
+                defaultSetting.sound_file,
+                defaultSetting.repeat_count,
+                defaultSetting.repeat_interval_ms
+              );
+            }
+          } catch (error) {
+            console.error('Error playing notification sound:', error);
+          }
         }
       )
       .subscribe();
@@ -158,20 +231,32 @@ const PushNotificationManager = ({ userId }: PushNotificationManagerProps) => {
   };
 
   return (
-    <div className="relative">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setShowNotifications(!showNotifications)}
-        className="relative"
-      >
-        <Bell className="h-5 w-5" />
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
-        )}
-      </Button>
+    <>
+      {/* iOS Notification Banners */}
+      {iosNotifications.map((notification) => (
+        <IOSNotificationBanner
+          key={notification.id}
+          title={notification.title}
+          message={notification.message}
+          duration={notification.duration}
+          onDismiss={() => dismissNotification(notification.id)}
+        />
+      ))}
+      
+      <div className="relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowNotifications(!showNotifications)}
+          className="relative"
+        >
+          <Bell className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </Button>
 
       {showNotifications && (
         <div className="absolute right-0 top-full mt-2 w-80 bg-background border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
@@ -241,7 +326,8 @@ const PushNotificationManager = ({ userId }: PushNotificationManagerProps) => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 
