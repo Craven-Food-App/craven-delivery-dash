@@ -235,13 +235,9 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
         </div>}
       
       {/* GPS Controls */}
-      <div 
-        className="absolute left-4 z-10 flex flex-col gap-2 pointer-events-auto" 
-        style={{
-          top: `calc(env(safe-area-inset-top, 0px) + 8px)`,
-          maxWidth: '200px'
-        }}
-      >
+      <div className="absolute top-4 left-4 z-10 flex flex-col gap-2 pointer-events-auto" style={{
+      maxWidth: '200px'
+    }}>
         <button onClick={isTracking ? stopTracking : startTracking} className={`p-3 rounded-full shadow-lg border-2 ${isTracking ? 'bg-green-500 border-green-400 text-white' : 'bg-white border-gray-300 text-gray-700'}`} disabled={isLoading}>
           {isTracking ? <div className="w-5 h-5 flex items-center justify-center">
               <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
@@ -269,10 +265,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
       </div>
 
       {/* Map Controls: zoom and recenter - positioned next to change zone button */}
-      <div 
-        className="absolute left-32 z-20 flex flex-row gap-2 pointer-events-auto py-0 mx-0 my-0 px-0"
-        style={{ top: `calc(env(safe-area-inset-top, 0px) + 8px)` }}
-      >
+      <div className="absolute top-4 left-32 z-20 flex flex-row gap-2 pointer-events-auto py-0 mx-0 my-0 px-0">
         
         
         <button onClick={() => {

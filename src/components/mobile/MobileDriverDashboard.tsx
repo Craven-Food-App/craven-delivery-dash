@@ -465,39 +465,17 @@ export const MobileDriverDashboard: React.FC = () => {
         <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
       </>;
   }
-  // Prevent body scrolling when on home tab
-  useEffect(() => {
-    if (activeTab === 'home') {
-      const prevOverflow = document.documentElement.style.overflow;
-      const prevBodyOverflow = document.body.style.overflow;
-      
-      document.documentElement.style.overflow = 'hidden';
-      document.body.style.overflow = 'hidden';
-      
-      return () => {
-        document.documentElement.style.overflow = prevOverflow;
-        document.body.style.overflow = prevBodyOverflow;
-      };
-    }
-  }, [activeTab]);
-
   return <>
     <LoadingScreen isLoading={isLoading} />
     
-    <div 
-      className="fixed inset-0 bg-background overscroll-none overflow-hidden"
-      style={{ height: '100dvh' }}
-    >
-      {/* Full Screen Map Background */}
+    <div className="h-screen bg-background relative">
+      {/* Full Screen Map Background - Full height */}
       <div className="absolute inset-0 z-0">
         <MobileMapbox />
       </div>
       
       {/* Status Bar - Top */}
-      {driverState !== 'offline' && <div 
-          className="absolute left-1/2 transform -translate-x-1/2 z-20 px-4"
-          style={{ top: `calc(env(safe-area-inset-top, 0px) + 8px)` }}
-        >
+      {driverState !== 'offline' && <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 px-4">
           <div className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-lg ${driverState === 'online_searching' ? 'bg-green-500 text-white' : driverState === 'online_paused' ? 'bg-yellow-500 text-white' : 'bg-blue-500 text-white'}`}>
             <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
             <span className="font-semibold text-sm">
@@ -506,14 +484,8 @@ export const MobileDriverDashboard: React.FC = () => {
           </div>
         </div>}
 
-      {/* Main Content Overlay - Respect safe areas */}
-      <div 
-        className="absolute inset-0 z-10 flex flex-col" 
-        style={{ 
-          paddingTop: `calc(env(safe-area-inset-top, 0px) + 8px)`,
-          paddingBottom: `calc(80px + env(safe-area-inset-bottom, 0px))`
-        }}
-      >
+      {/* Main Content Overlay - Allow for bottom nav space */}
+      <div className="absolute inset-0 z-10 flex flex-col" style={{ paddingBottom: '80px' }}>
         
         {/* OFFLINE STATE */}
         {driverState === 'offline' && <>
@@ -577,28 +549,19 @@ export const MobileDriverDashboard: React.FC = () => {
         {/* ONLINE SEARCHING STATE */}
         {driverState === 'online_searching' && <>
             {/* Change Zone Button - Top Left */}
-            <div 
-              className="absolute left-4 z-20 pointer-events-auto"
-              style={{ top: `calc(env(safe-area-inset-top, 0px) + 8px)` }}
-            >
+            <div className="absolute top-4 left-4 z-20 pointer-events-auto py-0 my-[525px] mx-0 px-0">
               
             </div>
 
             {/* Pause Button - Top Right */}
-            <div 
-              className="absolute right-7 z-20 pointer-events-auto"
-              style={{ top: `calc(env(safe-area-inset-top, 0px) + 8px)` }}
-            >
-              <Button onClick={handlePause} variant="ghost" size="sm" className="bg-card/80 backdrop-blur-sm border border-border/20 rounded-full p-2 shadow-sm hover:bg-card/90">
+            <div className="absolute top-4 right-7 z-20 pointer-events-auto">
+              <Button onClick={handlePause} variant="ghost" size="sm" className="bg-card/80 backdrop-blur-sm border border-border/20 rounded-full p-2 shadow-sm hover:bg-card/90 mx-[41px]">
                 <Pause className="h-4 w-4" />
               </Button>
             </div>
 
             {/* Get Offers Until Section - Top */}
-            <div 
-              className="absolute left-1/2 transform -translate-x-1/2 z-20"
-              style={{ top: `calc(env(safe-area-inset-top, 0px) + 56px)` }}
-            >
+            <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20">
               <div className="bg-card/95 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm border border-border/20">
                 <span className="text-xs text-muted-foreground mr-2">Get offers until</span>
                 <span className="text-xs font-semibold text-foreground bg-muted/50 px-2 py-1 rounded-full">
