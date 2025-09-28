@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Save, Clock, DollarSign, MapPin, Upload, X, Image, Crop, Scissors } from "lucide-react";
 import ImageCropper from "@/components/common/ImageCropper";
 import { removeBackground, loadImage } from "@/utils/BackgroundRemovalService";
+import { AddressAutocomplete } from "@/components/common/AddressAutocomplete";
 
 interface Restaurant {
   id: string;
@@ -515,10 +516,11 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="address">Street Address</Label>
-                <Input
-                  id="address"
+                <AddressAutocomplete
                   value={formData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
+                  onChange={(value) => handleInputChange('address', value)}
+                  placeholder="123 Main St, City, State 12345"
+                  required
                 />
               </div>
 

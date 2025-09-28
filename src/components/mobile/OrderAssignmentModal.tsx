@@ -268,7 +268,11 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
                 <p className="text-muted-foreground">
                   {typeof assignment.pickup_address === 'string' 
                     ? assignment.pickup_address 
-                    : `${assignment.pickup_address?.street || ''} ${assignment.pickup_address?.city || ''}`.trim()
+                    : (() => {
+                        const addr = assignment.pickup_address;
+                        if (addr?.address) return addr.address;
+                        return `${addr?.street || ''} ${addr?.city || ''} ${addr?.state || ''} ${addr?.zip_code || ''}`.trim();
+                      })()
                   }
                 </p>
               </div>
@@ -307,7 +311,11 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
                   <p className="text-sm text-muted-foreground">
                     {typeof assignment.dropoff_address === 'string' 
                       ? assignment.dropoff_address 
-                      : `${assignment.dropoff_address?.street || ''} ${assignment.dropoff_address?.city || ''}`.trim()
+                      : (() => {
+                          const addr = assignment.dropoff_address;
+                          if (addr?.address) return addr.address;
+                          return `${addr?.street || ''} ${addr?.city || ''} ${addr?.state || ''} ${addr?.zip_code || ''}`.trim();
+                        })()
                     }
                   </p>
                   {locationType && (

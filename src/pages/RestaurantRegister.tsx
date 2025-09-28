@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Upload, X, Image } from "lucide-react";
 import Header from "@/components/Header";
+import { AddressAutocomplete } from "@/components/common/AddressAutocomplete";
 
 const restaurantSchema = z.object({
   name: z.string().min(2, "Restaurant name must be at least 2 characters"),
@@ -325,7 +326,12 @@ const RestaurantRegister = () => {
                       <FormItem>
                         <FormLabel>Street Address *</FormLabel>
                         <FormControl>
-                          <Input placeholder="123 Main Street" {...field} />
+                          <AddressAutocomplete
+                            value={field.value}
+                            onChange={(value) => field.onChange(value)}
+                            placeholder="123 Main Street, City, State 12345"
+                            required
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

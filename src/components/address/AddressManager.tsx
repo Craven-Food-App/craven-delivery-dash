@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { AddressAutocomplete } from '@/components/common/AddressAutocomplete';
 
 interface DeliveryAddress {
   id: string;
@@ -238,11 +239,10 @@ const AddressManager: React.FC<AddressManagerProps> = ({
 
                 <div>
                   <Label htmlFor="street_address">Street Address</Label>
-                  <Input
-                    id="street_address"
+                  <AddressAutocomplete
                     value={formData.street_address}
-                    onChange={(e) => setFormData(prev => ({ ...prev, street_address: e.target.value }))}
-                    placeholder="123 Main St"
+                    onChange={(value) => setFormData(prev => ({ ...prev, street_address: value }))}
+                    placeholder="123 Main St, City, State 12345"
                     required
                   />
                 </div>
@@ -409,11 +409,10 @@ const AddressManager: React.FC<AddressManagerProps> = ({
 
             <div>
               <Label htmlFor="street_address">Street Address</Label>
-              <Input
-                id="street_address"
+              <AddressAutocomplete
                 value={formData.street_address}
-                onChange={(e) => setFormData(prev => ({ ...prev, street_address: e.target.value }))}
-                placeholder="123 Main St"
+                onChange={(value) => setFormData(prev => ({ ...prev, street_address: value }))}
+                placeholder="123 Main St, City, State 12345"
                 required
               />
             </div>

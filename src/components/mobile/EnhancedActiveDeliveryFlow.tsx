@@ -23,8 +23,8 @@ import { useToast } from '@/hooks/use-toast';
 
 interface OrderDetails {
   restaurant_name: string;
-  pickup_address: string;
-  dropoff_address: string;
+  pickup_address: string | any;
+  dropoff_address: string | any;
   customer_name?: string;
   customer_phone?: string;
   delivery_notes?: string;
@@ -147,16 +147,22 @@ export const EnhancedActiveDeliveryFlow: React.FC<EnhancedActiveDeliveryFlowProp
     });
   };
 
+  const formatAddress = (addressData: string | any): string => {
+    if (typeof addressData === 'string') return addressData;
+    if (addressData?.address) return addressData.address;
+    return `${addressData?.street || ''} ${addressData?.city || ''} ${addressData?.state || ''} ${addressData?.zip_code || ''}`.trim();
+  };
+
   const getCurrentDestination = () => {
     if (['accepted', 'heading_to_pickup', 'at_restaurant'].includes(currentStep)) {
       return {
-        address: orderDetails.pickup_address,
+        address: formatAddress(orderDetails.pickup_address),
         name: orderDetails.restaurant_name,
         type: 'pickup' as const
       };
     } else {
       return {
-        address: orderDetails.dropoff_address,
+        address: formatAddress(orderDetails.dropoff_address),
         name: orderDetails.customer_name,
         type: 'delivery' as const
       };
@@ -248,7 +254,7 @@ export const EnhancedActiveDeliveryFlow: React.FC<EnhancedActiveDeliveryFlowProp
               </div>
               <div>
                 <p className="font-semibold">{orderDetails.restaurant_name}</p>
-                <p className="text-sm text-muted-foreground">{orderDetails.pickup_address}</p>
+                <p className="text-sm text-muted-foreground">{formatAddress(orderDetails.pickup_address)}</p>
               </div>
             </div>
             
@@ -258,7 +264,7 @@ export const EnhancedActiveDeliveryFlow: React.FC<EnhancedActiveDeliveryFlowProp
               </div>
               <div>
                 <p className="font-semibold">{orderDetails.customer_name || 'Customer'}</p>
-                <p className="text-sm text-muted-foreground">{orderDetails.dropoff_address}</p>
+                <p className="text-sm text-muted-foreground">{formatAddress(orderDetails.dropoff_address)}</p>
               </div>
             </div>
 

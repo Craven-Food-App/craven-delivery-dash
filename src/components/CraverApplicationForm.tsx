@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AddressAutocomplete } from "@/components/common/AddressAutocomplete";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -418,11 +419,11 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="streetAddress">Street Address *</Label>
-              <Input
-                id="streetAddress"
+              <AddressAutocomplete
                 value={data.streetAddress}
-                onChange={(e) => updateData('streetAddress', e.target.value)}
-                placeholder="123 Main Street"
+                onChange={(value) => updateData('streetAddress', value)}
+                placeholder="123 Main Street, City, State 12345"
+                required
               />
             </div>
             
