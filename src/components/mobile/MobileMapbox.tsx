@@ -93,12 +93,13 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
       // Set initial view to Toledo, Ohio
       if (map.current && !location) {
         map.current.flyTo({
-          center: [-83.5379, 41.6528], // Toledo coordinates
+          center: [-83.5379, 41.6528],
+          // Toledo coordinates
           zoom: 11,
           duration: 1000
         });
       }
-      
+
       // Auto-start GPS tracking
       if (!isTracking) {
         setTimeout(() => {
@@ -121,8 +122,10 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
       // Create the map instance - Default to Toledo, Ohio
       map.current = new window.mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12', // Use stable default style
-        center: [-83.5379, 41.6528], // Toledo, Ohio coordinates
+        style: 'mapbox://styles/mapbox/streets-v12',
+        // Use stable default style
+        center: [-83.5379, 41.6528],
+        // Toledo, Ohio coordinates
         zoom: 11,
         interactive: true,
         scrollZoom: true,
@@ -239,13 +242,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-2 pointer-events-auto" style={{
       maxWidth: '200px'
     }}>
-        <button onClick={isTracking ? stopTracking : startTracking} className={`p-3 rounded-full shadow-lg border-2 ${isTracking ? 'bg-green-500 border-green-400 text-white' : 'bg-white border-gray-300 text-gray-700'}`} disabled={isLoading}>
-          {isTracking ? <div className="w-5 h-5 flex items-center justify-center">
-              <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-            </div> : <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-            </svg>}
-        </button>
+        
         
         {gpsError && <div className="bg-red-100 border border-red-300 rounded-lg p-3 text-xs shadow-lg max-w-48">
             <div className="text-red-600 font-medium mb-1">GPS Error</div>
@@ -265,13 +262,11 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
           </div>}
         
         {/* Speed Limit Sign - positioned under GPS controls */}
-        <SpeedLimitSign
-          currentSpeed={location?.speed ? location.speed * 2.237 : 0} // Convert m/s to mph
-          location={location ? {
-            latitude: location.latitude,
-            longitude: location.longitude
-          } : undefined}
-        />
+        <SpeedLimitSign currentSpeed={location?.speed ? location.speed * 2.237 : 0} // Convert m/s to mph
+      location={location ? {
+        latitude: location.latitude,
+        longitude: location.longitude
+      } : undefined} />
       </div>
 
       {/* Map Controls: zoom and recenter - positioned next to change zone button */}
