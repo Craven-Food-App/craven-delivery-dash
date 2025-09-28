@@ -136,10 +136,10 @@ export const MobileDriverDashboard: React.FC = () => {
     };
   };
 
-  // Check session persistence on component mount - DISABLED for now
-  // useEffect(() => {
-  //   checkSessionPersistence();
-  // }, []);
+  // Check session persistence on component mount
+  useEffect(() => {
+    checkSessionPersistence();
+  }, []);
 
   const checkSessionPersistence = async () => {
     try {
@@ -154,13 +154,20 @@ export const MobileDriverDashboard: React.FC = () => {
         .maybeSingle();
 
       if (session?.is_online) {
-        // Restore online state if session shows driver was online
-        setDriverState('online_searching');
-        // Update last activity
-        await supabase
-          .from('driver_sessions')
-          .update({ last_activity: new Date().toISOString() })
-          .eq('driver_id', user.id);
+        // Don't auto-restore online state, just show they were online before
+        // The user will need to tap "CRAVE NOW" again to go online
+        toast({
+          title: "Welcome back!",
+          description: "You were online in your last session. Tap CRAVE NOW to resume driving.",
+        });
+        
+        // Optionally restore other session data like end time and earnings
+        if (session.session_data && typeof session.session_data === 'object' && 'online_since' in session.session_data) {
+          const onlineSince = new Date(session.session_data.online_since as string);
+          const now = new Date();
+          const timeOnline = Math.floor((now.getTime() - onlineSince.getTime()) / 1000);
+          setOnlineTime(timeOnline > 0 ? timeOnline : 0);
+        }
       }
     } catch (error) {
       console.error('Error checking session persistence:', error);
