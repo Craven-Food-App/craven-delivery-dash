@@ -103,16 +103,19 @@ export const OrderVerificationScreen: React.FC<OrderVerificationProps> = ({
         .getPublicUrl(filePath);
 
       // Update order with pickup photo and confirmation
-      const { error: updateError } = await supabase
-        .from('orders')
-        .update({
-          pickup_photo_url: publicUrl,
-          pickup_confirmed_at: new Date().toISOString(),
-          order_status: 'picked_up'
-        })
-        .eq('id', orderDetails.id);
+      // Skip database update for test orders since they use non-UUID IDs
+      if (!orderDetails.isTestOrder) {
+        const { error: updateError } = await supabase
+          .from('orders')
+          .update({
+            pickup_photo_url: publicUrl,
+            pickup_confirmed_at: new Date().toISOString(),
+            order_status: 'picked_up'
+          })
+          .eq('id', orderDetails.id);
 
-      if (updateError) throw updateError;
+        if (updateError) throw updateError;
+      }
 
       setPickupPhoto(publicUrl);
       setShowCamera(false);
@@ -140,16 +143,19 @@ export const OrderVerificationScreen: React.FC<OrderVerificationProps> = ({
 
   const handleConfirmWithoutPhoto = async () => {
     try {
-      // Update order status to picked up
-      const { error: updateError } = await supabase
-        .from('orders')
-        .update({
-          pickup_confirmed_at: new Date().toISOString(),
-          order_status: 'picked_up'
-        })
-        .eq('id', orderDetails.id);
+      // Skip database update for test orders since they use non-UUID IDs
+      if (!orderDetails.isTestOrder) {
+        // Update order status to picked up
+        const { error: updateError } = await supabase
+          .from('orders')
+          .update({
+            pickup_confirmed_at: new Date().toISOString(),
+            order_status: 'picked_up'
+          })
+          .eq('id', orderDetails.id);
 
-      if (updateError) throw updateError;
+        if (updateError) throw updateError;
+      }
 
       toast({
         title: "Pickup Confirmed!",
