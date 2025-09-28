@@ -116,7 +116,6 @@ export const useDriverLocation = (): UseDriverLocationReturn => {
 
         setLocation(locationData);
         updateLocationInDatabase(locationData);
-        toast.success('GPS location found');
       },
       (err) => {
         console.error('Error getting initial position:', {
@@ -212,7 +211,6 @@ export const useDriverLocation = (): UseDriverLocationReturn => {
     setIsTracking(false);
     setLocation(null);
     setError(null);
-    toast.info('GPS tracking stopped');
   };
 
   useEffect(() => {

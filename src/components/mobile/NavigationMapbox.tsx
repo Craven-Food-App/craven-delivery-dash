@@ -300,7 +300,6 @@ export const NavigationMapbox: React.FC<NavigationMapboxProps> = ({
 
   const toggleVoiceGuidance = () => {
     updateSettings({ voiceGuidance: !navigationSettings.voiceGuidance });
-    toast.info(`Voice guidance ${!navigationSettings.voiceGuidance ? 'enabled' : 'disabled'}`);
   };
 
   const recenterMap = () => {
