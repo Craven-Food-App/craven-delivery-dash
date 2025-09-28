@@ -151,10 +151,16 @@ export const MobileDriverDashboard: React.FC = () => {
         }
       } = await supabase.auth.getUser();
       if (!user) return;
-      await supabase.from('driver_profiles').update({
+      const { error: profileError } = await supabase.from('driver_profiles').update({
         status: 'online',
-        is_available: true
+        is_available: true,
+        last_location_update: new Date().toISOString()
       }).eq('user_id', user.id);
+
+      if (profileError) {
+        console.error('Error updating driver profile:', profileError);
+        throw profileError;
+      }
 
       // Get location and update craver_locations table
       if (navigator.geolocation) {
@@ -201,10 +207,15 @@ export const MobileDriverDashboard: React.FC = () => {
         }
       } = await supabase.auth.getUser();
       if (user) {
-        await supabase.from('driver_profiles').update({
+        const { error: profileError } = await supabase.from('driver_profiles').update({
           status: 'offline',
-          is_available: false
+          is_available: false,
+          last_location_update: new Date().toISOString()
         }).eq('user_id', user.id);
+        
+        if (profileError) {
+          console.error('Error updating driver profile:', profileError);
+        }
       }
       setDriverState('offline');
       setOnlineTime(0);
@@ -224,10 +235,15 @@ export const MobileDriverDashboard: React.FC = () => {
         }
       } = await supabase.auth.getUser();
       if (user) {
-        await supabase.from('driver_profiles').update({
+        const { error: profileError } = await supabase.from('driver_profiles').update({
           status: 'paused',
-          is_available: false
+          is_available: false,
+          last_location_update: new Date().toISOString()
         }).eq('user_id', user.id);
+        
+        if (profileError) {
+          console.error('Error updating driver profile:', profileError);
+        }
       }
       setDriverState('online_paused');
       toast({
@@ -246,10 +262,15 @@ export const MobileDriverDashboard: React.FC = () => {
         }
       } = await supabase.auth.getUser();
       if (user) {
-        await supabase.from('driver_profiles').update({
+        const { error: profileError } = await supabase.from('driver_profiles').update({
           status: 'online',
-          is_available: true
+          is_available: true,
+          last_location_update: new Date().toISOString()
         }).eq('user_id', user.id);
+        
+        if (profileError) {
+          console.error('Error updating driver profile:', profileError);
+        }
       }
       setDriverState('online_searching');
       toast({
