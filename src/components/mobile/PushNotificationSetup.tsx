@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { PushNotifications } from '@capacitor/push-notifications';
+import { Capacitor } from '@capacitor/core';
 
 interface NotificationSettings {
   newOffers: boolean;
@@ -68,44 +70,100 @@ export const PushNotificationSetup: React.FC = () => {
     loadSettings();
   }, []);
 
-  const checkNotificationSupport = () => {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isIOSSafari = isIOS && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS/.test(navigator.userAgent);
-    const hasCapacitor = !!(window as any).Capacitor;
+  const checkNotificationSupport = async () => {
+    const isNative = Capacitor.isNativePlatform();
     
-    // Check for basic notification API support
-    const hasNotificationAPI = 'Notification' in window;
-    const hasServiceWorker = 'serviceWorker' in navigator;
-    const hasPushManager = 'PushManager' in window;
-    
-    // iOS Safari has limited push notification support
-    let supported = false;
-    let limitedSupport = false;
-    
-    if (hasCapacitor) {
-      // Native app via Capacitor - full support
-      supported = true;
-    } else if (isIOSSafari) {
-      // iOS Safari - limited support, requires iOS 16.4+
-      const iosVersion = parseFloat((navigator.userAgent.match(/OS (\d+)_(\d+)/) || [])[1] + '.' + (navigator.userAgent.match(/OS (\d+)_(\d+)/) || [])[2]);
-      supported = iosVersion >= 16.4 && hasNotificationAPI && hasPushManager;
-      limitedSupport = hasNotificationAPI && !hasPushManager;
+    if (isNative) {
+      // Native app - check Capacitor push notification support
+      try {
+        const permissionStatus = await PushNotifications.checkPermissions();
+        setPermissionStatus({
+          permission: permissionStatus.receive === 'granted' ? 'granted' : permissionStatus.receive === 'denied' ? 'denied' : 'default',
+          supported: true,
+          serviceWorkerReady: true
+        });
+        
+        // Set up native push notification listeners
+        setupNativePushNotifications();
+      } catch (error) {
+        console.error('Native push notifications not available:', error);
+        setPermissionStatus({
+          permission: 'denied',
+          supported: false,
+          serviceWorkerReady: false
+        });
+      }
     } else {
-      // Other browsers
-      supported = hasNotificationAPI && hasServiceWorker && hasPushManager;
+      // Web app - fallback to web push
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isIOSSafari = isIOS && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS/.test(navigator.userAgent);
+      
+      const hasNotificationAPI = 'Notification' in window;
+      const hasServiceWorker = 'serviceWorker' in navigator;
+      const hasPushManager = 'PushManager' in window;
+      
+      let supported = false;
+      
+      if (isIOSSafari) {
+        const iosVersion = parseFloat((navigator.userAgent.match(/OS (\d+)_(\d+)/) || [])[1] + '.' + (navigator.userAgent.match(/OS (\d+)_(\d+)/) || [])[2]);
+        supported = iosVersion >= 16.4 && hasNotificationAPI && hasPushManager;
+      } else {
+        supported = hasNotificationAPI && hasServiceWorker && hasPushManager;
+      }
+      
+      const permission = supported ? Notification.permission : 'denied';
+      
+      setPermissionStatus({
+        permission,
+        supported,
+        serviceWorkerReady: false
+      });
+
+      if (supported) {
+        checkServiceWorker();
+      }
     }
-    
-    const permission = supported || limitedSupport ? Notification.permission : 'denied';
-    
-    setPermissionStatus({
-      permission,
-      supported,
-      serviceWorkerReady: false
+  };
+
+  const setupNativePushNotifications = () => {
+    // Listen for push notification registration
+    PushNotifications.addListener('registration', (token) => {
+      console.log('Push registration success, token: ' + token.value);
+      sendTokenToServer(token.value);
     });
 
-    if (supported) {
-      checkServiceWorker();
-    }
+    // Listen for push notification registration errors
+    PushNotifications.addListener('registrationError', (error) => {
+      console.error('Error on registration: ' + JSON.stringify(error));
+    });
+
+    // Listen for push notifications received
+    PushNotifications.addListener('pushNotificationReceived', (notification) => {
+      console.log('Push received in foreground: ' + JSON.stringify(notification));
+      
+      // Play sound if enabled
+      if (settings.sound) {
+        playNotificationSound();
+      }
+      
+      // Show toast notification
+      toast({
+        title: notification.title || 'New Notification',
+        description: notification.body || 'You have a new notification',
+      });
+    });
+
+    // Listen for push notification taps (when app is backgrounded/closed)
+    PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+      console.log('Push action performed: ' + JSON.stringify(notification));
+      
+      // Handle the notification tap - navigate to relevant screen
+      const data = notification.notification.data;
+      if (data?.orderId) {
+        // Navigate to order details or relevant screen
+        console.log('Navigate to order:', data.orderId);
+      }
+    });
   };
 
   const checkServiceWorker = async () => {
@@ -148,23 +206,49 @@ export const PushNotificationSetup: React.FC = () => {
     }
 
     try {
-      const permission = await Notification.requestPermission();
-      setPermissionStatus(prev => ({ ...prev, permission }));
+      const isNative = Capacitor.isNativePlatform();
       
-      if (permission === 'granted') {
-        toast({
-          title: "Notifications Enabled",
-          description: "You'll now receive important delivery notifications.",
-        });
+      if (isNative) {
+        // Request native push notification permissions
+        const permissionStatus = await PushNotifications.requestPermissions();
         
-        // Register for push notifications with your service
-        await registerForPushNotifications();
+        if (permissionStatus.receive === 'granted') {
+          setPermissionStatus(prev => ({ ...prev, permission: 'granted' }));
+          
+          // Register for push notifications
+          await PushNotifications.register();
+          
+          toast({
+            title: "Notifications Enabled",
+            description: "You'll receive notifications even when the app is closed.",
+          });
+        } else {
+          setPermissionStatus(prev => ({ ...prev, permission: 'denied' }));
+          toast({
+            title: "Notifications Denied",
+            description: "You can enable them later in your device settings.",
+            variant: "destructive"
+          });
+        }
       } else {
-        toast({
-          title: "Notifications Denied",
-          description: "You can enable them later in your browser settings.",
-          variant: "destructive"
-        });
+        // Web fallback
+        const permission = await Notification.requestPermission();
+        setPermissionStatus(prev => ({ ...prev, permission }));
+        
+        if (permission === 'granted') {
+          toast({
+            title: "Notifications Enabled",
+            description: "You'll now receive important delivery notifications.",
+          });
+          
+          await registerForPushNotifications();
+        } else {
+          toast({
+            title: "Notifications Denied",
+            description: "You can enable them later in your browser settings.",
+            variant: "destructive"
+          });
+        }
       }
     } catch (error) {
       console.error('Error requesting notification permission:', error);
@@ -197,7 +281,7 @@ export const PushNotificationSetup: React.FC = () => {
               subscription,
               userId: userData.user.id,
               deviceInfo: {
-                platform: navigator.platform,
+                platform: navigator.platform,  
                 userAgent: navigator.userAgent
               }
             }
@@ -226,6 +310,47 @@ export const PushNotificationSetup: React.FC = () => {
     }
   };
 
+  const sendTokenToServer = async (token: string) => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user) {
+        const response = await supabase.functions.invoke('register-push-subscription', {
+          body: {
+            subscription: {
+              endpoint: `fcm:${token}`, // FCM format for native apps
+              keys: null // Not needed for native apps
+            },
+            userId: userData.user.id,
+            deviceInfo: {
+              platform: Capacitor.getPlatform(),
+              isNative: true,
+              pushToken: token
+            }
+          }
+        });
+
+        if (response.error) {
+          console.error('Failed to register native push token:', response.error);
+          throw new Error(response.error.message);
+        }
+
+        console.log('Native push token registered successfully');
+        
+        toast({
+          title: "Background Notifications Enabled",  
+          description: "You'll receive notifications even when the app is closed.",
+        });
+      }
+    } catch (error) {
+      console.error('Error registering native push token:', error);
+      toast({
+        title: "Token Registration Failed",
+        description: "Could not register for background notifications.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const sendSubscriptionToServer = async (subscription: PushSubscription) => {
     // This function is kept for compatibility but functionality moved to registerForPushNotifications
     console.log('Push subscription:', subscription);
@@ -236,27 +361,59 @@ export const PushNotificationSetup: React.FC = () => {
     
     try {
       if (permissionStatus.permission === 'granted') {
-        // Show local notification for testing
-        const notification = new Notification('🚗 New Delivery Offer!', {
-          body: 'McDonald\'s • $8.50 • 2.3 miles • 15 min',
-          icon: '/craven-logo.png',
-          badge: '/craven-logo.png',
-          tag: 'delivery-offer',
-          requireInteraction: true
-        });
+        const { data: userData } = await supabase.auth.getUser();
+        
+        if (userData.user) {
+          // Send test notification via edge function to test background notifications
+          const response = await supabase.functions.invoke('send-push-notification', {
+            body: {
+              userId: userData.user.id,
+              title: '🚗 Test Notification!',
+              message: 'This is a test to verify background notifications work.',
+              data: {
+                type: 'test',
+                timestamp: new Date().toISOString()
+              }
+            }
+          });
 
-        // Auto-close after 5 seconds
-        setTimeout(() => notification.close(), 5000);
+          if (response.error) {
+            throw new Error(response.error.message);
+          }
+
+          toast({
+            title: "Test Notification Sent",
+            description: "Check if you received the notification in the background!",
+          });
+        }
+
+        // Also show local notification for immediate feedback
+        if (Capacitor.isNativePlatform()) {
+          // Native local notification
+          await PushNotifications.createChannel({
+            id: 'test',
+            name: 'Test Notifications',
+            description: 'Test notification channel',
+            importance: 5,
+            visibility: 1
+          });
+        } else {
+          // Web notification fallback
+          const notification = new Notification('🚗 Test Notification!', {
+            body: 'Testing background notifications...',
+            icon: '/craven-logo.png',
+            badge: '/craven-logo.png',
+            tag: 'test-notification',
+            requireInteraction: true
+          });
+
+          setTimeout(() => notification.close(), 5000);
+        }
 
         // Play notification sound if enabled
         if (settings.sound) {
           playNotificationSound();
         }
-
-        toast({
-          title: "Test Notification Sent",
-          description: "Check if you received the notification!",
-        });
       } else {
         toast({
           title: "Permission Required",

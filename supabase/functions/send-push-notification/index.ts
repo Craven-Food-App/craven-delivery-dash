@@ -6,8 +6,94 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Helper function to send push notification via Web Push Protocol
-async function sendPushNotification(subscription: any, payload: any) {
+// Helper function to send native push notification
+async function sendNativePushNotification(subscription: any, payload: any) {
+  const fcmServerKey = Deno.env.get("FCM_SERVER_KEY");
+  
+  if (!fcmServerKey) {
+    console.warn("FCM server key not configured, skipping native push");
+    return { success: false, error: "FCM server key not configured" };
+  }
+
+  try {
+    // Extract FCM token from endpoint
+    const fcmToken = subscription.endpoint.replace('fcm:', '');
+    
+    if (!fcmToken || fcmToken === subscription.endpoint) {
+      // Fallback to web push if not native
+      return sendWebPushNotification(subscription, payload);
+    }
+
+    const fcmPayload = {
+      to: fcmToken,
+      notification: {
+        title: payload.title,
+        body: payload.message,
+        icon: payload.icon || '/craven-logo.png',
+        sound: 'default',
+        click_action: "FCM_PLUGIN_ACTIVITY",
+        priority: "high"
+      },
+      data: {
+        ...payload.data,
+        title: payload.title,
+        message: payload.message,
+        sound: 'enabled'
+      },
+      android: {
+        notification: {
+          channel_id: "craven_notifications",
+          priority: "high",
+          visibility: "public",
+          sound: "default"
+        },
+        priority: "high"
+      },
+      apns: {
+        payload: {
+          aps: {
+            alert: {
+              title: payload.title,
+              body: payload.message
+            },
+            sound: "default",
+            badge: 1,
+            "content-available": 1
+          }
+        },
+        headers: {
+          "apns-priority": "10",
+          "apns-push-type": "alert"
+        }
+      }
+    };
+
+    const response = await fetch("https://fcm.googleapis.com/fcm/send", {
+      method: "POST",
+      headers: {
+        "Authorization": `key=${fcmServerKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(fcmPayload),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      console.error("FCM error:", result);
+      return { success: false, error: result.error || "FCM send failed" };
+    }
+
+    console.log("FCM notification sent successfully:", result);
+    return { success: true, result };
+  } catch (error) {
+    console.error("Native push error:", error);
+    return { success: false, error: (error as Error).message || 'Unknown error' };
+  }
+}
+
+// Helper function to send web push notification
+async function sendWebPushNotification(subscription: any, payload: any) {
   const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY");
   const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY");
 
@@ -91,7 +177,7 @@ serve(async (req) => {
           ]
         };
 
-        pushPromises.push(sendPushNotification(pushSubscription, pushPayload));
+        pushPromises.push(sendNativePushNotification(pushSubscription, pushPayload));
       }
     }
 

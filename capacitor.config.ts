@@ -15,6 +15,9 @@ const config: CapacitorConfig = {
     Geolocation: {
       requestPermission: true,
       enableHighAccuracy: true
+    },
+    PushNotifications: {
+      presentationOptions: ["badge", "sound", "alert"]
     }
   }
 };
