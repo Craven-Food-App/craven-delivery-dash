@@ -664,14 +664,20 @@ export const MobileDriverDashboard: React.FC = () => {
 
         {/* ON DELIVERY STATE */}
         {driverState === 'on_delivery' && activeDelivery && <ActiveDeliveryFlow orderDetails={{
+        id: activeDelivery.id || 'test-order-' + Date.now(),
+        order_number: activeDelivery.order_number || 'TEST' + Math.random().toString(36).substr(2, 6).toUpperCase(),
         restaurant_name: activeDelivery.restaurant_name || 'Restaurant',
         pickup_address: activeDelivery.pickup_address || 'Pickup Address',
         dropoff_address: activeDelivery.dropoff_address || 'Delivery Address',
-        customer_name: activeDelivery.customer_name,
+        customer_name: activeDelivery.customer_name || 'Customer',
         customer_phone: activeDelivery.customer_phone,
         delivery_notes: activeDelivery.delivery_notes,
         payout_cents: activeDelivery.payout_cents || 0,
+        subtotal_cents: activeDelivery.subtotal_cents || activeDelivery.payout_cents || 1200,
         estimated_time: activeDelivery.estimated_time || 30,
+        items: activeDelivery.items || [
+          { name: 'Test Item', quantity: 1, price_cents: activeDelivery.subtotal_cents || 1200 }
+        ],
         isTestOrder: activeDelivery.isTestOrder // Pass through test order flag
       }} onCompleteDelivery={() => {
         // Check if this was a test order

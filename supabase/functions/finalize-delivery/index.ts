@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { orderId, driverId } = await req.json();
+    const { orderId, driverId, deliveryPhotoUrl, pickupPhotoUrl } = await req.json();
 
     if (!orderId) throw new Error("Missing orderId");
 
@@ -35,11 +35,25 @@ serve(async (req) => {
     const resolvedDriverId = driverId || order.driver_id || order.assigned_craver_id;
     if (!resolvedDriverId) throw new Error("Driver not assigned to this order");
 
-    // Update order status to delivered if not already
+    // Prepare order update data
+    const updateData: any = {
+      order_status: 'delivered',
+      driver_id: resolvedDriverId
+    };
+
+    // Add photo URLs if provided
+    if (deliveryPhotoUrl) {
+      updateData.delivery_photo_url = deliveryPhotoUrl;
+    }
+    if (pickupPhotoUrl) {
+      updateData.pickup_photo_url = pickupPhotoUrl;
+    }
+
+    // Update order status to delivered and add photos
     if (order.order_status !== 'delivered') {
       const { error: statusErr } = await supabase
         .from('orders')
-        .update({ order_status: 'delivered', driver_id: resolvedDriverId })
+        .update(updateData)
         .eq('id', orderId);
       if (statusErr) throw statusErr;
     }
@@ -75,8 +89,26 @@ serve(async (req) => {
 
     if (earnErr) throw earnErr;
 
+    console.log('Delivery finalized:', {
+      orderId,
+      driverId: resolvedDriverId,
+      earnings: total / 100,
+      hasPickupPhoto: !!pickupPhotoUrl,
+      hasDeliveryPhoto: !!deliveryPhotoUrl
+    });
+
     return new Response(
-      JSON.stringify({ success: true, percentage, basePay, tip, total }),
+      JSON.stringify({ 
+        success: true, 
+        percentage, 
+        basePay, 
+        tip, 
+        total,
+        photos: {
+          pickup: pickupPhotoUrl,
+          delivery: deliveryPhotoUrl
+        }
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

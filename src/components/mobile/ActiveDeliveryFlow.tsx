@@ -5,21 +5,33 @@ import { Badge } from '@/components/ui/badge';
 import { MapPin, Navigation, Clock, Phone, MessageCircle, Camera, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DeliveryCamera } from './DeliveryCamera';
+import { OrderVerificationScreen } from './OrderVerificationScreen';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigation } from '@/hooks/useNavigation';
 
-type DeliveryStage = 'navigate_to_restaurant' | 'arrived_at_restaurant' | 'navigate_to_customer' | 'capture_proof' | 'delivered';
+type DeliveryStage = 'navigate_to_restaurant' | 'arrived_at_restaurant' | 'verify_pickup' | 'navigate_to_customer' | 'capture_proof' | 'delivered';
+
+interface OrderItem {
+  name: string;
+  quantity: number;
+  price_cents: number;
+  special_instructions?: string;
+}
 
 interface ActiveDeliveryProps {
   orderDetails: {
+    id: string;
+    order_number: string;
     restaurant_name: string;
     pickup_address: any; // can be string or address object
     dropoff_address: any; // can be string or address object
-    customer_name?: string;
+    customer_name: string;
     customer_phone?: string;
     delivery_notes?: string;
     payout_cents: number;
+    subtotal_cents: number;
     estimated_time: number;
+    items: OrderItem[];
     isTestOrder?: boolean; // Add test order flag
   };
   onCompleteDelivery: (photoUrl?: string) => void;
@@ -66,6 +78,14 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         });
         break;
       case 'arrived_at_restaurant':
+        console.log('Transitioning to verify_pickup');
+        setCurrentStage('verify_pickup');
+        toast({
+          title: "Verify Order!",
+          description: orderDetails.isTestOrder ? "Test: Verify order details" : "Please verify order details and customer information.",
+        });
+        break;
+      case 'verify_pickup':
         console.log('Transitioning to navigate_to_customer');
         setCurrentStage('navigate_to_customer');
         toast({
@@ -256,7 +276,7 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
       {/* Stage Header */}
       <div className="bg-orange-500 text-white p-4 rounded-2xl text-center">
         <h2 className="text-xl font-bold">At Restaurant</h2>
-        <p className="opacity-90">Confirm pickup</p>
+        <p className="opacity-90">Ready to verify order</p>
       </div>
 
       {/* Restaurant Card */}
@@ -271,7 +291,7 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
           </div>
           
           <div className="bg-muted/30 rounded-lg p-3 mb-4">
-            <p className="text-sm text-muted-foreground">Order ready for pickup</p>
+            <p className="text-sm text-muted-foreground">Ready to verify order details</p>
           </div>
 
           <Button
@@ -279,11 +299,25 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
             className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white"
           >
             <CheckCircle className="h-5 w-5 mr-2" />
-            Confirm Pickup
+            Verify Order Details
           </Button>
         </CardContent>
       </Card>
     </div>
+  );
+
+  const renderVerifyPickup = () => (
+    <OrderVerificationScreen
+      orderDetails={orderDetails}
+      onPickupConfirmed={(pickupPhotoUrl) => {
+        setCurrentStage('navigate_to_customer');
+        toast({
+          title: "Order Picked Up!",
+          description: orderDetails.isTestOrder ? "Test: Order pickup confirmed" : "Navigate to customer for delivery.",
+        });
+      }}
+      onCancel={() => setCurrentStage('arrived_at_restaurant')}
+    />
   );
 
   const renderNavigateToCustomer = () => (
@@ -294,23 +328,38 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         <p className="opacity-90">Deliver the order</p>
       </div>
 
-      {/* Customer Details */}
+      {/* Customer Details - Enhanced */}
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
             <div className="flex-1">
               <h3 className="font-bold text-lg">
-                {orderDetails.customer_name || 'Customer'}
+                {orderDetails.customer_name}
               </h3>
               <p className="text-muted-foreground">{formatAddress(orderDetails.dropoff_address)}</p>
+              {orderDetails.customer_phone && (
+                <p className="text-sm text-green-600 font-medium">
+                  📞 {orderDetails.customer_phone}
+                </p>
+              )}
             </div>
           </div>
 
+          {/* Order Summary for Driver Reference */}
+          <div className="bg-blue-50 p-3 rounded-lg mb-4">
+            <p className="text-sm font-semibold text-blue-800 mb-1">
+              Order #{orderDetails.order_number}
+            </p>
+            <p className="text-sm text-blue-700">
+              {orderDetails.items.length} item(s) • ${(orderDetails.subtotal_cents / 100).toFixed(2)}
+            </p>
+          </div>
+
           {orderDetails.delivery_notes && (
-            <div className="bg-blue-50 p-3 rounded-lg mb-4">
+            <div className="bg-yellow-50 p-3 rounded-lg mb-4">
               <p className="text-sm">
-                <span className="font-semibold">Note:</span> {orderDetails.delivery_notes}
+                <span className="font-semibold text-yellow-800">Delivery Notes:</span> {orderDetails.delivery_notes}
               </p>
             </div>
           )}
@@ -334,10 +383,34 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                 ⚡ Skip
               </Button>
             )}
-            <Button variant="outline" size="lg">
-              <Phone className="h-5 w-5" />
-            </Button>
-            <Button variant="outline" size="lg">
+            {orderDetails.customer_phone && (
+              <Button 
+                variant="outline" 
+                size="lg"
+                onClick={() => {
+                  if (orderDetails.isTestOrder) {
+                    toast({
+                      title: "Test Mode",
+                      description: "Would call customer: " + orderDetails.customer_phone,
+                    });
+                  } else {
+                    window.open(`tel:${orderDetails.customer_phone}`);
+                  }
+                }}
+              >
+                <Phone className="h-5 w-5" />
+              </Button>
+            )}
+            <Button 
+              variant="outline" 
+              size="lg"
+              onClick={() => {
+                toast({
+                  title: "Chat Feature",
+                  description: "Customer chat coming soon!",
+                });
+              }}
+            >
               <MessageCircle className="h-5 w-5" />
             </Button>
           </div>
@@ -473,6 +546,8 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         return renderNavigateToRestaurant();
       case 'arrived_at_restaurant':
         return renderArrivedAtRestaurant();
+      case 'verify_pickup':
+        return renderVerifyPickup();
       case 'navigate_to_customer':
         return renderNavigateToCustomer();
       case 'capture_proof':
