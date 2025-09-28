@@ -14,7 +14,6 @@ import {
   Clock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 interface NotificationSettings {
   newOffers: boolean;
@@ -69,33 +68,8 @@ export const PushNotificationSetup: React.FC = () => {
   }, []);
 
   const checkNotificationSupport = () => {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isIOSSafari = isIOS && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS/.test(navigator.userAgent);
-    const hasCapacitor = !!(window as any).Capacitor;
-    
-    // Check for basic notification API support
-    const hasNotificationAPI = 'Notification' in window;
-    const hasServiceWorker = 'serviceWorker' in navigator;
-    const hasPushManager = 'PushManager' in window;
-    
-    // iOS Safari has limited push notification support
-    let supported = false;
-    let limitedSupport = false;
-    
-    if (hasCapacitor) {
-      // Native app via Capacitor - full support
-      supported = true;
-    } else if (isIOSSafari) {
-      // iOS Safari - limited support, requires iOS 16.4+
-      const iosVersion = parseFloat((navigator.userAgent.match(/OS (\d+)_(\d+)/) || [])[1] + '.' + (navigator.userAgent.match(/OS (\d+)_(\d+)/) || [])[2]);
-      supported = iosVersion >= 16.4 && hasNotificationAPI && hasPushManager;
-      limitedSupport = hasNotificationAPI && !hasPushManager;
-    } else {
-      // Other browsers
-      supported = hasNotificationAPI && hasServiceWorker && hasPushManager;
-    }
-    
-    const permission = supported || limitedSupport ? Notification.permission : 'denied';
+    const supported = 'Notification' in window && 'serviceWorker' in navigator;
+    const permission = supported ? Notification.permission : 'denied';
     
     setPermissionStatus({
       permission,
@@ -181,54 +155,39 @@ export const PushNotificationSetup: React.FC = () => {
       if ('serviceWorker' in navigator && 'PushManager' in window) {
         const registration = await navigator.serviceWorker.ready;
         
-        // Get VAPID public key from environment or use default
-        const vapidPublicKey = 'BN4GvZtEZiZuqkn9xCeFJ8QqUmzUyZg7jM8Y0vX6b8vI2oJiL9Xr3kNmT1qU9Y8pW0cV5bA2dE3fR4gH6nI7xJ2'; // This should be replaced with actual VAPID key
-
+        // In a real app, you'd get this from your server
+        const vapidPublicKey = 'YOUR_VAPID_PUBLIC_KEY';
+        
         const subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: vapidPublicKey
         });
 
-        // Send subscription to server
-        const { data: userData } = await supabase.auth.getUser();
-        if (userData.user) {
-          const response = await supabase.functions.invoke('register-push-subscription', {
-            body: {
-              subscription,
-              userId: userData.user.id,
-              deviceInfo: {
-                platform: navigator.platform,
-                userAgent: navigator.userAgent
-              }
-            }
-          });
-
-          if (response.error) {
-            console.error('Failed to register push subscription:', response.error);
-            throw new Error(response.error.message);
-          }
-
-          console.log('Push subscription registered successfully');
-          
-          toast({
-            title: "Push Notifications Enabled",
-            description: "You'll receive notifications even when the app is closed.",
-          });
-        }
+        // Send subscription to your server
+        await sendSubscriptionToServer(subscription);
       }
     } catch (error) {
       console.error('Error registering for push notifications:', error);
-      toast({
-        title: "Push Registration Failed",
-        description: "Could not enable background notifications. You'll still receive in-app notifications.",
-        variant: "destructive"
-      });
     }
   };
 
   const sendSubscriptionToServer = async (subscription: PushSubscription) => {
-    // This function is kept for compatibility but functionality moved to registerForPushNotifications
+    // In a real app, send this to your Supabase edge function
     console.log('Push subscription:', subscription);
+    
+    // Example of how you'd send it:
+    /*
+    await supabase.functions.invoke('register-push-subscription', {
+      body: {
+        subscription,
+        userId: user.id,
+        deviceInfo: {
+          platform: navigator.platform,
+          userAgent: navigator.userAgent
+        }
+      }
+    });
+    */
   };
 
   const testNotification = async () => {
@@ -239,8 +198,8 @@ export const PushNotificationSetup: React.FC = () => {
         // Show local notification for testing
         const notification = new Notification('🚗 New Delivery Offer!', {
           body: 'McDonald\'s • $8.50 • 2.3 miles • 15 min',
-          icon: '/craven-logo.png',
-          badge: '/craven-logo.png',
+          icon: '/favicon.ico',
+          badge: '/favicon.ico',
           tag: 'delivery-offer',
           requireInteraction: true
         });
@@ -368,32 +327,11 @@ export const PushNotificationSetup: React.FC = () => {
             )}
 
             {!permissionStatus.supported && (
-              <div className="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
-                <AlertTriangle className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-orange-800">
-                    Limited Notification Support
-                  </p>
-                  <p className="text-xs text-orange-700">
-                    {/iPad|iPhone|iPod/.test(navigator.userAgent) ? (
-                      <>
-                        iOS Safari has limited push notification support. For the best experience, 
-                        install the Crave'N app from the App Store or use "Add to Home Screen" 
-                        for enhanced notifications.
-                      </>
-                    ) : (
-                      'Push notifications are not supported on this browser. Try using Chrome, Firefox, or Safari.'
-                    )}
-                  </p>
-                  {/iPad|iPhone|iPod/.test(navigator.userAgent) && (
-                    <div className="mt-3 p-2 bg-orange-100 rounded border">
-                      <p className="text-xs text-orange-800">
-                        <strong>Alternative:</strong> You can still receive notifications through:
-                        • SMS updates • Email alerts • In-app notifications
-                      </p>
-                    </div>
-                  )}
-                </div>
+              <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                <AlertTriangle className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
+                <p className="text-sm text-yellow-800">
+                  Push notifications are not supported on this device or browser.
+                </p>
               </div>
             )}
           </CardContent>
@@ -527,7 +465,7 @@ export const PushNotificationSetup: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium text-sm">Enable Quiet Hours</p>
-                <p className="text-xs text-muted-foreground">Reduce notifications during set hours</p>
+                <p className="text-xs text-muted-foreground">Reduce notifications during these times</p>
               </div>
               <Switch 
                 checked={settings.quietHours.enabled}
@@ -538,46 +476,58 @@ export const PushNotificationSetup: React.FC = () => {
             </div>
 
             {settings.quietHours.enabled && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Start Time</label>
-                  <input
-                    type="time"
-                    value={settings.quietHours.start}
-                    onChange={(e) => 
-                      updateSetting('quietHours', { ...settings.quietHours, start: e.target.value })
-                    }
-                    className="w-full mt-1 px-3 py-2 border border-input rounded-md text-sm"
-                  />
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">Start Time</label>
+                    <input 
+                      type="time" 
+                      value={settings.quietHours.start}
+                      onChange={(e) => 
+                        updateSetting('quietHours', { 
+                          ...settings.quietHours, 
+                          start: e.target.value 
+                        })
+                      }
+                      className="w-full mt-1 p-2 border rounded-md text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">End Time</label>
+                    <input 
+                      type="time" 
+                      value={settings.quietHours.end}
+                      onChange={(e) => 
+                        updateSetting('quietHours', { 
+                          ...settings.quietHours, 
+                          end: e.target.value 
+                        })
+                      }
+                      className="w-full mt-1 p-2 border rounded-md text-sm"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium">End Time</label>
-                  <input
-                    type="time"
-                    value={settings.quietHours.end}
-                    onChange={(e) => 
-                      updateSetting('quietHours', { ...settings.quietHours, end: e.target.value })
-                    }
-                    className="w-full mt-1 px-3 py-2 border border-input rounded-md text-sm"
-                  />
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  Only critical notifications will be shown during quiet hours
+                </p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Device-Specific Instructions */}
+        {/* Tips */}
         <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4">
+          <CardContent className="pt-6">
             <div className="flex items-start gap-3">
-              <Smartphone className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div className="space-y-2">
-                <h3 className="font-semibold text-blue-800">Device Setup Tips</h3>
-                <div className="text-sm text-blue-700 space-y-1">
-                  <p><strong>iOS:</strong> Add to Home Screen for best notification experience</p>
-                  <p><strong>Android:</strong> Allow all permissions for reliable delivery alerts</p>
-                  <p><strong>Desktop:</strong> Keep browser notifications enabled</p>
-                </div>
+              <Smartphone className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div>
+                <p className="font-medium text-sm text-blue-800">Pro Tips</p>
+                <ul className="text-xs text-blue-700 mt-1 space-y-1">
+                  <li>• Keep notifications enabled for the best earning opportunities</li>
+                  <li>• Test notifications regularly to ensure they're working</li>
+                  <li>• Critical notifications will bypass quiet hours</li>
+                  <li>• Check your phone's battery optimization settings</li>
+                </ul>
               </div>
             </div>
           </CardContent>

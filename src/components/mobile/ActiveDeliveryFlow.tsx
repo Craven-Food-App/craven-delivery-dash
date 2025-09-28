@@ -4,22 +4,19 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Navigation, Clock, Phone, MessageCircle, Camera, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { DeliveryCamera } from './DeliveryCamera';
-import { supabase } from '@/integrations/supabase/client';
 
-type DeliveryStage = 'navigate_to_restaurant' | 'arrived_at_restaurant' | 'navigate_to_customer' | 'capture_proof' | 'delivered';
+type DeliveryStage = 'navigate_to_restaurant' | 'arrived_at_restaurant' | 'navigate_to_customer' | 'delivered';
 
 interface ActiveDeliveryProps {
   orderDetails: {
     restaurant_name: string;
-    pickup_address: any; // can be string or address object
-    dropoff_address: any; // can be string or address object
+    pickup_address: string;
+    dropoff_address: string;
     customer_name?: string;
     customer_phone?: string;
     delivery_notes?: string;
     payout_cents: number;
     estimated_time: number;
-    isTestOrder?: boolean; // Add test order flag
   };
   onCompleteDelivery: () => void;
 }
@@ -29,147 +26,32 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
   onCompleteDelivery
 }) => {
   const [currentStage, setCurrentStage] = useState<DeliveryStage>('navigate_to_restaurant');
-  const [deliveryPhoto, setDeliveryPhoto] = useState<string | null>(null);
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [showPhotoUpload, setShowPhotoUpload] = useState(false);
   const { toast } = useToast();
 
-  // Helper function to format address
-  const formatAddress = (address: any) => {
-    if (typeof address === 'string') return address;
-    if (typeof address === 'object' && address) {
-      return `${address.street || ''} ${address.city || ''} ${address.state || ''} ${address.zip || ''}`.trim();
-    }
-    return 'Address not available';
-  };
-
   const handleStageComplete = () => {
-    console.log('handleStageComplete called, current stage:', currentStage);
-    
-    // Add GPS skip logic for testing
-    if (orderDetails.isTestOrder) {
-      toast({
-        title: "GPS Skipped",
-        description: "Test mode: Skipping GPS requirements",
-        duration: 2000
-      });
-    }
-    
     switch (currentStage) {
       case 'navigate_to_restaurant':
-        console.log('Transitioning to arrived_at_restaurant');
         setCurrentStage('arrived_at_restaurant');
-        toast({
-          title: "Arrived at Restaurant!",
-          description: orderDetails.isTestOrder ? "Test: Simulated arrival at pickup location" : "Ready to pick up the order.",
-        });
         break;
       case 'arrived_at_restaurant':
-        console.log('Transitioning to navigate_to_customer');
         setCurrentStage('navigate_to_customer');
         toast({
           title: "Order Picked Up!",
-          description: orderDetails.isTestOrder ? "Test: Simulated order pickup" : "Navigate to customer for delivery.",
+          description: "Navigate to customer for delivery.",
         });
         break;
       case 'navigate_to_customer':
-        console.log('Transitioning to capture_proof');
-        setCurrentStage('capture_proof');
-        toast({
-          title: "Arrived at Customer!",
-          description: orderDetails.isTestOrder ? "Test: Simulated arrival at customer" : "Take a photo to complete delivery.",
-        });
+        setCurrentStage('delivered');
         break;
-      case 'capture_proof':
       case 'delivered':
-        console.log('Completing delivery');
-        if (orderDetails.isTestOrder) {
-          toast({
-            title: "Test Complete!",
-            description: "Thank you for testing the delivery flow",
-            duration: 3000
-          });
-        }
         onCompleteDelivery();
         break;
     }
-  };
-
-  // Add GPS skip function for testing
-  const handleSkipGPS = () => {
-    if (orderDetails.isTestOrder) {
-      toast({
-        title: "GPS Skipped",
-        description: "Proceeding to next step for testing",
-        duration: 2000
-      });
-      handleStageComplete();
-    }
-  };
-
-  const handlePhotoCapture = async (photoBlob: Blob) => {
-    setIsUploadingPhoto(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      // Create a unique filename
-      const fileName = `delivery-proof-${Date.now()}.jpg`;
-      const filePath = `${user.id}/${fileName}`;
-
-      // Upload to Supabase storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('delivery-photos')
-        .upload(filePath, photoBlob, {
-          contentType: 'image/jpeg',
-          upsert: false
-        });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('delivery-photos')
-        .getPublicUrl(filePath);
-
-      setDeliveryPhoto(publicUrl);
-      setCurrentStage('delivered');
-      
-      toast({
-        title: "Photo Uploaded!",
-        description: "Delivery proof captured successfully.",
-      });
-
-      // Complete delivery after successful photo upload
-      setTimeout(() => {
-        onCompleteDelivery();
-      }, 1500);
-
-    } catch (error: any) {
-      console.error('Error uploading photo:', error);
-      toast({
-        title: 'Upload Failed',
-        description: 'Failed to upload delivery photo. Please try again.',
-        variant: 'destructive'
-      });
-    }
-    setIsUploadingPhoto(false);
   };
 
   const renderNavigateToRestaurant = () => (
     <div className="space-y-4">
-      {/* Test Order Alert */}
-      {orderDetails.isTestOrder && (
-        <div className="p-4 bg-orange-100 border border-orange-300 rounded-xl">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-lg">🧪</span>
-            <span className="font-bold text-orange-800">Test Delivery</span>
-          </div>
-          <p className="text-sm text-orange-700">
-            This is a simulated delivery for testing purposes. Go through the normal flow to complete the test.
-          </p>
-        </div>
-      )}
-
       {/* Stage Header */}
       <div className="bg-blue-500 text-white p-4 rounded-2xl text-center">
         <h2 className="text-xl font-bold">Navigate to Restaurant</h2>
@@ -183,56 +65,20 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
             <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
             <div>
               <h3 className="font-bold text-lg">{orderDetails.restaurant_name}</h3>
-              <p className="text-muted-foreground">{formatAddress(orderDetails.pickup_address)}</p>
+              <p className="text-muted-foreground">{orderDetails.pickup_address}</p>
             </div>
           </div>
           <div className="flex gap-2 mt-4">
-            <Button 
-              className="flex-1" 
-              size="lg" 
-              onClick={handleStageComplete}
-            >
+            <Button className="flex-1" size="lg">
               <Navigation className="h-5 w-5 mr-2" />
-              {orderDetails.isTestOrder ? 'Simulate Navigation' : 'Start Navigation'}
+              Start Navigation
             </Button>
-            {orderDetails.isTestOrder && (
-              <Button 
-                variant="secondary" 
-                size="lg" 
-                onClick={handleSkipGPS}
-                className="px-3"
-              >
-                ⚡ Skip
-              </Button>
-            )}
             <Button variant="outline" size="lg">
               <Phone className="h-5 w-5" />
             </Button>
           </div>
         </CardContent>
       </Card>
-
-      {/* Test Mode GPS Skip */}
-      {orderDetails.isTestOrder && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-orange-800">Test Mode Active</p>
-                <p className="text-sm text-orange-600">GPS requirements are skippable</p>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleSkipGPS}
-                className="border-orange-300 text-orange-700 hover:bg-orange-100"
-              >
-                Skip to Arrival
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* ETA */}
       <div className="text-center">
@@ -252,28 +98,29 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         <p className="opacity-90">Confirm pickup</p>
       </div>
 
-      {/* Restaurant Card */}
+      {/* Restaurant Info */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-            <div>
-              <h3 className="font-bold text-lg">{orderDetails.restaurant_name}</h3>
-              <p className="text-muted-foreground">{formatAddress(orderDetails.pickup_address)}</p>
-            </div>
+          <div className="text-center mb-4">
+            <h3 className="font-bold text-xl">{orderDetails.restaurant_name}</h3>
+            <p className="text-muted-foreground">{orderDetails.pickup_address}</p>
           </div>
           
-          <div className="bg-muted/30 rounded-lg p-3 mb-4">
-            <p className="text-sm text-muted-foreground">Order ready for pickup</p>
+          <div className="space-y-3">
+            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+              <p className="text-sm text-yellow-800">
+                📋 Show this screen to restaurant staff to confirm pickup
+              </p>
+            </div>
+            
+            <Button 
+              onClick={handleStageComplete}
+              className="w-full h-12 bg-green-500 hover:bg-green-600 text-white font-bold text-lg"
+            >
+              <CheckCircle className="h-5 w-5 mr-2" />
+              Confirm Pickup
+            </Button>
           </div>
-
-          <Button
-            onClick={handleStageComplete}
-            className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white"
-          >
-            <CheckCircle className="h-5 w-5 mr-2" />
-            Confirm Pickup
-          </Button>
         </CardContent>
       </Card>
     </div>
@@ -284,52 +131,38 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
       {/* Stage Header */}
       <div className="bg-green-500 text-white p-4 rounded-2xl text-center">
         <h2 className="text-xl font-bold">Navigate to Customer</h2>
-        <p className="opacity-90">Deliver the order</p>
+        <p className="opacity-90">Deliver your order</p>
       </div>
 
       {/* Customer Details */}
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <div className="flex-1">
-              <h3 className="font-bold text-lg">
-                {orderDetails.customer_name || 'Customer'}
-              </h3>
-              <p className="text-muted-foreground">{formatAddress(orderDetails.dropoff_address)}</p>
+            <MapPin className="h-5 w-5 text-red-500" />
+            <div>
+              <h3 className="font-bold text-lg">{orderDetails.customer_name || 'Customer'}</h3>
+              <p className="text-muted-foreground">{orderDetails.dropoff_address}</p>
             </div>
           </div>
-
+          
           {orderDetails.delivery_notes && (
-            <div className="bg-blue-50 p-3 rounded-lg mb-4">
-              <p className="text-sm">
-                <span className="font-semibold">Note:</span> {orderDetails.delivery_notes}
+            <div className="bg-blue-50 p-3 rounded-lg mb-4 border border-blue-200">
+              <p className="text-sm text-blue-800">
+                <strong>Delivery Notes:</strong> {orderDetails.delivery_notes}
               </p>
             </div>
           )}
-
-          <div className="flex gap-2 mt-4">
-            <Button 
-              className="flex-1" 
-              size="lg" 
-              onClick={handleStageComplete}
-            >
+          
+          <div className="flex gap-2">
+            <Button className="flex-1" size="lg">
               <Navigation className="h-5 w-5 mr-2" />
-              {orderDetails.isTestOrder ? 'Simulate Arrival' : 'Start Navigation'}
+              Start Navigation
             </Button>
-            {orderDetails.isTestOrder && (
-              <Button 
-                variant="secondary" 
-                size="lg" 
-                onClick={handleSkipGPS}
-                className="px-3"
-              >
-                ⚡ Skip
+            {orderDetails.customer_phone && (
+              <Button variant="outline" size="lg">
+                <Phone className="h-5 w-5" />
               </Button>
             )}
-            <Button variant="outline" size="lg">
-              <Phone className="h-5 w-5" />
-            </Button>
             <Button variant="outline" size="lg">
               <MessageCircle className="h-5 w-5" />
             </Button>
@@ -337,83 +170,14 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         </CardContent>
       </Card>
 
-      {/* Manual Arrival Button - Enhanced for Testing */}
-      <Button
+      {/* Arrival Button */}
+      <Button 
         onClick={handleStageComplete}
         variant="outline"
         className="w-full h-12 border-2 border-green-500 text-green-600 hover:bg-green-50"
       >
-        {orderDetails.isTestOrder ? '🧪 Test: I\'ve Arrived at Customer' : 'I\'ve Arrived at Customer'}
+        I've Arrived at Customer
       </Button>
-
-      {/* Additional Test Controls */}
-      {orderDetails.isTestOrder && (
-        <Card className="border-green-200 bg-green-50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-green-800">Test Navigation</p>
-                <p className="text-sm text-green-600">Skip GPS tracking for testing</p>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleSkipGPS}
-                className="border-green-300 text-green-700 hover:bg-green-100"
-              >
-                Skip to Customer
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-
-  const renderCaptureProof = () => (
-    <div className="space-y-4">
-      {/* Test Order Skip Option */}
-      {orderDetails.isTestOrder && (
-        <Card className="border-purple-200 bg-purple-50">
-          <CardContent className="p-4">
-            <div className="text-center space-y-3">
-              <div className="text-2xl">🧪</div>
-              <h3 className="font-bold text-purple-800">Test Mode: Photo Capture</h3>
-              <p className="text-sm text-purple-600">
-                You can skip photo capture for testing or proceed normally
-              </p>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    toast({
-                      title: "Photo Skipped",
-                      description: "Test completed without photo capture",
-                      duration: 2000
-                    });
-                    onCompleteDelivery();
-                  }}
-                  className="flex-1 border-purple-300 text-purple-700 hover:bg-purple-100"
-                >
-                  Skip Photo & Complete
-                </Button>
-                <Button 
-                  onClick={() => setCurrentStage('delivered')}
-                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
-                >
-                  Take Photo
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-      
-      <DeliveryCamera
-        onPhotoCapture={handlePhotoCapture}
-        onCancel={() => setCurrentStage('navigate_to_customer')}
-        isUploading={isUploadingPhoto}
-      />
     </div>
   );
 
@@ -421,32 +185,43 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
     <div className="space-y-4">
       {/* Stage Header */}
       <div className="bg-purple-500 text-white p-4 rounded-2xl text-center">
-        <h2 className="text-xl font-bold">Delivery Complete!</h2>
-        <p className="opacity-90">{orderDetails.isTestOrder ? 'Test completed' : 'Great job!'}</p>
+        <h2 className="text-xl font-bold">Complete Delivery</h2>
+        <p className="opacity-90">Confirm delivery completion</p>
       </div>
 
-      {/* Completion Status */}
+      {/* Completion Options */}
       <Card>
         <CardContent className="p-4 space-y-4">
           <div className="text-center">
-            <CheckCircle className="h-12 w-12 mx-auto mb-3 text-green-600" />
-            <h3 className="font-bold text-lg mb-2">
-              {orderDetails.isTestOrder ? 'Test Delivery Complete!' : 'Order Delivered!'}
-            </h3>
-            <p className="text-muted-foreground">
-              {orderDetails.isTestOrder 
-                ? 'Thank you for participating in our test!'
-                : 'Delivery photo captured successfully'
-              }
-            </p>
+            <h3 className="font-bold text-lg mb-2">Order Delivered!</h3>
+            <p className="text-muted-foreground">Confirm delivery completion</p>
           </div>
 
-          {deliveryPhoto && (
-            <div className="bg-green-50 p-4 rounded-lg border border-green-200 text-center">
-              <CheckCircle className="h-6 w-6 mx-auto mb-2 text-green-600" />
-              <p className="text-sm text-green-700">Proof of delivery uploaded</p>
-            </div>
-          )}
+          <div className="space-y-3">
+            <Button 
+              onClick={() => setShowPhotoUpload(!showPhotoUpload)}
+              variant="outline" 
+              className="w-full h-12"
+            >
+              <Camera className="h-5 w-5 mr-2" />
+              Take Photo (Optional)
+            </Button>
+            
+            {showPhotoUpload && (
+              <div className="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300 text-center">
+                <Camera className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                <p className="text-sm text-gray-600">Tap to take delivery photo</p>
+              </div>
+            )}
+            
+            <Button 
+              onClick={handleStageComplete}
+              className="w-full h-14 bg-green-500 hover:bg-green-600 text-white font-bold text-lg"
+            >
+              <CheckCircle className="h-6 w-6 mr-2" />
+              Complete Delivery
+            </Button>
+          </div>
 
           {/* Earnings Display */}
           <div className="bg-green-50 p-4 rounded-lg border border-green-200 text-center">
@@ -468,8 +243,6 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         return renderArrivedAtRestaurant();
       case 'navigate_to_customer':
         return renderNavigateToCustomer();
-      case 'capture_proof':
-        return renderCaptureProof();
       case 'delivered':
         return renderDeliveredOrder();
       default:
@@ -480,21 +253,21 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
   return (
     <div className="absolute inset-0 z-10 bg-background">
       {/* Progress Indicator */}
-      <div className="absolute top-4 left-4 right-4 z-20 pointer-events-none">
-        <div className="bg-background/95 backdrop-blur-sm p-3 rounded-xl shadow-lg pointer-events-auto">
+      <div className="absolute top-4 left-4 right-4 z-20">
+        <div className="bg-background/95 backdrop-blur-sm p-3 rounded-xl shadow-lg">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium">Delivery Progress</span>
             <span className="text-xs text-muted-foreground">
-              Step {['navigate_to_restaurant', 'arrived_at_restaurant', 'navigate_to_customer', 'capture_proof', 'delivered'].indexOf(currentStage) + 1} of 5
+              Step {['navigate_to_restaurant', 'arrived_at_restaurant', 'navigate_to_customer', 'delivered'].indexOf(currentStage) + 1} of 4
             </span>
           </div>
           <div className="flex gap-1">
-            {['navigate_to_restaurant', 'arrived_at_restaurant', 'navigate_to_customer', 'capture_proof', 'delivered'].map((stage, index) => (
+            {['navigate_to_restaurant', 'arrived_at_restaurant', 'navigate_to_customer', 'delivered'].map((stage, index) => (
               <div
                 key={stage}
                 className={`flex-1 h-2 rounded-full ${
-                  ['navigate_to_restaurant', 'arrived_at_restaurant', 'navigate_to_customer', 'capture_proof', 'delivered'].indexOf(currentStage) >= index
-                    ? 'bg-orange-500'
+                  ['navigate_to_restaurant', 'arrived_at_restaurant', 'navigate_to_customer', 'delivered'].indexOf(currentStage) >= index
+                    ? 'bg-blue-500'
                     : 'bg-gray-200'
                 }`}
               />
@@ -505,9 +278,7 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
 
       {/* Main Content */}
       <div className="pt-24 pb-6 px-4 h-full overflow-y-auto">
-        <div className="relative z-0">
-          {getCurrentStageComponent()}
-        </div>
+        {getCurrentStageComponent()}
       </div>
     </div>
   );

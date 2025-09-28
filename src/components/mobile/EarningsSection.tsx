@@ -104,26 +104,15 @@ export const EarningsSection: React.FC = () => {
         .eq('user_id', user.id)
         .single();
 
-      // Get driver earnings from the earnings table
-      const { data: earnings } = await supabase
-        .from('driver_earnings')
-        .select('*')
-        .eq('driver_id', user.id)
-        .order('earned_at', { ascending: false });
-
       // Get completed orders for this driver
       const { data: completedOrders } = await supabase
         .from('orders')
-        .select('id, payout_cents, created_at, distance_km, pickup_address, restaurants(name)')
-        .eq('driver_id', user.id)
-        .eq('order_status', 'delivered')
+        .select('id, payout_cents, created_at, distance_km, pickup_name')
+        .eq('assigned_craver_id', user.id)
+        .eq('status', 'delivered')
         .order('created_at', { ascending: false });
 
-      // Use earnings data if available, otherwise use orders
-      const earningsToUse = earnings && earnings.length > 0 ? earnings : [];
-      const ordersToUse = completedOrders || [];
-
-      if (earningsToUse.length === 0 && ordersToUse.length === 0) {
+      if (!completedOrders || completedOrders.length === 0) {
         const emptyDailyEarnings = Array.from({ length: 7 }, (_, i) => ({
           day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
           date: new Date().getDate() - new Date().getDay() + i,
@@ -149,13 +138,13 @@ export const EarningsSection: React.FC = () => {
         return;
       }
 
-      // Calculate today's earnings using driver_earnings table
+      // Calculate today's earnings
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const todayEarnings = earningsToUse.filter(earning => 
-        new Date(earning.earned_at) >= today
+      const todayOrders = completedOrders.filter(order => 
+        new Date(order.created_at) >= today
       );
-      const todayTotal = todayEarnings.reduce((sum, earning) => sum + earning.total_cents, 0) / 100;
+      const todayTotal = todayOrders.reduce((sum, order) => sum + order.payout_cents, 0) / 100;
 
       // Calculate this week's earnings and daily breakdown
       const weekStart = new Date(today);
@@ -163,20 +152,20 @@ export const EarningsSection: React.FC = () => {
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
       
-      const weekEarnings = earningsToUse.filter(earning => 
-        new Date(earning.earned_at) >= weekStart && new Date(earning.earned_at) <= weekEnd
+      const weekOrders = completedOrders.filter(order => 
+        new Date(order.created_at) >= weekStart && new Date(order.created_at) <= weekEnd
       );
-      const weekTotal = weekEarnings.reduce((sum, earning) => sum + earning.total_cents, 0) / 100;
+      const weekTotal = weekOrders.reduce((sum, order) => sum + order.payout_cents, 0) / 100;
 
       // Create daily earnings breakdown for current week
       const dailyEarnings = Array.from({ length: 7 }, (_, i) => {
         const day = new Date(weekStart);
         day.setDate(weekStart.getDate() + i);
-        const dayEarnings = weekEarnings.filter(earning => {
-          const earningDate = new Date(earning.earned_at);
-          return earningDate.toDateString() === day.toDateString();
+        const dayOrders = weekOrders.filter(order => {
+          const orderDate = new Date(order.created_at);
+          return orderDate.toDateString() === day.toDateString();
         });
-        const dayTotal = dayEarnings.reduce((sum, earning) => sum + earning.total_cents, 0) / 100;
+        const dayTotal = dayOrders.reduce((sum, order) => sum + order.payout_cents, 0) / 100;
         
         return {
           day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],

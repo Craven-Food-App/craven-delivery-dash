@@ -9,10 +9,13 @@ import {
   Truck, 
   Users, 
   DollarSign, 
-  Clock,
+  Clock, 
   MapPin,
+  Phone,
   RefreshCw,
-  CheckCircle
+  AlertCircle,
+  CheckCircle,
+  Timer
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,10 +40,11 @@ interface Order {
 interface Driver {
   id: string;
   user_id: string;
+  status: string;
   is_available: boolean;
   rating: number;
   total_deliveries: number;
-  driver_level: string;
+  driver_level: number;
 }
 
 const LiveDashboard = () => {
@@ -58,7 +62,7 @@ const LiveDashboard = () => {
   const fetchData = async () => {
     try {
       // Fetch recent orders
-      const { data: ordersData, error: ordersError } = await supabase
+      const { data: ordersData, error: ordersError } = await (supabase as any)
         .from('orders')
         .select(`
           *,
@@ -82,24 +86,23 @@ const LiveDashboard = () => {
 
       if (driversError) throw driversError;
 
-      setOrders(ordersData || []);
-      setDrivers(
-        (driversData || []).map((d: any) => ({
-          ...d,
-          driver_level: d.driver_level || 'standard'
-        }))
-      );
+      setOrders((ordersData || []) as any);
+      setDrivers((driversData || []).map((d: any) => ({ ...d, driver_level: 'standard' })));
 
       // Calculate stats
       const today = new Date().toISOString().split('T')[0];
-      const todayOrders = ordersData?.filter(order => order.created_at.startsWith(today)) || [];
+      const todayOrders = ordersData?.filter(order => 
+        order.created_at.startsWith(today)
+      ) || [];
 
       setStats({
         totalOrders: todayOrders.length,
         pendingOrders: ordersData?.filter(order => 
           order.order_status === 'pending' || order.order_status === 'confirmed'
         ).length || 0,
-        activeDrivers: driversData?.filter(driver => driver.is_available).length || 0,
+        activeDrivers: driversData?.filter(driver => 
+          driver.status === 'online' && driver.is_available
+        ).length || 0,
         totalRevenue: todayOrders.reduce((sum, order) => 
           sum + (order.payment_status === 'paid' ? order.total_cents : 0), 0
         )
@@ -117,9 +120,33 @@ const LiveDashboard = () => {
     }
   };
 
+  const handleAssignDriver = async (orderId: string, driverId: string) => {
+    try {
+      const { error } = await supabase.functions.invoke('assign-driver', {
+        body: { orderId, driverId }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Driver assigned successfully",
+        description: "The driver has been notified about the order.",
+      });
+
+      fetchData(); // Refresh data
+    } catch (error) {
+      console.error('Error assigning driver:', error);
+      toast({
+        title: "Error assigning driver",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleCancelOrder = async (orderId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('orders')
         .update({ order_status: 'canceled' })
         .eq('id', orderId);
@@ -185,6 +212,16 @@ const LiveDashboard = () => {
     }
   };
 
+  const getDriverStatusColor = (status: string, isAvailable: boolean) => {
+    if (!isAvailable) return 'bg-gray-100 text-gray-800';
+    switch (status) {
+      case 'online': return 'bg-green-100 text-green-800';
+      case 'busy': return 'bg-orange-100 text-orange-800';
+      case 'offline': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -209,41 +246,49 @@ const LiveDashboard = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <Package className="h-8 w-8 text-blue-600" />
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Today's Orders</p>
-              <p className="text-2xl font-bold">{stats.totalOrders}</p>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Package className="h-8 w-8 text-blue-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-muted-foreground">Today's Orders</p>
+                <p className="text-2xl font-bold">{stats.totalOrders}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <Clock className="h-8 w-8 text-orange-600" />
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Pending Orders</p>
-              <p className="text-2xl font-bold">{stats.pendingOrders}</p>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Clock className="h-8 w-8 text-orange-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-muted-foreground">Pending Orders</p>
+                <p className="text-2xl font-bold">{stats.pendingOrders}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <Users className="h-8 w-8 text-green-600" />
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Active Drivers</p>
-              <p className="text-2xl font-bold">{stats.activeDrivers}</p>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Users className="h-8 w-8 text-green-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-muted-foreground">Active Drivers</p>
+                <p className="text-2xl font-bold">{stats.activeDrivers}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <DollarSign className="h-8 w-8 text-purple-600" />
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Today's Revenue</p>
-              <p className="text-2xl font-bold">${(stats.totalRevenue / 100).toFixed(2)}</p>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <DollarSign className="h-8 w-8 text-purple-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-muted-foreground">Today's Revenue</p>
+                <p className="text-2xl font-bold">${(stats.totalRevenue / 100).toFixed(2)}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -269,7 +314,6 @@ const LiveDashboard = () => {
           </Button>
         </div>
 
-        {/* Orders Tab */}
         <TabsContent value="orders" className="space-y-4">
           <Card>
             <CardHeader>
@@ -330,7 +374,6 @@ const LiveDashboard = () => {
           </Card>
         </TabsContent>
 
-        {/* Drivers Tab */}
         <TabsContent value="drivers" className="space-y-4">
           <Card>
             <CardHeader>
@@ -343,35 +386,39 @@ const LiveDashboard = () => {
                 ) : (
                   drivers.map((driver) => (
                     <Card key={driver.id}>
-                      <CardContent className="p-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium">Driver #{driver.id.slice(-8)}</span>
-                          <Badge className={driver.is_available ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
-                            {driver.is_available ? "online" : "offline"}
-                          </Badge>
-                        </div>
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">Driver #{driver.id.slice(-8)}</span>
+                            <Badge className={getDriverStatusColor(driver.status, driver.is_available)}>
+                              {driver.is_available ? driver.status : 'offline'}
+                            </Badge>
+                          </div>
+                          
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span>Rating:</span>
+                              <span className="flex items-center gap-1">
+                                ⭐ {driver.rating.toFixed(1)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Deliveries:</span>
+                              <span>{driver.total_deliveries}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Level:</span>
+                              <span>{driver.driver_level}</span>
+                            </div>
+                          </div>
 
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span>Rating:</span>
-                            <span className="flex items-center gap-1">⭐ {driver.rating.toFixed(1)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Deliveries:</span>
-                            <span>{driver.total_deliveries}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Level:</span>
-                            <span>{driver.driver_level}</span>
-                          </div>
+                          {driver.status === 'online' && driver.is_available && (
+                            <div className="flex items-center gap-1 text-green-600 text-sm">
+                              <CheckCircle className="h-4 w-4" />
+                              Available for orders
+                            </div>
+                          )}
                         </div>
-
-                        {driver.is_available && (
-                          <div className="flex items-center gap-1 text-green-600 text-sm">
-                            <CheckCircle className="h-4 w-4" />
-                            Available for orders
-                          </div>
-                        )}
                       </CardContent>
                     </Card>
                   ))

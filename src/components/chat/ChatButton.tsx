@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { MessageCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ChatInterface from './ChatInterface';
+
 interface ChatButtonProps {
   type: 'customer_support' | 'driver_support' | 'customer_driver';
   userType: 'customer' | 'driver' | 'admin';
@@ -12,6 +13,7 @@ interface ChatButtonProps {
   className?: string;
   children?: React.ReactNode;
 }
+
 const ChatButton: React.FC<ChatButtonProps> = ({
   type,
   userType,
@@ -22,8 +24,10 @@ const ChatButton: React.FC<ChatButtonProps> = ({
   children
 }) => {
   const [open, setOpen] = useState(false);
+
   const getButtonText = () => {
     if (children) return children;
+    
     switch (type) {
       case 'customer_support':
         return 'Contact Support';
@@ -35,16 +39,28 @@ const ChatButton: React.FC<ChatButtonProps> = ({
         return 'Chat';
     }
   };
-  return <Dialog open={open} onOpenChange={setOpen}>
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        
+        <Button variant={variant} size={size} className={className}>
+          <MessageCircle className="h-4 w-4 mr-2" />
+          {getButtonText()}
+        </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>{getButtonText()}</DialogTitle>
         </DialogHeader>
-        <ChatInterface conversationId={conversationId} conversationType={type} currentUserType={userType} onClose={() => setOpen(false)} />
+        <ChatInterface
+          conversationId={conversationId}
+          conversationType={type}
+          currentUserType={userType}
+          onClose={() => setOpen(false)}
+        />
       </DialogContent>
-    </Dialog>;
+    </Dialog>
+  );
 };
+
 export default ChatButton;

@@ -1,20 +1,32 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { User, Car, CheckCircle, AlertCircle, DollarSign, Settings, Bell, Shield, CreditCard, FileText, Edit, LogOut, ChevronRight, Star, UserPlus, HelpCircle, MessageCircle, Archive, Wallet } from 'lucide-react';
+import { 
+  User, 
+  Car, 
+  CheckCircle, 
+  AlertCircle, 
+  DollarSign, 
+  Settings, 
+  Bell,
+  Shield,
+  CreditCard,
+  FileText,
+  Edit,
+  LogOut
+} from 'lucide-react';
+import { VehicleSelector } from './VehicleSelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ProfileSection } from './ProfileSection';
-import { PaymentMethodsSection } from './PaymentMethodsSection';
-import { AppSettingsSection } from './AppSettingsSection';
-import { VehicleManagementSection } from './VehicleManagementSection';
-import { SafeDrivingSection } from './SafeDrivingSection';
+
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
+
 interface CraverProfile {
   id: string;
   first_name: string;
@@ -28,19 +40,14 @@ interface CraverProfile {
   vehicle_color?: string;
   profile_photo?: string;
 }
+
 export const AccountSection: React.FC<{
   activeTab: 'home' | 'schedule' | 'earnings' | 'notifications' | 'account';
   onTabChange: (tab: 'home' | 'schedule' | 'earnings' | 'notifications' | 'account') => void;
-}> = ({
-  activeTab,
-  onTabChange
-}) => {
+}> = ({ activeTab, onTabChange }) => {
   const [profile, setProfile] = useState<CraverProfile | null>(null);
   const [driverStats, setDriverStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [isReferralEligible, setIsReferralEligible] = useState(false);
-  const [driverStartDate, setDriverStartDate] = useState<Date | null>(null);
-  const [currentSection, setCurrentSection] = useState<'main' | 'profile' | 'payments' | 'settings' | 'vehicle' | 'safety'>('main');
   const [notifications, setNotifications] = useState(true);
   const [locationSharing, setLocationSharing] = useState(true);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleType>('car');
@@ -49,41 +56,47 @@ export const AccountSection: React.FC<{
     bike: false,
     scooter: false,
     walk: false,
-    motorcycle: false
+    motorcycle: false,
   });
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+
   useEffect(() => {
     fetchProfile();
   }, []);
+
   const fetchProfile = async () => {
     try {
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       // Get craver application
-      const {
-        data: application
-      } = await supabase.from('craver_applications').select('*').eq('user_id', user.id).single();
+      const { data: application } = await supabase
+        .from('craver_applications')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
 
       // Get driver profile and stats
-      const {
-        data: driverProfile
-      } = await supabase.from('driver_profiles').select('total_deliveries, rating').eq('user_id', user.id).single();
+      const { data: driverProfile } = await supabase
+        .from('driver_profiles')
+        .select('total_deliveries, rating')
+        .eq('user_id', user.id)
+        .single();
 
       // Get recent earnings (this week)
       const weekStart = new Date();
       weekStart.setDate(weekStart.getDate() - weekStart.getDay());
       weekStart.setHours(0, 0, 0, 0);
-      const {
-        data: weekOrders
-      } = await supabase.from('orders').select('payout_cents').eq('assigned_craver_id', user.id).eq('status', 'delivered').gte('created_at', weekStart.toISOString());
+
+      const { data: weekOrders } = await supabase
+        .from('orders')
+        .select('payout_cents')
+        .eq('assigned_craver_id', user.id)
+        .eq('status', 'delivered')
+        .gte('created_at', weekStart.toISOString());
+
       const weekEarnings = weekOrders?.reduce((sum, order) => sum + order.payout_cents, 0) || 0;
+
       if (application) {
         setProfile({
           id: user.id,
@@ -98,19 +111,12 @@ export const AccountSection: React.FC<{
           vehicle_color: application.vehicle_color,
           profile_photo: application.profile_photo
         });
+
         setDriverStats({
           weekEarnings: weekEarnings / 100,
           totalDeliveries: driverProfile?.total_deliveries || 0,
           rating: driverProfile?.rating || 0
         });
-
-        // Calculate referral eligibility
-        const totalDeliveries = driverProfile?.total_deliveries || 0;
-        const startDate = new Date(application.created_at);
-        const daysSinceStart = Math.floor((new Date().getTime() - startDate.getTime()) / (1000 * 3600 * 24));
-        
-        setDriverStartDate(startDate);
-        setIsReferralEligible(totalDeliveries >= 30 && daysSinceStart >= 30);
 
         // Map vehicle type and set docs status
         const vehicleTypeMapping: Record<string, VehicleType> = {
@@ -120,6 +126,7 @@ export const AccountSection: React.FC<{
           'motorcycle': 'motorcycle',
           'walking': 'walk'
         };
+        
         const mappedVehicleType = vehicleTypeMapping[application.vehicle_type] || 'car';
         setSelectedVehicle(mappedVehicleType);
 
@@ -129,12 +136,19 @@ export const AccountSection: React.FC<{
           bike: false,
           scooter: false,
           walk: true,
-          motorcycle: false
+          motorcycle: false,
         };
+
         if (application.vehicle_type !== 'walking') {
-          const hasRequiredDocs = !!(application.drivers_license_front && application.drivers_license_back && (application.vehicle_type === 'bike' || application.insurance_document && application.vehicle_registration));
+          const hasRequiredDocs = !!(
+            application.drivers_license_front && 
+            application.drivers_license_back &&
+            (application.vehicle_type === 'bike' || 
+             (application.insurance_document && application.vehicle_registration))
+          );
           newDocsStatus[mappedVehicleType] = hasRequiredDocs;
         }
+
         setDocsStatus(newDocsStatus);
       }
     } catch (error) {
@@ -143,6 +157,7 @@ export const AccountSection: React.FC<{
       setLoading(false);
     }
   };
+
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -158,6 +173,7 @@ export const AccountSection: React.FC<{
       });
     }
   };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
@@ -170,6 +186,7 @@ export const AccountSection: React.FC<{
         return 'bg-yellow-500';
     }
   };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved':
@@ -181,42 +198,9 @@ export const AccountSection: React.FC<{
     }
   };
 
-  const handleReferralClick = () => {
-    if (isReferralEligible) {
-      toast({
-        title: "Referral Program",
-        description: "Refer friends and earn rewards! Feature coming soon.",
-      });
-    } else {
-      toast({
-        title: "Not Eligible Yet",
-        description: "Complete 30 deliveries and be active for 30 days to become eligible.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleProfileClick = () => {
-    setCurrentSection('profile');
-  };
-
-  const handlePaymentMethodsClick = () => {
-    setCurrentSection('payments');
-  };
-
-  const handleAppSettingsClick = () => {
-    setCurrentSection('settings');
-  };
-
-  const handleVehicleManagementClick = () => {
-    setCurrentSection('vehicle');
-  };
-
-  const handleSafeDrivingClick = () => {
-    setCurrentSection('safety');
-  };
   if (loading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-pulse space-y-4">
             <div className="h-20 w-20 bg-muted rounded-full mx-auto"></div>
@@ -224,203 +208,246 @@ export const AccountSection: React.FC<{
             <div className="h-3 w-24 bg-muted rounded mx-auto"></div>
           </div>
         </div>
-      </div>;
+      </div>
+    );
   }
 
-  // Render sub-sections
-  if (currentSection === 'profile') {
-    return <ProfileSection onBack={() => setCurrentSection('main')} />;
-  }
+  return (
+    <div className="min-h-screen bg-background pb-20">
+      <div className="max-w-md mx-auto p-4">
+        <div className="border-l bg-muted/10 p-4 flex flex-col h-[calc(100vh-8rem)]">
+          <Tabs defaultValue="profile" className="w-full h-full flex flex-col">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="profile" className="flex items-center gap-1">
+                <User className="h-4 w-4" />
+                Profile
+              </TabsTrigger>
+              <TabsTrigger value="tools" className="flex items-center gap-1">
+                <Settings className="h-4 w-4" />
+                Tools
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="flex items-center gap-1">
+                <Bell className="h-4 w-4" />
+                Settings
+              </TabsTrigger>
+            </TabsList>
 
-  if (currentSection === 'payments') {
-    return <PaymentMethodsSection onBack={() => setCurrentSection('main')} />;
-  }
+            <TabsContent value="profile" className="flex-1 space-y-4 mt-4">
+              {/* Profile Header */}
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center space-x-4">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src={profile?.profile_photo} />
+                      <AvatarFallback>
+                        {profile?.first_name?.[0]}{profile?.last_name?.[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <h2 className="text-xl font-semibold">
+                        {profile?.first_name} {profile?.last_name}
+                      </h2>
+                      <p className="text-sm text-muted-foreground">{profile?.email}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge className={`${getStatusColor(profile?.status || 'pending')} text-white`}>
+                          {getStatusIcon(profile?.status || 'pending')}
+                          <span className="ml-1 capitalize">{profile?.status}</span>
+                        </Badge>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
 
-  if (currentSection === 'settings') {
-    return <AppSettingsSection onBack={() => setCurrentSection('main')} />;
-  }
+              {/* Vehicle Selector */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Car className="h-5 w-5" />
+                    Active Vehicle
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <VehicleSelector 
+                    selectedVehicle={selectedVehicle}
+                    onVehicleSelect={setSelectedVehicle}
+                    docsStatus={docsStatus}
+                  />
+                </CardContent>
+              </Card>
 
-  if (currentSection === 'vehicle') {
-    return <VehicleManagementSection onBack={() => setCurrentSection('main')} />;
-  }
+              {/* Vehicle Information */}
+              {profile?.vehicle_type && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Car className="h-5 w-5" />
+                      Vehicle Details
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Type</p>
+                        <p className="font-medium capitalize">{profile.vehicle_type}</p>
+                      </div>
+                      {profile.vehicle_make && (
+                        <div>
+                          <p className="text-muted-foreground">Make</p>
+                          <p className="font-medium">{profile.vehicle_make}</p>
+                        </div>
+                      )}
+                    </div>
+                    {profile.vehicle_model && (
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Model</p>
+                          <p className="font-medium">{profile.vehicle_model}</p>
+                        </div>
+                        {profile.vehicle_color && (
+                          <div>
+                            <p className="text-muted-foreground">Color</p>
+                            <p className="font-medium">{profile.vehicle_color}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
-  if (currentSection === 'safety') {
-    return <SafeDrivingSection onBack={() => setCurrentSection('main')} />;
-  }
-  return <div className="min-h-screen bg-background pb-20 overflow-y-auto">
-      <div className="max-w-md mx-auto">
-        {/* Header */}
-        <div className="bg-background border-b border-border/50 px-4 py-3">
-          <h1 className="text-2xl font-bold text-foreground">Account</h1>
-        </div>
-
-        {/* Profile Header with Stats */}
-        <div className="px-4 py-6 bg-background">
-          <div className="flex items-center space-x-4 mb-6">
-            <Avatar className="h-16 w-16">
-              <AvatarImage src={profile?.profile_photo} />
-              <AvatarFallback className="bg-primary/10 text-primary text-xl font-semibold">
-                {profile?.first_name?.[0]}{profile?.last_name?.[0]}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <h2 className="text-xl font-semibold text-foreground">
-                {profile?.first_name} {profile?.last_name}
-              </h2>
-              <p className="text-sm text-muted-foreground capitalize">Driver</p>
-            </div>
-          </div>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-green-50 dark:bg-green-900/20 rounded-2xl p-4">
-              <div className="text-2xl font-bold text-green-600 dark:text-green-500">
-                ${driverStats?.weekEarnings?.toFixed(2) || '0.00'}
+              {/* Quick Stats */}
+              <div className="grid grid-cols-3 gap-3">
+                <Card>
+                  <CardContent className="pt-4 pb-4 text-center">
+                    <DollarSign className="h-6 w-6 mx-auto mb-2 text-green-500" />
+                    <p className="text-2xl font-bold">${driverStats?.weekEarnings?.toFixed(0) || '0'}</p>
+                    <p className="text-xs text-muted-foreground">This week</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4 pb-4 text-center">
+                    <CheckCircle className="h-6 w-6 mx-auto mb-2 text-blue-500" />
+                    <p className="text-2xl font-bold">{driverStats?.totalDeliveries || 0}</p>
+                    <p className="text-xs text-muted-foreground">Deliveries</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4 pb-4 text-center">
+                    <User className="h-6 w-6 mx-auto mb-2 text-purple-500" />
+                    <p className="text-2xl font-bold">{driverStats?.rating?.toFixed(1) || '0.0'}</p>
+                    <p className="text-xs text-muted-foreground">Rating</p>
+                  </CardContent>
+                </Card>
               </div>
-              <div className="text-sm text-green-700 dark:text-green-400">Total earnings</div>
-            </div>
-            <div className="bg-orange-50 dark:bg-orange-900/20 rounded-2xl p-4 flex items-center">
-              <Star className="h-6 w-6 text-orange-500 mr-2" />
-              <div>
-                <div className="text-2xl font-bold text-orange-600 dark:text-orange-500">
-                  {driverStats?.rating?.toFixed(1) || '5.0'}
-                </div>
-                <div className="text-sm text-orange-700 dark:text-orange-400">Rating</div>
-              </div>
-            </div>
-          </div>
-        </div>
+            </TabsContent>
 
-        {/* Menu Items */}
-        <div className="space-y-0">
-          {/* Refer a friend */}
-          <button onClick={handleReferralClick} className="w-full">
-            <div className="px-4 py-4 bg-background border-b border-border/30">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <UserPlus className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="font-medium text-foreground">Refer a friend to satisfy a Cave'n</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {isReferralEligible ? 'Eligible' : 'Currently ineligible'}
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </div>
-          </button>
+            <TabsContent value="tools" className="flex-1 space-y-4 mt-4">
+              {/* Quick Actions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    Driver Tools
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button variant="outline" className="w-full justify-start" size="sm">
+                    <CreditCard className="h-4 w-4 mr-3" />
+                    Payment Methods
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start" size="sm">
+                    <FileText className="h-4 w-4 mr-3" />
+                    Documents
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start" size="sm">
+                    <Shield className="h-4 w-4 mr-3" />
+                    Safety Center
+                  </Button>
+                </CardContent>
+              </Card>
 
-          {/* Profile */}
-          <button onClick={handleProfileClick} className="w-full">
-            <div className="px-4 py-4 bg-background border-b border-border/30">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                    <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-foreground">Profile</h3>
-                  </div>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </div>
-          </button>
+              {/* Sign Out */}
+              <Card>
+                <CardContent className="pt-6">
+                  <Button 
+                    variant="destructive" 
+                    className="w-full" 
+                    onClick={handleSignOut}
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          {/* Payment methods */}
-          <button onClick={handlePaymentMethodsClick} className="w-full">
-            <div className="px-4 py-4 bg-background border-b border-border/30">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                    <Wallet className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+            <TabsContent value="settings" className="flex-1 space-y-4 mt-4">
+              {/* Settings */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    App Settings
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Bell className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Push notifications</span>
+                    </div>
+                    <Switch 
+                      checked={notifications} 
+                      onCheckedChange={setNotifications}
+                    />
                   </div>
-                  <div>
-                    <h3 className="font-medium text-foreground">Payment methods</h3>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Shield className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Location sharing</span>
+                    </div>
+                    <Switch 
+                      checked={locationSharing} 
+                      onCheckedChange={setLocationSharing}
+                    />
                   </div>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </div>
-          </button>
-
-          {/* Craver Red Card */}
-          
-
-          {/* App Settings */}
-          <button onClick={handleAppSettingsClick} className="w-full">
-            <div className="px-4 py-4 bg-background border-b border-border/30">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                    <Settings className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-foreground">App Settings</h3>
-                  </div>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </div>
-          </button>
-
-          {/* Vehicle management */}
-          <button onClick={handleVehicleManagementClick} className="w-full">
-            <div className="px-4 py-4 bg-background border-b border-border/30">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                    <Car className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-foreground">Vehicle management</h3>
-                  </div>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </div>
-          </button>
-
-          {/* Safe driving features */}
-          <button onClick={handleSafeDrivingClick} className="w-full">
-            <div className="px-4 py-4 bg-background border-b border-border/30">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                    <Shield className="h-5 w-5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-foreground">Safe driving features</h3>
-                  </div>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </div>
-          </button>
-
-          {/* Log Out */}
-          <div className="px-4 py-4 bg-background">
-            <button onClick={handleSignOut} className="flex items-center justify-between w-full">
-              <div className="flex items-center space-x-4">
-                <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                  <LogOut className="h-5 w-5 text-red-600 dark:text-red-400" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-foreground">Log Out</h3>
-                </div>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </button>
-          </div>
-        </div>
-
-        {/* Version Info */}
-        <div className="px-4 py-8 text-center">
-          <p className="text-sm text-muted-foreground">Version 2.392.0 Build 323526</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
-    </div>;
+
+      {/* Bottom Navigation - Import and use it */}
+      <div className="fixed bottom-0 left-0 right-0">
+        <div className="bg-card/95 backdrop-blur-sm border-t border-border/50 h-20 shadow-lg">
+          <div className="flex h-full">
+            {[
+              { id: 'home', label: 'Home', icon: '🏠' },
+              { id: 'schedule', label: 'Schedule', icon: '📅' },
+              { id: 'earnings', label: 'Earnings', icon: '💰' },
+              { id: 'notifications', label: 'Alerts', icon: '🔔' },
+              { id: 'account', label: 'Account', icon: '👤' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => onTabChange(tab.id as any)}
+                className={`flex-1 flex flex-col items-center justify-center py-2 px-1 h-full transition-all duration-200 ${
+                  activeTab === tab.id ? 'text-primary' : 'text-muted-foreground/70'
+                }`}
+              >
+                <span className="text-xl mb-1">{tab.icon}</span>
+                <span className="text-xs font-medium">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
