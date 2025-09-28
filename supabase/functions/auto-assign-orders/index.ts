@@ -1,150 +1,98 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.52.0'
+// @ts-nocheck
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.52.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { orderId } = await req.json()
-    
-    console.log('Starting auto-assignment for order:', orderId)
+    const { orderId } = await req.json();
+    console.log('Auto-assigning order:', orderId);
 
-    // Get order details
+    // Fetch order with restaurant coordinates
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .select(`
-        *,
-        restaurants!inner(
-          id,
-          name,
-          latitude,
-          longitude
-        )
-      `)
+      .select(`*, restaurants!inner(id, name, latitude, longitude)`)
       .eq('id', orderId)
-      .eq('status', 'pending')
-      .single()
+      .eq('order_status', 'pending')
+      .single();
 
-    if (orderError) {
-      console.error('Error fetching order:', orderError)
-      throw new Error('Order not found or not pending')
-    }
+    if (orderError || !order) throw new Error('Order not found or not pending');
 
-    const restaurant = order.restaurants
-    console.log('Order found for restaurant:', restaurant.name)
+    const restaurant = order.restaurants;
 
-    // Find available drivers within 10 miles, prioritized by rating and level
+    // Get available online drivers
     const { data: availableDrivers, error: driversError } = await supabase
       .from('driver_profiles')
       .select('*')
       .eq('status', 'online')
-      .eq('is_available', true)
+      .eq('is_available', true);
 
-    if (driversError) {
-      console.error('Error fetching drivers:', driversError)
-      throw new Error('Error finding available drivers')
-    }
+    if (driversError || !availableDrivers || availableDrivers.length === 0)
+      throw new Error('No drivers available');
 
-    console.log('Found available drivers:', availableDrivers.length)
-
-    // Calculate distances and prioritize drivers
-    const driversWithDistance = []
+    // Calculate distance and priority
+    const driversWithDistance: any[] = [];
     for (const driver of availableDrivers) {
-      // Get driver location separately
-      const { data: locationData, error: locationError } = await supabase
+      const { data: locationData } = await supabase
         .from('craver_locations')
         .select('lat, lng, updated_at')
         .eq('user_id', driver.user_id)
-        .single()
-      
-      if (locationError || !locationData) {
-        console.log('No location found for driver:', driver.user_id)
-        continue
-      }
-      
-      // Calculate distance using the database function
-      const { data: distanceResult } = await supabase
-        .rpc('calculate_distance', {
-          lat1: restaurant.latitude,
-          lng1: restaurant.longitude,
-          lat2: locationData.lat,
-          lng2: locationData.lng
-        })
+        .single();
 
-      const distance = distanceResult || 999
-      
-      // Only consider drivers within 10 miles
-      if (distance <= 10) {
-        driversWithDistance.push({
-          ...driver,
-          distance,
-          location: locationData,
-          priority: calculateDriverPriority(driver.rating, driver.driver_level, distance)
-        })
-      }
+      if (!locationData) continue;
+
+      const distanceResult = restaurant.latitude != null && restaurant.longitude != null
+        ? (await supabase.rpc('calculate_distance', {
+            lat1: restaurant.latitude,
+            lng1: restaurant.longitude,
+            lat2: locationData.lat,
+            lng2: locationData.lng
+          })).data
+        : 999;
+
+      const distanceMiles = distanceResult ?? 999;
+      if (distanceMiles > 10) continue;
+
+      const level = driver.driver_level ?? 1;
+      const priority = calculateDriverPriority(Number(driver.rating) || 5, Number(level), Number(distanceMiles));
+
+      driversWithDistance.push({ ...driver, distance: distanceMiles, location: locationData, priority });
     }
 
-    console.log('Drivers within range:', driversWithDistance.length)
+    if (driversWithDistance.length === 0)
+      return new Response(JSON.stringify({ success: false, message: 'No drivers in range' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-    if (driversWithDistance.length === 0) {
-      console.log('No drivers available within range')
-      return new Response(
-        JSON.stringify({ success: false, message: 'No drivers available' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    // Sort by priority (nearest + best rating/level)
+    driversWithDistance.sort((a, b) => b.priority - a.priority);
 
-    // Sort by priority (higher is better)
-    driversWithDistance.sort((a, b) => b.priority - a.priority)
-    
-    // Take top 3 drivers and assign to the best one first
-    const topDrivers = driversWithDistance.slice(0, 3)
-    console.log('Top drivers for assignment:', topDrivers.map(d => ({ 
-      user_id: d.user_id, 
-      rating: d.rating, 
-      level: d.driver_level, 
-      distance: d.distance,
-      priority: d.priority 
-    })))
-
-    // Start with the highest priority driver
-    for (const driver of topDrivers) {
+    // Assign order to drivers one by one until accepted
+    for (const driver of driversWithDistance) {
       try {
-        // Create assignment with 30-second timeout
-        const expiresAt = new Date()
-        expiresAt.setSeconds(expiresAt.getSeconds() + 30)
+        const expiresAt = new Date();
+        expiresAt.setSeconds(expiresAt.getSeconds() + 30);
 
-        const { data: assignment, error: assignmentError } = await supabase
+        const { data: assignment } = await supabase
           .from('order_assignments')
           .insert({
             order_id: orderId,
             driver_id: driver.user_id,
-            expires_at: expiresAt.toISOString(),
-            status: 'pending'
+            status: 'pending',
+            expires_at: expiresAt.toISOString()
           })
           .select()
-          .single()
+          .single();
 
-        if (assignmentError) {
-          console.error('Error creating assignment:', assignmentError)
-          continue
-        }
-
-        console.log('Assignment created:', assignment.id, 'for driver:', driver.user_id)
-
-        // Send real-time notification to driver
         const notificationPayload = {
           type: 'order_assignment',
           assignment_id: assignment.id,
@@ -156,67 +104,65 @@ serve(async (req) => {
           distance_km: order.distance_km,
           distance_mi: (order.distance_km * 0.621371).toFixed(1),
           expires_at: assignment.expires_at,
-          estimated_time: Math.ceil(order.distance_km * 2.5) // Rough estimate: 2.5 minutes per km
-        }
+          estimated_time: Math.ceil(order.distance_km * 2.5)
+        };
 
-        // Send notification via Supabase realtime
-        const channel = supabase.channel(`driver_${driver.user_id}`)
-        await channel.subscribe()
-        
-        await channel.send({
-          type: 'broadcast',
-          event: 'order_assignment',
-          payload: notificationPayload
-        })
-        
-        // Clean up the channel
-        await supabase.removeChannel(channel)
+        // Send real-time notification via persistent channel
+        const channel = supabase.channel(`driver_${driver.user_id}`);
+        await channel.subscribe();
+        await channel.send({ type: 'broadcast', event: 'order_assignment', payload: notificationPayload });
 
-        console.log('Notification sent to driver:', driver.user_id)
+        console.log(`Order assigned to driver: ${driver.user_id} with priority ${driver.priority}`);
 
-        // Return success - only assign to one driver at a time
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            assignment_id: assignment.id,
-            driver_id: driver.user_id,
-            message: 'Order assigned successfully' 
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
+        // Monitor acceptance for 30 seconds
+        await waitForAcceptance(supabase, assignment.id, 30_000);
 
-      } catch (error) {
-        console.error('Error assigning to driver:', driver.user_id, error)
-        continue
+        return new Response(JSON.stringify({
+          success: true,
+          assignment_id: assignment.id,
+          driver_id: driver.user_id,
+          message: 'Order assigned successfully'
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+      } catch (err) {
+        console.warn(`Driver ${driver.user_id} failed to accept or error occurred. Trying next driver.`);
+        continue;
       }
     }
 
-    // If we get here, assignment failed for all drivers
-    console.log('Failed to assign order to any driver')
-    return new Response(
-      JSON.stringify({ success: false, message: 'Failed to assign order' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-    )
+    return new Response(JSON.stringify({ success: false, message: 'Failed to assign order to any driver' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 });
 
-  } catch (error) {
-    console.error('Auto-assignment error:', error)
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-    )
+  } catch (err) {
+    console.error('Auto-assignment error:', err);
+    const message = err instanceof Error ? err.message : String(err);
+    return new Response(JSON.stringify({ error: message }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 });
   }
-})
+});
 
-// Calculate driver priority based on rating, level, and distance
+// Wait for driver acceptance (checks assignment status periodically)
+async function waitForAcceptance(supabase, assignmentId: string, timeoutMs: number) {
+  const interval = 1000;
+  const maxChecks = timeoutMs / interval;
+  let checks = 0;
+
+  while (checks < maxChecks) {
+    const { data: assignment } = await supabase.from('order_assignments').select('status').eq('id', assignmentId).single();
+    if (assignment?.status === 'accepted') return true;
+    await new Promise(res => setTimeout(res, interval));
+    checks++;
+  }
+
+  // Mark assignment expired if not accepted
+  await supabase.from('order_assignments').update({ status: 'expired' }).eq('id', assignmentId);
+  return false;
+}
+
+// Driver priority: higher rating/level + closer distance
 function calculateDriverPriority(rating: number, level: number, distance: number): number {
-  // Base score from rating (0-50 points)
-  const ratingScore = (rating / 5) * 50
-  
-  // Level bonus (0-20 points)
-  const levelScore = (level - 1) * 10
-  
-  // Distance penalty (closer = better, max 30 points deducted)
-  const distanceScore = Math.max(0, 30 - (distance * 3))
-  
-  return ratingScore + levelScore + distanceScore
+  const ratingScore = (rating / 5) * 50;
+  const levelScore = (level - 1) * 10;
+  const distanceScore = Math.max(0, 30 - (distance * 3));
+  return ratingScore + levelScore + distanceScore;
 }

@@ -228,14 +228,27 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
     try {
       const totals = calculateTotals();
 
-      // Create order
+      // Ensure user is authenticated for RLS (orders.customer_id = auth.uid())
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Not signed in",
+          description: "Please sign in to place an order.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Create order record using allowed columns on orders table
       const orderData = {
+        customer_id: user.id,
         restaurant_id: restaurantId,
         subtotal_cents: totals.subtotal,
         delivery_fee_cents: totals.deliveryFee,
         tax_cents: totals.tax,
         total_cents: totals.total,
-        order_status: 'pending',
+        order_status: paymentMethod === 'cash' ? 'confirmed' : 'pending',
         delivery_address: orderType === 'delivery' ? {
           name: customerInfo.name,
           phone: customerInfo.phone,
@@ -255,14 +268,17 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
         .select()
         .single();
 
-      if (orderError) throw orderError;
+      if (orderError) {
+        console.error('Checkout error:', orderError);
+        throw orderError;
+      }
 
-      // Create order items
+      // Create order items for detailed tracking
       const orderItems = cart.map(item => ({
         order_id: newOrder.id,
         menu_item_id: item.id,
         quantity: item.quantity,
-        price_cents: item.price_cents,
+        price_cents: item.price_cents + (item.modifiers?.reduce((sum, mod) => sum + mod.price_cents, 0) || 0),
         special_instructions: item.special_instructions || null
       }));
 
@@ -270,13 +286,30 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
         .from('order_items')
         .insert(orderItems);
 
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        console.error('Order items error:', itemsError);
+        // Don't fail the whole order if items fail to insert
+      }
+
+      // Trigger auto-assignment for delivery orders to send to drivers
+      if (orderType === 'delivery') {
+        try {
+          console.log('Triggering auto-assignment for POS order:', newOrder.id);
+          await supabase.functions.invoke('auto-assign-orders', {
+            body: { orderId: newOrder.id }
+          });
+          console.log('Auto-assignment triggered successfully');
+        } catch (autoAssignError) {
+          console.error('Auto-assignment error:', autoAssignError);
+          // Don't fail the order if auto-assignment fails
+        }
+      }
 
       toast({
         title: "Order placed successfully!",
         description: `Order #${newOrder.id.slice(-8)} has been created. ${
-          orderType === 'delivery' ? 'Estimated delivery: 45 minutes' : 'Ready for pickup in 20 minutes'
-        }`
+          orderType === 'delivery' ? 'Auto-assignment triggered for delivery' : 'Ready for pickup in 20 minutes'
+        }. Payment: ${paymentMethod.toUpperCase()}`
       });
 
       // Reset form
@@ -285,10 +318,10 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
       setSearchQuery('');
 
     } catch (error) {
-      console.error('Error placing order:', error);
+      console.error('Checkout error:', error);
       toast({
-        title: "Error placing order",
-        description: "Something went wrong. Please try again.",
+        title: "Checkout failed",
+        description: "Something went wrong placing the order. Please try again.",
         variant: "destructive"
       });
     } finally {

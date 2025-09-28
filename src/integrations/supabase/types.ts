@@ -111,6 +111,45 @@ export type Database = {
           },
         ]
       }
+      commission_settings: {
+        Row: {
+          created_at: string
+          customer_service_fee_percent: number
+          delivery_fee_base_cents: number
+          delivery_fee_per_mile_cents: number
+          id: string
+          is_active: boolean
+          peak_hour_multiplier: number
+          restaurant_commission_percent: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_service_fee_percent?: number
+          delivery_fee_base_cents?: number
+          delivery_fee_per_mile_cents?: number
+          id?: string
+          is_active?: boolean
+          peak_hour_multiplier?: number
+          restaurant_commission_percent?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_service_fee_percent?: number
+          delivery_fee_base_cents?: number
+          delivery_fee_per_mile_cents?: number
+          id?: string
+          is_active?: boolean
+          peak_hour_multiplier?: number
+          restaurant_commission_percent?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       craver_applications: {
         Row: {
           account_number_last_four: string | null
@@ -239,6 +278,66 @@ export type Database = {
           },
         ]
       }
+      craver_locations: {
+        Row: {
+          created_at: string
+          id: string
+          lat: number
+          lng: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lat: number
+          lng: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lat?: number
+          lng?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      customer_carts: {
+        Row: {
+          created_at: string
+          customer_id: string
+          delivery_address: Json | null
+          id: string
+          items: Json
+          restaurant_id: string
+          special_instructions: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          delivery_address?: Json | null
+          id?: string
+          items?: Json
+          restaurant_id: string
+          special_instructions?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          delivery_address?: Json | null
+          id?: string
+          items?: Json
+          restaurant_id?: string
+          special_instructions?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_favorites: {
         Row: {
           created_at: string
@@ -355,13 +454,81 @@ export type Database = {
           },
         ]
       }
+      driver_location_history: {
+        Row: {
+          accuracy: number | null
+          created_at: string
+          driver_id: string
+          heading: number | null
+          id: string
+          latitude: number
+          longitude: number
+          speed: number | null
+          timestamp: string
+        }
+        Insert: {
+          accuracy?: number | null
+          created_at?: string
+          driver_id: string
+          heading?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          speed?: number | null
+          timestamp?: string
+        }
+        Update: {
+          accuracy?: number | null
+          created_at?: string
+          driver_id?: string
+          heading?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          speed?: number | null
+          timestamp?: string
+        }
+        Relationships: []
+      }
+      driver_payout_settings: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          percentage: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          percentage?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          percentage?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       driver_profiles: {
         Row: {
           created_at: string | null
+          current_latitude: number | null
+          current_longitude: number | null
+          heading: number | null
           id: string
           is_available: boolean | null
+          last_location_update: string | null
           license_plate: string | null
           rating: number | null
+          speed: number | null
           status: string | null
           total_deliveries: number | null
           updated_at: string | null
@@ -373,10 +540,15 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          current_latitude?: number | null
+          current_longitude?: number | null
+          heading?: number | null
           id?: string
           is_available?: boolean | null
+          last_location_update?: string | null
           license_plate?: string | null
           rating?: number | null
+          speed?: number | null
           status?: string | null
           total_deliveries?: number | null
           updated_at?: string | null
@@ -388,10 +560,15 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          current_latitude?: number | null
+          current_longitude?: number | null
+          heading?: number | null
           id?: string
           is_available?: boolean | null
+          last_location_update?: string | null
           license_plate?: string | null
           rating?: number | null
+          speed?: number | null
           status?: string | null
           total_deliveries?: number | null
           updated_at?: string | null
@@ -410,6 +587,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      driver_schedules: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          driver_id: string
+          end_time: string
+          id: string
+          is_active: boolean
+          is_recurring: boolean
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          driver_id: string
+          end_time: string
+          id?: string
+          is_active?: boolean
+          is_recurring?: boolean
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          driver_id?: string
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          is_recurring?: boolean
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      driver_sessions: {
+        Row: {
+          created_at: string
+          driver_id: string
+          id: string
+          is_online: boolean
+          last_activity: string
+          session_data: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          driver_id: string
+          id?: string
+          is_online?: boolean
+          last_activity?: string
+          session_data?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          driver_id?: string
+          id?: string
+          is_online?: boolean
+          last_activity?: string
+          session_data?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       menu_categories: {
         Row: {
@@ -599,6 +842,86 @@ export type Database = {
           },
         ]
       }
+      notification_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_ms: number
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          repeat_count: number
+          repeat_interval_ms: number
+          sound_file: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_ms?: number
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          repeat_count?: number
+          repeat_interval_ms?: number
+          sound_file: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_ms?: number
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          repeat_count?: number
+          repeat_interval_ms?: number
+          sound_file?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      order_assignments: {
+        Row: {
+          created_at: string
+          driver_id: string
+          expires_at: string
+          id: string
+          order_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          driver_id: string
+          expires_at: string
+          id?: string
+          order_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          driver_id?: string
+          expires_at?: string
+          id?: string
+          order_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_assignments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_feedback: {
         Row: {
           comment: string | null
@@ -653,6 +976,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      order_heat_map: {
+        Row: {
+          created_at: string
+          id: string
+          intensity: number
+          lat: number
+          lng: number
+          location_type: string
+          time_window: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          intensity?: number
+          lat: number
+          lng: number
+          location_type?: string
+          time_window?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          intensity?: number
+          lat?: number
+          lng?: number
+          location_type?: string
+          time_window?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       order_item_modifiers: {
         Row: {
@@ -714,16 +1070,54 @@ export type Database = {
         }
         Relationships: []
       }
+      order_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          notification_type: string
+          order_id: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          notification_type?: string
+          order_id?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          notification_type?: string
+          order_id?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
+          assigned_craver_id: string | null
           created_at: string | null
           customer_id: string | null
           delivery_address: Json | null
           delivery_fee_cents: number | null
+          distance_km: number | null
           driver_id: string | null
+          dropoff_address: Json | null
           estimated_delivery_time: string | null
           id: string
           order_status: string | null
+          payout_cents: number | null
+          pickup_address: Json | null
           restaurant_id: string | null
           subtotal_cents: number
           tax_cents: number | null
@@ -732,14 +1126,19 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          assigned_craver_id?: string | null
           created_at?: string | null
           customer_id?: string | null
           delivery_address?: Json | null
           delivery_fee_cents?: number | null
+          distance_km?: number | null
           driver_id?: string | null
+          dropoff_address?: Json | null
           estimated_delivery_time?: string | null
           id?: string
           order_status?: string | null
+          payout_cents?: number | null
+          pickup_address?: Json | null
           restaurant_id?: string | null
           subtotal_cents: number
           tax_cents?: number | null
@@ -748,14 +1147,19 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          assigned_craver_id?: string | null
           created_at?: string | null
           customer_id?: string | null
           delivery_address?: Json | null
           delivery_fee_cents?: number | null
+          distance_km?: number | null
           driver_id?: string | null
+          dropoff_address?: Json | null
           estimated_delivery_time?: string | null
           id?: string
           order_status?: string | null
+          payout_cents?: number | null
+          pickup_address?: Json | null
           restaurant_id?: string | null
           subtotal_cents?: number
           tax_cents?: number | null
@@ -764,20 +1168,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "orders_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "orders_driver_id_fkey"
-            columns: ["driver_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "orders_restaurant_id_fkey"
             columns: ["restaurant_id"]
@@ -827,6 +1217,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth_key: string
+          created_at: string
+          device_type: string | null
+          endpoint: string
+          id: string
+          is_active: boolean
+          p256dh_key: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth_key: string
+          created_at?: string
+          device_type?: string | null
+          endpoint: string
+          id?: string
+          is_active?: boolean
+          p256dh_key: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth_key?: string
+          created_at?: string
+          device_type?: string | null
+          endpoint?: string
+          id?: string
+          is_active?: boolean
+          p256dh_key?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       restaurant_employee_roles: {
         Row: {
@@ -1044,6 +1473,41 @@ export type Database = {
         }
         Relationships: []
       }
+      user_notification_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean
+          notification_setting_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          notification_setting_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          notification_setting_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_notification_preferences_notification_setting_id_fkey"
+            columns: ["notification_setting_id"]
+            isOneToOne: false
+            referencedRelation: "notification_settings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profiles: {
         Row: {
           avatar_url: string | null
@@ -1142,8 +1606,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_distance: {
+        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+        Returns: number
+      }
       make_user_active_driver: {
         Args: { target_user_id: string; vehicle_info?: Json }
+        Returns: undefined
+      }
+      update_order_heat_map: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
     }

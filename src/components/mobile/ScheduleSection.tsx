@@ -66,48 +66,31 @@ export const ScheduleSection: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // In a real app, you'd fetch from a driver_schedules table
-      // For now, we'll create mock data that matches Spark Driver patterns
-      const mockSchedule: ScheduleBlock[] = [
-        {
-          id: '1',
-          day_of_week: 1, // Monday
-          start_time: '09:00',
-          end_time: '17:00',
-          is_active: true,
-          is_recurring: true,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '2', 
-          day_of_week: 2, // Tuesday
-          start_time: '10:00',
-          end_time: '18:00',
-          is_active: true,
-          is_recurring: true,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '3',
-          day_of_week: 5, // Friday
-          start_time: '16:00',
-          end_time: '22:00',
-          is_active: true,
-          is_recurring: true,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '4',
-          day_of_week: 6, // Saturday
-          start_time: '11:00',
-          end_time: '20:00',
-          is_active: true,
-          is_recurring: true,
-          created_at: new Date().toISOString()
-        }
-      ];
+      // Fetch real schedule data from driver_schedules table
+      const { data: scheduleData, error } = await supabase
+        .from('driver_schedules')
+        .select('*')
+        .eq('driver_id', user.id)
+        .order('day_of_week');
 
-      setScheduleBlocks(mockSchedule);
+      if (error) {
+        console.error('Error fetching schedule:', error);
+        // Create default schedule if none exists
+        const defaultSchedule: ScheduleBlock[] = [
+          {
+            id: '1',
+            day_of_week: 1, // Monday
+            start_time: '09:00',
+            end_time: '17:00',
+            is_active: true,
+            is_recurring: true,
+            created_at: new Date().toISOString()
+          }
+        ];
+        setScheduleBlocks(defaultSchedule);
+      } else {
+        setScheduleBlocks(scheduleData || []);
+      }
     } catch (error) {
       console.error('Error fetching schedule:', error);
     } finally {
@@ -189,11 +172,41 @@ export const ScheduleSection: React.FC = () => {
       created_at: new Date().toISOString()
     };
 
-    setScheduleBlocks([...scheduleBlocks, newBlock]);
-    toast({
-      title: "Schedule Added",
-      description: `Added ${hours}-hour block starting now`,
-    });
+    // Save to database
+    const saveScheduleBlock = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase
+          .from('driver_schedules')
+          .insert({
+            driver_id: user.id,
+            day_of_week: newBlock.day_of_week,
+            start_time: newBlock.start_time,
+            end_time: newBlock.end_time,
+            is_active: newBlock.is_active,
+            is_recurring: newBlock.is_recurring
+          });
+
+        if (error) throw error;
+
+        setScheduleBlocks([...scheduleBlocks, newBlock]);
+        toast({
+          title: "Schedule Added",
+          description: `Added ${hours}-hour block starting now`,
+        });
+      } catch (error) {
+        console.error('Error saving schedule:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save schedule",
+          variant: "destructive"
+        });
+      }
+    };
+
+    saveScheduleBlock();
   };
 
   if (loading) {

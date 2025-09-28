@@ -55,12 +55,28 @@ const PushNotificationManager = ({ userId }: PushNotificationManagerProps) => {
       .on('broadcast', { event: 'push_notification' }, (payload) => {
         const { title, message, data } = payload.payload;
         
-        // Show toast notification
+        // Show toast notification, play in-app sound, and handle service worker messages
         toast({
           title,
           description: message,
           duration: 5000,
         });
+
+        // Listen for service worker messages to play sounds
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.addEventListener('message', (event) => {
+            if (event.data.type === 'push_notification_received') {
+              // Play notification sound when push received
+              try {
+                const audio = new Audio('/notification.mp3');
+                audio.volume = 0.7;
+                audio.play().catch(e => console.log('Audio play blocked:', e));
+              } catch (e) {
+                console.log('Audio not available:', e);
+              }
+            }
+          });
+        }
 
         // Add to notifications list
         const newNotification: Notification = {

@@ -3,9 +3,12 @@ import AdminAccessGuard from '@/components/AdminAccessGuard';
 import ApplicationReview from '@/components/admin/ApplicationReview';
 import LiveDashboard from '@/components/admin/LiveDashboard';
 import ChatPortal from '@/components/admin/ChatPortal';
+import { NotificationSettingsManager } from '@/components/admin/NotificationSettingsManager';
+import { PayoutSettingsManager } from '@/components/admin/PayoutSettingsManager';
+import CommissionSettingsManager from '@/components/admin/CommissionSettingsManager';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Shield, BarChart3, Users, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Shield, BarChart3, Users, MessageCircle, Bell, DollarSign } from 'lucide-react';
 import cravenLogo from "@/assets/craven-logo.png";
 
 const Admin: React.FC = () => {
@@ -40,10 +43,22 @@ const Admin: React.FC = () => {
         {/* Main Content */}
         <main className="container mx-auto px-4 py-6">
           <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsList className="grid w-full grid-cols-6 mb-6">
               <TabsTrigger value="dashboard" className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4" />
                 Live Dashboard
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                Notifications
+              </TabsTrigger>
+              <TabsTrigger value="payouts" className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                Payouts
+              </TabsTrigger>
+              <TabsTrigger value="commission" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Commission
               </TabsTrigger>
               <TabsTrigger value="chat" className="flex items-center gap-2">
                 <MessageCircle className="h-4 w-4" />
@@ -57,6 +72,18 @@ const Admin: React.FC = () => {
             
             <TabsContent value="dashboard" className="space-y-4">
               <LiveDashboard />
+            </TabsContent>
+            
+            <TabsContent value="notifications" className="space-y-4">
+              <NotificationSettingsManager />
+            </TabsContent>
+            
+            <TabsContent value="payouts" className="space-y-4">
+              <PayoutSettingsManager />
+            </TabsContent>
+            
+            <TabsContent value="commission" className="space-y-4">
+              <CommissionSettingsManager />
             </TabsContent>
             
             <TabsContent value="chat" className="space-y-4">
