@@ -94,16 +94,47 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
         const pAddr: any = assignment.pickup_address;
         const dAddr: any = assignment.dropoff_address;
 
-        const pLat = Number(pAddr?.lat ?? pAddr?.latitude);
-        const pLng = Number(pAddr?.lng ?? pAddr?.longitude);
-        const dLat = Number(dAddr?.lat ?? dAddr?.latitude);
-        const dLng = Number(dAddr?.lng ?? dAddr?.longitude);
+        const tokRes = await supabase.functions.invoke('get-mapbox-token');
+        const token = (tokRes.data as any)?.token;
+        if (!token) return;
+
+        // Helper: build a searchable address string
+        const buildAddress = (addr: any) => {
+          if (!addr) return '';
+          if (typeof addr === 'string') return addr;
+          if (addr.address) return addr.address;
+          const parts = [addr.street, addr.city, addr.state, addr.zip_code].filter(Boolean);
+          return parts.join(', ');
+        };
+
+        // Helper: geocode to [lng, lat]
+        const geocode = async (addr: any): Promise<[number, number] | null> => {
+          const q = buildAddress(addr);
+          if (!q) return null;
+          const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(q)}.json?limit=1&access_token=${token}`);
+          const j = await res.json();
+          const c = j?.features?.[0]?.center;
+          return Array.isArray(c) && c.length === 2 ? [Number(c[0]), Number(c[1])] : null;
+        };
+
+        // Extract coordinates or geocode as fallback
+        let pLat = Number(pAddr?.lat ?? pAddr?.latitude);
+        let pLng = Number(pAddr?.lng ?? pAddr?.longitude);
+        let dLat = Number(dAddr?.lat ?? dAddr?.latitude);
+        let dLng = Number(dAddr?.lng ?? dAddr?.longitude);
+
+        if ([pLat, pLng].some(isNaN)) {
+          const g = await geocode(pAddr);
+          if (g) { pLng = g[0]; pLat = g[1]; }
+        }
+        if ([dLat, dLng].some(isNaN)) {
+          const g = await geocode(dAddr);
+          if (g) { dLng = g[0]; dLat = g[1]; }
+        }
 
         if ([pLat, pLng, dLat, dLng].some(isNaN)) return;
 
-        const tokRes = await supabase.functions.invoke('get-mapbox-token');
-        const token = (tokRes.data as any)?.token;
-
+        // Try to prepend current location as first leg if available
         let originLat: number | null = null;
         let originLng: number | null = null;
         try {
@@ -113,7 +144,7 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
           originLat = position.coords.latitude;
           originLng = position.coords.longitude;
         } catch (_) {
-          console.warn('Geolocation unavailable, using default route');
+          // ignore
         }
 
         const coords = originLat && originLng

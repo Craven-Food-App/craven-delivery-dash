@@ -39,14 +39,40 @@ export const OrderMapPreview: React.FC<OrderMapPreviewProps> = ({
 
         mapboxgl.accessToken = data.token;
 
-        // Extract coordinates
-        const pickupLat = Number(pickupAddress?.lat ?? pickupAddress?.latitude);
-        const pickupLng = Number(pickupAddress?.lng ?? pickupAddress?.longitude);
-        const dropoffLat = Number(dropoffAddress?.lat ?? dropoffAddress?.latitude);
-        const dropoffLng = Number(dropoffAddress?.lng ?? dropoffAddress?.longitude);
+        // Helpers
+        const buildAddress = (addr: any) => {
+          if (!addr) return '';
+          if (typeof addr === 'string') return addr;
+          if (addr.address) return addr.address;
+          const parts = [addr.street, addr.city, addr.state, addr.zip_code].filter(Boolean);
+          return parts.join(', ');
+        };
+        const geocode = async (addr: any): Promise<[number, number] | null> => {
+          const q = buildAddress(addr);
+          if (!q) return null;
+          const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(q)}.json?limit=1&access_token=${data.token}`);
+          const j = await res.json();
+          const c = j?.features?.[0]?.center;
+          return Array.isArray(c) && c.length === 2 ? [Number(c[0]), Number(c[1])] : null;
+        };
+
+        // Extract or geocode coordinates
+        let pickupLat = Number(pickupAddress?.lat ?? pickupAddress?.latitude);
+        let pickupLng = Number(pickupAddress?.lng ?? pickupAddress?.longitude);
+        let dropoffLat = Number(dropoffAddress?.lat ?? dropoffAddress?.latitude);
+        let dropoffLng = Number(dropoffAddress?.lng ?? dropoffAddress?.longitude);
+
+        if ([pickupLat, pickupLng].some(isNaN)) {
+          const g = await geocode(pickupAddress);
+          if (g) { pickupLng = g[0]; pickupLat = g[1]; }
+        }
+        if ([dropoffLat, dropoffLng].some(isNaN)) {
+          const g = await geocode(dropoffAddress);
+          if (g) { dropoffLng = g[0]; dropoffLat = g[1]; }
+        }
 
         if ([pickupLat, pickupLng, dropoffLat, dropoffLng].some(isNaN)) {
-          console.error('Invalid coordinates');
+          console.error('Invalid or ungeocodable coordinates');
           return;
         }
 
@@ -166,7 +192,7 @@ export const OrderMapPreview: React.FC<OrderMapPreviewProps> = ({
           <div className="bg-muted/50 rounded-lg p-3 mb-3">
             <div className="text-xs text-muted-foreground mb-1">Total Trip Distance</div>
             <div className="font-semibold text-lg text-foreground">
-              {(parseFloat(displayRouteInfo.miles) * 2).toFixed(1)} miles
+              {parseFloat(displayRouteInfo.miles).toFixed(1)} miles
             </div>
             <div className="text-xs text-muted-foreground mt-1">
               Includes commute to restaurant + delivery distance
