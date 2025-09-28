@@ -23,7 +23,7 @@ serve(async (req) => {
       .from('orders')
       .select(`*, restaurants!inner(id, name, latitude, longitude)`)
       .eq('id', orderId)
-      .eq('order_status', 'pending')
+      .in('order_status', ['pending', 'confirmed'])
       .single();
 
     if (orderError || !order) throw new Error('Order not found or not pending');
@@ -51,17 +51,20 @@ serve(async (req) => {
 
       if (!locationData) continue;
 
-      const distanceResult = restaurant.latitude != null && restaurant.longitude != null
-        ? (await supabase.rpc('calculate_distance', {
-            lat1: restaurant.latitude,
-            lng1: restaurant.longitude,
-            lat2: locationData.lat,
-            lng2: locationData.lng
-          })).data
-        : 999;
+      // Calculate distance only if restaurant has coordinates; otherwise don't filter by distance
+      const hasCoords = restaurant.latitude != null && restaurant.longitude != null;
+      let distanceMiles = 0;
+      if (hasCoords) {
+        const distanceResult = (await supabase.rpc('calculate_distance', {
+          lat1: restaurant.latitude,
+          lng1: restaurant.longitude,
+          lat2: locationData.lat,
+          lng2: locationData.lng
+        })).data;
+        distanceMiles = distanceResult ?? 999;
+        if (distanceMiles > 10) continue;
+      }
 
-      const distanceMiles = distanceResult ?? 999;
-      if (distanceMiles > 10) continue;
 
       const level = driver.driver_level ?? 1;
       const priority = calculateDriverPriority(Number(driver.rating) || 5, Number(level), Number(distanceMiles));
