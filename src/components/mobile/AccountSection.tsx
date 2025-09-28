@@ -102,9 +102,9 @@ export const AccountSection: React.FC<{
         .gte('created_at', weekStart.toISOString());
 
       const weekEarnings = weekOrders?.reduce((sum, order) => sum + order.payout_cents, 0) || 0;
+      const todayEarnings = todayOrders?.reduce((sum, order) => sum + order.payout_cents, 0) || 0;
       
       // Calculate available instant cashout (today's earnings minus $10 minimum)
-      const todayEarnings = todayOrders?.reduce((sum, order) => sum + order.payout_cents, 0) || 0;
       const availableForCashout = Math.max(0, (todayEarnings / 100) - 10);
       setAvailableCashout(availableForCashout);
       if (application) {
@@ -123,6 +123,7 @@ export const AccountSection: React.FC<{
         });
         setDriverStats({
           weekEarnings: weekEarnings / 100,
+          todayEarnings: todayEarnings / 100,
           totalDeliveries: driverProfile?.total_deliveries || 0,
           rating: driverProfile?.rating || 0
         });
@@ -300,7 +301,10 @@ export const AccountSection: React.FC<{
               <div className="text-2xl font-bold text-green-600 dark:text-green-500">
                 ${driverStats?.weekEarnings?.toFixed(2) || '0.00'}
               </div>
-              <div className="text-sm text-green-700 dark:text-green-400">Total earnings</div>
+              <div className="text-sm text-green-700 dark:text-green-400">This week</div>
+              <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                Today: ${driverStats?.todayEarnings?.toFixed(2) || '0.00'}
+              </div>
               {availableCashout > 0.50 && (
                 <Button 
                   size="sm" 
