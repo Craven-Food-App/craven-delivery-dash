@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
+import { InstantCashoutModal } from './InstantCashoutModal';
 
 interface DailyEarnings {
   day: string;
@@ -87,6 +88,7 @@ export const EarningsSection: React.FC = () => {
   const [earningsData, setEarningsData] = useState<EarningsData | null>(null);
   const [deliveryHistory, setDeliveryHistory] = useState<DeliveryHistory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCashoutModal, setShowCashoutModal] = useState(false);
 
   useEffect(() => {
     fetchEarningsData();
@@ -426,10 +428,11 @@ export const EarningsSection: React.FC = () => {
         <div className="p-4 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <Button 
-              className="h-16 flex flex-col items-center justify-center gap-1"
-              variant="outline"
+              className="h-16 flex flex-col items-center justify-center gap-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white border-0"
+              onClick={() => setShowCashoutModal(true)}
+              disabled={earningsData.instantPay.available < 0.50}
             >
-              <Zap className="h-5 w-5 text-yellow-500" />
+              <Zap className="h-5 w-5" />
               <span className="text-xs">Instant Pay</span>
               <span className="text-xs font-bold">${earningsData.instantPay.available.toFixed(2)}</span>
             </Button>
@@ -444,6 +447,17 @@ export const EarningsSection: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Instant Cashout Modal */}
+      <InstantCashoutModal
+        isOpen={showCashoutModal}
+        onClose={() => setShowCashoutModal(false)}
+        availableAmount={earningsData.instantPay.available}
+        onSuccess={() => {
+          // Refresh earnings data after successful cashout
+          fetchEarningsData();
+        }}
+      />
     </div>
   );
 };

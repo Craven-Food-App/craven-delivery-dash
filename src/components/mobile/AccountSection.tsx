@@ -14,6 +14,7 @@ import { PaymentMethodsSection } from './PaymentMethodsSection';
 import { AppSettingsSection } from './AppSettingsSection';
 import { VehicleManagementSection } from './VehicleManagementSection';
 import { SafeDrivingSection } from './SafeDrivingSection';
+import { InstantCashoutModal } from './InstantCashoutModal';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
 interface CraverProfile {
   id: string;
@@ -51,6 +52,8 @@ export const AccountSection: React.FC<{
     walk: false,
     motorcycle: false
   });
+  const [showCashoutModal, setShowCashoutModal] = useState(false);
+  const [availableCashout, setAvailableCashout] = useState(0);
   const {
     toast
   } = useToast();
@@ -80,10 +83,30 @@ export const AccountSection: React.FC<{
       const weekStart = new Date();
       weekStart.setDate(weekStart.getDate() - weekStart.getDay());
       weekStart.setHours(0, 0, 0, 0);
-      const {
-        data: weekOrders
-      } = await supabase.from('orders').select('payout_cents').eq('assigned_craver_id', user.id).eq('order_status', 'delivered').gte('created_at', weekStart.toISOString());
+
+      // Get today's orders for available cashout
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const { data: todayOrders } = await supabase
+        .from('orders')
+        .select('payout_cents')
+        .eq('driver_id', user.id)
+        .eq('order_status', 'delivered')
+        .gte('created_at', todayStart.toISOString());
+
+      const { data: weekOrders } = await supabase
+        .from('orders')
+        .select('payout_cents')
+        .eq('driver_id', user.id)
+        .eq('order_status', 'delivered')
+        .gte('created_at', weekStart.toISOString());
+
       const weekEarnings = weekOrders?.reduce((sum, order) => sum + order.payout_cents, 0) || 0;
+      
+      // Calculate available instant cashout (today's earnings minus $10 minimum)
+      const todayEarnings = todayOrders?.reduce((sum, order) => sum + order.payout_cents, 0) || 0;
+      const availableForCashout = Math.max(0, (todayEarnings / 100) - 10);
+      setAvailableCashout(availableForCashout);
       if (application) {
         setProfile({
           id: user.id,
@@ -278,6 +301,15 @@ export const AccountSection: React.FC<{
                 ${driverStats?.weekEarnings?.toFixed(2) || '0.00'}
               </div>
               <div className="text-sm text-green-700 dark:text-green-400">Total earnings</div>
+              {availableCashout > 0.50 && (
+                <Button 
+                  size="sm" 
+                  className="mt-2 h-8 bg-green-600 hover:bg-green-700 text-white text-xs px-3"
+                  onClick={() => setShowCashoutModal(true)}
+                >
+                  Cash Out ${availableCashout.toFixed(2)}
+                </Button>
+              )}
             </div>
             <div className="bg-orange-50 dark:bg-orange-900/20 rounded-2xl p-4 flex items-center">
               <Star className="h-6 w-6 text-orange-500 mr-2" />
@@ -422,5 +454,16 @@ export const AccountSection: React.FC<{
           <p className="text-sm text-muted-foreground">Version 2.392.0 Build 323526</p>
         </div>
       </div>
+
+      {/* Instant Cashout Modal */}
+      <InstantCashoutModal
+        isOpen={showCashoutModal}
+        onClose={() => setShowCashoutModal(false)}
+        availableAmount={availableCashout}
+        onSuccess={() => {
+          // Refresh driver stats after successful cashout
+          fetchProfile();
+        }}
+      />
     </div>;
 };
