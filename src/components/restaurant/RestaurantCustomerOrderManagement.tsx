@@ -173,6 +173,14 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
   };
 
   const updateOrderStatus = async (orderId: string, newStatus: CustomerOrder['order_status']) => {
+    // Optimistic update - update UI immediately
+    const previousOrders = [...orders];
+    setOrders(orders.map(order => 
+      order.id === orderId 
+        ? { ...order, order_status: newStatus }
+        : order
+    ));
+
     try {
       const { error } = await supabase
         .from('orders')
@@ -185,10 +193,12 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
         title: "Order Updated",
         description: `Order status updated to ${newStatus}`,
       });
-
-      fetchOrders();
     } catch (error) {
       console.error('Error updating order:', error);
+      
+      // Revert to previous state on error
+      setOrders(previousOrders);
+      
       toast({
         title: "Error",
         description: "Failed to update order status",
