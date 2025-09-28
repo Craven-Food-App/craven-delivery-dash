@@ -6,9 +6,10 @@ import ChatPortal from '@/components/admin/ChatPortal';
 import { NotificationSettingsManager } from '@/components/admin/NotificationSettingsManager';
 import { PayoutSettingsManager } from '@/components/admin/PayoutSettingsManager';
 import CommissionSettingsManager from '@/components/admin/CommissionSettingsManager';
+import { PromoCodeManager } from '@/components/admin/PromoCodeManager';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Shield, BarChart3, Users, MessageCircle, Bell, DollarSign } from 'lucide-react';
+import { ArrowLeft, Shield, BarChart3, Users, MessageCircle, Bell, DollarSign, Tags } from 'lucide-react';
 import cravenLogo from "@/assets/craven-logo.png";
 
 const Admin: React.FC = () => {
@@ -43,7 +44,7 @@ const Admin: React.FC = () => {
         {/* Main Content */}
         <main className="container mx-auto px-4 py-6">
           <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="grid w-full grid-cols-6 mb-6">
+            <TabsList className="grid w-full grid-cols-7 mb-6">
               <TabsTrigger value="dashboard" className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4" />
                 Live Dashboard
@@ -59,6 +60,10 @@ const Admin: React.FC = () => {
               <TabsTrigger value="commission" className="flex items-center gap-2">
                 <Shield className="h-4 w-4" />
                 Commission
+              </TabsTrigger>
+              <TabsTrigger value="promo-codes" className="flex items-center gap-2">
+                <Tags className="h-4 w-4" />
+                Promo Codes
               </TabsTrigger>
               <TabsTrigger value="chat" className="flex items-center gap-2">
                 <MessageCircle className="h-4 w-4" />
@@ -84,6 +89,10 @@ const Admin: React.FC = () => {
             
             <TabsContent value="commission" className="space-y-4">
               <CommissionSettingsManager />
+            </TabsContent>
+            
+            <TabsContent value="promo-codes" className="space-y-4">
+              <PromoCodeManager />
             </TabsContent>
             
             <TabsContent value="chat" className="space-y-4">

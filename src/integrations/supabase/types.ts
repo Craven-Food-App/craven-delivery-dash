@@ -1353,6 +1353,117 @@ export type Database = {
           },
         ]
       }
+      promo_code_usage: {
+        Row: {
+          discount_applied_cents: number
+          id: string
+          order_id: string | null
+          promo_code_id: string
+          used_at: string
+          user_id: string
+        }
+        Insert: {
+          discount_applied_cents: number
+          id?: string
+          order_id?: string | null
+          promo_code_id: string
+          used_at?: string
+          user_id: string
+        }
+        Update: {
+          discount_applied_cents?: number
+          id?: string
+          order_id?: string | null
+          promo_code_id?: string
+          used_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_code_usage_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_code_usage_promo_code_id_fkey"
+            columns: ["promo_code_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promo_codes: {
+        Row: {
+          applicable_to: string | null
+          code: string
+          created_at: string
+          created_by: string | null
+          customer_eligibility: string | null
+          description: string | null
+          discount_amount_cents: number | null
+          discount_percentage: number | null
+          id: string
+          is_active: boolean
+          maximum_discount_cents: number | null
+          minimum_order_cents: number | null
+          name: string
+          per_user_limit: number | null
+          type: string
+          updated_at: string
+          usage_count: number
+          usage_limit: number | null
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          applicable_to?: string | null
+          code: string
+          created_at?: string
+          created_by?: string | null
+          customer_eligibility?: string | null
+          description?: string | null
+          discount_amount_cents?: number | null
+          discount_percentage?: number | null
+          id?: string
+          is_active?: boolean
+          maximum_discount_cents?: number | null
+          minimum_order_cents?: number | null
+          name: string
+          per_user_limit?: number | null
+          type?: string
+          updated_at?: string
+          usage_count?: number
+          usage_limit?: number | null
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          applicable_to?: string | null
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          customer_eligibility?: string | null
+          description?: string | null
+          discount_amount_cents?: number | null
+          discount_percentage?: number | null
+          id?: string
+          is_active?: boolean
+          maximum_discount_cents?: number | null
+          minimum_order_cents?: number | null
+          name?: string
+          per_user_limit?: number | null
+          type?: string
+          updated_at?: string
+          usage_count?: number
+          usage_limit?: number | null
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth_key: string
