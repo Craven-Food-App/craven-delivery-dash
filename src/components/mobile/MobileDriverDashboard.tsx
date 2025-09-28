@@ -468,9 +468,9 @@ export const MobileDriverDashboard: React.FC = () => {
   return <>
     <LoadingScreen isLoading={isLoading} />
     
-    <div className="h-screen bg-background relative overflow-hidden">
-      {/* Full Screen Map Background - Constrained above bottom nav */}
-      <div className="absolute inset-0 bottom-20 z-0">
+    <div className="h-screen bg-background relative">
+      {/* Full Screen Map Background - Full height */}
+      <div className="absolute inset-0 z-0">
         <MobileMapbox />
       </div>
       
@@ -484,8 +484,8 @@ export const MobileDriverDashboard: React.FC = () => {
           </div>
         </div>}
 
-      {/* Main Content Overlay - Constrained above bottom nav */}
-      <div className="absolute inset-0 bottom-20 z-10 flex flex-col overflow-hidden">
+      {/* Main Content Overlay - Allow for bottom nav space */}
+      <div className="absolute inset-0 z-10 flex flex-col" style={{ paddingBottom: '80px' }}>
         
         {/* OFFLINE STATE */}
         {driverState === 'offline' && <>
@@ -495,7 +495,7 @@ export const MobileDriverDashboard: React.FC = () => {
             </div>
 
             {/* Content Container */}
-            <div className="flex flex-col justify-end h-full px-4 space-y-4 pointer-events-auto overflow-hidden">
+            <div className="flex flex-col justify-end h-full px-4 space-y-4 pointer-events-auto">
               {/* Popular Times Chart with CRAVE NOW Button */}
               <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/10 overflow-hidden">
                 {/* Main Action Button - Centered at top */}
@@ -574,7 +574,7 @@ export const MobileDriverDashboard: React.FC = () => {
             </div>
 
             {/* Bottom Content - Still Searching + Popular Times */}
-            <div className="absolute bottom-7 left-4 right-4 z-20 space-y-3 overflow-hidden">
+            <div className="absolute bottom-7 left-4 right-4 z-20 space-y-3 pointer-events-auto">
               {/* Still Searching Section */}
               <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/20 overflow-hidden">
                 <div className="flex items-center justify-between">
@@ -634,7 +634,7 @@ export const MobileDriverDashboard: React.FC = () => {
         {/* PAUSED STATE */}
         {driverState === 'online_paused' && <>
             {/* Paused Message - Center */}
-            <div className="flex flex-col justify-center items-center h-full px-4 overflow-hidden">
+            <div className="flex flex-col justify-center items-center h-full px-4 pointer-events-auto">
               <div className="bg-background/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-border/20 text-center max-w-sm w-full overflow-hidden">
                 <div className="text-4xl mb-3">⏸️</div>
                 <div className="text-lg font-bold text-foreground mb-2">

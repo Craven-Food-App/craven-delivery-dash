@@ -86,15 +86,26 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
     }
   }, [location, isAutoCentering]);
 
-  // Auto-start GPS tracking when map loads
+  // Auto-start GPS tracking when map loads and center on Toledo initially
   useEffect(() => {
-    if (!isLoading && !error && !isTracking) {
-      // Auto-start tracking when map is ready
-      setTimeout(() => {
-        startTracking();
-      }, 1000);
+    if (!isLoading && !error) {
+      // Set initial view to Toledo, Ohio
+      if (map.current && !location) {
+        map.current.flyTo({
+          center: [-83.5379, 41.6528], // Toledo coordinates
+          zoom: 11,
+          duration: 1000
+        });
+      }
+      
+      // Auto-start GPS tracking
+      if (!isTracking) {
+        setTimeout(() => {
+          startTracking();
+        }, 1000);
+      }
     }
-  }, [isLoading, error, isTracking]);
+  }, [isLoading, error, isTracking, location]);
   const initializeMap = () => {
     if (!mapContainer.current || !window.mapboxgl) {
       console.log('MapContainer or mapboxgl not available');
@@ -106,12 +117,12 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
       // Set the access token
       window.mapboxgl.accessToken = 'pk.eyJ1IjoiY3JhdmUtbiIsImEiOiJjbWVxb21qbTQyNTRnMm1vaHg5bDZwcmw2In0.aOsYrL2B0cjfcCGW1jHAdw';
 
-      // Create the map instance
+      // Create the map instance - Default to Toledo, Ohio
       map.current = new window.mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v12', // Use stable default style
-        center: [-74.5, 40],
-        zoom: 9,
+        center: [-83.5379, 41.6528], // Toledo, Ohio coordinates
+        zoom: 11,
         interactive: true,
         scrollZoom: true,
         boxZoom: true,
