@@ -18,53 +18,107 @@ export const SpeedLimitSign: React.FC<SpeedLimitSignProps> = ({
   const [speedLimit, setSpeedLimit] = useState<number | null>(null);
   const [isOverLimit, setIsOverLimit] = useState(false);
 
-  // Fetch speed limit for current location
+  // Fetch actual posted speed limit for current location
   useEffect(() => {
     if (!location) return;
 
     const fetchSpeedLimit = async () => {
       try {
-        // Get Mapbox token
-        const { data } = await supabase.functions.invoke('get-mapbox-token');
-        if (!data?.token) return;
-
-        // Try to get speed limit from Mapbox Isochrone API (requires premium)
-        // For now, we'll use a mock based on typical city limits
-        // In production, you'd use Mapbox Speed Limits API or similar service
+        // Try to get actual speed limit from OpenStreetMap Overpass API
+        const overpassQuery = `
+          [out:json][timeout:10];
+          (
+            way(around:50,${location.latitude},${location.longitude})[highway][maxspeed];
+            way(around:100,${location.latitude},${location.longitude})[highway][maxspeed];
+          );
+          out geom;
+        `;
         
-        // Mock speed limits based on area (this would be replaced with real API call)
-        const mockSpeedLimits = [25, 30, 35, 40, 45, 50, 55]; // Common city speeds
-        const mockLimit = mockSpeedLimits[Math.floor(Math.random() * mockSpeedLimits.length)];
+        const overpassUrl = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`;
         
-        // You could also try reverse geocoding to determine road type
-        const geocodeUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${location.longitude},${location.latitude}.json?access_token=${data.token}`;
-        const response = await fetch(geocodeUrl);
-        const geocodeData = await response.json();
+        let realSpeedLimit = null;
         
-        // Determine speed limit based on road type from geocoding
-        const place = geocodeData.features?.[0];
-        const context = place?.context || [];
-        
-        let estimatedLimit = 25; // Default city limit
-        
-        // Check if it's a highway or major road
-        if (place?.place_name?.toLowerCase().includes('highway') || 
-            place?.place_name?.toLowerCase().includes('interstate')) {
-          estimatedLimit = 70;
-        } else if (place?.place_name?.toLowerCase().includes('boulevard') ||
-                   place?.place_name?.toLowerCase().includes('avenue')) {
-          estimatedLimit = 35;
-        } else if (context.some((c: any) => c.id?.includes('neighborhood'))) {
-          estimatedLimit = 25;
-        } else {
-          estimatedLimit = 30;
+        try {
+          const overpassResponse = await fetch(overpassUrl);
+          const overpassData = await overpassResponse.json();
+          
+          if (overpassData.elements && overpassData.elements.length > 0) {
+            // Find the closest road with speed limit data
+            let closestWay = null;
+            let minDistance = Infinity;
+            
+            overpassData.elements.forEach((way: any) => {
+              if (way.tags?.maxspeed && way.geometry) {
+                // Calculate approximate distance to way
+                const wayCenter = way.geometry[Math.floor(way.geometry.length / 2)];
+                const distance = Math.sqrt(
+                  Math.pow(wayCenter.lat - location.latitude, 2) + 
+                  Math.pow(wayCenter.lon - location.longitude, 2)
+                );
+                
+                if (distance < minDistance) {
+                  minDistance = distance;
+                  closestWay = way;
+                }
+              }
+            });
+            
+            if (closestWay?.tags?.maxspeed) {
+              // Parse speed limit (handle formats like "30 mph", "50", "30 km/h")
+              const maxspeedStr = closestWay.tags.maxspeed;
+              const speedMatch = maxspeedStr.match(/(\d+)/);
+              if (speedMatch) {
+                let speed = parseInt(speedMatch[1]);
+                // Convert km/h to mph if needed
+                if (maxspeedStr.toLowerCase().includes('km') || (!maxspeedStr.includes('mph') && speed > 80)) {
+                  speed = Math.round(speed * 0.621371); // km/h to mph
+                }
+                realSpeedLimit = speed;
+              }
+            }
+          }
+        } catch (overpassError) {
+          console.warn('OpenStreetMap Overpass API failed:', overpassError);
         }
-
-        setSpeedLimit(estimatedLimit);
+        
+        // If we got real data, use it
+        if (realSpeedLimit) {
+          setSpeedLimit(realSpeedLimit);
+          return;
+        }
+        
+        // Fallback: Use geocoding for road type estimation
+        const { data } = await supabase.functions.invoke('get-mapbox-token');
+        if (data?.token) {
+          const geocodeUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${location.longitude},${location.latitude}.json?access_token=${data.token}`;
+          const response = await fetch(geocodeUrl);
+          const geocodeData = await response.json();
+          
+          const place = geocodeData.features?.[0];
+          let estimatedLimit = 25; // Default city limit
+          
+          // Estimate based on road type from geocoding
+          if (place?.place_name?.toLowerCase().includes('highway') || 
+              place?.place_name?.toLowerCase().includes('interstate')) {
+            estimatedLimit = 65;
+          } else if (place?.place_name?.toLowerCase().includes('boulevard') ||
+                     place?.place_name?.toLowerCase().includes('avenue')) {
+            estimatedLimit = 35;
+          } else if (place?.context?.some((c: any) => c.id?.includes('neighborhood'))) {
+            estimatedLimit = 25;
+          } else {
+            estimatedLimit = 30;
+          }
+          
+          setSpeedLimit(estimatedLimit);
+        } else {
+          // Final fallback
+          setSpeedLimit(25);
+        }
+        
       } catch (error) {
         console.warn('Could not fetch speed limit:', error);
-        // Fallback to common city speed limit
-        setSpeedLimit(30);
+        setSpeedLimit(25);
       }
     };
 
