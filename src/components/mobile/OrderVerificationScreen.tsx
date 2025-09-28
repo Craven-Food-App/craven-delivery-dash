@@ -227,7 +227,7 @@ export const OrderVerificationScreen: React.FC<OrderVerificationProps> = ({
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-semibold">{orderDetails.customer_name}</p>
+                <p className="font-semibold">{orderDetails.customer_name || "Customer"}</p>
                 <p className="text-sm text-muted-foreground">
                   {formatAddress(orderDetails.dropoff_address)}
                 </p>
