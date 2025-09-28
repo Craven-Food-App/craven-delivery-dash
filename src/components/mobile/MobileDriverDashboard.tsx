@@ -523,10 +523,10 @@ export const MobileDriverDashboard: React.FC = () => {
           </div>
         </div>}
 
-      {/* Main Content Overlay - Allow for bottom nav space */}
+      {/* Main Content Overlay - Allow for bottom nav space - Non-interactive overlay */}
       <div style={{
         paddingBottom: '80px'
-      }} className="absolute inset-0 z-10 flex flex-col py-0">
+      }} className="absolute inset-0 z-10 flex flex-col py-0 pointer-events-none">
         
         {/* OFFLINE STATE */}
         {driverState === 'offline' && <>
