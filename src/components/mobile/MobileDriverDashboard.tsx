@@ -136,10 +136,10 @@ export const MobileDriverDashboard: React.FC = () => {
     };
   };
 
-  // Check session persistence on component mount
-  useEffect(() => {
-    checkSessionPersistence();
-  }, []);
+  // Check session persistence on component mount - DISABLED for now
+  // useEffect(() => {
+  //   checkSessionPersistence();
+  // }, []);
 
   const checkSessionPersistence = async () => {
     try {
