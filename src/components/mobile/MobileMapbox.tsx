@@ -244,16 +244,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
     }}>
         
         
-        {gpsError && <div className="bg-red-100 border border-red-300 rounded-lg p-3 text-xs shadow-lg max-w-48">
-            <div className="text-red-600 font-medium mb-1">GPS Error</div>
-            <div className="text-red-500 text-xs">{gpsError}</div>
-            {gpsError && gpsError.includes('permission') && <button onClick={() => {
-          console.log('Requesting location permission...');
-          startTracking();
-        }} className="mt-2 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600">
-                Try Again
-              </button>}
-          </div>}
+        {gpsError}
         
         {location && <div className="bg-white/90 backdrop-blur-sm rounded-lg p-2 text-xs shadow-lg">
             <div className="text-gray-600">GPS: {isTracking ? 'Active' : 'Inactive'}</div>
