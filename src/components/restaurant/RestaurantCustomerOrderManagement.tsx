@@ -89,39 +89,72 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
       // Fetch order items separately for each order
       const transformedOrders = await Promise.all(
         ordersData.map(async (order) => {
-          // Fetch order items for this order
-          const { data: orderItems } = await supabase
-            .from('order_items')
-            .select(`
-              id,
-              menu_item_id,
-              quantity,
-              price_cents,
-              special_instructions,
-              menu_items (name)
-            `)
-            .eq('order_id', order.id);
+          try {
+            // Fetch order items for this order
+            const { data: orderItems, error: itemsError } = await supabase
+              .from('order_items')
+              .select(`
+                id,
+                menu_item_id,
+                quantity,
+                price_cents,
+                special_instructions,
+                menu_items (name)
+              `)
+              .eq('order_id', order.id);
 
-          // Fetch customer profile
-          const { data: customerProfile } = await supabase
-            .from('user_profiles')
-            .select('full_name, phone')
-            .eq('user_id', order.customer_id)
-            .single();
+            if (itemsError) {
+              console.error('Error fetching order items:', itemsError);
+            }
 
-          return {
-            ...order,
-            customer_name: customerProfile?.full_name || 'Customer',
-            customer_email: '', // Email not available in user_profiles
-            customer_phone: customerProfile?.phone || '',
-            order_items: orderItems?.map((item: any) => ({
-              ...item,
-              name: item.menu_items?.name || 'Unknown Item',
-              modifiers: [] // Simplified for now
-            })) || [],
-            delivery_method: order.delivery_address ? 'delivery' as const : 'pickup' as const,
-            payment_status: 'paid' as const
-          };
+            // Try to fetch customer info from user_profiles
+            // Note: This may fail due to RLS policies restricting access
+            let customerName = 'Customer';
+            let customerPhone = '';
+            let customerEmail = '';
+
+            try {
+              const { data: customerProfile } = await supabase
+                .from('user_profiles')
+                .select('full_name, phone')
+                .eq('user_id', order.customer_id)
+                .maybeSingle();
+
+              if (customerProfile) {
+                customerName = customerProfile.full_name || 'Customer';
+                customerPhone = customerProfile.phone || '';
+              }
+            } catch (profileError) {
+              console.log('Could not fetch customer profile (RLS restriction):', profileError);
+              // This is expected due to RLS policies - restaurant owners can't see customer profiles
+            }
+
+            return {
+              ...order,
+              customer_name: customerName,
+              customer_email: customerEmail,
+              customer_phone: customerPhone,
+              order_items: orderItems?.map((item: any) => ({
+                ...item,
+                name: item.menu_items?.name || 'Unknown Item',
+                modifiers: [] // Simplified for now
+              })) || [],
+              delivery_method: order.delivery_address ? 'delivery' as const : 'pickup' as const,
+              payment_status: 'paid' as const
+            };
+          } catch (error) {
+            console.error('Error processing order:', order.id, error);
+            // Return order with minimal data if processing fails
+            return {
+              ...order,
+              customer_name: 'Customer',
+              customer_email: '',
+              customer_phone: '',
+              order_items: [],
+              delivery_method: order.delivery_address ? 'delivery' as const : 'pickup' as const,
+              payment_status: 'paid' as const
+            };
+          }
         })
       );
       
