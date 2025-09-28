@@ -16,6 +16,7 @@ import { CartSidebar } from './CartSidebar';
 import { MenuItemModal } from './MenuItemModal';
 import MenuFilters, { FilterOptions } from './MenuFilters';
 import MobileBottomNav from '@/components/mobile/MobileBottomNav';
+import { usePromoCode } from '@/hooks/usePromoCode';
 
 interface MenuItem {
   id: string;
@@ -70,6 +71,13 @@ const RestaurantMenuPage = () => {
   
   // Menu item favorites  
   const { toggleFavorite, isFavorite } = useMenuItemFavorites();
+  const {
+    appliedPromoCode,
+    isValidating: isValidatingPromo,
+    validatePromoCode,
+    removePromoCode,
+    recordPromoCodeUsage
+  } = usePromoCode();
   const [filters, setFilters] = useState<FilterOptions>({
     priceRange: [0, 50],
     dietary: { vegetarian: false, vegan: false, glutenFree: false },
@@ -294,14 +302,21 @@ const RestaurantMenuPage = () => {
     }
   };
 
+  const handleApplyPromoCode = async (code: string): Promise<boolean> => {
+    const subtotal = cart.reduce((sum, item) => sum + item.price_cents * item.quantity, 0);
+    return await validatePromoCode(code, subtotal, deliveryMethod);
+  };
+
   const formatPrice = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
   const computeTotals = () => {
     const subtotal = cart.reduce((sum, item) => sum + item.price_cents * item.quantity, 0);
     const tax = Math.round(subtotal * 0.08);
+    const promoDiscount = appliedPromoCode?.discount_applied_cents || 0;
     const deliveryFee = deliveryMethod === 'delivery' ? (restaurant?.delivery_fee_cents || 0) : 0;
-    const total = subtotal + tax + deliveryFee;
-    return { subtotal, tax, deliveryFee, total };
+    const adjustedDeliveryFee = appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery' ? 0 : deliveryFee;
+    const total = subtotal + tax + adjustedDeliveryFee - promoDiscount;
+    return { subtotal, tax, deliveryFee: adjustedDeliveryFee, total };
   };
 
   if (loading) {
@@ -524,6 +539,12 @@ const RestaurantMenuPage = () => {
                 onUpdateQuantity={updateQuantity}
                 onCheckout={handleCheckout}
                 className="border-border/50"
+                promoCodeDiscount={appliedPromoCode?.discount_applied_cents || 0}
+                deliveryMethod={deliveryMethod}
+                onApplyPromoCode={handleApplyPromoCode}
+                onRemovePromoCode={removePromoCode}
+                appliedPromoCode={appliedPromoCode}
+                isValidatingPromo={isValidatingPromo}
               />
             </div>
           </div>

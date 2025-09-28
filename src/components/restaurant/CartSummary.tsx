@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Plus, Minus, ShoppingCart } from 'lucide-react';
+import { PromoCodeInput } from './PromoCodeInput';
 
 interface CartItem {
   id: string;
@@ -18,6 +19,17 @@ interface CartSummaryProps {
   onUpdateQuantity: (id: string, delta: number) => void;
   onCheckout: () => void;
   className?: string;
+  promoCodeDiscount?: number;
+  deliveryMethod?: 'delivery' | 'pickup';
+  onApplyPromoCode?: (code: string) => Promise<boolean>;
+  onRemovePromoCode?: () => void;
+  appliedPromoCode?: {
+    code: string;
+    name: string;
+    discount_applied_cents: number;
+    type: string;
+  } | null;
+  isValidatingPromo?: boolean;
 }
 
 const CartSummary = ({ 
@@ -25,12 +37,19 @@ const CartSummary = ({
   deliveryFee, 
   onUpdateQuantity, 
   onCheckout,
-  className 
+  className,
+  promoCodeDiscount = 0,
+  deliveryMethod = 'delivery',
+  onApplyPromoCode,
+  onRemovePromoCode,
+  appliedPromoCode,
+  isValidatingPromo = false
 }: CartSummaryProps) => {
   const formatPrice = (cents: number) => `$${(cents / 100).toFixed(2)}`;
   
   const subtotal = items.reduce((sum, item) => sum + (item.price_cents * item.quantity), 0);
-  const total = subtotal + deliveryFee;
+  const adjustedDeliveryFee = appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery' ? 0 : deliveryFee;
+  const total = subtotal + adjustedDeliveryFee - promoCodeDiscount;
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
   if (items.length === 0) {
@@ -104,6 +123,18 @@ const CartSummary = ({
         
         <Separator className="my-6" />
         
+        {/* Promo Code Section */}
+        {onApplyPromoCode && onRemovePromoCode && (
+          <div className="mb-4">
+            <PromoCodeInput
+              onApplyPromoCode={onApplyPromoCode}
+              onRemovePromoCode={onRemovePromoCode}
+              appliedPromoCode={appliedPromoCode}
+              isValidating={isValidatingPromo}
+            />
+          </div>
+        )}
+        
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Subtotal</span>
@@ -112,10 +143,24 @@ const CartSummary = ({
           
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Delivery fee</span>
-            <span className="font-medium">
+            <span className={`font-medium ${appliedPromoCode?.type === 'free_delivery' && adjustedDeliveryFee === 0 ? 'line-through text-muted-foreground' : ''}`}>
               {deliveryFee === 0 ? 'Free' : formatPrice(deliveryFee)}
             </span>
           </div>
+          
+          {appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery' && deliveryFee > 0 && (
+            <div className="flex justify-between text-sm text-primary">
+              <span>Free delivery applied</span>
+              <span>-{formatPrice(deliveryFee)}</span>
+            </div>
+          )}
+          
+          {promoCodeDiscount > 0 && appliedPromoCode?.type !== 'free_delivery' && (
+            <div className="flex justify-between text-sm text-primary">
+              <span>Promo discount</span>
+              <span>-{formatPrice(promoCodeDiscount)}</span>
+            </div>
+          )}
           
           <Separator />
           

@@ -10,6 +10,8 @@ import { Minus, Plus, Trash2, Truck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CustomerOrderForm } from "./CustomerOrderForm";
+import { PromoCodeInput } from "./PromoCodeInput";
+import { usePromoCode } from "@/hooks/usePromoCode";
 
 interface Modifier {
   id: string;
@@ -78,9 +80,26 @@ export const CartSidebar = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [showOrderForm, setShowOrderForm] = useState(false);
   const { toast } = useToast();
+  
+  const {
+    appliedPromoCode,
+    isValidating: isValidatingPromo,
+    validatePromoCode,
+    removePromoCode,
+    recordPromoCodeUsage
+  } = usePromoCode();
 
   const handleCheckout = () => {
     setShowOrderForm(true);
+  };
+
+  const handleApplyPromoCode = async (code: string): Promise<boolean> => {
+    const subtotal = cart.reduce((sum, item) => {
+      const modifierPrice = item.modifiers?.reduce((modSum, mod) => modSum + mod.price_cents, 0) || 0;
+      return sum + ((item.price_cents + modifierPrice) * item.quantity);
+    }, 0);
+    
+    return await validatePromoCode(code, subtotal, deliveryMethod);
   };
 
   const handleOrderSubmit = async (customerInfo: any) => {
@@ -90,14 +109,24 @@ export const CartSidebar = ({
       // Get current user if authenticated
       const { data: { user } } = await supabase.auth.getUser();
       
+      // Calculate final totals with promo code
+      const subtotal = cart.reduce((sum, item) => {
+        const modifierPrice = item.modifiers?.reduce((modSum, mod) => modSum + mod.price_cents, 0) || 0;
+        return sum + ((item.price_cents + modifierPrice) * item.quantity);
+      }, 0);
+      
+      const promoDiscount = appliedPromoCode?.discount_applied_cents || 0;
+      const adjustedDeliveryFee = appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery' ? 0 : totals.deliveryFee;
+      const finalTotal = subtotal + adjustedDeliveryFee + totals.tax - promoDiscount;
+      
       // Create order with correct schema
       const orderData = {
         customer_id: user?.id || null,
         restaurant_id: restaurant.id,
-        subtotal_cents: totals.subtotal,
-        delivery_fee_cents: totals.deliveryFee,
+        subtotal_cents: subtotal,
+        delivery_fee_cents: adjustedDeliveryFee,
         tax_cents: totals.tax,
-        total_cents: totals.total,
+        total_cents: finalTotal,
         order_status: 'pending',
         delivery_address: deliveryMethod === 'delivery' ? {
           name: customerInfo.name,
@@ -120,6 +149,11 @@ export const CartSidebar = ({
 
       if (orderError) throw orderError;
 
+      // Record promo code usage if applied
+      if (appliedPromoCode) {
+        await recordPromoCodeUsage(newOrder.id);
+      }
+
       // Trigger auto-assignment for delivery orders to send to drivers
       if (deliveryMethod === 'delivery') {
         try {
@@ -137,7 +171,7 @@ export const CartSidebar = ({
       // Create Stripe payment session
       const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-payment', {
         body: {
-          orderTotal: totals.total,
+          orderTotal: finalTotal,
           customerInfo,
           orderId: newOrder.id
         }
@@ -286,16 +320,44 @@ export const CartSidebar = ({
             </div>
           </div>
 
+          {/* Promo Code Section */}
+          <div className="mb-4">
+            <PromoCodeInput
+              onApplyPromoCode={handleApplyPromoCode}
+              onRemovePromoCode={removePromoCode}
+              appliedPromoCode={appliedPromoCode}
+              isValidating={isValidatingPromo}
+              disabled={isProcessing}
+            />
+          </div>
+
           {/* Order Summary */}
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Subtotal</span>
-              <span>${(totals.subtotal / 100).toFixed(2)}</span>
+              <span>${(cart.reduce((sum, item) => {
+                const modifierPrice = item.modifiers?.reduce((modSum, mod) => modSum + mod.price_cents, 0) || 0;
+                return sum + ((item.price_cents + modifierPrice) * item.quantity);
+              }, 0) / 100).toFixed(2)}</span>
             </div>
             {deliveryMethod === 'delivery' && (
               <div className="flex justify-between text-sm">
                 <span>Delivery Fee</span>
-                <span>${(totals.deliveryFee / 100).toFixed(2)}</span>
+                <span className={appliedPromoCode?.type === 'free_delivery' ? 'line-through text-muted-foreground' : ''}>
+                  ${(totals.deliveryFee / 100).toFixed(2)}
+                </span>
+              </div>
+            )}
+            {appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery' && totals.deliveryFee > 0 && (
+              <div className="flex justify-between text-sm text-primary">
+                <span>Free delivery applied</span>
+                <span>-${(totals.deliveryFee / 100).toFixed(2)}</span>
+              </div>
+            )}
+            {appliedPromoCode && appliedPromoCode.type !== 'free_delivery' && appliedPromoCode.discount_applied_cents > 0 && (
+              <div className="flex justify-between text-sm text-primary">
+                <span>Promo discount</span>
+                <span>-${(appliedPromoCode.discount_applied_cents / 100).toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between text-sm">
@@ -305,7 +367,10 @@ export const CartSidebar = ({
             <Separator />
             <div className="flex justify-between font-semibold">
               <span>Total</span>
-              <span>${(totals.total / 100).toFixed(2)}</span>
+              <span>${((cart.reduce((sum, item) => {
+                const modifierPrice = item.modifiers?.reduce((modSum, mod) => modSum + mod.price_cents, 0) || 0;
+                return sum + ((item.price_cents + modifierPrice) * item.quantity);
+              }, 0) + (appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery' ? 0 : totals.deliveryFee) + totals.tax - (appliedPromoCode?.discount_applied_cents || 0)) / 100).toFixed(2)}</span>
             </div>
           </div>
 
