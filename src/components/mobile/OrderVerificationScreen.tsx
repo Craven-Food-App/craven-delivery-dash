@@ -102,20 +102,23 @@ export const OrderVerificationScreen: React.FC<OrderVerificationProps> = ({
         .from('delivery-photos')
         .getPublicUrl(filePath);
 
-      // Update order with pickup photo and confirmation
-      // Skip database update for test orders since they use non-UUID IDs
-      if (!orderDetails.isTestOrder) {
-        const { error: updateError } = await supabase
-          .from('orders')
-          .update({
-            pickup_photo_url: publicUrl,
-            pickup_confirmed_at: new Date().toISOString(),
-            order_status: 'picked_up'
-          })
-          .eq('id', orderDetails.id);
+    // Update order with pickup photo and confirmation
+    // Skip database update for test orders since they use non-UUID IDs
+    if (!orderDetails.isTestOrder) {
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({
+          pickup_photo_url: publicUrl,
+          pickup_confirmed_at: new Date().toISOString(),
+          order_status: 'picked_up'
+        })
+        .eq('id', orderDetails.id);
 
-        if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Database update error:', updateError);
+        throw new Error(`Failed to update order: ${updateError.message}`);
       }
+    }
 
       setPickupPhoto(publicUrl);
       setShowCamera(false);
@@ -154,7 +157,10 @@ export const OrderVerificationScreen: React.FC<OrderVerificationProps> = ({
           })
           .eq('id', orderDetails.id);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Database update error:', updateError);
+          throw new Error(`Failed to update order: ${updateError.message}`);
+        }
       }
 
       toast({
@@ -222,41 +228,66 @@ export const OrderVerificationScreen: React.FC<OrderVerificationProps> = ({
           </CardContent>
         </Card>
 
-        {/* Customer Information */}
-        <Card>
+        {/* Customer Information - Enhanced */}
+        <Card className="border-green-200 bg-green-50/50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-green-800">
               <User className="h-5 w-5" />
               Customer Details
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-semibold">{orderDetails.customer_name || "Customer"}</p>
-                <p className="text-sm text-muted-foreground">
-                  {formatAddress(orderDetails.dropoff_address)}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                {orderDetails.customer_phone && (
-                  <Button variant="outline" size="sm">
-                    <Phone className="h-4 w-4" />
+            <div className="bg-white p-4 rounded-lg border border-green-200 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex-1">
+                  <p className="font-bold text-lg text-green-900">{orderDetails.customer_name || "Customer"}</p>
+                  <p className="text-sm text-green-700 font-medium mt-1">
+                    📍 {formatAddress(orderDetails.dropoff_address)}
+                  </p>
+                  {orderDetails.customer_phone && (
+                    <p className="text-sm text-green-600 font-medium mt-1">
+                      📞 {orderDetails.customer_phone}
+                    </p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  {orderDetails.customer_phone && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="border-green-300 text-green-700 hover:bg-green-100"
+                      onClick={() => {
+                        if (orderDetails.isTestOrder) {
+                          toast({
+                            title: "Test Mode",
+                            description: "Would call customer: " + orderDetails.customer_phone,
+                          });
+                        } else {
+                          window.open(`tel:${orderDetails.customer_phone}`);
+                        }
+                      }}
+                    >
+                      <Phone className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="border-green-300 text-green-700 hover:bg-green-100"
+                  >
+                    <MessageSquare className="h-4 w-4" />
                   </Button>
-                )}
-                <Button variant="outline" size="sm">
-                  <MessageSquare className="h-4 w-4" />
-                </Button>
+                </div>
               </div>
-            </div>
             
-            {orderDetails.delivery_notes && (
-              <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                <p className="text-sm text-yellow-800">
-                  <strong>Delivery Notes:</strong> {orderDetails.delivery_notes}
-                </p>
-              </div>
-            )}
+              {orderDetails.delivery_notes && (
+                <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200 mt-3">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Delivery Notes:</strong> {orderDetails.delivery_notes}
+                  </p>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 

@@ -681,9 +681,9 @@ export const MobileDriverDashboard: React.FC = () => {
         payout_cents: activeDelivery.payout_cents || 0,
         subtotal_cents: activeDelivery.subtotal_cents || activeDelivery.payout_cents || 1200,
         estimated_time: activeDelivery.estimated_time || 30,
-        items: activeDelivery.items || [
-          { name: 'Default Item', quantity: 1, price_cents: activeDelivery.subtotal_cents || 1200 }
-        ],
+        items: activeDelivery.items && activeDelivery.items.length > 0 
+          ? activeDelivery.items 
+          : [{ name: 'Order Items', quantity: 1, price_cents: activeDelivery.subtotal_cents || 1200 }],
         isTestOrder: activeDelivery.isTestOrder || false // Only true if explicitly marked as test
       }} onCompleteDelivery={() => {
         // Check if this was a test order

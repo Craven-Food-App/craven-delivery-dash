@@ -240,9 +240,10 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
               className="flex-1" 
               size="lg" 
               onClick={() => {
-                if (!orderDetails.isTestOrder) {
+                const restaurantAddress = formatAddress(orderDetails.pickup_address);
+                if (!orderDetails.isTestOrder && restaurantAddress && restaurantAddress !== 'Address not available') {
                   openExternalNavigation({ 
-                    address: formatAddress(orderDetails.pickup_address), 
+                    address: restaurantAddress, 
                     name: orderDetails.restaurant_name 
                   });
                 }
@@ -398,7 +399,16 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
             <Button 
               className="flex-1" 
               size="lg" 
-              onClick={handleStageComplete}
+              onClick={() => {
+                const customerAddress = formatAddress(orderDetails.dropoff_address);
+                if (!orderDetails.isTestOrder && customerAddress && customerAddress !== 'Address not available') {
+                  openExternalNavigation({ 
+                    address: customerAddress, 
+                    name: orderDetails.customer_name 
+                  });
+                }
+                handleStageComplete();
+              }}
             >
               <Navigation className="h-5 w-5 mr-2" />
               {orderDetails.isTestOrder ? 'Simulate Arrival' : 'Start Navigation'}
