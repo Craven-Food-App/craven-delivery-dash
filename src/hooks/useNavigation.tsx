@@ -81,11 +81,14 @@ export const useNavigation = (): UseNavigationReturn => {
         .eq('user_id', user.id)
         .single();
 
-      if (profile?.settings?.navigation) {
-        setNavigationSettings(prev => ({
-          ...prev,
-          ...profile.settings.navigation
-        }));
+      if (profile?.settings && typeof profile.settings === 'object' && profile.settings !== null) {
+        const settings = profile.settings as any;
+        if (settings.navigation) {
+          setNavigationSettings(prev => ({
+            ...prev,
+            ...settings.navigation
+          }));
+        }
       }
     } catch (error) {
       console.error('Error loading navigation settings:', error);
@@ -104,7 +107,10 @@ export const useNavigation = (): UseNavigationReturn => {
         .eq('user_id', user.id)
         .single();
 
-      const currentSettings = profile?.settings || {};
+      const currentSettings = (profile?.settings && typeof profile.settings === 'object' && profile.settings !== null) 
+        ? profile.settings as any 
+        : {};
+      
       const updatedSettings = {
         ...currentSettings,
         navigation: settings

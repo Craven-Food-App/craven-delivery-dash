@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useDriverLocation } from '@/hooks/useDriverLocation';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface NavigationMapboxProps {
