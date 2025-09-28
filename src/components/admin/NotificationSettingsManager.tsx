@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Play, Pause } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NotificationSound {
   id: string;
@@ -13,35 +14,108 @@ interface NotificationSound {
   is_default: boolean;
 }
 
-const DEFAULT_SOUNDS: NotificationSound[] = [
-  { id: '1', name: 'Default Alert', file: '/notification.mp3', is_default: true },
-];
-
 export const NotificationSettingsManager: React.FC = () => {
-  const [sounds, setSounds] = useState<NotificationSound[]>(DEFAULT_SOUNDS);
+  const [sounds, setSounds] = useState<NotificationSound[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newSoundFile, setNewSoundFile] = useState<File | null>(null);
   const [newSoundName, setNewSoundName] = useState('');
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Load sounds from database
+  const loadSounds = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('notification_settings')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      const formattedSounds = data?.map(setting => ({
+        id: setting.id,
+        name: setting.name,
+        file: setting.sound_file,
+        is_default: setting.is_default
+      })) || [];
+
+      setSounds(formattedSounds);
+    } catch (error) {
+      console.error('Error loading sounds:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSounds();
+  }, [loadSounds]);
 
   // Add new sound
-  const addSound = useCallback(() => {
+  const addSound = useCallback(async () => {
     if (!newSoundName || !newSoundFile) return;
 
-    const id = Math.random().toString(36).substring(2, 15);
-    const fileUrl = URL.createObjectURL(newSoundFile);
+    try {
+      // Upload file to storage bucket (if using storage)
+      const fileUrl = URL.createObjectURL(newSoundFile);
 
-    setSounds(prev => [...prev, { id, name: newSoundName, file: fileUrl, is_default: false }]);
-    setNewSoundName('');
-    setNewSoundFile(null);
-    setIsDialogOpen(false);
-  }, [newSoundName, newSoundFile]);
+      // Save to database
+      const { data, error } = await supabase
+        .from('notification_settings')
+        .insert({
+          name: newSoundName,
+          sound_file: fileUrl,
+          is_default: sounds.length === 0, // First sound becomes default
+          description: `Custom sound: ${newSoundName}`,
+          duration_ms: 3000,
+          repeat_count: 1,
+          repeat_interval_ms: 1000,
+          is_active: true
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Add to local state
+      const newSound = {
+        id: data.id,
+        name: data.name,
+        file: data.sound_file,
+        is_default: data.is_default
+      };
+
+      setSounds(prev => [...prev, newSound]);
+      setNewSoundName('');
+      setNewSoundFile(null);
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Error adding sound:', error);
+    }
+  }, [newSoundName, newSoundFile, sounds.length]);
 
   // Set default sound
-  const setDefault = (id: string) => {
-    setSounds(prev =>
-      prev.map(s => ({ ...s, is_default: s.id === id }))
-    );
+  const setDefault = async (id: string) => {
+    try {
+      // Update database - unset all defaults first
+      await supabase
+        .from('notification_settings')
+        .update({ is_default: false })
+        .neq('id', id);
+
+      // Set new default
+      await supabase
+        .from('notification_settings')
+        .update({ is_default: true })
+        .eq('id', id);
+
+      // Update local state
+      setSounds(prev =>
+        prev.map(s => ({ ...s, is_default: s.id === id }))
+      );
+    } catch (error) {
+      console.error('Error setting default sound:', error);
+    }
   };
 
   // Play preview
@@ -55,6 +129,10 @@ export const NotificationSettingsManager: React.FC = () => {
     await audio.play().catch(console.warn);
     setTimeout(() => setPlayingId(null), 2000); // simple duration
   };
+
+  if (loading) {
+    return <div className="p-6">Loading notification settings...</div>;
+  }
 
   return (
     <div className="p-6 space-y-6">
