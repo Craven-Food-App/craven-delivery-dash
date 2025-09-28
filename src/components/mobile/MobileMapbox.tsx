@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useDriverLocation } from '@/hooks/useDriverLocation';
 import { Crosshair } from 'lucide-react';
+import { SpeedLimitSign } from './SpeedLimitSign';
 declare global {
   interface Window {
     mapboxgl: any;
@@ -285,6 +286,17 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
       }} className={`p-3 rounded-full shadow-lg border transition ${isAutoCentering ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground hover:bg-accent'}`} aria-label="Center on my location">
           <Crosshair className="h-4 w-4 my-[5px] py-0" />
         </button>
+      </div>
+
+      {/* Speed Limit Sign - positioned in top right */}
+      <div className="absolute top-4 right-4 z-20 pointer-events-auto">
+        <SpeedLimitSign
+          currentSpeed={location?.speed ? location.speed * 2.237 : 0} // Convert m/s to mph
+          location={location ? {
+            latitude: location.latitude,
+            longitude: location.longitude
+          } : undefined}
+        />
       </div>
 
       <div ref={mapContainer} className={`w-full h-full ${className}`} style={{

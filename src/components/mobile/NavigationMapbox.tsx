@@ -16,6 +16,7 @@ import { useNavigation } from '@/hooks/useNavigation';
 import { useDriverLocation } from '@/hooks/useDriverLocation';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { SpeedLimitSign } from './SpeedLimitSign';
 
 interface NavigationMapboxProps {
   destination: {
@@ -460,13 +461,16 @@ export const NavigationMapbox: React.FC<NavigationMapboxProps> = ({
               </div>
             )}
 
-            {/* Speed and Location Info Overlay */}
-            {navigationState.isNavigating && location && (
-              <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-sm">
-                <div className="text-xs text-muted-foreground">Current</div>
-                <div className="text-sm font-semibold">
-                  {location.speed ? `${(location.speed * 2.237).toFixed(0)} mph` : '— mph'}
-                </div>
+            {/* Speed Limit Sign Overlay */}
+            {location && (
+              <div className="absolute top-4 right-4">
+                <SpeedLimitSign
+                  currentSpeed={location.speed ? location.speed * 2.237 : 0} // Convert m/s to mph
+                  location={{
+                    latitude: location.latitude,
+                    longitude: location.longitude
+                  }}
+                />
               </div>
             )}
           </div>
