@@ -49,14 +49,30 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
     setIsLoading(true);
     try {
-      const { data } = await supabase.functions.invoke('get-mapbox-token');
-      if (!data?.token) {
+      let mapboxToken = '';
+      
+      // Try to get token from edge function first (production)
+      try {
+        const { data } = await supabase.functions.invoke('get-mapbox-token');
+        if (data?.token) {
+          mapboxToken = data.token;
+        }
+      } catch (edgeFunctionError) {
+        console.warn('Edge function not available, using fallback token for development');
+      }
+
+      // Fallback to development token if edge function fails
+      if (!mapboxToken) {
+        mapboxToken = 'pk.eyJ1IjoiY3JhdmUtbiIsImEiOiJjbWVxb21qbTQyNTRnMm1vaHg5bDZwcmw2In0.aOsYrL2B0cjfcCGW1jHAdw';
+      }
+
+      if (!mapboxToken) {
         throw new Error('Mapbox token not available');
       }
 
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?` +
-        `access_token=${data.token}&` +
+        `access_token=${mapboxToken}&` +
         `country=US&` + // Limit to US addresses
         `types=address,poi&` + // Focus on addresses and points of interest
         `limit=5`
