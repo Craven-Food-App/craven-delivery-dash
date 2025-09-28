@@ -16,6 +16,7 @@ import { AccountSection } from './AccountSection';
 import { TestCompletionModal } from './TestCompletionModal';
 import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { MobileMapbox } from './MobileMapbox';
+import { DriveTimeSelector } from './DriveTimeSelector';
 type DriverState = 'offline' | 'online_searching' | 'online_paused' | 'on_delivery';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
 type EarningMode = 'perHour' | 'perOffer';
@@ -52,6 +53,7 @@ export const MobileDriverDashboard: React.FC = () => {
   const [tripCount, setTripCount] = useState(0);
   const [isAvailable, setIsAvailable] = useState(false);
   const [showTestCompletionModal, setShowTestCompletionModal] = useState(false);
+  const [showTimeSelector, setShowTimeSelector] = useState(false);
   const {
     toast
   } = useToast();
@@ -232,15 +234,13 @@ export const MobileDriverDashboard: React.FC = () => {
           }
         });
       }
-      const now = new Date();
-      const defaultEndTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-      setEndTime(defaultEndTime);
       setDriverState('online_searching');
       setOnlineTime(0);
+      setShowTimeSelector(true);
       setupRealtimeListener(user.id);
       toast({
         title: "You're online!",
-        description: "Looking for delivery offers..."
+        description: "Choose how long you want to drive."
       });
     } catch (error) {
       console.error('Error going online:', error);
@@ -336,6 +336,16 @@ export const MobileDriverDashboard: React.FC = () => {
     } catch (error) {
       console.error('Error unpausing:', error);
     }
+  };
+  const handleSelectDriveTime = (minutes: number) => {
+    const now = new Date();
+    const selectedEnd = new Date(now.getTime() + minutes * 60 * 1000);
+    setEndTime(selectedEnd);
+    setShowTimeSelector(false);
+    toast({
+      title: 'Drive time set',
+      description: `Ends around ${selectedEnd.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
+    });
   };
   const formatTime = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
@@ -626,28 +636,41 @@ export const MobileDriverDashboard: React.FC = () => {
       </div>
 
       {/* Order Assignment Modal */}
-      <OrderAssignmentModal isOpen={showOrderModal} onClose={() => {
-      setShowOrderModal(false);
-      setCurrentOrderAssignment(null);
-    }} assignment={currentOrderAssignment} onAccept={assignment => {
-      setActiveDelivery({
-        ...assignment,
-        order_id: assignment.order_id,
-        assignment_id: assignment.assignment_id,
-        restaurant_name: assignment.restaurant_name,
-        pickup_address: assignment.pickup_address,
-        dropoff_address: assignment.dropoff_address,
-        payout_cents: assignment.payout_cents,
-        distance_mi: assignment.distance_mi,
-        isTestOrder: assignment.isTestOrder // Pass through test order flag
-      });
-      setDriverState('on_delivery');
-      setShowOrderModal(false);
-      setCurrentOrderAssignment(null);
-    }} onDecline={assignment => {
-      setShowOrderModal(false);
-      setCurrentOrderAssignment(null);
-    }} />
+      <OrderAssignmentModal
+        isOpen={showOrderModal}
+        onClose={() => {
+          setShowOrderModal(false);
+          setCurrentOrderAssignment(null);
+        }}
+        assignment={currentOrderAssignment}
+        onAccept={assignment => {
+          setActiveDelivery({
+            ...assignment,
+            order_id: assignment.order_id,
+            assignment_id: assignment.assignment_id,
+            restaurant_name: assignment.restaurant_name,
+            pickup_address: assignment.pickup_address,
+            dropoff_address: assignment.dropoff_address,
+            payout_cents: assignment.payout_cents,
+            distance_mi: assignment.distance_mi,
+            isTestOrder: assignment.isTestOrder // Pass through test order flag
+          });
+          setDriverState('on_delivery');
+          setShowOrderModal(false);
+          setCurrentOrderAssignment(null);
+        }}
+        onDecline={() => {
+          setShowOrderModal(false);
+          setCurrentOrderAssignment(null);
+        }}
+      />
+
+      {/* Drive Time Selector */}
+      <DriveTimeSelector
+        open={showTimeSelector}
+        onClose={() => setShowTimeSelector(false)}
+        onSelect={handleSelectDriveTime}
+      />
 
       {/* Bottom Navigation */}
       <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
