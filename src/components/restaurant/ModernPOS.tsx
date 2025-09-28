@@ -12,6 +12,7 @@ import { Plus, Minus, Trash2, Search, ShoppingCart, User, MapPin, CreditCard, Lo
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MenuItemModal } from './MenuItemModal';
+import { AddressAutocomplete } from '@/components/common/AddressAutocomplete';
 
 interface MenuItem {
   id: string;
@@ -48,6 +49,7 @@ interface CustomerInfo {
   state?: string;
   zip_code?: string;
   special_instructions?: string;
+  addressCoordinates?: { lat: number; lng: number };
 }
 
 interface Employee {
@@ -73,6 +75,7 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
     name: '',
     phone: ''
   });
+  const [isValidAddress, setIsValidAddress] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('pickup');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'phone_payment'>('cash');
@@ -217,7 +220,16 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
     if (orderType === 'delivery' && !customerInfo.address) {
       toast({
         title: "Missing delivery address",
-        description: "Please provide a delivery address for delivery orders.",
+        description: "Please provide a valid delivery address for delivery orders.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (orderType === 'delivery' && !isValidAddress) {
+      toast({
+        title: "Invalid delivery address",
+        description: "Please select a valid address from the suggestions.",
         variant: "destructive"
       });
       return;
@@ -257,7 +269,11 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
           city: customerInfo.city || '',
           state: customerInfo.state || '',
           zip_code: customerInfo.zip_code || '',
-          special_instructions: customerInfo.special_instructions || ''
+          special_instructions: customerInfo.special_instructions || '',
+          ...customerInfo.addressCoordinates && {
+            latitude: customerInfo.addressCoordinates.lat,
+            longitude: customerInfo.addressCoordinates.lng
+          }
         } : null,
         estimated_delivery_time: new Date(Date.now() + (orderType === 'delivery' ? 45 : 20) * 60000).toISOString()
       };
@@ -514,11 +530,18 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
               {orderType === 'delivery' && (
                 <div>
                   <Label htmlFor="address" className="text-xs font-medium">Delivery Address *</Label>
-                  <Input
-                    id="address"
+                  <AddressAutocomplete
                     value={customerInfo.address || ''}
-                    onChange={(e) => setCustomerInfo({ ...customerInfo, address: e.target.value })}
-                    placeholder="Street address"
+                    onChange={(value, coordinates) => {
+                      setCustomerInfo(prev => ({ 
+                        ...prev, 
+                        address: value,
+                        ...(coordinates && { addressCoordinates: coordinates })
+                      }));
+                    }}
+                    onValidAddress={(isValid) => setIsValidAddress(isValid)}
+                    placeholder="123 Main St, City, State 12345"
+                    required
                     className="h-10"
                   />
                 </div>

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { MapPin, User, Phone, Mail } from "lucide-react";
+import { AddressAutocomplete } from "@/components/common/AddressAutocomplete";
 
 interface CustomerInfo {
   name: string;
@@ -12,6 +13,7 @@ interface CustomerInfo {
   phone: string;
   deliveryAddress: string;
   specialInstructions?: string;
+  addressCoordinates?: { lat: number; lng: number };
 }
 
 interface CustomerOrderFormProps {
@@ -40,6 +42,7 @@ export const CustomerOrderForm = ({
   });
 
   const [errors, setErrors] = useState<Partial<CustomerInfo>>({});
+  const [isValidAddress, setIsValidAddress] = useState(false);
 
   const validateForm = () => {
     const newErrors: Partial<CustomerInfo> = {};
@@ -60,6 +63,8 @@ export const CustomerOrderForm = ({
 
     if (deliveryMethod === 'delivery' && !formData.deliveryAddress.trim()) {
       newErrors.deliveryAddress = 'Delivery address is required';
+    } else if (deliveryMethod === 'delivery' && !isValidAddress) {
+      newErrors.deliveryAddress = 'Please select a valid address from the suggestions';
     }
 
     setErrors(newErrors);
@@ -143,16 +148,19 @@ export const CustomerOrderForm = ({
                 <MapPin className="h-4 w-4" />
                 Delivery Address *
               </Label>
-              <Input
-                id="address"
+              <AddressAutocomplete
                 value={formData.deliveryAddress}
-                onChange={(e) => updateField('deliveryAddress', e.target.value)}
+                onChange={(value, coordinates) => {
+                  updateField('deliveryAddress', value);
+                  if (coordinates) {
+                    setFormData(prev => ({ ...prev, addressCoordinates: coordinates }));
+                  }
+                }}
+                onValidAddress={(isValid) => setIsValidAddress(isValid)}
                 placeholder="123 Main St, City, State 12345"
-                className={errors.deliveryAddress ? 'border-destructive' : ''}
+                required
+                error={errors.deliveryAddress}
               />
-              {errors.deliveryAddress && (
-                <p className="text-sm text-destructive">{errors.deliveryAddress}</p>
-              )}
             </div>
           )}
 

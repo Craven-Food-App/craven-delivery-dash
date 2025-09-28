@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Users } from 'lucide-react';
+import { ChevronRight, Users, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import cravenC from '@/assets/craven-c.png';
+import { OrderMapPreview } from './OrderMapPreview';
 
 interface OrderAssignment {
   assignment_id: string;
@@ -282,9 +283,39 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
               </div>
             </div>
 
+            {/* Route Map Preview */}
             <div className="py-2">
-              <div className="bg-muted/30 rounded-lg px-4 py-3">
-                <span className="text-sm text-muted-foreground">Apartment</span>
+              <OrderMapPreview
+                pickupAddress={assignment.pickup_address}
+                dropoffAddress={assignment.dropoff_address}
+                routeInfo={{
+                  miles,
+                  minutes: mins
+                }}
+                className="w-full"
+              />
+            </div>
+
+            {/* Dropoff Info */}
+            <div className="py-2">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                  <MapPin className="h-5 w-5 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground">Dropoff Location</p>
+                  <p className="text-sm text-muted-foreground">
+                    {typeof assignment.dropoff_address === 'string' 
+                      ? assignment.dropoff_address 
+                      : `${assignment.dropoff_address?.street || ''} ${assignment.dropoff_address?.city || ''}`.trim()
+                    }
+                  </p>
+                  {locationType && (
+                    <div className="bg-muted/30 rounded-lg px-3 py-1 mt-2 inline-block">
+                      <span className="text-xs text-muted-foreground capitalize">{locationType}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
