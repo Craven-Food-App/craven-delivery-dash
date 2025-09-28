@@ -405,11 +405,6 @@ export const EarningsSection: React.FC = () => {
                       {day.date}
                     </div>
                   </div>
-                  
-                  {/* Today indicator */}
-                  {isToday && (
-                    <div className="w-0.5 h-4 bg-white/60 mt-1" />
-                  )}
                 </div>
               );
             })}
