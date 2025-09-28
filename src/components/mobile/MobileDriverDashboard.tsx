@@ -434,21 +434,27 @@ export const MobileDriverDashboard: React.FC = () => {
   // Render different tabs
   if (activeTab === 'schedule') {
     return <>
-        <ScheduleSection />
+        <div className="h-screen pb-20 overflow-y-auto">
+          <ScheduleSection />
+        </div>
         <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
       </>;
   }
   if (activeTab === 'earnings') {
     return <>
-        <EarningsSection />
+        <div className="h-screen pb-20 overflow-y-auto">
+          <EarningsSection />
+        </div>
         <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
       </>;
   }
   if (activeTab === 'notifications') {
     return <>
-        <div className="space-y-4 p-4">
-          <NotificationPreferences />
-          <PushNotificationSetup />
+        <div className="h-screen pb-20 overflow-y-auto">
+          <div className="space-y-4 p-4">
+            <NotificationPreferences />
+            <PushNotificationSetup />
+          </div>
         </div>
         <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
       </>;
