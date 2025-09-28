@@ -485,7 +485,7 @@ export const MobileDriverDashboard: React.FC = () => {
         </div>}
 
       {/* Main Content Overlay - Constrained above bottom nav */}
-      <div className="absolute inset-0 bottom-20 z-10 flex flex-col">
+      <div className="absolute inset-0 bottom-20 z-10 flex flex-col overflow-hidden">
         
         {/* OFFLINE STATE */}
         {driverState === 'offline' && <>
