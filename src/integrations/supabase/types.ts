@@ -111,6 +111,45 @@ export type Database = {
           },
         ]
       }
+      commission_settings: {
+        Row: {
+          created_at: string
+          customer_service_fee_percent: number
+          delivery_fee_base_cents: number
+          delivery_fee_per_mile_cents: number
+          id: string
+          is_active: boolean
+          peak_hour_multiplier: number
+          restaurant_commission_percent: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_service_fee_percent?: number
+          delivery_fee_base_cents?: number
+          delivery_fee_per_mile_cents?: number
+          id?: string
+          is_active?: boolean
+          peak_hour_multiplier?: number
+          restaurant_commission_percent?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_service_fee_percent?: number
+          delivery_fee_base_cents?: number
+          delivery_fee_per_mile_cents?: number
+          id?: string
+          is_active?: boolean
+          peak_hour_multiplier?: number
+          restaurant_commission_percent?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       craver_applications: {
         Row: {
           account_number_last_four: string | null
@@ -263,6 +302,39 @@ export type Database = {
           lng?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      customer_carts: {
+        Row: {
+          created_at: string
+          customer_id: string
+          delivery_address: Json | null
+          id: string
+          items: Json
+          restaurant_id: string
+          special_instructions: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          delivery_address?: Json | null
+          id?: string
+          items?: Json
+          restaurant_id: string
+          special_instructions?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          delivery_address?: Json | null
+          id?: string
+          items?: Json
+          restaurant_id?: string
+          special_instructions?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -515,6 +587,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      driver_schedules: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          driver_id: string
+          end_time: string
+          id: string
+          is_active: boolean
+          is_recurring: boolean
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          driver_id: string
+          end_time: string
+          id?: string
+          is_active?: boolean
+          is_recurring?: boolean
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          driver_id?: string
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          is_recurring?: boolean
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      driver_sessions: {
+        Row: {
+          created_at: string
+          driver_id: string
+          id: string
+          is_online: boolean
+          last_activity: string
+          session_data: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          driver_id: string
+          id?: string
+          is_online?: boolean
+          last_activity?: string
+          session_data?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          driver_id?: string
+          id?: string
+          is_online?: boolean
+          last_activity?: string
+          session_data?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       menu_categories: {
         Row: {

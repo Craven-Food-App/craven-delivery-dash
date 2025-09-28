@@ -134,6 +134,37 @@ export const MobileDriverDashboard: React.FC = () => {
     };
   };
 
+  // Check session persistence on component mount
+  useEffect(() => {
+    checkSessionPersistence();
+  }, []);
+
+  const checkSessionPersistence = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Check if driver was previously online
+      const { data: session } = await supabase
+        .from('driver_sessions')
+        .select('*')
+        .eq('driver_id', user.id)
+        .single();
+
+      if (session?.is_online) {
+        // Restore online state if session shows driver was online
+        setDriverState('online_searching');
+        // Update last activity
+        await supabase
+          .from('driver_sessions')
+          .update({ last_activity: new Date().toISOString() })
+          .eq('driver_id', user.id);
+      }
+    } catch (error) {
+      console.error('Error checking session persistence:', error);
+    }
+  };
+
   // Track online time
   useEffect(() => {
     if (driverState === 'online_searching') {
@@ -151,6 +182,8 @@ export const MobileDriverDashboard: React.FC = () => {
         }
       } = await supabase.auth.getUser();
       if (!user) return;
+      
+      // Update driver profile
       const { error: profileError } = await supabase.from('driver_profiles').update({
         status: 'online',
         is_available: true,
@@ -160,6 +193,20 @@ export const MobileDriverDashboard: React.FC = () => {
       if (profileError) {
         console.error('Error updating driver profile:', profileError);
         throw profileError;
+      }
+
+      // Update or create driver session for persistence
+      const { error: sessionError } = await supabase
+        .from('driver_sessions')
+        .upsert({
+          driver_id: user.id,
+          is_online: true,
+          last_activity: new Date().toISOString(),
+          session_data: { online_since: new Date().toISOString() }
+        });
+
+      if (sessionError) {
+        console.error('Error updating driver session:', sessionError);
       }
 
       // Get location and update craver_locations table
@@ -216,6 +263,15 @@ export const MobileDriverDashboard: React.FC = () => {
         if (profileError) {
           console.error('Error updating driver profile:', profileError);
         }
+
+        // Update driver session
+        await supabase
+          .from('driver_sessions')
+          .upsert({
+            driver_id: user.id,
+            is_online: false,
+            last_activity: new Date().toISOString()
+          });
       }
       setDriverState('offline');
       setOnlineTime(0);
