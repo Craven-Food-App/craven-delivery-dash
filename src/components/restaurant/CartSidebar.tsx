@@ -127,6 +127,16 @@ export const CartSidebar = ({
       
       const finalTotal = appliedPromoCode?.type === 'total_free' ? 0 : subtotal + adjustedDeliveryFee + totals.tax - promoDiscount;
       
+      console.log('Order submission details:', {
+        subtotal,
+        adjustedDeliveryFee,
+        tax: totals.tax,
+        promoDiscount,
+        promoType: appliedPromoCode?.type,
+        finalTotal,
+        appliedPromoCode
+      });
+      
       // Create order with correct schema
       const orderData = {
         customer_id: user?.id || null,
@@ -176,8 +186,12 @@ export const CartSidebar = ({
         }
       }
 
+      console.log('Checking if order is free:', finalTotal, finalTotal <= 0);
+      
       // If total is $0.00, skip payment and directly complete the order
       if (finalTotal <= 0) {
+        console.log('Processing free order - skipping payment');
+        
         // Update order status to confirmed since no payment is needed
         await supabase
           .from('orders')
@@ -200,6 +214,8 @@ export const CartSidebar = ({
         return;
       }
 
+      console.log('Creating Stripe payment session for amount:', finalTotal);
+      
       // Create Stripe payment session for non-free orders
       const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-payment', {
         body: {
