@@ -27,14 +27,18 @@ export const LiveDriverTesting = () => {
   const [selectedDriver, setSelectedDriver] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSendingTest, setIsSendingTest] = useState(false);
+  const [notificationSound, setNotificationSound] = useState<string>('default'); // <- add this
   const { toast } = useToast();
 
+  // Fetch online drivers and subscribe to changes
   useEffect(() => {
-    fetchOnlineDrivers();
+    const fetchData = async () => await fetchOnlineDrivers();
+    fetchData();
 
     const subscription = supabase
       .channel('driver_availability')
-      .on('postgres_changes', 
+      .on(
+        'postgres_changes',
         { event: '*', schema: 'public', table: 'driver_profiles' },
         () => fetchOnlineDrivers()
       )
@@ -60,7 +64,6 @@ export const LiveDriverTesting = () => {
         .eq('is_available', true);
 
       if (driversError) throw driversError;
-
       if (!drivers || drivers.length === 0) {
         setOnlineDrivers([]);
         setIsLoading(false);
@@ -68,6 +71,7 @@ export const LiveDriverTesting = () => {
       }
 
       const driverUserIds = [...new Set(drivers.map(d => d.user_id))];
+
       const { data: profiles } = await supabase
         .from('user_profiles')
         .select('user_id, full_name')
@@ -100,22 +104,14 @@ export const LiveDriverTesting = () => {
       setOnlineDrivers(combinedDrivers);
     } catch (error: any) {
       console.error('Error fetching online drivers:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch online drivers',
-        variant: 'destructive'
-      });
+      toast({ title: 'Error', description: 'Failed to fetch online drivers', variant: 'destructive' });
     }
     setIsLoading(false);
   };
 
   const sendTestOrder = async () => {
     if (!selectedDriver) {
-      toast({
-        title: 'No Driver Selected',
-        description: 'Please select a driver to send the test order to',
-        variant: 'destructive'
-      });
+      toast({ title: 'No Driver Selected', description: 'Please select a driver', variant: 'destructive' });
       return;
     }
 
@@ -173,15 +169,12 @@ export const LiveDriverTesting = () => {
           distance_mi: (distanceKm * 0.621371).toFixed(1),
           expires_at: expiresAt,
           estimated_time: estimatedTime,
-          isTestOrder: true
+          isTestOrder: true,
+          notification_sound: notificationSound // <- include selected sound
         }
       });
 
-      toast({
-        title: 'Test Order Sent!',
-        description: `Test order has been assigned to the selected driver.`,
-        duration: 5000
-      });
+      toast({ title: 'Test Order Sent!', description: `Test order assigned to selected driver.`, duration: 5000 });
       setSelectedDriver('');
     } catch (error: any) {
       console.error(error);
@@ -194,62 +187,41 @@ export const LiveDriverTesting = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-orange-500" />
-            Live Driver Testing
-          </CardTitle>
-          <CardDescription>
-            Send test orders to real online drivers for testing push notifications and order flow.
-          </CardDescription>
+          <CardTitle className="flex items-center gap-2"><Zap className="h-5 w-5 text-orange-500" />Live Driver Testing</CardTitle>
+          <CardDescription>Send test orders to real online drivers for testing push notifications and order flow.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Alert>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              This sends real push notifications to actual drivers. Only use for testing purposes.
-            </AlertDescription>
-          </Alert>
+          <Alert><AlertTriangle className="h-4 w-4" /><AlertDescription>This sends real push notifications. Only for testing.</AlertDescription></Alert>
         </CardContent>
       </Card>
 
+      {/* Online Drivers Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Online Drivers ({onlineDrivers.length})
-          </CardTitle>
+          <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5" />Online Drivers ({onlineDrivers.length})</CardTitle>
           <CardDescription>Currently available drivers</CardDescription>
         </CardHeader>
         <CardContent>
           <Button onClick={fetchOnlineDrivers} variant="outline" className="mb-4" disabled={isLoading}>
             {isLoading ? 'Refreshing...' : 'Refresh Drivers'}
           </Button>
+
           {onlineDrivers.length === 0 ? (
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>No drivers are currently online.</AlertDescription>
-            </Alert>
+            <Alert><AlertTriangle className="h-4 w-4" /><AlertDescription>No drivers online.</AlertDescription></Alert>
           ) : (
             <div className="grid gap-4">
               {onlineDrivers.map(driver => (
-                <div
-                  key={driver.id}
-                  className={`p-4 border rounded-lg transition-colors ${
-                    selectedDriver === driver.user_id ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'
-                  }`}
-                >
+                <div key={driver.id} className={`p-4 border rounded-lg transition-colors ${selectedDriver === driver.user_id ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Avatar><AvatarFallback>{getDriverInitials(driver.full_name)}</AvatarFallback></Avatar>
                       <div>
                         <p className="font-medium">{driver.full_name}</p>
                         <p className="text-sm text-muted-foreground">Driver ID: {driver.user_id.slice(0, 8)}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Car className="h-3 w-3" />
-                          <span className="text-xs">{driver.vehicle_make} {driver.vehicle_model}</span>
-                        </div>
+                        <div className="flex items-center gap-2 mt-1"><Car className="h-3 w-3" /><span className="text-xs">{driver.vehicle_make} {driver.vehicle_model}</span></div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -270,6 +242,7 @@ export const LiveDriverTesting = () => {
         </CardContent>
       </Card>
 
+      {/* Send Test Order Card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Send className="h-5 w-5" />Send Test Order</CardTitle>
@@ -286,21 +259,22 @@ export const LiveDriverTesting = () => {
             </SelectContent>
           </Select>
 
-          <Button
-            onClick={sendTestOrder}
-            disabled={!selectedDriver || isSendingTest || onlineDrivers.length === 0}
-            className="w-full"
-            size="lg"
-          >
+          {/* Notification Sound Selector */}
+          <Select value={notificationSound} onValueChange={setNotificationSound}>
+            <SelectTrigger><SelectValue placeholder="Choose notification sound..." /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default">Default</SelectItem>
+              <SelectItem value="spark">Spark</SelectItem>
+              <SelectItem value="ping">Ping</SelectItem>
+              <SelectItem value="alert">Alert</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Button onClick={sendTestOrder} disabled={!selectedDriver || isSendingTest || onlineDrivers.length === 0} className="w-full" size="lg">
             {isSendingTest ? <><Clock className="h-4 w-4 mr-2 animate-spin" />Sending Test Order...</> : <><Send className="h-4 w-4 mr-2" />Send Test Order</>}
           </Button>
 
-          <Alert>
-            <CheckCircle className="h-4 w-4" />
-            <AlertDescription>
-              The selected driver will receive a push notification and see a test order assignment modal.
-            </AlertDescription>
-          </Alert>
+          <Alert><CheckCircle className="h-4 w-4" /><AlertDescription>The selected driver will receive a push notification and see a test order assignment modal.</AlertDescription></Alert>
         </CardContent>
       </Card>
     </div>
