@@ -36,3 +36,9 @@ enable_confirmations = false
 
 [functions.register-push-subscription]
 verify_jwt = false
+
+[functions.daily-driver-payouts]
+verify_jwt = false
+
+[functions.manual-driver-payout]
+verify_jwt = true
