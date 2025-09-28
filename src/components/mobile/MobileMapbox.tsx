@@ -263,6 +263,15 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
             {location.accuracy && <div className="text-gray-500">±{Math.round(location.accuracy)}m</div>}
             {location.speed && location.speed > 0 && <div className="text-gray-500">{Math.round(location.speed * 2.237)} mph</div>}
           </div>}
+        
+        {/* Speed Limit Sign - positioned under GPS controls */}
+        <SpeedLimitSign
+          currentSpeed={location?.speed ? location.speed * 2.237 : 0} // Convert m/s to mph
+          location={location ? {
+            latitude: location.latitude,
+            longitude: location.longitude
+          } : undefined}
+        />
       </div>
 
       {/* Map Controls: zoom and recenter - positioned next to change zone button */}
@@ -288,16 +297,6 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
         </button>
       </div>
 
-      {/* Speed Limit Sign - positioned in top right */}
-      <div className="absolute top-4 right-4 z-20 pointer-events-auto">
-        <SpeedLimitSign
-          currentSpeed={location?.speed ? location.speed * 2.237 : 0} // Convert m/s to mph
-          location={location ? {
-            latitude: location.latitude,
-            longitude: location.longitude
-          } : undefined}
-        />
-      </div>
 
       <div ref={mapContainer} className={`w-full h-full ${className}`} style={{
       minHeight: '100%',

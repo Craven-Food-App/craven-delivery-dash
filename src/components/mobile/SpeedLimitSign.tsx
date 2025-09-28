@@ -86,50 +86,50 @@ export const SpeedLimitSign: React.FC<SpeedLimitSignProps> = ({
 
   return (
     <div className={`${className}`}>
-      {/* Speed Limit Sign */}
-      <div className={`relative bg-white border-4 border-black rounded-lg shadow-lg transition-all duration-300 ${
+      {/* Speed Limit Sign - Smaller for mobile */}
+      <div className={`relative bg-white border-2 border-black rounded-md shadow-md transition-all duration-300 ${
         isOverLimit ? 'border-red-500 bg-red-50' : 'border-black bg-white'
-      }`} style={{ width: '80px', height: '100px' }}>
+      }`} style={{ width: '50px', height: '65px' }}>
         
         {/* Speed Limit Header */}
-        <div className="text-center py-1 border-b-2 border-black">
-          <div className="text-[8px] font-bold text-black leading-none">SPEED</div>
-          <div className="text-[8px] font-bold text-black leading-none">LIMIT</div>
+        <div className="text-center py-0.5 border-b border-black">
+          <div className="text-[6px] font-bold text-black leading-none">SPEED</div>
+          <div className="text-[6px] font-bold text-black leading-none">LIMIT</div>
         </div>
         
         {/* Speed Limit Number */}
-        <div className="flex-1 flex items-center justify-center py-2">
-          <div className="text-4xl font-black text-black leading-none">
+        <div className="flex-1 flex items-center justify-center py-1">
+          <div className="text-2xl font-black text-black leading-none">
             {speedLimit}
           </div>
         </div>
         
         {/* Warning indicator if over speed */}
         {isOverLimit && (
-          <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-pulse">
+          <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-500 rounded-full animate-pulse">
             <div className="w-full h-full bg-red-600 rounded-full animate-ping"></div>
           </div>
         )}
       </div>
 
-      {/* Current Speed Display */}
-      <div className={`mt-2 bg-black/80 text-white rounded-lg px-3 py-2 text-center transition-all duration-300 ${
+      {/* Current Speed Display - Smaller */}
+      <div className={`mt-1 bg-black/80 text-white rounded-md px-2 py-1 text-center transition-all duration-300 ${
         isOverLimit ? 'bg-red-600/90 animate-pulse' : 'bg-black/80'
       }`}>
-        <div className="text-xs font-medium">YOUR SPEED</div>
-        <div className="text-2xl font-bold">
+        <div className="text-[8px] font-medium">YOUR SPEED</div>
+        <div className="text-lg font-bold">
           {Math.round(currentSpeed)}
-          <span className="text-sm ml-1">mph</span>
+          <span className="text-xs ml-0.5">mph</span>
         </div>
         
         {/* Speed status */}
-        <div className="text-xs mt-1">
+        <div className="text-[8px] mt-0.5">
           {currentSpeed === 0 ? (
             <span className="text-gray-300">STOPPED</span>
           ) : isOverLimit ? (
-            <span className="text-red-200 font-bold">OVER LIMIT!</span>
+            <span className="text-red-200 font-bold">OVER!</span>
           ) : currentSpeed > speedLimit - 5 ? (
-            <span className="text-yellow-200">APPROACHING</span>
+            <span className="text-yellow-200">CLOSE</span>
           ) : (
             <span className="text-green-200">SAFE</span>
           )}
