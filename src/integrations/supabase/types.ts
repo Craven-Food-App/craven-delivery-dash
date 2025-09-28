@@ -1228,6 +1228,8 @@ export type Database = {
           assigned_craver_id: string | null
           created_at: string | null
           customer_id: string | null
+          customer_name: string | null
+          customer_phone: string | null
           delivery_address: Json | null
           delivery_fee_cents: number | null
           distance_km: number | null
@@ -1235,9 +1237,12 @@ export type Database = {
           dropoff_address: Json | null
           estimated_delivery_time: string | null
           id: string
+          order_number: string | null
           order_status: string | null
           payout_cents: number | null
           pickup_address: Json | null
+          pickup_confirmed_at: string | null
+          pickup_photo_url: string | null
           restaurant_id: string | null
           subtotal_cents: number
           tax_cents: number | null
@@ -1249,6 +1254,8 @@ export type Database = {
           assigned_craver_id?: string | null
           created_at?: string | null
           customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           delivery_address?: Json | null
           delivery_fee_cents?: number | null
           distance_km?: number | null
@@ -1256,9 +1263,12 @@ export type Database = {
           dropoff_address?: Json | null
           estimated_delivery_time?: string | null
           id?: string
+          order_number?: string | null
           order_status?: string | null
           payout_cents?: number | null
           pickup_address?: Json | null
+          pickup_confirmed_at?: string | null
+          pickup_photo_url?: string | null
           restaurant_id?: string | null
           subtotal_cents: number
           tax_cents?: number | null
@@ -1270,6 +1280,8 @@ export type Database = {
           assigned_craver_id?: string | null
           created_at?: string | null
           customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           delivery_address?: Json | null
           delivery_fee_cents?: number | null
           distance_km?: number | null
@@ -1277,9 +1289,12 @@ export type Database = {
           dropoff_address?: Json | null
           estimated_delivery_time?: string | null
           id?: string
+          order_number?: string | null
           order_status?: string | null
           payout_cents?: number | null
           pickup_address?: Json | null
+          pickup_confirmed_at?: string | null
+          pickup_photo_url?: string | null
           restaurant_id?: string | null
           subtotal_cents?: number
           tax_cents?: number | null
@@ -1741,6 +1756,10 @@ export type Database = {
       ensure_driver_can_go_online: {
         Args: { target_user_id: string }
         Returns: boolean
+      }
+      generate_order_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       make_user_active_driver: {
         Args: { target_user_id: string; vehicle_info?: Json }
