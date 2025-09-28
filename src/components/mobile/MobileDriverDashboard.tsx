@@ -3,7 +3,6 @@ import { MapPin, Settings, Pause, Play, Square, Clock, Car, DollarSign, Calendar
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { OrderAssignmentModal } from './OrderAssignmentModal';
 import { ScheduleSection } from './ScheduleSection';
@@ -55,9 +54,6 @@ export const MobileDriverDashboard: React.FC = () => {
   const [showTestCompletionModal, setShowTestCompletionModal] = useState(false);
   const [showTimeSelector, setShowTimeSelector] = useState(false);
   const {
-    toast
-  } = useToast();
-  const {
     playNotification
   } = useNotificationSettings();
 
@@ -83,12 +79,6 @@ export const MobileDriverDashboard: React.FC = () => {
 
       // Play notification sound
       playNotification();
-
-      // Show toast notification
-      toast({
-        title: "New Order Available!",
-        description: `${payload.payload.restaurant_name} - $${(payload.payload.payout_cents / 100).toFixed(2)}`
-      });
     }).subscribe();
     const dbChannel = supabase.channel(`order_assignments_${userId}`).on('postgres_changes', {
       event: 'INSERT',
@@ -122,12 +112,6 @@ export const MobileDriverDashboard: React.FC = () => {
 
         // Play notification sound
         playNotification();
-
-        // Show toast notification
-        toast({
-          title: "New Order Available!",
-          description: `$${((order.payout_cents || 0) / 100).toFixed(2)} - ${((Number(order.distance_km) || 0) * 0.621371).toFixed(1)} miles`
-        });
       }
     }).subscribe();
     return () => {
@@ -212,10 +196,6 @@ export const MobileDriverDashboard: React.FC = () => {
           ? ` until ${new Date(sessionData.end_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
           : '';
         
-        toast({
-          title: "Welcome back!",
-          description: `You're back online${timeMessage}`,
-        });
       }
     } catch (error) {
       console.error('Error checking session persistence:', error);
@@ -247,11 +227,6 @@ export const MobileDriverDashboard: React.FC = () => {
 
       if (ensureError) {
         console.error('Failed to ensure driver can go online:', ensureError);
-        toast({
-          title: "Error",
-          description: ensureError.message || "Failed to go online. Please contact support.",
-          variant: "destructive",
-        });
         return;
       }
 
@@ -310,17 +285,8 @@ export const MobileDriverDashboard: React.FC = () => {
       }
       
       setupRealtimeListener(user.id);
-      toast({
-        title: "You're online!",
-        description: endTime ? `Driving until ${endTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : "Choose how long you want to drive."
-      });
     } catch (error) {
       console.error('Error going online:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
     }
   };
   const handleGoOffline = async () => {
@@ -354,10 +320,6 @@ export const MobileDriverDashboard: React.FC = () => {
       setDriverState('offline');
       setOnlineTime(0);
       setEndTime(null); // Clear end time
-      toast({
-        title: "You're offline",
-        description: "You won't receive delivery offers."
-      });
     } catch (error) {
       console.error('Error going offline:', error);
     }
@@ -381,10 +343,6 @@ export const MobileDriverDashboard: React.FC = () => {
         }
       }
       setDriverState('online_paused');
-      toast({
-        title: "Paused",
-        description: "You won't receive offers while paused."
-      });
     } catch (error) {
       console.error('Error pausing:', error);
     }
@@ -408,10 +366,6 @@ export const MobileDriverDashboard: React.FC = () => {
         }
       }
       setDriverState('online_searching');
-      toast({
-        title: "Back online",
-        description: "Looking for delivery offers..."
-      });
     } catch (error) {
       console.error('Error unpausing:', error);
     }
@@ -445,11 +399,6 @@ export const MobileDriverDashboard: React.FC = () => {
     } catch (error) {
       console.error('Error updating session with end time:', error);
     }
-    
-    toast({
-      title: 'Drive time set',
-      description: `Ends around ${selectedEnd.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
-    });
   };
   const formatTime = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
@@ -731,10 +680,6 @@ export const MobileDriverDashboard: React.FC = () => {
         }
         setActiveDelivery(null);
         setDriverState('online_searching');
-        toast({
-          title: "Delivery Complete!",
-          description: activeDelivery?.isTestOrder ? "Test delivery completed successfully!" : "Great job! Looking for your next order."
-        });
       }} />}
 
       </div>
