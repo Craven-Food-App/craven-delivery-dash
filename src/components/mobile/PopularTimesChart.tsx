@@ -31,17 +31,6 @@ export const PopularTimesChart: React.FC<PopularTimesChartProps> = ({ className 
         </Button>
       </div>
       
-      {/* Still Searching Section */}
-      <div className="flex items-center justify-between mb-4 w-full">
-        <span className="text-sm text-foreground font-medium">Still searching...</span>
-        <div className="w-4 h-4">
-          <svg className="animate-spin w-full h-full" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" />
-            <path className="opacity-75 text-primary" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
-        </div>
-      </div>
-      
       <div className="flex items-end justify-between h-24 gap-2">
         {timeData.map((data, index) => (
           <div key={data.time} className="flex flex-col items-center flex-1">

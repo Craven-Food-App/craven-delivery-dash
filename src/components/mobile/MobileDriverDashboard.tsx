@@ -568,8 +568,20 @@ export const MobileDriverDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Bottom Content - Popular Times */}
+            {/* Bottom Content - Still Searching + Popular Times */}
             <div className="absolute bottom-7 left-4 right-4 z-20 space-y-3 pointer-events-auto">
+              {/* Still Searching Section */}
+              <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/20 overflow-hidden">
+                <div className="flex items-center justify-between">
+                  <span className="text-base text-foreground font-medium">Still searching...</span>
+                  <div className="w-6 h-6">
+                    <svg className="animate-spin w-full h-full" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" />
+                      <path className="opacity-75 text-primary" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
 
               {/* Popular Times Chart */}
               <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/10 overflow-hidden">
