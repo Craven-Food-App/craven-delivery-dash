@@ -20,9 +20,11 @@ import { MapNavigationHelper } from './MapNavigationHelper';
 import { NavigationMapbox } from './NavigationMapbox';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface OrderDetails {
   restaurant_name: string;
+  restaurant_id?: string; // Add restaurant_id for address lookup
   pickup_address: string | any;
   dropoff_address: string | any;
   customer_name?: string;
@@ -58,9 +60,33 @@ export const EnhancedActiveDeliveryFlow: React.FC<EnhancedActiveDeliveryFlowProp
   const [estimatedArrival, setEstimatedArrival] = useState<Date | null>(null);
   const [proofPhoto, setProofPhoto] = useState<string | null>(null);
   const [showPhotoCapture, setShowPhotoCapture] = useState(false);
+  const [restaurantAddress, setRestaurantAddress] = useState<string>('');
 
   const { toast } = useToast();
   const { navigationSettings } = useNavigation();
+
+  // Fetch restaurant address if pickup_address is null
+  useEffect(() => {
+    const fetchRestaurantAddress = async () => {
+      if (!orderDetails.pickup_address && orderDetails.restaurant_id) {
+        try {
+          const { data, error } = await supabase
+            .from('restaurants')
+            .select('address')
+            .eq('id', orderDetails.restaurant_id)
+            .single();
+          
+          if (data && !error) {
+            setRestaurantAddress(data.address || '');
+          }
+        } catch (error) {
+          console.error('Error fetching restaurant address:', error);
+        }
+      }
+    };
+
+    fetchRestaurantAddress();
+  }, [orderDetails.pickup_address, orderDetails.restaurant_id]);
 
   // Timer for elapsed time
   useEffect(() => {
@@ -147,10 +173,14 @@ export const EnhancedActiveDeliveryFlow: React.FC<EnhancedActiveDeliveryFlowProp
     });
   };
 
-  const formatAddress = (addressData: string | any): string => {
+  const formatAddress = (addressData: string | any, fallbackAddress?: string): string => {
     if (typeof addressData === 'string') return addressData;
     if (addressData?.address) return addressData.address;
-    return `${addressData?.street || ''} ${addressData?.city || ''} ${addressData?.state || ''} ${addressData?.zip_code || ''}`.trim();
+    const formatted = `${addressData?.street || ''} ${addressData?.city || ''} ${addressData?.state || ''} ${addressData?.zip_code || ''}`.trim();
+    if (formatted) return formatted;
+    // Use restaurant address as fallback if available
+    if (fallbackAddress || restaurantAddress) return fallbackAddress || restaurantAddress;
+    return 'Address not available';
   };
 
   const getCurrentDestination = () => {

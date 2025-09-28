@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +23,7 @@ interface ActiveDeliveryProps {
     id: string;
     order_number: string;
     restaurant_name: string;
+    restaurant_id?: string; // Add restaurant_id for address lookup
     pickup_address: any; // can be string or address object
     dropoff_address: any; // can be string or address object
     customer_name: string;
@@ -44,15 +45,41 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
   const [currentStage, setCurrentStage] = useState<DeliveryStage>('navigate_to_restaurant');
   const [deliveryPhoto, setDeliveryPhoto] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [restaurantAddress, setRestaurantAddress] = useState<string>('');
   const { toast } = useToast();
   const { openExternalNavigation } = useNavigation();
 
-  // Helper function to format address
-  const formatAddress = (address: any) => {
+  // Fetch restaurant address if pickup_address is null
+  useEffect(() => {
+    const fetchRestaurantAddress = async () => {
+      if (!orderDetails.pickup_address && orderDetails.restaurant_id) {
+        try {
+          const { data, error } = await supabase
+            .from('restaurants')
+            .select('address')
+            .eq('id', orderDetails.restaurant_id)
+            .single();
+          
+          if (data && !error) {
+            setRestaurantAddress(data.address || '');
+          }
+        } catch (error) {
+          console.error('Error fetching restaurant address:', error);
+        }
+      }
+    };
+
+    fetchRestaurantAddress();
+  }, [orderDetails.pickup_address, orderDetails.restaurant_id]);
+
+  // Helper function to format address with restaurant fallback
+  const formatAddress = (address: any, fallbackAddress?: string) => {
     if (typeof address === 'string') return address;
     if (typeof address === 'object' && address) {
       return `${address.street || ''} ${address.city || ''} ${address.state || ''} ${address.zip || ''}`.trim();
     }
+    // Use restaurant address as fallback if available
+    if (fallbackAddress || restaurantAddress) return fallbackAddress || restaurantAddress;
     return 'Address not available';
   };
 
@@ -214,7 +241,10 @@ export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
               size="lg" 
               onClick={() => {
                 if (!orderDetails.isTestOrder) {
-                  openExternalNavigation({ address: formatAddress(orderDetails.pickup_address), name: orderDetails.restaurant_name });
+                  openExternalNavigation({ 
+                    address: formatAddress(orderDetails.pickup_address), 
+                    name: orderDetails.restaurant_name 
+                  });
                 }
                 handleStageComplete();
               }}

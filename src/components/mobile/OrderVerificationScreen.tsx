@@ -56,11 +56,13 @@ export const OrderVerificationScreen: React.FC<OrderVerificationProps> = ({
   const [showOrderItems, setShowOrderItems] = useState(false);
   const { toast } = useToast();
 
-  const formatAddress = (address: any) => {
+  const formatAddress = (address: any, fallbackAddress?: string) => {
     if (typeof address === 'string') return address;
     if (typeof address === 'object' && address) {
       return `${address.street || ''} ${address.city || ''} ${address.state || ''} ${address.zip || ''}`.trim();
     }
+    // Use fallback address if available
+    if (fallbackAddress) return fallbackAddress;
     return 'Address not available';
   };
 
