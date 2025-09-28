@@ -710,51 +710,53 @@ export const MobileDriverDashboard: React.FC = () => {
           </>}
 
         {/* ON DELIVERY STATE */}
-        {driverState === 'on_delivery' && activeDelivery && <ActiveDeliveryFlow orderDetails={{
-          id: activeDelivery.id || activeDelivery.order_id || 'missing-order-id',
-          order_number: activeDelivery.order_number || 'MISSING-ORDER',
-          restaurant_name: activeDelivery.restaurant_name || 'Restaurant',
-          pickup_address: activeDelivery.pickup_address || 'Pickup Address',
-          dropoff_address: activeDelivery.dropoff_address || 'Delivery Address',
-          customer_name: activeDelivery.customer_name || 'Customer',
-          customer_phone: activeDelivery.customer_phone,
-          delivery_notes: activeDelivery.delivery_notes,
-          payout_cents: activeDelivery.payout_cents || 0,
-          subtotal_cents: activeDelivery.subtotal_cents || activeDelivery.payout_cents || 1200,
-          estimated_time: activeDelivery.estimated_time || 30,
-          items: activeDelivery.items && activeDelivery.items.length > 0 ? activeDelivery.items : [{
-            name: 'Order Items',
-            quantity: 1,
-            price_cents: activeDelivery.subtotal_cents || 1200
-          }],
-          isTestOrder: activeDelivery.isTestOrder || false // Only true if explicitly marked as test
-        }} onCompleteDelivery={() => {
-          // Check if this was a test order
-          if (activeDelivery?.isTestOrder) {
-            setShowTestCompletionModal(true);
-          } else {
-            // Record final driver earnings for real orders
-            (async () => {
-              try {
-                const {
-                  data: {
-                    user
-                  }
-                } = await supabase.auth.getUser();
-                await supabase.functions.invoke('finalize-delivery', {
-                  body: {
-                    orderId: activeDelivery.order_id,
-                    driverId: user?.id
-                  }
-                });
-              } catch (e) {
-                console.error('finalize-delivery failed', e);
-              }
-            })();
-          }
-          setActiveDelivery(null);
-          setDriverState('online_searching');
-        }} />}
+        {driverState === 'on_delivery' && activeDelivery && <div className="pointer-events-auto">
+          <ActiveDeliveryFlow orderDetails={{
+            id: activeDelivery.id || activeDelivery.order_id || 'missing-order-id',
+            order_number: activeDelivery.order_number || 'MISSING-ORDER',
+            restaurant_name: activeDelivery.restaurant_name || 'Restaurant',
+            pickup_address: activeDelivery.pickup_address || 'Pickup Address',
+            dropoff_address: activeDelivery.dropoff_address || 'Delivery Address',
+            customer_name: activeDelivery.customer_name || 'Customer',
+            customer_phone: activeDelivery.customer_phone,
+            delivery_notes: activeDelivery.delivery_notes,
+            payout_cents: activeDelivery.payout_cents || 0,
+            subtotal_cents: activeDelivery.subtotal_cents || activeDelivery.payout_cents || 1200,
+            estimated_time: activeDelivery.estimated_time || 30,
+            items: activeDelivery.items && activeDelivery.items.length > 0 ? activeDelivery.items : [{
+              name: 'Order Items',
+              quantity: 1,
+              price_cents: activeDelivery.subtotal_cents || 1200
+            }],
+            isTestOrder: activeDelivery.isTestOrder || false // Only true if explicitly marked as test
+          }} onCompleteDelivery={() => {
+            // Check if this was a test order
+            if (activeDelivery?.isTestOrder) {
+              setShowTestCompletionModal(true);
+            } else {
+              // Record final driver earnings for real orders
+              (async () => {
+                try {
+                  const {
+                    data: {
+                      user
+                    }
+                  } = await supabase.auth.getUser();
+                  await supabase.functions.invoke('finalize-delivery', {
+                    body: {
+                      orderId: activeDelivery.order_id,
+                      driverId: user?.id
+                    }
+                  });
+                } catch (e) {
+                  console.error('finalize-delivery failed', e);
+                }
+              })();
+            }
+            setActiveDelivery(null);
+            setDriverState('online_searching');
+          }} />
+        </div>}
 
       </div>
 
