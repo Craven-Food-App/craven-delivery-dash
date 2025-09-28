@@ -49,7 +49,7 @@ export const useNavigation = (): UseNavigationReturn => {
   });
 
   const [navigationSettings, setNavigationSettings] = useState<NavigationSettings>({
-    provider: 'mapbox',
+    provider: 'google',
     voiceGuidance: true,
     avoidTolls: false,
     avoidHighways: false

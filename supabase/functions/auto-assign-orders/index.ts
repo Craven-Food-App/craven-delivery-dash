@@ -110,10 +110,36 @@ serve(async (req) => {
           estimated_time: Math.ceil(order.distance_km * 2.5)
         };
 
-        // Send real-time notification via persistent channel
+        // Send real-time notification via persistent channel (driver-specific)
         const channel = supabase.channel(`driver_${driver.user_id}`);
         await channel.subscribe();
         await channel.send({ type: 'broadcast', event: 'order_assignment', payload: notificationPayload });
+
+        // Also broadcast on the common user notifications channel so clients listening there receive it
+        const pickupText = typeof order.pickup_address === 'string'
+          ? order.pickup_address
+          : [order.pickup_address?.address, order.pickup_address?.city, order.pickup_address?.state]
+              .filter(Boolean)
+              .join(', ');
+        const title = `New Order: ${restaurant.name || 'Pickup'}`;
+        const message = `Pickup at ${pickupText || 'restaurant'}`;
+
+        const userChannel = supabase.channel(`user_notifications_${driver.user_id}`);
+        await userChannel.subscribe();
+        await userChannel.send({
+          type: 'broadcast',
+          event: 'push_notification',
+          payload: { title, message, data: notificationPayload }
+        });
+
+        // Persist a record in order_notifications for history
+        await supabase.from('order_notifications').insert({
+          user_id: driver.user_id,
+          order_id: orderId,
+          title,
+          message,
+          notification_type: 'order_assignment'
+        });
 
         console.log(`Order assigned to driver: ${driver.user_id} with priority ${driver.priority}`);
 

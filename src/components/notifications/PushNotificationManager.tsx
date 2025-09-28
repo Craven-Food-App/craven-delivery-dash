@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Bell, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { playNotificationSound } from '@/utils/audioUtils';
 
 interface Notification {
   id: string;
@@ -49,46 +50,53 @@ const PushNotificationManager = ({ userId }: PushNotificationManagerProps) => {
 
     fetchNotifications();
 
-    // Set up real-time subscription for push notifications
-    const channel = supabase
+    // Set up real-time subscription for push notifications (generic)
+    const channelPush = supabase
       .channel(`user_notifications_${userId}`)
-      .on('broadcast', { event: 'push_notification' }, (payload) => {
-        const { title, message, data } = payload.payload;
-        
-        // Show toast notification, play in-app sound, and handle service worker messages
-        toast({
-          title,
-          description: message,
-          duration: 5000,
-        });
+      .on('broadcast', { event: 'push_notification' }, async (payload) => {
+        const { title, message, data } = payload.payload || {};
 
-        // Listen for service worker messages to play sounds
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.addEventListener('message', (event) => {
-            if (event.data.type === 'push_notification_received') {
-              // Play notification sound when push received
-              try {
-                const audio = new Audio('/notification.mp3');
-                audio.volume = 0.7;
-                audio.play().catch(e => console.log('Audio play blocked:', e));
-              } catch (e) {
-                console.log('Audio not available:', e);
-              }
-            }
-          });
-        }
+        toast({ title, description: message, duration: 5000 });
+        try { await playNotificationSound('/notification.mp3', 2, 300); } catch {}
 
-        // Add to notifications list
+        const newNotification: Notification = {
+          id: crypto.randomUUID(),
+          title: title || 'Notification',
+          message: message || '',
+          notification_type: data?.type || 'general',
+          is_read: false,
+          created_at: new Date().toISOString(),
+          order_id: data?.order_id || data?.orderId,
+        };
+        setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
+        setUnreadCount(prev => prev + 1);
+      })
+      .subscribe();
+
+    // Also listen for order assignment broadcasts sent to driver-specific channel
+    const channelAssign = supabase
+      .channel(`driver_${userId}`)
+      .on('broadcast', { event: 'order_assignment' }, async (payload) => {
+        const data: any = payload.payload || {};
+        const pickup = typeof data.pickup_address === 'string'
+          ? data.pickup_address
+          : [data.pickup_address?.address, data.pickup_address?.city, data.pickup_address?.state]
+              .filter(Boolean).join(', ');
+        const title = `New Order: ${data.restaurant_name || 'Pickup'}`;
+        const message = `Pickup at ${pickup || 'restaurant'}`;
+
+        toast({ title, description: message, duration: 5000 });
+        try { await playNotificationSound('/notification.mp3', 2, 300); } catch {}
+
         const newNotification: Notification = {
           id: crypto.randomUUID(),
           title,
           message,
-          notification_type: data?.type || 'general',
+          notification_type: 'order_assignment',
           is_read: false,
           created_at: new Date().toISOString(),
-          order_id: data?.orderId,
+          order_id: data.order_id,
         };
-
         setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
         setUnreadCount(prev => prev + 1);
       })
@@ -108,18 +116,14 @@ const PushNotificationManager = ({ userId }: PushNotificationManagerProps) => {
           const newNotification = payload.new as Notification;
           setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
           setUnreadCount(prev => prev + 1);
-          
-          toast({
-            title: newNotification.title,
-            description: newNotification.message,
-            duration: 5000,
-          });
+          toast({ title: newNotification.title, description: newNotification.message, duration: 5000 });
         }
       )
       .subscribe();
 
     return () => {
-      channel.unsubscribe();
+      channelPush.unsubscribe();
+      channelAssign.unsubscribe();
       dbChannel.unsubscribe();
     };
   }, [userId, toast]);
