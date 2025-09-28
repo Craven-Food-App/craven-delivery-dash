@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMenuItemFavorites } from '@/hooks/useMenuItemFavorites';
-import { Star, Clock, MapPin, Heart, ShoppingCart, Plus, Minus, ArrowLeft, Search } from 'lucide-react';
+import { Star, Clock, MapPin, Heart, ShoppingCart, Plus, Minus, ArrowLeft, Search, Navigation } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import MenuItemCard from './MenuItemCard';
 import CartSummary from './CartSummary';
@@ -376,6 +376,18 @@ const RestaurantMenuPage = () => {
 
   const formatPrice = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
+  const handleGetDirections = () => {
+    if (restaurant?.address) {
+      const encodedAddress = encodeURIComponent(restaurant.address);
+      // Try to open in native map app first, fallback to Google Maps
+      const mapUrl = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+        ? `maps:0,0?q=${encodedAddress}`
+        : `https://maps.google.com/maps?q=${encodedAddress}`;
+      
+      window.open(mapUrl, '_blank');
+    }
+  };
+
   const computeTotals = () => {
     const subtotal = cart.reduce((sum, item) => sum + item.price_cents * item.quantity, 0);
     const tax = Math.round(subtotal * 0.08);
@@ -465,7 +477,7 @@ const RestaurantMenuPage = () => {
                 <h1 className="text-3xl md:text-4xl font-bold mb-2">{restaurant.name}</h1>
                 <p className="text-white/90 mb-2">{restaurant.description}</p>
                 
-                <div className="flex flex-wrap gap-4 text-sm">
+                <div className="flex flex-wrap gap-4 text-sm mb-4">
                   <div className="flex items-center gap-1">
                     <Star className="h-4 w-4 fill-current text-yellow-400" />
                     <span>{restaurant.rating.toFixed(1)}</span>
@@ -485,6 +497,17 @@ const RestaurantMenuPage = () => {
                     {restaurant.cuisine_type}
                   </Badge>
                 </div>
+
+                {/* Get Directions Button */}
+                <Button
+                  onClick={handleGetDirections}
+                  variant="secondary"
+                  size="sm"
+                  className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+                >
+                  <Navigation className="h-4 w-4 mr-2" />
+                  Get Directions
+                </Button>
               </div>
             </div>
           </div>
