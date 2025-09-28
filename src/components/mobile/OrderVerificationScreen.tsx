@@ -18,6 +18,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { DeliveryCamera } from './DeliveryCamera';
 import { supabase } from '@/integrations/supabase/client';
+import cravenLogo from '@/assets/craven-c.png';
 
 interface OrderItem {
   name: string;
@@ -202,180 +203,137 @@ export const OrderVerificationScreen: React.FC<OrderVerificationProps> = ({
 
   return (
     <div className="absolute inset-0 z-10 bg-background">
-      <div className="max-w-md mx-auto p-4 space-y-4">
+      <div className="max-w-md mx-auto space-y-4">
         
-        {/* Test Order Alert */}
-        {orderDetails.isTestOrder && (
-          <div className="p-4 bg-orange-100 border border-orange-300 rounded-xl">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-lg">🧪</span>
-              <span className="font-bold text-orange-800">Test Order Verification</span>
-            </div>
-            <p className="text-sm text-orange-700">
-              This is a test order verification. You can skip the photo or take one for testing.
-            </p>
+        {/* Header with pickup time */}
+        <div className="bg-black text-white rounded-b-3xl px-4 py-6">
+          <div className="text-center">
+            <Clock className="h-5 w-5 mx-auto mb-2 text-orange-400" />
+            <h1 className="text-lg font-semibold">Pick up by 12:27 PM</h1>
           </div>
-        )}
+        </div>
 
-        {/* Header */}
-        <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-          <CardContent className="pt-6">
-            <div className="text-center space-y-2">
-              <div className="text-3xl">📦</div>
-              <h1 className="text-xl font-bold">Verify Pickup</h1>
-              <p className="text-orange-100">Order #{orderDetails.order_number}</p>
+        <div className="px-4 space-y-4">
+          {/* Test Order Alert */}
+          {orderDetails.isTestOrder && (
+            <div className="p-4 bg-orange-100 border border-orange-300 rounded-xl">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">🧪</span>
+                <span className="font-bold text-orange-800">Test Order Verification</span>
+              </div>
+              <p className="text-sm text-orange-700">
+                This is a test order verification. You can skip the photo or take one for testing.
+              </p>
             </div>
-          </CardContent>
-        </Card>
+          )}
 
-        {/* Customer Information - Enhanced */}
-        <Card className="border-green-200 bg-green-50/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-800">
-              <User className="h-5 w-5" />
-              Customer Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-white p-4 rounded-lg border border-green-200 shadow-sm">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex-1">
-                  <p className="font-bold text-lg text-green-900">{orderDetails.customer_name || "Customer"}</p>
-                  <p className="text-sm text-green-700 font-medium mt-1">
-                    📍 {formatAddress(orderDetails.dropoff_address)}
-                  </p>
-                  {orderDetails.customer_phone && (
-                    <p className="text-sm text-green-600 font-medium mt-1">
-                      📞 {orderDetails.customer_phone}
-                    </p>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  {orderDetails.customer_phone && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="border-green-300 text-green-700 hover:bg-green-100"
-                      onClick={() => {
-                        if (orderDetails.isTestOrder) {
-                          toast({
-                            title: "Test Mode",
-                            description: "Would call customer: " + orderDetails.customer_phone,
-                          });
-                        } else {
-                          window.open(`tel:${orderDetails.customer_phone}`);
-                        }
-                      }}
-                    >
-                      <Phone className="h-4 w-4" />
-                    </Button>
-                  )}
+          {/* Order for section with Crave'N logo */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <img src={cravenLogo} alt="Crave'N" className="w-8 h-8 object-contain" />
+              <div>
+                <p className="text-gray-600 text-sm">Order for</p>
+                <h2 className="text-2xl font-bold text-gray-900">{orderDetails.customer_name || "Customer"}</h2>
+              </div>
+              <div className="ml-auto flex gap-2">
+                {orderDetails.customer_phone && (
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     size="sm"
-                    className="border-green-300 text-green-700 hover:bg-green-100"
+                    className="w-10 h-10 rounded-full bg-gray-200 p-0"
+                    onClick={() => {
+                      if (orderDetails.isTestOrder) {
+                        toast({
+                          title: "Test Mode",
+                          description: "Would call customer: " + orderDetails.customer_phone,
+                        });
+                      } else {
+                        window.open(`tel:${orderDetails.customer_phone}`);
+                      }
+                    }}
                   >
-                    <MessageSquare className="h-4 w-4" />
+                    <Phone className="h-4 w-4" />
                   </Button>
+                )}
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="w-10 h-10 rounded-full bg-gray-200 p-0"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Delivery encouragement message */}
+            <div className="bg-green-50 p-4 rounded-xl border border-green-200">
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-white text-sm">💚</span>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-green-800 mb-1">Make this delivery count</h3>
+                  <p className="text-sm text-green-700">
+                    This customer tends to leave higher tips and ratings for great service. Take a moment to check the order.
+                  </p>
                 </div>
               </div>
-            
-              {orderDetails.delivery_notes && (
-                <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200 mt-3">
-                  <p className="text-sm text-yellow-800">
-                    <strong>Delivery Notes:</strong> {orderDetails.delivery_notes}
-                  </p>
-                </div>
-              )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        {/* Order Summary */}
-        <Card>
-          <CardHeader>
-            <CardTitle 
-              className="flex items-center justify-between cursor-pointer"
+        <div className="px-4 space-y-4">
+          {/* Order Summary */}
+          <div className="bg-white">
+            <div 
+              className="flex items-center justify-between cursor-pointer py-3"
               onClick={() => setShowOrderItems(!showOrderItems)}
             >
               <div className="flex items-center gap-2">
                 <Package className="h-5 w-5" />
-                Order Items ({orderDetails.items.length})
+                <span className="font-semibold">{orderDetails.items.length} items</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge className="bg-green-100 text-green-800">
-                  ${(orderDetails.subtotal_cents / 100).toFixed(2)}
-                </Badge>
-                {showOrderItems ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </div>
-            </CardTitle>
-          </CardHeader>
-          {showOrderItems && (
-            <CardContent className="space-y-2">
-              {orderDetails.items.map((item, index) => (
-                <div key={index} className="flex justify-between items-start p-2 bg-muted/50 rounded-lg">
-                  <div className="flex-1">
-                    <p className="font-medium">{item.quantity}x {item.name}</p>
-                    {item.special_instructions && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Note: {item.special_instructions}
-                      </p>
-                    )}
+              {showOrderItems ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </div>
+            
+            {showOrderItems && (
+              <div className="space-y-3 pb-4">
+                {orderDetails.items.map((item, index) => (
+                  <div key={index} className="border-l-2 border-orange-200 pl-4">
+                    <div className="flex items-start gap-2">
+                      <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-medium">{item.quantity}×</span>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900">{item.name}</h4>
+                        {item.special_instructions && (
+                          <div className="mt-1 space-y-1">
+                            {item.special_instructions.split(',').map((instruction, idx) => (
+                              <p key={idx} className="text-sm text-gray-600">{instruction.trim()}</p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-sm font-semibold">
-                    ${(item.price_cents / 100).toFixed(2)}
-                  </p>
-                </div>
-              ))}
-            </CardContent>
-          )}
-        </Card>
-
-        {/* Restaurant Info */}
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <MapPin className="h-5 w-5 text-blue-600" />
+                ))}
               </div>
-              <div>
-                <p className="font-semibold">{orderDetails.restaurant_name}</p>
-                <p className="text-sm text-muted-foreground">
-                  {formatAddress(orderDetails.pickup_address)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            )}
+          </div>
 
-        {/* Earnings Display */}
-        <Card className="bg-green-50 border-green-200">
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-600" />
-              <span className="text-green-800 font-semibold text-lg">
-                You'll earn ${(calculatePayout() / 100).toFixed(2)}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Action Buttons */}
-        <div className="space-y-3">
-          {/* Photo Verification Button */}
+          {/* Verify Order Button */}
           <Button
             onClick={() => setShowCamera(true)}
-            className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg rounded-xl"
+            className="w-full h-14 text-lg font-semibold bg-red-500 hover:bg-red-600 text-white shadow-lg rounded-xl"
           >
-            <Camera className="h-5 w-5 mr-2" />
-            Take Pickup Photo & Confirm
+            Verify order
           </Button>
 
           {/* Skip Photo Option */}
           <Button
             onClick={handleConfirmWithoutPhoto}
             variant="outline"
-            className="w-full h-12 border-2 border-green-500 text-green-600 hover:bg-green-50"
+            className="w-full h-12 border-2 border-gray-300 text-gray-600 hover:bg-gray-50"
           >
             <CheckCircle className="h-4 w-4 mr-2" />
             {orderDetails.isTestOrder ? 'Test: Confirm Pickup' : 'Confirm Pickup (No Photo)'}
@@ -384,8 +342,8 @@ export const OrderVerificationScreen: React.FC<OrderVerificationProps> = ({
           {/* Cancel Button */}
           <Button
             onClick={onCancel}
-            variant="secondary"
-            className="w-full h-10 text-muted-foreground"
+            variant="ghost"
+            className="w-full h-10 text-gray-500"
           >
             Back to Navigation
           </Button>
