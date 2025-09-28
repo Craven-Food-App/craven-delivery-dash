@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Bell, MapPin, Volume2, Smartphone, Moon, Sun } from 'lucide-react';
+import { ArrowLeft, Bell, MapPin, Volume2, Smartphone, Moon, Sun, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +18,11 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ onBack }
     vibration: true,
     darkMode: false,
     language: 'english',
-    distanceUnit: 'miles'
+    distanceUnit: 'miles',
+    navigationProvider: 'mapbox', // mapbox, google, apple, waze
+    voiceGuidance: true,
+    avoidTolls: false,
+    avoidHighways: false
   });
   const { toast } = useToast();
 
@@ -88,6 +92,74 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ onBack }
                 <Switch
                   checked={settings.vibration}
                   onCheckedChange={(checked) => handleSettingChange('vibration', checked)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Navigation */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Navigation className="h-5 w-5 text-primary" />
+                Navigation
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <div className="font-medium mb-2">Navigation Provider</div>
+                <Select
+                  value={settings.navigationProvider}
+                  onValueChange={(value) => handleSettingChange('navigationProvider', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mapbox">Crave'N Navigation (In-App)</SelectItem>
+                    <SelectItem value="google">Google Maps</SelectItem>
+                    <SelectItem value="apple">Apple Maps</SelectItem>
+                    <SelectItem value="waze">Waze</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {settings.navigationProvider === 'mapbox' 
+                    ? 'Turn-by-turn navigation within the app'
+                    : 'Opens external navigation app'
+                  }
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium">Voice Guidance</div>
+                  <div className="text-sm text-muted-foreground">Turn-by-turn voice instructions</div>
+                </div>
+                <Switch
+                  checked={settings.voiceGuidance}
+                  onCheckedChange={(checked) => handleSettingChange('voiceGuidance', checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium">Avoid Tolls</div>
+                  <div className="text-sm text-muted-foreground">Route around toll roads</div>
+                </div>
+                <Switch
+                  checked={settings.avoidTolls}
+                  onCheckedChange={(checked) => handleSettingChange('avoidTolls', checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium">Avoid Highways</div>
+                  <div className="text-sm text-muted-foreground">Use local roads when possible</div>
+                </div>
+                <Switch
+                  checked={settings.avoidHighways}
+                  onCheckedChange={(checked) => handleSettingChange('avoidHighways', checked)}
                 />
               </div>
             </CardContent>

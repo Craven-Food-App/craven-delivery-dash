@@ -17,6 +17,8 @@ import {
   Package
 } from 'lucide-react';
 import { MapNavigationHelper } from './MapNavigationHelper';
+import { NavigationMapbox } from './NavigationMapbox';
+import { useNavigation } from '@/hooks/useNavigation';
 import { useToast } from '@/hooks/use-toast';
 
 interface OrderDetails {
@@ -58,6 +60,7 @@ export const EnhancedActiveDeliveryFlow: React.FC<EnhancedActiveDeliveryFlowProp
   const [showPhotoCapture, setShowPhotoCapture] = useState(false);
 
   const { toast } = useToast();
+  const { navigationSettings } = useNavigation();
 
   // Timer for elapsed time
   useEffect(() => {
@@ -269,14 +272,23 @@ export const EnhancedActiveDeliveryFlow: React.FC<EnhancedActiveDeliveryFlowProp
           </CardContent>
         </Card>
 
-        {/* Navigation Helper */}
-        <MapNavigationHelper 
-          destination={{
-            address: destination.address,
-            name: destination.name
-          }}
-          type={destination.type}
-        />
+        {/* Navigation */}
+        {navigationSettings.provider === 'mapbox' ? (
+          <NavigationMapbox
+            destination={{
+              address: destination.address,
+              name: destination.name
+            }}
+          />
+        ) : (
+          <MapNavigationHelper 
+            destination={{
+              address: destination.address,
+              name: destination.name
+            }}
+            type={destination.type}
+          />
+        )}
 
         {/* ETA Display */}
         {estimatedArrival && (
