@@ -379,29 +379,36 @@ export const EarningsSection: React.FC = () => {
               
               return (
                 <div key={index} className="flex flex-col items-center w-10">
-                  <div className="relative flex flex-col items-center justify-end h-20 mb-2">
-                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2">
-                      {day.amount > 0 && (
-                        <span className="text-white text-xs font-medium whitespace-nowrap">
-                          ${day.amount.toFixed(2)}
-                        </span>
-                      )}
-                    </div>
+                  {/* Fixed container for amount label */}
+                  <div className="h-6 flex items-start justify-center mb-1">
+                    {day.amount > 0 && (
+                      <span className="text-white text-xs font-medium whitespace-nowrap">
+                        ${day.amount.toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Fixed container for bars */}
+                  <div className="h-16 flex items-end justify-center mb-2">
                     <div 
                       className={`w-8 ${day.amount > 0 ? 'bg-green-400' : 'bg-primary/30'} rounded-t transition-all duration-300`}
-                      style={{ height: `${Math.max(height * 0.6, day.amount > 0 ? 20 : 8)}px` }}
+                      style={{ height: `${Math.max(height * 0.6, day.amount > 0 ? 16 : 4)}px` }}
                     />
                   </div>
-                  <div className="text-center w-full">
-                    <div className={`text-xs ${isToday ? 'text-white font-semibold' : 'text-orange-200'}`}>
+                  
+                  {/* Fixed container for day/date labels */}
+                  <div className="h-8 flex flex-col items-center justify-start w-full">
+                    <div className={`text-xs leading-tight ${isToday ? 'text-white font-semibold' : 'text-orange-200'}`}>
                       {day.day}
                     </div>
-                    <div className={`text-xs ${isToday ? 'text-white font-semibold' : 'text-orange-200'}`}>
+                    <div className={`text-xs leading-tight ${isToday ? 'text-white font-semibold' : 'text-orange-200'}`}>
                       {day.date}
                     </div>
                   </div>
+                  
+                  {/* Today indicator */}
                   {isToday && (
-                    <div className="w-0.5 h-16 bg-white/60 mt-2 mx-auto" />
+                    <div className="w-0.5 h-4 bg-white/60 mt-1" />
                   )}
                 </div>
               );
