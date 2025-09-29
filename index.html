@@ -29,10 +29,64 @@
     
     <!-- Mapbox Search JS -->
     <script id="search-js" defer src="https://api.mapbox.com/search-js/v1.3.0/web.js"></script>
+
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #fff;
+      }
+
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center; /* Vertically + horizontally center */
+        text-align: center;
+      }
+
+      .content {
+        max-width: 90%;
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        color: #EA580C;
+      }
+
+      p {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        color: #333;
+      }
+
+      .btn {
+        display: inline-block;
+        padding: 12px 24px;
+        background: #EA580C;
+        color: #fff;
+        font-size: 1rem;
+        font-weight: bold;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: background 0.3s ease;
+      }
+
+      .btn:hover {
+        background: #c94a0a;
+      }
+    </style>
   </head>
 
   <body>
-    <div id="root"></div>
+    <div class="content">
+      <h1>Crave'n</h1>
+      <p>Your favorite food, delivered fast.</p>
+      <a href="/order" class="btn">Order Now</a>
+    </div>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
