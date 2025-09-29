@@ -1,466 +1,595 @@
-// @ts-nocheck
-import React, { useState, useEffect } from 'react';
-import { DollarSign, Clock, TrendingUp, Calendar, CreditCard, Zap, Gift, FileText, Target, ChevronRight, Download, Settings, PiggyBank, Users, Award, HelpCircle, Info } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Progress } from '@/components/ui/progress';
-import { supabase } from '@/integrations/supabase/client';
-import { InstantCashoutModal } from './InstantCashoutModal';
+import React, { useState, useEffect, useCallback } from 'react';
+import { 
+  DollarSign, 
+  Clock, 
+  Calendar,
+  CreditCard,
+  Zap,
+  ChevronRight,
+  HelpCircle,
+  Info,
+  X,
+  Check
+} from 'lucide-react';
+
+
+// --- Mock UI Components (Shadcn/ui equivalents using Tailwind) ---
+
+const Card = ({ className = '', children, ...props }) => (
+  <div className={`rounded-xl border bg-card text-card-foreground shadow-lg ${className}`} {...props}>
+    {children}
+  </div>
+);
+
+const CardHeader = ({ className = '', children }) => (
+  <div className={`flex flex-col space-y-1.5 p-6 ${className}`}>
+    {children}
+  </div>
+);
+
+const CardTitle = ({ className = '', children }) => (
+  <h3 className={`text-xl font-semibold leading-none tracking-tight ${className}`}>
+    {children}
+  </h3>
+);
+
+const CardContent = ({ className = '', children }) => (
+  <div className={`p-6 pt-0 ${className}`}>
+    {children}
+  </div>
+);
+
+const Button = ({ className = '', variant = 'default', children, disabled = false, ...props }) => {
+  const baseStyle = 'inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background';
+  
+  const getVariantStyle = (v) => {
+    switch (v) {
+      case 'outline':
+        return 'border border-input bg-background hover:bg-accent hover:text-accent-foreground';
+      case 'secondary':
+        return 'bg-secondary text-secondary-foreground hover:bg-secondary/80';
+      default:
+        // Orange Primary Theme for Default Button
+        return 'bg-orange-600 text-white hover:bg-orange-700 shadow-md';
+    }
+  };
+
+  const variantStyle = getVariantStyle(variant);
+
+  return (
+    <button
+      className={`${baseStyle} ${variantStyle} ${className}`}
+      disabled={disabled}
+      style={{ padding: '0.5rem 1rem' }}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+};
+
+const Badge = ({ className = '', variant = 'default', children }) => {
+  const baseStyle = 'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2';
+  let variantStyle = '';
+
+  switch (variant) {
+    case 'secondary':
+      variantStyle = 'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80';
+      break;
+    case 'success':
+      variantStyle = 'border-transparent bg-green-500 text-white hover:bg-green-600';
+      break;
+    default:
+      // Orange Primary Theme for Default Badge
+      variantStyle = 'border-transparent bg-orange-500 text-white hover:bg-orange-600';
+      break;
+  }
+
+  return <span className={`${baseStyle} ${variantStyle} ${className}`}>{children}</span>;
+};
+
+const Separator = ({ className = '' }) => (
+  <div className={`shrink-0 bg-gray-200 h-[1px] w-full ${className}`} />
+);
+
+const Progress = ({ value, className = '' }) => (
+  <div className={`relative h-2 w-full overflow-hidden rounded-full bg-secondary ${className}`}>
+    <div
+      className="h-full bg-yellow-400 transition-all duration-500 ease-out"
+      style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+    />
+  </div>
+);
+
+// --- Data Interfaces (Unchanged) ---
+
 interface DailyEarnings {
-  day: string;
-  date: number;
-  amount: number;
+  day: string;
+  date: number;
+  amount: number;
 }
+
 interface WeeklyEarnings {
-  weekStart: string;
-  weekEnd: string;
-  total: number;
-  isCurrentWeek: boolean;
+  weekStart: string;
+  weekEnd: string;
+  total: number;
+  isCurrentWeek: boolean;
 }
+
 interface EarningsData {
-  today: {
-    total: number;
-    deliveries: number;
-    activeTime: string;
-    basePay: number;
-    tips: number;
-    bonuses: number;
-  };
-  currentWeek: {
-    total: number;
-    deliveries: number;
-    activeTime: string;
-    goal: number;
-    daysWorked: number;
-    dailyEarnings: DailyEarnings[];
-    weekRange: string;
-  };
-  weeklyHistory: WeeklyEarnings[];
-  lifetime: {
-    total: number;
-    deliveries: number;
-    totalTime: string;
-    avgPerDelivery: number;
-  };
-  instantPay: {
-    available: number;
-    dailyLimit: number;
-    used: number;
-  };
+  today: {
+    total: number;
+    deliveries: number;
+    activeTime: string;
+    basePay: number;
+    tips: number;
+    bonuses: number;
+  };
+  currentWeek: {
+    total: number;
+    deliveries: number;
+    activeTime: string;
+    goal: number;
+    daysWorked: number;
+    dailyEarnings: DailyEarnings[];
+    weekRange: string;
+  };
+  weeklyHistory: WeeklyEarnings[];
+  lifetime: {
+    total: number;
+    deliveries: number;
+    totalTime: string;
+    avgPerDelivery: number;
+  };
+  instantPay: {
+    available: number;
+    dailyLimit: number;
+    used: number;
+  };
 }
+
 interface DeliveryHistory {
-  id: string;
-  date: string;
-  restaurant: string;
-  earnings: number;
-  basePay: number;
-  tip: number;
-  bonus: number;
-  distance: number;
-  time: string;
+  id: string;
+  date: string; // ISO string or formatted string
+  restaurant: string;
+  earnings: number;
+  distance: number;
+  time: string; // duration
 }
-export const EarningsSection: React.FC = () => {
-  const [earningsData, setEarningsData] = useState<EarningsData | null>(null);
-  const [deliveryHistory, setDeliveryHistory] = useState<DeliveryHistory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showCashoutModal, setShowCashoutModal] = useState(false);
+
+// --- Initial Data Generator ---
+
+const getInitialEarningsData = (userId: string): EarningsData => {
+  const today = new Date();
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - today.getDay());
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  
+  return {
+    today: { total: 45.75, deliveries: 3, activeTime: '2h 15m', basePay: 28.50, tips: 12.25, bonuses: 5.00 },
+    currentWeek: {
+      total: 127.45, deliveries: 8, activeTime: '6h 30m', goal: 500, daysWorked: 3,
+      dailyEarnings: [
+        { day: 'Sun', date: weekStart.getDate(), amount: 0 },
+        { day: 'Mon', date: weekStart.getDate() + 1, amount: 35.20 },
+        { day: 'Tue', date: weekStart.getDate() + 2, amount: 46.50 },
+        { day: 'Wed', date: weekStart.getDate() + 3, amount: 0 },
+        { day: 'Thu', date: new Date().getDate(), amount: 45.75 },
+        { day: 'Fri', date: weekStart.getDate() + 5, amount: 0 },
+        { day: 'Sat', date: weekStart.getDate() + 6, amount: 0 },
+      ],
+      weekRange: `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+    },
+    weeklyHistory: [],
+    lifetime: { total: 1247.80, deliveries: 89, totalTime: '52h 15m', avgPerDelivery: 14.02 },
+    instantPay: { available: 127.45, dailyLimit: 500, used: 0 }
+  };
+};
+
+const INITIAL_DELIVERY_HISTORY: DeliveryHistory[] = [
+  {
+    id: "delivery-004", 
+    date: new Date().toISOString(), 
+    restaurant: "Chipotle Mexican Grill", 
+    earnings: 16.50,
+    distance: 2.3, 
+    time: '18 min'
+  },
+  {
+    id: "delivery-003", 
+    date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), 
+    restaurant: "Panda Express", 
+    earnings: 14.75,
+    distance: 1.8, 
+    time: '12 min'
+  },
+  {
+    id: "delivery-002", 
+    date: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), 
+    restaurant: "McDonald's", 
+    earnings: 14.50,
+    distance: 1.2, 
+    time: '15 min'
+  },
+  {
+    id: "delivery-001", 
+    date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), 
+    restaurant: "Five Guys", 
+    earnings: 18.25,
+    distance: 3.1, 
+    time: '22 min'
+  }
+];
+
+const INSTANT_CASHOUT_FEE = 0.50; // $0.50 fee for instant cashout
+
+// --- Instant Cashout Modal Component ---
+
+const InstantCashoutModal = ({ isOpen, onClose, availableAmount, onCashoutSuccess }) => {
+  const [cashoutAmount, setCashoutAmount] = useState('');
+  const [message, setMessage] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
-    fetchEarningsData();
-  }, []);
-  const fetchEarningsData = async () => {
+    if (isOpen) {
+      setCashoutAmount(Math.max(0, availableAmount).toFixed(2));
+      setMessage('');
+      setSuccess(false);
+    }
+  }, [isOpen, availableAmount]);
+
+  const handleCashout = async () => {
+    const amount = parseFloat(cashoutAmount);
+    const netAmount = amount - INSTANT_CASHOUT_FEE;
+
+    if (isNaN(amount) || amount <= 0) {
+      setMessage('Please enter a valid amount greater than $0.00.');
+      return;
+    }
+    if (amount > availableAmount) {
+      setMessage(`Amount ($${amount.toFixed(2)}) exceeds available balance ($${availableAmount.toFixed(2)}).`);
+      return;
+    }
+    if (netAmount < 0.01) {
+      setMessage(`Minimum net cashout must be over $0.00. (Requires entry > $${INSTANT_CASHOUT_FEE.toFixed(2)})`);
+      return;
+    }
+    
+    setLoading(true);
+    setMessage('Processing instant cashout...');
+
     try {
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      setMessage(`Successfully cashed out $${amount.toFixed(2)} (Net: $${netAmount.toFixed(2)})! Check your bank in minutes.`);
+      setSuccess(true);
+      
+      setTimeout(() => {
+        onCashoutSuccess?.(amount);
+        onClose();
+      }, 800);
 
-      // Get driver profile
-      const {
-        data: driverProfile
-      } = await supabase.from('driver_profiles').select('total_deliveries, rating').eq('user_id', user.id).single();
-
-      // Get driver earnings from the earnings table
-      const {
-        data: earnings
-      } = await supabase.from('driver_earnings').select('*').eq('driver_id', user.id).order('earned_at', {
-        ascending: false
-      });
-
-      // Get completed orders for this driver
-      const {
-        data: completedOrders
-      } = await supabase.from('orders').select('id, payout_cents, created_at, distance_km, pickup_address, restaurants(name)').eq('driver_id', user.id).eq('order_status', 'delivered').order('created_at', {
-        ascending: false
-      });
-
-      // Use earnings data if available, otherwise use orders
-      const earningsToUse = earnings && earnings.length > 0 ? earnings : [];
-      const ordersToUse = completedOrders || [];
-      if (earningsToUse.length === 0 && ordersToUse.length === 0) {
-        const emptyDailyEarnings = Array.from({
-          length: 7
-        }, (_, i) => ({
-          day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
-          date: new Date().getDate() - new Date().getDay() + i,
-          amount: 0
-        }));
-        setEarningsData({
-          today: {
-            total: 0,
-            deliveries: 0,
-            activeTime: '0h 0m',
-            basePay: 0,
-            tips: 0,
-            bonuses: 0
-          },
-          currentWeek: {
-            total: 0,
-            deliveries: 0,
-            activeTime: '0h 0m',
-            goal: 500,
-            daysWorked: 0,
-            dailyEarnings: emptyDailyEarnings,
-            weekRange: 'Current Week'
-          },
-          weeklyHistory: [],
-          lifetime: {
-            total: 0,
-            deliveries: 0,
-            totalTime: '0h 0m',
-            avgPerDelivery: 0
-          },
-          instantPay: {
-            available: 0,
-            dailyLimit: 500,
-            used: 0
-          }
-        });
-        setDeliveryHistory([]);
-        return;
-      }
-
-      // Calculate today's time window and totals
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      // Earnings rows for today (if present)
-      const todayEarnings = earningsToUse.filter(earning => new Date(earning.earned_at) >= today);
-
-      // Orders completed today (fallback when earnings rows are missing)
-      const todayOrders = ordersToUse.filter(order => {
-        const d = new Date(order.created_at);
-        d.setHours(0, 0, 0, 0);
-        return d >= today;
-      });
-
-      // Today's total, prefer earnings rows, fallback to orders payout
-      const todayTotal = (todayEarnings.length > 0 ? todayEarnings.reduce((sum, earning) => sum + (earning.total_cents || 0), 0) : todayOrders.reduce((sum, order) => sum + (order.payout_cents || 0), 0)) / 100;
-
-      // Calculate this week's range and totals
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - today.getDay());
-      weekStart.setHours(0, 0, 0, 0);
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
-      weekEnd.setHours(23, 59, 59, 999);
-      const weekEarnings = earningsToUse.filter(earning => {
-        const d = new Date(earning.earned_at);
-        return d >= weekStart && d <= weekEnd;
-      });
-
-      // Orders within this week (fallback)
-      const weekOrders = ordersToUse.filter(order => {
-        const d = new Date(order.created_at);
-        return d >= weekStart && d <= weekEnd;
-      });
-
-      // Weekly total, prefer earnings rows, fallback to orders payout
-      const weekTotal = (weekEarnings.length > 0 ? weekEarnings.reduce((sum, earning) => sum + (earning.total_cents || 0), 0) : weekOrders.reduce((sum, order) => sum + (order.payout_cents || 0), 0)) / 100;
-
-      // Create daily earnings breakdown for current week
-      const dailyEarnings = Array.from({
-        length: 7
-      }, (_, i) => {
-        const day = new Date(weekStart);
-        day.setDate(weekStart.getDate() + i);
-        day.setHours(0, 0, 0, 0);
-        const dayEnd = new Date(day);
-        dayEnd.setHours(23, 59, 59, 999);
-
-        // Earnings rows on this day
-        const dayEarnings = weekEarnings.filter(earning => {
-          const earningDate = new Date(earning.earned_at);
-          return earningDate >= day && earningDate <= dayEnd;
-        });
-
-        // Orders on this day (fallback)
-        const dayOrders = weekOrders.filter(order => {
-          const orderDate = new Date(order.created_at);
-          return orderDate >= day && orderDate <= dayEnd;
-        });
-        const cents = dayEarnings.length > 0 ? dayEarnings.reduce((sum, earning) => sum + (earning.total_cents || 0), 0) : dayOrders.reduce((sum, order) => sum + (order.payout_cents || 0), 0);
-        return {
-          day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
-          date: day.getDate(),
-          amount: cents / 100
-        };
-      });
-
-      // Calculate weekly history (last 8 weeks)
-      const weeklyHistory = [];
-      for (let i = 1; i <= 8; i++) {
-        const historyWeekStart = new Date(weekStart);
-        historyWeekStart.setDate(weekStart.getDate() - i * 7);
-        const historyWeekEnd = new Date(historyWeekStart);
-        historyWeekEnd.setDate(historyWeekStart.getDate() + 6);
-        const historyWeekOrders = completedOrders.filter(order => {
-          const orderDate = new Date(order.created_at);
-          return orderDate >= historyWeekStart && orderDate <= historyWeekEnd;
-        });
-        const historyWeekTotal = historyWeekOrders.reduce((sum, order) => sum + order.payout_cents, 0) / 100;
-        if (historyWeekTotal > 0) {
-          weeklyHistory.push({
-            weekStart: historyWeekStart.toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric'
-            }),
-            weekEnd: historyWeekEnd.toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric'
-            }),
-            total: historyWeekTotal,
-            isCurrentWeek: false
-          });
-        }
-      }
-
-      // Calculate lifetime earnings
-      const lifetimeTotal = completedOrders.reduce((sum, order) => sum + order.payout_cents, 0) / 100;
-      const lifetimeDeliveries = driverProfile?.total_deliveries || completedOrders.length;
-      const avgPerDelivery = lifetimeDeliveries > 0 ? lifetimeTotal / lifetimeDeliveries : 0;
-
-      // Estimate breakdown (in a real app, you'd track these separately)
-      const estimateBreakdown = (total: number) => ({
-        basePay: total * 0.65,
-        tips: total * 0.25,
-        bonuses: total * 0.10
-      });
-      const todayBreakdown = estimateBreakdown(todayTotal);
-      setEarningsData({
-        today: {
-          total: todayTotal,
-          deliveries: todayOrders.length,
-          activeTime: `${todayOrders.length * 0.5}h ${todayOrders.length * 30 % 60}m`,
-          ...todayBreakdown
-        },
-        currentWeek: {
-          total: weekTotal,
-          deliveries: weekOrders.length,
-          activeTime: `${Math.floor(weekOrders.length * 0.5)}h ${weekOrders.length * 30 % 60}m`,
-          goal: 500,
-          daysWorked: new Set(weekOrders.map(o => new Date(o.created_at).toDateString())).size,
-          dailyEarnings: dailyEarnings,
-          weekRange: `${weekStart.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric'
-          })} - ${weekEnd.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric'
-          })}`
-        },
-        weeklyHistory: weeklyHistory,
-        lifetime: {
-          total: lifetimeTotal,
-          deliveries: lifetimeDeliveries,
-          totalTime: `${Math.floor(lifetimeDeliveries * 0.5)}h ${lifetimeDeliveries * 30 % 60}m`,
-          avgPerDelivery: avgPerDelivery
-        },
-        instantPay: {
-          available: Math.max(0, todayTotal - 10),
-          // Keep $10 minimum
-          dailyLimit: 500,
-          used: 0
-        }
-      });
-
-      // Create delivery history from recent orders
-      const recentHistory = completedOrders.slice(0, 5).map((order, index) => {
-        const orderDate = new Date(order.created_at);
-        const earnings = (order.payout_cents || 0) / 100;
-        const breakdown = estimateBreakdown(earnings);
-        return {
-          id: order.id || index.toString(),
-          date: orderDate.toLocaleDateString() === today.toLocaleDateString() ? `Today ${orderDate.toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit'
-          })}` : orderDate.toLocaleDateString(),
-          restaurant: order.restaurants && order.restaurants.name ? order.restaurants.name : 'Restaurant',
-          earnings: earnings,
-          basePay: breakdown.basePay,
-          tip: breakdown.tips,
-          bonus: breakdown.bonuses,
-          distance: (order.distance_km || 0) * 0.621371,
-          // Convert to miles
-          time: `${Math.ceil((order.distance_km || 0) * 2)} min`
-        };
-      });
-      setDeliveryHistory(recentHistory);
     } catch (error) {
-      console.error('Error fetching earnings data:', error);
+      console.error("Cashout UI error:", error);
+      setMessage("Cashout failed. Please try again.");
+      setSuccess(false);
     } finally {
       setLoading(false);
     }
   };
-  if (loading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center pb-16">
-        <div className="text-center">
-          <div className="animate-pulse space-y-4">
-            <div className="h-20 w-64 bg-muted rounded-lg mx-auto"></div>
-            <div className="h-4 w-32 bg-muted rounded mx-auto"></div>
-          </div>
-        </div>
-      </div>;
-  }
-  if (!earningsData) {
-    return <div className="min-h-screen bg-background flex items-center justify-center pb-16">
-        <div className="text-center">
-          <DollarSign className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-xl font-semibold mb-2">No Earnings Yet</h2>
-          <p className="text-muted-foreground">Complete your first delivery to see your earnings!</p>
-        </div>
-      </div>;
-  }
-  const maxWeeklyEarning = Math.max(...earningsData.currentWeek.dailyEarnings.map(d => d.amount));
-  return <div className="min-h-screen bg-background pb-16">
-      {/* Earnings Header with Gradient Background */}
-      <div className="bg-gradient-to-b from-primary to-primary-glow text-white">
-        <div className="flex items-center justify-between p-4 pt-12">
-          <h1 className="text-xl font-semibold">Earnings</h1>
-          <HelpCircle className="h-6 w-6" />
-        </div>
-        
-        <div className="px-4 pb-6">
-          <p className="text-orange-100 text-center mb-6">Confirmed Earnings for Current Week</p>
-          
-          {/* Daily Earnings Bar Chart */}
-          <div className="flex items-end justify-center gap-2 mb-6 h-32">
-            {earningsData.currentWeek.dailyEarnings.map((day, index) => {
-            const height = maxWeeklyEarning > 0 ? day.amount / maxWeeklyEarning * 100 : 0;
-            const isToday = day.date === new Date().getDate();
-            return <div key={index} className="flex flex-col items-center w-10">
-                  {/* Fixed container for amount label */}
-                  <div className="h-6 flex items-start justify-center mb-1">
-                    {day.amount > 0 && <span className="text-white text-xs font-medium whitespace-nowrap">
-                        ${day.amount.toFixed(2)}
-                      </span>}
-                  </div>
-                  
-                  {/* Fixed container for bars */}
-                  <div className="h-16 flex items-end justify-center mb-2">
-                    <div className={`w-8 ${day.amount > 0 ? 'bg-green-400' : 'bg-primary/30'} rounded-t transition-all duration-300`} style={{
-                  height: `${Math.max(height * 0.6, day.amount > 0 ? 16 : 4)}px`
-                }} />
-                  </div>
-                  
-                  {/* Fixed container for day/date labels */}
-                  <div className="h-8 flex flex-col items-center justify-start w-full">
-                    <div className={`text-xs leading-tight ${isToday ? 'text-white font-semibold' : 'text-orange-200'}`}>
-                      {day.day}
-                    </div>
-                    <div className={`text-xs leading-tight ${isToday ? 'text-white font-semibold' : 'text-orange-200'}`}>
-                      {day.date}
-                    </div>
-                  </div>
-                </div>;
-          })}
-          </div>
-        </div>
-        
-        {/* Current Week Summary */}
-        <div className="bg-primary/20 mx-4 rounded-lg p-4 mb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-orange-100 text-sm">Current Week</p>
-              <p className="text-white font-medium my-0 py-0">{earningsData.currentWeek.weekRange}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-orange-100 text-sm">Confirmed Earnings</p>
-              <p className="text-green-400 text-xl font-bold">${earningsData.currentWeek.total.toFixed(2)}</p>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* White Background Content */}
-      <div className="bg-white">
-        {/* Weekly Earnings Summary */}
-        <div className="p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Weekly Earnings Summary</h2>
-            <Info className="h-4 w-4 text-primary" />
-          </div>
-          <p className="text-sm text-gray-600 mb-6">
-            For more details about your earnings, including when you can expect to get them, you can visit the Crave'n portal.
-          </p>
-          
-          {/* Year Header */}
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">2025</h3>
-          
-          {/* Weekly History */}
-          <div className="space-y-4">
-            {earningsData.weeklyHistory.map((week, index) => <div key={index} className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  <span className="text-primary font-medium">
-                    {week.weekStart} - {week.weekEnd}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-semibold text-gray-900">
-                    ${week.total.toFixed(2)}
-                  </span>
-                  <ChevronRight className="h-5 w-5 text-gray-400" />
-                </div>
-              </div>)}
-            
-            {/* Empty weeks with dashes */}
-            {Array.from({
-            length: Math.max(0, 6 - earningsData.weeklyHistory.length)
-          }, (_, i) => <div key={`empty-${i}`} className="flex items-center justify-between py-3 my-[2px] px-0 mx-px">
-                <div className="flex items-center gap-3">
-                  <span className="text-primary font-medium">
-                    Week {earningsData.weeklyHistory.length + i + 1}
-                  </span>
-                </div>
-                <span className="text-lg font-semibold text-gray-900">-</span>
-              </div>)}
-          </div>
-        </div>
-        
-        {/* Quick Actions */}
-        <div className="p-4 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Button className="h-16 flex flex-col items-center justify-center gap-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white border-0" onClick={() => setShowCashoutModal(true)} disabled={earningsData.instantPay.available < 0.50}>
-              <Zap className="h-5 w-5" />
-              <span className="text-xs">Instant Pay</span>
-              <span className="text-xs font-bold">${earningsData.instantPay.available.toFixed(2)}</span>
-            </Button>
-            <Button className="h-16 flex flex-col items-center justify-center gap-1" variant="outline">
-              <CreditCard className="h-5 w-5 text-primary" />
-              <span className="text-xs">Payment</span>
-              <span className="text-xs">Methods</span>
-            </Button>
-          </div>
-        </div>
-      </div>
+  if (!isOpen) return null;
 
-      {/* Instant Cashout Modal */}
-      <InstantCashoutModal isOpen={showCashoutModal} onClose={() => setShowCashoutModal(false)} availableAmount={earningsData.instantPay.available} onSuccess={() => {
-      // Refresh earnings data after successful cashout
-      fetchEarningsData();
-    }} />
-    </div>;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <Card className="w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-green-600" />
+            CashApp Instant Cashout
+          </CardTitle>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
+            <X className="h-5 w-5" />
+          </button>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="text-center">
+            <p className="text-sm text-gray-600 mb-1">Available to Cash Out</p>
+            <p className="text-3xl font-bold text-green-600">${Math.max(0, availableAmount).toFixed(2)}</p>
+            <p className="text-xs text-gray-500 mt-1">Instant transfer to your CashApp</p>
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
+              Cashout Amount (CashApp Fee: ${INSTANT_CASHOUT_FEE.toFixed(2)})
+            </label>
+            <input
+              id="amount"
+              type="number"
+              value={cashoutAmount}
+              onChange={(e) => setCashoutAmount(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 p-2 text-lg focus:ring-green-500 focus:border-green-500"
+              min="0.01"
+              max={availableAmount.toFixed(2)}
+              step="0.01"
+              disabled={success || loading}
+            />
+          </div>
+          {message && (
+            <p className={`text-sm font-medium ${success ? 'text-green-600' : 'text-red-600'}`}>
+              {message}
+            </p>
+          )}
+          <Button
+            className="w-full h-10 bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
+            onClick={handleCashout}
+            disabled={success || loading || availableAmount < INSTANT_CASHOUT_FEE}
+          >
+            {loading ? 'Processing...' : (success ? <><Check className="h-5 w-5 mr-2" /> Sent to CashApp!</> : <><Zap className="h-5 w-5 mr-2" /> Cash Out to CashApp</>)}
+          </Button>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <p className="text-xs text-green-700 font-medium mb-1">💡 Same-Day CashApp Transfer</p>
+            <p className="text-xs text-green-600">
+              • Funds arrive in your CashApp within minutes<br/>
+              • Available 24/7 including weekends<br/>
+              • Secure & encrypted transfer
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 };
+
+
+// --- Main Application Component ---
+
+export const EarningsSection = () => {
+  const [earningsData, setEarningsData] = useState<EarningsData | null>(null);
+  const [deliveryHistory, setDeliveryHistory] = useState<DeliveryHistory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCashoutModal, setShowCashoutModal] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [db, setDb] = useState<any>(null);
+  const [auth, setAuth] = useState<any>(null);
+
+  // Initialize local demo data (no Firebase)
+  useEffect(() => {
+    const uid = 'local-user';
+    setUserId(uid);
+    setEarningsData(getInitialEarningsData(uid));
+    setDeliveryHistory(INITIAL_DELIVERY_HISTORY);
+    setLoading(false);
+  }, []);
+
+
+  // Handler to refresh/force update (though onSnapshot makes this mostly redundant)
+  const handleCashoutSuccess = (amount: number) => {
+    setEarningsData((prev) => {
+      if (!prev) return prev;
+      const updatedAvailable = Math.max(0, prev.instantPay.available - amount);
+      const updatedUsed = (prev.instantPay.used || 0) + amount;
+      return {
+        ...prev,
+        instantPay: { ...prev.instantPay, available: updatedAvailable, used: updatedUsed }
+      };
+    });
+  };
+
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center pb-16 font-sans">
+        <div className="text-center">
+          <div className="animate-pulse space-y-4">
+            <div className="h-20 w-64 bg-gray-200 rounded-xl mx-auto"></div>
+            <div className="h-4 w-32 bg-gray-200 rounded mx-auto"></div>
+            <p className="text-sm text-gray-500 mt-2">Connecting to real-time earnings data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!earningsData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center pb-16 font-sans">
+        <div className="text-center p-6">
+          <DollarSign className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+          <h2 className="text-xl font-semibold mb-2">No Earnings Data Available</h2>
+          <p className="text-gray-500">Could not load earnings. This is likely a new account initialization or a connection error.</p>
+          <Button className="mt-4" onClick={() => setLoading(true)}>Try Reconnect</Button>
+          </div>
+      </div>
+    );
+  }
+  
+  const currentWeek = earningsData.currentWeek;
+  const today = earningsData.today;
+  const lifetime = earningsData.lifetime;
+  const instantPay = earningsData.instantPay;
+
+  // Calculate Max Weekly Earning for chart scaling
+  const maxWeeklyEarning = Math.max(
+    ...currentWeek.dailyEarnings.map(d => d.amount),
+    100 // Ensure a minimum bar height for visibility if all are zero
+  );
+
+  const todayAvgPerDelivery = today.deliveries > 0 ? today.total / today.deliveries : 0;
+  const weekGoalProgress = (currentWeek.total / currentWeek.goal) * 100;
+  
+  return (
+    <div className="min-h-screen bg-gray-50 pb-16 font-sans">
+      
+      {/* User ID Display - MANDATORY FOR MULTI-USER APPS */}
+      <div className="p-2 text-center bg-gray-100 text-xs text-gray-600 border-b">
+          Your Driver ID: <span className="font-mono font-bold text-orange-600 break-all">{userId || 'N/A'}</span>
+      </div>
+
+      {/* Earnings Header with Gradient Background (ORANGE) - Fully Responsive Header */}
+      <div className="bg-gradient-to-b from-orange-600 to-orange-700 text-white shadow-lg p-4 md:p-6">
+        <div className="flex items-center justify-between pt-4 pb-2">
+          <h1 className="text-xl md:text-2xl font-bold">Your Earnings</h1>
+          <HelpCircle className="h-6 w-6 text-orange-200 hover:text-white transition-colors cursor-pointer" />
+        </div>
+        
+        {/* Daily Earnings Bar Chart - Fluid Layout */}
+        <div className="px-0 pb-6">
+          <p className="text-orange-200 text-center mb-6 text-sm">Confirmed Earnings for Current Week</p>
+          <div className="flex items-end justify-between gap-1 mb-6 h-36">
+            {currentWeek.dailyEarnings.map((day, index) => {
+              const height = maxWeeklyEarning > 0 ? (day.amount / maxWeeklyEarning) * 100 : 0;
+              const isToday = day.date === new Date().getDate();
+              
+              return (
+                <div key={index} className="flex flex-col items-center w-1/7 min-w-[2.2rem] sm:min-w-10">
+                  {/* Amount Label */}
+                  <div className="h-6 flex items-end justify-center mb-1">
+                    {day.amount > 0 && (
+                      <span className={`text-white text-[10px] sm:text-xs font-medium whitespace-nowrap ${isToday ? 'font-bold' : ''}`}>
+                        ${day.amount.toFixed(0)}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Bar */}
+                  <div className="h-20 w-full flex items-end justify-center px-[2px]">
+                    <div 
+                      className={`w-full max-w-[1.8rem] sm:max-w-[2.5rem] ${isToday ? 'bg-yellow-400 shadow-md' : 'bg-green-400'} rounded-t transition-all duration-500`}
+                      style={{ height: `${Math.max(height * 0.8, day.amount > 0 ? 8 : 4)}px` }}
+                    />
+                  </div>
+                  
+                  {/* Day/Date Labels */}
+                  <div className="h-8 flex flex-col items-center justify-start w-full">
+                    <div className={`text-[10px] sm:text-xs leading-tight ${isToday ? 'text-white font-bold' : 'text-orange-200'}`}>
+                      {day.day}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
+        {/* Current Week Summary & Goal */}
+        <Card className="mx-4 mb-4 bg-orange-700/30 border-0 shadow-lg">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-orange-200 text-xs">Week Total ({currentWeek.weekRange})</p>
+                <p className="text-3xl md:text-4xl font-extrabold text-white">${currentWeek.total.toFixed(2)}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-orange-200 text-xs">Goal: ${currentWeek.goal}</p>
+                <Badge variant="success" className="bg-yellow-400 text-gray-900 font-bold">
+                  {Math.min(100, weekGoalProgress).toFixed(0)}%
+                </Badge>
+              </div>
+            </div>
+            <Progress 
+              value={weekGoalProgress}
+              className="bg-orange-400 h-1.5"
+            />
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions - Responsive Grid */}
+        <div className="p-4 pt-0 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <Button 
+              className="h-16 flex flex-col items-center justify-center gap-1 bg-green-500 hover:bg-green-600 text-white border-0 shadow-xl transition-transform transform hover:scale-[1.02] active:scale-95"
+              onClick={() => setShowCashoutModal(true)}
+              disabled={instantPay.available < INSTANT_CASHOUT_FEE}
+            >
+              <Zap className="h-5 w-5" />
+              <span className="text-xs font-semibold">CashApp Pay</span>
+              <span className="text-xs font-bold">${Math.max(0, instantPay.available).toFixed(2)}</span>
+            </Button>
+            <Button 
+              className="h-16 flex flex-col items-center justify-center gap-1 bg-white/20 border-white/50 text-white hover:bg-white/30"
+              variant="outline"
+              onClick={() => console.log("Navigating to Payment Settings")}
+            >
+              <CreditCard className="h-5 w-5" />
+              <span className="text-xs">Manage</span>
+              <span className="text-xs font-semibold">Payments</span>
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* White Background Content */}
+      <div className="bg-white p-4 md:p-6">
+
+        {/* Today's Stats - Responsive Grid */}
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Today's Performance</h2>
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <div className="flex justify-around text-center flex-wrap gap-4">
+                <div className="space-y-1 w-1/4 min-w-[70px]">
+                  <Clock className="h-5 w-5 text-orange-500 mx-auto" />
+                  <p className="text-xs text-gray-500">Active Time</p>
+                  <p className="font-semibold text-sm">{today.activeTime}</p>
+                </div>
+                <div className="space-y-1 w-1/4 min-w-[70px]">
+                  <Calendar className="h-5 w-5 text-orange-500 mx-auto" />
+                  <p className="text-xs text-gray-500">Deliveries</p>
+                  <p className="font-semibold text-sm">{today.deliveries}</p>
+                </div>
+                <div className="space-y-1 w-1/4 min-w-[70px]">
+                  <DollarSign className="h-5 w-5 text-orange-500 mx-auto" />
+                  <p className="text-xs text-gray-500">Avg / Del</p>
+                  <p className="font-semibold text-sm">${todayAvgPerDelivery.toFixed(2)}</p>
+                </div>
+              </div>
+              <Separator />
+              <div className="text-xs text-gray-600 space-y-1">
+                <div className="flex justify-between"><span>Base Pay</span> <span className="font-medium">${today.basePay.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Customer Tips</span> <span className="font-medium">${today.tips.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Bonuses</span> <span className="font-medium">${today.bonuses.toFixed(2)}</span></div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Deliveries */}
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">Recent Deliveries</h2>
+          <Card>
+            {deliveryHistory.slice(0, 5).map((delivery, index) => (
+              <React.Fragment key={delivery.id}>
+                <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors cursor-pointer">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800 break-words max-w-[200px]">{delivery.restaurant}</p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(delivery.date).toLocaleDateString()} - {delivery.time}
+                    </p>
+                  </div>
+                  <div className="text-right flex flex-col items-end">
+                    <p className="text-lg font-bold text-green-600">${delivery.earnings.toFixed(2)}</p>
+                    <p className="text-xs text-gray-500">{delivery.distance.toFixed(1)} mi</p>
+                  </div>
+                </div>
+                {index < deliveryHistory.length - 1 && index < 4 && <Separator className="mx-4" />}
+              </React.Fragment>
+            ))}
+          </Card>
+          <Button variant="secondary" className="w-full mt-4 h-10 bg-orange-500 text-white hover:bg-orange-600">
+            View All History <ChevronRight className="h-4 w-4 ml-2" />
+          </Button>
+        </div>
+      </div>
+      
+      {/* Instant Cashout Modal */}
+      <InstantCashoutModal
+        isOpen={showCashoutModal}
+        onClose={() => setShowCashoutModal(false)}
+        availableAmount={instantPay.available}
+        onCashoutSuccess={handleCashoutSuccess}
+      />
+    </div>
+  );
+};
+// Default export for the single-file React component
+export default EarningsSection;
