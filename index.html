@@ -6,27 +6,44 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="mobile-web-app-capable" content="yes" />
-    
-    <!-- Favicon and App Icons -->
     <link rel="icon" href="/craven-logo.png" type="image/png">
     <link rel="apple-touch-icon" href="/craven-logo.png">
     <meta name="apple-mobile-web-app-title" content="Crave'n">
     <meta name="application-name" content="Crave'n">
     <meta name="theme-color" content="#EA580C">
-    
     <title>Crave'n - Your Favorite Food, Delivered Fast</title>
     <meta name="description" content="Crave'n food delivery app - Order from the best restaurants and get your favorite meals delivered fast. Browse cuisines, discover new places to eat." />
     <meta name="author" content="Crave'n" />
-
     <meta property="og:title" content="Crave'n - Your Favorite Food, Delivered Fast" />
     <meta property="og:description" content="Order from the best restaurants and get your favorite meals delivered fast. Browse cuisines, discover new places to eat." />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
     
+    <style>
+      html, body, #root {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+
+      #root {
+        max-width: 500px;
+        width: 100%;
+        padding: 1rem;
+        box-sizing: border-box;
+      }
+    </style>
+
     <!-- Mapbox Search JS -->
     <script id="search-js" defer src="https://api.mapbox.com/search-js/v1.3.0/web.js"></script>
   </head>
