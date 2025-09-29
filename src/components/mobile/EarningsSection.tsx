@@ -452,7 +452,7 @@ export const EarningsSection = () => {
                   </div>
                   
                   {/* Bar */}
-                  <div className="h-20 w-full flex items-end justify-center px-[2px]">
+                  <div className="h-20 w-full flex items-end justify-center">
                     <div 
                       className={`w-full max-w-[1.8rem] sm:max-w-[2.5rem] ${isToday ? 'bg-yellow-400 shadow-md' : 'bg-green-400'} rounded-t transition-all duration-500`}
                       // FIX: Use percentage (%) unit for height based on the calculated 'height' (0-100)
