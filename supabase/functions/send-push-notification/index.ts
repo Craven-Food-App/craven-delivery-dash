@@ -153,14 +153,19 @@ async function sendNativePushNotification(subscription: any, payload: any) {
                 title: payload.title,
                 body: payload.message
               },
-              sound: 'default',
+              sound: "craven-notification.caf", // Custom sound file bundled with iOS app
               badge: 1,
-              'content-available': 1
-            }
+              'content-available': 1,
+              'mutable-content': 1 // Allow modification of notification content
+            },
+            // Custom data for iOS
+            customSound: "craven-notification.caf",
+            forceSound: true
           },
           headers: {
             'apns-priority': '10',
-            'apns-push-type': 'alert'
+            'apns-push-type': 'alert',
+            'apns-sound': 'craven-notification.caf'
           }
         },
         webpush: {
@@ -249,6 +254,16 @@ serve(async (req) => {
 
     console.log("Sending push notification to user:", userId);
 
+    // Get default notification sound from admin settings
+    const { data: notificationSettings } = await supabase
+      .from("notification_settings")
+      .select("sound_file")
+      .eq("is_default", true)
+      .eq("is_active", true)
+      .single();
+
+    const customSoundFile = notificationSettings?.sound_file || "craven-notification.caf";
+
     // Get user's active push subscriptions
     const { data: subscriptions, error: subError } = await supabase
       .from("push_subscriptions")
@@ -276,11 +291,16 @@ serve(async (req) => {
         const pushPayload = {
           title,
           message,
-          data,
+          data: {
+            ...data,
+            customSound: "craven-notification.caf",
+            forceSound: true
+          },
           icon: '/craven-logo.png',
           badge: '/craven-logo.png',
           vibrate: [200, 100, 200],
           requireInteraction: true,
+          sound: "craven-notification.caf", // For iOS web notifications
           actions: [
             { action: 'open', title: 'Open App' },
             { action: 'dismiss', title: 'Dismiss' }

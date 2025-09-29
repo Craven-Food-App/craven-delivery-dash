@@ -62,8 +62,26 @@ export const PushNotificationSetup: React.FC = () => {
   });
 
   const [testingNotification, setTestingNotification] = useState(false);
+  const [customSoundAudio, setCustomSoundAudio] = useState<HTMLAudioElement | null>(null);
 
   const { toast } = useToast();
+
+  // Play custom notification sound
+  const playCustomNotificationSound = async () => {
+    try {
+      if (!customSoundAudio) {
+        const audio = new Audio('/craven-notification.caf');
+        audio.volume = 0.8;
+        setCustomSoundAudio(audio);
+        await audio.play();
+      } else {
+        customSoundAudio.currentTime = 0;
+        await customSoundAudio.play();
+      }
+    } catch (error) {
+      console.warn('Could not play custom notification sound:', error);
+    }
+  };
 
   useEffect(() => {
     checkNotificationSupport();
@@ -141,9 +159,13 @@ export const PushNotificationSetup: React.FC = () => {
     PushNotifications.addListener('pushNotificationReceived', (notification) => {
       console.log('Push received in foreground: ' + JSON.stringify(notification));
       
-      // Play sound if enabled
+      // Play custom sound if enabled and on iOS
       if (settings.sound) {
-        playNotificationSound();
+        if (Capacitor.getPlatform() === 'ios') {
+          playCustomNotificationSound();
+        } else {
+          playNotificationSound();
+        }
       }
       
       // Show toast notification

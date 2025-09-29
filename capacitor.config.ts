@@ -17,7 +17,8 @@ const config: CapacitorConfig = {
       enableHighAccuracy: true
     },
     PushNotifications: {
-      presentationOptions: ["badge", "sound", "alert"]
+      presentationOptions: ["badge", "sound", "alert"],
+      sound: "craven-notification.caf"
     }
   }
 };
