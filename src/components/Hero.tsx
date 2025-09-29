@@ -9,7 +9,7 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-[#8B4513] via-[#A0522D] to-[#CD853F]">
+    <section className="relative min-h-screen flex items-center justify-center bg-gradient-hero">
       {/* Content */}
       <div className="relative text-center text-white px-4 animate-fade-in">
         <div className="max-w-4xl mx-auto">
