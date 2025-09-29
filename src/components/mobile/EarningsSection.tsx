@@ -461,12 +461,12 @@ export const EarningsSection = () => {
                     />
                   </div>
                   
-                  {/* Day/Date Labels */}
-                  <div className="h-8 flex flex-col items-center justify-start w-full">
-                    <div className={`text-[10px] sm:text-xs leading-tight ${isToday ? 'text-white font-bold' : 'text-orange-200'}`}>
-                      {day.day}
-                    </div>
-                  </div>
+                  {/* Day/Date Labels */}
+                  <div className="h-8 flex items-center justify-center w-full">
+                    <div className={`text-[10px] sm:text-xs font-medium ${isToday ? 'text-white font-bold' : 'text-orange-200'}`}>
+                      {day.day}
+                    </div>
+                  </div>
                 </div>
               );
             })}
