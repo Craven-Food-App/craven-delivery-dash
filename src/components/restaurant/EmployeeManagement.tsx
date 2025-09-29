@@ -116,12 +116,37 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ restaura
         return;
       }
 
+      // Generate employee ID if not provided
+      const employeeId = newEmployee.employee_id || generateEmployeeId();
+
+      // Check if employee ID already exists for this restaurant
+      const { data: existingEmployee, error: checkError } = await supabase
+        .from('restaurant_employees')
+        .select('employee_id')
+        .eq('restaurant_id', restaurantId)
+        .eq('employee_id', employeeId)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        // PGRST116 means "no rows returned" which is what we want
+        throw checkError;
+      }
+
+      if (existingEmployee) {
+        toast({
+          title: "Employee ID already exists",
+          description: `Employee ID "${employeeId}" is already in use. Please use a different ID.`,
+          variant: "destructive"
+        });
+        return;
+      }
+
       // Get the selected role to include the role name
       const selectedRole = roles.find(r => r.id === newEmployee.role_id);
 
       const employeeData = {
         restaurant_id: restaurantId,
-        employee_id: newEmployee.employee_id || generateEmployeeId(),
+        employee_id: employeeId,
         full_name: newEmployee.full_name,
         pin_code: newEmployee.pin_code || generatePinCode(),
         role_id: newEmployee.role_id,
@@ -143,13 +168,23 @@ export const EmployeeManagement: React.FC<EmployeeManagementProps> = ({ restaura
       setNewEmployee({ employee_id: '', full_name: '', pin_code: '', role_id: '' });
       setShowAddDialog(false);
       fetchEmployees();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding employee:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add employee",
-        variant: "destructive"
-      });
+      
+      // Handle specific duplicate key error
+      if (error?.code === '23505' && error?.message?.includes('restaurant_employees_restaurant_id_employee_id_key')) {
+        toast({
+          title: "Duplicate Employee ID",
+          description: "This employee ID already exists. Please use a different ID.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to add employee. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
