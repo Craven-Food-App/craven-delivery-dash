@@ -559,23 +559,23 @@ export const EarningsSection = () => {
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-3">Recent Deliveries</h2>
           <Card>
-            {deliveryHistory.slice(0, 5).map((delivery, index) => (
-              <React.Fragment key={delivery.id}>
-                <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800 break-words max-w-[200px]">{delivery.restaurant}</p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(delivery.date).toLocaleDateString()} - {delivery.time}
-                    </p>
-                  </div>
-                  <div className="text-right flex flex-col items-end">
-                    <p className="text-lg font-bold text-green-600">${delivery.earnings.toFixed(2)}</p>
-                    <p className="text-xs text-gray-500">{delivery.distance.toFixed(1)} mi</p>
-                  </div>
-                </div>
-                {index < deliveryHistory.length - 1 && index < 4 && <Separator className="mx-4" />}
-              </React.Fragment>
-            ))}
+            {deliveryHistory.slice(0, 5).map((delivery, index) => (
+              <div key={delivery.id}>
+                <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors cursor-pointer">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800 break-words max-w-[200px]">{delivery.restaurant}</p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(delivery.date).toLocaleDateString()} - {delivery.time}
+                    </p>
+                  </div>
+                  <div className="text-right flex flex-col items-end">
+                    <p className="text-lg font-bold text-green-600">${delivery.earnings.toFixed(2)}</p>
+                    <p className="text-xs text-gray-500">{delivery.distance.toFixed(1)} mi</p>
+                  </div>
+                </div>
+                {index < deliveryHistory.length - 1 && index < 4 && <Separator className="mx-4" />}
+              </div>
+            ))}
           </Card>
           <Button variant="secondary" className="w-full mt-4 h-10 bg-orange-500 text-white hover:bg-orange-600">
             View All History <ChevronRight className="h-4 w-4 ml-2" />
