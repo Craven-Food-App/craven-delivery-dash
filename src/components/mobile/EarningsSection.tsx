@@ -453,12 +453,10 @@ export const EarningsSection = () => {
                   
                   {/* Bar */}
                   <div className="h-20 w-full flex items-end justify-center">
-                    <div 
-                      className={`w-full max-w-[1.8rem] sm:max-w-[2.5rem] ${isToday ? 'bg-yellow-400 shadow-md' : 'bg-green-400'} rounded-t transition-all duration-500`}
-                      // FIX: Use percentage (%) unit for height based on the calculated 'height' (0-100)
-                      // Ensure a minimum height of 5% for visual clarity if amount > 0, otherwise a 4px dot.
-                      style={{ height: day.amount > 0 ? `${Math.max(5, height)}%` : '4px' }}
-                    />
+                    <div 
+                      className={`w-6 ${isToday ? 'bg-yellow-400 shadow-md' : 'bg-green-400'} rounded-t transition-all duration-500`}
+                      style={{ height: day.amount > 0 ? `${Math.max(5, height)}%` : '4px' }}
+                    />
                   </div>
                   
                   {/* Day/Date Labels */}
