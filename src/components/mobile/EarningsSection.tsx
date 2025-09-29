@@ -1,112 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  DollarSign, 
-  Clock, 
-  Calendar,
-  CreditCard,
-  Zap,
-  ChevronRight,
-  HelpCircle,
-  Info,
+import { 
+  DollarSign, 
+  Clock, 
+  Calendar,
+  CreditCard,
+  Zap,
+  ChevronRight,
+  HelpCircle,
+  Info,
   X,
   Check
 } from 'lucide-react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, setLogLevel } from 'firebase/firestore';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
+import { supabase } from '@/integrations/supabase/client';
 
-// --- Global Context Variables (Mandatory for Canvas Environment) ---
-// These are assumed to be defined by the environment
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : undefined;
-
-// --- Mock UI Components (Shadcn/ui equivalents using Tailwind) ---
-
-const Card = ({ className = '', children }) => (
-  <div className={`rounded-xl border bg-card text-card-foreground shadow-lg ${className}`}>
-    {children}
-  </div>
-);
-
-const CardHeader = ({ className = '', children }) => (
-  <div className={`flex flex-col space-y-1.5 p-6 ${className}`}>
-    {children}
-  </div>
-);
-
-const CardTitle = ({ className = '', children }) => (
-  <h3 className={`text-xl font-semibold leading-none tracking-tight ${className}`}>
-    {children}
-  </h3>
-);
-
-const CardContent = ({ className = '', children }) => (
-  <div className={`p-6 pt-0 ${className}`}>
-    {children}
-  </div>
-);
-
-const Button = ({ className = '', variant = 'default', children, onClick, disabled = false }) => {
-  const baseStyle = 'inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background';
-  let variantStyle = '';
-
-  switch (variant) {
-    case 'outline':
-      variantStyle = 'border border-input bg-background hover:bg-accent hover:text-accent-foreground';
-      break;
-    case 'secondary':
-      variantStyle = 'bg-secondary text-secondary-foreground hover:bg-secondary/80';
-      break;
-    default:
-      // Note: Default primary style is handled by className for the orange theme
-      variantStyle = 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-md';
-      break;
-  }
-
-  return (
-    <button
-      className={`${baseStyle} ${variantStyle} ${className}`}
-      onClick={onClick}
-      disabled={disabled}
-      style={{ padding: '0.5rem 1rem' }}
-    >
-      {children}
-    </button>
-  );
-};
-
-const Badge = ({ className = '', variant = 'default', children }) => {
-  const baseStyle = 'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2';
-  let variantStyle = '';
-
-  switch (variant) {
-    case 'secondary':
-      variantStyle = 'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80';
-      break;
-    case 'success':
-      variantStyle = 'border-transparent bg-green-500 text-white hover:bg-green-600';
-      break;
-    default:
-      variantStyle = 'border-transparent bg-primary text-primary-foreground hover:bg-primary/80';
-      break;
-  }
-
-  return <span className={`${baseStyle} ${variantStyle} ${className}`}>{children}</span>;
-};
-
-const Separator = ({ className = '' }) => (
-  <div className={`shrink-0 bg-gray-200 h-[1px] w-full ${className}`} />
-);
-
-const Progress = ({ value, className = '' }) => (
-  <div className={`relative h-2 w-full overflow-hidden rounded-full bg-secondary ${className}`}>
-    <div
-      className="h-full bg-yellow-400 transition-all duration-500 ease-out"
-      style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
-    />
-  </div>
-);
 
 // --- Instant Cashout Modal Component ---
 
@@ -359,49 +270,25 @@ export const EarningsSection = () => {
   const [showCashoutModal, setShowCashoutModal] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Initialize Firebase and Authenticate
+  // Initialize user data
   useEffect(() => {
-    // setLogLevel('debug');
-    try {
-      if (!firebaseConfig.apiKey) {
-        console.error("Firebase config is missing API key. Cannot initialize.");
-        setLoading(false);
-        return;
-      }
-      
-      const app = initializeApp(firebaseConfig, 'earnings-dashboard-app');
-      const auth = getAuth(app);
-      
-      const authenticate = async () => {
-        try {
-          if (initialAuthToken) {
-            await signInWithCustomToken(auth, initialAuthToken);
-          } else {
-            await signInAnonymously(auth);
-          }
-        } catch (error) {
-          console.error("Firebase auth failed:", error);
-          // Fallback to anonymous sign-in if custom token fails
-          await signInAnonymously(auth);
-        }
-      };
-
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const initializeUser = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          setUserId(user.uid);
+          setUserId(user.id);
         } else {
-          // This should not happen after the initial sign-in, but handle it
-          setUserId(null);
-          setLoading(false);
+          // Generate a temporary user ID for demo purposes
+          setUserId('demo-user-' + Math.random().toString(36).substr(2, 9));
         }
-      });
-      
-      authenticate();
-      return () => unsubscribe(); // Cleanup auth listener
-    } catch(e) {
-      console.error("Error during Firebase initialization:", e);
-      setLoading(false);
-    }
+      } catch (error) {
+        console.error("Error getting user:", error);
+        // Generate a temporary user ID for demo purposes
+        setUserId('demo-user-' + Math.random().toString(36).substr(2, 9));
+      }
+    };
+
+    initializeUser();
   }, []);
 
   // Fetch or Mock Data once Auth is ready
@@ -524,7 +411,7 @@ export const EarningsSection = () => {
               </div>
               <div className="text-right">
                 <p className="text-orange-200 text-xs">Goal: ${earningsData.currentWeek.goal}</p>
-                <Badge variant="success" className="bg-yellow-400 text-gray-900 font-bold">
+                <Badge className="bg-yellow-400 text-gray-900 font-bold">
                   {((earningsData.currentWeek.total / earningsData.currentWeek.goal) * 100).toFixed(0)}%
                 </Badge>
               </div>
@@ -548,9 +435,10 @@ export const EarningsSection = () => {
               <span className="text-xs font-semibold">Instant Pay</span>
               <span className="text-xs font-bold">${earningsData.instantPay.available.toFixed(2)}</span>
             </Button>
-            <Button 
+            <Button 
               className="h-16 flex flex-col items-center justify-center gap-1 bg-white/20 border-white/50 text-white hover:bg-white/30"
               variant="outline"
+              onClick={() => {}}
             >
               <CreditCard className="h-5 w-5" />
               <span className="text-xs">Manage</span>
@@ -615,7 +503,7 @@ export const EarningsSection = () => {
               </React.Fragment>
             ))}
           </Card>
-          <Button variant="secondary" className="w-full mt-4 h-10 bg-orange-500 text-white hover:bg-orange-600">
+          <Button variant="secondary" className="w-full mt-4 h-10 bg-orange-500 text-white hover:bg-orange-600" onClick={() => {}}>
             View All History <ChevronRight className="h-4 w-4 ml-2" />
           </Button>
         </div>
