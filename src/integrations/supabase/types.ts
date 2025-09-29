@@ -1902,6 +1902,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      has_role: {
+        Args: { _role: string; _user_id: string }
+        Returns: boolean
+      }
       make_user_active_driver: {
         Args: { target_user_id: string; vehicle_info?: Json }
         Returns: undefined
