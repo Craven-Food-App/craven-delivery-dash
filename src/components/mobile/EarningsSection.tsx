@@ -11,25 +11,12 @@ import { 
   X,
   Check
 } from 'lucide-react';
-import { initializeApp } from 'firebase/app';
-import { 
-  getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged 
-} from 'firebase/auth';
-import { 
-  getFirestore, doc, setDoc, onSnapshot, collection, query, updateDoc, 
-  getDoc, getDocs, addDoc, serverTimestamp, setLogLevel 
-} from 'firebase/firestore';
 
-// --- Global Context Variables (Mandatory for Canvas Environment) ---
-// These are assumed to be defined by the environment
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : undefined;
 
 // --- Mock UI Components (Shadcn/ui equivalents using Tailwind) ---
 
-const Card = ({ className = '', children }) => (
-  <div className={`rounded-xl border bg-card text-card-foreground shadow-lg ${className}`}>
+const Card = ({ className = '', children, ...props }) => (
+  <div className={`rounded-xl border bg-card text-card-foreground shadow-lg ${className}`} {...props}>
     {children}
   </div>
 );
@@ -52,7 +39,7 @@ const CardContent = ({ className = '', children }) => (
   </div>
 );
 
-const Button = ({ className = '', variant = 'default', children, onClick, disabled = false }) => {
+const Button = ({ className = '', variant = 'default', children, disabled = false, ...props }) => {
   const baseStyle = 'inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background';
   
   const getVariantStyle = (v) => {
@@ -72,9 +59,9 @@ const Button = ({ className = '', variant = 'default', children, onClick, disabl
   return (
     <button
       className={`${baseStyle} ${variantStyle} ${className}`}
-      onClick={onClick}
       disabled={disabled}
       style={{ padding: '0.5rem 1rem' }}
+      {...props}
     >
       {children}
     </button>
@@ -213,7 +200,7 @@ const INSTANT_CASHOUT_FEE = 0.50; // $0.50 fee for instant cashout
 
 // --- Instant Cashout Modal Component ---
 
-const InstantCashoutModal = ({ isOpen, onClose, availableAmount, onCashoutSuccess, db, userId }) => {
+const InstantCashoutModal = ({ isOpen, onClose, availableAmount, onCashoutSuccess }) => {
   const [cashoutAmount, setCashoutAmount] = useState('');
   const [message, setMessage] = useState('');
   const [success, setSuccess] = useState(false);
@@ -248,28 +235,17 @@ const InstantCashoutModal = ({ isOpen, onClose, availableAmount, onCashoutSucces
     setMessage('Processing instant cashout...');
 
     try {
-      const docRef = doc(db, 'artifacts', appId, 'users', userId, 'driver_earnings', 'data');
-      
-      // Perform the update: subtract the amount from 'available'
-      // Note: In a real production environment, this should use a Firestore Transaction
-      // or a secure Cloud Function to prevent race conditions.
-      await updateDoc(docRef, {
-        'instantPay.available': availableAmount - amount,
-        'instantPay.used': amount, // Simplified, tracking used daily limit
-        // Optionally, add a record to a CashoutHistory collection
-      });
-
       setMessage(`Successfully cashed out $${amount.toFixed(2)} (Net: $${netAmount.toFixed(2)})! Check your bank in minutes.`);
       setSuccess(true);
       
       setTimeout(() => {
-        onCashoutSuccess();
+        onCashoutSuccess?.(amount);
         onClose();
-      }, 1500);
+      }, 800);
 
     } catch (error) {
-      console.error("Cashout failed:", error);
-      setMessage("Cashout failed due to a database error. Please try again.");
+      console.error("Cashout UI error:", error);
+      setMessage("Cashout failed. Please try again.");
       setSuccess(false);
     } finally {
       setLoading(false);
@@ -340,130 +316,27 @@ export const EarningsSection = () => {
   const [db, setDb] = useState<any>(null);
   const [auth, setAuth] = useState<any>(null);
 
-  // 1. Initialize Firebase and Authenticate
+  // Initialize local demo data (no Firebase)
   useEffect(() => {
-    // setLogLevel('debug'); // Uncomment to see Firebase logs
-    try {
-      if (!firebaseConfig.apiKey) {
-        console.error("Firebase config is missing API key. Cannot initialize.");
-        setLoading(false);
-        return;
-      }
-      
-      const app = initializeApp(firebaseConfig, 'earnings-dashboard-app');
-      const firestore = getFirestore(app);
-      const authInstance = getAuth(app);
-      
-      setDb(firestore);
-      setAuth(authInstance);
-
-      const authenticate = async () => {
-        try {
-          if (initialAuthToken) {
-            await signInWithCustomToken(authInstance, initialAuthToken);
-          } else {
-            await signInAnonymously(authInstance);
-          }
-        } catch (error) {
-          console.error("Firebase auth failed:", error);
-          await signInAnonymously(authInstance);
-        }
-      };
-
-      const unsubscribe = onAuthStateChanged(authInstance, (user) => {
-        if (user) {
-          setUserId(user.uid);
-        } else {
-          setUserId(null);
-          setLoading(false);
-        }
-      });
-      
-      authenticate();
-      return () => unsubscribe(); // Cleanup auth listener
-    } catch(e) {
-      console.error("Error during Firebase initialization:", e);
-      setLoading(false);
-    }
+    const uid = 'local-user';
+    setUserId(uid);
+    setEarningsData(getInitialEarningsData(uid));
+    setDeliveryHistory(INITIAL_DELIVERY_HISTORY);
+    setLoading(false);
   }, []);
 
-  // 2. Setup Firestore Listeners
-  const setupFirestoreListeners = useCallback(() => {
-    if (!db || !userId) return;
-
-    // --- A. Main Earnings Data Listener ---
-    const earningsDocRef = doc(db, 'artifacts', appId, 'users', userId, 'driver_earnings', 'data');
-    
-    // Check if data exists and initialize if not
-    const checkAndInitialize = async () => {
-      try {
-        const docSnap = await getDoc(earningsDocRef);
-        if (!docSnap.exists()) {
-          const initialData = getInitialEarningsData(userId);
-          await setDoc(earningsDocRef, initialData);
-          console.log("Initialized new earnings data for user.");
-
-          // Also initialize the history collection with an example entry
-          const historyColRef = collection(db, 'artifacts', appId, 'users', userId, 'delivery_history');
-          await addDoc(historyColRef, { 
-            ...INITIAL_DELIVERY_HISTORY[0], 
-            timestamp: serverTimestamp(),
-            id: 'initial-001' // Overwrite with server ID if needed, but for simplicity, keeping this structure
-          });
-        }
-      } catch (e) {
-        console.error("Error during initial data check/setup:", e);
-      }
-    };
-    
-    checkAndInitialize();
-
-    // Listen for real-time updates to main earnings document
-    const unsubscribeEarnings = onSnapshot(earningsDocRef, (doc) => {
-      if (doc.exists()) {
-        const data = doc.data() as EarningsData;
-        setEarningsData(data);
-      } else {
-        // Should only happen if initialization failed or doc was deleted
-        setEarningsData(null); 
-      }
-      setLoading(false);
-    }, (error) => {
-      console.error("Error listening to earnings data:", error);
-      setLoading(false);
-    });
-    
-    // --- B. Delivery History Listener ---
-    const historyColRef = collection(db, 'artifacts', appId, 'users', userId, 'delivery_history');
-    const unsubscribeHistory = onSnapshot(historyColRef, (snapshot) => {
-      const historyList: DeliveryHistory[] = [];
-      snapshot.forEach(doc => {
-        historyList.push({ id: doc.id, ...doc.data() } as DeliveryHistory);
-      });
-      
-      // Simple sorting by date/id descending for most recent first
-      historyList.sort((a, b) => b.id.localeCompare(a.id)); 
-      setDeliveryHistory(historyList);
-    }, (error) => {
-      console.error("Error listening to delivery history:", error);
-    });
-
-    return () => {
-      unsubscribeEarnings();
-      unsubscribeHistory();
-    };
-
-  }, [db, userId]);
-
-  useEffect(() => {
-    if (userId && db) {
-      return setupFirestoreListeners();
-    }
-  }, [userId, db, setupFirestoreListeners]);
 
   // Handler to refresh/force update (though onSnapshot makes this mostly redundant)
-  const handleCashoutSuccess = () => {
-    console.log("Cashout successful. onSnapshot will handle UI update.");
+  const handleCashoutSuccess = (amount: number) => {
+    setEarningsData((prev) => {
+      if (!prev) return prev;
+      const updatedAvailable = Math.max(0, prev.instantPay.available - amount);
+      const updatedUsed = (prev.instantPay.used || 0) + amount;
+      return {
+        ...prev,
+        instantPay: { ...prev.instantPay, available: updatedAvailable, used: updatedUsed }
+      };
+    });
   };
 
 
@@ -673,14 +546,12 @@ export const EarningsSection = () => {
       </div>
       
       {/* Instant Cashout Modal */}
-      <InstantCashoutModal
-        isOpen={showCashoutModal}
-        onClose={() => setShowCashoutModal(false)}
-        availableAmount={instantPay.available}
-        db={db}
-        userId={userId}
-        onCashoutSuccess={handleCashoutSuccess}
-      />
+      <InstantCashoutModal
+        isOpen={showCashoutModal}
+        onClose={() => setShowCashoutModal(false)}
+        availableAmount={instantPay.available}
+        onCashoutSuccess={handleCashoutSuccess}
+      />
     </div>
   );
 };
