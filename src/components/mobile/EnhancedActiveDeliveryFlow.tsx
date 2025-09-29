@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { MapNavigationHelper } from './MapNavigationHelper';
 import { NavigationMapbox } from './NavigationMapbox';
+import { CustomerNavigationStep } from './CustomerNavigationStep';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -239,6 +240,27 @@ export const EnhancedActiveDeliveryFlow: React.FC<EnhancedActiveDeliveryFlowProp
   const destination = getCurrentDestination();
   const actionButton = getActionButton();
   const currentStepData = DELIVERY_STEPS[getCurrentStepIndex()];
+
+  // Show specialized customer navigation view for customer delivery steps
+  if (currentStep === 'heading_to_customer' || currentStep === 'at_customer') {
+    return (
+      <CustomerNavigationStep
+        customerName={orderDetails.customer_name}
+        deliveryTime={estimatedArrival ? formatETA(estimatedArrival) : '12:44 PM'}
+        customerPhone={orderDetails.customer_phone}
+        dropoffAddress={orderDetails.dropoff_address}
+        apartmentInfo="lot 34"
+        deliveryInstructions={orderDetails.delivery_notes}
+        onCall={() => toast({ title: "Calling customer...", description: "Feature coming soon!" })}
+        onMessage={() => toast({ title: "Messaging customer...", description: "Feature coming soon!" })}
+        onDirections={() => {
+          // Open external navigation or use built-in navigation
+          const address = formatAddress(orderDetails.dropoff_address);
+          window.open(`https://maps.google.com/maps?q=${encodeURIComponent(address)}`, '_blank');
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background relative">
