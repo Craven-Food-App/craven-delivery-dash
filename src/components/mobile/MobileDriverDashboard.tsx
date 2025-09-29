@@ -312,6 +312,12 @@ export const MobileDriverDashboard: React.FC = () => {
           }
         });
       }
+      
+      // Update schedule availability status to sync with online/offline
+      window.dispatchEvent(new CustomEvent('driverStatusChange', { 
+        detail: { status: 'online' } 
+      }));
+      
       setDriverState('online_searching');
       setOnlineTime(0);
 
@@ -353,6 +359,12 @@ export const MobileDriverDashboard: React.FC = () => {
           onConflict: 'driver_id'
         });
       }
+      
+      // Update schedule availability status to sync with online/offline
+      window.dispatchEvent(new CustomEvent('driverStatusChange', { 
+        detail: { status: 'offline' } 
+      }));
+      
       setDriverState('offline');
       setOnlineTime(0);
       setEndTime(null); // Clear end time

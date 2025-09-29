@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Calendar,
   Clock,
@@ -438,6 +439,15 @@ export default function ScheduleSection() {
 
   useEffect(() => {
     fetchScheduleData();
+    
+    // Listen for driver status changes from main dashboard
+    const handleStatusChange = (event: CustomEvent) => {
+      const { status } = event.detail;
+      setCurrentStatus(status);
+    };
+    
+    window.addEventListener('driverStatusChange', handleStatusChange as EventListener);
+    return () => window.removeEventListener('driverStatusChange', handleStatusChange as EventListener);
   }, [fetchScheduleData]);
 
   // Re-check status every minute
@@ -529,9 +539,31 @@ export default function ScheduleSection() {
     });
   };
 
-  const handleManualToggle = () => {
+  const handleManualToggle = async () => {
     const newStatus = currentStatus === 'online' ? 'offline' : 'online';
     setCurrentStatus(newStatus);
+    
+    // Update driver profile status in database
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('driver_profiles').update({
+          status: newStatus,
+          is_available: newStatus === 'online',
+          last_location_update: new Date().toISOString()
+        }).eq('user_id', user.id);
+        
+        // Update driver session
+        await supabase.from('driver_sessions').upsert({
+          driver_id: user.id,
+          is_online: newStatus === 'online',
+          last_activity: new Date().toISOString(),
+          session_data: newStatus === 'online' ? { online_since: new Date().toISOString() } : {}
+        }, { onConflict: 'driver_id' });
+      }
+    } catch (error) {
+      console.error('Error updating driver status:', error);
+    }
     
     if (newStatus === 'online') {
         toast({ title: "You Are Online", description: "The platform now sees you as available.", variant: "default" });
