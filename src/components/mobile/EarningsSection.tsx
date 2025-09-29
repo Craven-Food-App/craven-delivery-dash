@@ -442,8 +442,8 @@ export const EarningsSection = () => {
               
               return (
                 <div key={index} className="flex flex-col items-center w-1/7 min-w-[2.2rem] sm:min-w-10">
-                  {/* Amount Label */}
-                  <div className="h-6 flex items-end justify-center mb-1">
+                  {/* Amount Label */}
+                  <div className="h-6 flex items-end justify-center">
                     {day.amount > 0 && (
                       <span className={`text-white text-[10px] sm:text-xs font-medium whitespace-nowrap ${isToday ? 'font-bold' : ''}`}>
                         ${day.amount.toFixed(0)}
