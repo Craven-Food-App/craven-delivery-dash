@@ -167,32 +167,58 @@ const getInitialEarningsData = (userId: string): EarningsData => {
   weekEnd.setDate(weekStart.getDate() + 6);
   
   return {
-    today: { total: 0.00, deliveries: 0, activeTime: '0h 0m', basePay: 0, tips: 0, bonuses: 0 },
+    today: { total: 45.75, deliveries: 3, activeTime: '2h 15m', basePay: 28.50, tips: 12.25, bonuses: 5.00 },
     currentWeek: {
-      total: 0.00, deliveries: 0, activeTime: '0h 0m', goal: 500, daysWorked: 0,
+      total: 127.45, deliveries: 8, activeTime: '6h 30m', goal: 500, daysWorked: 3,
       dailyEarnings: [
         { day: 'Sun', date: weekStart.getDate(), amount: 0 },
-        { day: 'Mon', date: weekStart.getDate() + 1, amount: 0 },
-        { day: 'Tue', date: weekStart.getDate() + 2, amount: 0 },
+        { day: 'Mon', date: weekStart.getDate() + 1, amount: 35.20 },
+        { day: 'Tue', date: weekStart.getDate() + 2, amount: 46.50 },
         { day: 'Wed', date: weekStart.getDate() + 3, amount: 0 },
-        { day: 'Thu', date: new Date().getDate(), amount: 0 },
+        { day: 'Thu', date: new Date().getDate(), amount: 45.75 },
         { day: 'Fri', date: weekStart.getDate() + 5, amount: 0 },
         { day: 'Sat', date: weekStart.getDate() + 6, amount: 0 },
       ],
       weekRange: `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
     },
     weeklyHistory: [],
-    lifetime: { total: 0, deliveries: 0, totalTime: '0h 0m', avgPerDelivery: 0 },
-    instantPay: { available: 0, dailyLimit: 500, used: 0 }
+    lifetime: { total: 1247.80, deliveries: 89, totalTime: '52h 15m', avgPerDelivery: 14.02 },
+    instantPay: { available: 127.45, dailyLimit: 500, used: 0 }
   };
 };
 
 const INITIAL_DELIVERY_HISTORY: DeliveryHistory[] = [
-  // Example for a new user, can be extended by application logic
-  // These will be added to the subcollection for the first time user
   {
-    id: "initial-001", date: new Date().toISOString(), restaurant: "Welcome Tutorial", earnings: 0.00,
-    distance: 0, time: '0 min'
+    id: "delivery-004", 
+    date: new Date().toISOString(), 
+    restaurant: "Chipotle Mexican Grill", 
+    earnings: 16.50,
+    distance: 2.3, 
+    time: '18 min'
+  },
+  {
+    id: "delivery-003", 
+    date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), 
+    restaurant: "Panda Express", 
+    earnings: 14.75,
+    distance: 1.8, 
+    time: '12 min'
+  },
+  {
+    id: "delivery-002", 
+    date: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), 
+    restaurant: "McDonald's", 
+    earnings: 14.50,
+    distance: 1.2, 
+    time: '15 min'
+  },
+  {
+    id: "delivery-001", 
+    date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), 
+    restaurant: "Five Guys", 
+    earnings: 18.25,
+    distance: 3.1, 
+    time: '22 min'
   }
 ];
 
@@ -258,7 +284,10 @@ const InstantCashoutModal = ({ isOpen, onClose, availableAmount, onCashoutSucces
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <Card className="w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Instant Cashout</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-green-600" />
+            CashApp Instant Cashout
+          </CardTitle>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
             <X className="h-5 w-5" />
           </button>
@@ -267,15 +296,18 @@ const InstantCashoutModal = ({ isOpen, onClose, availableAmount, onCashoutSucces
           <div className="text-center">
             <p className="text-sm text-gray-600 mb-1">Available to Cash Out</p>
             <p className="text-3xl font-bold text-green-600">${Math.max(0, availableAmount).toFixed(2)}</p>
+            <p className="text-xs text-gray-500 mt-1">Instant transfer to your CashApp</p>
           </div>
           <div className="space-y-2">
-            <label htmlFor="amount" className="block text-sm font-medium text-gray-700">Cashout Amount (Fee: ${INSTANT_CASHOUT_FEE.toFixed(2)})</label>
+            <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
+              Cashout Amount (CashApp Fee: ${INSTANT_CASHOUT_FEE.toFixed(2)})
+            </label>
             <input
               id="amount"
               type="number"
               value={cashoutAmount}
               onChange={(e) => setCashoutAmount(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 p-2 text-lg focus:ring-orange-500 focus:border-orange-500"
+              className="w-full rounded-lg border border-gray-300 p-2 text-lg focus:ring-green-500 focus:border-green-500"
               min="0.01"
               max={availableAmount.toFixed(2)}
               step="0.01"
@@ -288,16 +320,20 @@ const InstantCashoutModal = ({ isOpen, onClose, availableAmount, onCashoutSucces
             </p>
           )}
           <Button
-            className="w-full h-10 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400"
+            className="w-full h-10 bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
             onClick={handleCashout}
             disabled={success || loading || availableAmount < INSTANT_CASHOUT_FEE}
           >
-            {loading ? 'Processing...' : (success ? <Check className="h-5 w-5 mr-2" /> : <Zap className="h-5 w-5 mr-2" />)}
-            {success ? 'Cashed Out!' : 'Cash Out Now'}
+            {loading ? 'Processing...' : (success ? <><Check className="h-5 w-5 mr-2" /> Sent to CashApp!</> : <><Zap className="h-5 w-5 mr-2" /> Cash Out to CashApp</>)}
           </Button>
-          <p className="text-xs text-center text-gray-500">
-            Note: Minimum entry must cover the $0.50 fee.
-          </p>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <p className="text-xs text-green-700 font-medium mb-1">💡 Same-Day CashApp Transfer</p>
+            <p className="text-xs text-green-600">
+              • Funds arrive in your CashApp within minutes<br/>
+              • Available 24/7 including weekends<br/>
+              • Secure & encrypted transfer
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -460,13 +496,13 @@ export const EarningsSection = () => {
         {/* Quick Actions - Responsive Grid */}
         <div className="p-4 pt-0 space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <Button 
-              className="h-16 flex flex-col items-center justify-center gap-1 bg-yellow-400 hover:bg-yellow-500 text-gray-900 border-0 shadow-xl transition-transform transform hover:scale-[1.02] active:scale-95"
+            <Button 
+              className="h-16 flex flex-col items-center justify-center gap-1 bg-green-500 hover:bg-green-600 text-white border-0 shadow-xl transition-transform transform hover:scale-[1.02] active:scale-95"
               onClick={() => setShowCashoutModal(true)}
               disabled={instantPay.available < INSTANT_CASHOUT_FEE}
             >
               <Zap className="h-5 w-5" />
-              <span className="text-xs font-semibold">Instant Pay</span>
+              <span className="text-xs font-semibold">CashApp Pay</span>
               <span className="text-xs font-bold">${Math.max(0, instantPay.available).toFixed(2)}</span>
             </Button>
             <Button 
