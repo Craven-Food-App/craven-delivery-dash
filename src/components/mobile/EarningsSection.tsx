@@ -441,7 +441,7 @@ export const EarningsSection = () => {
               const isToday = day.date === new Date().getDate();
               
               return (
-                <div key={index} className="flex flex-col items-center w-1/7 min-w-[2.2rem] sm:min-w-10">
+                <div key={index} className="flex flex-col items-center w-1/7 min-w-[1.5rem] sm:min-w-8">
                   {/* Amount Label */}
                   <div className="h-6 flex items-end justify-center">
                     {day.amount > 0 && (
