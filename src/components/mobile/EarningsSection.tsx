@@ -416,7 +416,7 @@ export const EarningsSection = () => {
                   </div>
                   
                   {/* Bar */}
-                  <div className="h-20 w-full flex items-end justify-center px-[2px] mb-2">
+                  <div className="h-20 w-full flex items-end justify-center px-[2px]">
                     <div 
                       className={`w-full max-w-[1.8rem] sm:max-w-[2.5rem] ${isToday ? 'bg-yellow-400 shadow-md' : 'bg-green-400'} rounded-t transition-all duration-500`}
                       style={{ height: `${Math.max(height * 0.8, day.amount > 0 ? 8 : 4)}px` }}
