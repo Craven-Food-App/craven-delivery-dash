@@ -34,7 +34,7 @@ const CardContent = ({ children, className = '' }) => (
   <div className={`p-6 pt-0 ${className}`}>{children}</div>
 );
 
-const Button = ({ children, variant = 'default', size = 'default', className = '', onClick, disabled, type = 'button' }) => {
+const Button = ({ children, variant = 'default', size = 'default', className = '', onClick, disabled = false, type = 'button' }) => {
   let baseClasses = 'inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background';
   
   // CHANGED: Blue -> Orange
@@ -49,7 +49,7 @@ const Button = ({ children, variant = 'default', size = 'default', className = '
   if (size === 'icon') baseClasses += ' h-10 w-10';
 
   return (
-    <button type={type} className={`${baseClasses} ${className}`} onClick={onClick} disabled={disabled}>
+    <button type={type as "button" | "submit" | "reset"} className={`${baseClasses} ${className}`} onClick={onClick} disabled={disabled}>
       {children}
     </button>
   );
@@ -80,9 +80,10 @@ const Switch = ({ checked, onCheckedChange }) => (
   </button>
 );
 
-const Input = ({ type = 'text', value, onChange, placeholder, className = '' }) => (
+const Input = ({ type = 'text', value, onChange, placeholder = '', className = '', name }) => (
     <input 
         type={type} 
+        name={name}
         value={value} 
         onChange={onChange} 
         placeholder={placeholder} 
@@ -91,8 +92,9 @@ const Input = ({ type = 'text', value, onChange, placeholder, className = '' }) 
     />
 );
 
-const Select = ({ value, onChange, options, className = '' }) => (
+const Select = ({ value, onChange, options, className = '', name }) => (
     <select 
+        name={name}
         value={value} 
         onChange={onChange} 
         // CHANGED: Blue -> Orange (Focus Ring)
@@ -292,6 +294,7 @@ const ScheduleBlockForm: React.FC<ScheduleBlockFormProps> = ({ block, onClose, o
                                     name="start_time"
                                     value={formData.start_time}
                                     onChange={handleChange}
+                                    placeholder=""
                                 />
                             </div>
                             <div className="space-y-2 w-1/2">
@@ -301,6 +304,7 @@ const ScheduleBlockForm: React.FC<ScheduleBlockFormProps> = ({ block, onClose, o
                                     name="end_time"
                                     value={formData.end_time}
                                     onChange={handleChange}
+                                    placeholder=""
                                 />
                             </div>
                         </div>
@@ -318,7 +322,7 @@ const ScheduleBlockForm: React.FC<ScheduleBlockFormProps> = ({ block, onClose, o
                     <div className="flex justify-end p-6 pt-0 gap-3">
                         <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
                         {/* CHANGED: Blue -> Orange */}
-                        <Button type="submit" variant="default" className="bg-orange-600 hover:bg-orange-700">{isEditing ? 'Update Shift' : 'Save Shift'}</Button>
+                        <Button type="submit" variant="default" className="bg-orange-600 hover:bg-orange-700" onClick={() => {}}>{isEditing ? 'Update Shift' : 'Save Shift'}</Button>
                     </div>
                 </form>
             </Card>
@@ -329,7 +333,7 @@ const ScheduleBlockForm: React.FC<ScheduleBlockFormProps> = ({ block, onClose, o
 
 // --- MAIN APPLICATION COMPONENT ---
 
-export default function App() {
+export default function ScheduleSection() {
   const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([]);
   const [availabilitySettings, setAvailabilitySettings] = useState<AvailabilitySettings>({
     auto_online: true,
@@ -411,12 +415,13 @@ export default function App() {
       const { data: { user } } = await mockSupabase.auth.getUser();
       if (!user) return;
 
-      const { data: scheduleData, error } = await mockSupabase
+      const result = await mockSupabase
         .from('driver_schedules')
         .select('*')
         .eq('driver_id', user.id)
         .order('day_of_week');
 
+      const { data: scheduleData, error } = result as { data: any, error: any };
       if (error) {
         console.error('Error fetching schedule (mocked):', error);
       } else {
@@ -566,7 +571,7 @@ export default function App() {
         {/* Header */}
         <header className="py-2 flex justify-between items-center">
             <h1 className="text-3xl font-extrabold text-gray-900">Availability Hub</h1>
-            <Button variant="ghost" size="icon" className="text-gray-600">
+            <Button variant="ghost" size="icon" className="text-gray-600" onClick={() => {}}>
                 <Menu className="h-6 w-6" />
             </Button>
         </header>
@@ -891,6 +896,7 @@ export default function App() {
                 size="sm" 
                 // CHANGED: Teal -> Orange
                 className="h-8 px-3 border-dashed text-gray-500 hover:border-orange-500 hover:text-orange-600 rounded-lg"
+                onClick={() => {}}
               >
                 <Plus className="h-3 w-3 mr-1" /> Add Zone
               </Button>
