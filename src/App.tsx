@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import MobileBottomNav from "@/components/mobile/MobileBottomNav";
 import Index from "./pages/Index";
 import DriverAuth from "./pages/DriverAuth";
@@ -34,13 +35,40 @@ import ChatButton from "./components/chat/ChatButton";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
+const App = () => {
+  // Check if running on native mobile (iOS/Android)
+  const isNative = Capacitor.isNativePlatform();
+
+  // If running on native platform, show only mobile dashboard
+  if (isNative) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <AccessGuard fallback={
+            <div className="flex flex-col items-center justify-center min-h-screen p-4">
+              <h1 className="text-2xl font-bold mb-4">Craver Access Required</h1>
+              <p className="text-muted-foreground text-center mb-4">
+                You need an approved Craver application to access the mobile portal.
+              </p>
+            </div>
+          }>
+            <MobileDriverDashboard />
+          </AccessGuard>
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  // Web version with full routing
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/restaurants" element={<Restaurants />} />
           <Route path="/auth" element={<Auth />} />
@@ -102,6 +130,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
