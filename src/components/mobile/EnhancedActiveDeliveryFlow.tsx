@@ -17,6 +17,7 @@ import {
   Map,
   ClipboardList
 } from 'lucide-react';
+import { CustomerNavigationStep } from './CustomerNavigationStep';
 
 // --- MAPBOX CONFIGURATION ---
 // Using the API key provided by the user to generate a static map image.
@@ -106,61 +107,6 @@ const MapboxStaticMap = ({ destinationName, type, currentCoords, destinationCoor
   );
 };
 
-// Mocking the specialized customer view component
-const CustomerNavigationStep = ({
-  customerName,
-  deliveryTime,
-  dropoffAddress,
-  deliveryInstructions,
-  onCall,
-  onMessage,
-  onDirections,
-}) => (
-  <div className="p-4 space-y-4 bg-gray-50 min-h-screen">
-    <CardContainer className="mt-4">
-      <CardHeaderMock className="flex flex-row items-center justify-between">
-        <h3 className="text-2xl font-extrabold text-gray-900 flex items-center">
-            <User className="h-6 w-6 mr-2 text-orange-500" /> {customerName || 'Customer'}
-        </h3>
-        <BadgeMock className="bg-orange-500 text-white font-bold text-sm">
-            {deliveryTime} ETA
-        </BadgeMock>
-      </CardHeaderMock>
-      <CardContentMock className="space-y-4">
-        {/* Contact Buttons */}
-        <div className="grid grid-cols-2 gap-3">
-          <ButtonMock variant="outline" className="h-14 border-orange-500 text-orange-600 hover:bg-orange-50" onClick={onCall}>
-            <Phone className="h-5 w-5 mr-2" /> Call
-          </ButtonMock>
-          <ButtonMock variant="outline" className="h-14 border-orange-500 text-orange-600 hover:bg-orange-50" onClick={onMessage}>
-            <MessageSquare className="h-5 w-5 mr-2" /> Message
-          </ButtonMock>
-        </div>
-        
-        {/* Address & Directions */}
-        <div className="space-y-3 p-3 bg-gray-50 rounded-lg">
-          <h4 className="font-semibold text-lg flex items-center gap-2 text-gray-800">
-            <MapPin className="h-5 w-5 text-green-600" /> Dropoff Location
-          </h4>
-          <p className="text-gray-600 ml-7 -mt-1">{dropoffAddress}</p>
-          <ButtonMock variant="default" className="w-full mt-2 h-12 bg-blue-600 hover:bg-blue-700 shadow-blue-400/50" onClick={onDirections}>
-            <Navigation className="h-5 w-5 mr-2" /> Open Directions
-          </ButtonMock>
-        </div>
-        
-        {/* Instructions */}
-        {deliveryInstructions && (
-            <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                <h4 className="font-semibold text-orange-700 flex items-center gap-2">
-                    <ClipboardList className="h-5 w-5" /> Instructions
-                </h4>
-                <p className="text-sm text-orange-800 ml-7 -mt-1">{deliveryInstructions}</p>
-            </div>
-        )}
-      </CardContentMock>
-    </CardContainer>
-  </div>
-);
 
 
 // --- MOCK HOOKS AND UTILITIES ---
