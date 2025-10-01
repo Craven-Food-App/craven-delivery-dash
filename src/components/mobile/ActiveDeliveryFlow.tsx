@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { MapPin, Navigation, Clock, Phone, MessageCircle, Camera, CheckCircle } from 'lucide-react';
-// Required Firebase Imports
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setLogLevel } from 'firebase/firestore'; // <-- setLogLevel imported
+import { supabase } from '@/integrations/supabase/client';
+import { toast as showToast } from 'sonner';
 
 // --- MOCK UI COMPONENTS (Replaces Shadcn/UI imports) ---
 
@@ -241,14 +239,12 @@ interface OrderDetails {
     subtotal_cents: number;
     estimated_time: number;
     items: OrderItem[];
+    isTestOrder?: boolean;
 }
 
 interface ActiveDeliveryProps {
   orderDetails: OrderDetails;
   onCompleteDelivery: (photoUrl?: string) => void;
-  db: any; // Firestore instance
-  userId: string; // Authenticated user ID
-  isAuthReady: boolean; // <-- NEW: Authentication readiness flag
 }
 
 // --- ACTIVE DELIVERY FLOW ---
@@ -256,9 +252,6 @@ interface ActiveDeliveryProps {
 const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
   orderDetails,
   onCompleteDelivery,
-  db,
-  userId,
-  isAuthReady,
 }) => {
   const [currentStage, setCurrentStage] = useState<DeliveryStage>('navigate_to_restaurant');
   const [deliveryPhoto, setDeliveryPhoto] = useState<string | null>(null);
@@ -267,70 +260,34 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
   const { toast } = useToast();
   const { openExternalNavigation } = useNavigation();
 
-  // Define fetchRestaurantAddress helper function (Refactored for clarity and robustness)
-  const fetchRestaurantAddress = async (attempt = 1) => {
-    const restaurantId = orderDetails.restaurant_id;
-
-    // Path: /artifacts/{appId}/public/data/restaurants/{restaurantId}
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-    // Guard against missing dependencies.
-    if (!db || !userId || !restaurantId) {
-        console.log("[FIRESTORE] Pre-check failed. DB, UserId, or Restaurant ID missing.");
-        return;
-    }
-
-    try {
-      console.log(`[FIRESTORE] Attempting to fetch public restaurant data (Attempt ${attempt}/7) for user ${userId} on ID: ${restaurantId}`); 
-
-      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'restaurants', restaurantId);
-      const docSnap = await getDoc(docRef);
-      
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setRestaurantAddress(data.address || '');
-        console.log(`[FIRESTORE] Successfully loaded restaurant address: ${data.address}`);
-      } else {
-         console.log(`[FIRESTORE] No address document found for restaurant ID: ${restaurantId}`);
-      }
-    } catch (error: any) {
-      
-      // *** FIX: Use console.warn for the initial permission-denied error (race condition) ***
-      if (error.code === 'permission-denied' && attempt === 1) {
-          console.warn(`[FIRESTORE WARNING] Permission denied on first attempt. This is likely a temporary auth race condition. Retrying...`);
-      } else {
-          // Use console.error for critical or subsequent failures
-          console.error(`Error fetching restaurant address (Attempt ${attempt}):`, error);
-      }
-      
-      // FIX: The core issue is the auth race condition. We retry on permission failure.
-      if (error.code === 'permission-denied' && attempt < 7) { 
-         const delay = Math.min(5000, attempt * 1000); 
-         console.log(`[FIRESTORE RETRY] Permission denied (Auth Race). Retrying in ${delay}ms... (Max 7 attempts)`);
-         await new Promise(resolve => setTimeout(resolve, delay));
-         return fetchRestaurantAddress(attempt + 1); // Recursive call
-      }
-      
-      // If all retries fail, fall back
-      setRestaurantAddress('1234 Mock Restaurant St, Test Town, USA'); 
-      toast({
-          title: "Data Error",
-          description: "Could not load restaurant address from live data. Using fallback.",
-          variant: 'destructive'
-      });
-    }
-  };
-
-
-  // Fetch restaurant address using Firestore - Triggered only when auth is ready
+  // Fetch restaurant address from Supabase
   useEffect(() => {
-    // Initial Guard: Only start the process if all dependencies (including the crucial isAuthReady) are met, 
-    // AND if we actually need to fetch an address (i.e., we have a restaurant_id but no address yet, AND we haven't already fetched it).
-    if (db && userId && isAuthReady && !orderDetails.pickup_address && orderDetails.restaurant_id && !restaurantAddress) {
-        fetchRestaurantAddress(); // Start the process
-    }
-    // Added restaurantAddress to dependency array to prevent repeated fetch attempts after success
-  }, [db, userId, isAuthReady, orderDetails.pickup_address, orderDetails.restaurant_id, restaurantAddress]);
+    const fetchRestaurantAddress = async () => {
+      if (!orderDetails.restaurant_id || typeof orderDetails.pickup_address === 'string') {
+        if (typeof orderDetails.pickup_address === 'string') {
+          setRestaurantAddress(orderDetails.pickup_address);
+        }
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('restaurants')
+          .select('address')
+          .eq('id', orderDetails.restaurant_id)
+          .single();
+
+        if (data && !error) {
+          setRestaurantAddress(data.address || '');
+        }
+      } catch (error) {
+        console.error('Error fetching restaurant address:', error);
+        setRestaurantAddress('Restaurant address unavailable');
+      }
+    };
+
+    fetchRestaurantAddress();
+  }, [orderDetails.pickup_address, orderDetails.restaurant_id]);
 
 
   // Helper function to format address
@@ -367,26 +324,18 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
     }
   };
 
-  // handlePhotoCapture: Updated to use mockStorageUpload
+  // handlePhotoCapture: Mock upload for now
   const handlePhotoCapture = async (photoBlob: Blob) => {
     setIsUploadingPhoto(true);
     try {
-      // NOTE: This uses the mockStorageUpload since the Firebase Storage SDK is not explicitly imported.
-      const { data: uploadData, error: uploadError } = await mockStorageUpload(userId, photoBlob);
-
-      if (uploadError) throw uploadError;
-
-      const publicUrl = uploadData.publicUrl;
+      // Mock upload - in production, upload to Supabase Storage
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const publicUrl = `https://delivery.proof/${Date.now()}.jpg`;
       setDeliveryPhoto(publicUrl);
-      
-      // Real-world: Update the delivery document in Firestore here with the publicUrl
 
       setCurrentStage('delivered');
       
-      toast({
-        title: "Photo Uploaded!",
-        description: "Delivery proof captured successfully.",
-      });
+      showToast.success("Photo uploaded successfully!");
 
       // Complete delivery after successful photo upload
       setTimeout(() => {
@@ -395,11 +344,7 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
 
     } catch (error: any) {
       console.error('Error uploading photo:', error);
-      toast({
-        title: 'Upload Failed',
-        description: 'Failed to upload delivery photo. Check console for details.',
-        variant: 'destructive'
-      });
+      showToast.error('Failed to upload delivery photo');
     }
     setIsUploadingPhoto(false);
   };
@@ -737,154 +682,4 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
 };
 
 
-// --- MAIN APP COMPONENT (Handles Firebase Initialization and Data Provision) ---
-
-const App = () => {
-    const { toast, ToastDisplay } = useToast();
-    const [isDeliveryComplete, setIsDeliveryComplete] = useState(false);
-    const [finalPhotoUrl, setFinalPhotoUrl] = useState<string | null>(null);
-
-    // Firebase State
-    const [db, setDb] = useState<any>(null);
-    const [userId, setUserId] = useState<string | null>(null);
-    const [isAuthReady, setIsAuthReady] = useState(false); // <-- Auth readiness state
-    
-    // Placeholder for actual data fetch
-    const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
-
-    // 1. Firebase Initialization and Auth Setup
-    useEffect(() => {
-        try {
-            // Set debug level for better logging
-            setLogLevel('debug'); // <-- Added setLogLevel call
-            
-            // Use provided global variables
-            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-            const app = initializeApp(firebaseConfig);
-            const firestoreDb = getFirestore(app);
-            const authInstance = getAuth(app);
-
-            setDb(firestoreDb);
-
-            const signInUser = async () => {
-                try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(authInstance, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(authInstance);
-                    }
-                } catch (e) {
-                    console.error("Authentication failed during sign-in:", e);
-                }
-            };
-
-            const unsubscribe = onAuthStateChanged(authInstance, (user) => {
-                if (user) {
-                    setUserId(user.uid);
-                } else {
-                    // Fallback should use an ephemeral ID if all else fails
-                    setUserId(crypto.randomUUID()); 
-                }
-                setIsAuthReady(true); // <-- Set ready state after user ID is determined
-            });
-
-            signInUser();
-            return () => unsubscribe();
-
-        } catch (e) {
-            console.error("Firebase initialization failed:", e);
-            setIsAuthReady(true);
-        }
-    }, []); 
-
-    // 2. Mock Order Details until real fetch is implemented
-    useEffect(() => {
-        // Only load order details once auth is ready
-        if (isAuthReady && !orderDetails) {
-             // Simulate fetching the single active order for the current driver.
-             // This structure is preserved to keep the UI functional.
-            const fetchedOrderDetails: OrderDetails = {
-                id: 'ORD-12345',
-                order_number: '12345',
-                restaurant_name: "Walmart Franklin #272",
-                restaurant_id: 'rest_272_id', // This ID is now used to fetch the address via Firestore
-                pickup_address: null, 
-                dropoff_address: "1000 Mockingbird Lane, Test City, CA 90210",
-                customer_name: "Jane Doe",
-                customer_phone: "555-0101",
-                delivery_notes: "Leave package at the door and text when arrived. Doorbell is broken!",
-                payout_cents: 1050, 
-                subtotal_cents: 3500,
-                estimated_time: 20, 
-                items: [
-                    { name: "Giant Burger Combo", quantity: 1, price_cents: 1500 },
-                    { name: "Fries (Large)", quantity: 2, price_cents: 500 },
-                    { name: "Diet Soda", quantity: 2, price_cents: 500, special_instructions: "No ice" },
-                ],
-            };
-            setOrderDetails(fetchedOrderDetails);
-        }
-    }, [isAuthReady, orderDetails]);
-
-
-    const handleCompleteDelivery = (photoUrl?: string) => {
-        setFinalPhotoUrl(photoUrl || null);
-        setIsDeliveryComplete(true);
-    };
-
-    if (!isAuthReady || !orderDetails) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="flex items-center space-x-3 p-6 rounded-xl bg-white shadow-xl">
-                    <svg className="animate-spin h-6 w-6 text-orange-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span className="text-lg font-medium text-gray-700">Connecting to Live Data...</span>
-                </div>
-            </div>
-        );
-    }
-
-    if (isDeliveryComplete) {
-        return (
-            <div className="min-h-screen bg-amber-50 flex flex-col items-center justify-center p-4 font-sans">
-                <Card className="max-w-md w-full p-6 text-center shadow-2xl border-amber-300">
-                    <CheckCircle className="h-16 w-16 mx-auto mb-4 text-amber-500" />
-                    <h1 className="text-3xl font-bold text-amber-700 mb-2">
-                        Delivery Cycle Finished!
-                    </h1>
-                    <p className="text-gray-600 mb-4">
-                        Order #{orderDetails.order_number} successfully completed.
-                    </p>
-                    <p className="text-lg font-semibold text-amber-600 mb-4">
-                        Payout: ${(orderDetails.payout_cents / 100).toFixed(2)}
-                    </p>
-                    {finalPhotoUrl && (
-                        <p className="text-sm text-gray-500">Proof uploaded successfully.</p>
-                    )}
-                    <Button onClick={() => setIsDeliveryComplete(false)} variant="secondary" className="mt-4 w-full">
-                        Start New Delivery (Reset)
-                    </Button>
-                </Card>
-                {ToastDisplay}
-            </div>
-        );
-    }
-
-    return (
-        <div className="min-h-screen bg-white">
-            <ActiveDeliveryFlow 
-                orderDetails={orderDetails} 
-                onCompleteDelivery={handleCompleteDelivery} 
-                db={db}
-                userId={userId}
-                isAuthReady={isAuthReady} 
-            />
-            {ToastDisplay}
-        </div>
-    );
-};
-
-// CRITICAL: This line ensures the component is the default export and accessible by the React renderer.
-export default App;
+export default ActiveDeliveryFlow;
