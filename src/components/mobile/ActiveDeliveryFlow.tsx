@@ -620,7 +620,7 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                 </div>
 
                 {/* Pickup Time and Status */}
-                <div className="flex justify-between items-start pr-20 mt-4 pb-4 my-0 py-0">
+                <div className="flex justify-between items-start pr-20 mt-4 pb-4 py-0 my-0 px-[56px] mx-[61px]">
                     <div className="space-y-1">
                         <p className="text-sm text-gray-500">Pickup Time</p>
                         <p className="text-xl font-bold text-orange-600">
