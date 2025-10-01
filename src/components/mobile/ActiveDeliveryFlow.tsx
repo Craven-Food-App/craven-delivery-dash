@@ -1,100 +1,70 @@
 // src/components/mobile/ActiveDeliveryFlow.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MapPin } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
-import { useNavigation } from '@react-navigation/native';
 import { supabase } from '@/integrations/supabase/client';
-import { RestaurantRouteMap } from '@/components/mobile/RestaurantRouteMap';
-import { CaptureDeliveryPhoto } from '@/components/mobile/CaptureDeliveryPhoto';
-
-// Types
-export type DeliveryStage = 'PICKUP' | 'IN_TRANSIT' | 'DELIVERED';
+import { RestaurantRouteMap } from './RestaurantRouteMap';
+import { CaptureDeliveryPhoto } from './CaptureDeliveryPhoto';
 
 export interface ActiveDeliveryProps {
-  deliveryId: string;
-  restaurantAddress: string | Record<string, any>;
-  customerAddress?: string | Record<string, any>;
-  restaurantName?: string;
-  customerName?: string;
+  orderDetails: {
+    id: string;
+    order_number: string;
+    restaurant_name: string;
+    pickup_address: any;
+    dropoff_address: any;
+    customer_name?: string;
+    customer_phone?: string;
+    delivery_notes?: string;
+    payout_cents?: number;
+    subtotal_cents?: number;
+    estimated_time?: number;
+    items?: Array<{ name: string; quantity: number; price_cents: number }>;
+    isTestOrder?: boolean;
+  };
+  onCompleteDelivery: () => void;
 }
 
-// Placeholder helpers
-const showToast = (message: string) => {
-  const { toast } = useToast();
-  toast({ title: message });
-};
-
-const uploadDeliveryPhoto = async (file: Blob, deliveryId: string) => {
-  // Replace with your actual Supabase upload logic
-  console.log('Uploading photo for delivery', deliveryId);
-  return true;
-};
-
-// Component
-const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
-  deliveryId,
-  restaurantAddress,
-  customerAddress,
-  restaurantName,
-  customerName,
-}) => {
-  const navigation = useNavigation();
-  const [deliveryStage, setDeliveryStage] = useState<DeliveryStage>('PICKUP');
+const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({ orderDetails, onCompleteDelivery }) => {
+  const [deliveryStage, setDeliveryStage] = useState<'PICKUP' | 'IN_TRANSIT' | 'DELIVERED'>('PICKUP');
   const [deliveryPhoto, setDeliveryPhoto] = useState<Blob | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false);
 
-  // Example effect for fetching delivery data
-  useEffect(() => {
-    const fetchDelivery = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('deliveries')
-          .select('*')
-          .eq('id', deliveryId)
-          .single();
-        if (error) throw error;
-        console.log('Delivery data', data);
-      } catch (err) {
-        showToast('Failed to load delivery');
-      }
-    };
-
-    fetchDelivery();
-  }, [deliveryId]);
-
-  // Handle photo upload
   const handleUploadPhoto = async () => {
     if (!deliveryPhoto) return;
     setIsUploading(true);
     try {
-      await uploadDeliveryPhoto(deliveryPhoto, deliveryId);
-      showToast('Photo uploaded successfully!');
+      // Replace with your actual Supabase storage logic
+      await supabase.storage.from('deliveries').upload(`delivery-${orderDetails.id}.jpg`, deliveryPhoto);
       setDeliveryPhoto(null);
     } catch (err) {
-      showToast('Photo upload failed.');
+      console.error('Upload failed', err);
     } finally {
       setIsUploading(false);
     }
   };
 
   return (
-    <div>
+    <div className="absolute inset-0 z-20 pointer-events-auto p-4">
       <Card>
         <CardHeader>
-          <CardTitle>{restaurantName || 'Restaurant'}</CardTitle>
+          <CardTitle>{orderDetails.restaurant_name}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p>Delivery Stage: {deliveryStage}</p>
-          <Button onClick={() => setDeliveryStage('IN_TRANSIT')}>Start Delivery</Button>
+          <p>Stage: {deliveryStage}</p>
+          <Button onClick={() => setDeliveryStage('IN_TRANSIT')} className="mb-2">
+            Start Transit
+          </Button>
+          <Button onClick={() => setDeliveryStage('DELIVERED')} className="mb-2">
+            Mark Delivered
+          </Button>
         </CardContent>
       </Card>
 
       <RestaurantRouteMap
-        restaurantAddress={restaurantAddress}
-        customerAddress={customerAddress}
+        restaurantAddress={orderDetails.pickup_address}
+        customerAddress={orderDetails.dropoff_address}
       />
 
       <CaptureDeliveryPhoto
@@ -102,9 +72,15 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         setDeliveryPhoto={setDeliveryPhoto}
       />
 
-      <Button onClick={handleUploadPhoto} disabled={isUploading || !deliveryPhoto}>
-        {isUploading ? 'Uploading...' : 'Upload Delivery Photo'}
+      <Button onClick={handleUploadPhoto} disabled={isUploading || !deliveryPhoto} className="mt-2 w-full">
+        {isUploading ? 'Uploading...' : 'Upload Photo'}
       </Button>
+
+      {deliveryStage === 'DELIVERED' && (
+        <Button onClick={onCompleteDelivery} className="mt-4 w-full bg-green-600 text-white">
+          Complete Delivery
+        </Button>
+      )}
     </div>
   );
 };
