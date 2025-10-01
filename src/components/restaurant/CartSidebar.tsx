@@ -156,11 +156,21 @@ export const CartSidebar = ({
           lat: restaurant.latitude,
           lng: restaurant.longitude
         },
+        dropoff_address: deliveryMethod === 'delivery' ? {
+          name: customerInfo.name,
+          phone: customerInfo.phone,
+          address: customerInfo.deliveryAddress,
+          lat: customerInfo.addressCoordinates?.lat || null,
+          lng: customerInfo.addressCoordinates?.lng || null,
+          special_instructions: customerInfo.specialInstructions
+        } : null,
         delivery_address: deliveryMethod === 'delivery' ? {
           name: customerInfo.name,
           email: customerInfo.email,
           phone: customerInfo.phone,
           address: customerInfo.deliveryAddress,
+          lat: customerInfo.addressCoordinates?.lat || null,
+          lng: customerInfo.addressCoordinates?.lng || null,
           special_instructions: customerInfo.specialInstructions
         } : null,
         estimated_delivery_time: deliveryMethod === 'delivery' 
