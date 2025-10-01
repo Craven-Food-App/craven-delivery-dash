@@ -9,11 +9,9 @@ interface OrderAssignmentModalProps {
   assignment: any;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAccept?: (assignment: any) => void;
-  onDecline?: () => void;
 }
 
-export function OrderAssignmentModal({ assignment, open, onOpenChange, onAccept, onDecline }: OrderAssignmentModalProps) {
+export function OrderAssignmentModal({ assignment, open, onOpenChange }: OrderAssignmentModalProps) {
   if (!assignment) return null;
 
   // ✅ Address formatter (handles jsonb or string)
@@ -81,27 +79,9 @@ export function OrderAssignmentModal({ assignment, open, onOpenChange, onAccept,
               <Badge variant="secondary">{assignment.status}</Badge>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-2 justify-end">
-              {onDecline && (
-                <Button variant="outline" onClick={() => {
-                  onDecline();
-                  onOpenChange(false);
-                }}>
-                  Decline
-                </Button>
-              )}
-              {onAccept && (
-                <Button onClick={() => {
-                  onAccept(assignment);
-                  onOpenChange(false);
-                }}>
-                  Accept
-                </Button>
-              )}
-              {!onAccept && !onDecline && (
-                <Button onClick={() => onOpenChange(false)}>Close</Button>
-              )}
+            {/* Close Button */}
+            <div className="flex justify-end">
+              <Button onClick={() => onOpenChange(false)}>Close</Button>
             </div>
           </CardContent>
         </Card>

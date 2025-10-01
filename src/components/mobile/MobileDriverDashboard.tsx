@@ -773,34 +773,28 @@ export const MobileDriverDashboard: React.FC = () => {
       </div>
 
       {/* Order Assignment Modal */}
-      <OrderAssignmentModal 
-        open={showOrderModal} 
-        onOpenChange={(open) => {
-          setShowOrderModal(open);
-          if (!open) setCurrentOrderAssignment(null);
-        }} 
-        assignment={currentOrderAssignment}
-        onAccept={(assignment) => {
-          setActiveDelivery({
-            ...assignment,
-            order_id: assignment.order_id,
-            assignment_id: assignment.assignment_id,
-            restaurant_name: assignment.restaurant_name,
-            pickup_address: assignment.pickup_address,
-            dropoff_address: assignment.dropoff_address,
-            payout_cents: assignment.payout_cents,
-            distance_mi: assignment.distance_mi,
-            isTestOrder: assignment.isTestOrder
-          });
-          setDriverState('on_delivery');
-          setShowOrderModal(false);
-          setCurrentOrderAssignment(null);
-        }}
-        onDecline={() => {
-          setShowOrderModal(false);
-          setCurrentOrderAssignment(null);
-        }}
-      />
+      <OrderAssignmentModal isOpen={showOrderModal} onClose={() => {
+        setShowOrderModal(false);
+        setCurrentOrderAssignment(null);
+      }} assignment={currentOrderAssignment} onAccept={assignment => {
+        setActiveDelivery({
+          ...assignment,
+          order_id: assignment.order_id,
+          assignment_id: assignment.assignment_id,
+          restaurant_name: assignment.restaurant_name,
+          pickup_address: assignment.pickup_address,
+          dropoff_address: assignment.dropoff_address,
+          payout_cents: assignment.payout_cents,
+          distance_mi: assignment.distance_mi,
+          isTestOrder: assignment.isTestOrder // Pass through test order flag
+        });
+        setDriverState('on_delivery');
+        setShowOrderModal(false);
+        setCurrentOrderAssignment(null);
+      }} onDecline={() => {
+        setShowOrderModal(false);
+        setCurrentOrderAssignment(null);
+      }} />
 
       {/* Drive Time Selector */}
       <DriveTimeSelector open={showTimeSelector} onClose={() => setShowTimeSelector(false)} onSelect={handleSelectDriveTime} />
