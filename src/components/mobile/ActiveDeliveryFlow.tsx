@@ -232,28 +232,69 @@ const useToast = () => {
   };
 };
 
-// Mock useNavigation Hook (kept the same)
+// Helper functions for map preferences
+const getUserMapPreference = (): string => {
+  return localStorage.getItem('preferred_map_app') || 'google_maps';
+};
+
+const getMapAppName = (appId: string): string => {
+  const names: { [key: string]: string } = {
+    'google_maps': 'Google Maps',
+    'apple_maps': 'Apple Maps',
+    'waze': 'Waze',
+    'mapbox': 'Mapbox'
+  };
+  return names[appId] || 'Maps';
+};
+
+// Updated useNavigation Hook with real external navigation
 const useNavigation = () => {
-  const {
-    toast
-  } = useToast();
-  const openExternalNavigation = ({
-    address,
-    name
-  }: {
-    address: string;
-    name: string;
-  }) => {
-    toast({
-      title: "Navigation Started",
-      description: `Navigating to ${name} at ${address}`,
-      duration: 3000
-    });
-    console.log(`[NAVIGATE] Starting external navigation to: ${name} (${address})`);
+  const openExternalNavigation = ({ address, name }: { address: string; name: string }) => {
+    // Get user's preferred map app from settings
+    const preferredMapApp = getUserMapPreference();
+    
+    const encodedAddress = encodeURIComponent(address);
+    const encodedName = encodeURIComponent(name);
+    
+    let navigationUrl = '';
+    
+    switch (preferredMapApp) {
+      case 'google_maps':
+        navigationUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`;
+        break;
+      case 'apple_maps':
+        navigationUrl = `http://maps.apple.com/?daddr=${encodedAddress}`;
+        break;
+      case 'waze':
+        navigationUrl = `https://waze.com/ul?q=${encodedAddress}`;
+        break;
+      case 'mapbox':
+        navigationUrl = `https://api.mapbox.com/directions/v5/mapbox/driving/?destination=${encodedAddress}`;
+        break;
+      default:
+        // Fallback to Google Maps
+        navigationUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`;
+        break;
+    }
+    
+    try {
+      // For mobile apps, use deep links
+      if (window.navigator.userAgent.includes('Mobile')) {
+        window.location.href = navigationUrl;
+      } else {
+        // For web, open in new tab
+        window.open(navigationUrl, '_blank');
+      }
+      
+      showToast.success(`Opening ${getMapAppName(preferredMapApp)} for navigation`);
+      console.log(`[NAVIGATE] Starting external navigation to: ${name} (${address}) via ${preferredMapApp}`);
+    } catch (error) {
+      console.error('Error opening external navigation:', error);
+      showToast.error('Failed to open navigation app');
+    }
   };
-  return {
-    openExternalNavigation
-  };
+
+  return { openExternalNavigation };
 };
 
 // Upload delivery photo to Supabase Storage
@@ -815,5 +856,4 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         </div>
         
     </div>;
-};
-export default ActiveDeliveryFlow;
+};export default ActiveDeliveryFlow;
