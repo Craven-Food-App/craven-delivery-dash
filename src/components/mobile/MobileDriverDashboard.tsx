@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
-import OrderAssignmentModal from './OrderAssignmentModal';
+import { OrderAssignmentModal } from './OrderAssignmentModal';
 import ScheduleSection from './ScheduleSection';
 import { EarningsSection } from './EarningsSection';
 import { BottomNavigation } from './BottomNavigation';
