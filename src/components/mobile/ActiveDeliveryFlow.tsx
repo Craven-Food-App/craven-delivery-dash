@@ -593,7 +593,7 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
             </div>
 
             {/* Main Content Area */}
-            <div className="p-4 flex-1 overflow-y-auto px-[41px] mx-[7px] py-0 my-[5px]">
+            <div className="p-4 flex-1 overflow-y-auto px-[41px] mx-[7px] my-[5px] py-px">
                 {/* Restaurant Details */}
                 <div className="relative pt-2">
                     <p className="text-sm text-gray-500 mb-1">Restaurant</p>
@@ -620,10 +620,10 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                 </div>
 
                 {/* Pickup Time and Status */}
-                <div className="flex justify-between items-start pr-20 mt-4 pb-4 py-0 my-0 px-[56px] mx-[61px]">
+                <div className="flex justify-between items-start pr-20 mt-4 pb-4 py-0 mx-0 px-[16px] my-0">
                     <div className="space-y-1">
                         <p className="text-sm text-gray-500">Pickup Time</p>
-                        <p className="text-xl font-bold text-orange-600">
+                        <p className="text-xl font-bold text-orange-600 py-0">
                             {orderDetails.estimated_time || '4:00 PM'}
                         </p>
                     </div>
