@@ -644,7 +644,7 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
             {/* Sticky Bottom Action Sheet */}
             <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pt-2 z-20 py-[90px] my-px">
                 <div className="flex justify-center mb-3">
-                    <span className="text-xs text-gray-400">Hide options</span>
+                    
                 </div>
                 
                 {/* Pickup Notes Button (Dark Blue/Navy) */}
