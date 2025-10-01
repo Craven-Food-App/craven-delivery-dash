@@ -1,385 +1,235 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Users, MapPin } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import cravenC from '@/assets/craven-c.png';
-import { OrderMapPreview } from './OrderMapPreview';
+import { X, Clock, DollarSign } from 'lucide-react';
 
-interface OrderAssignment {
-  assignment_id: string;
-  order_id: string;
-  restaurant_name: string;
-  pickup_address: any; 
-  dropoff_address: any; 
-  payout_cents: number;
-  distance_km: number;
-  distance_mi: string;
-  expires_at: string;
-  estimated_time: number;
-  isTestOrder?: boolean;
+// ⚠️ ASSUMPTION: You have a custom component that handles Mapbox rendering.
+// You would replace 'MapComponent' with your actual Mapbox wrapper component.
+interface MapProps {
+  centerLat: number;
+  centerLng: number;
+  pickupLat: number;
+  pickupLng: number;
+  dropoffLat: number;
+  dropoffLng: number;
 }
 
-interface OrderAssignmentModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  assignment: OrderAssignment | null;
-  onAccept: (assignment: OrderAssignment) => void;
-  onDecline: (assignment: OrderAssignment) => void;
-}
-
-export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
-  isOpen,
-  onClose,
-  assignment,
-  onAccept,
-  onDecline
-}) => {
-  const [timeLeft, setTimeLeft] = useState(45);
-  const { toast } = useToast();
-
-  // Earnings + routing state
-  const [payoutPercent, setPayoutPercent] = useState<number>(70);
-  const [subtotalCents, setSubtotalCents] = useState<number>(0);
-  const [tipCents, setTipCents] = useState<number>(0);
-  const [routeMiles, setRouteMiles] = useState<number | null>(null);
-  const [routeMins, setRouteMins] = useState<number | null>(null);
-  const [locationType, setLocationType] = useState<string | null>(null);
-
-  // Load payout settings and order details
-  useEffect(() => {
-    if (!isOpen || !assignment) return;
-
-    const run = async () => {
-      try {
-        // Get active payout percentage
-        const { data: setting } = await supabase
-          .from('driver_payout_settings')
-          .select('percentage')
-          .eq('is_active', true)
-          .maybeSingle();
-        if (setting?.percentage != null) setPayoutPercent(Number(setting.percentage));
-
-        // Get order details
-        const { data: order } = await supabase
-          .from('orders')
-          .select('subtotal_cents, tip_cents, dropoff_address, pickup_address')
-          .eq('id', assignment.order_id)
-          .maybeSingle();
-
-        if (order) {
-          setSubtotalCents(Number(order.subtotal_cents || 0));
-          setTipCents(Number(order.tip_cents || 0));
-
-          const dAddr: any = order.dropoff_address;
-          const pAddr: any = order.pickup_address;
-          const type = dAddr?.type || dAddr?.address_type || dAddr?.location_type || null;
-          if (type) setLocationType(String(type));
-        }
-      } catch (e) {
-        console.warn('Order detail fetch failed', e);
-      }
-    };
-
-    run();
-  }, [isOpen, assignment]);
-
-  // Mapbox route fetch (optimized)
-  useEffect(() => {
-    if (!isOpen || !assignment) return;
-    let canceled = false;
-
-    const fetchRoute = async () => {
-      try {
-        const pAddr: any = assignment.pickup_address;
-        const dAddr: any = assignment.dropoff_address;
-
-        const tokRes = await supabase.functions.invoke('get-mapbox-token');
-        const token = (tokRes.data as any)?.token;
-        if (!token) return;
-
-        // Helper: build a searchable address string
-        const buildAddress = (addr: any) => {
-          if (!addr) return '';
-          if (typeof addr === 'string') return addr;
-          if (addr.address) return addr.address;
-          const parts = [addr.street, addr.city, addr.state, addr.zip_code].filter(Boolean);
-          return parts.join(', ');
-        };
-
-        // Helper: geocode to [lng, lat]
-        const geocode = async (addr: any): Promise<[number, number] | null> => {
-          const q = buildAddress(addr);
-          if (!q) return null;
-          const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(q)}.json?limit=1&access_token=${token}`);
-          const j = await res.json();
-          const c = j?.features?.[0]?.center;
-          return Array.isArray(c) && c.length === 2 ? [Number(c[0]), Number(c[1])] : null;
-        };
-
-        // Extract coordinates or geocode as fallback
-        let pLat = Number(pAddr?.lat ?? pAddr?.latitude);
-        let pLng = Number(pAddr?.lng ?? pAddr?.longitude);
-        let dLat = Number(dAddr?.lat ?? dAddr?.latitude);
-        let dLng = Number(dAddr?.lng ?? dAddr?.longitude);
-
-        if ([pLat, pLng].some(isNaN)) {
-          const g = await geocode(pAddr);
-          if (g) { pLng = g[0]; pLat = g[1]; }
-        }
-        if ([dLat, dLng].some(isNaN)) {
-          const g = await geocode(dAddr);
-          if (g) { dLng = g[0]; dLat = g[1]; }
-        }
-
-        if ([pLat, pLng, dLat, dLng].some(isNaN)) return;
-
-        // Try to prepend current location as first leg if available
-        let originLat: number | null = null;
-        let originLng: number | null = null;
-        try {
-          const position = await new Promise<GeolocationPosition>((resolve, reject) =>
-            navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 5000 })
-          );
-          originLat = position.coords.latitude;
-          originLng = position.coords.longitude;
-        } catch (_) {
-          // ignore
-        }
-
-        const coords = originLat && originLng
-          ? `${originLng},${originLat};${pLng},${pLat};${dLng},${dLat}`
-          : `${pLng},${pLat};${dLng},${dLat}`;
-
-        const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}.json?overview=false&access_token=${token}`;
-        const res = await fetch(url);
-        const json = await res.json();
-        const route = json?.routes?.[0];
-
-        if (!canceled && route) {
-          setRouteMiles(Number((route.distance / 1609.34).toFixed(1)));
-          setRouteMins(Math.round(route.duration / 60));
-        }
-      } catch (e) {
-        console.warn('Route fetch failed', e);
-      }
-    };
-
-    fetchRoute();
-    return () => { canceled = true; };
-  }, [isOpen, assignment]);
-
-  // Countdown timer and notification sound
-  useEffect(() => {
-    if (!isOpen || !assignment) return;
-
-    const playNotificationSequence = async () => {
-      try {
-        const audioContext = new AudioContext();
-        const duration = 0.3;
-        const gap = 0.15;
-        for (let i = 0; i < 3; i++) {
-          const oscillator = audioContext.createOscillator();
-          const gainNode = audioContext.createGain();
-          oscillator.connect(gainNode);
-          gainNode.connect(audioContext.destination);
-          oscillator.frequency.setValueAtTime(i % 2 === 0 ? 800 : 600, audioContext.currentTime);
-          oscillator.type = 'sine';
-          gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-          gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
-          gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
-          const startTime = audioContext.currentTime + (i * (duration + gap));
-          oscillator.start(startTime);
-          oscillator.stop(startTime + duration);
-        }
-      } catch (e) {
-        console.log('Notification sound failed:', e);
-      }
-    };
-
-    playNotificationSequence();
-
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          handleDecline();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [isOpen, assignment]);
-
-  const handleAccept = () => {
-    if (assignment) {
-      onAccept(assignment);
-      toast({ title: "Order Accepted!", description: "Navigate to the pickup location." });
-    }
-  };
-
-  const handleDecline = () => {
-    if (assignment) {
-      onDecline(assignment);
-      toast({ title: "Order Declined", description: "Looking for new offers..." });
-    }
-  };
-
-  if (!isOpen || !assignment) return null;
-
-  // ==========================
-  // Safe calculations
-  // ==========================
-  const estimatedPayout = (((payoutPercent / 100) * subtotalCents + tipCents) / 100).toFixed(2);
-  const milesParsed = parseFloat(assignment.distance_mi || '0') || 0;
-  const miles = routeMiles ?? milesParsed;
-  const mins = routeMins ?? (assignment.estimated_time || 0);
-  const totalStops = Math.floor(Math.random() * 3) + 2;
-  const dropOffs = totalStops - 1;
-
+// 📌 Placeholder for your actual Mapbox wrapper component 
+// (which gets the API key from Lovable.dev's global config).
+const MapComponent: React.FC<MapProps> = ({ centerLat, centerLng, pickupLat, pickupLng, dropoffLat, dropoffLng }) => {
+  // In a real Lovable.dev project, this component handles Mapbox initialization
+  // and drawing based on the props, using the globally provided API key.
+  
+  // The structure below mimics the orange-themed map from the image.
   return (
-    <div className="fixed inset-0 z-50 flex items-end">
-      <div className="absolute inset-0 bg-black/20" onClick={handleDecline} />
-      <div className="relative w-full bg-card rounded-t-3xl shadow-2xl transform transition-transform duration-300 ease-out animate-in slide-in-from-bottom-full">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-muted rounded-t-3xl overflow-hidden">
-          <div 
-            className="h-full bg-orange-500 transition-all duration-1000 ease-linear"
-            style={{ width: `${(timeLeft / 45) * 100}%` }}
-          />
-        </div>
-        <div className="p-6 pb-8">
-          {assignment.isTestOrder && (
-            <div className="mb-4 p-4 bg-orange-100 border border-orange-300 rounded-xl">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg">🧪</span>
-                <span className="font-bold text-orange-800">Test Order</span>
-              </div>
-              <p className="text-sm text-orange-700">
-                This is a test order from Crave'N for testing purposes.
-              </p>
-            </div>
-          )}
-
-          <div className="text-center mb-6">
-            <div className="bg-muted/50 rounded-full px-4 py-2 inline-block">
-              <span className="text-sm text-muted-foreground mr-2">Get offers until</span>
-              <span className="text-sm font-semibold text-foreground bg-card px-3 py-1 rounded-full border">9:00 PM</span>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold text-foreground">${estimatedPayout}</span>
-                  <span className="text-lg text-muted-foreground">estimate</span>
-                </div>
-                <div className="text-muted-foreground mt-1">
-                  <span className="font-semibold">{totalStops} stops</span>
-                  <span className="mx-2">•</span>
-                  <span className="font-semibold">{miles} miles</span>
-                  <span className="mx-2">•</span>
-                  <span className="font-semibold">{mins} mins</span>
-                </div>
-              </div>
-              <ChevronRight className="h-6 w-6 text-muted-foreground" />
-            </div>
-
-            <div className="flex items-center gap-4 py-4 border-b border-border/50">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-muted/60 overflow-hidden">
-                <img src={cravenC} alt="Crave'N" className="w-6 h-6 object-contain" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-semibold text-foreground">ASAP</span>
-                  <span className="text-muted-foreground">•</span>
-                  <span className="font-semibold text-foreground">Pickup</span>
-                </div>
-                <p className="text-muted-foreground">
-                  {typeof assignment.pickup_address === 'string' 
-                    ? assignment.pickup_address 
-                    : (() => {
-                        const addr = assignment.pickup_address;
-                        if (addr?.address) return addr.address;
-                        return `${addr?.street || ''} ${addr?.city || ''} ${addr?.state || ''} ${addr?.zip_code || ''}`.trim();
-                      })()
-                  }
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 py-2">
-              <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                <Users className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-foreground">{dropOffs} drop-offs</p>
-              </div>
-            </div>
-
-            {/* Route Map Preview */}
-            <div className="py-2">
-              <OrderMapPreview
-                pickupAddress={assignment.pickup_address}
-                dropoffAddress={assignment.dropoff_address}
-                routeInfo={{
-                  miles,
-                  minutes: mins
-                }}
-                className="w-full"
-              />
-            </div>
-
-            {/* Dropoff Info */}
-            <div className="py-2">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                  <MapPin className="h-5 w-5 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-foreground">Dropoff Location</p>
-                  <p className="text-sm text-muted-foreground">
-                    {typeof assignment.dropoff_address === 'string' 
-                      ? assignment.dropoff_address 
-                      : (() => {
-                          const addr = assignment.dropoff_address;
-                          if (addr?.address) return addr.address;
-                          return `${addr?.street || ''} ${addr?.city || ''} ${addr?.state || ''} ${addr?.zip_code || ''}`.trim();
-                        })()
-                    }
-                  </p>
-                  {locationType && (
-                    <div className="bg-muted/30 rounded-lg px-3 py-1 mt-2 inline-block">
-                      <span className="text-xs text-muted-foreground capitalize">{locationType}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-4 pt-4">
-              <Button
-                onClick={handleDecline}
-                variant="secondary"
-                className="flex-1 h-14 text-lg font-semibold bg-muted hover:bg-muted/80 text-muted-foreground rounded-2xl"
-              >
-                REJECT
-              </Button>
-              <Button
-                onClick={handleAccept}
-                className="flex-1 h-14 text-lg font-semibold bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white rounded-2xl shadow-lg"
-              >
-                ACCEPT
-              </Button>
-            </div>
-
-            <div className="text-center pt-2">
-              <span className="text-sm text-muted-foreground">Auto-decline in {timeLeft}s</span>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div 
+      style={{
+        width: '100%', 
+        height: '100%', 
+        backgroundColor: '#d8e4f1', // Light blue/gray map background
+        position: 'relative',
+        overflow: 'hidden'
+      }}
+    >
+      {/* Visual Placeholder for the Route Line (Orange) */}
+      <div 
+        style={{
+          position: 'absolute', 
+          top: '50%', 
+          left: '10%', 
+          width: '80%', 
+          height: '4px', 
+          backgroundColor: '#F97316', // Orange-600
+          borderRadius: '2px', 
+          opacity: 0.6
+        }}
+      />
+      
+      {/* Pickup Marker (Green) */}
+      <div 
+        style={{
+          position: 'absolute', 
+          top: '45%', 
+          left: '20%', 
+          width: '16px', 
+          height: '16px', 
+          borderRadius: '50%', 
+          backgroundColor: '#10B981', // Green-500
+          border: '3px solid white', 
+          boxShadow: '0 0 5px rgba(0,0,0,0.3)'
+        }} 
+      />
+      
+      {/* Dropoff Marker (Orange Pin SVG) */}
+      <svg 
+        viewBox="0 0 24 24" 
+        style={{
+          position: 'absolute', 
+          top: '35%', 
+          left: '75%', 
+          width: '28px', 
+          height: '28px', 
+          color: '#F97316', // Orange-600
+          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))'
+        }}
+      >
+        <path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+      </svg>
     </div>
   );
 };
+
+
+interface Order {
+  id: string;
+  pickup_lat: number;
+  pickup_lng: number;
+  dropoff_lat: number;
+  dropoff_lng: number;
+  payout_cents: number;
+  delivery_payout_cents: number;
+  extra_earnings_cents: number;
+  distance_km: number;
+  num_stops: number;
+  estimated_time_mins: number;
+  status: 'pending' | 'assigned' | 'picked_up' | 'delivered' | 'cancelled';
+}
+
+interface OrderCardProps {
+  order: Order;
+  variant: 'available';
+  onAccept?: (order: Order) => void;
+  onReject?: (order: Order) => void;
+}
+
+// Helper to format currency
+const formatCurrency = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+
+// Helper to calculate the center for the map view
+const calculateCenter = (lat1: number, lng1: number, lat2: number, lng2: number) => ({
+  latitude: (lat1 + lat2) / 2,
+  longitude: (lng1 + lng2) / 2,
+});
+
+// Helper to format time (e.g., 1 hr, 37 mins)
+const formatTime = (totalMinutes: number) => {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  let timeString = '';
+  if (hours > 0) {
+    timeString += `${hours} hr`;
+    if (hours > 1) timeString += 's';
+  }
+  if (minutes > 0) {
+    if (hours > 0) timeString += ', ';
+    timeString += `${minutes} min`;
+  }
+  return timeString || '0 mins';
+};
+
+
+const OrderCard: React.FC<OrderCardProps> = ({ order, variant, onAccept, onReject }) => {
+  const center = calculateCenter(order.pickup_lat, order.pickup_lng, order.dropoff_lat, order.dropoff_lng);
+
+  return (
+    <Card className="w-full max-w-sm mx-auto shadow-lg rounded-xl overflow-hidden bg-white mt-4">
+
+      {/* Map Component integrated here */}
+      <div className="w-full h-48 relative">
+        <MapComponent
+          centerLat={center.latitude}
+          centerLng={center.longitude}
+          pickupLat={order.pickup_lat}
+          pickupLng={order.pickup_lng}
+          dropoffLat={order.dropoff_lat}
+          dropoffLng={order.dropoff_lng}
+        />
+      </div>
+
+      <CardContent className="p-4 space-y-4">
+        {/* Stops, Miles, Time */}
+        <div className="flex justify-between items-center text-gray-700 text-sm font-semibold border-b pb-4">
+          <span>
+            <span className="font-bold">{order.num_stops}</span> stops
+          </span>
+          <span className="mx-2">•</span>
+          <span>
+            <span className="font-bold">{(order.distance_km * 0.621371).toFixed(1)}</span> miles
+          </span>
+          <span className="mx-2">•</span>
+          <span>
+            <span className="font-bold">{formatTime(order.estimated_time_mins)}</span>
+          </span>
+        </div>
+
+        {/* Just for you section (Countdown Timer Area) */}
+        <div className="flex items-center justify-between bg-orange-50 px-3 py-2 rounded-lg">
+          <span className="font-semibold text-lg text-orange-700">Just for you</span>
+          {/* Countdown Timer Circle */}
+          <div className="relative w-8 h-8 flex items-center justify-center">
+            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+              <path
+                className="text-gray-200"
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeDasharray="100, 100"
+              />
+              <path
+                className="text-orange-500" // Orange progress line
+                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeDashoffset="75" 
+              />
+            </svg>
+            <span className="absolute text-xs font-medium text-orange-700">0:25</span>
+          </div>
+        </div>
+
+        {/* Estimated Total section */}
+        <div className="space-y-1">
+          <div className="flex justify-between items-center text-2xl font-bold text-gray-800">
+            <span>Estimated Total</span>
+            <span>{formatCurrency(order.payout_cents)}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm text-gray-600">
+            <span>Delivery</span>
+            <span>{formatCurrency(order.delivery_payout_cents)}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm text-gray-600">
+            <span>Extra Earnings</span>
+            <span>{formatCurrency(order.extra_earnings_cents)}</span>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-3 pt-4">
+          {variant === 'available' && onReject && (
+            <Button
+              onClick={() => onReject(order)}
+              variant="outline"
+              // Orange outline styles
+              className="flex-1 border-orange-500 text-orange-500 hover:bg-orange-50 hover:text-orange-600"
+            >
+              REJECT
+            </Button>
+          )}
+          {variant === 'available' && onAccept && (
+            <Button
+              onClick={() => onAccept(order)}
+              // Solid orange button
+              className="flex-1 bg-orange-500 text-white hover:bg-orange-600"
+            >
+              ACCEPT
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default OrderCard;
