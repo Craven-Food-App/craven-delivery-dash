@@ -83,11 +83,22 @@ const RestaurantRouteMap = ({ restaurantAddress, restaurantName }: { restaurantA
 
         mapboxgl.accessToken = data.token;
 
-        // Get current location (mock for now)
-        const currentLocation = [-122.4194, 37.7749]; // San Francisco as default
+        // Get real current location
+        let currentLocation = [-83.5379, 41.6528]; // Toledo, OH as fallback
+        
+        if (navigator.geolocation) {
+          try {
+            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject);
+            });
+            currentLocation = [position.coords.longitude, position.coords.latitude];
+          } catch (error) {
+            console.error('Error getting current location:', error);
+          }
+        }
         
         // Geocode restaurant address
-        let restaurantCoords = [-122.4194, 37.7849]; // Default nearby location
+        let restaurantCoords = currentLocation; // Use current location as fallback
         if (restaurantAddress && restaurantAddress !== 'Address not available') {
           try {
             const geocodeResponse = await fetch(
@@ -219,14 +230,28 @@ const useNavigation = () => {
   return { openExternalNavigation };
 };
 
-// Placeholder for Firebase Storage Upload (since the Storage SDK is not imported)
-const mockStorageUpload = async (userId: string, photoBlob: Blob) => {
-    console.log(`[STORAGE MOCK] Simulating upload of ${photoBlob.size} bytes for user ${userId}.`);
-    // Simulate delay
-    await new Promise(resolve => setTimeout(resolve, 500)); 
-    // Return a mock public URL
-    const publicUrl = `https://delivery.proof/${userId}/${Date.now()}.jpg`;
-    return { data: { publicUrl }, error: null };
+// Upload delivery photo to Supabase Storage
+const uploadDeliveryPhoto = async (userId: string, photoBlob: Blob) => {
+    try {
+      const fileName = `${userId}/${Date.now()}.jpg`;
+      const { data, error } = await supabase.storage
+        .from('delivery-photos')
+        .upload(fileName, photoBlob, {
+          contentType: 'image/jpeg',
+          upsert: false
+        });
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('delivery-photos')
+        .getPublicUrl(fileName);
+
+      return { data: { publicUrl }, error: null };
+    } catch (error: any) {
+      console.error('Error uploading delivery photo:', error);
+      return { data: null, error };
+    }
 };
 
 
@@ -235,12 +260,58 @@ const mockStorageUpload = async (userId: string, photoBlob: Blob) => {
 // DeliveryCamera (Colors changed from purple to red)
 const DeliveryCamera = ({ onPhotoCapture, onCancel, isUploading }: any) => {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
 
-  const simulateCapture = () => {
-    const mockPhotoBlob = new Blob(['mock image data'], { type: 'image/jpeg' });
-    const mockUrl = 'https://placehold.co/400x300/a855f7/ffffff?text=Proof+Mock';
-    setPhotoPreview(mockUrl);
-    onPhotoCapture(mockPhotoBlob);
+  useEffect(() => {
+    // Start camera
+    const startCamera = async () => {
+      try {
+        const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: 'environment' } 
+        });
+        setStream(mediaStream);
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+        }
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+      }
+    };
+
+    startCamera();
+
+    return () => {
+      // Cleanup camera stream
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  const capturePhoto = () => {
+    if (!videoRef.current) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    const ctx = canvas.getContext('2d');
+    
+    if (ctx) {
+      ctx.drawImage(videoRef.current, 0, 0);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          setPhotoPreview(url);
+          onPhotoCapture(blob);
+          
+          // Stop camera after capture
+          if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+          }
+        }
+      }, 'image/jpeg', 0.9);
+    }
   };
 
   if (photoPreview) {
@@ -264,11 +335,15 @@ const DeliveryCamera = ({ onPhotoCapture, onCancel, isUploading }: any) => {
         <p className="text-sm text-gray-500">
           Ensure the delivery location and order are clearly visible.
         </p>
-        <div className="bg-gray-200 h-48 rounded-lg flex items-center justify-center text-gray-500">
-            <Camera className="h-8 w-8 mr-2" />
-            [Webcam Feed Mock]
+        <div className="bg-gray-900 h-64 rounded-lg overflow-hidden relative">
+          <video 
+            ref={videoRef}
+            autoPlay 
+            playsInline 
+            className="w-full h-full object-cover"
+          />
         </div>
-        <Button onClick={simulateCapture} className="w-full bg-red-700 hover:bg-red-800" disabled={isUploading}>
+        <Button onClick={capturePhoto} className="w-full bg-red-700 hover:bg-red-800" disabled={isUploading}>
           {isUploading ? 'Uploading...' : 'Take Photo'}
         </Button>
         <Button onClick={onCancel} variant="outline" className="w-full">
@@ -282,9 +357,7 @@ const DeliveryCamera = ({ onPhotoCapture, onCancel, isUploading }: any) => {
 // OrderVerificationScreen (Colors changed to red for attention and amber for confirm)
 const OrderVerificationScreen = ({ orderDetails, onPickupConfirmed, onCancel }: any) => {
   const handleConfirm = () => {
-    // Simulate photo URL or just confirm
-    const pickupPhotoUrl = 'mock-pickup-verification-url';
-    onPickupConfirmed(pickupPhotoUrl);
+    onPickupConfirmed();
   };
 
   return (
@@ -443,13 +516,17 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
     }
   };
 
-  // handlePhotoCapture: Mock upload for now
+  // handlePhotoCapture: Upload to Supabase Storage
   const handlePhotoCapture = async (photoBlob: Blob) => {
     setIsUploadingPhoto(true);
     try {
-      // Mock upload - in production, upload to Supabase Storage
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const publicUrl = `https://delivery.proof/${Date.now()}.jpg`;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await uploadDeliveryPhoto(user.id, photoBlob);
+      if (error || !data) throw error;
+
+      const publicUrl = data.publicUrl;
       setDeliveryPhoto(publicUrl);
 
       setCurrentStage('delivered');
