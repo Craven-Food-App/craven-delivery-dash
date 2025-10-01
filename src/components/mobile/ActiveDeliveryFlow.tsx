@@ -1,606 +1,890 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-// The incorrect imports that were previously here were removed in the last revision,
-// which correctly leaves the mock components defined below.
-import {
-  Navigation,
-  Phone,
-  MessageSquare,
-  MapPin,
-  Clock,
-  DollarSign,
-  Camera,
-  CheckCircle,
-  ArrowRight,
-  Package,
-  User,
-  Store,
-  Map,
-  ClipboardList
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MapPin, Navigation, Clock, Phone, MessageCircle, Camera, CheckCircle } from 'lucide-react';
+// Required Firebase Imports
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, getDoc, setLogLevel } from 'firebase/firestore'; // <-- setLogLevel imported
 
-// --- MAPBOX CONFIGURATION ---
-// Using the API key provided by the user to generate a static map image.
-const MAPBOX_ACCESS_TOKEN = "pk.eyJ1IjoiY3JhdmUtbiIsImEiOiJjbWZpbXN4NmUwMG0wMmpxNDNkc2lmNWhiIn0._lEfvdpBUJpz-RYDV02ZAA";
+// --- MOCK UI COMPONENTS (Replaces Shadcn/UI imports) ---
 
-// Mock Geolocation Data (Mapbox requires coordinates, not just addresses)
-// Using coordinates near San Francisco/Oakland for a realistic feel
-const MOCK_COORDS = {
-  driver: { lat: 37.77, lng: -122.45 }, // Current driver location
-  pickup: { lat: 37.7915, lng: -122.4048 }, // Restaurant (e.g., Fisherman's Wharf area)
-  dropoff: { lat: 37.7550, lng: -122.4475 }, // Customer (e.g., Mission District area)
-};
-
-// --- MOCK UI COMPONENTS (Simulating shadcn/ui for single-file deployment) ---
-const CardContainer = ({ children, className = '' }) => <div className={`bg-white rounded-xl shadow-lg ${className}`}>{children}</div>;
-const CardContentMock = ({ children, className = '' }) => <div className={`p-4 ${className}`}>{children}</div>;
-const CardHeaderMock = ({ children, className = '' }) => <div className={`p-4 border-b border-gray-100 ${className}`}>{children}</div>;
-const CardTitleMock = ({ children, className = '' }) => <h2 className="text-xl font-bold">{children}</h2>;
-const ButtonMock = ({ children, onClick, className = '', variant = 'default', disabled = false }) => {
-  let baseStyle = "w-full h-14 text-base font-semibold transition-all duration-200 rounded-lg flex items-center justify-center"; // Increased height slightly
-  if (variant === 'default') {
-    baseStyle = `${baseStyle} bg-green-600 text-white hover:bg-green-700 shadow-xl shadow-green-400/50`;
-  } else if (variant === 'outline') {
-    baseStyle = `${baseStyle} border-2 border-gray-300 text-gray-700 hover:bg-gray-50`;
-  } else if (variant === 'ghost') {
-    baseStyle = `${baseStyle} text-gray-600 hover:bg-gray-100`;
-  }
-
-  if (disabled) {
-      baseStyle = `${baseStyle} opacity-50 cursor-not-allowed`;
-  }
-
-  return <button onClick={disabled ? null : onClick} className={`${baseStyle} ${className}`}>{children}</button>;
-};
-const BadgeMock = ({ children, className = '' }) => <span className={`px-3 py-1 text-xs font-semibold rounded-full ${className}`}>{children}</span>;
-const ProgressMock = ({ value, className = '' }) => (
-  <div className={`w-full h-2 bg-gray-200 rounded-full overflow-hidden ${className}`}>
-    <div
-      style={{ width: `${value}%` }}
-      className="h-full bg-orange-500 transition-all duration-500 ease-out"
-    ></div>
+const Card = ({ children, className = '' }) => (
+  <div className={`bg-white rounded-xl shadow-lg border border-gray-200 ${className}`}>
+    {children}
   </div>
 );
+const CardContent = ({ children, className = 'p-4' }) => (
+  <div className={className}>{children}</div>
+);
 
-// --- MAPBOX STATIC IMAGE COMPONENT ---
-const MapboxStaticMap = ({ destinationName, type, currentCoords, destinationCoords }) => {
-  if (!MAPBOX_ACCESS_TOKEN) return (
-    <div className="w-full h-48 bg-gray-100 relative overflow-hidden rounded-t-xl flex items-center justify-center">
-      <p className="text-gray-500">Mapbox Token Missing</p>
-    </div>
-  );
+// Updated Button component
+const Button = ({ children, onClick, className = '', variant = 'default', size = 'md', disabled = false }) => {
+  const baseClasses = "flex items-center justify-center font-medium rounded-xl transition duration-150 active:scale-[0.98]";
+  let sizeClasses = '';
+  let variantClasses = '';
 
-  const markerColor = type === 'pickup' ? '00BFFF' : '00FF00'; // Blue for pickup, Green for dropoff
-  const centerLat = (currentCoords.lat + destinationCoords.lat) / 2;
-  const centerLng = (currentCoords.lng + destinationCoords.lng) / 2;
-  
-  // Markers: Driver (red), Destination (colored)
-  const markers = [
-    `pin-s-car+FF0000(${currentCoords.lng},${currentCoords.lat})`,
-    `pin-s-flag+${markerColor}(${destinationCoords.lng},${destinationCoords.lat})`
-  ].join(',');
+  switch (size) {
+    case 'lg': sizeClasses = 'h-14 px-6 text-base'; break; // Taller for bottom sheet actions
+    case 'sm': sizeClasses = 'h-8 px-3 text-sm'; break;
+    default: sizeClasses = 'h-10 px-4 text-sm'; break;
+  }
 
-  // The style is 'mapbox/navigation-preview-day'
-  // The center is calculated as the midpoint between driver and destination
-  // Zoom is set to 12 for a good city view, and the image size is 600x480
-  const mapUrl = `https://api.mapbox.com/styles/v1/mapbox/navigation-preview-day/static/${markers}/${centerLng},${centerLat},12,0/600x480?access_token=${MAPBOX_ACCESS_TOKEN}&attribution=false&logo=false`;
+  switch (variant) {
+    case 'secondary': variantClasses = 'bg-gray-100 text-gray-800 hover:bg-gray-200'; break;
+    case 'outline': variantClasses = 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'; break;
+    case 'destructive': variantClasses = 'bg-red-500 text-white hover:bg-red-600'; break;
+    // Dark red/brown for primary actions (like PICKUP NOTES) - was dark blue
+    case 'primary-dark': variantClasses = 'bg-red-700 text-white hover:bg-red-600 shadow-lg'; break; 
+    // Orange for NAVIGATE and CONFIRM ARRIVAL - was blue
+    default: variantClasses = 'bg-orange-600 text-white hover:bg-orange-700 shadow-md'; break;
+  }
 
   return (
-    <div className="w-full h-48 relative overflow-hidden rounded-t-xl">
-      <img
-        src={mapUrl}
-        alt={`Map navigating to ${destinationName}`}
-        className="w-full h-full object-cover"
-        onError={(e) => {
-          e.currentTarget.onerror = null;
-          e.currentTarget.src = `https://placehold.co/600x480/cccccc/333333?text=Map+Error`;
-          console.error("Mapbox image failed to load. Check API key and network.");
-        }}
-      />
-      <div className="absolute bottom-4 left-4 right-4 bg-white p-3 rounded-lg shadow-xl border-l-4 border-orange-500 flex items-center gap-2">
-        <MapPin className="h-5 w-5 text-orange-500" />
-        <span className="text-sm font-semibold text-gray-800">
-          Navigating to: {destinationName}
-        </span>
+    <button
+      onClick={onClick}
+      className={`${baseClasses} ${sizeClasses} ${variantClasses} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+      disabled={disabled}
+    >
+      {children}
+    </button>
+  );
+};
+
+// New AppHeader component
+const AppHeader = ({ title, onBack, showHelp = true }: { title: string, onBack: () => void, showHelp?: boolean }) => (
+    <div className="flex items-center justify-between p-4 bg-orange-600 text-white shadow-md w-full">
+        <button onClick={onBack} className="p-1 rounded-full hover:bg-orange-700 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+        <h1 className="text-xl font-bold">{title}</h1>
+        {showHelp ? (
+            <button onClick={() => console.log('Help clicked')} className="p-1 rounded-full border-2 border-white hover:bg-orange-700 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-help-circle"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+            </button>
+        ) : <div className="w-8"></div>}
+    </div>
+);
+
+
+// --- HOOKS & UTILITIES ---
+
+// Mock useToast Hook (kept the same)
+const useToast = () => {
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const toast = ({ title, description, variant, duration = 3000 }: any) => {
+    const message = `${title}: ${description}`;
+    console.log(`[TOAST] ${message} (${variant || 'default'})`);
+    
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), duration);
+  };
+  
+  const ToastDisplay = toastMessage ? (
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 p-3 bg-gray-800 text-white rounded-lg shadow-xl z-50 animate-bounce-in">
+        {toastMessage}
+    </div>
+  ) : null;
+
+  return { toast, ToastDisplay };
+};
+
+// Mock useNavigation Hook (kept the same)
+const useNavigation = () => {
+  const { toast } = useToast();
+  const openExternalNavigation = ({ address, name }: { address: string; name: string }) => {
+    toast({
+      title: "Navigation Started",
+      description: `Navigating to ${name} at ${address}`,
+      duration: 3000,
+    });
+    console.log(`[NAVIGATE] Starting external navigation to: ${name} (${address})`);
+  };
+  return { openExternalNavigation };
+};
+
+// Placeholder for Firebase Storage Upload (since the Storage SDK is not imported)
+const mockStorageUpload = async (userId: string, photoBlob: Blob) => {
+    console.log(`[STORAGE MOCK] Simulating upload of ${photoBlob.size} bytes for user ${userId}.`);
+    // Simulate delay
+    await new Promise(resolve => setTimeout(resolve, 500)); 
+    // Return a mock public URL
+    const publicUrl = `https://delivery.proof/${userId}/${Date.now()}.jpg`;
+    return { data: { publicUrl }, error: null };
+};
+
+
+// --- EXTERNAL COMPONENTS (DeliveryCamera, OrderVerificationScreen) ---
+
+// DeliveryCamera (Colors changed from purple to red)
+const DeliveryCamera = ({ onPhotoCapture, onCancel, isUploading }: any) => {
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  const simulateCapture = () => {
+    const mockPhotoBlob = new Blob(['mock image data'], { type: 'image/jpeg' });
+    const mockUrl = 'https://placehold.co/400x300/a855f7/ffffff?text=Proof+Mock';
+    setPhotoPreview(mockUrl);
+    onPhotoCapture(mockPhotoBlob);
+  };
+
+  if (photoPreview) {
+      return (
+          <Card>
+              <CardContent className="p-4 text-center space-y-4">
+                  <h3 className="text-xl font-bold text-red-700">Proof Captured!</h3>
+                  <img src={photoPreview} alt="Delivery Proof Preview" className="rounded-lg w-full h-auto object-cover border" />
+                  <Button onClick={onCancel} variant="secondary" className="w-full">
+                      Cancel (Go Back)
+                  </Button>
+              </CardContent>
+          </Card>
+      );
+  }
+
+  return (
+    <Card className="p-6">
+      <CardContent className="p-0 space-y-4 text-center">
+        <h3 className="text-xl font-bold text-red-700">Capture Proof of Delivery</h3>
+        <p className="text-sm text-gray-500">
+          Ensure the delivery location and order are clearly visible.
+        </p>
+        <div className="bg-gray-200 h-48 rounded-lg flex items-center justify-center text-gray-500">
+            <Camera className="h-8 w-8 mr-2" />
+            [Webcam Feed Mock]
+        </div>
+        <Button onClick={simulateCapture} className="w-full bg-red-700 hover:bg-red-800" disabled={isUploading}>
+          {isUploading ? 'Uploading...' : 'Take Photo'}
+        </Button>
+        <Button onClick={onCancel} variant="outline" className="w-full">
+          Cancel
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
+
+// OrderVerificationScreen (Colors changed to red for attention and amber for confirm)
+const OrderVerificationScreen = ({ orderDetails, onPickupConfirmed, onCancel }: any) => {
+  const handleConfirm = () => {
+    // Simulate photo URL or just confirm
+    const pickupPhotoUrl = 'mock-pickup-verification-url';
+    onPickupConfirmed(pickupPhotoUrl);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-red-600 text-white p-4 rounded-2xl text-center">
+        <h2 className="text-xl font-bold">Verify Pickup</h2>
+        <p className="opacity-90">Confirm all items are collected.</p>
       </div>
+
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <h3 className="font-bold text-lg text-red-800">Order #{orderDetails.order_number}</h3>
+          
+          <div className="max-h-48 overflow-y-auto border-b pb-2">
+            {orderDetails.items.map((item: OrderItem, index: number) => (
+              <div key={index} className="flex justify-between items-center text-sm py-1">
+                <span className="font-medium">{item.quantity}x {item.name}</span>
+                <span className="text-gray-600">${(item.price_cents / 100).toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="pt-2">
+            <p className="text-sm font-semibold">Customer: {orderDetails.customer_name}</p>
+            <p className="text-sm text-gray-500">Total: ${(orderDetails.subtotal_cents / 100).toFixed(2)}</p>
+          </div>
+
+          <Button
+            onClick={handleConfirm}
+            className="w-full h-12 bg-amber-500 hover:bg-amber-600 text-white mt-4"
+          >
+            <CheckCircle className="h-5 w-5 mr-2" />
+            Confirm Pickup & Start Delivery
+          </Button>
+          <Button
+            onClick={onCancel}
+            variant="outline"
+            className="w-full h-12"
+          >
+            Cancel / Back
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 };
 
-// Mocking the specialized customer view component
-interface CustomerNavigationStepProps {
-  customerName: string;
-  deliveryTime: string;
-  customerPhone?: string;
-  dropoffAddress: string;
-  deliveryInstructions?: string;
-  onCall: () => void;
-  onMessage: () => void;
-  onDirections: () => void;
+
+// --- TYPES ---
+
+type DeliveryStage = 'navigate_to_restaurant' | 'arrived_at_restaurant' | 'verify_pickup' | 'navigate_to_customer' | 'capture_proof' | 'delivered';
+
+interface OrderItem {
+  name: string;
+  quantity: number;
+  price_cents: number;
+  special_instructions?: string;
 }
-
-const CustomerNavigationStep: React.FC<CustomerNavigationStepProps> = ({
-  customerName,
-  deliveryTime,
-  customerPhone,
-  dropoffAddress,
-  deliveryInstructions,
-  onCall,
-  onMessage,
-  onDirections,
-}) => (
-  <div className="p-4 space-y-4 bg-gray-50 min-h-screen">
-    <CardContainer className="mt-4">
-      <CardHeaderMock className="flex flex-row items-center justify-between">
-        <h3 className="text-2xl font-extrabold text-gray-900 flex items-center">
-            <User className="h-6 w-6 mr-2 text-orange-500" /> {customerName || 'Customer'}
-        </h3>
-        <BadgeMock className="bg-orange-500 text-white font-bold text-sm">
-            {deliveryTime} ETA
-        </BadgeMock>
-      </CardHeaderMock>
-      <CardContentMock className="space-y-4">
-        {/* Contact Buttons */}
-        <div className="grid grid-cols-2 gap-3">
-          <ButtonMock variant="outline" className="h-14 border-orange-500 text-orange-600 hover:bg-orange-50" onClick={onCall}>
-            <Phone className="h-5 w-5 mr-2" /> Call
-          </ButtonMock>
-          <ButtonMock variant="outline" className="h-14 border-orange-500 text-orange-600 hover:bg-orange-50" onClick={onMessage}>
-            <MessageSquare className="h-5 w-5 mr-2" /> Message
-          </ButtonMock>
-        </div>
-        
-        {/* Address & Directions */}
-        <div className="space-y-3 p-3 bg-gray-50 rounded-lg">
-          <h4 className="font-semibold text-lg flex items-center gap-2 text-gray-800">
-            <MapPin className="h-5 w-5 text-green-600" /> Dropoff Location
-          </h4>
-          <p className="text-gray-600 ml-7 -mt-1">{dropoffAddress}</p>
-          <ButtonMock variant="default" className="w-full mt-2 h-12 bg-blue-600 hover:bg-blue-700 shadow-blue-400/50" onClick={onDirections}>
-            <Navigation className="h-5 w-5 mr-2" /> Open Directions
-          </ButtonMock>
-        </div>
-        
-        {/* Instructions */}
-        {deliveryInstructions && (
-            <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                <h4 className="font-semibold text-orange-700 flex items-center gap-2">
-                    <ClipboardList className="h-5 w-5" /> Instructions
-                </h4>
-                <p className="text-sm text-orange-800 ml-7 -mt-1">{deliveryInstructions}</p>
-            </div>
-        )}
-      </CardContentMock>
-    </CardContainer>
-  </div>
-);
-
-
-// --- MOCK HOOKS AND UTILITIES ---
-const useToast = () => ({
-  toast: (options) => console.log(`[TOAST]: ${options.title} - ${options.description}`),
-});
-const useNavigation = () => ({
-  navigationSettings: { provider: 'external' } // Force external nav for simplicity
-});
-const supabase = {
-  from: (table) => ({
-    select: (cols) => ({
-      eq: (key, value) => ({
-        single: async () => {
-          // Mock fetch for restaurant address
-          if (table === 'restaurants' && key === 'id') {
-            return { data: { address: "123 Mock Street, Unit B" }, error: null };
-          }
-          return { data: null, error: new Error("Mock DB Error") };
-        }
-      })
-    })
-  })
-};
-
-// --- CORE DELIVERY FLOW LOGIC ---
 
 interface OrderDetails {
-  id?: string;
-  order_number?: string;
-  restaurant_name: string;
-  restaurant_id?: string;
-  // NOTE: For a real app, pickup/dropoff address must include lat/lng fields.
-  pickup_address: string | any;
-  dropoff_address: string | any;
-  customer_name?: string;
-  customer_phone?: string;
-  delivery_notes?: string;
-  payout_cents: number;
-  subtotal_cents?: number;
-  estimated_time: number;
-  items?: Array<{ name: string; quantity: number; price_cents: number }>;
-  isTestOrder?: boolean;
+    id: string;
+    order_number: string;
+    restaurant_name: string;
+    restaurant_id?: string;
+    pickup_address: any; 
+    dropoff_address: any;
+    customer_name: string;
+    customer_phone?: string;
+    delivery_notes?: string;
+    payout_cents: number;
+    subtotal_cents: number;
+    estimated_time: number;
+    items: OrderItem[];
 }
 
-// Renamed props interface to align with main component name (App)
-interface AppProps {
+interface ActiveDeliveryProps {
   orderDetails: OrderDetails;
-  onCompleteDelivery: () => void;
+  onCompleteDelivery: (photoUrl?: string) => void;
+  db: any; // Firestore instance
+  userId: string; // Authenticated user ID
+  isAuthReady: boolean; // <-- NEW: Authentication readiness flag
 }
 
-type DeliveryStep = 'accepted' | 'heading_to_pickup' | 'at_restaurant' | 'picked_up' | 'heading_to_customer' | 'at_customer' | 'delivered';
+// --- ACTIVE DELIVERY FLOW ---
 
-const DELIVERY_STEPS = [
-  { id: 'accepted', label: 'Order Accepted', emoji: '✅' },
-  { id: 'heading_to_pickup', label: 'Driving to Pickup', emoji: '🚗' },
-  { id: 'at_restaurant', label: 'Arrived at Restaurant', emoji: '🏪' },
-  { id: 'picked_up', label: 'Package Secured', emoji: '📦' },
-  { id: 'heading_to_customer', label: 'Driving to Customer', emoji: '🚚' },
-  { id: 'at_customer', label: 'Arrived at Dropoff', emoji: '📍' },
-  { id: 'delivered', label: 'Delivery Complete', emoji: '🎉' }
-] as const;
-
-// Renamed component to App and exporting as default to fix the element type error.
-const App: React.FC<AppProps> = ({
+const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
   orderDetails,
-  onCompleteDelivery
+  onCompleteDelivery,
+  db,
+  userId,
+  isAuthReady,
 }) => {
-  // FIX: Added defensive check to handle cases where orderDetails might be undefined on initial render.
-  if (!orderDetails) {
-    return (
-      <div className="min-h-screen p-8 flex items-center justify-center bg-gray-100">
-        <div className="text-center p-6 bg-white rounded-xl shadow-lg border-t-4 border-red-500">
-          <p className="text-xl font-semibold text-red-600">Loading Order Details...</p>
-          <p className="text-sm text-gray-500 mt-2">The 'orderDetails' prop is missing or not fully loaded.</p>
-        </div>
-      </div>
-    );
-  }
-
-  const [currentStep, setCurrentStep] = useState<DeliveryStep>('accepted');
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [estimatedArrival, setEstimatedArrival] = useState<Date | null>(null);
-  const [proofPhoto, setProofPhoto] = useState<string | null>(null); // State for mock proof of delivery photo
+  const [currentStage, setCurrentStage] = useState<DeliveryStage>('navigate_to_restaurant');
+  const [deliveryPhoto, setDeliveryPhoto] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [restaurantAddress, setRestaurantAddress] = useState<string>('');
-
   const { toast } = useToast();
+  const { openExternalNavigation } = useNavigation();
 
-  // --- Data Fetching & Timers ---
+  // Define fetchRestaurantAddress helper function (Refactored for clarity and robustness)
+  const fetchRestaurantAddress = async (attempt = 1) => {
+    const restaurantId = orderDetails.restaurant_id;
 
-  // Fetch restaurant address if pickup_address is not detailed
-  useEffect(() => {
-    const fetchRestaurantAddress = async () => {
-      // Logic only runs if pickup_address is not a string (i.e., requires lookup)
-      if (typeof orderDetails.pickup_address !== 'string' && orderDetails.restaurant_id) {
-        try {
-          const { data, error } = await supabase
-            .from('restaurants')
-            .select('address')
-            .eq('id', orderDetails.restaurant_id)
-            .single();
+    // Path: /artifacts/{appId}/public/data/restaurants/{restaurantId}
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-          if (data && !error && data.address) {
-            setRestaurantAddress(data.address);
-          }
-        } catch (error) {
-          console.error('Error fetching restaurant address:', error);
-        }
-      } else if (typeof orderDetails.pickup_address === 'string') {
-          // If it's already a string, use it directly
-          setRestaurantAddress(orderDetails.pickup_address);
-      }
-    };
-    fetchRestaurantAddress();
-  }, [orderDetails.pickup_address, orderDetails.restaurant_id]);
-
-  // Timer for elapsed time
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setElapsedTime(prev => prev + 1);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Auto-advance logic (from accepted to first driving step)
-  useEffect(() => {
-    if (currentStep === 'accepted') {
-      const timer = setTimeout(() => {
-        setCurrentStep('heading_to_pickup');
-        calculateETA('pickup');
-      }, 3000); // 3-second delay after accepting
-      return () => clearTimeout(timer);
-    }
-  }, [currentStep]);
-
-  // --- Helper Functions ---
-
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}m ${remainingSeconds.toString().padStart(2, '0')}s`;
-  };
-
-  const formatETA = (date: Date) => {
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
-  const calculateETA = useCallback((destination: 'pickup' | 'customer') => {
-    const baseTime = destination === 'pickup' ? 12 : 18; // Mock time in minutes
-    const eta = new Date();
-    eta.setMinutes(eta.getMinutes() + baseTime);
-    setEstimatedArrival(eta);
-  }, []);
-
-  const getCurrentStepIndex = useCallback(() => {
-    return DELIVERY_STEPS.findIndex(step => step.id === currentStep);
-  }, [currentStep]);
-
-  const getStepProgress = useCallback(() => {
-    const currentIndex = getCurrentStepIndex();
-    return ((currentIndex + 1) / DELIVERY_STEPS.length) * 100;
-  }, [getCurrentStepIndex]);
-
-  const formatAddress = (addressData: string | any): string => {
-    if (typeof addressData === 'string' && addressData) return addressData;
-    if (addressData?.address) return addressData.address;
-
-    // Use fetched restaurantAddress as fallback if needed for pickup
-    if (['accepted', 'heading_to_pickup', 'at_restaurant'].includes(currentStep) && restaurantAddress) {
-        return restaurantAddress;
+    // Guard against missing dependencies.
+    if (!db || !userId || !restaurantId) {
+        console.log("[FIRESTORE] Pre-check failed. DB, UserId, or Restaurant ID missing.");
+        return;
     }
 
-    const formatted = `${addressData?.street || ''}, ${addressData?.city || ''}, ${addressData?.state || ''}`.trim();
-    if (formatted.length > 5) return formatted;
+    try {
+      console.log(`[FIRESTORE] Attempting to fetch public restaurant data (Attempt ${attempt}/7) for user ${userId} on ID: ${restaurantId}`); 
 
-    return 'Address loading/unavailable';
-  };
-
-  const getCurrentDestination = useMemo(() => {
-    const isPickupPhase = ['accepted', 'heading_to_pickup', 'at_restaurant'].includes(currentStep);
-    
-    // Determine coordinates based on phase
-    const currentCoords = MOCK_COORDS.driver;
-    const destinationCoords = isPickupPhase ? MOCK_COORDS.pickup : MOCK_COORDS.dropoff;
-
-    return {
-      address: isPickupPhase ? formatAddress(orderDetails.pickup_address) : formatAddress(orderDetails.dropoff_address),
-      name: isPickupPhase ? orderDetails.restaurant_name : orderDetails.customer_name || 'Customer Dropoff',
-      type: isPickupPhase ? 'pickup' as const : 'delivery' as const,
-      currentCoords,
-      destinationCoords
-    };
-  }, [currentStep, orderDetails, restaurantAddress]);
-
-
-  // --- Action Handlers ---
-
-  const handleNextStep = useCallback(() => {
-    const currentIndex = getCurrentStepIndex();
-    const nextStep = DELIVERY_STEPS[currentIndex + 1]?.id as DeliveryStep;
-
-    if (nextStep) {
-      setCurrentStep(nextStep);
-
-      if (nextStep === 'picked_up') {
-        calculateETA('customer');
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'restaurants', restaurantId);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setRestaurantAddress(data.address || '');
+        console.log(`[FIRESTORE] Successfully loaded restaurant address: ${data.address}`);
+      } else {
+         console.log(`[FIRESTORE] No address document found for restaurant ID: ${restaurantId}`);
       }
-
+    } catch (error: any) {
+      
+      // *** FIX: Use console.warn for the initial permission-denied error (race condition) ***
+      if (error.code === 'permission-denied' && attempt === 1) {
+          console.warn(`[FIRESTORE WARNING] Permission denied on first attempt. This is likely a temporary auth race condition. Retrying...`);
+      } else {
+          // Use console.error for critical or subsequent failures
+          console.error(`Error fetching restaurant address (Attempt ${attempt}):`, error);
+      }
+      
+      // FIX: The core issue is the auth race condition. We retry on permission failure.
+      if (error.code === 'permission-denied' && attempt < 7) { 
+         const delay = Math.min(5000, attempt * 1000); 
+         console.log(`[FIRESTORE RETRY] Permission denied (Auth Race). Retrying in ${delay}ms... (Max 7 attempts)`);
+         await new Promise(resolve => setTimeout(resolve, delay));
+         return fetchRestaurantAddress(attempt + 1); // Recursive call
+      }
+      
+      // If all retries fail, fall back
+      setRestaurantAddress('1234 Mock Restaurant St, Test Town, USA'); 
       toast({
-        title: "Status Updated",
-        description: `${DELIVERY_STEPS[currentIndex + 1].label} confirmed.`,
+          title: "Data Error",
+          description: "Could not load restaurant address from live data. Using fallback.",
+          variant: 'destructive'
       });
     }
-  }, [getCurrentStepIndex, calculateETA, toast]);
+  };
 
-  const getActionButton = () => {
-    switch (currentStep) {
-      case 'heading_to_pickup':
-      case 'heading_to_customer':
-        return {
-          text: "I've Arrived",
-          action: handleNextStep,
-          icon: <MapPin className="h-5 w-5" />,
-          variant: 'default' as const
-        };
-      case 'at_restaurant':
-        return {
-          text: "Order Picked Up",
-          action: handleNextStep,
-          icon: <Package className="h-5 w-5" />,
-          variant: 'default' as const
-        };
-      case 'at_customer':
-        return {
-          text: "Complete Delivery",
-          action: handleNextStep, // This will advance to 'delivered'
-          icon: <CheckCircle className="h-5 w-5" />,
-          variant: 'default' as const
-        };
-      default:
-        return null;
+
+  // Fetch restaurant address using Firestore - Triggered only when auth is ready
+  useEffect(() => {
+    // Initial Guard: Only start the process if all dependencies (including the crucial isAuthReady) are met, 
+    // AND if we actually need to fetch an address (i.e., we have a restaurant_id but no address yet, AND we haven't already fetched it).
+    if (db && userId && isAuthReady && !orderDetails.pickup_address && orderDetails.restaurant_id && !restaurantAddress) {
+        fetchRestaurantAddress(); // Start the process
+    }
+    // Added restaurantAddress to dependency array to prevent repeated fetch attempts after success
+  }, [db, userId, isAuthReady, orderDetails.pickup_address, orderDetails.restaurant_id, restaurantAddress]);
+
+
+  // Helper function to format address
+  const formatAddress = (address: any, fallbackAddress?: string) => {
+    if (typeof address === 'string') return address;
+    if (typeof address === 'object' && address) {
+      return `${address.street || ''} ${address.city || ''} ${address.state || ''} ${address.zip || ''}`.trim();
+    }
+    if (fallbackAddress || restaurantAddress) return fallbackAddress || restaurantAddress;
+    return 'Address not available';
+  };
+
+  // Simplified handleStageComplete (removed test logic)
+  const handleStageComplete = () => {
+    switch (currentStage) {
+      case 'navigate_to_restaurant':
+        setCurrentStage('arrived_at_restaurant');
+        toast({
+          title: "Arrived at Restaurant!",
+          description: "Ready to pick up the order.",
+        });
+        break;
+      case 'navigate_to_customer':
+        setCurrentStage('capture_proof');
+        toast({
+          title: "Arrived at Customer!",
+          description: "Take a photo to complete delivery.",
+        });
+        break;
+      case 'capture_proof':
+      case 'delivered':
+        onCompleteDelivery(deliveryPhoto || undefined);
+        break;
     }
   };
 
-  const actionButton = getActionButton();
+  // handlePhotoCapture: Updated to use mockStorageUpload
+  const handlePhotoCapture = async (photoBlob: Blob) => {
+    setIsUploadingPhoto(true);
+    try {
+      // NOTE: This uses the mockStorageUpload since the Firebase Storage SDK is not explicitly imported.
+      const { data: uploadData, error: uploadError } = await mockStorageUpload(userId, photoBlob);
 
-  // --- Conditional Renders ---
+      if (uploadError) throw uploadError;
 
-  // Renders the specialized Customer Dropoff screen (Spark/Dash style)
-  if (['heading_to_customer', 'at_customer'].includes(currentStep)) {
-    return (
-      <CustomerNavigationStep
-        customerName={orderDetails.customer_name}
-        deliveryTime={estimatedArrival ? formatETA(estimatedArrival) : '12:44 PM'}
-        customerPhone={orderDetails.customer_phone}
-        dropoffAddress={getCurrentDestination.address}
-        deliveryInstructions={orderDetails.delivery_notes}
-        onCall={() => toast({ title: "Calling customer...", description: "Feature coming soon!" })}
-        onMessage={() => toast({ title: "Messaging customer...", description: "Feature coming soon!" })}
-        onDirections={() => window.open(`https://maps.google.com/maps?q=${encodeURIComponent(getCurrentDestination.address)}`, '_blank')}
+      const publicUrl = uploadData.publicUrl;
+      setDeliveryPhoto(publicUrl);
+      
+      // Real-world: Update the delivery document in Firestore here with the publicUrl
+
+      setCurrentStage('delivered');
+      
+      toast({
+        title: "Photo Uploaded!",
+        description: "Delivery proof captured successfully.",
+      });
+
+      // Complete delivery after successful photo upload
+      setTimeout(() => {
+        onCompleteDelivery(publicUrl);
+      }, 1500);
+
+    } catch (error: any) {
+      console.error('Error uploading photo:', error);
+      toast({
+        title: 'Upload Failed',
+        description: 'Failed to upload delivery photo. Check console for details.',
+        variant: 'destructive'
+      });
+    }
+    setIsUploadingPhoto(false);
+  };
+  
+  // Re-added the missing renderVerifyPickup for completeness
+  const renderVerifyPickup = () => (
+    <div className="p-4">
+      <OrderVerificationScreen
+        orderDetails={orderDetails}
+        onPickupConfirmed={() => {
+          setCurrentStage('navigate_to_customer');
+          toast({ title: 'Pickup Verified', description: 'Starting navigation to customer.' });
+        }}
+        onCancel={() => setCurrentStage('arrived_at_restaurant')}
       />
-    );
-  }
+    </div>
+  );
 
-  // Renders the Success Screen
-  if (currentStep === 'delivered') {
+  // --- RENDER FUNCTION FOR THE UNIFIED PICKUP SCREEN (Colors changed to orange/red) ---
+  const renderPickupScreen = () => {
+    const isArrived = currentStage === 'arrived_at_restaurant';
+    const isNavigating = currentStage === 'navigate_to_restaurant';
+    
+    const mainActionText = isNavigating ? 'CONFIRM ARRIVAL' : 'VERIFY ORDER & START DELIVERY';
+    const storeAddress = formatAddress(orderDetails.pickup_address, restaurantAddress);
+    
+    const orderStatusText = isNavigating ? 'Ready' : 'Ready to Pick Up';
+    const orderStatusColor = isNavigating ? 'text-orange-600' : 'text-amber-600'; // Orange for navigating, Amber for arrived/ready
+
+    const handleMainAction = () => {
+        if (isNavigating) {
+            handleStageComplete();
+        } else if (isArrived) {
+            setCurrentStage('verify_pickup');
+            toast({
+                title: "Verify Order!",
+                description: "Please verify order details before proceeding.",
+            });
+        }
+    };
+
     return (
-      <div className="p-4 bg-gray-50 min-h-screen flex items-center justify-center">
-        <CardContainer className="w-full max-w-sm text-center p-8 bg-gradient-to-br from-green-500 to-green-700 text-white shadow-2xl shadow-green-500/50">
-          <CheckCircle className="h-16 w-16 mx-auto mb-4 text-white animate-pulse" />
-          <h2 className="text-3xl font-extrabold mb-2">Delivery Complete!</h2>
-          <p className="text-lg mb-6">
-            Great job! You earned <span className="font-extrabold">${(orderDetails.payout_cents / 100).toFixed(2)}</span>
-          </p>
-          <ButtonMock
-            onClick={onCompleteDelivery}
-            className="w-full h-14 bg-white text-green-700 hover:bg-gray-100 font-bold shadow-none"
-            variant="ghost"
-          >
-            Continue to Next Offer <ArrowRight className="ml-2 h-5 w-5" />
-          </ButtonMock>
-        </CardContainer>
-      </div>
-    );
-  }
+        <div className="flex flex-col h-full bg-white">
+            {/* Top Banner/Illustration Section - Curbside Pickup Theme (Orange) */}
+            <div className="relative h-48 bg-orange-50 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-t from-orange-50/50 to-orange-100/50"></div>
+                
+                <div className="absolute bottom-4 left-4 text-2xl font-bold text-gray-800 z-10">
+                    Curbside Pickup
+                </div>
+                {/* Mock Car Illustration */}
+                <div className="absolute right-0 bottom-0 w-48 h-48 opacity-75">
+                    {/* Person */}
+                    <div className="absolute bottom-4 right-4 w-1 h-12 bg-gray-600"></div>
+                    <div className="absolute bottom-16 right-4 w-4 h-4 rounded-full bg-gray-600"></div>
+                    {/* Box */}
+                    <div className="absolute bottom-12 right-1 w-6 h-6 bg-yellow-400 border border-yellow-500 rounded-sm"></div>
 
+                    {/* Car Body (Simplified) */}
+                    <div className="absolute bottom-0 right-10 w-40 h-16 bg-white border-2 border-gray-300 rounded-t-lg"></div>
+                    {/* Trunk open */}
+                    <div className="absolute bottom-16 right-10 w-40 h-2 bg-gray-300"></div>
+                    {/* Bags in Trunk */}
+                    <div className="absolute bottom-4 right-20 w-8 h-8 bg-orange-200 rounded-full"></div>
+                    <div className="absolute bottom-4 right-30 w-8 h-8 bg-orange-200 rounded-full"></div>
+                </div>
+            </div>
 
-  // --- Main Pickup/Initial Flow UI ---
+            {/* Main Content Area */}
+            <div className="p-4 flex-1 overflow-y-auto">
+                {/* Pickup Store Details */}
+                <div className="relative pt-2">
+                    <p className="text-sm text-gray-500 mb-1">Pickup Store</p>
+                    <h2 className="text-2xl font-bold text-orange-800 mb-1">
+                        {orderDetails.restaurant_name}
+                    </h2>
+                    <p className="text-gray-600 text-sm mb-4">
+                        {storeAddress || 'Address not available'}
+                    </p>
 
-  const currentStepData = DELIVERY_STEPS[getCurrentStepIndex()];
+                    {/* Navigation Button (Orange) */}
+                    <Button
+                        className="absolute top-4 right-0 w-16 h-16 bg-white text-orange-600 border border-orange-200 rounded-full flex flex-col items-center justify-center shadow-lg transition duration-200 hover:bg-orange-50 active:scale-[0.95] p-0"
+                        onClick={() => {
+                            const addr = storeAddress;
+                            if (addr && addr !== 'Address not available') {
+                                openExternalNavigation({ address: addr, name: orderDetails.restaurant_name });
+                            }
+                        }}
+                    >
+                        <Navigation className="h-6 w-6" />
+                        <span className="text-xs font-medium mt-0.5">NAVIGATE</span>
+                    </Button>
+                </div>
 
-  return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      {/* Fixed Top Section: Map & Payout */}
-      <div className="relative z-10 shadow-xl bg-white rounded-b-3xl overflow-hidden">
-        {/* REPLACED MOCK MAP COMPONENT WITH MAPBOX STATIC MAP */}
-        <MapboxStaticMap
-          destinationName={getCurrentDestination.name}
-          type={getCurrentDestination.type}
-          currentCoords={getCurrentDestination.currentCoords}
-          destinationCoords={getCurrentDestination.destinationCoords}
-        />
-        
-        {/* Progress and Header */}
-        <div className="p-4 bg-orange-600 text-white">
-          <ProgressMock value={getStepProgress()} className="h-1 bg-orange-300 mb-2" />
-          <div className="flex justify-between items-center mb-3">
-            <BadgeMock className="bg-white text-orange-600 font-extrabold text-sm shadow-md">
-              {currentStepData.label}
-            </BadgeMock>
-            <span className="text-sm font-light text-orange-100">
-              {formatTime(elapsedTime)} elapsed
-            </span>
-          </div>
-          <h1 className="text-2xl font-extrabold">{getCurrentDestination.name}</h1>
-          <p className="text-sm font-light text-orange-100">{getCurrentDestination.address}</p>
+                {/* Pickup Time and Status */}
+                <div className="flex justify-between items-center pr-20 mt-4 border-b pb-4 mb-4">
+                    <div className="space-y-1">
+                        <p className="text-sm text-gray-500">Pickup Time</p>
+                        <p className="text-xl font-bold text-orange-600">4:00 PM</p>
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-sm text-gray-500">Order Status</p>
+                        <div className="flex items-center">
+                            <p className={`text-xl font-bold ${orderStatusColor}`}>{orderStatusText}</p>
+                            {isNavigating && (
+                                <svg className="animate-spin h-5 w-5 text-gray-400 ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* No Test Mode Alert in the final version */}
+            </div>
+
+            {/* Sticky Bottom Action Sheet */}
+            <div className="sticky bottom-0 left-0 right-0 bg-white shadow-2xl p-4 pt-2 rounded-t-3xl z-20">
+                <div className="flex justify-center mb-3">
+                    <span className="text-xs text-gray-400">Hide options</span>
+                </div>
+                
+                {/* Pickup Notes Button (Red/Dark Orange) */}
+                <Button variant="primary-dark" size="lg" className="w-full mb-3 shadow-none" onClick={() => toast({ title: "Pickup Notes", description: "Notes feature invoked.", duration: 2000 })}>
+                    PICKUP NOTES
+                </Button>
+
+                {/* Main Action Button (Orange) */}
+                <Button
+                    variant="default"
+                    size="lg"
+                    className="w-full mb-0 shadow-lg"
+                    onClick={handleMainAction}
+                >
+                    <div className="relative flex items-center justify-center w-full">
+                        {/* Double Arrow Icon on the left */}
+                        <div className="absolute left-4 p-0.5 bg-white/20 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevrons-right"><path d="m6 17 5-5-5-5"/><path d="m13 17 5-5-5-5"/></svg>
+                        </div>
+                        {mainActionText}
+                    </div>
+                </Button>
+            </div>
         </div>
+    );
+  };
+  
+  // renderNavigateToCustomer (Colors changed from green to amber)
+  const renderNavigateToCustomer = () => (
+    <div className="p-4 space-y-4">
+      {/* Stage Header (Amber) */}
+      <Card className="bg-amber-50 border-amber-200 text-center">
+        <CardContent className="p-4">
+            <h2 className="text-xl font-bold text-amber-700">Deliver to Customer</h2>
+            <p className="opacity-90 text-sm text-amber-600">Final leg of the journey</p>
+        </CardContent>
+      </Card>
 
-        {/* Payout Strip (Walmart Spark style) */}
-        <div className="bg-gray-800 text-white p-3 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-green-400" />
-            <span className="text-xl font-extrabold text-green-400">
-              ${(orderDetails.payout_cents / 100).toFixed(2)}
-            </span>
-            <span className="text-xs font-light text-gray-400">PAYOUT</span>
+      {/* Customer Details - Enhanced */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3 mb-3">
+            <MapPin className="h-6 w-6 text-amber-600 mt-1 flex-shrink-0" />
+            <div className="flex-1">
+              <h3 className="font-bold text-lg text-amber-700">
+                {orderDetails.customer_name}
+              </h3>
+              <p className="text-gray-600">{formatAddress(orderDetails.dropoff_address)}</p>
+              {orderDetails.customer_phone && (
+                <p className="text-sm text-amber-600 font-medium mt-1">
+                  📞 {orderDetails.customer_phone}
+                </p>
+              )}
+            </div>
           </div>
-          {estimatedArrival && (
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-blue-400" />
-              <span className="text-sm font-semibold text-blue-400">
-                ETA: {formatETA(estimatedArrival)}
-              </span>
+
+          {/* Delivery Notes */}
+          {orderDetails.delivery_notes && (
+            <div className="bg-yellow-50 p-3 rounded-lg mt-4 mb-4">
+              <p className="text-sm">
+                <span className="font-semibold text-yellow-800">Delivery Notes:</span> {orderDetails.delivery_notes}
+              </p>
             </div>
           )}
-        </div>
+          
+          <div className="flex gap-2 mt-4">
+            <Button  
+              className="flex-1 bg-amber-600 hover:bg-amber-700"  // Amber for Nav button
+              size="lg"  
+              onClick={() => {
+                const customerAddress = formatAddress(orderDetails.dropoff_address);
+                if (customerAddress && customerAddress !== 'Address not available') {
+                  openExternalNavigation({  
+                    address: customerAddress,  
+                    name: orderDetails.customer_name  
+                  });
+                }
+                handleStageComplete();
+              }}
+            >
+              <Navigation className="h-5 w-5 mr-2" />
+              Start Navigation
+            </Button>
+            
+            {orderDetails.customer_phone && (
+              <Button  
+                variant="outline"  
+                size="lg"
+                onClick={() => {
+                  toast({
+                    title: "Action Mocked",
+                    description: "Phone/Chat feature invoked.",
+                  });
+                }}
+              >
+                <MessageCircle className="h-5 w-5" />
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Manual Arrival Button (Amber) */}
+      <Button
+        onClick={handleStageComplete}
+        variant="outline"
+        className="w-full h-12 border-2 border-amber-500 text-amber-600 hover:bg-amber-50"
+      >
+        I've Arrived at Customer
+      </Button>
+      
+    </div>
+  );
+
+  // renderCaptureProof (No change, uses the updated DeliveryCamera)
+  const renderCaptureProof = () => (
+    <div className="p-4 space-y-4">
+      <DeliveryCamera
+        onPhotoCapture={handlePhotoCapture}
+        onCancel={() => setCurrentStage('navigate_to_customer')}
+        isUploading={isUploadingPhoto}
+      />
+
+      {/* No Test Mode Skip Option */}
+    </div>
+  );
+
+  // renderDeliveredOrder (Colors changed from green to amber/red)
+  const renderDeliveredOrder = () => (
+    <div className="p-4 space-y-4">
+      {/* Stage Header (Amber) */}
+      <div className="bg-amber-600 text-white p-4 rounded-2xl text-center">
+        <h2 className="text-xl font-bold">Delivery Complete!</h2>
+        <p className="opacity-90">Great job!</p>
       </div>
 
-      {/* Scrollable Content Section */}
-      <div className="flex-1 p-4 space-y-4 overflow-y-auto pb-28">
-        
-        {/* Current Task & Next Step */}
-        <CardContainer className="p-4 border-l-4 border-orange-500 shadow-md">
-            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <ArrowRight className="h-5 w-5 text-orange-500" /> Your Current Task
+      {/* Completion Status */}
+      <Card>
+        <CardContent className="p-4 space-y-4">
+          <div className="text-center">
+            <CheckCircle className="h-12 w-12 mx-auto mb-3 text-amber-600" />
+            <h3 className="font-bold text-lg mb-2">
+              Order Delivered!
             </h3>
-            {/* FIX: Replaced markdown bolding (**) with JSX span for correct rendering */}
-            <p className="text-sm text-gray-600 mt-1">
-                Proceed to <span className="font-bold">{getCurrentDestination.name}</span> to collect the items.
+            <p className="text-muted-foreground">
+              {deliveryPhoto
+                ? 'Delivery photo captured successfully.'
+                : 'Delivery completed (No photo captured).'
+              }
             </p>
-        </CardContainer>
+          </div>
 
-        {/* Order Details Card */}
-        <CardContainer>
-          <CardHeaderMock>
-            <h3 className="font-extrabold text-xl text-gray-800 flex items-center gap-2">
-                <ClipboardList className="h-6 w-6 text-gray-500" /> Full Order Summary
-            </h3>
-          </CardHeaderMock>
-          <CardContentMock className="space-y-4">
-            {/* Pickup Info */}
-            <div className="flex items-center gap-3 p-2 bg-blue-50 rounded-lg">
-              <Store className="h-6 w-6 text-blue-600 shrink-0" />
-              <div>
-                <p className="font-bold text-blue-800">{orderDetails.restaurant_name}</p>
-                <p className="text-sm text-blue-600">{formatAddress(orderDetails.pickup_address)}</p>
-              </div>
+          {deliveryPhoto && (
+            <div className="bg-amber-50 p-4 rounded-lg border border-amber-200 text-center">
+              <CheckCircle className="h-6 w-6 mx-auto mb-2 text-amber-600" />
+              <p className="text-sm text-amber-700">Proof of delivery uploaded (Mock URL)</p>
             </div>
+          )}
 
-            {/* Dropoff Info */}
-            <div className="flex items-center gap-3 p-2 bg-green-50 rounded-lg">
-              <User className="h-6 w-6 text-green-600 shrink-0" />
-              <div>
-                <p className="font-bold text-green-800">{orderDetails.customer_name || 'Customer Dropoff'}</p>
-                <p className="text-sm text-green-600">{formatAddress(orderDetails.dropoff_address)}</p>
-              </div>
-            </div>
+          {/* Earnings Display (Amber) */}
+          <div className="bg-amber-50 p-4 rounded-lg border border-amber-200 text-center">
+            <p className="text-sm text-amber-700 mb-1">You've Earned</p>
+            <p className="text-2xl font-bold text-amber-600">
+              {(orderDetails.payout_cents / 100).toFixed(2)}
+            </p>
+          </div>
+          <Button 
+            onClick={() => onCompleteDelivery(deliveryPhoto || undefined)} 
+            className="w-full bg-red-600 hover:bg-red-700" // Red for the final button
+          >
+            Complete and Finish Order
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
-            {/* Delivery Notes */}
-            {orderDetails.delivery_notes && (
-              <div className="p-3 bg-orange-50 border border-orange-300 rounded-lg text-sm text-orange-800 shadow-inner">
-                <h4 className="font-bold mb-1">Driver Instructions:</h4>
-                <p>{orderDetails.delivery_notes}</p>
-              </div>
-            )}
-          </CardContentMock>
-        </CardContainer>
+  const getCurrentStageComponent = () => {
+    switch (currentStage) {
+      case 'navigate_to_restaurant':
+      case 'arrived_at_restaurant':
+        return renderPickupScreen();
+      case 'verify_pickup':
+        return renderVerifyPickup();
+      case 'navigate_to_customer':
+        return renderNavigateToCustomer();
+      case 'capture_proof':
+        return renderCaptureProof();
+      case 'delivered':
+        return renderDeliveredOrder();
+      default:
+        return renderPickupScreen();
+    }
+  };
 
-      </div>
-
-      {/* Fixed Bottom Action Bar (DoorDash/Spark style) */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] z-20">
-        <div className="flex items-center gap-3">
-            {/* Primary Action */}
-            {actionButton && (
-                <ButtonMock
-                    onClick={actionButton.action}
-                    className="flex-1 h-14"
-                    variant={actionButton.variant}
-                >
-                    {actionButton.icon}
-                    <span className="ml-2">{actionButton.text}</span>
-                </ButtonMock>
-            )}
-
-            {/* Quick Contact Buttons */}
-            <ButtonMock
-                variant="outline"
-                className="w-1/4 h-14 border-gray-400 hover:bg-orange-50"
-                onClick={() => toast({ title: "Calling...", description: "Feature coming soon!" })}
-            >
-                <Phone className="h-6 w-6 text-orange-600" />
-            </ButtonMock>
-            <ButtonMock
-                variant="outline"
-                className="w-1/4 h-14 border-gray-400 hover:bg-orange-50"
-                onClick={() => toast({ title: "Messaging...", description: "Feature coming soon!" })}
-            >
-                <MessageSquare className="h-6 w-6 text-orange-600" />
-            </ButtonMock>
+  return (
+    <div className="absolute inset-0 z-10 bg-gray-50 flex flex-col">
+        
+        {/* New Fixed Header (Orange) */}
+        <AppHeader 
+            title={currentStage.includes('restaurant') || currentStage.includes('pickup') ? 'Pickup' : currentStage.includes('customer') ? 'Delivery' : 'Complete'} 
+            onBack={() => console.log("Back/Cancel flow")} 
+            showHelp={currentStage !== 'delivered'} 
+        />
+        
+        {/* Main Content Area: Fills the space below the fixed header */}
+        <div className="flex-1 overflow-y-auto">
+            {getCurrentStageComponent()}
         </div>
-      </div>
+        
     </div>
   );
 };
 
+
+// --- MAIN APP COMPONENT (Handles Firebase Initialization and Data Provision) ---
+
+const App = () => {
+    const { toast, ToastDisplay } = useToast();
+    const [isDeliveryComplete, setIsDeliveryComplete] = useState(false);
+    const [finalPhotoUrl, setFinalPhotoUrl] = useState<string | null>(null);
+
+    // Firebase State
+    const [db, setDb] = useState<any>(null);
+    const [userId, setUserId] = useState<string | null>(null);
+    const [isAuthReady, setIsAuthReady] = useState(false); // <-- Auth readiness state
+    
+    // Placeholder for actual data fetch
+    const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
+
+    // 1. Firebase Initialization and Auth Setup
+    useEffect(() => {
+        try {
+            // Set debug level for better logging
+            setLogLevel('debug'); // <-- Added setLogLevel call
+            
+            // Use provided global variables
+            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+            const app = initializeApp(firebaseConfig);
+            const firestoreDb = getFirestore(app);
+            const authInstance = getAuth(app);
+
+            setDb(firestoreDb);
+
+            const signInUser = async () => {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(authInstance, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(authInstance);
+                    }
+                } catch (e) {
+                    console.error("Authentication failed during sign-in:", e);
+                }
+            };
+
+            const unsubscribe = onAuthStateChanged(authInstance, (user) => {
+                if (user) {
+                    setUserId(user.uid);
+                } else {
+                    // Fallback should use an ephemeral ID if all else fails
+                    setUserId(crypto.randomUUID()); 
+                }
+                setIsAuthReady(true); // <-- Set ready state after user ID is determined
+            });
+
+            signInUser();
+            return () => unsubscribe();
+
+        } catch (e) {
+            console.error("Firebase initialization failed:", e);
+            setIsAuthReady(true);
+        }
+    }, []); 
+
+    // 2. Mock Order Details until real fetch is implemented
+    useEffect(() => {
+        // Only load order details once auth is ready
+        if (isAuthReady && !orderDetails) {
+             // Simulate fetching the single active order for the current driver.
+             // This structure is preserved to keep the UI functional.
+            const fetchedOrderDetails: OrderDetails = {
+                id: 'ORD-12345',
+                order_number: '12345',
+                restaurant_name: "Walmart Franklin #272",
+                restaurant_id: 'rest_272_id', // This ID is now used to fetch the address via Firestore
+                pickup_address: null, 
+                dropoff_address: "1000 Mockingbird Lane, Test City, CA 90210",
+                customer_name: "Jane Doe",
+                customer_phone: "555-0101",
+                delivery_notes: "Leave package at the door and text when arrived. Doorbell is broken!",
+                payout_cents: 1050, 
+                subtotal_cents: 3500,
+                estimated_time: 20, 
+                items: [
+                    { name: "Giant Burger Combo", quantity: 1, price_cents: 1500 },
+                    { name: "Fries (Large)", quantity: 2, price_cents: 500 },
+                    { name: "Diet Soda", quantity: 2, price_cents: 500, special_instructions: "No ice" },
+                ],
+            };
+            setOrderDetails(fetchedOrderDetails);
+        }
+    }, [isAuthReady, orderDetails]);
+
+
+    const handleCompleteDelivery = (photoUrl?: string) => {
+        setFinalPhotoUrl(photoUrl || null);
+        setIsDeliveryComplete(true);
+    };
+
+    if (!isAuthReady || !orderDetails) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="flex items-center space-x-3 p-6 rounded-xl bg-white shadow-xl">
+                    <svg className="animate-spin h-6 w-6 text-orange-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span className="text-lg font-medium text-gray-700">Connecting to Live Data...</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (isDeliveryComplete) {
+        return (
+            <div className="min-h-screen bg-amber-50 flex flex-col items-center justify-center p-4 font-sans">
+                <Card className="max-w-md w-full p-6 text-center shadow-2xl border-amber-300">
+                    <CheckCircle className="h-16 w-16 mx-auto mb-4 text-amber-500" />
+                    <h1 className="text-3xl font-bold text-amber-700 mb-2">
+                        Delivery Cycle Finished!
+                    </h1>
+                    <p className="text-gray-600 mb-4">
+                        Order #{orderDetails.order_number} successfully completed.
+                    </p>
+                    <p className="text-lg font-semibold text-amber-600 mb-4">
+                        Payout: ${(orderDetails.payout_cents / 100).toFixed(2)}
+                    </p>
+                    {finalPhotoUrl && (
+                        <p className="text-sm text-gray-500">Proof uploaded successfully.</p>
+                    )}
+                    <Button onClick={() => setIsDeliveryComplete(false)} variant="secondary" className="mt-4 w-full">
+                        Start New Delivery (Reset)
+                    </Button>
+                </Card>
+                {ToastDisplay}
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-white">
+            <ActiveDeliveryFlow 
+                orderDetails={orderDetails} 
+                onCompleteDelivery={handleCompleteDelivery} 
+                db={db}
+                userId={userId}
+                isAuthReady={isAuthReady} 
+            />
+            {ToastDisplay}
+        </div>
+    );
+};
+
+// CRITICAL: This line ensures the component is the default export and accessible by the React renderer.
 export default App;
