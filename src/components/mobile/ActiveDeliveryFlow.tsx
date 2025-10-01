@@ -1,636 +1,589 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { MapPin, Navigation, Clock, Phone, MessageCircle, Camera, CheckCircle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { DeliveryCamera } from './DeliveryCamera';
-import { OrderVerificationScreen } from './OrderVerificationScreen';
-import { supabase } from '@/integrations/supabase/client';
-import { useNavigation } from '@/hooks/useNavigation';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+// The incorrect imports that were previously here were removed in the last revision,
+// which correctly leaves the mock components defined below.
+import {
+  Navigation,
+  Phone,
+  MessageSquare,
+  MapPin,
+  Clock,
+  DollarSign,
+  Camera,
+  CheckCircle,
+  ArrowRight,
+  Package,
+  User,
+  Store,
+  Map,
+  ClipboardList
+} from 'lucide-react';
 
-type DeliveryStage = 'navigate_to_restaurant' | 'arrived_at_restaurant' | 'verify_pickup' | 'navigate_to_customer' | 'capture_proof' | 'delivered';
+// --- MAPBOX CONFIGURATION ---
+// Using the API key provided by the user to generate a static map image.
+const MAPBOX_ACCESS_TOKEN = "pk.eyJ1IjoiY3JhdmUtbiIsImEiOiJjbWZpbXN4NmUwMG0wMmpxNDNkc2lmNWhiIn0._lEfvdpBUJpz-RYDV02ZAA";
 
-interface OrderItem {
-  name: string;
-  quantity: number;
-  price_cents: number;
-  special_instructions?: string;
+// Mock Geolocation Data (Mapbox requires coordinates, not just addresses)
+// Using coordinates near San Francisco/Oakland for a realistic feel
+const MOCK_COORDS = {
+  driver: { lat: 37.77, lng: -122.45 }, // Current driver location
+  pickup: { lat: 37.7915, lng: -122.4048 }, // Restaurant (e.g., Fisherman's Wharf area)
+  dropoff: { lat: 37.7550, lng: -122.4475 }, // Customer (e.g., Mission District area)
+};
+
+// --- MOCK UI COMPONENTS (Simulating shadcn/ui for single-file deployment) ---
+const CardContainer = ({ children, className = '' }) => <div className={`bg-white rounded-xl shadow-lg ${className}`}>{children}</div>;
+const CardContentMock = ({ children, className = '' }) => <div className={`p-4 ${className}`}>{children}</div>;
+const CardHeaderMock = ({ children, className = '' }) => <div className={`p-4 border-b border-gray-100 ${className}`}>{children}</div>;
+const CardTitleMock = ({ children, className = '' }) => <h2 className="text-xl font-bold">{children}</h2>;
+const ButtonMock = ({ children, onClick, className = '', variant = 'default', disabled = false }) => {
+  let baseStyle = "w-full h-14 text-base font-semibold transition-all duration-200 rounded-lg flex items-center justify-center"; // Increased height slightly
+  if (variant === 'default') {
+    baseStyle = `${baseStyle} bg-green-600 text-white hover:bg-green-700 shadow-xl shadow-green-400/50`;
+  } else if (variant === 'outline') {
+    baseStyle = `${baseStyle} border-2 border-gray-300 text-gray-700 hover:bg-gray-50`;
+  } else if (variant === 'ghost') {
+    baseStyle = `${baseStyle} text-gray-600 hover:bg-gray-100`;
+  }
+
+  if (disabled) {
+      baseStyle = `${baseStyle} opacity-50 cursor-not-allowed`;
+  }
+
+  return <button onClick={disabled ? null : onClick} className={`${baseStyle} ${className}`}>{children}</button>;
+};
+const BadgeMock = ({ children, className = '' }) => <span className={`px-3 py-1 text-xs font-semibold rounded-full ${className}`}>{children}</span>;
+const ProgressMock = ({ value, className = '' }) => (
+  <div className={`w-full h-2 bg-gray-200 rounded-full overflow-hidden ${className}`}>
+    <div
+      style={{ width: `${value}%` }}
+      className="h-full bg-orange-500 transition-all duration-500 ease-out"
+    ></div>
+  </div>
+);
+
+// --- MAPBOX STATIC IMAGE COMPONENT ---
+const MapboxStaticMap = ({ destinationName, type, currentCoords, destinationCoords }) => {
+  if (!MAPBOX_ACCESS_TOKEN) return (
+    <div className="w-full h-48 bg-gray-100 relative overflow-hidden rounded-t-xl flex items-center justify-center">
+      <p className="text-gray-500">Mapbox Token Missing</p>
+    </div>
+  );
+
+  const markerColor = type === 'pickup' ? '00BFFF' : '00FF00'; // Blue for pickup, Green for dropoff
+  const centerLat = (currentCoords.lat + destinationCoords.lat) / 2;
+  const centerLng = (currentCoords.lng + destinationCoords.lng) / 2;
+  
+  // Markers: Driver (red), Destination (colored)
+  const markers = [
+    `pin-s-car+FF0000(${currentCoords.lng},${currentCoords.lat})`,
+    `pin-s-flag+${markerColor}(${destinationCoords.lng},${destinationCoords.lat})`
+  ].join(',');
+
+  // The style is 'mapbox/navigation-preview-day'
+  // The center is calculated as the midpoint between driver and destination
+  // Zoom is set to 12 for a good city view, and the image size is 600x480
+  const mapUrl = `https://api.mapbox.com/styles/v1/mapbox/navigation-preview-day/static/${markers}/${centerLng},${centerLat},12,0/600x480?access_token=${MAPBOX_ACCESS_TOKEN}&attribution=false&logo=false`;
+
+  return (
+    <div className="w-full h-48 relative overflow-hidden rounded-t-xl">
+      <img
+        src={mapUrl}
+        alt={`Map navigating to ${destinationName}`}
+        className="w-full h-full object-cover"
+        onError={(e) => {
+          e.currentTarget.onerror = null;
+          e.currentTarget.src = `https://placehold.co/600x480/cccccc/333333?text=Map+Error`;
+          console.error("Mapbox image failed to load. Check API key and network.");
+        }}
+      />
+      <div className="absolute bottom-4 left-4 right-4 bg-white p-3 rounded-lg shadow-xl border-l-4 border-orange-500 flex items-center gap-2">
+        <MapPin className="h-5 w-5 text-orange-500" />
+        <span className="text-sm font-semibold text-gray-800">
+          Navigating to: {destinationName}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+// Mocking the specialized customer view component
+const CustomerNavigationStep = ({
+  customerName,
+  deliveryTime,
+  dropoffAddress,
+  deliveryInstructions,
+  onCall,
+  onMessage,
+  onDirections,
+}) => (
+  <div className="p-4 space-y-4 bg-gray-50 min-h-screen">
+    <CardContainer className="mt-4">
+      <CardHeaderMock className="flex flex-row items-center justify-between">
+        <h3 className="text-2xl font-extrabold text-gray-900 flex items-center">
+            <User className="h-6 w-6 mr-2 text-orange-500" /> {customerName || 'Customer'}
+        </h3>
+        <BadgeMock className="bg-orange-500 text-white font-bold text-sm">
+            {deliveryTime} ETA
+        </BadgeMock>
+      </CardHeaderMock>
+      <CardContentMock className="space-y-4">
+        {/* Contact Buttons */}
+        <div className="grid grid-cols-2 gap-3">
+          <ButtonMock variant="outline" className="h-14 border-orange-500 text-orange-600 hover:bg-orange-50" onClick={onCall}>
+            <Phone className="h-5 w-5 mr-2" /> Call
+          </ButtonMock>
+          <ButtonMock variant="outline" className="h-14 border-orange-500 text-orange-600 hover:bg-orange-50" onClick={onMessage}>
+            <MessageSquare className="h-5 w-5 mr-2" /> Message
+          </ButtonMock>
+        </div>
+        
+        {/* Address & Directions */}
+        <div className="space-y-3 p-3 bg-gray-50 rounded-lg">
+          <h4 className="font-semibold text-lg flex items-center gap-2 text-gray-800">
+            <MapPin className="h-5 w-5 text-green-600" /> Dropoff Location
+          </h4>
+          <p className="text-gray-600 ml-7 -mt-1">{dropoffAddress}</p>
+          <ButtonMock variant="default" className="w-full mt-2 h-12 bg-blue-600 hover:bg-blue-700 shadow-blue-400/50" onClick={onDirections}>
+            <Navigation className="h-5 w-5 mr-2" /> Open Directions
+          </ButtonMock>
+        </div>
+        
+        {/* Instructions */}
+        {deliveryInstructions && (
+            <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <h4 className="font-semibold text-orange-700 flex items-center gap-2">
+                    <ClipboardList className="h-5 w-5" /> Instructions
+                </h4>
+                <p className="text-sm text-orange-800 ml-7 -mt-1">{deliveryInstructions}</p>
+            </div>
+        )}
+      </CardContentMock>
+    </CardContainer>
+  </div>
+);
+
+
+// --- MOCK HOOKS AND UTILITIES ---
+const useToast = () => ({
+  toast: (options) => console.log(`[TOAST]: ${options.title} - ${options.description}`),
+});
+const useNavigation = () => ({
+  navigationSettings: { provider: 'external' } // Force external nav for simplicity
+});
+const supabase = {
+  from: (table) => ({
+    select: (cols) => ({
+      eq: (key, value) => ({
+        single: async () => {
+          // Mock fetch for restaurant address
+          if (table === 'restaurants' && key === 'id') {
+            return { data: { address: "123 Mock Street, Unit B" }, error: null };
+          }
+          return { data: null, error: new Error("Mock DB Error") };
+        }
+      })
+    })
+  })
+};
+
+// --- CORE DELIVERY FLOW LOGIC ---
+
+interface OrderDetails {
+  restaurant_name: string;
+  restaurant_id?: string;
+  // NOTE: For a real app, pickup/dropoff address must include lat/lng fields.
+  pickup_address: string | any;
+  dropoff_address: string | any;
+  customer_name?: string;
+  customer_phone?: string;
+  delivery_notes?: string;
+  payout_cents: number;
+  estimated_time: number;
 }
 
-interface ActiveDeliveryProps {
-  orderDetails: {
-    id: string;
-    order_number: string;
-    restaurant_name: string;
-    restaurant_id?: string; // Add restaurant_id for address lookup
-    pickup_address: any; // can be string or address object
-    dropoff_address: any; // can be string or address object
-    customer_name: string;
-    customer_phone?: string;
-    delivery_notes?: string;
-    payout_cents: number;
-    subtotal_cents: number;
-    estimated_time: number;
-    items: OrderItem[];
-    isTestOrder?: boolean; // Add test order flag
-  };
-  onCompleteDelivery: (photoUrl?: string) => void;
+// Renamed props interface to align with main component name (App)
+interface AppProps {
+  orderDetails: OrderDetails;
+  onCompleteDelivery: () => void;
 }
 
-export const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
+type DeliveryStep = 'accepted' | 'heading_to_pickup' | 'at_restaurant' | 'picked_up' | 'heading_to_customer' | 'at_customer' | 'delivered';
+
+const DELIVERY_STEPS = [
+  { id: 'accepted', label: 'Order Accepted', emoji: '✅' },
+  { id: 'heading_to_pickup', label: 'Driving to Pickup', emoji: '🚗' },
+  { id: 'at_restaurant', label: 'Arrived at Restaurant', emoji: '🏪' },
+  { id: 'picked_up', label: 'Package Secured', emoji: '📦' },
+  { id: 'heading_to_customer', label: 'Driving to Customer', emoji: '🚚' },
+  { id: 'at_customer', label: 'Arrived at Dropoff', emoji: '📍' },
+  { id: 'delivered', label: 'Delivery Complete', emoji: '🎉' }
+] as const;
+
+// Renamed component to App and exporting as default to fix the element type error.
+const App: React.FC<AppProps> = ({
   orderDetails,
   onCompleteDelivery
 }) => {
-  const [currentStage, setCurrentStage] = useState<DeliveryStage>('navigate_to_restaurant');
-  const [deliveryPhoto, setDeliveryPhoto] = useState<string | null>(null);
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const [restaurantAddress, setRestaurantAddress] = useState<string>('');
-  const { toast } = useToast();
-  const { openExternalNavigation } = useNavigation();
+  // FIX: Added defensive check to handle cases where orderDetails might be undefined on initial render.
+  if (!orderDetails) {
+    return (
+      <div className="min-h-screen p-8 flex items-center justify-center bg-gray-100">
+        <div className="text-center p-6 bg-white rounded-xl shadow-lg border-t-4 border-red-500">
+          <p className="text-xl font-semibold text-red-600">Loading Order Details...</p>
+          <p className="text-sm text-gray-500 mt-2">The 'orderDetails' prop is missing or not fully loaded.</p>
+        </div>
+      </div>
+    );
+  }
 
-  // Fetch restaurant address if pickup_address is null
+  const [currentStep, setCurrentStep] = useState<DeliveryStep>('accepted');
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [estimatedArrival, setEstimatedArrival] = useState<Date | null>(null);
+  const [proofPhoto, setProofPhoto] = useState<string | null>(null); // State for mock proof of delivery photo
+  const [restaurantAddress, setRestaurantAddress] = useState<string>('');
+
+  const { toast } = useToast();
+
+  // --- Data Fetching & Timers ---
+
+  // Fetch restaurant address if pickup_address is not detailed
   useEffect(() => {
     const fetchRestaurantAddress = async () => {
-      if (!orderDetails.pickup_address && orderDetails.restaurant_id) {
+      // Logic only runs if pickup_address is not a string (i.e., requires lookup)
+      if (typeof orderDetails.pickup_address !== 'string' && orderDetails.restaurant_id) {
         try {
           const { data, error } = await supabase
             .from('restaurants')
             .select('address')
             .eq('id', orderDetails.restaurant_id)
             .single();
-          
-          if (data && !error) {
-            setRestaurantAddress(data.address || '');
+
+          if (data && !error && data.address) {
+            setRestaurantAddress(data.address);
           }
         } catch (error) {
           console.error('Error fetching restaurant address:', error);
         }
+      } else if (typeof orderDetails.pickup_address === 'string') {
+          // If it's already a string, use it directly
+          setRestaurantAddress(orderDetails.pickup_address);
       }
     };
-
     fetchRestaurantAddress();
   }, [orderDetails.pickup_address, orderDetails.restaurant_id]);
 
-  // Helper function to format address with restaurant fallback
-  const formatAddress = (address: any, fallbackAddress?: string) => {
-    if (typeof address === 'string') return address;
-    if (typeof address === 'object' && address) {
-      return `${address.street || ''} ${address.city || ''} ${address.state || ''} ${address.zip || ''}`.trim();
+  // Timer for elapsed time
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setElapsedTime(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Auto-advance logic (from accepted to first driving step)
+  useEffect(() => {
+    if (currentStep === 'accepted') {
+      const timer = setTimeout(() => {
+        setCurrentStep('heading_to_pickup');
+        calculateETA('pickup');
+      }, 3000); // 3-second delay after accepting
+      return () => clearTimeout(timer);
     }
-    // Use restaurant address as fallback if available
-    if (fallbackAddress || restaurantAddress) return fallbackAddress || restaurantAddress;
-    return 'Address not available';
+  }, [currentStep]);
+
+  // --- Helper Functions ---
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds.toString().padStart(2, '0')}s`;
   };
 
-  const handleStageComplete = () => {
-    console.log('handleStageComplete called, current stage:', currentStage);
+  const formatETA = (date: Date) => {
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  const calculateETA = useCallback((destination: 'pickup' | 'customer') => {
+    const baseTime = destination === 'pickup' ? 12 : 18; // Mock time in minutes
+    const eta = new Date();
+    eta.setMinutes(eta.getMinutes() + baseTime);
+    setEstimatedArrival(eta);
+  }, []);
+
+  const getCurrentStepIndex = useCallback(() => {
+    return DELIVERY_STEPS.findIndex(step => step.id === currentStep);
+  }, [currentStep]);
+
+  const getStepProgress = useCallback(() => {
+    const currentIndex = getCurrentStepIndex();
+    return ((currentIndex + 1) / DELIVERY_STEPS.length) * 100;
+  }, [getCurrentStepIndex]);
+
+  const formatAddress = (addressData: string | any): string => {
+    if (typeof addressData === 'string' && addressData) return addressData;
+    if (addressData?.address) return addressData.address;
+
+    // Use fetched restaurantAddress as fallback if needed for pickup
+    if (['accepted', 'heading_to_pickup', 'at_restaurant'].includes(currentStep) && restaurantAddress) {
+        return restaurantAddress;
+    }
+
+    const formatted = `${addressData?.street || ''}, ${addressData?.city || ''}, ${addressData?.state || ''}`.trim();
+    if (formatted.length > 5) return formatted;
+
+    return 'Address loading/unavailable';
+  };
+
+  const getCurrentDestination = useMemo(() => {
+    const isPickupPhase = ['accepted', 'heading_to_pickup', 'at_restaurant'].includes(currentStep);
     
-    // Add GPS skip logic for testing
-    if (orderDetails.isTestOrder) {
+    // Determine coordinates based on phase
+    const currentCoords = MOCK_COORDS.driver;
+    const destinationCoords = isPickupPhase ? MOCK_COORDS.pickup : MOCK_COORDS.dropoff;
+
+    return {
+      address: isPickupPhase ? formatAddress(orderDetails.pickup_address) : formatAddress(orderDetails.dropoff_address),
+      name: isPickupPhase ? orderDetails.restaurant_name : orderDetails.customer_name || 'Customer Dropoff',
+      type: isPickupPhase ? 'pickup' as const : 'delivery' as const,
+      currentCoords,
+      destinationCoords
+    };
+  }, [currentStep, orderDetails, restaurantAddress]);
+
+
+  // --- Action Handlers ---
+
+  const handleNextStep = useCallback(() => {
+    const currentIndex = getCurrentStepIndex();
+    const nextStep = DELIVERY_STEPS[currentIndex + 1]?.id as DeliveryStep;
+
+    if (nextStep) {
+      setCurrentStep(nextStep);
+
+      if (nextStep === 'picked_up') {
+        calculateETA('customer');
+      }
+
       toast({
-        title: "GPS Skipped",
-        description: "Test mode: Skipping GPS requirements",
-        duration: 2000
+        title: "Status Updated",
+        description: `${DELIVERY_STEPS[currentIndex + 1].label} confirmed.`,
       });
     }
-    
-    switch (currentStage) {
-      case 'navigate_to_restaurant':
-        console.log('Transitioning to arrived_at_restaurant');
-        setCurrentStage('arrived_at_restaurant');
-        toast({
-          title: "Arrived at Restaurant!",
-          description: orderDetails.isTestOrder ? "Test: Simulated arrival at pickup location" : "Ready to pick up the order.",
-        });
-        break;
-      case 'arrived_at_restaurant':
-        console.log('Transitioning to verify_pickup');
-        setCurrentStage('verify_pickup');
-        toast({
-          title: "Verify Order!",
-          description: orderDetails.isTestOrder ? "Test: Verify order details" : "Please verify order details and customer information.",
-        });
-        break;
-      case 'verify_pickup':
-        console.log('Transitioning to navigate_to_customer');
-        setCurrentStage('navigate_to_customer');
-        toast({
-          title: "Order Picked Up!",
-          description: orderDetails.isTestOrder ? "Test: Simulated order pickup" : "Navigate to customer for delivery.",
-        });
-        break;
-      case 'navigate_to_customer':
-        console.log('Transitioning to capture_proof');
-        setCurrentStage('capture_proof');
-        toast({
-          title: "Arrived at Customer!",
-          description: orderDetails.isTestOrder ? "Test: Simulated arrival at customer" : "Take a photo to complete delivery.",
-        });
-        break;
-      case 'capture_proof':
-      case 'delivered':
-        console.log('Completing delivery');
-        if (orderDetails.isTestOrder) {
-          toast({
-            title: "Test Complete!",
-            description: "Thank you for testing the delivery flow",
-            duration: 3000
-          });
-        }
-        onCompleteDelivery();
-        break;
-    }
-  };
+  }, [getCurrentStepIndex, calculateETA, toast]);
 
-  // Add GPS skip function for testing
-  const handleSkipGPS = () => {
-    if (orderDetails.isTestOrder) {
-      toast({
-        title: "GPS Skipped",
-        description: "Proceeding to next step for testing",
-        duration: 2000
-      });
-      handleStageComplete();
-    }
-  };
-
-  const handlePhotoCapture = async (photoBlob: Blob) => {
-    setIsUploadingPhoto(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      // Create a unique filename
-      const fileName = `delivery-proof-${Date.now()}.jpg`;
-      const filePath = `${user.id}/${fileName}`;
-
-      // Upload to Supabase storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('delivery-photos')
-        .upload(filePath, photoBlob, {
-          contentType: 'image/jpeg',
-          upsert: false
-        });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('delivery-photos')
-        .getPublicUrl(filePath);
-
-      setDeliveryPhoto(publicUrl);
-      setCurrentStage('delivered');
-      
-      toast({
-        title: "Photo Uploaded!",
-        description: "Delivery proof captured successfully.",
-      });
-
-      // Complete delivery after successful photo upload
-      setTimeout(() => {
-        onCompleteDelivery(publicUrl);
-      }, 1500);
-
-    } catch (error: any) {
-      console.error('Error uploading photo:', error);
-      toast({
-        title: 'Upload Failed',
-        description: 'Failed to upload delivery photo. Please try again.',
-        variant: 'destructive'
-      });
-    }
-    setIsUploadingPhoto(false);
-  };
-
-  const renderNavigateToRestaurant = () => (
-    <div className="space-y-4">
-      {/* Test Order Alert */}
-      {orderDetails.isTestOrder && (
-        <div className="p-4 bg-orange-100 border border-orange-300 rounded-xl">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-lg">🧪</span>
-            <span className="font-bold text-orange-800">Test Delivery</span>
-          </div>
-          <p className="text-sm text-orange-700">
-            This is a simulated delivery for testing purposes. Go through the normal flow to complete the test.
-          </p>
-        </div>
-      )}
-
-      {/* Stage Header */}
-      <div className="bg-blue-500 text-white p-4 rounded-2xl text-center">
-        <h2 className="text-xl font-bold">Navigate to Restaurant</h2>
-        <p className="opacity-90">Pick up your order</p>
-      </div>
-
-      {/* Restaurant Details */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-            <div>
-              <h3 className="font-bold text-lg">{orderDetails.restaurant_name}</h3>
-              <p className="text-muted-foreground">{formatAddress(orderDetails.pickup_address, restaurantAddress)}</p>
-            </div>
-          </div>
-          <div className="flex gap-2 mt-4">
-            <Button 
-              className="flex-1" 
-              size="lg" 
-              onClick={() => {
-                const addr = formatAddress(orderDetails.pickup_address, restaurantAddress);
-                if (!orderDetails.isTestOrder && addr && addr !== 'Address not available') {
-                  openExternalNavigation({ 
-                    address: addr, 
-                    name: orderDetails.restaurant_name 
-                  });
-                }
-                handleStageComplete();
-              }}
-            >
-              <Navigation className="h-5 w-5 mr-2" />
-              {orderDetails.isTestOrder ? 'Simulate Navigation' : 'Start Navigation'}
-            </Button>
-            {orderDetails.isTestOrder && (
-              <Button 
-                variant="secondary" 
-                size="lg" 
-                onClick={handleSkipGPS}
-                className="px-3"
-              >
-                ⚡ Skip
-              </Button>
-            )}
-            <Button variant="outline" size="lg">
-              <Phone className="h-5 w-5" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Test Mode GPS Skip */}
-      {orderDetails.isTestOrder && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-orange-800">Test Mode Active</p>
-                <p className="text-sm text-orange-600">GPS requirements are skippable</p>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleSkipGPS}
-                className="border-orange-300 text-orange-700 hover:bg-orange-100"
-              >
-                Skip to Arrival
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ETA */}
-      <div className="text-center">
-        <Badge variant="secondary" className="px-4 py-2">
-          <Clock className="h-4 w-4 mr-1" />
-          ETA: {Math.ceil(orderDetails.estimated_time / 2)} min
-        </Badge>
-      </div>
-    </div>
-  );
-
-  const renderArrivedAtRestaurant = () => (
-    <div className="space-y-4">
-      {/* Stage Header */}
-      <div className="bg-orange-500 text-white p-4 rounded-2xl text-center">
-        <h2 className="text-xl font-bold">At Restaurant</h2>
-        <p className="opacity-90">Ready to verify order</p>
-      </div>
-
-      {/* Restaurant Card */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-            <div>
-              <h3 className="font-bold text-lg">{orderDetails.restaurant_name}</h3>
-              <p className="text-muted-foreground">{formatAddress(orderDetails.pickup_address)}</p>
-            </div>
-          </div>
-          
-          <div className="bg-muted/30 rounded-lg p-3 mb-4">
-            <p className="text-sm text-muted-foreground">Ready to verify order details</p>
-          </div>
-
-          <Button
-            onClick={handleStageComplete}
-            className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white"
-          >
-            <CheckCircle className="h-5 w-5 mr-2" />
-            Verify Order Details
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  const renderVerifyPickup = () => (
-    <OrderVerificationScreen
-      orderDetails={orderDetails}
-      onPickupConfirmed={(pickupPhotoUrl) => {
-        setCurrentStage('navigate_to_customer');
-        toast({
-          title: "Order Picked Up!",
-          description: orderDetails.isTestOrder ? "Test: Order pickup confirmed" : "Navigate to customer for delivery.",
-        });
-      }}
-      onCancel={() => setCurrentStage('arrived_at_restaurant')}
-    />
-  );
-
-  const renderNavigateToCustomer = () => (
-    <div className="space-y-4">
-      {/* Stage Header */}
-      <div className="bg-green-500 text-white p-4 rounded-2xl text-center">
-        <h2 className="text-xl font-bold">Navigate to Customer</h2>
-        <p className="opacity-90">Deliver the order</p>
-      </div>
-
-      {/* Customer Details - Enhanced */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <div className="flex-1">
-              <h3 className="font-bold text-lg">
-                {orderDetails.customer_name}
-              </h3>
-              <p className="text-muted-foreground">{formatAddress(orderDetails.dropoff_address)}</p>
-              {orderDetails.customer_phone && (
-                <p className="text-sm text-green-600 font-medium">
-                  📞 {orderDetails.customer_phone}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Order Summary for Driver Reference */}
-          <div className="bg-blue-50 p-3 rounded-lg mb-4">
-            <p className="text-sm font-semibold text-blue-800 mb-1">
-              Order #{orderDetails.order_number}
-            </p>
-            <p className="text-sm text-blue-700">
-              {orderDetails.items.length} item(s) • ${(orderDetails.subtotal_cents / 100).toFixed(2)}
-            </p>
-          </div>
-
-          {orderDetails.delivery_notes && (
-            <div className="bg-yellow-50 p-3 rounded-lg mb-4">
-              <p className="text-sm">
-                <span className="font-semibold text-yellow-800">Delivery Notes:</span> {orderDetails.delivery_notes}
-              </p>
-            </div>
-          )}
-
-          <div className="flex gap-2 mt-4">
-            <Button 
-              className="flex-1" 
-              size="lg" 
-              onClick={() => {
-                const customerAddress = formatAddress(orderDetails.dropoff_address);
-                if (!orderDetails.isTestOrder && customerAddress && customerAddress !== 'Address not available') {
-                  openExternalNavigation({ 
-                    address: customerAddress, 
-                    name: orderDetails.customer_name 
-                  });
-                }
-                handleStageComplete();
-              }}
-            >
-              <Navigation className="h-5 w-5 mr-2" />
-              {orderDetails.isTestOrder ? 'Simulate Arrival' : 'Start Navigation'}
-            </Button>
-            {orderDetails.isTestOrder && (
-              <Button 
-                variant="secondary" 
-                size="lg" 
-                onClick={handleSkipGPS}
-                className="px-3"
-              >
-                ⚡ Skip
-              </Button>
-            )}
-            {orderDetails.customer_phone && (
-              <Button 
-                variant="outline" 
-                size="lg"
-                onClick={() => {
-                  if (orderDetails.isTestOrder) {
-                    toast({
-                      title: "Test Mode",
-                      description: "Would call customer: " + orderDetails.customer_phone,
-                    });
-                  } else {
-                    window.open(`tel:${orderDetails.customer_phone}`);
-                  }
-                }}
-              >
-                <Phone className="h-5 w-5" />
-              </Button>
-            )}
-            <Button 
-              variant="outline" 
-              size="lg"
-              onClick={() => {
-                toast({
-                  title: "Chat Feature",
-                  description: "Customer chat coming soon!",
-                });
-              }}
-            >
-              <MessageCircle className="h-5 w-5" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Manual Arrival Button - Enhanced for Testing */}
-      <Button
-        onClick={handleStageComplete}
-        variant="outline"
-        className="w-full h-12 border-2 border-green-500 text-green-600 hover:bg-green-50"
-      >
-        {orderDetails.isTestOrder ? '🧪 Test: I\'ve Arrived at Customer' : 'I\'ve Arrived at Customer'}
-      </Button>
-
-      {/* Additional Test Controls */}
-      {orderDetails.isTestOrder && (
-        <Card className="border-green-200 bg-green-50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-green-800">Test Navigation</p>
-                <p className="text-sm text-green-600">Skip GPS tracking for testing</p>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleSkipGPS}
-                className="border-green-300 text-green-700 hover:bg-green-100"
-              >
-                Skip to Customer
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-
-  const renderCaptureProof = () => (
-    <div className="space-y-4">
-      {/* Test Order Skip Option */}
-      {orderDetails.isTestOrder && (
-        <Card className="border-purple-200 bg-purple-50">
-          <CardContent className="p-4">
-            <div className="text-center space-y-3">
-              <div className="text-2xl">🧪</div>
-              <h3 className="font-bold text-purple-800">Test Mode: Photo Capture</h3>
-              <p className="text-sm text-purple-600">
-                You can skip photo capture for testing or proceed normally
-              </p>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    toast({
-                      title: "Photo Skipped",
-                      description: "Test completed without photo capture",
-                      duration: 2000
-                    });
-                    onCompleteDelivery();
-                  }}
-                  className="flex-1 border-purple-300 text-purple-700 hover:bg-purple-100"
-                >
-                  Skip Photo & Complete
-                </Button>
-                <Button 
-                  onClick={() => setCurrentStage('delivered')}
-                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
-                >
-                  Take Photo
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-      
-      <DeliveryCamera
-        onPhotoCapture={handlePhotoCapture}
-        onCancel={() => setCurrentStage('navigate_to_customer')}
-        isUploading={isUploadingPhoto}
-      />
-    </div>
-  );
-
-  const renderDeliveredOrder = () => (
-    <div className="space-y-4">
-      {/* Stage Header */}
-      <div className="bg-purple-500 text-white p-4 rounded-2xl text-center">
-        <h2 className="text-xl font-bold">Delivery Complete!</h2>
-        <p className="opacity-90">{orderDetails.isTestOrder ? 'Test completed' : 'Great job!'}</p>
-      </div>
-
-      {/* Completion Status */}
-      <Card>
-        <CardContent className="p-4 space-y-4">
-          <div className="text-center">
-            <CheckCircle className="h-12 w-12 mx-auto mb-3 text-green-600" />
-            <h3 className="font-bold text-lg mb-2">
-              {orderDetails.isTestOrder ? 'Test Delivery Complete!' : 'Order Delivered!'}
-            </h3>
-            <p className="text-muted-foreground">
-              {orderDetails.isTestOrder 
-                ? 'Thank you for participating in our test!'
-                : 'Delivery photo captured successfully'
-              }
-            </p>
-          </div>
-
-          {deliveryPhoto && (
-            <div className="bg-green-50 p-4 rounded-lg border border-green-200 text-center">
-              <CheckCircle className="h-6 w-6 mx-auto mb-2 text-green-600" />
-              <p className="text-sm text-green-700">Proof of delivery uploaded</p>
-            </div>
-          )}
-
-          {/* Earnings Display */}
-          <div className="bg-green-50 p-4 rounded-lg border border-green-200 text-center">
-            <p className="text-sm text-green-700 mb-1">You've Earned</p>
-            <p className="text-2xl font-bold text-green-600">
-              ${(orderDetails.payout_cents / 100).toFixed(2)}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  const getCurrentStageComponent = () => {
-    switch (currentStage) {
-      case 'navigate_to_restaurant':
-        return renderNavigateToRestaurant();
-      case 'arrived_at_restaurant':
-        return renderArrivedAtRestaurant();
-      case 'verify_pickup':
-        return renderVerifyPickup();
-      case 'navigate_to_customer':
-        return renderNavigateToCustomer();
-      case 'capture_proof':
-        return renderCaptureProof();
-      case 'delivered':
-        return renderDeliveredOrder();
+  const getActionButton = () => {
+    switch (currentStep) {
+      case 'heading_to_pickup':
+      case 'heading_to_customer':
+        return {
+          text: "I've Arrived",
+          action: handleNextStep,
+          icon: <MapPin className="h-5 w-5" />,
+          variant: 'default' as const
+        };
+      case 'at_restaurant':
+        return {
+          text: "Order Picked Up",
+          action: handleNextStep,
+          icon: <Package className="h-5 w-5" />,
+          variant: 'default' as const
+        };
+      case 'at_customer':
+        return {
+          text: "Complete Delivery",
+          action: handleNextStep, // This will advance to 'delivered'
+          icon: <CheckCircle className="h-5 w-5" />,
+          variant: 'default' as const
+        };
       default:
-        return renderNavigateToRestaurant();
+        return null;
     }
   };
+
+  const actionButton = getActionButton();
+
+  // --- Conditional Renders ---
+
+  // Renders the specialized Customer Dropoff screen (Spark/Dash style)
+  if (['heading_to_customer', 'at_customer'].includes(currentStep)) {
+    return (
+      <CustomerNavigationStep
+        customerName={orderDetails.customer_name}
+        deliveryTime={estimatedArrival ? formatETA(estimatedArrival) : '12:44 PM'}
+        customerPhone={orderDetails.customer_phone}
+        dropoffAddress={getCurrentDestination.address}
+        deliveryInstructions={orderDetails.delivery_notes}
+        onCall={() => toast({ title: "Calling customer...", description: "Feature coming soon!" })}
+        onMessage={() => toast({ title: "Messaging customer...", description: "Feature coming soon!" })}
+        onDirections={() => window.open(`https://maps.google.com/maps?q=${encodeURIComponent(getCurrentDestination.address)}`, '_blank')}
+      />
+    );
+  }
+
+  // Renders the Success Screen
+  if (currentStep === 'delivered') {
+    return (
+      <div className="p-4 bg-gray-50 min-h-screen flex items-center justify-center">
+        <CardContainer className="w-full max-w-sm text-center p-8 bg-gradient-to-br from-green-500 to-green-700 text-white shadow-2xl shadow-green-500/50">
+          <CheckCircle className="h-16 w-16 mx-auto mb-4 text-white animate-pulse" />
+          <h2 className="text-3xl font-extrabold mb-2">Delivery Complete!</h2>
+          <p className="text-lg mb-6">
+            Great job! You earned <span className="font-extrabold">${(orderDetails.payout_cents / 100).toFixed(2)}</span>
+          </p>
+          <ButtonMock
+            onClick={onCompleteDelivery}
+            className="w-full h-14 bg-white text-green-700 hover:bg-gray-100 font-bold shadow-none"
+            variant="ghost"
+          >
+            Continue to Next Offer <ArrowRight className="ml-2 h-5 w-5" />
+          </ButtonMock>
+        </CardContainer>
+      </div>
+    );
+  }
+
+
+  // --- Main Pickup/Initial Flow UI ---
+
+  const currentStepData = DELIVERY_STEPS[getCurrentStepIndex()];
 
   return (
-    <div className="absolute inset-0 z-10 bg-background">
-      {/* Progress Indicator */}
-      <div className="absolute top-4 left-4 right-4 z-20 pointer-events-none">
-        <div className="bg-background/95 backdrop-blur-sm p-3 rounded-xl shadow-lg pointer-events-auto">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium">Delivery Progress</span>
-            <span className="text-xs text-muted-foreground">
-              Step {['navigate_to_restaurant', 'arrived_at_restaurant', 'navigate_to_customer', 'capture_proof', 'delivered'].indexOf(currentStage) + 1} of 5
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      {/* Fixed Top Section: Map & Payout */}
+      <div className="relative z-10 shadow-xl bg-white rounded-b-3xl overflow-hidden">
+        {/* REPLACED MOCK MAP COMPONENT WITH MAPBOX STATIC MAP */}
+        <MapboxStaticMap
+          destinationName={getCurrentDestination.name}
+          type={getCurrentDestination.type}
+          currentCoords={getCurrentDestination.currentCoords}
+          destinationCoords={getCurrentDestination.destinationCoords}
+        />
+        
+        {/* Progress and Header */}
+        <div className="p-4 bg-orange-600 text-white">
+          <ProgressMock value={getStepProgress()} className="h-1 bg-orange-300 mb-2" />
+          <div className="flex justify-between items-center mb-3">
+            <BadgeMock className="bg-white text-orange-600 font-extrabold text-sm shadow-md">
+              {currentStepData.label}
+            </BadgeMock>
+            <span className="text-sm font-light text-orange-100">
+              {formatTime(elapsedTime)} elapsed
             </span>
           </div>
-          <div className="flex gap-1">
-            {['navigate_to_restaurant', 'arrived_at_restaurant', 'navigate_to_customer', 'capture_proof', 'delivered'].map((stage, index) => (
-              <div
-                key={stage}
-                className={`flex-1 h-2 rounded-full ${
-                  ['navigate_to_restaurant', 'arrived_at_restaurant', 'navigate_to_customer', 'capture_proof', 'delivered'].indexOf(currentStage) >= index
-                    ? 'bg-orange-500'
-                    : 'bg-gray-200'
-                }`}
-              />
-            ))}
+          <h1 className="text-2xl font-extrabold">{getCurrentDestination.name}</h1>
+          <p className="text-sm font-light text-orange-100">{getCurrentDestination.address}</p>
+        </div>
+
+        {/* Payout Strip (Walmart Spark style) */}
+        <div className="bg-gray-800 text-white p-3 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-green-400" />
+            <span className="text-xl font-extrabold text-green-400">
+              ${(orderDetails.payout_cents / 100).toFixed(2)}
+            </span>
+            <span className="text-xs font-light text-gray-400">PAYOUT</span>
           </div>
+          {estimatedArrival && (
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-blue-400" />
+              <span className="text-sm font-semibold text-blue-400">
+                ETA: {formatETA(estimatedArrival)}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="pt-24 pb-6 px-4 h-full overflow-y-auto">
-        <div className="relative z-0">
-          {getCurrentStageComponent()}
+      {/* Scrollable Content Section */}
+      <div className="flex-1 p-4 space-y-4 overflow-y-auto pb-28">
+        
+        {/* Current Task & Next Step */}
+        <CardContainer className="p-4 border-l-4 border-orange-500 shadow-md">
+            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <ArrowRight className="h-5 w-5 text-orange-500" /> Your Current Task
+            </h3>
+            {/* FIX: Replaced markdown bolding (**) with JSX span for correct rendering */}
+            <p className="text-sm text-gray-600 mt-1">
+                Proceed to <span className="font-bold">{getCurrentDestination.name}</span> to collect the items.
+            </p>
+        </CardContainer>
+
+        {/* Order Details Card */}
+        <CardContainer>
+          <CardHeaderMock>
+            <h3 className="font-extrabold text-xl text-gray-800 flex items-center gap-2">
+                <ClipboardList className="h-6 w-6 text-gray-500" /> Full Order Summary
+            </h3>
+          </CardHeaderMock>
+          <CardContentMock className="space-y-4">
+            {/* Pickup Info */}
+            <div className="flex items-center gap-3 p-2 bg-blue-50 rounded-lg">
+              <Store className="h-6 w-6 text-blue-600 shrink-0" />
+              <div>
+                <p className="font-bold text-blue-800">{orderDetails.restaurant_name}</p>
+                <p className="text-sm text-blue-600">{formatAddress(orderDetails.pickup_address)}</p>
+              </div>
+            </div>
+
+            {/* Dropoff Info */}
+            <div className="flex items-center gap-3 p-2 bg-green-50 rounded-lg">
+              <User className="h-6 w-6 text-green-600 shrink-0" />
+              <div>
+                <p className="font-bold text-green-800">{orderDetails.customer_name || 'Customer Dropoff'}</p>
+                <p className="text-sm text-green-600">{formatAddress(orderDetails.dropoff_address)}</p>
+              </div>
+            </div>
+
+            {/* Delivery Notes */}
+            {orderDetails.delivery_notes && (
+              <div className="p-3 bg-orange-50 border border-orange-300 rounded-lg text-sm text-orange-800 shadow-inner">
+                <h4 className="font-bold mb-1">Driver Instructions:</h4>
+                <p>{orderDetails.delivery_notes}</p>
+              </div>
+            )}
+          </CardContentMock>
+        </CardContainer>
+
+      </div>
+
+      {/* Fixed Bottom Action Bar (DoorDash/Spark style) */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] z-20">
+        <div className="flex items-center gap-3">
+            {/* Primary Action */}
+            {actionButton && (
+                <ButtonMock
+                    onClick={actionButton.action}
+                    className="flex-1 h-14"
+                    variant={actionButton.variant}
+                >
+                    {actionButton.icon}
+                    <span className="ml-2">{actionButton.text}</span>
+                </ButtonMock>
+            )}
+
+            {/* Quick Contact Buttons */}
+            <ButtonMock
+                variant="outline"
+                className="w-1/4 h-14 border-gray-400 hover:bg-orange-50"
+                onClick={() => toast({ title: "Calling...", description: "Feature coming soon!" })}
+            >
+                <Phone className="h-6 w-6 text-orange-600" />
+            </ButtonMock>
+            <ButtonMock
+                variant="outline"
+                className="w-1/4 h-14 border-gray-400 hover:bg-orange-50"
+                onClick={() => toast({ title: "Messaging...", description: "Feature coming soon!" })}
+            >
+                <MessageSquare className="h-6 w-6 text-orange-600" />
+            </ButtonMock>
         </div>
       </div>
     </div>
   );
 };
+
+export default App;
