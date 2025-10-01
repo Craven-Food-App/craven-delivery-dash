@@ -8,11 +8,11 @@ import { OrderAssignmentModal } from './OrderAssignmentModal';
 import ScheduleSection from './ScheduleSection';
 import { EarningsSection } from './EarningsSection';
 import { BottomNavigation } from './BottomNavigation';
-import { ActiveDeliveryFlow } from './ActiveDeliveryFlow';
+import ActiveDeliveryFlow from './ActiveDeliveryFlow';
 import { PushNotificationSetup } from './PushNotificationSetup';
 import { NotificationPreferences } from './NotificationPreferences';
 import { AccountSection } from './AccountSection';
-import { TestCompletionModal } from './TestCompletionModal';
+import TestCompletionModal from './TestCompletionModal';
 import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { useIOSNotifications } from '@/hooks/useIOSNotifications';
 import { IOSNotificationBanner } from './IOSNotificationBanner';
@@ -803,7 +803,17 @@ export const MobileDriverDashboard: React.FC = () => {
       <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Test Completion Modal */}
-      <TestCompletionModal isOpen={showTestCompletionModal} onClose={() => setShowTestCompletionModal(false)} />
+      {showTestCompletionModal && <TestCompletionModal 
+        orderDetails={{
+          restaurant_name: 'Test Restaurant',
+          pickup_address: 'Test Pickup Address',
+          dropoff_address: 'Test Dropoff Address',
+          payout_cents: 1500,
+          estimated_time: 30,
+          isTestOrder: true
+        }}
+        onCompleteDelivery={() => setShowTestCompletionModal(false)}
+      />}
     </div>
   </>;
 };

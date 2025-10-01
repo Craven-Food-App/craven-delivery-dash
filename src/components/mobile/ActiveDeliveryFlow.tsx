@@ -110,6 +110,7 @@ const MapboxStaticMap = ({ destinationName, type, currentCoords, destinationCoor
 const CustomerNavigationStep = ({
   customerName,
   deliveryTime,
+  customerPhone,
   dropoffAddress,
   deliveryInstructions,
   onCall,
@@ -189,6 +190,8 @@ const supabase = {
 // --- CORE DELIVERY FLOW LOGIC ---
 
 interface OrderDetails {
+  id?: string;
+  order_number?: string;
   restaurant_name: string;
   restaurant_id?: string;
   // NOTE: For a real app, pickup/dropoff address must include lat/lng fields.
@@ -198,7 +201,10 @@ interface OrderDetails {
   customer_phone?: string;
   delivery_notes?: string;
   payout_cents: number;
+  subtotal_cents?: number;
   estimated_time: number;
+  items?: Array<{ name: string; quantity: number; price_cents: number }>;
+  isTestOrder?: boolean;
 }
 
 // Renamed props interface to align with main component name (App)
