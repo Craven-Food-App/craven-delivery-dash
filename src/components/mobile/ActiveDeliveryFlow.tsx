@@ -107,7 +107,18 @@ const MapboxStaticMap = ({ destinationName, type, currentCoords, destinationCoor
 };
 
 // Mocking the specialized customer view component
-const CustomerNavigationStep = ({
+interface CustomerNavigationStepProps {
+  customerName: string;
+  deliveryTime: string;
+  customerPhone?: string;
+  dropoffAddress: string;
+  deliveryInstructions?: string;
+  onCall: () => void;
+  onMessage: () => void;
+  onDirections: () => void;
+}
+
+const CustomerNavigationStep: React.FC<CustomerNavigationStepProps> = ({
   customerName,
   deliveryTime,
   customerPhone,
