@@ -773,9 +773,9 @@ export const MobileDriverDashboard: React.FC = () => {
       </div>
 
       {/* Order Assignment Modal */}
-      <OrderAssignmentModal isOpen={showOrderModal} onClose={() => {
-        setShowOrderModal(false);
-        setCurrentOrderAssignment(null);
+      <OrderAssignmentModal isOpen={showOrderModal} onOpenChange={(open) => {
+        setShowOrderModal(open);
+        if (!open) setCurrentOrderAssignment(null);
       }} assignment={currentOrderAssignment} onAccept={assignment => {
         setActiveDelivery({
           ...assignment,
