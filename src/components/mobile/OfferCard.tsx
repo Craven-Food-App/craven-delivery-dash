@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Star, MapPin, Clock, Package } from 'lucide-react';
 
 interface Offer {
   id: string;
@@ -13,6 +12,7 @@ interface Offer {
   estimatedPay: number;
   itemCount: number;
   miles: number;
+  routeImageUrl?: string; // Optional map preview
 }
 
 interface OfferCardProps {
@@ -31,93 +31,96 @@ export const OfferCard: React.FC<OfferCardProps> = ({
   const [timeLeft, setTimeLeft] = useState(countdownSeconds);
 
   useEffect(() => {
+    setTimeLeft(countdownSeconds); // Reset timer on offer change
+  }, [offer.id, countdownSeconds]);
+
+  useEffect(() => {
     if (timeLeft <= 0) return;
 
     const timer = setInterval(() => {
       setTimeLeft(prev => {
-        if (prev <= 1) {
-          onDecline(offer.id); // Auto-decline when time runs out
-          return 0;
-        }
+        if (prev <= 1) return 0;
         return prev - 1;
       });
     }, 1000);
 
     return () => clearInterval(timer);
+  }, [timeLeft]);
+
+  useEffect(() => {
+    if (timeLeft === 0) {
+      onDecline(offer.id); // Auto-decline when timer hits zero
+    }
   }, [timeLeft, offer.id, onDecline]);
 
-  const progressPercentage = (timeLeft / countdownSeconds) * 100;
+  const progressPercentage = useMemo(() => (timeLeft / countdownSeconds) * 100, [timeLeft, countdownSeconds]);
 
   return (
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-end">
       <div className="w-full p-4">
-        <Card className="w-full animate-slide-up shadow-hover">
-          <CardContent className="p-6">
+        <Card className="w-full animate-slide-up shadow-lg rounded-xl overflow-hidden">
+          <CardContent className="p-0 relative">
+
+            {/* Countdown badge */}
+            <div className="absolute top-2 right-4 z-10">
+              <Badge variant="outline" className="text-xs">
+                {timeLeft}s left
+              </Badge>
+            </div>
+
             {/* Countdown bar */}
-            <div className="w-full bg-muted rounded-full h-1 mb-4">
-              <div 
-                className="bg-primary h-1 rounded-full transition-all duration-1000 ease-linear"
+            <div className="w-full bg-muted h-1">
+              <div
+                className={`h-1 transition-all duration-1000 ease-linear ${timeLeft <= 10 ? 'bg-red-500' : 'bg-primary'}`}
                 style={{ width: `${progressPercentage}%` }}
               />
             </div>
 
-            {/* Pickup info */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-lg">{offer.pickupName}</h3>
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm font-medium">{offer.pickupRating}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
-                    <span>{offer.dropoffDistance} mi</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    <span>{offer.estimatedTime} min</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Package className="h-4 w-4" />
-                    <span>{offer.itemCount} items</span>
-                  </div>
-                </div>
+            {/* Map preview */}
+            {offer.routeImageUrl && (
+              <div className="w-full h-48 bg-gray-200 animate-pulse">
+                <img
+                  src={offer.routeImageUrl}
+                  alt="Route preview"
+                  className="w-full h-full object-cover"
+                />
               </div>
-              
-              <div className="text-right">
-                <div className="text-2xl font-bold text-status-online">
-                  ${offer.estimatedPay.toFixed(2)}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {offer.miles.toFixed(1)} mi total
-                </div>
+            )}
+
+            {/* Route summary */}
+            <div className="text-center py-4">
+              <div className="text-lg font-semibold">
+                {offer.itemCount} stops · {offer.miles.toFixed(1)} miles · {offer.estimatedTime} mins
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Just for you
               </div>
             </div>
 
-            {/* Time remaining indicator */}
-            <div className="text-center mb-4">
-              <Badge variant="outline" className="text-sm">
-                {timeLeft}s remaining
-              </Badge>
+            {/* Earnings breakdown */}
+            <div className="text-center pb-4">
+              <div className="text-2xl font-bold text-status-online">
+                ${offer.estimatedPay.toFixed(2)}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Delivery ${(offer.estimatedPay - 1.52).toFixed(2)} · Extra Earnings $1.52
+              </div>
             </div>
 
             {/* Action buttons */}
-            <div className="flex gap-3">
+            <div className="grid grid-cols-2 gap-0 border-t border-muted">
               <Button
-                variant="outline"
+                variant="ghost"
+                className="w-full py-4 text-lg font-semibold text-destructive hover:bg-destructive/10 rounded-none"
                 onClick={() => onDecline(offer.id)}
-                className="flex-1"
               >
-                Decline
+                REJECT
               </Button>
               <Button
+                className="w-full py-4 text-lg font-semibold bg-status-online hover:bg-status-online/90 rounded-none"
                 onClick={() => onAccept(offer.id)}
-                className="flex-1 bg-status-online hover:bg-status-online/90"
               >
-                Accept
+                ACCEPT
               </Button>
             </div>
           </CardContent>
