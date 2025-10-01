@@ -1,118 +1,131 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, DollarSign, Navigation } from 'lucide-react';
 
-interface Order {
+interface Offer {
   id: string;
-  pickup_name: string;
-  pickup_address: string;
-  pickup_lat: number;
-  pickup_lng: number;
-  dropoff_name: string;
-  dropoff_address: string;
-  dropoff_lat: number;
-  dropoff_lng: number;
-  payout_cents: number;
-  distance_km: number;
-  status: 'pending' | 'assigned' | 'picked_up' | 'delivered' | 'cancelled';
-  assigned_craver_id?: string | null;
+  pickupName: string;
+  pickupRating: number;
+  dropoffDistance: number;
+  estimatedTime: number;
+  estimatedPay: number;
+  itemCount: number;
+  miles: number;
+  routeImageUrl?: string; // Optional map preview
 }
 
-interface OrderCardProps {
-  order: Order;
-  variant: 'available' | 'active';
-  onAccept?: (order: Order) => void;
-  onStatusUpdate?: (orderId: string, status: string) => void;
+interface OfferCardProps {
+  offer: Offer;
+  onAccept: (offerId: string) => void;
+  onDecline: (offerId: string) => void;
+  countdownSeconds?: number;
 }
 
-const OrderCard: React.FC<OrderCardProps> = ({ order, variant, onAccept, onStatusUpdate }) => {
-  const getStatusBadge = (status: string) => {
-    const statusMap = {
-      pending: { variant: 'secondary' as const, label: 'Available' },
-      assigned: { variant: 'default' as const, label: 'Assigned' },
-      picked_up: { variant: 'default' as const, label: 'Picked Up' },
-      delivered: { variant: 'outline' as const, label: 'Delivered' },
-      cancelled: { variant: 'destructive' as const, label: 'Cancelled' },
-    };
-    
-    const config = statusMap[status as keyof typeof statusMap] || statusMap.pending;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
+export const OfferCard: React.FC<OfferCardProps> = ({
+  offer,
+  onAccept,
+  onDecline,
+  countdownSeconds = 30
+}) => {
+  const [timeLeft, setTimeLeft] = useState(countdownSeconds);
 
-  const getNextAction = (status: string) => {
-    switch (status) {
-      case 'assigned':
-        return { label: 'Arrived at Pickup', action: 'picked_up' };
-      case 'picked_up':
-        return { label: 'Mark Delivered', action: 'delivered' };
-      default:
-        return null;
+  useEffect(() => {
+    setTimeLeft(countdownSeconds); // Reset timer on offer change
+  }, [offer.id, countdownSeconds]);
+
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) return 0;
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeLeft]);
+
+  useEffect(() => {
+    if (timeLeft === 0) {
+      onDecline(offer.id); // Auto-decline when timer hits zero
     }
-  };
+  }, [timeLeft, offer.id, onDecline]);
 
-  const nextAction = getNextAction(order.status);
+  const progressPercentage = useMemo(() => (timeLeft / countdownSeconds) * 100, [timeLeft, countdownSeconds]);
 
   return (
-    <Card className="w-full">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{order.pickup_name}</CardTitle>
-          {getStatusBadge(order.status)}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <div className="flex items-start gap-2">
-            <MapPin className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-            <div className="text-sm">
-              <p className="font-medium">Pickup</p>
-              <p className="text-muted-foreground">{order.pickup_address}</p>
+    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-end">
+      <div className="w-full p-4">
+        <Card className="w-full animate-slide-up shadow-lg rounded-xl overflow-hidden">
+          <CardContent className="p-0 relative">
+
+            {/* Countdown badge */}
+            <div className="absolute top-2 right-4 z-10">
+              <Badge variant="outline" className="text-xs">
+                {timeLeft}s left
+              </Badge>
             </div>
-          </div>
-          
-          <div className="flex items-start gap-2">
-            <Navigation className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
-            <div className="text-sm">
-              <p className="font-medium">Dropoff</p>
-              <p className="text-muted-foreground">{order.dropoff_address}</p>
+
+            {/* Countdown bar */}
+            <div className="w-full bg-muted h-1">
+              <div
+                className={`h-1 transition-all duration-1000 ease-linear ${timeLeft <= 10 ? 'bg-red-500' : 'bg-primary'}`}
+                style={{ width: `${progressPercentage}%` }}
+              />
             </div>
-          </div>
-        </div>
 
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-1">
-            <DollarSign className="h-4 w-4 text-green-600" />
-            <span className="font-semibold">${(order.payout_cents / 100).toFixed(2)}</span>
-          </div>
-          
-          <div className="flex items-center gap-1">
-            <Clock className="h-4 w-4 text-blue-600" />
-            <span>{(order.distance_km * 0.621371).toFixed(1)} mi</span>
-          </div>
-        </div>
+            {/* Map preview */}
+            {offer.routeImageUrl && (
+              <div className="w-full h-48 bg-gray-200 animate-pulse">
+                <img
+                  src={offer.routeImageUrl}
+                  alt="Route preview"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
 
-        {variant === 'available' && onAccept && (
-          <Button 
-            onClick={() => onAccept(order)} 
-            className="w-full"
-          >
-            Accept Order
-          </Button>
-        )}
+            {/* Route summary */}
+            <div className="text-center py-4">
+              <div className="text-lg font-semibold">
+                {offer.itemCount} stops · {offer.miles.toFixed(1)} miles · {offer.estimatedTime} mins
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Just for you
+              </div>
+            </div>
 
-        {variant === 'active' && nextAction && onStatusUpdate && (
-          <Button 
-            onClick={() => onStatusUpdate(order.id, nextAction.action)}
-            className="w-full"
-          >
-            {nextAction.label}
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+            {/* Earnings breakdown */}
+            <div className="text-center pb-4">
+              <div className="text-2xl font-bold text-status-online">
+                ${offer.estimatedPay.toFixed(2)}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Delivery ${(offer.estimatedPay - 1.52).toFixed(2)} · Extra Earnings $1.52
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="grid grid-cols-2 gap-0 border-t border-muted">
+              <Button
+                variant="ghost"
+                className="w-full py-4 text-lg font-semibold text-destructive hover:bg-destructive/10 rounded-none"
+                onClick={() => onDecline(offer.id)}
+              >
+                REJECT
+              </Button>
+              <Button
+                className="w-full py-4 text-lg font-semibold bg-status-online hover:bg-status-online/90 rounded-none"
+                onClick={() => onAccept(offer.id)}
+              >
+                ACCEPT
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
-
-export default OrderCard;
