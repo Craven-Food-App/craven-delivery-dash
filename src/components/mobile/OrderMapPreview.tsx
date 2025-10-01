@@ -12,7 +12,7 @@ const Card = ({ children, className = '' }) => (
     {children}
   </div>
 );
-const Button = ({ children, onClick, className = '' }) => (
+const Button = ({ children, onClick = () => {}, className = '' }) => (
     <button
       onClick={onClick}
       className={`h-10 px-4 text-sm font-medium rounded-xl transition duration-150 active:scale-[0.98] bg-orange-600 text-white hover:bg-orange-700 shadow-md ${className}`}
@@ -362,4 +362,5 @@ const App = () => {
     );
 };
 
+export { OrderMapPreview };
 export default App;
