@@ -593,7 +593,7 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
             </div>
 
             {/* Main Content Area */}
-            <div className="p-4 flex-1 overflow-y-auto px-[41px] mx-[7px] my-[5px] py-px">
+            <div className="p-4 flex-1 overflow-y-auto px-[41px] mx-[7px] py-px my-0">
                 {/* Restaurant Details */}
                 <div className="relative pt-2">
                     <p className="text-sm text-gray-500 mb-1">Restaurant</p>
