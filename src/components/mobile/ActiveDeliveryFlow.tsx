@@ -62,6 +62,125 @@ const AppHeader = ({ title, onBack, showHelp = true }: { title: string, onBack: 
     </div>
 );
 
+// Restaurant Route Map Component with Mapbox
+const RestaurantRouteMap = ({ restaurantAddress, restaurantName }: { restaurantAddress: string, restaurantName: string }) => {
+  const mapContainer = React.useRef<HTMLDivElement>(null);
+  const map = React.useRef<any>(null);
+
+  useEffect(() => {
+    if (!mapContainer.current || map.current) return;
+
+    const initMap = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+        if (error) throw error;
+        
+        const mapboxgl = (window as any).mapboxgl;
+        if (!mapboxgl) {
+          console.error('Mapbox GL not loaded');
+          return;
+        }
+
+        mapboxgl.accessToken = data.token;
+
+        // Get current location (mock for now)
+        const currentLocation = [-122.4194, 37.7749]; // San Francisco as default
+        
+        // Geocode restaurant address
+        let restaurantCoords = [-122.4194, 37.7849]; // Default nearby location
+        if (restaurantAddress && restaurantAddress !== 'Address not available') {
+          try {
+            const geocodeResponse = await fetch(
+              `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(restaurantAddress)}.json?access_token=${data.token}&limit=1`
+            );
+            const geocodeData = await geocodeResponse.json();
+            if (geocodeData.features && geocodeData.features.length > 0) {
+              restaurantCoords = geocodeData.features[0].center;
+            }
+          } catch (e) {
+            console.error('Geocoding error:', e);
+          }
+        }
+
+        map.current = new mapboxgl.Map({
+          container: mapContainer.current,
+          style: 'mapbox://styles/mapbox/streets-v12',
+          center: currentLocation,
+          zoom: 12,
+          interactive: false
+        });
+
+        map.current.on('load', async () => {
+          // Add markers
+          new mapboxgl.Marker({ color: '#3b82f6' })
+            .setLngLat(currentLocation)
+            .addTo(map.current);
+
+          new mapboxgl.Marker({ color: '#f97316' })
+            .setLngLat(restaurantCoords)
+            .addTo(map.current);
+
+          // Fetch and draw route
+          try {
+            const routeResponse = await fetch(
+              `https://api.mapbox.com/directions/v5/mapbox/driving/${currentLocation[0]},${currentLocation[1]};${restaurantCoords[0]},${restaurantCoords[1]}?geometries=geojson&access_token=${data.token}`
+            );
+            const routeData = await routeResponse.json();
+            
+            if (routeData.routes && routeData.routes.length > 0) {
+              const route = routeData.routes[0].geometry;
+              
+              map.current.addSource('route', {
+                type: 'geojson',
+                data: {
+                  type: 'Feature',
+                  properties: {},
+                  geometry: route
+                }
+              });
+
+              map.current.addLayer({
+                id: 'route',
+                type: 'line',
+                source: 'route',
+                layout: {
+                  'line-join': 'round',
+                  'line-cap': 'round'
+                },
+                paint: {
+                  'line-color': '#f97316',
+                  'line-width': 5
+                }
+              });
+
+              // Fit bounds to show full route
+              const bounds = new mapboxgl.LngLatBounds();
+              bounds.extend(currentLocation);
+              bounds.extend(restaurantCoords);
+              map.current.fitBounds(bounds, { padding: 50 });
+            }
+          } catch (e) {
+            console.error('Route fetch error:', e);
+          }
+        });
+      } catch (error) {
+        console.error('Map initialization error:', error);
+      }
+    };
+
+    initMap();
+
+    return () => {
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
+    };
+  }, [restaurantAddress]);
+
+  return <div ref={mapContainer} className="w-full h-full" />;
+};
+
 
 // --- HOOKS & UTILITIES ---
 
@@ -372,7 +491,7 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
     const storeAddress = formatAddress(orderDetails.pickup_address, restaurantAddress);
     
     const orderStatusText = isNavigating ? 'Ready' : 'Ready to Pick Up';
-    const orderStatusColor = isNavigating ? 'text-orange-600' : 'text-amber-600'; // Orange for navigating, Amber for arrived/ready
+    const orderStatusColor = isNavigating ? 'text-orange-600' : 'text-amber-600';
 
     const handleMainAction = () => {
         if (isNavigating) {
@@ -388,46 +507,29 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
 
     return (
         <div className="flex flex-col h-full bg-white">
-            {/* Top Banner/Illustration Section - Curbside Pickup Theme (Orange) */}
-            <div className="relative h-48 bg-orange-50 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-t from-orange-50/50 to-orange-100/50"></div>
-                
-                <div className="absolute bottom-4 left-4 text-2xl font-bold text-gray-800 z-10">
-                    Curbside Pickup
-                </div>
-                {/* Mock Car Illustration */}
-                <div className="absolute right-0 bottom-0 w-48 h-48 opacity-75">
-                    {/* Person */}
-                    <div className="absolute bottom-4 right-4 w-1 h-12 bg-gray-600"></div>
-                    <div className="absolute bottom-16 right-4 w-4 h-4 rounded-full bg-gray-600"></div>
-                    {/* Box */}
-                    <div className="absolute bottom-12 right-1 w-6 h-6 bg-yellow-400 border border-yellow-500 rounded-sm"></div>
-
-                    {/* Car Body (Simplified) */}
-                    <div className="absolute bottom-0 right-10 w-40 h-16 bg-white border-2 border-gray-300 rounded-t-lg"></div>
-                    {/* Trunk open */}
-                    <div className="absolute bottom-16 right-10 w-40 h-2 bg-gray-300"></div>
-                    {/* Bags in Trunk */}
-                    <div className="absolute bottom-4 right-20 w-8 h-8 bg-orange-200 rounded-full"></div>
-                    <div className="absolute bottom-4 right-30 w-8 h-8 bg-orange-200 rounded-full"></div>
-                </div>
+            {/* Mapbox Route Section */}
+            <div className="relative h-64 bg-gray-100 overflow-hidden">
+                <RestaurantRouteMap 
+                    restaurantAddress={storeAddress}
+                    restaurantName={orderDetails.restaurant_name}
+                />
             </div>
 
             {/* Main Content Area */}
             <div className="p-4 flex-1 overflow-y-auto">
-                {/* Pickup Store Details */}
+                {/* Restaurant Details */}
                 <div className="relative pt-2">
-                    <p className="text-sm text-gray-500 mb-1">Pickup Store</p>
-                    <h2 className="text-2xl font-bold text-orange-800 mb-1">
+                    <p className="text-sm text-gray-500 mb-1">Restaurant</p>
+                    <h2 className="text-xl font-bold text-orange-600 mb-1">
                         {orderDetails.restaurant_name}
                     </h2>
                     <p className="text-gray-600 text-sm mb-4">
                         {storeAddress || 'Address not available'}
                     </p>
 
-                    {/* Navigation Button (Orange) */}
-                    <Button
-                        className="absolute top-4 right-0 w-16 h-16 bg-white text-orange-600 border border-orange-200 rounded-full flex flex-col items-center justify-center shadow-lg transition duration-200 hover:bg-orange-50 active:scale-[0.95] p-0"
+                    {/* Navigation Button (Orange Circle) */}
+                    <button
+                        className="absolute top-0 right-0 w-16 h-16 bg-orange-500 text-white rounded-full flex flex-col items-center justify-center shadow-lg transition duration-200 hover:bg-orange-600 active:scale-95"
                         onClick={() => {
                             const addr = storeAddress;
                             if (addr && addr !== 'Address not available') {
@@ -436,59 +538,61 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                         }}
                     >
                         <Navigation className="h-6 w-6" />
-                        <span className="text-xs font-medium mt-0.5">NAVIGATE</span>
-                    </Button>
+                        <span className="text-[10px] font-semibold mt-0.5">NAVIGATE</span>
+                    </button>
                 </div>
 
                 {/* Pickup Time and Status */}
-                <div className="flex justify-between items-center pr-20 mt-4 border-b pb-4 mb-4">
+                <div className="flex justify-between items-start pr-20 mt-4 pb-4">
                     <div className="space-y-1">
                         <p className="text-sm text-gray-500">Pickup Time</p>
-                        <p className="text-xl font-bold text-orange-600">4:00 PM</p>
+                        <p className="text-xl font-bold text-orange-600">
+                            {orderDetails.estimated_time || '4:00 PM'}
+                        </p>
                     </div>
                     <div className="space-y-1">
-                        <p className="text-sm text-gray-500">Order Status</p>
-                        <div className="flex items-center">
-                            <p className={`text-xl font-bold ${orderStatusColor}`}>{orderStatusText}</p>
-                            {isNavigating && (
-                                <svg className="animate-spin h-5 w-5 text-gray-400 ml-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                            )}
-                        </div>
+                        <p className="text-sm text-gray-500 flex items-center gap-1">
+                            Order Status 
+                            <svg className="h-4 w-4 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        </p>
+                        <p className={`text-xl font-bold ${orderStatusColor}`}>
+                            {orderStatusText}
+                        </p>
                     </div>
                 </div>
-
-                {/* No Test Mode Alert in the final version */}
             </div>
 
             {/* Sticky Bottom Action Sheet */}
-            <div className="sticky bottom-0 left-0 right-0 bg-white shadow-2xl p-4 pt-2 rounded-t-3xl z-20">
+            <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pt-2 z-20">
                 <div className="flex justify-center mb-3">
                     <span className="text-xs text-gray-400">Hide options</span>
                 </div>
                 
-                {/* Pickup Notes Button (Red/Dark Orange) */}
-                <Button variant="primary-dark" size="lg" className="w-full mb-3 shadow-none" onClick={() => toast({ title: "Pickup Notes", description: "Notes feature invoked.", duration: 2000 })}>
+                {/* Pickup Notes Button (Dark Blue/Navy) */}
+                <button 
+                    className="w-full h-14 bg-blue-900 text-white rounded-full font-semibold text-base mb-3 transition hover:bg-blue-800 active:scale-98"
+                    onClick={() => toast({ title: "Pickup Notes", description: "Notes feature invoked.", duration: 2000 })}
+                >
                     PICKUP NOTES
-                </Button>
+                </button>
 
-                {/* Main Action Button (Orange) */}
-                <Button
-                    variant="default"
-                    size="lg"
-                    className="w-full mb-0 shadow-lg"
+                {/* Confirm Arrival Slider (Orange) */}
+                <button
+                    className="w-full h-16 bg-orange-500 text-white rounded-full font-semibold text-base shadow-lg transition hover:bg-orange-600 active:scale-98 flex items-center justify-center"
                     onClick={handleMainAction}
                 >
                     <div className="relative flex items-center justify-center w-full">
                         {/* Double Arrow Icon on the left */}
-                        <div className="absolute left-4 p-0.5 bg-white/20 rounded-full">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevrons-right"><path d="m6 17 5-5-5-5"/><path d="m13 17 5-5-5-5"/></svg>
+                        <div className="absolute left-6 p-1 bg-white/20 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="m6 17 5-5-5-5"/><path d="m13 17 5-5-5-5"/>
+                            </svg>
                         </div>
                         {mainActionText}
                     </div>
-                </Button>
+                </button>
             </div>
         </div>
     );
@@ -667,7 +771,7 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         
         {/* New Fixed Header (Orange) */}
         <AppHeader 
-            title={currentStage.includes('restaurant') || currentStage.includes('pickup') ? 'Pickup' : currentStage.includes('customer') ? 'Delivery' : 'Complete'} 
+            title={currentStage.includes('restaurant') || currentStage.includes('pickup') ? 'Head to Restaurant' : currentStage.includes('customer') ? 'Delivery' : 'Complete'} 
             onBack={() => console.log("Back/Cancel flow")} 
             showHelp={currentStage !== 'delivered'} 
         />
