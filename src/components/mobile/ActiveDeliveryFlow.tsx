@@ -577,11 +577,11 @@ const getStageInfo = (stage: DeliveryStage): { stageNumber: number; stageName: s
 
 // --- ACTIVE DELIVERY FLOW ---
 
-const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
+const ActiveDeliveryFlow = ({
   orderDetails,
   onCompleteDelivery,
   onProgressChange // NEW: Progress callback
-}) => {
+}: ActiveDeliveryProps) => {
   const [currentStage, setCurrentStage] = useState<DeliveryStage>('navigate_to_restaurant');
   const [deliveryPhoto, setDeliveryPhoto] = useState<string | null>(null);
   const [pickupPhoto, setPickupPhoto] = useState<string | null>(null);

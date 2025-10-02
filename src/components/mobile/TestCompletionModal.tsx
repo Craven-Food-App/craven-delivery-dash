@@ -93,15 +93,27 @@ const Button = ({
 
 // --- MAIN COMPONENT ---
 
+interface TestCompletionModalProps {
+  orderDetails: {
+    restaurant_name: string;
+    pickup_address: string;
+    dropoff_address: string;
+    payout_cents: number;
+    estimated_time: number;
+    isTestOrder: boolean;
+  };
+  onCompleteDelivery: () => void;
+}
+
 /**
  * Renders the screen for completing a system test order.
  * This component focuses only on the final, successful completion state.
  */
-const TestOrderCompletionFlow = () => {
+const TestOrderCompletionFlow = ({ orderDetails, onCompleteDelivery }: TestCompletionModalProps) => {
 
   const handleNextOpportunity = () => {
     console.log("Navigating to the next opportunity (dashboard/home screen).");
-    alert("Navigating to the next opportunity..."); // Using alert() for simulation as per instructions
+    onCompleteDelivery();
   };
 
   const renderTestCompletionScreen = () => (
