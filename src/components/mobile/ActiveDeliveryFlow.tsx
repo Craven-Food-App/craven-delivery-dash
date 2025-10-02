@@ -1016,19 +1016,82 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
     }
   };
 
+  // Calculate progress percentage
+  const getProgressPercentage = () => {
+    const stageMap = {
+      'navigate_to_restaurant': 14,
+      'arrived_at_restaurant': 28,
+      'verify_pickup': 42,
+      'pickup_photo_verification': 57,
+      'navigate_to_customer': 71,
+      'capture_proof': 85,
+      'delivered': 100
+    };
+    return stageMap[currentStage] || 14;
+  };
+
+  // Calculate ETA
+  const getETA = () => {
+    const now = new Date();
+    const etaMinutes = currentStage.includes('restaurant') || currentStage.includes('pickup') ? 12 : 18;
+    now.setMinutes(now.getMinutes() + etaMinutes);
+    return now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  };
+
+  // Format elapsed time
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setElapsedSeconds(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatElapsedTime = () => {
+    const minutes = Math.floor(elapsedSeconds / 60);
+    const seconds = elapsedSeconds % 60;
+    return `${minutes}m ${seconds}s elapsed`;
+  };
+
   return <div className="absolute inset-0 z-10 bg-gray-50 flex flex-col">
-        {/* New Fixed Header (Orange) */}
-        <AppHeader 
-          title={
-            currentStage.includes('restaurant') || currentStage.includes('pickup') 
-              ? 'Head to Restaurant' 
-              : currentStage.includes('customer') 
-                ? 'Delivery' 
-                : 'Complete'
-          } 
-          onBack={() => console.log("Back/Cancel flow")} 
-          showHelp={currentStage !== 'delivered'} 
-        />
+        {/* Progress Header with Payout and ETA */}
+        <div className="bg-white shadow-md">
+          {/* Progress Bar */}
+          <div className="h-2 bg-gray-200">
+            <div 
+              className="h-full bg-orange-500 transition-all duration-500"
+              style={{ width: `${getProgressPercentage()}%` }}
+            />
+          </div>
+          
+          {/* Header Info */}
+          <div className="p-4 bg-orange-600 text-white">
+            <div className="flex justify-between items-center mb-2">
+              <span className="bg-white text-orange-600 px-3 py-1 rounded-full text-sm font-bold">
+                {getStageInfo(currentStage).stageName}
+              </span>
+              <span className="text-sm font-light">
+                {formatElapsedTime()}
+              </span>
+            </div>
+          </div>
+
+          {/* Payout and ETA Strip */}
+          <div className="bg-gray-800 text-white px-4 py-3 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <span className="text-green-400 text-2xl font-bold">
+                ${(orderDetails.payout_cents / 100).toFixed(2)}
+              </span>
+              <span className="text-xs text-gray-400 uppercase">PAYOUT</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-blue-400" />
+              <span className="text-sm font-semibold text-blue-400">
+                ETA: {getETA()}
+              </span>
+            </div>
+          </div>
+        </div>
         
         {/* Main Content Area: Fills the space below the fixed header */}
         <div className="flex-1 overflow-y-auto">
