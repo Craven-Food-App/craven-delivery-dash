@@ -331,15 +331,18 @@ const uploadDeliveryPhoto = async (userId: string, photoBlob: Blob) => {
 
 // --- EXTERNAL COMPONENTS (DeliveryCamera, OrderVerificationScreen) ---
 
-// DeliveryCamera (Colors changed from purple to red)
+// Enhanced DeliveryCamera with retake/submit options
 const DeliveryCamera = ({
   onPhotoCapture,
   onCancel,
-  isUploading
+  isUploading,
+  title = "Capture Proof of Delivery"
 }: any) => {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  
   useEffect(() => {
     // Start camera
     const startCamera = async () => {
@@ -365,6 +368,7 @@ const DeliveryCamera = ({
       }
     };
   }, []);
+
   const capturePhoto = () => {
     if (!videoRef.current) return;
     const canvas = document.createElement('canvas');
@@ -377,7 +381,7 @@ const DeliveryCamera = ({
         if (blob) {
           const url = URL.createObjectURL(blob);
           setPhotoPreview(url);
-          onPhotoCapture(blob);
+          setCapturedBlob(blob);
 
           // Stop camera after capture
           if (stream) {
@@ -387,28 +391,66 @@ const DeliveryCamera = ({
       }, 'image/jpeg', 0.9);
     }
   };
+
+  const handleRetake = () => {
+    setPhotoPreview(null);
+    setCapturedBlob(null);
+    // Restart camera
+    const startCamera = async () => {
+      try {
+        const mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'environment'
+          }
+        });
+        setStream(mediaStream);
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+        }
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+      }
+    };
+    startCamera();
+  };
+
+  const handleSubmit = () => {
+    if (capturedBlob) {
+      onPhotoCapture(capturedBlob);
+    }
+  };
+
   if (photoPreview) {
     return <Card>
               <CardContent className="p-4 text-center space-y-4">
-                  <h3 className="text-xl font-bold text-red-700">Proof Captured!</h3>
+                  <h3 className="text-xl font-bold text-green-700">Photo Captured!</h3>
                   <img src={photoPreview} alt="Delivery Proof Preview" className="rounded-lg w-full h-auto object-cover border" />
+                  <div className="flex gap-2">
+                    <Button onClick={handleRetake} variant="outline" className="flex-1">
+                        Retake
+                    </Button>
+                    <Button onClick={handleSubmit} className="flex-1 bg-green-600 hover:bg-green-700" disabled={isUploading}>
+                        {isUploading ? 'Uploading...' : 'Submit'}
+                    </Button>
+                  </div>
                   <Button onClick={onCancel} variant="secondary" className="w-full">
-                      Cancel (Go Back)
+                      Cancel
                   </Button>
               </CardContent>
           </Card>;
   }
+
   return <Card className="p-6">
       <CardContent className="p-0 space-y-4 text-center">
-        <h3 className="text-xl font-bold text-red-700">Capture Proof of Delivery</h3>
+        <h3 className="text-xl font-bold text-red-700">{title}</h3>
         <p className="text-sm text-gray-500">
           Ensure the delivery location and order are clearly visible.
         </p>
         <div className="bg-gray-900 h-64 rounded-lg overflow-hidden relative">
           <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
         </div>
-        <Button onClick={capturePhoto} className="w-full bg-red-700 hover:bg-red-800" disabled={isUploading}>
-          {isUploading ? 'Uploading...' : 'Take Photo'}
+        <Button onClick={capturePhoto} className="w-full bg-red-700 hover:bg-red-800">
+          TAKE PHOTO
         </Button>
         <Button onClick={onCancel} variant="outline" className="w-full">
           Cancel
@@ -417,7 +459,7 @@ const DeliveryCamera = ({
     </Card>;
 };
 
-// OrderVerificationScreen (Colors changed to red for attention and amber for confirm)
+// Enhanced OrderVerificationScreen
 const OrderVerificationScreen = ({
   orderDetails,
   onPickupConfirmed,
@@ -426,31 +468,45 @@ const OrderVerificationScreen = ({
   const handleConfirm = () => {
     onPickupConfirmed();
   };
+  
   return <div className="space-y-4">
       <div className="bg-red-600 text-white p-4 rounded-2xl text-center">
         <h2 className="text-xl font-bold">Verify Pickup</h2>
-        <p className="opacity-90">Confirm all items are collected.</p>
+        <p className="opacity-90">Confirm all items match the receipt</p>
       </div>
 
       <Card>
-        <CardContent className="p-4 space-y-3">
-          <h3 className="font-bold text-lg text-red-800">Order #{orderDetails.order_number}</h3>
+        <CardContent className="p-4 space-y-4">
+          {/* Order Number */}
+          <div className="text-center p-3 bg-gray-100 rounded-lg">
+            <h3 className="font-bold text-lg text-red-800">Order #{orderDetails.order_number}</h3>
+          </div>
           
-          <div className="max-h-48 overflow-y-auto border-b pb-2">
-            {orderDetails.items.map((item: OrderItem, index: number) => <div key={index} className="flex justify-between items-center text-sm py-1">
-                <span className="font-medium">{item.quantity}x {item.name}</span>
-                <span className="text-gray-600">${(item.price_cents / 100).toFixed(2)}</span>
-              </div>)}
+          {/* Customer Name */}
+          <div className="text-center p-3 bg-blue-50 rounded-lg">
+            <p className="text-sm text-gray-600">Customer</p>
+            <p className="font-bold text-lg">{orderDetails.customer_name}</p>
           </div>
 
-          <div className="pt-2">
-            <p className="text-sm font-semibold">Customer: {orderDetails.customer_name}</p>
-            <p className="text-sm text-gray-500">Total: ${(orderDetails.subtotal_cents / 100).toFixed(2)}</p>
+          {/* Order Items */}
+          <div className="border rounded-lg p-3">
+            <h4 className="font-semibold mb-2">Order Items:</h4>
+            <div className="max-h-32 overflow-y-auto space-y-1">
+              {orderDetails.items.map((item: OrderItem, index: number) => (
+                <div key={index} className="flex justify-between items-center text-sm py-1 border-b last:border-b-0">
+                  <span className="font-medium">{item.quantity}x {item.name}</span>
+                  <span className="text-gray-600">${(item.price_cents / 100).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 pt-2 border-t font-semibold">
+              Total: ${(orderDetails.subtotal_cents / 100).toFixed(2)}
+            </div>
           </div>
 
-          <Button onClick={handleConfirm} className="w-full h-12 bg-amber-500 hover:bg-amber-600 text-white mt-4">
+          <Button onClick={handleConfirm} className="w-full h-12 bg-amber-500 hover:bg-amber-600 text-white">
             <CheckCircle className="h-5 w-5 mr-2" />
-            Confirm Pickup & Start Delivery
+            CONFIRM PICKUP & START DELIVERY
           </Button>
           <Button onClick={onCancel} variant="outline" className="w-full h-12">
             Cancel / Back
@@ -462,13 +518,15 @@ const OrderVerificationScreen = ({
 
 // --- TYPES ---
 
-type DeliveryStage = 'navigate_to_restaurant' | 'arrived_at_restaurant' | 'verify_pickup' | 'navigate_to_customer' | 'capture_proof' | 'delivered';
+type DeliveryStage = 'navigate_to_restaurant' | 'arrived_at_restaurant' | 'verify_pickup' | 'pickup_photo_verification' | 'navigate_to_customer' | 'capture_proof' | 'delivered';
+
 interface OrderItem {
   name: string;
   quantity: number;
   price_cents: number;
   special_instructions?: string;
 }
+
 interface OrderDetails {
   id: string;
   order_number: string;
@@ -485,19 +543,48 @@ interface OrderDetails {
   items: OrderItem[];
   isTestOrder?: boolean;
 }
+
 interface ActiveDeliveryProps {
   orderDetails: OrderDetails;
   onCompleteDelivery: (photoUrl?: string) => void;
+  onProgressChange?: (progress: DeliveryProgress) => void; // NEW: Progress callback
 }
+
+// NEW: Progress interface for external tracking
+interface DeliveryProgress {
+  currentStage: DeliveryStage;
+  stageNumber: number;
+  totalStages: number;
+  stageName: string;
+  isCompleted: boolean;
+  pickupPhotoUrl?: string;
+  deliveryPhotoUrl?: string;
+}
+
+// NEW: Helper function to get stage info
+const getStageInfo = (stage: DeliveryStage): { stageNumber: number; stageName: string } => {
+  const stageMap = {
+    'navigate_to_restaurant': { stageNumber: 1, stageName: 'Navigate to Restaurant' },
+    'arrived_at_restaurant': { stageNumber: 2, stageName: 'Arrived at Restaurant' },
+    'verify_pickup': { stageNumber: 3, stageName: 'Verify Order' },
+    'pickup_photo_verification': { stageNumber: 4, stageName: 'Pickup Photo' },
+    'navigate_to_customer': { stageNumber: 5, stageName: 'Navigate to Customer' },
+    'capture_proof': { stageNumber: 6, stageName: 'Delivery Photo' },
+    'delivered': { stageNumber: 7, stageName: 'Delivered' }
+  };
+  return stageMap[stage] || { stageNumber: 1, stageName: 'Unknown' };
+};
 
 // --- ACTIVE DELIVERY FLOW ---
 
 const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
   orderDetails,
-  onCompleteDelivery
+  onCompleteDelivery,
+  onProgressChange // NEW: Progress callback
 }) => {
   const [currentStage, setCurrentStage] = useState<DeliveryStage>('navigate_to_restaurant');
   const [deliveryPhoto, setDeliveryPhoto] = useState<string | null>(null);
+  const [pickupPhoto, setPickupPhoto] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [restaurantAddress, setRestaurantAddress] = useState<string>('');
   const {
@@ -506,6 +593,23 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
   const {
     openExternalNavigation
   } = useNavigation();
+
+  // NEW: Update progress whenever stage changes
+  useEffect(() => {
+    if (onProgressChange) {
+      const stageInfo = getStageInfo(currentStage);
+      const progress: DeliveryProgress = {
+        currentStage,
+        stageNumber: stageInfo.stageNumber,
+        totalStages: 7,
+        stageName: stageInfo.stageName,
+        isCompleted: currentStage === 'delivered',
+        pickupPhotoUrl: pickupPhoto || undefined,
+        deliveryPhotoUrl: deliveryPhoto || undefined
+      };
+      onProgressChange(progress);
+    }
+  }, [currentStage, pickupPhoto, deliveryPhoto, onProgressChange]);
 
   // Fetch restaurant address from Supabase
   useEffect(() => {
@@ -542,7 +646,16 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
     return 'Address not available';
   };
 
-  // Simplified handleStageComplete (removed test logic)
+  // Format customer name (First name + Last initial)
+  const formatCustomerName = (fullName: string) => {
+    const nameParts = fullName.split(' ');
+    if (nameParts.length >= 2) {
+      return `${nameParts[0]} ${nameParts[1].charAt(0)}.`;
+    }
+    return fullName;
+  };
+
+  // Enhanced handleStageComplete
   const handleStageComplete = () => {
     switch (currentStage) {
       case 'navigate_to_restaurant':
@@ -566,8 +679,34 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
     }
   };
 
-  // handlePhotoCapture: Upload to Supabase Storage
-  const handlePhotoCapture = async (photoBlob: Blob) => {
+  // Handle pickup photo capture
+  const handlePickupPhotoCapture = async (photoBlob: Blob) => {
+    setIsUploadingPhoto(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+      
+      const { data, error } = await uploadDeliveryPhoto(user.id, photoBlob);
+      if (error || !data) throw error;
+      
+      const publicUrl = data.publicUrl;
+      setPickupPhoto(publicUrl);
+      setCurrentStage('navigate_to_customer');
+      showToast.success("Pickup photo uploaded successfully!");
+      
+      toast({
+        title: 'Pickup Confirmed!',
+        description: 'Starting navigation to customer.'
+      });
+    } catch (error: any) {
+      console.error('Error uploading pickup photo:', error);
+      showToast.error('Failed to upload pickup photo');
+    }
+    setIsUploadingPhoto(false);
+  };
+
+  // Handle delivery photo capture
+  const handleDeliveryPhotoCapture = async (photoBlob: Blob) => {
     setIsUploadingPhoto(true);
     try {
       const {
@@ -584,29 +723,52 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
       const publicUrl = data.publicUrl;
       setDeliveryPhoto(publicUrl);
       setCurrentStage('delivered');
-      showToast.success("Photo uploaded successfully!");
+      showToast.success("Delivery photo uploaded successfully!");
 
       // Complete delivery after successful photo upload
       setTimeout(() => {
         onCompleteDelivery(publicUrl);
       }, 1500);
     } catch (error: any) {
-      console.error('Error uploading photo:', error);
+      console.error('Error uploading delivery photo:', error);
       showToast.error('Failed to upload delivery photo');
     }
     setIsUploadingPhoto(false);
   };
 
-  // Re-added the missing renderVerifyPickup for completeness
-  const renderVerifyPickup = () => <div className="p-4">
-      <OrderVerificationScreen orderDetails={orderDetails} onPickupConfirmed={() => {
-      setCurrentStage('navigate_to_customer');
-      toast({
-        title: 'Pickup Verified',
-        description: 'Starting navigation to customer.'
-      });
-    }} onCancel={() => setCurrentStage('arrived_at_restaurant')} />
-    </div>;
+  // Render verify pickup
+  const renderVerifyPickup = () => (
+    <div className="p-4">
+      <OrderVerificationScreen 
+        orderDetails={orderDetails} 
+        onPickupConfirmed={() => {
+          setCurrentStage('pickup_photo_verification');
+          toast({
+            title: 'Order Verified!',
+            description: 'Now take a photo to confirm pickup.'
+          });
+        }} 
+        onCancel={() => setCurrentStage('arrived_at_restaurant')} 
+      />
+    </div>
+  );
+
+  // Render pickup photo verification
+  const renderPickupPhotoVerification = () => (
+    <div className="p-4 space-y-4">
+      <div className="bg-orange-600 text-white p-4 rounded-2xl text-center">
+        <h2 className="text-xl font-bold">Pickup Photo Verification</h2>
+        <p className="opacity-90">Take a photo to confirm pickup</p>
+      </div>
+      
+      <DeliveryCamera 
+        title="Capture Pickup Verification"
+        onPhotoCapture={handlePickupPhotoCapture} 
+        onCancel={() => setCurrentStage('verify_pickup')} 
+        isUploading={isUploadingPhoto}
+      />
+    </div>
+  );
 
   // --- RENDER FUNCTION FOR THE UNIFIED PICKUP SCREEN (Colors changed to orange/red) ---
   const renderPickupScreen = () => {
@@ -713,8 +875,9 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         </div>;
   };
 
-  // renderNavigateToCustomer (Colors changed from green to amber)
-  const renderNavigateToCustomer = () => <div className="p-4 space-y-4">
+  // Enhanced renderNavigateToCustomer
+  const renderNavigateToCustomer = () => (
+    <div className="p-4 space-y-4">
       {/* Stage Header (Amber) */}
       <Card className="bg-amber-50 border-amber-200 text-center">
         <CardContent className="p-4">
@@ -730,63 +893,68 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
             <MapPin className="h-6 w-6 text-amber-600 mt-1 flex-shrink-0" />
             <div className="flex-1">
               <h3 className="font-bold text-lg text-amber-700">
-                {orderDetails.customer_name}
+                {formatCustomerName(orderDetails.customer_name)}
               </h3>
               <p className="text-gray-600">{formatAddress(orderDetails.dropoff_address)}</p>
-              {orderDetails.customer_phone && <p className="text-sm text-amber-600 font-medium mt-1">
+              {orderDetails.customer_phone && (
+                <p className="text-sm text-amber-600 font-medium mt-1">
                   📞 {orderDetails.customer_phone}
-                </p>}
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Delivery Notes */}
-          {orderDetails.delivery_notes && <div className="bg-yellow-50 p-3 rounded-lg mt-4 mb-4">
+          {/* Special Delivery Notes */}
+          {orderDetails.delivery_notes && (
+            <div className="bg-yellow-50 p-3 rounded-lg mt-4 mb-4 border border-yellow-200">
               <p className="text-sm">
-                <span className="font-semibold text-yellow-800">Delivery Notes:</span> {orderDetails.delivery_notes}
+                <span className="font-semibold text-yellow-800">Special Notes:</span> {orderDetails.delivery_notes}
               </p>
-            </div>}
+            </div>
+          )}
           
-          <div className="flex gap-2 mt-4">
-            <Button className="flex-1 bg-amber-600 hover:bg-amber-700" // Amber for Nav button
-          size="lg" onClick={() => {
-            const customerAddress = formatAddress(orderDetails.dropoff_address);
-            if (customerAddress && customerAddress !== 'Address not available') {
-              openExternalNavigation({
-                address: customerAddress,
-                name: orderDetails.customer_name
-              });
-            }
-            handleStageComplete();
-          }}>
-              <Navigation className="h-5 w-5 mr-2" />
-              Start Navigation
-            </Button>
-            
-            {orderDetails.customer_phone && <Button variant="outline" size="lg" onClick={() => {
-            toast({
-              title: "Action Mocked",
-              description: "Phone/Chat feature invoked."
-            });
-          }}>
-                <MessageCircle className="h-5 w-5" />
-              </Button>}
-          </div>
+          <Button 
+            className="w-full bg-amber-600 hover:bg-amber-700 mb-3" 
+            size="lg" 
+            onClick={() => {
+              const customerAddress = formatAddress(orderDetails.dropoff_address);
+              if (customerAddress && customerAddress !== 'Address not available') {
+                openExternalNavigation({
+                  address: customerAddress,
+                  name: formatCustomerName(orderDetails.customer_name)
+                });
+              }
+            }}
+          >
+            <Navigation className="h-5 w-5 mr-2" />
+            START NAVIGATION
+          </Button>
+
+          {/* I AM HERE Button */}
+          <Button 
+            onClick={handleStageComplete} 
+            variant="outline" 
+            className="w-full h-12 border-2 border-green-500 text-green-600 hover:bg-green-50"
+          >
+            <MapPin className="h-5 w-5 mr-2" />
+            I AM HERE
+          </Button>
         </CardContent>
       </Card>
+    </div>
+  );
 
-      {/* Manual Arrival Button (Amber) */}
-      <Button onClick={handleStageComplete} variant="outline" className="w-full h-12 border-2 border-amber-500 text-amber-600 hover:bg-amber-50">
-        I've Arrived at Customer
-      </Button>
-      
-    </div>;
-
-  // renderCaptureProof (No change, uses the updated DeliveryCamera)
-  const renderCaptureProof = () => <div className="p-4 space-y-4">
-      <DeliveryCamera onPhotoCapture={handlePhotoCapture} onCancel={() => setCurrentStage('navigate_to_customer')} isUploading={isUploadingPhoto} />
-
-      {/* No Test Mode Skip Option */}
-    </div>;
+  // renderCaptureProof (Enhanced with delivery-specific camera)
+  const renderCaptureProof = () => (
+    <div className="p-4 space-y-4">
+      <DeliveryCamera 
+        title="Capture Proof of Delivery"
+        onPhotoCapture={handleDeliveryPhotoCapture} 
+        onCancel={() => setCurrentStage('navigate_to_customer')} 
+        isUploading={isUploadingPhoto}
+      />
+    </div>
+  );
 
   // renderDeliveredOrder (Colors changed from green to amber/red)
   const renderDeliveredOrder = () => <div className="p-4 space-y-4">
@@ -811,23 +979,23 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
 
           {deliveryPhoto && <div className="bg-amber-50 p-4 rounded-lg border border-amber-200 text-center">
               <CheckCircle className="h-6 w-6 mx-auto mb-2 text-amber-600" />
-              <p className="text-sm text-amber-700">Proof of delivery uploaded (Mock URL)</p>
+              <p className="text-sm text-amber-700">Proof of delivery uploaded</p>
             </div>}
 
           {/* Earnings Display (Amber) */}
           <div className="bg-amber-50 p-4 rounded-lg border border-amber-200 text-center">
             <p className="text-sm text-amber-700 mb-1">You've Earned</p>
             <p className="text-2xl font-bold text-amber-600">
-              {(orderDetails.payout_cents / 100).toFixed(2)}
+              ${(orderDetails.payout_cents / 100).toFixed(2)}
             </p>
           </div>
-          <Button onClick={() => onCompleteDelivery(deliveryPhoto || undefined)} className="w-full bg-red-600 hover:bg-red-700" // Red for the final button
-        >
+          <Button onClick={() => onCompleteDelivery(deliveryPhoto || undefined)} className="w-full bg-red-600 hover:bg-red-700">
             Complete and Finish Order
           </Button>
         </CardContent>
       </Card>
     </div>;
+
   const getCurrentStageComponent = () => {
     switch (currentStage) {
       case 'navigate_to_restaurant':
@@ -835,6 +1003,8 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         return renderPickupScreen();
       case 'verify_pickup':
         return renderVerifyPickup();
+      case 'pickup_photo_verification':
+        return renderPickupPhotoVerification();
       case 'navigate_to_customer':
         return renderNavigateToCustomer();
       case 'capture_proof':
@@ -845,15 +1015,28 @@ const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
         return renderPickupScreen();
     }
   };
+
   return <div className="absolute inset-0 z-10 bg-gray-50 flex flex-col">
-        
         {/* New Fixed Header (Orange) */}
-        <AppHeader title={currentStage.includes('restaurant') || currentStage.includes('pickup') ? 'Head to Restaurant' : currentStage.includes('customer') ? 'Delivery' : 'Complete'} onBack={() => console.log("Back/Cancel flow")} showHelp={currentStage !== 'delivered'} />
+        <AppHeader 
+          title={
+            currentStage.includes('restaurant') || currentStage.includes('pickup') 
+              ? 'Head to Restaurant' 
+              : currentStage.includes('customer') 
+                ? 'Delivery' 
+                : 'Complete'
+          } 
+          onBack={() => console.log("Back/Cancel flow")} 
+          showHelp={currentStage !== 'delivered'} 
+        />
         
         {/* Main Content Area: Fills the space below the fixed header */}
         <div className="flex-1 overflow-y-auto">
             {getCurrentStageComponent()}
         </div>
-        
     </div>;
-};export default ActiveDeliveryFlow;
+};
+
+// Export the types for external use
+export type { DeliveryStage, DeliveryProgress };
+export default ActiveDeliveryFlow;
