@@ -1,18 +1,14 @@
+import React, { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from 'react-router-dom';
+import { 
+  Star, Clock, Truck, Plus, Minus, ShoppingCart, TrendingUp, Award, X, 
+  ChevronLeft, Utensils, Zap, Heart, Share2, MapPin, Phone, Camera,
+  Navigation, MessageCircle, CheckCircle, Filter, Search, ChefHat, Leaf
+} from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
+import { toast as showToast } from 'sonner';
 
-// @ts-nocheck
-import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
-import { Star, Clock, Truck, Plus, Minus, ShoppingCart, TrendingUp, Award } from "lucide-react";
-import Header from "@/components/Header";
-import { MenuItemModal } from "@/components/restaurant/MenuItemModal";
-import { CartSidebar } from "@/components/restaurant/CartSidebar";
-
+// Enhanced Types
 interface Restaurant {
   id: string;
   name: string;
@@ -30,6 +26,8 @@ interface Restaurant {
   image_url: string;
   latitude?: number;
   longitude?: number;
+  chef_name?: string;
+  established_year?: string;
 }
 
 interface MenuCategory {
@@ -37,6 +35,7 @@ interface MenuCategory {
   name: string;
   description: string;
   display_order: number;
+  icon?: string;
 }
 
 interface MenuItem {
@@ -53,40 +52,248 @@ interface MenuItem {
   preparation_time: number;
   is_featured?: boolean;
   order_count?: number;
-}
-
-interface Modifier {
-  id: string;
-  name: string;
-  description: string | null;
-  price_cents: number;
-  modifier_type: string;
-  is_required: boolean;
-}
-
-interface SelectedModifier extends Modifier {
-  selected: boolean;
+  spice_level?: number;
+  calories?: number;
+  chef_recommended?: boolean;
 }
 
 interface CartItem extends MenuItem {
+  key: string;
   quantity: number;
   special_instructions?: string;
-  modifiers?: SelectedModifier[];
+  modifiers?: any[];
 }
+
+// Premium Button Component
+const PremiumButton = ({ 
+  children, 
+  onClick, 
+  variant = 'primary', 
+  size = 'md', 
+  disabled = false,
+  className = '',
+  icon = null,
+  style = {}
+}: {
+  children: any;
+  onClick: any;
+  variant?: string;
+  size?: string;
+  disabled?: boolean;
+  className?: string;
+  icon?: any;
+  style?: React.CSSProperties;
+}) => {
+  const baseStyles = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: '600',
+    borderRadius: '20px',
+    border: 'none',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+    position: 'relative',
+    overflow: 'hidden',
+    touchAction: 'manipulation'
+  };
+
+  const variants = {
+    primary: {
+      background: 'linear-gradient(135deg, #ff6b35 0%, #f97316 100%)',
+      color: 'white',
+      boxShadow: '0 8px 32px rgba(255, 107, 53, 0.3)'
+    },
+    secondary: {
+      background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,248,240,0.9) 100%)',
+      color: '#d2691e',
+      border: '2px solid rgba(255, 183, 0, 0.3)',
+      backdropFilter: 'blur(10px)'
+    },
+    ghost: {
+      background: 'transparent',
+      color: '#ff6b35',
+      boxShadow: 'none'
+    },
+    danger: {
+      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+      color: 'white'
+    }
+  };
+
+  const sizes = {
+    sm: {
+      fontSize: '0.95rem',
+      padding: '0.5rem 1.2rem',
+      minHeight: '40px',
+      minWidth: '40px'
+    },
+    md: {
+      fontSize: '1.1rem',
+      padding: '0.75rem 1.8rem',
+      minHeight: '48px',
+      minWidth: '48px'
+    },
+    lg: {
+      fontSize: '1.3rem',
+      padding: '1rem 2.5rem',
+      minHeight: '56px',
+      minWidth: '56px'
+    }
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        ...baseStyles,
+        ...variants[variant],
+        ...sizes[size],
+        opacity: disabled ? 0.6 : 1,
+        ...style
+      }}
+      className={className}
+      onMouseEnter={(e) => {
+        if (!disabled) {
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          if (variant === 'primary') {
+            e.currentTarget.style.boxShadow = '0 12px 40px rgba(255, 107, 53, 0.4)';
+          }
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!disabled) {
+          e.currentTarget.style.transform = 'translateY(0)';
+          if (variant === 'primary') {
+            e.currentTarget.style.boxShadow = '0 8px 32px rgba(255, 107, 53, 0.3)';
+          }
+        }
+      }}
+    >
+      {icon && <span style={{ marginRight: '0.5rem' }}>{icon}</span>}
+      {children}
+    </button>
+  );
+};
+
+// Premium Card Component
+const PremiumCard = ({
+  children,
+  className = '',
+  hoverable = true,
+  gradient = false,
+  style = {}
+}: {
+  children: any;
+  className?: string;
+  hoverable?: boolean;
+  gradient?: boolean;
+  style?: React.CSSProperties;
+}) => {
+  const baseStyles = {
+    background: gradient 
+      ? 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,248,240,0.9) 100%)'
+      : 'rgba(255, 255, 255, 0.95)',
+    backdropFilter: 'blur(20px)',
+    borderRadius: '25px',
+    border: '2px solid rgba(255, 183, 0, 0.2)',
+    boxShadow: '0 20px 60px rgba(255, 107, 53, 0.1)',
+    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+    overflow: 'hidden'
+  };
+
+  return (
+    <div
+      style={{ ...baseStyles, ...style }}
+      className={className}
+      onMouseEnter={(e) => {
+        if (hoverable) {
+          e.currentTarget.style.transform = 'translateY(-8px)';
+          e.currentTarget.style.boxShadow = '0 30px 80px rgba(255, 107, 53, 0.2)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (hoverable) {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 20px 60px rgba(255, 107, 53, 0.1)';
+        }
+      }}
+    >
+      {children}
+    </div>
+  );
+};
+
+// Premium Badge Component
+const PremiumBadge = ({ children, variant = 'default', icon = null }) => {
+  const variants = {
+    default: {
+      background: 'linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 183, 0, 0.1) 100%)',
+      color: '#ff6b35',
+      border: '1px solid rgba(255, 107, 53, 0.2)'
+    },
+    success: {
+      background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(22, 163, 74, 0.1) 100%)',
+      color: '#16a34a',
+      border: '1px solid rgba(34, 197, 94, 0.2)'
+    },
+    featured: {
+      background: 'linear-gradient(135deg, #ff6b35 0%, #f97316 100%)',
+      color: 'white',
+      border: 'none'
+    },
+    popular: {
+      background: 'linear-gradient(135deg, #e85a4f 0%, #dc2626 100%)',
+      color: 'white',
+      border: 'none'
+    }
+  };
+
+  return (
+    <span
+      style={{
+        ...variants[variant],
+        padding: '0.5rem 1rem',
+        borderRadius: '15px',
+        fontSize: '0.75rem',
+        fontWeight: '700',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.25rem',
+        boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)'
+      }}
+    >
+      {icon}
+      {children}
+    </span>
+  );
+};
 
 const RestaurantDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [featuredItems, setFeaturedItems] = useState<MenuItem[]>([]);
-  const [popularItems, setPopularItems] = useState<MenuItem[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [showCart, setShowCart] = useState(false);
   const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  // Enhanced Restaurant Images
+  const restaurantImages = [
+    restaurant?.image_url || '/placeholder-restaurant.jpg',
+    '/restaurant-interior.jpg',
+    '/restaurant-kitchen.jpg',
+    '/restaurant-signature-dish.jpg'
+  ];
 
   useEffect(() => {
     if (id) {
@@ -96,124 +303,72 @@ const RestaurantDetail = () => {
 
   const fetchRestaurantData = async () => {
     try {
-      // Fetch restaurant details
+      setLoading(true);
+      
+      // Fetch restaurant data
       const { data: restaurantData, error: restaurantError } = await supabase
-        .from("restaurants")
-        .select("*")
-        .eq("id", id!)
-        .eq("is_active", true)
+        .from('restaurants')
+        .select('*')
+        .eq('id', id)
         .single();
 
       if (restaurantError) throw restaurantError;
       setRestaurant(restaurantData);
 
-      // Fetch menu categories
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from("menu_categories")
-        .select("*")
-        .eq("restaurant_id", id!)
-        .eq("is_active", true)
-        .order("display_order");
+      // Fetch categories and menu items
+      const { data: categoriesData } = await supabase
+        .from('menu_categories')
+        .select('*')
+        .eq('restaurant_id', id)
+        .order('display_order');
 
-      if (categoriesError) throw categoriesError;
+      const { data: menuData } = await supabase
+        .from('menu_items')
+        .select('*')
+        .eq('restaurant_id', id)
+        .eq('is_available', true);
+
       setCategories(categoriesData || []);
-
-      // Fetch menu items
-      const { data: itemsData, error: itemsError } = await supabase
-        .from("menu_items")
-        .select("*")
-        .eq("restaurant_id", id!)
-        .eq("is_available", true)
-        .order("display_order");
-
-      if (itemsError) throw itemsError;
-      setMenuItems(itemsData || []);
-
-      // Fetch featured items
-      const { data: featuredData, error: featuredError } = await supabase
-        .from("menu_items")
-        .select("*")
-        .eq("restaurant_id", id!)
-        .eq("is_available", true)
-        .eq("is_featured", true)
-        .limit(6);
-
-      if (featuredError) throw featuredError;
-      setFeaturedItems(featuredData || []);
-
-      // Fetch popular items (top ordered items)
-      const { data: popularData, error: popularError } = await supabase
-        .from("menu_items")
-        .select("*")
-        .eq("restaurant_id", id!)
-        .eq("is_available", true)
-        .gt("order_count", 0)
-        .order("order_count", { ascending: false })
-        .limit(6);
-
-      if (popularError) throw popularError;
-      setPopularItems(popularData || []);
-
-    } catch (error) {
-      console.error("Error fetching restaurant data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load restaurant information",
-        variant: "destructive",
-      });
+      setMenuItems(
+        (menuData || []).map((item: any) => ({
+          ...item,
+          spice_level: item.spice_level !== undefined && item.spice_level !== null
+            ? Number(item.spice_level)
+            : undefined
+        }))
+      );
+      
+      if (categoriesData?.length > 0) {
+        setSelectedCategory(categoriesData[0].id);
+      }
+    } catch (error: any) {
+      console.error('Error fetching restaurant data:', error);
+      showToast.error("Failed to load restaurant details");
     } finally {
       setLoading(false);
     }
   };
 
-  const addToCart = (item: MenuItem, quantity: number = 1, modifiers: SelectedModifier[] = [], specialInstructions?: string) => {
-    const modifiersKey = modifiers.map(m => m.id).sort().join(',');
-    const existingItem = cart.find(cartItem => 
-      cartItem.id === item.id && 
-      (cartItem.modifiers?.map(m => m.id).sort().join(',') || '') === modifiersKey
-    );
-    
+  const addToCart = useCallback((item: MenuItem, quantity: number = 1) => {
+    const existingItem = cart.find(cartItem => cartItem.id === item.id);
     if (existingItem) {
-      setCart(cart.map(cartItem => 
-        cartItem.id === item.id && 
-        (cartItem.modifiers?.map(m => m.id).sort().join(',') || '') === modifiersKey
-          ? { ...cartItem, quantity: cartItem.quantity + quantity, special_instructions: specialInstructions }
+      setCart(cart.map(cartItem =>
+        cartItem.id === item.id
+          ? { ...cartItem, quantity: cartItem.quantity + quantity }
           : cartItem
       ));
     } else {
-      const newCartItem: CartItem = {
-        ...item,
-        quantity,
-        special_instructions: specialInstructions,
-        modifiers: modifiers.filter(m => m.selected)
-      };
-      setCart([...cart, newCartItem]);
+      setCart([...cart, { ...item, quantity, key: item.id }]);
     }
-
-    toast({
-      title: "Added to cart",
-      description: `${item.name} has been added to your cart`,
-    });
-  };
-
-  const updateCartItemQuantity = (itemId: string, quantity: number) => {
-    if (quantity <= 0) {
-      setCart(cart.filter(item => item.id !== itemId));
-    } else {
-      setCart(cart.map(item => 
-        item.id === itemId ? { ...item, quantity } : item
-      ));
-    }
-  };
+    
+    showToast.success(`${item.name} added to cart!`);
+  }, [cart]);
 
   const getCartTotal = () => {
-    const subtotal = cart.reduce((total, item) => {
-      const itemTotal = item.price_cents * item.quantity;
-      const modifiersTotal = (item.modifiers || []).reduce((modSum, mod) => modSum + (mod.price_cents * item.quantity), 0);
-      return total + itemTotal + modifiersTotal;
-    }, 0);
+    const subtotal = cart.reduce((total, item) => total + (item.price_cents * item.quantity), 0);
     const deliveryFee = deliveryMethod === 'delivery' ? (restaurant?.delivery_fee_cents || 0) : 0;
-    const tax = Math.round(subtotal * 0.08); // 8% tax
+    const tax = Math.round(subtotal * 0.08);
+    
     return {
       subtotal,
       deliveryFee,
@@ -226,343 +381,651 @@ const RestaurantDetail = () => {
     return menuItems.filter(item => item.category_id === categoryId);
   };
 
-  const scrollToCategory = (categoryId: string) => {
-    const element = document.getElementById(`category-${categoryId}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
+  const filteredItems = menuItems.filter(item =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">Loading restaurant...</div>
-        </div>
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <PremiumCard hoverable={false} style={{ padding: '3rem', textAlign: 'center' }}>
+          <div style={{
+            width: '60px',
+            height: '60px',
+            border: '4px solid #ff6b35',
+            borderTop: '4px solid transparent',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1rem'
+          }} />
+          <h3 style={{ color: '#ff6b35', fontSize: '1.5rem', fontWeight: '700' }}>
+            Loading Restaurant...
+          </h3>
+        </PremiumCard>
       </div>
     );
   }
 
   if (!restaurant) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">Restaurant Not Found</h1>
-            <p className="text-muted-foreground">The restaurant you're looking for doesn't exist or is not available.</p>
-          </div>
-        </div>
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <PremiumCard hoverable={false} style={{ padding: '3rem', textAlign: 'center', maxWidth: '400px' }}>
+          <h2 style={{ color: '#ff6b35', fontSize: '2rem', marginBottom: '1rem' }}>
+            Restaurant Not Found
+          </h2>
+          <PremiumButton onClick={() => navigate('/restaurants')}>
+            Browse Restaurants
+          </PremiumButton>
+        </PremiumCard>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      {/* Restaurant Header */}
-      <div className="relative h-48 md:h-64 lg:h-80">
-        {restaurant.image_url ? (
-          <img 
-            src={restaurant.image_url} 
-            alt={restaurant.name}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full bg-muted flex items-center justify-center">
-            <span className="text-muted-foreground text-lg">No image available</span>
+    <div style={{ 
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #fff8f0 0%, #ffeee6 100%)'
+    }}>
+      {/* Immersive Hero Section */}
+      <section style={{ position: 'relative', height: '70vh', overflow: 'hidden' }}>
+        {/* Dynamic Background */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: `linear-gradient(rgba(0,0,0,0.3), rgba(255,107,53,0.4)), url(${restaurantImages[activeImageIndex]})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          transition: 'all 0.8s ease'
+        }} />
+        
+        {/* Floating Navigation */}
+        <div style={{
+          position: 'absolute',
+          top: '2rem',
+          left: '2rem',
+          right: '2rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          zIndex: 10
+        }}>
+          <PremiumButton
+            variant="secondary"
+            size="sm"
+            onClick={() => navigate(-1)}
+            icon={<ChevronLeft style={{ width: '20px', height: '20px' }} />}
+            style={{ borderRadius: '50%', width: '50px', height: '50px', padding: 0 }} children={undefined}          />
+          
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <PremiumButton
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsFavorited(!isFavorited)}
+              icon={<Heart style={{
+                width: '20px',
+                height: '20px',
+                fill: isFavorited ? '#ff6b35' : 'transparent',
+                color: isFavorited ? '#ff6b35' : '#666'
+              }} />}
+              style={{ borderRadius: '50%', width: '50px', height: '50px', padding: 0 }} children={undefined}            />
+            <PremiumButton
+              variant="secondary"
+              size="sm"
+              icon={<Share2 style={{ width: '20px', height: '20px' }} />}
+              style={{ borderRadius: '50%', width: '50px', height: '50px', padding: 0 }} children={undefined} onClick={undefined}            />
           </div>
-        )}
-        <div className="absolute inset-0 bg-black/30" />
+        </div>
+
+        {/* Image Navigation Dots */}
+        <div style={{
+          position: 'absolute',
+          bottom: '2rem',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          gap: '0.5rem',
+          zIndex: 10
+        }}>
+          {restaurantImages.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setActiveImageIndex(index)}
+              style={{
+                width: activeImageIndex === index ? '40px' : '12px',
+                height: '12px',
+                borderRadius: '6px',
+                border: 'none',
+                background: activeImageIndex === index 
+                  ? 'rgba(255, 255, 255, 0.9)' 
+                  : 'rgba(255, 255, 255, 0.5)',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Restaurant Info Overlay */}
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: 'linear-gradient(transparent, rgba(0,0,0,0.8))',
+          padding: '4rem 2rem 2rem',
+          color: 'white'
+        }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+              <h1 style={{
+                fontSize: 'clamp(2rem, 4vw, 4rem)',
+                fontWeight: '800',
+                margin: 0,
+                textShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
+              }}>
+                {restaurant.name}
+              </h1>
+              {restaurant.chef_name && (
+                <PremiumBadge variant="featured" icon={<ChefHat style={{ width: '14px', height: '14px' }} />}>
+                  Chef {restaurant.chef_name}
+                </PremiumBadge>
+              )}
+            </div>
+            
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '2rem',
+              alignItems: 'center',
+              marginBottom: '1rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Star style={{ width: '24px', height: '24px', fill: '#ffb700', color: '#ffb700' }} />
+                <span style={{ fontSize: '1.5rem', fontWeight: '700' }}>{restaurant.rating}</span>
+                <span style={{ opacity: 0.8 }}>({restaurant.total_reviews}+ reviews)</span>
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Clock style={{ width: '20px', height: '20px' }} />
+                <span>{restaurant.min_delivery_time}-{restaurant.max_delivery_time} min</span>
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Truck style={{ width: '20px', height: '20px' }} />
+                <span>${(restaurant.delivery_fee_cents / 100).toFixed(2)} delivery</span>
+              </div>
+              
+              <PremiumBadge variant="success">
+                Open Now
+              </PremiumBadge>
+            </div>
+            
+            <p style={{
+              fontSize: '1.1rem',
+              opacity: 0.9,
+              maxWidth: '600px',
+              lineHeight: 1.6
+            }}>
+              {restaurant.description}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Floating Delivery Method Selector */}
+      <div style={{
+        position: 'sticky',
+        top: '1rem',
+        zIndex: 50,
+        margin: '2rem',
+        display: 'flex',
+        justifyContent: 'center'
+      }}>
+        <PremiumCard hoverable={false} style={{ padding: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {['delivery', 'pickup'].map((method) => (
+              <PremiumButton
+                key={method}
+                variant={deliveryMethod === method ? 'primary' : 'ghost'}
+                onClick={() => setDeliveryMethod(method as 'delivery' | 'pickup')}
+                icon={method === 'delivery' ? <Truck style={{ width: '18px', height: '18px' }} /> : <MapPin style={{ width: '18px', height: '18px' }} />}
+                style={{ textTransform: 'capitalize' }}
+              >
+                {method}
+              </PremiumButton>
+            ))}
+          </div>
+        </PremiumCard>
       </div>
 
-      {/* Restaurant Info Section */}
-      <div className="container mx-auto px-4 py-4 md:py-6">
-        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">{restaurant.name}</h1>
-        <p className="text-base md:text-lg mb-4 text-muted-foreground">{restaurant.description}</p>
-        <div className="flex flex-wrap items-center gap-3 md:gap-4 text-sm">
-          <div className="flex items-center gap-1">
-            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            <span>{restaurant.rating.toFixed(1)} ({restaurant.total_reviews} reviews)</span>
+      {/* Enhanced Search & Filter */}
+      <div style={{
+        padding: '0 2rem',
+        maxWidth: '1200px',
+        margin: '0 auto 2rem'
+      }}>
+        <PremiumCard hoverable={false} style={{ padding: '1.5rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <Search style={{
+                position: 'absolute',
+                left: '1rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: '20px',
+                height: '20px',
+                color: '#d2691e'
+              }} />
+              <input
+                type="text"
+                placeholder="Search menu items..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '1rem 1rem 1rem 3rem',
+                  border: '2px solid rgba(255, 183, 0, 0.3)',
+                  borderRadius: '20px',
+                  fontSize: '1rem',
+                  background: 'rgba(255, 255, 255, 0.8)',
+                  color: '#8b4513'
+                }}
+              />
+            </div>
+            
+            <PremiumButton
+                variant="secondary"
+                icon={<Filter style={{ width: '16px', height: '16px' }} />}
+                onClick={() => { /* TODO: Implement filter logic */ }}
+              >
+              Filters
+            </PremiumButton>
+            
+            <PremiumButton
+              variant={cart.length > 0 ? 'primary' : 'secondary'}
+              onClick={() => setShowCart(true)}
+              icon={<ShoppingCart style={{ width: '18px', height: '18px' }} />}
+            >
+              Cart
+              {cart.length > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-8px',
+                  right: '-8px',
+                  background: '#e85a4f',
+                  color: 'white',
+                  borderRadius: '50%',
+                  width: '24px',
+                  height: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.8rem',
+                  fontWeight: '700'
+                }}>
+                  {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                </span>
+              )}
+            </PremiumButton>
           </div>
-          <div className="flex items-center gap-1">
-            <Clock className="h-4 w-4" />
-            <span>{restaurant.min_delivery_time}-{restaurant.max_delivery_time} min</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Truck className="h-4 w-4" />
-            <span>${(restaurant.delivery_fee_cents / 100).toFixed(2)} delivery</span>
-          </div>
+        </PremiumCard>
+      </div>
+
+      {/* Menu Categories */}
+      <div style={{
+        padding: '0 2rem',
+        maxWidth: '1200px',
+        margin: '0 auto 3rem'
+      }}>
+        <div style={{
+          display: 'flex',
+          gap: '1rem',
+          overflowX: 'auto',
+          paddingBottom: '1rem'
+        }}>
+          {categories.map((category) => (
+            <PremiumButton
+              key={category.id}
+              variant={selectedCategory === category.id ? 'primary' : 'secondary'}
+              onClick={() => setSelectedCategory(category.id)}
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              {category.icon && <span style={{ marginRight: '0.5rem' }}>{category.icon}</span>}
+              {category.name}
+            </PremiumButton>
+          ))}
         </div>
       </div>
 
-      <div className="container mx-auto px-4 pb-4 md:pb-6 flex gap-4 md:gap-6 overflow-x-hidden">
-        {/* Menu Content */}
-        <div className="flex-1 min-w-0">
-          {/* Category Navigation */}
-          <Card className="mb-4 md:mb-6 sticky top-4 z-10">
-            <CardContent className="p-3 md:p-4">
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-                {categories.map((category) => (
-                  <Button
-                    key={category.id}
-                    variant="ghost"
-                    size="sm"
-                    className="whitespace-nowrap flex-shrink-0 text-sm md:text-base h-9 md:h-10 px-3 md:px-4 touch-manipulation"
-                    onClick={() => scrollToCategory(category.id)}
-                  >
-                    {category.name}
-                  </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Featured Items Section */}
-          {featuredItems.length > 0 && (
-            <div className="mb-8">
-              <div className="flex items-center gap-2 mb-4">
-                <Award className="h-5 w-5 text-primary" />
-                <h2 className="text-2xl font-bold">Featured Items</h2>
-              </div>
-              <div className="grid grid-cols-1 gap-4">
-                {featuredItems.map((item) => (
-                  <Card key={`featured-${item.id}`} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer touch-manipulation">
-                    <CardContent className="p-0" onClick={() => setSelectedItem(item)}>
-                      <div className="flex min-w-0">
-                        <div className="flex-1 p-3 md:p-4 min-w-0">
-                          <div className="flex items-start justify-between min-w-0">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                <h3 className="font-semibold text-base md:text-lg break-words">{item.name}</h3>
-                                <Badge variant="secondary" className="text-xs bg-primary/20 text-primary">Featured</Badge>
-                                <div className="flex gap-1 flex-wrap">
-                                  {item.is_vegetarian && <Badge variant="secondary" className="text-xs">Vegetarian</Badge>}
-                                  {item.is_vegan && <Badge variant="secondary" className="text-xs">Vegan</Badge>}
-                                  {item.is_gluten_free && <Badge variant="secondary" className="text-xs">Gluten Free</Badge>}
-                                </div>
-                              </div>
-                              <p className="text-muted-foreground text-sm mb-3 line-clamp-2 break-words">
-                                {item.description}
-                              </p>
-                              <div className="flex items-center justify-between flex-wrap gap-2">
-                                <span className="text-lg font-bold">
-                                  ${(item.price_cents / 100).toFixed(2)}
-                                </span>
-                                <Button
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedItem(item);
-                                  }}
-                                  className="ml-4 flex-shrink-0 h-9 px-3 touch-manipulation"
-                                >
-                                  <Plus className="h-4 w-4 mr-1" />
-                                  Add
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        {item.image_url && (
-                          <div className="w-20 h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 flex-shrink-0">
-                            <img 
-                              src={item.image_url} 
-                              alt={item.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-              <Separator className="mt-8" />
+      {/* Menu Items */}
+      <div style={{
+        padding: '0 2rem',
+        maxWidth: '1200px',
+        margin: '0 auto 4rem'
+      }}>
+        {searchQuery ? (
+          <div>
+            <h2 style={{
+              fontSize: '2rem',
+              fontWeight: '800',
+              marginBottom: '2rem',
+              background: 'linear-gradient(135deg, #ff6b35 0%, #f97316 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
+            }}>
+              Search Results ({filteredItems.length})
+            </h2>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+              gap: '2rem'
+            }}>
+              {filteredItems.map((item) => (
+                <MenuItemCard key={item.id} item={item} onAddToCart={addToCart} />
+              ))}
             </div>
-          )}
-
-          {/* Popular Items Section */}
-          {popularItems.length > 0 && (
-            <div className="mb-8">
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                <h2 className="text-2xl font-bold">Most Popular</h2>
-              </div>
-              <div className="grid grid-cols-1 gap-4">
-                {popularItems.map((item) => (
-                  <Card key={`popular-${item.id}`} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer touch-manipulation">
-                    <CardContent className="p-0" onClick={() => setSelectedItem(item)}>
-                      <div className="flex min-w-0">
-                        <div className="flex-1 p-3 md:p-4 min-w-0">
-                          <div className="flex items-start justify-between min-w-0">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                <h3 className="font-semibold text-base md:text-lg break-words">{item.name}</h3>
-                                <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700">
-                                  {item.order_count} orders
-                                </Badge>
-                                <div className="flex gap-1 flex-wrap">
-                                  {item.is_vegetarian && <Badge variant="secondary" className="text-xs">Vegetarian</Badge>}
-                                  {item.is_vegan && <Badge variant="secondary" className="text-xs">Vegan</Badge>}
-                                  {item.is_gluten_free && <Badge variant="secondary" className="text-xs">Gluten Free</Badge>}
-                                </div>
-                              </div>
-                              <p className="text-muted-foreground text-sm mb-3 line-clamp-2 break-words">
-                                {item.description}
-                              </p>
-                              <div className="flex items-center justify-between flex-wrap gap-2">
-                                <span className="text-lg font-bold">
-                                  ${(item.price_cents / 100).toFixed(2)}
-                                </span>
-                                <Button
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedItem(item);
-                                  }}
-                                  className="ml-4 flex-shrink-0 h-9 px-3 touch-manipulation"
-                                >
-                                  <Plus className="h-4 w-4 mr-1" />
-                                  Add
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        {item.image_url && (
-                          <div className="w-20 h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 flex-shrink-0">
-                            <img 
-                              src={item.image_url} 
-                              alt={item.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-              <Separator className="mt-8" />
-            </div>
-          )}
-
-          {/* Menu Categories and Items */}
-          {categories.map((category) => {
+          </div>
+        ) : (
+          categories.map((category) => {
             const categoryItems = getItemsByCategory(category.id);
             if (categoryItems.length === 0) return null;
 
             return (
-              <div key={category.id} id={`category-${category.id}`} className="mb-8">
-                <div className="mb-4">
-                  <h2 className="text-2xl font-bold">{category.name}</h2>
-                  {category.description && (
-                    <p className="text-muted-foreground mt-1">{category.description}</p>
-                  )}
+              <div key={category.id} style={{ marginBottom: '4rem' }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  marginBottom: '2rem'
+                }}>
+                  <h2 style={{
+                    fontSize: '2.5rem',
+                    fontWeight: '800',
+                    background: 'linear-gradient(135deg, #ff6b35 0%, #f97316 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent'
+                  }}>
+                    {category.icon} {category.name}
+                  </h2>
+                  <PremiumBadge>
+                    {categoryItems.length} items
+                  </PremiumBadge>
                 </div>
-
-                <div className="space-y-4">
+                
+                {category.description && (
+                  <p style={{
+                    fontSize: '1.1rem',
+                    color: '#d2691e',
+                    marginBottom: '2rem',
+                    fontWeight: '500'
+                  }}>
+                    {category.description}
+                  </p>
+                )}
+                
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+                  gap: '2rem'
+                }}>
                   {categoryItems.map((item) => (
-                    <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
-                      <CardContent className="p-0" onClick={() => setSelectedItem(item)}>
-                        <div className="flex min-w-0">
-                          <div className="flex-1 p-4 min-w-0">
-                            <div className="flex items-start justify-between min-w-0">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                  <h3 className="font-semibold text-lg break-words">{item.name}</h3>
-                                  <div className="flex gap-1 flex-wrap">
-                                    {item.is_vegetarian && <Badge variant="secondary" className="text-xs">Vegetarian</Badge>}
-                                    {item.is_vegan && <Badge variant="secondary" className="text-xs">Vegan</Badge>}
-                                    {item.is_gluten_free && <Badge variant="secondary" className="text-xs">Gluten Free</Badge>}
-                                  </div>
-                                </div>
-                                <p className="text-muted-foreground text-sm mb-3 line-clamp-2 break-words">
-                                  {item.description}
-                                </p>
-                                <div className="flex items-center justify-between flex-wrap gap-2">
-                                  <span className="text-lg font-bold">
-                                    ${(item.price_cents / 100).toFixed(2)}
-                                  </span>
-                                  <Button
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedItem(item);
-                                    }}
-                                    className="ml-4 flex-shrink-0"
-                                  >
-                                    <Plus className="h-4 w-4 mr-1" />
-                                    Add
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          {item.image_url && (
-                            <div className="w-24 h-24 md:w-32 md:h-32 flex-shrink-0">
-                              <img 
-                                src={item.image_url} 
-                                alt={item.name}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <MenuItemCard key={item.id} item={item} onAddToCart={addToCart} />
                   ))}
                 </div>
-                {categories.indexOf(category) < categories.length - 1 && (
-                  <Separator className="mt-8" />
-                )}
               </div>
             );
-          })}
-        </div>
+          })
+        )}
       </div>
 
-      {/* Floating Cart Button */}
+      {/* Floating Cart Summary */}
       {cart.length > 0 && (
-        <div className="fixed bottom-6 right-6 z-50 max-w-[90vw]">
-          <Button
+        <div style={{
+          position: 'fixed',
+          bottom: '2rem',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 100
+        }}>
+          <PremiumButton
+            variant="primary"
             size="lg"
             onClick={() => setShowCart(true)}
-            className="rounded-full shadow-lg text-sm sm:text-base px-3 sm:px-6 py-2 sm:py-3"
+            icon={<ShoppingCart style={{ width: '24px', height: '24px' }} />}
+            style={{
+              animation: 'bounce 2s infinite',
+              boxShadow: '0 20px 60px rgba(255, 107, 53, 0.4)'
+            }}
           >
-            <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
-            <span className="truncate">
-              {cart.reduce((total, item) => total + item.quantity, 0)} items • ${(getCartTotal().total / 100).toFixed(2)}
-            </span>
-          </Button>
+            {cart.reduce((sum, item) => sum + item.quantity, 0)} items • ${(getCartTotal().total / 100).toFixed(2)}
+          </PremiumButton>
         </div>
       )}
 
-      {/* Menu Item Modal */}
-      {selectedItem && (
-        <MenuItemModal
-          item={selectedItem}
-          onClose={() => setSelectedItem(null)}
-          onAddToCart={addToCart}
-        />
-      )}
-
-      {/* Cart Sidebar */}
-      <CartSidebar
-        isOpen={showCart}
-        onClose={() => setShowCart(false)}
-        cart={cart}
-        restaurant={restaurant}
-          totals={getCartTotal()}
-          deliveryMethod={deliveryMethod}
-          onDeliveryMethodChange={setDeliveryMethod}
-          onUpdateQuantity={updateCartItemQuantity}
-          onOrderComplete={() => setCart([])} // Clear cart after order
-      />
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        @keyframes bounce {
+          0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+          40% { transform: translateX(-50%) translateY(-5px); }
+          60% { transform: translateX(-50%) translateY(-3px); }
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </div>
+  );
+};
+
+// Enhanced Menu Item Card
+const MenuItemCard = ({ item, onAddToCart }: { item: MenuItem; onAddToCart: (item: MenuItem) => void }) => {
+  return (
+    <PremiumCard style={{ position: 'relative', cursor: 'pointer' }}>
+      {/* Special Badges */}
+      <div style={{
+        position: 'absolute',
+        top: '1rem',
+        left: '1rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.5rem',
+        zIndex: 10
+      }}>
+        {item.chef_recommended && (
+          <PremiumBadge variant="featured" icon={<ChefHat style={{ width: '12px', height: '12px' }} />}>
+            Chef's Choice
+          </PremiumBadge>
+        )}
+        {item.is_featured && (
+          <PremiumBadge variant="popular" icon={<TrendingUp style={{ width: '12px', height: '12px' }} />}>
+            Popular
+          </PremiumBadge>
+        )}
+      </div>
+
+      {/* Dietary Badges */}
+      <div style={{
+        position: 'absolute',
+        top: '1rem',
+        right: '1rem',
+        display: 'flex',
+        gap: '0.5rem',
+        zIndex: 10
+      }}>
+        {item.is_vegetarian && (
+          <div style={{
+            background: 'rgba(34, 197, 94, 0.9)',
+            color: 'white',
+            padding: '0.5rem',
+            borderRadius: '50%',
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <Leaf style={{ width: '16px', height: '16px' }} />
+          </div>
+        )}
+        {item.is_gluten_free && (
+          <div style={{
+            background: 'rgba(168, 85, 247, 0.9)',
+            color: 'white',
+            padding: '0.5rem',
+            borderRadius: '50%',
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '0.8rem',
+            fontWeight: '700'
+          }}>
+            GF
+          </div>
+        )}
+      </div>
+
+      {/* Item Image */}
+      <div style={{
+        height: '200px',
+        background: `linear-gradient(rgba(0,0,0,0.1), rgba(255,107,53,0.1)), url(${item.image_url || '/placeholder-food.jpg'})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        borderRadius: '20px 20px 0 0',
+        position: 'relative'
+      }}>
+        {/* Spice Level */}
+        {item.spice_level && item.spice_level > 0 && (
+          <div style={{
+            position: 'absolute',
+            bottom: '1rem',
+            left: '1rem',
+            display: 'flex',
+            gap: '2px'
+          }}>
+            {[...Array(3)].map((_, i) => (
+              <span
+                key={i}
+                style={{
+                  fontSize: '1rem',
+                  opacity: i < item.spice_level! ? 1 : 0.3
+                }}
+              >
+                🌶️
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Quick Add Button */}
+        <PremiumButton
+          variant="primary"
+          size="sm"
+          onClick={(e) => {
+            e?.stopPropagation();
+            onAddToCart(item);
+          } }
+          icon={<Plus style={{ width: '20px', height: '20px' }} />}
+          style={{
+            position: 'absolute',
+            bottom: '1rem',
+            right: '1rem',
+            borderRadius: '50%',
+            width: '45px',
+            height: '45px',
+            padding: 0
+          }} children={undefined}        />
+      </div>
+
+      {/* Item Details */}
+      <div style={{ padding: '1.5rem' }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: '1rem'
+        }}>
+          <div style={{ flex: 1 }}>
+            <h3 style={{
+              fontSize: '1.3rem',
+              fontWeight: '800',
+              color: '#8b4513',
+              marginBottom: '0.5rem',
+              lineHeight: 1.2
+            }}>
+              {item.name}
+            </h3>
+            <p style={{
+              color: '#d2691e',
+              fontSize: '0.95rem',
+              lineHeight: 1.4,
+              marginBottom: '1rem'
+            }}>
+              {item.description}
+            </p>
+          </div>
+          <div style={{
+            background: 'linear-gradient(135deg, #ff6b35 0%, #f97316 100%)',
+            color: 'white',
+            padding: '0.75rem 1rem',
+            borderRadius: '20px',
+            fontWeight: '800',
+            fontSize: '1.1rem',
+            marginLeft: '1rem'
+          }}>
+            ${(item.price_cents / 100).toFixed(2)}
+          </div>
+        </div>
+
+        {/* Additional Info */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingTop: '1rem',
+          borderTop: '1px solid rgba(255, 183, 0, 0.2)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            fontSize: '0.9rem',
+            color: '#d2691e'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <Clock style={{ width: '16px', height: '16px' }} />
+              {item.preparation_time} min
+            </div>
+            {item.calories && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Zap style={{ width: '16px', height: '16px' }} />
+                {item.calories} cal
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </PremiumCard>
   );
 };
 
