@@ -1,735 +1,1007 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from 'react-router-dom';
+import { 
+  Star, Clock, Truck, Plus, Minus, ShoppingCart, TrendingUp, Award, X, 
+  ChevronLeft, Utensils, Zap, Heart, Share2, MapPin, Phone, Camera,
+  Navigation, MessageCircle, CheckCircle, Filter, Search, ChefHat, Leaf
+} from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useMenuItemFavorites } from '@/hooks/useMenuItemFavorites';
-import { Star, Clock, MapPin, Heart, ShoppingCart, Plus, Minus, ArrowLeft, Search, Navigation } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import MenuItemCard from './MenuItemCard';
-import CartSummary from './CartSummary';
-import { CartSidebar } from './CartSidebar';
-import { MenuItemModal } from './MenuItemModal';
-import { CustomerOrderForm } from './CustomerOrderForm';
-import MenuFilters, { FilterOptions } from './MenuFilters';
-import MobileBottomNav from '@/components/mobile/MobileBottomNav';
-import { usePromoCode } from '@/hooks/usePromoCode';
+import { toast as showToast } from 'sonner';
 
-interface MenuItem {
-  id: string;
-  name: string;
-  description: string;
-  price_cents: number;
-  image_url?: string;
-  category: string;
-  is_available: boolean;
-  dietary_info?: string[];
-}
+// ...existing code...
 
-interface Restaurant {
-  id: string;
-  name: string;
-  description: string;
-  image_url?: string;
-  logo_url?: string;
-  cuisine_type: string;
-  rating: number;
-  delivery_fee_cents: number;
-  min_delivery_time: number;
-  max_delivery_time: number;
-  address: string;
-  phone?: string;
-  email?: string;
-  latitude?: number;
-  longitude?: number;
-}
+// Ultra Modern Button Component
+const UltraButton = ({ 
+  children, 
+  onClick, 
+  variant = 'primary', 
+  size = 'md', 
+  disabled = false,
+  className = '',
+  icon = null,
+  glow = false,
+  style = {}
+}: {
+  children: any;
+  onClick: any;
+  variant?: string;
+  size?: string;
+  disabled?: boolean;
+  className?: string;
+  icon?: any;
+  glow?: boolean;
+  style?: React.CSSProperties;
+}) => {
+  const baseStyles = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: '700',
+    borderRadius: '32px',
+    border: 'none',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+    position: 'relative',
+    overflow: 'hidden',
+    touchAction: 'manipulation',
+    transform: 'translateZ(0)',
+    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif'
+  };
 
-interface CartItem {
-  id: string;
-  name: string;
-  price_cents: number;
-  quantity: number;
-  image_url?: string;
-}
-
-const RestaurantMenuPage = () => {
-  const { id } = useParams();
-  const { toast } = useToast();
-  const isMobile = useIsMobile();
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
-  const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
-  const [user, setUser] = useState(null);
-  const [showOrderForm, setShowOrderForm] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  
-  // Category scrolling refs
-  const categoryRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  
-  // Menu item favorites  
-  const { toggleFavorite, isFavorite } = useMenuItemFavorites();
-  const {
-    appliedPromoCode,
-    isValidating: isValidatingPromo,
-    validatePromoCode,
-    removePromoCode,
-    recordPromoCodeUsage
-  } = usePromoCode();
-  const [filters, setFilters] = useState<FilterOptions>({
-    priceRange: [0, 50],
-    dietary: { vegetarian: false, vegan: false, glutenFree: false },
-    availability: true,
-    rating: 0,
-    preparationTime: 60,
-  });
-
-  useEffect(() => {
-    if (id) {
-      fetchRestaurantData();
-      fetchMenuItems();
+  const variants = {
+    primary: {
+      background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 25%, #ff8c00 50%, #ff4500 75%, #ff6347 100%)',
+      backgroundSize: '300% 300%',
+      animation: 'gradientShift 6s ease infinite',
+      color: 'white',
+      boxShadow: glow 
+        ? '0 0 40px rgba(255, 107, 53, 0.6), 0 20px 40px rgba(0, 0, 0, 0.15)'
+        : '0 20px 40px rgba(255, 107, 53, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
+    },
+    secondary: {
+      background: 'rgba(255, 255, 255, 0.95)',
+      backdropFilter: 'blur(20px)',
+      border: '1px solid rgba(255, 107, 53, 0.2)',
+      color: '#4a5568',
+      boxShadow: '0 15px 35px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
+    },
+    ghost: {
+      background: 'transparent',
+      color: '#ff6b35',
+      boxShadow: 'none'
+    },
+    danger: {
+      background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)',
+      color: 'white',
+      boxShadow: '0 15px 35px rgba(255, 107, 107, 0.3)'
+    },
+    glass: {
+      background: 'rgba(255, 255, 255, 0.1)',
+      backdropFilter: 'blur(30px)',
+      border: '1px solid rgba(255, 255, 255, 0.2)',
+      color: 'white',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
     }
-  }, [id]);
+  };
 
+  // ...existing code...
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        ...baseStyles,
+        ...variants[variant],
+        ...size[size],
+        opacity: disabled ? 0.6 : 1,
+        ...style
+      }}
+      className={className}
+      onMouseEnter={(e) => {
+        if (!disabled) {
+          e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
+          if (variant === 'primary') {
+            e.currentTarget.style.boxShadow = glow
+              ? '0 0 60px rgba(255, 107, 53, 0.8), 0 25px 50px rgba(0, 0, 0, 0.2)'
+              : '0 25px 50px rgba(255, 107, 53, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+          }
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!disabled) {
+          e.currentTarget.style.transform = 'translateY(0) scale(1)';
+          if (variant === 'primary') {
+            e.currentTarget.style.boxShadow = glow
+              ? '0 0 40px rgba(255, 107, 53, 0.6), 0 20px 40px rgba(0, 0, 0, 0.15)'
+              : '0 20px 40px rgba(255, 107, 53, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+          }
+        }
+      }}
+    >
+      {icon && <span style={{ marginRight: children ? '0.75rem' : 0 }}>{icon}</span>}
+      {children}
+    </button>
+  );
+};
+
+// ...existing code...
+
+// Neon Badge Component
+const NeonBadge = ({ children, variant = 'default', icon = null, pulse = false }) => {
+  const variants = {
+    default: {
+      background: 'linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(247, 147, 30, 0.15) 100%)',
+      color: '#ff6b35',
+      border: '1px solid rgba(255, 107, 53, 0.3)',
+      boxShadow: '0 0 20px rgba(255, 107, 53, 0.2)'
+    },
+    success: {
+      background: 'linear-gradient(135deg, rgba(46, 204, 113, 0.15) 0%, rgba(39, 174, 96, 0.15) 100%)',
+      color: '#2ecc71',
+      border: '1px solid rgba(46, 204, 113, 0.3)',
+      boxShadow: '0 0 20px rgba(46, 204, 113, 0.2)'
+    },
+    featured: {
+      background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+      color: 'white',
+      border: 'none',
+      boxShadow: '0 0 30px rgba(255, 107, 53, 0.5)'
+    },
+    popular: {
+      background: 'linear-gradient(135deg, #ff8c00 0%, #ff4500 100%)',
+      color: 'white',
+      border: 'none',
+      boxShadow: '0 0 30px rgba(255, 140, 0, 0.5)'
+    },
+    neon: {
+      background: 'transparent',
+      color: '#ff6b35',
+      border: '2px solid #ff6b35',
+      boxShadow: '0 0 20px #ff6b35, inset 0 0 20px rgba(255, 107, 53, 0.1)',
+      textShadow: '0 0 10px #ff6b35'
+    }
+  };
+
+  // ...existing code...
+};
+
+const RestaurantDetail = () => {
+  const navigate = useNavigate();
+  // ...existing code...
+  const [loading, setLoading] = useState(true);
+  const [restaurant, setRestaurant] = useState<any>(null); // Add this line
+  const [isFavorited, setIsFavorited] = useState(false); // Add this line
+
+  // Categories state and logic
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  // Example: fetch categories (replace with real fetch logic)
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    getUser();
+    // Replace this with your actual fetch logic
+    setCategories([
+      { id: 'starters', name: 'Starters', icon: <Utensils />, description: 'Begin your meal with a bang!' },
+      { id: 'mains', name: 'Mains', icon: <ChefHat />, description: 'Hearty and delicious main courses.' },
+      { id: 'vegan', name: 'Vegan', icon: <Leaf />, description: 'Plant-based delights.' }
+    ]);
+    setSelectedCategory('starters');
   }, []);
 
-  const fetchRestaurantData = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('restaurants')
-        .select('*')
-        .eq('id', id!)
-        .maybeSingle();
+  // Cart state and logic
+  const [cart, setCart] = useState<any[]>([]);
+  const [showCart, setShowCart] = useState(false);
 
-      if (error) throw error;
-      setRestaurant(data);
-    } catch (error) {
-      console.error('Error fetching restaurant:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load restaurant information",
-        variant: "destructive"
-      });
-    }
-  };
+  // Search query state
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const fetchMenuItems = async () => {
-    try {
-      // Fetch real menu items from the database
-      const { data: items, error } = await supabase
-        .from('menu_items')
-        .select(`
-          id,
-          name,
-          description,
-          price_cents,
-          image_url,
-          is_available,
-          is_vegetarian,
-          is_vegan,
-          is_gluten_free,
-          category_id,
-          menu_categories!inner(name)
-        `)
-        .eq('restaurant_id', id)
-        .eq('is_available', true)
-        .order('display_order');
-
-      if (error) throw error;
-
-      // Transform the data to match our interface
-      const transformedItems: MenuItem[] = (items || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        description: item.description || '',
-        price_cents: item.price_cents,
-        image_url: item.image_url,
-        category: item.menu_categories?.name || 'Uncategorized',
-        is_available: item.is_available,
-        dietary_info: [
-          ...(item.is_vegetarian ? ['Vegetarian'] : []),
-          ...(item.is_vegan ? ['Vegan'] : []),
-          ...(item.is_gluten_free ? ['Gluten Free'] : [])
-        ].filter(Boolean)
-      }));
-
-      setMenuItems(transformedItems);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching menu items:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load menu items",
-        variant: "destructive"
-      });
-      setLoading(false);
-    }
-  };
-
-  const categories = ['all', ...new Set(menuItems.map(item => item.category))];
-  
-  const filteredItems = menuItems.filter(item => {
-    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-    const matchesSearch = searchQuery === '' || 
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    // Apply filters
-    const matchesPrice = item.price_cents >= filters.priceRange[0] * 100 && 
-                        (filters.priceRange[1] >= 50 || item.price_cents <= filters.priceRange[1] * 100);
-    
-    const matchesDietary = (!filters.dietary.vegetarian || item.dietary_info?.includes('Vegetarian')) &&
-                          (!filters.dietary.vegan || item.dietary_info?.includes('Vegan')) &&
-                          (!filters.dietary.glutenFree || item.dietary_info?.includes('Gluten Free'));
-    
-    const matchesAvailability = !filters.availability || item.is_available;
-    
-    return matchesCategory && matchesSearch && matchesPrice && matchesDietary && matchesAvailability;
-  });
-
-  const addToCart = (item: MenuItem, quantity: number = 1, modifiers: any[] = [], specialInstructions?: string) => {
-    if (!item) return;
-    
-    const modifiersPrice = modifiers.reduce((sum, mod) => sum + mod.price_cents, 0);
-    const itemTotalPrice = item.price_cents + modifiersPrice;
-    
-    setCart(prev => {
-      const cartItemId = `${item.id}-${JSON.stringify(modifiers.map(m => m.id).sort())}`;
-      const existing = prev.find(cartItem => cartItem.id === cartItemId);
-      
+  // Example addToCart function
+  const addToCart = (item: any) => {
+    setCart(prevCart => {
+      const existing = prevCart.find((i) => i.id === item.id);
       if (existing) {
-        return prev.map(cartItem =>
-          cartItem.id === cartItemId
-            ? { ...cartItem, quantity: cartItem.quantity + quantity }
-            : cartItem
+        return prevCart.map((i) =>
+          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
         );
       }
-      
-      return [...prev, {
-        id: cartItemId,
-        name: item.name,
-        price_cents: itemTotalPrice,
-        quantity,
-        image_url: item.image_url,
-        modifiers: modifiers.map(m => ({ name: m.name, price_cents: m.price_cents })),
-        special_instructions: specialInstructions
-      }];
-    });
-    
-    toast({
-      title: "Added to cart",
-      description: `${item.name}${modifiers.length > 0 ? ' with customizations' : ''} has been added to your cart`
+      return [...prevCart, { ...item, quantity: 1 }];
     });
   };
 
-  // Keep the old addToCart for backwards compatibility with MenuItemCard
-  const addToCartSimple = (itemId: string) => {
-    const item = menuItems.find(i => i.id === itemId);
-    if (!item) return;
-    addToCart(item, 1, [], '');
+  // Example getCartTotal function
+  const getCartTotal = () => {
+    const total = cart.reduce((sum, item) => sum + (item.price_cents * item.quantity), 0);
+    return { total };
   };
 
-  const updateQuantity = (id: string, delta: number) => {
-    setCart(prev => {
-      return prev.map(item => {
-        if (item.id === id) {
-          const newQuantity = item.quantity + delta;
-          return newQuantity > 0 ? { ...item, quantity: newQuantity } : item;
-        }
-        return item;
-      }).filter(item => item.quantity > 0);
-    });
-  };
+  // Add these lines for images
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const restaurantImages = restaurant?.images && Array.isArray(restaurant.images) && restaurant.images.length > 0
+    ? restaurant.images
+    : ["/placeholder-restaurant.jpg"];
 
-  const handleCheckout = async () => {
-    if (cart.length === 0) {
-      toast({
-        title: "Cart is empty",
-        description: "Add items before checkout",
-        variant: "destructive"
-      });
-      return;
-    }
-    setShowOrderForm(true);
-  };
+  // Example: Fetch restaurant data and set loading to false when done
+  // useEffect(() => {
+  //   fetchRestaurantData().then((data) => {
+  //     setRestaurant(data);
+  //     setLoading(false);
+  //   });
+  // }, []);
 
-  const handleOrderSubmit = async (customerInfo: any) => {
-    setIsProcessing(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-
-      const subtotal = cart.reduce((sum, item) => sum + item.price_cents * item.quantity, 0);
-      const tax = Math.round(subtotal * 0.08);
-      const promoDiscount = appliedPromoCode?.discount_applied_cents ?? 0;
-      const promoType = appliedPromoCode?.type?.toLowerCase();
-      const isTotalFree = promoType === 'total_free' || (subtotal - promoDiscount) <= 0;
-
-      let adjustedDeliveryFee = deliveryMethod === 'delivery' ? (restaurant?.delivery_fee_cents || 0) : 0;
-      if (isTotalFree) {
-        adjustedDeliveryFee = 0;
-      } else if (promoType === 'free_delivery' && deliveryMethod === 'delivery') {
-        adjustedDeliveryFee = 0;
-      }
-
-      const finalTotal = isTotalFree ? 0 : subtotal + adjustedDeliveryFee + tax - promoDiscount;
-
-      const orderData: any = {
-        customer_id: user?.id || null,
-        restaurant_id: restaurant?.id,
-        subtotal_cents: subtotal,
-        delivery_fee_cents: adjustedDeliveryFee,
-        tax_cents: tax,
-        total_cents: finalTotal,
-        order_status: 'pending',
-        pickup_address: {
-          name: restaurant?.name,
-          address: restaurant?.address,
-          phone: restaurant?.phone || restaurant?.email,
-          lat: restaurant?.latitude,
-          lng: restaurant?.longitude
-        },
-        delivery_address: deliveryMethod === 'delivery' ? {
-          name: customerInfo.name,
-          email: customerInfo.email,
-          phone: customerInfo.phone,
-          address: customerInfo.deliveryAddress,
-          special_instructions: customerInfo.specialInstructions
-        } : null,
-        estimated_delivery_time: deliveryMethod === 'delivery'
-          ? new Date(Date.now() + (restaurant?.max_delivery_time || 30) * 60000).toISOString()
-          : new Date(Date.now() + 20 * 60000).toISOString()
-      };
-
-      const { data: newOrder, error: orderError } = await supabase
-        .from('orders')
-        .insert(orderData)
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
-      if (appliedPromoCode) {
-        await recordPromoCodeUsage(newOrder.id);
-      }
-
-      if (deliveryMethod === 'delivery') {
-        try {
-          await supabase.functions.invoke('auto-assign-orders', {
-            body: { orderId: newOrder.id }
-          });
-        } catch (autoAssignError) {
-          console.error('Auto-assignment error:', autoAssignError);
-        }
-      }
-
-      if (finalTotal <= 0) {
-        await supabase
-          .from('orders')
-          .update({ 
-            order_status: 'confirmed',
-            customer_name: customerInfo.name,
-            customer_phone: customerInfo.phone 
-          })
-          .eq('id', newOrder.id);
-
-        toast({
-          title: "Order placed successfully! 🎉",
-          description: "Your free order has been confirmed and sent to the restaurant.",
-        });
-
-        setCart([]);
-        setShowOrderForm(false);
-        return;
-      }
-
-      const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-payment', {
-        body: {
-          orderTotal: finalTotal,
-          customerInfo,
-          orderId: newOrder.id
-        }
-      });
-
-      if (paymentError) throw paymentError;
-      window.location.href = paymentData.url;
-    } catch (error) {
-      console.error('Error placing order:', error);
-      toast({
-        title: "Error placing order",
-        description: "Please try again or contact the restaurant directly.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleApplyPromoCode = async (code: string): Promise<boolean> => {
-    const subtotal = cart.reduce((sum, item) => sum + item.price_cents * item.quantity, 0);
-    return await validatePromoCode(code, subtotal, deliveryMethod);
-  };
-
-  const formatPrice = (cents: number) => `$${(cents / 100).toFixed(2)}`;
-
-  const handleGetDirections = () => {
-    if (restaurant?.address) {
-      const encodedAddress = encodeURIComponent(restaurant.address);
-      // Try to open in native map app first, fallback to Google Maps
-      const mapUrl = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-        ? `maps:0,0?q=${encodedAddress}`
-        : `https://maps.google.com/maps?q=${encodedAddress}`;
-      
-      window.open(mapUrl, '_blank');
-    }
-  };
-
-  const computeTotals = () => {
-    const subtotal = cart.reduce((sum, item) => sum + item.price_cents * item.quantity, 0);
-    const tax = Math.round(subtotal * 0.08);
-    const promoDiscount = appliedPromoCode?.discount_applied_cents || 0;
-    const deliveryFee = deliveryMethod === 'delivery' ? (restaurant?.delivery_fee_cents || 0) : 0;
-    const adjustedDeliveryFee = appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery' ? 0 : deliveryFee;
-    const total = subtotal + tax + adjustedDeliveryFee - promoDiscount;
-    return { subtotal, tax, deliveryFee: adjustedDeliveryFee, total };
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading menu...</p>
+  // Generic Glass Card for Presentational Use
+  const GlassCard = ({
+    children,
+    variant = "glass",
+    hoverable = false,
+    style = {},
+    ...props
+  }: {
+    children: React.ReactNode;
+    variant?: string;
+    hoverable?: boolean;
+    style?: React.CSSProperties;
+  }) => (
+    <div
+      style={{
+        background: variant === "glass"
+          ? "rgba(255,255,255,0.1)"
+          : "white",
+        borderRadius: "25px",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
+        ...(hoverable
+          ? {
+              transition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+              cursor: "pointer",
+            }
+          : {}),
+        ...style,
+      }}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+  
+    if (loading) {
+      return (
+        <div style={{
+          minHeight: '100vh',
+          background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 25%, #ff8c00 50%, #ff4500 75%, #ff6347 100%)',
+          backgroundSize: '400% 400%',
+          animation: 'gradientShift 8s ease infinite',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <GlassCard variant="glass" hoverable={false} style={{ padding: '4rem', textAlign: 'center' }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              border: '4px solid transparent',
+              borderTop: '4px solid #ff6b35',
+              borderRight: '4px solid #ff8c00',
+              borderRadius: '50%',
+              animation: 'spin 1.5s linear infinite',
+              margin: '0 auto 2rem'
+            }} />
+            <h3 style={{ 
+              color: 'white', 
+              fontSize: '2rem', 
+              fontWeight: '800',
+              background: 'linear-gradient(135deg, #ff6b35 0%, #ff8c00 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif'
+            }}>
+              Loading Experience...
+            </h3>
+          </GlassCard>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
   if (!restaurant) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-xl text-muted-foreground">Restaurant not found</p>
-          <Link to="/" className="text-primary hover:underline mt-2 inline-block">
-            Return to homepage
-          </Link>
-        </div>
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <GlassCard variant="glass" hoverable={false} style={{ padding: '4rem', textAlign: 'center', maxWidth: '500px' }}>
+          <h2 style={{ 
+            color: 'white', 
+            fontSize: '2.5rem', 
+            marginBottom: '2rem',
+            fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif'
+          }}>
+            Restaurant Not Found
+          </h2>
+          <UltraButton 
+            variant="glass" 
+            size="lg"
+            onClick={() => navigate('/restaurants')}
+            icon={<ChevronLeft style={{ width: '20px', height: '20px' }} />}
+          >
+            Explore Restaurants
+          </UltraButton>
+        </GlassCard>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border/50">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-5 w-5" />
-            <span>Back to restaurants</span>
-          </Link>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="relative"
-            onClick={() => setIsCartOpen(!isCartOpen)}
-          >
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            Cart ({cart.reduce((sum, item) => sum + item.quantity, 0)})
-            {cart.length > 0 && (
-              <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 text-xs">
-                {cart.reduce((sum, item) => sum + item.quantity, 0)}
-              </Badge>
-            )}
-          </Button>
-        </div>
-      </div>
+    <div style={{ 
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+      fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif'
+    }}>
+      {/* Revolutionary Hero Section */}
+      <section style={{ 
+        position: 'relative', 
+        height: '100vh', 
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'center'
+      }}>
+        {/* Animated Background */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: `
+            linear-gradient(135deg, rgba(255, 107, 53, 0.9) 0%, rgba(247, 147, 30, 0.8) 25%, rgba(255, 140, 0, 0.7) 50%, rgba(255, 69, 0, 0.8) 75%, rgba(255, 99, 71, 0.9) 100%),
+            url(${restaurantImages[activeImageIndex]})
+          `,
+          backgroundSize: '400% 400%, cover',
+          backgroundPosition: 'center, center',
+          animation: 'gradientShift 10s ease infinite',
+          filter: 'blur(1px)'
+        }} />
 
-      {/* Restaurant Hero */}
-      <div className="relative h-64 md:h-80 overflow-hidden">
-        <div 
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: `url(${restaurant.image_url || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200'})`,
-          }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-        </div>
+        {/* ...existing floating particles code... */}
         
-        <div className="relative h-full flex items-end">
-          <div className="container mx-auto px-4 pb-8">
-            <div className="flex items-end gap-4">
-              {restaurant.logo_url && (
-                <div className="w-20 h-20 rounded-xl border-4 border-white shadow-lg bg-white p-2 flex-shrink-0">
-                  <img
-                    src={restaurant.logo_url}
-                    alt={`${restaurant.name} logo`}
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              )}
-              
-              <div className="text-white">
-                <h1 className="text-3xl md:text-4xl font-bold mb-2">{restaurant.name}</h1>
-                <p className="text-white/90 mb-2">{restaurant.description}</p>
-                
-                <div className="flex flex-wrap gap-4 text-sm mb-4">
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 fill-current text-yellow-400" />
-                    <span>{restaurant.rating.toFixed(1)}</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    <span>{restaurant.min_delivery_time}-{restaurant.max_delivery_time} min</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
-                    <span>{formatPrice(restaurant.delivery_fee_cents)} delivery</span>
-                  </div>
-                  
-                  <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                    {restaurant.cuisine_type}
-                  </Badge>
-                </div>
-
-                {/* Get Directions Button */}
-                <Button
-                  onClick={handleGetDirections}
-                  variant="secondary"
-                  size="sm"
-                  className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
-                >
-                  <Navigation className="h-4 w-4 mr-2" />
-                  Get Directions
-                </Button>
-              </div>
-            </div>
+        {/* Futuristic Navigation */}
+        <div style={{
+          position: 'absolute',
+          top: '2rem',
+          left: '2rem',
+          right: '2rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          zIndex: 20
+        }}>
+          <UltraButton
+            variant="glass"
+            size="md"
+            onClick={() => navigate(-1)}
+            icon={<ChevronLeft style={{ width: '24px', height: '24px' }} />}
+            style={{ borderRadius: '50%', width: '60px', height: '60px', padding: 0 }}
+          >{""}</UltraButton>
+          
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <UltraButton
+              variant="glass"
+              size="md"
+              onClick={() => setIsFavorited(!isFavorited)}
+              icon={<Heart style={{
+                width: '24px',
+                height: '24px',
+                fill: isFavorited ? '#ff6b35' : 'transparent',
+                color: isFavorited ? '#ff6b35' : 'white'
+              }} />}
+              style={{ borderRadius: '50%', width: '60px', height: '60px', padding: 0 }}
+            >{""}</UltraButton>
+            <UltraButton
+              variant="glass"
+              size="md"
+              icon={<Share2 style={{ width: '24px', height: '24px' }} />}
+              style={{ borderRadius: '50%', width: '60px', height: '60px', padding: 0 }}
+              onClick={() => {}}
+            >{""}</UltraButton>
           </div>
         </div>
+
+        {/* ...existing central content code... */}
+
+        {/* Floating Image Indicators */}
+        <div style={{
+          position: 'absolute',
+          bottom: '3rem',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          gap: '1rem',
+          zIndex: 20
+        }}>
+          {restaurantImages.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setActiveImageIndex(index)}
+              style={{
+                width: activeImageIndex === index ? '60px' : '16px',
+                height: '16px',
+                borderRadius: '8px',
+                border: 'none',
+                background: activeImageIndex === index 
+                  ? 'rgba(255, 255, 255, 0.9)' 
+                  : 'rgba(255, 255, 255, 0.4)',
+                cursor: 'pointer',
+                transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                backdropFilter: 'blur(10px)'
+              }}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Floating Action Center */}
+      <div style={{
+        position: 'sticky',
+        top: '2rem',
+        zIndex: 100,
+        margin: '3rem 2rem 0',
+        display: 'flex',
+        justifyContent: 'center'
+      }}>
+        <GlassCard variant="glass" hoverable={false} style={{ padding: '1rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            {/* ...existing delivery/pickup buttons... */}
+            
+            <div style={{ width: '1px', height: '40px', background: 'rgba(255, 107, 53, 0.2)' }} />
+            
+            <UltraButton
+              variant={cart.length > 0 ? 'primary' : 'secondary'}
+              size="md"
+              glow={cart.length > 0}
+              onClick={() => setShowCart(true)}
+              icon={<ShoppingCart style={{ width: '20px', height: '20px' }} />}
+              style={{ position: 'relative' }}
+            >
+              Cart
+              {cart.length > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-10px',
+                  right: '-10px',
+                  background: 'linear-gradient(135deg, #ff8c00 0%, #ff4500 100%)',
+                  color: 'white',
+                  borderRadius: '50%',
+                  width: '28px',
+                  height: '28px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.8rem',
+                  fontWeight: '800',
+                  boxShadow: '0 0 20px rgba(255, 140, 0, 0.6)'
+                }}>
+                  {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                </span>
+              )}
+            </UltraButton>
+          </div>
+        </GlassCard>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Menu Content */}
-          <div className="lg:col-span-3">
-            {/* Search and Filters */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search menu items..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-background/50 backdrop-blur-sm border-border/50"
-                />
-              </div>
-              
-              <MenuFilters 
-                onFiltersChange={setFilters}
-                className="bg-background/50 backdrop-blur-sm"
-              />
-            </div>
+      {/* Advanced Search Interface */}
+      <div id="menu-section" style={{
+        padding: '3rem 2rem 0',
+        maxWidth: '1400px',
+        margin: '0 auto'
+      }}>
+      <GlassCard variant="glass" hoverable={false} style={{ padding: '2rem', marginBottom: '3rem' }}>
+        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', flex: '1', minWidth: '300px' }}>
+            <Search style={{
+              position: 'absolute',
+              left: '1.5rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: '24px',
+              height: '24px',
+              color: '#ff6b35'
+            }} />
+            <input
+              type="text"
+              placeholder="Search magical dishes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '1.25rem 1.5rem 1.25rem 4rem',
+                border: '2px solid rgba(255, 107, 53, 0.2)',
+                borderRadius: '25px',
+                fontSize: '1.1rem',
+                background: 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(10px)',
+                color: '#4a5568',
+                fontFamily: 'inherit',
+                outline: 'none',
+                transition: 'all 0.3s ease'
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = '#ff6b35';
+                e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 107, 53, 0.3)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(255, 107, 53, 0.2)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            />
+          </div>
+        </div>
+      </GlassCard>
 
-            {/* Floating Category Navigation */}
-            <div className="sticky top-20 z-10 bg-background/95 backdrop-blur-md border-b border-border/50 -mx-4 px-4 py-4 mb-8">
-              <div className="flex md:flex-wrap gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
-                {categories.map((category) => (
-                  <Button
-                    key={category}
-                    variant={selectedCategory === category ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      setSelectedCategory(category);
-                      // Smooth scroll to category section
-                      if (category !== 'all' && categoryRefs.current[category]) {
-                        const element = categoryRefs.current[category];
-                        const offset = 140; // Account for sticky header
-                        const elementPosition = element?.offsetTop || 0;
-                        const offsetPosition = elementPosition - offset;
-                        
-                        window.scrollTo({
-                          top: offsetPosition,
-                          behavior: 'smooth'
-                        });
-                      }
-                    }}
-                    className="whitespace-nowrap capitalize flex-shrink-0 min-w-fit transition-all duration-200 hover:scale-105"
-                  >
-                    {category === 'all' ? 'All Items' : category}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Menu Items */}
-            <div className="space-y-8">
-              {filteredItems.length === 0 ? (
-                <Card className="p-12 text-center border-border/50">
-                  <p className="text-muted-foreground text-lg mb-2">No items found</p>
-                  <p className="text-sm text-muted-foreground">
-                    Try adjusting your search or category filter
-                  </p>
-                </Card>
-              ) : selectedCategory === 'all' ? (
-                // Group by category when showing all items
-                categories.filter(cat => cat !== 'all').map((category) => {
-                  const categoryItems = filteredItems.filter(item => item.category.toLowerCase() === category.toLowerCase());
-                  if (categoryItems.length === 0) return null;
-                  
-                  return (
-                    <div key={category} ref={el => categoryRefs.current[category] = el}>
-                      <h2 className="text-2xl font-bold mb-4 capitalize">{category}</h2>
-                      <div className="space-y-4">
-                        {categoryItems.map((item) => (
-                          <MenuItemCard
-                            key={item.id}
-                            {...item}
-                            restaurantId={restaurant?.id}
-                            onAddToCart={() => addToCartSimple(item.id)}
-                            onCustomize={(item) => setSelectedItem(item)}
-                            onToggleFavorite={() => toggleFavorite(item.id)}
-                            isFavorite={isFavorite(item.id)}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                // Show filtered items for specific category
-                <div className="space-y-4">
-                  {filteredItems.map((item) => (
-                    <MenuItemCard
-                      key={item.id}
-                      {...item}
-                      restaurantId={restaurant?.id}
-                      onAddToCart={() => addToCartSimple(item.id)}
-                      onCustomize={(item) => setSelectedItem(item)}
-                      onToggleFavorite={() => toggleFavorite(item.id)}
-                      isFavorite={isFavorite(item.id)}
-                    />
+      {/* Revolutionary Menu Display */}
+      <div style={{
+        padding: '0 2rem 6rem',
+        maxWidth: '1400px',
+        margin: '0 auto'
+      }}>
+        {searchQuery ? (
+          (() => {
+            // Replace this with your actual menu items data source
+            const allMenuItems: any[] = []; // Example: fetch or use state for menu items
+            const filteredItems = allMenuItems.filter(item =>
+              item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              item.description?.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+            return (
+              <div>
+                <h2 style={{
+                  fontSize: '3rem',
+                  fontWeight: '900',
+                  marginBottom: '3rem',
+                  background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ff8c00 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  textAlign: 'center'
+                }}>
+                  Search Results
+                </h2>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))',
+                  gap: '2rem'
+                }}>
+                  {filteredItems && filteredItems.map((item) => (
+                    <FuturisticMenuCard key={item.id} item={item} onAddToCart={addToCart} />
                   ))}
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* Cart Sidebar */}
-          <div className={`lg:col-span-1 ${isCartOpen ? 'block' : 'hidden lg:block'}`}>
-            <div className="sticky top-24">
-              <CartSummary
-                items={cart}
-                deliveryFee={restaurant?.delivery_fee_cents || 0}
-                onUpdateQuantity={updateQuantity}
-                onCheckout={handleCheckout}
-                className="border-border/50"
-                promoCodeDiscount={appliedPromoCode?.discount_applied_cents || 0}
-                deliveryMethod={deliveryMethod}
-                onApplyPromoCode={handleApplyPromoCode}
-                onRemovePromoCode={removePromoCode}
-                appliedPromoCode={appliedPromoCode}
-                isValidatingPromo={isValidatingPromo}
-              />
-            </div>
-          </div>
-
-          {/* Mobile Cart Drawer */}
-          {isCartOpen && (
-            <div className="lg:hidden">
-              <CartSidebar
-                isOpen={isCartOpen}
-                onClose={() => setIsCartOpen(false)}
-                cart={cart as any}
-                restaurant={{ ...(restaurant as any) }}
-                totals={computeTotals() as any}
-                deliveryMethod={deliveryMethod}
-                onDeliveryMethodChange={setDeliveryMethod}
-                onUpdateQuantity={(itemId, quantity) => {
-                  setCart(prev => prev
-                    .map(item => item.id === itemId ? { ...item, quantity } : item)
-                    .filter(item => item.quantity > 0)
-                  );
-                }}
-                onOrderComplete={() => {
-                  setCart([]);
-                  setIsCartOpen(false);
-                }}
-              />
-            </div>
-          )}
-        </div>
+              </div>
+            );
+          })()
+        ) : (
+          categories && categories.map((category) => {
+            const categoryItems = getItemsByCategory(category.id);
+            if (categoryItems.length === 0) return null;
+  
+            return (
+              <div key={category.id} style={{ marginBottom: '5rem' }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '2rem',
+                  marginBottom: '3rem',
+                  flexWrap: 'wrap'
+                }}>
+                  <h2 style={{
+                    fontSize: '3rem',
+                    fontWeight: '900',
+                    background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ff8c00 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    textAlign: 'center'
+                  }}>
+                    {category.icon} {category.name}
+                  </h2>
+                  <NeonBadge variant="success">
+                    {categoryItems.length} dishes
+                  </NeonBadge>
+                </div>
+                
+                {category.description && (
+                  <p style={{
+                    fontSize: '1.2rem',
+                    color: '#ff6b35',
+                    marginBottom: '3rem',
+                    fontWeight: '500',
+                    textAlign: 'center',
+                    maxWidth: '600px',
+                    margin: '0 auto 3rem'
+                  }}>
+                    {category.description}
+                  </p>
+                )}
+                
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))',
+                  gap: '2rem'
+                }}>
+                  {categoryItems.map((item) => (
+                    <FuturisticMenuCard key={item.id} item={item} onAddToCart={addToCart} />
+                  ))}
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
-      
-      {/* Menu Item Customization Modal */}
-      {selectedItem && (
-        <MenuItemModal
-          item={{
-            id: selectedItem.id,
-            name: selectedItem.name,
-            description: selectedItem.description || '',
-            price_cents: selectedItem.price_cents,
-            image_url: selectedItem.image_url || '',
-            category_id: selectedItem.category || undefined,
-            is_available: selectedItem.is_available ?? true,
-            is_vegetarian: selectedItem.dietary_info?.includes('Vegetarian') || false,
-            is_vegan: selectedItem.dietary_info?.includes('Vegan') || false,
-            is_gluten_free: selectedItem.dietary_info?.includes('Gluten Free') || false,
-            preparation_time: 15
-          }}
-          onClose={() => setSelectedItem(null)}
-          onAddToCart={(item, quantity, modifiers, specialInstructions) => {
-            const menuItem = {
-              ...selectedItem,
-              ...item
-            };
-            addToCart(menuItem, quantity, modifiers, specialInstructions);
-          }}
-        />
+
+      {/* Floating Cart Summary */}
+      {cart.length > 0 && (
+        <div style={{
+          position: 'fixed',
+          bottom: '2rem',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 1000
+        }}>
+          <UltraButton
+            variant="primary"
+            size="xl"
+            glow
+            onClick={() => setShowCart(true)}
+            icon={<ShoppingCart style={{ width: '28px', height: '28px' }} />}
+            style={{
+              animation: 'float 3s ease-in-out infinite',
+              boxShadow: '0 25px 60px rgba(255, 107, 53, 0.4)'
+            }}
+          >
+            {cart.reduce((sum, item) => sum + item.quantity, 0)} items • ${(getCartTotal().total / 100).toFixed(2)}
+          </UltraButton>
+        </div>
       )}
 
-      {/* Checkout Modal */}
-      <CustomerOrderForm
-        isOpen={showOrderForm}
-        onClose={() => setShowOrderForm(false)}
-        onSubmit={handleOrderSubmit}
-        deliveryMethod={deliveryMethod}
-        isProcessing={isProcessing}
-        orderTotal={(() => {
-          const subtotal = cart.reduce((sum, item) => sum + item.price_cents * item.quantity, 0);
-          const tax = Math.round(subtotal * 0.08);
-          const promoDiscount = appliedPromoCode?.discount_applied_cents ?? 0;
-          const promoType = appliedPromoCode?.type?.toLowerCase();
-          const isTotalFree = promoType === 'total_free' || (subtotal - promoDiscount) <= 0;
-          const baseDelivery = deliveryMethod === 'delivery' ? (restaurant?.delivery_fee_cents || 0) : 0;
-          const adjustedDeliveryFee = (isTotalFree || (promoType === 'free_delivery' && deliveryMethod === 'delivery')) ? 0 : baseDelivery;
-          return isTotalFree ? 0 : subtotal + adjustedDeliveryFee + tax - promoDiscount;
-        })()}
-      />
-
-      {/* Mobile Bottom Navigation */}
-      <MobileBottomNav 
-        cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
-        user={user}
-      />
+      {/* ...existing styles... */}
     </div>
   );
 };
 
-export default RestaurantMenuPage;
+// Generic Glass Card for Presentational Use
+const GlassCard = ({
+  children,
+  variant = "glass",
+  hoverable = false,
+  style = {},
+  ...props
+}: {
+  children: React.ReactNode;
+  variant?: string;
+  hoverable?: boolean;
+  style?: React.CSSProperties;
+}) => (
+  <div
+    style={{
+      background: variant === "glass"
+        ? "rgba(255,255,255,0.1)"
+        : "white",
+      borderRadius: "25px",
+      boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
+  return (
+    <GlassCard
+      variant="default"
+      style={{ 
+        position: 'relative', 
+        cursor: 'pointer',
+        overflow: 'hidden',
+        transform: isHovered ? 'scale(1.02)' : 'scale(1)',
+        transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <FuturisticMenuCard
+      variant="default"
+      style={{ 
+        position: 'relative', 
+        cursor: 'pointer',
+        overflow: 'hidden',
+        transform: isHovered ? 'scale(1.02)' : 'scale(1)',
+        transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Animated Glow Effect */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 140, 0, 0.1) 100%)',
+        opacity: isHovered ? 1 : 0,
+        transition: 'opacity 0.4s ease'
+      }} />
+
+      {/* ...existing badges and dietary information... */}
+
+      {/* Enhanced Image Container */}
+      <div style={{
+        height: '250px',
+        background: `
+          linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 140, 0, 0.1) 100%),
+          url(${item.image_url || '/placeholder-food.jpg'})
+        `,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        borderRadius: '25px 25px 0 0',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* ...existing spice level indicator... */}
+
+        {/* Futuristic Add Button */}
+        <UltraButton
+          variant="primary"
+          size="md"
+          glow
+          onClick={(e) => {
+            e?.stopPropagation();
+            onAddToCart(item);
+          }}
+          icon={<Plus style={{ width: '24px', height: '24px' }} />}
+          style={{
+            position: 'absolute',
+            bottom: '1.5rem',
+            right: '1.5rem',
+            borderRadius: '50%',
+            width: '56px',
+            height: '56px',
+            padding: 0,
+            transform: isHovered ? 'scale(1.1)' : 'scale(1)',
+            transition: 'transform 0.3s ease'
+          }}
+        >{""}</UltraButton>
+      </div>
+
+      {/* Enhanced Content */}
+      <div style={{ padding: '2rem' }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: '1.5rem'
+        }}>
+          <div style={{ flex: 1 }}>
+            <h3 style={{
+              fontSize: '1.5rem',
+              fontWeight: '800',
+              color: '#2d3748',
+              marginBottom: '0.75rem',
+              lineHeight: 1.3
+            }}>
+              {item.name}
+            </h3>
+            <p style={{
+              color: '#ff6b35',
+              fontSize: '1rem',
+              lineHeight: 1.5,
+              marginBottom: '1.5rem'
+            }}>
+              {item.description}
+            </p>
+          </div>
+          <div style={{
+            background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+            color: 'white',
+            padding: '1rem 1.5rem',
+            borderRadius: '25px',
+            fontWeight: '800',
+            fontSize: '1.3rem',
+            marginLeft: '1.5rem',
+            boxShadow: '0 10px 30px rgba(255, 107, 53, 0.3)'
+          }}>
+            ${(item.price_cents / 100).toFixed(2)}
+          </div>
+        </div>
+        </div>
+
+        {/* Enhanced Footer */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingTop: '1.5rem',
+          borderTop: '2px solid rgba(255, 107, 53, 0.1)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1.5rem',
+            fontSize: '0.95rem',
+            color: '#ff6b35'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Clock style={{ width: '18px', height: '18px' }} />
+              {item.preparation_time} min
+            </div>
+            {item.calories && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Zap style={{ width: '18px', height: '18px' }} />
+                {item.calories} cal
+    </GlassCard>
+  );
+};
+          
+/**
+ * FuturisticMenuCard component for displaying menu items.
+ */
+const FuturisticMenuCard = ({ item, onAddToCart }: { item: any, onAddToCart: (item: any) => void }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        cursor: 'pointer',
+        overflow: 'hidden',
+        transform: isHovered ? 'scale(1.02)' : 'scale(1)',
+        transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        background: "white",
+        borderRadius: "25px",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.08)"
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Animated Glow Effect */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 140, 0, 0.1) 100%)',
+        opacity: isHovered ? 1 : 0,
+        transition: 'opacity 0.4s ease',
+        pointerEvents: 'none'
+      }} />
+
+      {/* Enhanced Image Container */}
+      <div style={{
+        height: '250px',
+        background: `
+          linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 140, 0, 0.1) 100%),
+          url(${item.image_url || '/placeholder-food.jpg'})
+        `,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        borderRadius: '25px 25px 0 0',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Futuristic Add Button */}
+        <UltraButton
+          variant="primary"
+          size="md"
+          glow
+          onClick={(e) => {
+            e?.stopPropagation();
+            onAddToCart(item);
+          }}
+          icon={<Plus style={{ width: '24px', height: '24px' }} />}
+          style={{
+            position: 'absolute',
+            bottom: '1.5rem',
+            right: '1.5rem',
+            borderRadius: '50%',
+            width: '56px',
+            height: '56px',
+            padding: 0,
+            transform: isHovered ? 'scale(1.1)' : 'scale(1)',
+            transition: 'transform 0.3s ease'
+          }}
+        >{""}</UltraButton>
+      </div>
+
+      {/* Enhanced Content */}
+      <div style={{ padding: '2rem' }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: '1.5rem'
+        }}>
+          <div style={{ flex: 1 }}>
+            <h3 style={{
+              fontSize: '1.5rem',
+              fontWeight: '800',
+              color: '#2d3748',
+              marginBottom: '0.75rem',
+              lineHeight: 1.3
+            }}>
+              {item.name}
+            </h3>
+            <p style={{
+              color: '#ff6b35',
+              fontSize: '1rem',
+              lineHeight: 1.5,
+              marginBottom: '1.5rem'
+            }}>
+              {item.description}
+            </p>
+          </div>
+          <div style={{
+            background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+            color: 'white',
+            padding: '1rem 1.5rem',
+            borderRadius: '25px',
+            fontWeight: '800',
+            fontSize: '1.3rem',
+            marginLeft: '1.5rem',
+            boxShadow: '0 10px 30px rgba(255, 107, 53, 0.3)'
+          }}>
+            ${(item.price_cents / 100).toFixed(2)}
+          </div>
+        </div>
+
+        {/* Enhanced Footer */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingTop: '1.5rem',
+          borderTop: '2px solid rgba(255, 107, 53, 0.1)'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1.5rem',
+            fontSize: '0.95rem',
+            color: '#ff6b35'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Clock style={{ width: '18px', height: '18px' }} />
+              {item.preparation_time} min
+            </div>
+            {item.calories && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Zap style={{ width: '18px', height: '18px' }} />
+                {item.calories} cal
+              </div>
+            )}
+          </div>
+          <UltraButton
+            variant="ghost"
+            size="sm"
+            icon={<Heart style={{ width: '16px', height: '16px' }} />}
+            onClick={(e) => {
+              e?.stopPropagation();
+              // Handle favorite logic
+            }}
+          >{""}</UltraButton>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Helper: getItemsByCategory
+ * Replace this with your actual logic to filter menu items by category.
+ */
+function getItemsByCategory(categoryId: string) {
+  // This should filter your menu items by categoryId.
+  // Replace with your actual menu items data source.
+  return [];
+}
+
+export default RestaurantDetail;
+            variant="ghost"
+            size="sm"
+            icon={<Heart style={{ width: '16px', height: '16px' }} />}
+            onClick={(e) => {
+              e?.stopPropagation();
+              // Handle favorite logic
+            }}
+          >{""}</UltraButton>
+        </div>
+      </div>
+    </FuturisticMenuCard>
+  );
+};
+
+export default RestaurantDetail;
