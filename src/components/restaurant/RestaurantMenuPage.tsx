@@ -104,7 +104,7 @@ const UltraButton = ({
 
   const variants = {
     primary: {
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%)',
+      background: 'linear-gradient(135deg, #a27b4bff 0%, #a27b4bff 25%, #d68a32ff 50%, #f5576c 75%, #4facfe 100%)',
       backgroundSize: '300% 300%',
       animation: 'gradientShift 6s ease infinite',
       color: 'white',
@@ -121,7 +121,7 @@ const UltraButton = ({
     },
     ghost: {
       background: 'transparent',
-      color: '#667eea',
+      color: '#a27b4bff',
       boxShadow: 'none'
     },
     danger: {
@@ -275,7 +275,7 @@ const NeonBadge = ({ children, variant = 'default', icon = null, pulse = false }
   const variants = {
     default: {
       background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)',
-      color: '#667eea',
+      color: '#a27b4bff',
       border: '1px solid rgba(102, 126, 234, 0.3)',
       boxShadow: '0 0 20px rgba(102, 126, 234, 0.2)'
     },
@@ -286,23 +286,23 @@ const NeonBadge = ({ children, variant = 'default', icon = null, pulse = false }
       boxShadow: '0 0 20px rgba(46, 204, 113, 0.2)'
     },
     featured: {
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: 'linear-gradient(135deg, #a27b4bff 0%, #d68a32ff 100%)',
       color: 'white',
       border: 'none',
       boxShadow: '0 0 30px rgba(102, 126, 234, 0.5)'
     },
     popular: {
-      background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+      background: 'linear-gradient(135deg, #d68a32ff 0%, #f5576c 100%)',
       color: 'white',
       border: 'none',
       boxShadow: '0 0 30px rgba(240, 147, 251, 0.5)'
     },
     neon: {
       background: 'transparent',
-      color: '#00f5ff',
-      border: '2px solid #00f5ff',
-      boxShadow: '0 0 20px #00f5ff, inset 0 0 20px rgba(0, 245, 255, 0.1)',
-      textShadow: '0 0 10px #00f5ff'
+      color: ' #ff5100ff',
+      border: '2px solid #fa773aff',
+      boxShadow: '0 0 20px #fa773aff, inset 0 0 20px rgba(0, 245, 255, 0.1)',
+      textShadow: '0 0 10px #fa773aff'
     }
   };
 
@@ -446,7 +446,7 @@ const RestaurantDetail = () => {
     return (
       <div style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%)',
+        background: 'linear-gradient(135deg, #a27b4bff 0%, #764ba2 25%, #d68a32ff 50%, #f5576c 75%, #4facfe 100%)',
         backgroundSize: '400% 400%',
         animation: 'gradientShift 8s ease infinite',
         display: 'flex',
@@ -458,8 +458,8 @@ const RestaurantDetail = () => {
             width: '80px',
             height: '80px',
             border: '4px solid transparent',
-            borderTop: '4px solid #667eea',
-            borderRight: '4px solid #f093fb',
+            borderTop: '4px solid #a27b4bff',
+            borderRight: '4px solid #d68a32ff',
             borderRadius: '50%',
             animation: 'spin 1.5s linear infinite',
             margin: '0 auto 2rem'
@@ -468,7 +468,7 @@ const RestaurantDetail = () => {
             color: 'white', 
             fontSize: '2rem', 
             fontWeight: '800',
-            background: 'linear-gradient(135deg, #667eea 0%, #f093fb 100%)',
+            background: 'linear-gradient(135deg, #a27b4bff 0%, #d68a32ff 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif'
@@ -484,7 +484,7 @@ const RestaurantDetail = () => {
     return (
       <div style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg, #a27b4bff 0%, #764ba2 100%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
@@ -578,8 +578,8 @@ const RestaurantDetail = () => {
               icon={<Heart style={{
                 width: '24px',
                 height: '24px',
-                fill: isFavorited ? '#f093fb' : 'transparent',
-                color: isFavorited ? '#f093fb' : 'white'
+                fill: isFavorited ? '#d68a32ff' : 'transparent',
+                color: isFavorited ? '#d68a32ff' : 'white'
               }} />}
               style={{ borderRadius: '50%', width: '60px', height: '60px', padding: 0 }}
             >{""}</UltraButton>
@@ -786,7 +786,7 @@ const RestaurantDetail = () => {
                   position: 'absolute',
                   top: '-10px',
                   right: '-10px',
-                  background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                  background: 'linear-gradient(135deg, #d68a32ff 0%, #f5576c 100%)',
                   color: 'white',
                   borderRadius: '50%',
                   width: '28px',
@@ -822,7 +822,7 @@ const RestaurantDetail = () => {
                 transform: 'translateY(-50%)',
                 width: '24px',
                 height: '24px',
-                color: '#667eea'
+                color: '#a27b4bff'
               }} />
               <input
                 type="text"
@@ -843,7 +843,7 @@ const RestaurantDetail = () => {
                   transition: 'all 0.3s ease'
                 }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#667eea';
+                  e.currentTarget.style.borderColor = '#a27b4bff';
                   e.currentTarget.style.boxShadow = '0 0 30px rgba(102, 126, 234, 0.3)';
                 }}
                 onBlur={(e) => {
@@ -911,7 +911,7 @@ const RestaurantDetail = () => {
               fontSize: '3rem',
               fontWeight: '900',
               marginBottom: '3rem',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+              background: 'linear-gradient(135deg, #a27b4bff 0%, #764ba2 50%, #d68a32ff 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               textAlign: 'center'
@@ -961,7 +961,7 @@ const RestaurantDetail = () => {
                 {category.description && (
                   <p style={{
                     fontSize: '1.2rem',
-                    color: '#667eea',
+                    color: '#a27b4bff',
                     marginBottom: '3rem',
                     fontWeight: '500',
                     textAlign: 'center',
@@ -1218,7 +1218,7 @@ const FuturisticMenuCard = ({ item, onAddToCart }: { item: MenuItem; onAddToCart
               {item.name}
             </h3>
             <p style={{
-              color: '#667eea',
+              color: '#a27b4bff',
               fontSize: '1rem',
               lineHeight: 1.5,
               marginBottom: '1.5rem'
@@ -1227,7 +1227,7 @@ const FuturisticMenuCard = ({ item, onAddToCart }: { item: MenuItem; onAddToCart
             </p>
           </div>
           <div style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: 'linear-gradient(135deg, #a27b4bff 0%, #764ba2 100%)',
             color: 'white',
             padding: '1rem 1.5rem',
             borderRadius: '25px',
@@ -1253,7 +1253,7 @@ const FuturisticMenuCard = ({ item, onAddToCart }: { item: MenuItem; onAddToCart
             alignItems: 'center',
             gap: '1.5rem',
             fontSize: '0.95rem',
-            color: '#667eea'
+            color: '#a27b4bff'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Clock style={{ width: '18px', height: '18px' }} />
