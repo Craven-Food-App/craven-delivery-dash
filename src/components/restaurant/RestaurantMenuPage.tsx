@@ -163,7 +163,23 @@ const NeonBadge = ({ children, variant = 'default', icon = null, pulse = false }
     }
   };
 
-  // ...existing code...
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '0.5rem',
+      padding: '0.75rem 1.5rem',
+      borderRadius: '20px',
+      fontSize: '0.95rem',
+      fontWeight: '700',
+      ...variants[variant],
+      animation: pulse ? 'pulse 2s ease infinite' : 'none',
+      fontFamily: 'inherit'
+    }}>
+      {icon && icon}
+      {children}
+    </span>
+  );
 };
 
 const RestaurantDetail = () => {
@@ -533,6 +549,7 @@ const RestaurantDetail = () => {
           </div>
         </div>
       </GlassCard>
+      </div>
 
       {/* Revolutionary Menu Display */}
       <div style={{
@@ -659,173 +676,6 @@ const RestaurantDetail = () => {
 
       {/* ...existing styles... */}
     </div>
-  );
-};
-
-// Generic Glass Card for Presentational Use
-const GlassCard = ({
-  children,
-  variant = "glass",
-  hoverable = false,
-  style = {},
-  ...props
-}: {
-  children: React.ReactNode;
-  variant?: string;
-  hoverable?: boolean;
-  style?: React.CSSProperties;
-}) => (
-  <div
-    style={{
-      background: variant === "glass"
-        ? "rgba(255,255,255,0.1)"
-        : "white",
-      borderRadius: "25px",
-      boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
-  return (
-    <GlassCard
-      variant="default"
-      style={{ 
-        position: 'relative', 
-        cursor: 'pointer',
-        overflow: 'hidden',
-        transform: isHovered ? 'scale(1.02)' : 'scale(1)',
-        transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <FuturisticMenuCard
-      variant="default"
-      style={{ 
-        position: 'relative', 
-        cursor: 'pointer',
-        overflow: 'hidden',
-        transform: isHovered ? 'scale(1.02)' : 'scale(1)',
-        transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {/* Animated Glow Effect */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        background: 'linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 140, 0, 0.1) 100%)',
-        opacity: isHovered ? 1 : 0,
-        transition: 'opacity 0.4s ease'
-      }} />
-
-      {/* ...existing badges and dietary information... */}
-
-      {/* Enhanced Image Container */}
-      <div style={{
-        height: '250px',
-        background: `
-          linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 140, 0, 0.1) 100%),
-          url(${item.image_url || '/placeholder-food.jpg'})
-        `,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        borderRadius: '25px 25px 0 0',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        {/* ...existing spice level indicator... */}
-
-        {/* Futuristic Add Button */}
-        <UltraButton
-          variant="primary"
-          size="md"
-          glow
-          onClick={(e) => {
-            e?.stopPropagation();
-            onAddToCart(item);
-          }}
-          icon={<Plus style={{ width: '24px', height: '24px' }} />}
-          style={{
-            position: 'absolute',
-            bottom: '1.5rem',
-            right: '1.5rem',
-            borderRadius: '50%',
-            width: '56px',
-            height: '56px',
-            padding: 0,
-            transform: isHovered ? 'scale(1.1)' : 'scale(1)',
-            transition: 'transform 0.3s ease'
-          }}
-        >{""}</UltraButton>
-      </div>
-
-      {/* Enhanced Content */}
-      <div style={{ padding: '2rem' }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: '1.5rem'
-        }}>
-          <div style={{ flex: 1 }}>
-            <h3 style={{
-              fontSize: '1.5rem',
-              fontWeight: '800',
-              color: '#2d3748',
-              marginBottom: '0.75rem',
-              lineHeight: 1.3
-            }}>
-              {item.name}
-            </h3>
-            <p style={{
-              color: '#ff6b35',
-              fontSize: '1rem',
-              lineHeight: 1.5,
-              marginBottom: '1.5rem'
-            }}>
-              {item.description}
-            </p>
-          </div>
-          <div style={{
-            background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-            color: 'white',
-            padding: '1rem 1.5rem',
-            borderRadius: '25px',
-            fontWeight: '800',
-            fontSize: '1.3rem',
-            marginLeft: '1.5rem',
-            boxShadow: '0 10px 30px rgba(255, 107, 53, 0.3)'
-          }}>
-            ${(item.price_cents / 100).toFixed(2)}
-          </div>
-        </div>
-        </div>
-
-        {/* Enhanced Footer */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          paddingTop: '1.5rem',
-          borderTop: '2px solid rgba(255, 107, 53, 0.1)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1.5rem',
-            fontSize: '0.95rem',
-            color: '#ff6b35'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Clock style={{ width: '18px', height: '18px' }} />
-              {item.preparation_time} min
-            </div>
-            {item.calories && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Zap style={{ width: '18px', height: '18px' }} />
-                {item.calories} cal
-    </GlassCard>
   );
 };
           
@@ -988,20 +838,5 @@ function getItemsByCategory(categoryId: string) {
   // Replace with your actual menu items data source.
   return [];
 }
-
-export default RestaurantDetail;
-            variant="ghost"
-            size="sm"
-            icon={<Heart style={{ width: '16px', height: '16px' }} />}
-            onClick={(e) => {
-              e?.stopPropagation();
-              // Handle favorite logic
-            }}
-          >{""}</UltraButton>
-        </div>
-      </div>
-    </FuturisticMenuCard>
-  );
-};
 
 export default RestaurantDetail;
