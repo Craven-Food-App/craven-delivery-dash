@@ -8,7 +8,61 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast as showToast } from 'sonner';
 
-// ...existing code...
+// Enhanced Types
+interface Restaurant {
+  id: string;
+  name: string;
+  description: string;
+  cuisine_type: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  delivery_fee_cents: number;
+  min_delivery_time: number;
+  max_delivery_time: number;
+  rating: number;
+  total_reviews: number;
+  image_url: string;
+  latitude?: number;
+  longitude?: number;
+  chef_name?: string;
+  established_year?: string;
+}
+
+interface MenuCategory {
+  id: string;
+  name: string;
+  description: string;
+  display_order: number;
+  icon?: string;
+}
+
+interface MenuItem {
+  id: string;
+  name: string;
+  description: string;
+  price_cents: number;
+  image_url: string;
+  is_available: boolean;
+  is_vegetarian: boolean;
+  is_vegan: boolean;
+  is_gluten_free: boolean;
+  category_id: string;
+  preparation_time: number;
+  is_featured?: boolean;
+  order_count?: number;
+  spice_level?: number;
+  calories?: number;
+  chef_recommended?: boolean;
+}
+
+interface CartItem extends MenuItem {
+  key: string;
+  quantity: number;
+  special_instructions?: string;
+  modifiers?: any[];
+}
 
 // Ultra Modern Button Component
 const UltraButton = ({ 
@@ -50,24 +104,24 @@ const UltraButton = ({
 
   const variants = {
     primary: {
-      background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 25%, #ff8c00 50%, #ff4500 75%, #ff6347 100%)',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%)',
       backgroundSize: '300% 300%',
       animation: 'gradientShift 6s ease infinite',
       color: 'white',
       boxShadow: glow 
-        ? '0 0 40px rgba(255, 107, 53, 0.6), 0 20px 40px rgba(0, 0, 0, 0.15)'
-        : '0 20px 40px rgba(255, 107, 53, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
+        ? '0 0 40px rgba(102, 126, 234, 0.6), 0 20px 40px rgba(0, 0, 0, 0.15)'
+        : '0 20px 40px rgba(102, 126, 234, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
     },
     secondary: {
       background: 'rgba(255, 255, 255, 0.95)',
       backdropFilter: 'blur(20px)',
-      border: '1px solid rgba(255, 107, 53, 0.2)',
+      border: '1px solid rgba(102, 126, 234, 0.2)',
       color: '#4a5568',
       boxShadow: '0 15px 35px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
     },
     ghost: {
       background: 'transparent',
-      color: '#ff6b35',
+      color: '#667eea',
       boxShadow: 'none'
     },
     danger: {
@@ -84,7 +138,28 @@ const UltraButton = ({
     }
   };
 
-  // ...existing code...
+  const sizes = {
+    sm: {
+      fontSize: '0.9rem',
+      padding: '0.75rem 1.5rem',
+      minHeight: '44px'
+    },
+    md: {
+      fontSize: '1rem',
+      padding: '1rem 2rem',
+      minHeight: '52px'
+    },
+    lg: {
+      fontSize: '1.1rem',
+      padding: '1.25rem 2.5rem',
+      minHeight: '60px'
+    },
+    xl: {
+      fontSize: '1.2rem',
+      padding: '1.5rem 3rem',
+      minHeight: '68px'
+    }
+  };
 
   return (
     <button
@@ -93,7 +168,7 @@ const UltraButton = ({
       style={{
         ...baseStyles,
         ...variants[variant],
-        ...size[size],
+        ...sizes[size],
         opacity: disabled ? 0.6 : 1,
         ...style
       }}
@@ -103,8 +178,8 @@ const UltraButton = ({
           e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
           if (variant === 'primary') {
             e.currentTarget.style.boxShadow = glow
-              ? '0 0 60px rgba(255, 107, 53, 0.8), 0 25px 50px rgba(0, 0, 0, 0.2)'
-              : '0 25px 50px rgba(255, 107, 53, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+              ? '0 0 60px rgba(102, 126, 234, 0.8), 0 25px 50px rgba(0, 0, 0, 0.2)'
+              : '0 25px 50px rgba(102, 126, 234, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
           }
         }
       }}
@@ -113,8 +188,8 @@ const UltraButton = ({
           e.currentTarget.style.transform = 'translateY(0) scale(1)';
           if (variant === 'primary') {
             e.currentTarget.style.boxShadow = glow
-              ? '0 0 40px rgba(255, 107, 53, 0.6), 0 20px 40px rgba(0, 0, 0, 0.15)'
-              : '0 20px 40px rgba(255, 107, 53, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+              ? '0 0 40px rgba(102, 126, 234, 0.6), 0 20px 40px rgba(0, 0, 0, 0.15)'
+              : '0 20px 40px rgba(102, 126, 234, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
           }
         }
       }}
@@ -125,16 +200,84 @@ const UltraButton = ({
   );
 };
 
-// ...existing code...
+// Futuristic Card Component
+const FuturisticCard = ({
+  children,
+  className = '',
+  hoverable = true,
+  variant = 'default',
+  style = {},
+  onMouseEnter,
+  onMouseLeave
+}: {
+  children: any;
+  className?: string;
+  hoverable?: boolean;
+  variant?: string;
+  style?: React.CSSProperties;
+  onMouseEnter?: React.MouseEventHandler<HTMLDivElement>;
+  onMouseLeave?: React.MouseEventHandler<HTMLDivElement>;
+}) => {
+  const variants = {
+    default: {
+      background: 'rgba(255, 255, 255, 0.95)',
+      backdropFilter: 'blur(30px)',
+      border: '1px solid rgba(255, 255, 255, 0.3)',
+      boxShadow: '0 25px 50px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6)'
+    },
+    glass: {
+      background: 'rgba(255, 255, 255, 0.1)',
+      backdropFilter: 'blur(40px)',
+      border: '1px solid rgba(255, 255, 255, 0.2)',
+      boxShadow: '0 15px 35px rgba(0, 0, 0, 0.1)'
+    },
+    gradient: {
+      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 248, 255, 0.9) 100%)',
+      backdropFilter: 'blur(20px)',
+      border: '1px solid rgba(102, 126, 234, 0.1)',
+      boxShadow: '0 20px 40px rgba(102, 126, 234, 0.1)'
+    }
+  };
+
+  const baseStyles = {
+    borderRadius: '32px',
+    transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+  };
+
+  return (
+    <div
+      style={{ 
+        ...baseStyles, 
+        ...variants[variant], 
+        ...style 
+      }}
+      className={className}
+      onMouseEnter={onMouseEnter ? onMouseEnter : (e) => {
+        if (hoverable) {
+          e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
+          e.currentTarget.style.boxShadow = '0 35px 70px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.7)';
+        }
+      }}
+      onMouseLeave={onMouseLeave ? onMouseLeave : (e) => {
+        if (hoverable) {
+          e.currentTarget.style.transform = 'translateY(0) scale(1)';
+          e.currentTarget.style.boxShadow = variants[variant].boxShadow;
+        }
+      }}
+    >
+      {children}
+    </div>
+  );
+};
 
 // Neon Badge Component
 const NeonBadge = ({ children, variant = 'default', icon = null, pulse = false }) => {
   const variants = {
     default: {
-      background: 'linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(247, 147, 30, 0.15) 100%)',
-      color: '#ff6b35',
-      border: '1px solid rgba(255, 107, 53, 0.3)',
-      boxShadow: '0 0 20px rgba(255, 107, 53, 0.2)'
+      background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)',
+      color: '#667eea',
+      border: '1px solid rgba(102, 126, 234, 0.3)',
+      boxShadow: '0 0 20px rgba(102, 126, 234, 0.2)'
     },
     success: {
       background: 'linear-gradient(135deg, rgba(46, 204, 113, 0.15) 0%, rgba(39, 174, 96, 0.15) 100%)',
@@ -143,189 +286,210 @@ const NeonBadge = ({ children, variant = 'default', icon = null, pulse = false }
       boxShadow: '0 0 20px rgba(46, 204, 113, 0.2)'
     },
     featured: {
-      background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       color: 'white',
       border: 'none',
-      boxShadow: '0 0 30px rgba(255, 107, 53, 0.5)'
+      boxShadow: '0 0 30px rgba(102, 126, 234, 0.5)'
     },
     popular: {
-      background: 'linear-gradient(135deg, #ff8c00 0%, #ff4500 100%)',
+      background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
       color: 'white',
       border: 'none',
-      boxShadow: '0 0 30px rgba(255, 140, 0, 0.5)'
+      boxShadow: '0 0 30px rgba(240, 147, 251, 0.5)'
     },
     neon: {
       background: 'transparent',
-      color: '#ff6b35',
-      border: '2px solid #ff6b35',
-      boxShadow: '0 0 20px #ff6b35, inset 0 0 20px rgba(255, 107, 53, 0.1)',
-      textShadow: '0 0 10px #ff6b35'
+      color: '#00f5ff',
+      border: '2px solid #00f5ff',
+      boxShadow: '0 0 20px #00f5ff, inset 0 0 20px rgba(0, 245, 255, 0.1)',
+      textShadow: '0 0 10px #00f5ff'
     }
   };
 
   return (
-    <span style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '0.5rem',
-      padding: '0.75rem 1.5rem',
-      borderRadius: '20px',
-      fontSize: '0.95rem',
-      fontWeight: '700',
-      ...variants[variant],
-      animation: pulse ? 'pulse 2s ease infinite' : 'none',
-      fontFamily: 'inherit'
-    }}>
-      {icon && icon}
+    <span
+      style={{
+        ...variants[variant],
+        padding: '0.5rem 1rem',
+        borderRadius: '20px',
+        fontSize: '0.8rem',
+        fontWeight: '700',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        animation: pulse ? 'pulse 2s infinite' : 'none',
+        fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif'
+      }}
+    >
+      {icon}
       {children}
     </span>
   );
 };
 
 const RestaurantDetail = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  // ...existing code...
-  const [loading, setLoading] = useState(true);
-  const [restaurant, setRestaurant] = useState<any>(null); // Add this line
-  const [isFavorited, setIsFavorited] = useState(false); // Add this line
-
-  // Categories state and logic
-  const [categories, setCategories] = useState<any[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-
-  // Example: fetch categories (replace with real fetch logic)
-  useEffect(() => {
-    // Replace this with your actual fetch logic
-    setCategories([
-      { id: 'starters', name: 'Starters', icon: <Utensils />, description: 'Begin your meal with a bang!' },
-      { id: 'mains', name: 'Mains', icon: <ChefHat />, description: 'Hearty and delicious main courses.' },
-      { id: 'vegan', name: 'Vegan', icon: <Leaf />, description: 'Plant-based delights.' }
-    ]);
-    setSelectedCategory('starters');
-  }, []);
-
-  // Cart state and logic
-  const [cart, setCart] = useState<any[]>([]);
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [showCart, setShowCart] = useState(false);
-
-  // Search query state
-  const [searchQuery, setSearchQuery] = useState("");
-
-  // Example addToCart function
-  const addToCart = (item: any) => {
-    setCart(prevCart => {
-      const existing = prevCart.find((i) => i.id === item.id);
-      if (existing) {
-        return prevCart.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
-        );
-      }
-      return [...prevCart, { ...item, quantity: 1 }];
-    });
-  };
-
-  // Example getCartTotal function
-  const getCartTotal = () => {
-    const total = cart.reduce((sum, item) => sum + (item.price_cents * item.quantity), 0);
-    return { total };
-  };
-
-  // Add these lines for images
+  const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [isFavorited, setIsFavorited] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const restaurantImages = restaurant?.images && Array.isArray(restaurant.images) && restaurant.images.length > 0
-    ? restaurant.images
-    : ["/placeholder-restaurant.jpg"];
 
-  // Example: Fetch restaurant data and set loading to false when done
-  // useEffect(() => {
-  //   fetchRestaurantData().then((data) => {
-  //     setRestaurant(data);
-  //     setLoading(false);
-  //   });
-  // }, []);
+  // Enhanced Restaurant Images
+  const restaurantImages = [
+    restaurant?.image_url || '/placeholder-restaurant.jpg',
+    '/restaurant-interior.jpg',
+    '/restaurant-kitchen.jpg',
+    '/restaurant-signature-dish.jpg'
+  ];
 
-  // Generic Glass Card for Presentational Use
-  const GlassCard = ({
-    children,
-    variant = "glass",
-    hoverable = false,
-    style = {},
-    ...props
-  }: {
-    children: React.ReactNode;
-    variant?: string;
-    hoverable?: boolean;
-    style?: React.CSSProperties;
-  }) => (
-    <div
-      style={{
-        background: variant === "glass"
-          ? "rgba(255,255,255,0.1)"
-          : "white",
-        borderRadius: "25px",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
-        ...(hoverable
-          ? {
-              transition: "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
-              cursor: "pointer",
-            }
-          : {}),
-        ...style,
-      }}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-  
-    if (loading) {
-      return (
-        <div style={{
-          minHeight: '100vh',
-          background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 25%, #ff8c00 50%, #ff4500 75%, #ff6347 100%)',
-          backgroundSize: '400% 400%',
-          animation: 'gradientShift 8s ease infinite',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <GlassCard variant="glass" hoverable={false} style={{ padding: '4rem', textAlign: 'center' }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              border: '4px solid transparent',
-              borderTop: '4px solid #ff6b35',
-              borderRight: '4px solid #ff8c00',
-              borderRadius: '50%',
-              animation: 'spin 1.5s linear infinite',
-              margin: '0 auto 2rem'
-            }} />
-            <h3 style={{ 
-              color: 'white', 
-              fontSize: '2rem', 
-              fontWeight: '800',
-              background: 'linear-gradient(135deg, #ff6b35 0%, #ff8c00 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif'
-            }}>
-              Loading Experience...
-            </h3>
-          </GlassCard>
-        </div>
-      );
+  useEffect(() => {
+    if (id) {
+      fetchRestaurantData();
     }
+  }, [id]);
+
+  const fetchRestaurantData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch restaurant data
+      const { data: restaurantData, error: restaurantError } = await supabase
+        .from('restaurants')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (restaurantError) throw restaurantError;
+      setRestaurant(restaurantData);
+
+      // Fetch categories and menu items
+      const { data: categoriesData } = await supabase
+        .from('menu_categories')
+        .select('*')
+        .eq('restaurant_id', id)
+        .order('display_order');
+
+      const { data: menuData } = await supabase
+        .from('menu_items')
+        .select('*')
+        .eq('restaurant_id', id)
+        .eq('is_available', true);
+
+      setCategories(categoriesData || []);
+      setMenuItems(
+        (menuData || []).map((item: any) => ({
+          ...item,
+          spice_level: item.spice_level !== undefined && item.spice_level !== null
+            ? Number(item.spice_level)
+            : undefined
+        }))
+      );
+      
+      if (categoriesData?.length > 0) {
+        setSelectedCategory(categoriesData[0].id);
+      }
+    } catch (error: any) {
+      console.error('Error fetching restaurant data:', error);
+      showToast.error("Failed to load restaurant details");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addToCart = useCallback((item: MenuItem, quantity: number = 1) => {
+    const existingItem = cart.find(cartItem => cartItem.id === item.id);
+    if (existingItem) {
+      setCart(cart.map(cartItem =>
+        cartItem.id === item.id
+          ? { ...cartItem, quantity: cartItem.quantity + quantity }
+          : cartItem
+      ));
+    } else {
+      setCart([...cart, { ...item, quantity, key: item.id }]);
+    }
+    
+    showToast.success(`${item.name} added to cart!`);
+  }, [cart]);
+
+  const getCartTotal = () => {
+    const subtotal = cart.reduce((total, item) => total + (item.price_cents * item.quantity), 0);
+    const deliveryFee = deliveryMethod === 'delivery' ? (restaurant?.delivery_fee_cents || 0) : 0;
+    const tax = Math.round(subtotal * 0.08);
+    
+    return {
+      subtotal,
+      deliveryFee,
+      tax,
+      total: subtotal + deliveryFee + tax
+    };
+  };
+
+  const getItemsByCategory = (categoryId: string) => {
+    return menuItems.filter(item => item.category_id === categoryId);
+  };
+
+  const filteredItems = menuItems.filter(item =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%)',
+        backgroundSize: '400% 400%',
+        animation: 'gradientShift 8s ease infinite',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <FuturisticCard variant="glass" hoverable={false} style={{ padding: '4rem', textAlign: 'center' }}>
+          <div style={{
+            width: '80px',
+            height: '80px',
+            border: '4px solid transparent',
+            borderTop: '4px solid #667eea',
+            borderRight: '4px solid #f093fb',
+            borderRadius: '50%',
+            animation: 'spin 1.5s linear infinite',
+            margin: '0 auto 2rem'
+          }} />
+          <h3 style={{ 
+            color: 'white', 
+            fontSize: '2rem', 
+            fontWeight: '800',
+            background: 'linear-gradient(135deg, #667eea 0%, #f093fb 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif'
+          }}>
+            Loading Experience...
+          </h3>
+        </FuturisticCard>
+      </div>
+    );
+  }
 
   if (!restaurant) {
     return (
       <div style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
       }}>
-        <GlassCard variant="glass" hoverable={false} style={{ padding: '4rem', textAlign: 'center', maxWidth: '500px' }}>
+        <FuturisticCard variant="glass" hoverable={false} style={{ padding: '4rem', textAlign: 'center', maxWidth: '500px' }}>
           <h2 style={{ 
             color: 'white', 
             fontSize: '2.5rem', 
@@ -342,7 +506,7 @@ const RestaurantDetail = () => {
           >
             Explore Restaurants
           </UltraButton>
-        </GlassCard>
+        </FuturisticCard>
       </div>
     );
   }
@@ -366,7 +530,7 @@ const RestaurantDetail = () => {
           position: 'absolute',
           inset: 0,
           background: `
-            linear-gradient(135deg, rgba(255, 107, 53, 0.9) 0%, rgba(247, 147, 30, 0.8) 25%, rgba(255, 140, 0, 0.7) 50%, rgba(255, 69, 0, 0.8) 75%, rgba(255, 99, 71, 0.9) 100%),
+            linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.8) 25%, rgba(240, 147, 251, 0.7) 50%, rgba(245, 87, 108, 0.8) 75%, rgba(79, 172, 254, 0.9) 100%),
             url(${restaurantImages[activeImageIndex]})
           `,
           backgroundSize: '400% 400%, cover',
@@ -375,7 +539,17 @@ const RestaurantDetail = () => {
           filter: 'blur(1px)'
         }} />
 
-        {/* ...existing floating particles code... */}
+        {/* Floating Particles */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: `
+            radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 40% 60%, rgba(255, 255, 255, 0.05) 0%, transparent 50%)
+          `,
+          animation: 'float 8s ease-in-out infinite'
+        }} />
         
         {/* Futuristic Navigation */}
         <div style={{
@@ -404,8 +578,8 @@ const RestaurantDetail = () => {
               icon={<Heart style={{
                 width: '24px',
                 height: '24px',
-                fill: isFavorited ? '#ff6b35' : 'transparent',
-                color: isFavorited ? '#ff6b35' : 'white'
+                fill: isFavorited ? '#f093fb' : 'transparent',
+                color: isFavorited ? '#f093fb' : 'white'
               }} />}
               style={{ borderRadius: '50%', width: '60px', height: '60px', padding: 0 }}
             >{""}</UltraButton>
@@ -419,7 +593,124 @@ const RestaurantDetail = () => {
           </div>
         </div>
 
-        {/* ...existing central content code... */}
+        {/* Central Content */}
+        <div style={{
+          position: 'relative',
+          zIndex: 10,
+          width: '100%',
+          maxWidth: '1400px',
+          margin: '0 auto',
+          padding: '0 2rem',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '1rem',
+            marginBottom: '2rem',
+            flexWrap: 'wrap'
+          }}>
+            {restaurant.chef_name && (
+              <NeonBadge variant="featured" icon={<ChefHat style={{ width: '16px', height: '16px' }} />}>
+                Chef {restaurant.chef_name}
+              </NeonBadge>
+            )}
+            <NeonBadge variant="neon" pulse>
+              LIVE NOW
+            </NeonBadge>
+          </div>
+          
+          <h1 style={{
+            fontSize: 'clamp(3rem, 8vw, 6rem)',
+            fontWeight: '900',
+            margin: '0 0 2rem 0',
+            color: 'white',
+            textShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
+            letterSpacing: '-0.02em',
+            lineHeight: 0.9
+          }}>
+            {restaurant.name}
+          </h1>
+          
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+            gap: '2rem',
+            marginBottom: '3rem'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(20px)',
+              padding: '1rem 2rem',
+              borderRadius: '25px',
+              border: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
+              <Star style={{ width: '28px', height: '28px', fill: '#ffd700', color: '#ffd700' }} />
+              <span style={{ fontSize: '1.8rem', fontWeight: '800', color: 'white' }}>{restaurant.rating}</span>
+              <span style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '1.1rem' }}>({restaurant.total_reviews}+)</span>
+            </div>
+            
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(20px)',
+              padding: '1rem 2rem',
+              borderRadius: '25px',
+              border: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
+              <Clock style={{ width: '24px', height: '24px', color: 'white' }} />
+              <span style={{ color: 'white', fontSize: '1.1rem', fontWeight: '600' }}>
+                {restaurant.min_delivery_time}-{restaurant.max_delivery_time} min
+              </span>
+            </div>
+            
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(20px)',
+              padding: '1rem 2rem',
+              borderRadius: '25px',
+              border: '1px solid rgba(255, 255, 255, 0.2)'
+            }}>
+              <Truck style={{ width: '24px', height: '24px', color: 'white' }} />
+              <span style={{ color: 'white', fontSize: '1.1rem', fontWeight: '600' }}>
+                ${(restaurant.delivery_fee_cents / 100).toFixed(2)} delivery
+              </span>
+            </div>
+          </div>
+          
+          <p style={{
+            fontSize: '1.3rem',
+            color: 'rgba(255, 255, 255, 0.9)',
+            maxWidth: '700px',
+            margin: '0 auto 3rem',
+            lineHeight: 1.6,
+            fontWeight: '400'
+          }}>
+            {restaurant.description}
+          </p>
+
+          <UltraButton
+            variant="primary"
+            size="xl"
+            glow
+            onClick={() => {
+              const menuSection = document.getElementById('menu-section');
+              menuSection?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            icon={<Utensils style={{ width: '24px', height: '24px' }} />}
+          >
+            Explore Menu
+          </UltraButton>
+        </div>
 
         {/* Floating Image Indicators */}
         <div style={{
@@ -461,11 +752,25 @@ const RestaurantDetail = () => {
         display: 'flex',
         justifyContent: 'center'
       }}>
-        <GlassCard variant="glass" hoverable={false} style={{ padding: '1rem' }}>
+        <FuturisticCard variant="glass" hoverable={false} style={{ padding: '1rem' }}>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            {/* ...existing delivery/pickup buttons... */}
+            {['delivery', 'pickup'].map((method) => (
+              <UltraButton
+                key={method}
+                variant={deliveryMethod === method ? 'primary' : 'ghost'}
+                size="md"
+                onClick={() => setDeliveryMethod(method as 'delivery' | 'pickup')}
+                icon={method === 'delivery' ? 
+                  <Truck style={{ width: '20px', height: '20px' }} /> : 
+                  <MapPin style={{ width: '20px', height: '20px' }} />
+                }
+                style={{ textTransform: 'capitalize' }}
+              >
+                {method}
+              </UltraButton>
+            ))}
             
-            <div style={{ width: '1px', height: '40px', background: 'rgba(255, 107, 53, 0.2)' }} />
+            <div style={{ width: '1px', height: '40px', background: 'rgba(102, 126, 234, 0.2)' }} />
             
             <UltraButton
               variant={cart.length > 0 ? 'primary' : 'secondary'}
@@ -481,7 +786,7 @@ const RestaurantDetail = () => {
                   position: 'absolute',
                   top: '-10px',
                   right: '-10px',
-                  background: 'linear-gradient(135deg, #ff8c00 0%, #ff4500 100%)',
+                  background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
                   color: 'white',
                   borderRadius: '50%',
                   width: '28px',
@@ -491,14 +796,14 @@ const RestaurantDetail = () => {
                   justifyContent: 'center',
                   fontSize: '0.8rem',
                   fontWeight: '800',
-                  boxShadow: '0 0 20px rgba(255, 140, 0, 0.6)'
+                  boxShadow: '0 0 20px rgba(240, 147, 251, 0.6)'
                 }}>
                   {cart.reduce((sum, item) => sum + item.quantity, 0)}
                 </span>
               )}
             </UltraButton>
           </div>
-        </GlassCard>
+        </FuturisticCard>
       </div>
 
       {/* Advanced Search Interface */}
@@ -507,48 +812,91 @@ const RestaurantDetail = () => {
         maxWidth: '1400px',
         margin: '0 auto'
       }}>
-      <GlassCard variant="glass" hoverable={false} style={{ padding: '2rem', marginBottom: '3rem' }}>
-        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative', flex: '1', minWidth: '300px' }}>
-            <Search style={{
-              position: 'absolute',
-              left: '1.5rem',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              width: '24px',
-              height: '24px',
-              color: '#ff6b35'
-            }} />
-            <input
-              type="text"
-              placeholder="Search magical dishes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '1.25rem 1.5rem 1.25rem 4rem',
-                border: '2px solid rgba(255, 107, 53, 0.2)',
-                borderRadius: '25px',
-                fontSize: '1.1rem',
-                background: 'rgba(255, 255, 255, 0.9)',
-                backdropFilter: 'blur(10px)',
-                color: '#4a5568',
-                fontFamily: 'inherit',
-                outline: 'none',
-                transition: 'all 0.3s ease'
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = '#ff6b35';
-                e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 107, 53, 0.3)';
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(255, 107, 53, 0.2)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            />
+        <FuturisticCard variant="gradient" hoverable={false} style={{ padding: '2rem', marginBottom: '3rem' }}>
+          <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', flex: '1', minWidth: '300px' }}>
+              <Search style={{
+                position: 'absolute',
+                left: '1.5rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: '24px',
+                height: '24px',
+                color: '#667eea'
+              }} />
+              <input
+                type="text"
+                placeholder="Search magical dishes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '1.25rem 1.5rem 1.25rem 4rem',
+                  border: '2px solid rgba(102, 126, 234, 0.2)',
+                  borderRadius: '25px',
+                  fontSize: '1.1rem',
+                  background: 'rgba(255, 255, 255, 0.9)',
+                  backdropFilter: 'blur(10px)',
+                  color: '#4a5568',
+                  fontFamily: 'inherit',
+                  outline: 'none',
+                  transition: 'all 0.3s ease'
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = '#667eea';
+                  e.currentTarget.style.boxShadow = '0 0 30px rgba(102, 126, 234, 0.3)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.2)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              />
+            </div>
+            
+            <UltraButton
+              variant="secondary"
+              size="lg"
+              icon={<Filter style={{ width: '20px', height: '20px' }} />}
+              onClick={() => {}}
+            >
+              Filters
+            </UltraButton>
           </div>
+        </FuturisticCard>
+      </div>
+
+      {/* Dynamic Category Navigation */}
+      <div style={{
+        padding: '0 2rem 3rem',
+        maxWidth: '1400px',
+        margin: '0 auto'
+      }}>
+        <div style={{
+          display: 'flex',
+          gap: '1rem',
+          overflowX: 'auto',
+          paddingBottom: '1rem',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}>
+          {categories.map((category) => (
+            <UltraButton
+              key={category.id}
+              variant={selectedCategory === category.id ? 'primary' : 'secondary'}
+              size="md"
+              onClick={() => setSelectedCategory(category.id)}
+              style={{ 
+                whiteSpace: 'nowrap',
+                boxShadow: selectedCategory === category.id 
+                  ? '0 0 30px rgba(102, 126, 234, 0.4)' 
+                  : '0 8px 25px rgba(0, 0, 0, 0.08)'
+              }}
+            >
+              {category.icon && <span style={{ marginRight: '0.5rem' }}>{category.icon}</span>}
+              {category.name}
+            </UltraButton>
+          ))}
         </div>
-      </GlassCard>
       </div>
 
       {/* Revolutionary Menu Display */}
@@ -558,43 +906,33 @@ const RestaurantDetail = () => {
         margin: '0 auto'
       }}>
         {searchQuery ? (
-          (() => {
-            // Replace this with your actual menu items data source
-            const allMenuItems: any[] = []; // Example: fetch or use state for menu items
-            const filteredItems = allMenuItems.filter(item =>
-              item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              item.description?.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-            return (
-              <div>
-                <h2 style={{
-                  fontSize: '3rem',
-                  fontWeight: '900',
-                  marginBottom: '3rem',
-                  background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ff8c00 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  textAlign: 'center'
-                }}>
-                  Search Results
-                </h2>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))',
-                  gap: '2rem'
-                }}>
-                  {filteredItems && filteredItems.map((item) => (
-                    <FuturisticMenuCard key={item.id} item={item} onAddToCart={addToCart} />
-                  ))}
-                </div>
-              </div>
-            );
-          })()
+          <div>
+            <h2 style={{
+              fontSize: '3rem',
+              fontWeight: '900',
+              marginBottom: '3rem',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              textAlign: 'center'
+            }}>
+              Search Results ({filteredItems.length})
+            </h2>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))',
+              gap: '2rem'
+            }}>
+              {filteredItems.map((item) => (
+                <FuturisticMenuCard key={item.id} item={item} onAddToCart={addToCart} />
+              ))}
+            </div>
+          </div>
         ) : (
-          categories && categories.map((category) => {
+          categories.map((category) => {
             const categoryItems = getItemsByCategory(category.id);
             if (categoryItems.length === 0) return null;
-  
+
             return (
               <div key={category.id} style={{ marginBottom: '5rem' }}>
                 <div style={{
@@ -608,7 +946,7 @@ const RestaurantDetail = () => {
                   <h2 style={{
                     fontSize: '3rem',
                     fontWeight: '900',
-                    background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ff8c00 100%)',
+                    background: 'linear-gradient(135deg, #ead666ff 0%, #a28f4bff 50%, #fbe493ff 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     textAlign: 'center'
@@ -623,7 +961,7 @@ const RestaurantDetail = () => {
                 {category.description && (
                   <p style={{
                     fontSize: '1.2rem',
-                    color: '#ff6b35',
+                    color: '#667eea',
                     marginBottom: '3rem',
                     fontWeight: '500',
                     textAlign: 'center',
@@ -666,7 +1004,7 @@ const RestaurantDetail = () => {
             icon={<ShoppingCart style={{ width: '28px', height: '28px' }} />}
             style={{
               animation: 'float 3s ease-in-out infinite',
-              boxShadow: '0 25px 60px rgba(255, 107, 53, 0.4)'
+              boxShadow: '0 25px 60px rgba(234, 201, 102, 0.4)'
             }}
           >
             {cart.reduce((sum, item) => sum + item.quantity, 0)} items • ${(getCartTotal().total / 100).toFixed(2)}
@@ -674,28 +1012,48 @@ const RestaurantDetail = () => {
         </div>
       )}
 
-      {/* ...existing styles... */}
+      <style>{`
+        @keyframes gradientShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateX(-50%) translateY(0px); }
+          50% { transform: translateX(-50%) translateY(-10px); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </div>
   );
 };
-          
-/**
- * FuturisticMenuCard component for displaying menu items.
- */
-const FuturisticMenuCard = ({ item, onAddToCart }: { item: any, onAddToCart: (item: any) => void }) => {
+
+// Futuristic Menu Item Card
+const FuturisticMenuCard = ({ item, onAddToCart }: { item: MenuItem; onAddToCart: (item: MenuItem) => void }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <div
-      style={{
-        position: 'relative',
+    <FuturisticCard
+      variant="default"
+      style={{ 
+        position: 'relative', 
         cursor: 'pointer',
         overflow: 'hidden',
         transform: isHovered ? 'scale(1.02)' : 'scale(1)',
-        transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
-        background: "white",
-        borderRadius: "25px",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.08)"
+        transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -704,17 +1062,83 @@ const FuturisticMenuCard = ({ item, onAddToCart }: { item: any, onAddToCart: (it
       <div style={{
         position: 'absolute',
         inset: 0,
-        background: 'linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 140, 0, 0.1) 100%)',
+        background: 'linear-gradient(135deg, rgba(234, 181, 102, 0.1) 0%, rgba(251, 213, 147, 0.1) 100%)',
         opacity: isHovered ? 1 : 0,
-        transition: 'opacity 0.4s ease',
-        pointerEvents: 'none'
+        transition: 'opacity 0.4s ease'
       }} />
+
+      {/* Premium Badges */}
+      <div style={{
+        position: 'absolute',
+        top: '1.5rem',
+        left: '1.5rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.75rem',
+        zIndex: 20
+      }}>
+        {item.chef_recommended && (
+          <NeonBadge variant="featured" icon={<ChefHat style={{ width: '14px', height: '14px' }} />}>
+            Chef's Special
+          </NeonBadge>
+        )}
+        {item.is_featured && (
+          <NeonBadge variant="popular" icon={<TrendingUp style={{ width: '14px', height: '14px' }} />} pulse>
+            Trending
+          </NeonBadge>
+        )}
+      </div>
+
+      {/* Dietary Information */}
+      <div style={{
+        position: 'absolute',
+        top: '1.5rem',
+        right: '1.5rem',
+        display: 'flex',
+        gap: '0.75rem',
+        zIndex: 20
+      }}>
+        {item.is_vegetarian && (
+          <div style={{
+            background: 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)',
+            color: 'white',
+            padding: '0.75rem',
+            borderRadius: '50%',
+            width: '40px',
+            height: '40px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 8px 25px rgba(46, 204, 113, 0.3)'
+          }}>
+            <Leaf style={{ width: '18px', height: '18px' }} />
+          </div>
+        )}
+        {item.is_gluten_free && (
+          <div style={{
+            background: 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)',
+            color: 'white',
+            padding: '0.75rem',
+            borderRadius: '50%',
+            width: '40px',
+            height: '40px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '0.8rem',
+            fontWeight: '800',
+            boxShadow: '0 8px 25px rgba(228, 119, 18, 0.3)'
+          }}>
+            GF
+          </div>
+        )}
+      </div>
 
       {/* Enhanced Image Container */}
       <div style={{
         height: '250px',
         background: `
-          linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 140, 0, 0.1) 100%),
+          linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(240, 147, 251, 0.1) 100%),
           url(${item.image_url || '/placeholder-food.jpg'})
         `,
         backgroundSize: 'cover',
@@ -723,6 +1147,34 @@ const FuturisticMenuCard = ({ item, onAddToCart }: { item: any, onAddToCart: (it
         position: 'relative',
         overflow: 'hidden'
       }}>
+        {/* Spice Level Indicator */}
+        {item.spice_level && item.spice_level > 0 && (
+          <div style={{
+            position: 'absolute',
+            bottom: '1.5rem',
+            left: '1.5rem',
+            display: 'flex',
+            gap: '4px',
+            background: 'rgba(0, 0, 0, 0.6)',
+            padding: '0.75rem 1rem',
+            borderRadius: '20px',
+            backdropFilter: 'blur(10px)'
+          }}>
+            {[...Array(3)].map((_, i) => (
+              <span
+                key={i}
+                style={{
+                  fontSize: '1.2rem',
+                  opacity: i < item.spice_level! ? 1 : 0.3,
+                  filter: i < item.spice_level! ? 'drop-shadow(0 0 8px #ff6b35)' : 'none'
+                }}
+              >
+                🌶️
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* Futuristic Add Button */}
         <UltraButton
           variant="primary"
@@ -766,7 +1218,7 @@ const FuturisticMenuCard = ({ item, onAddToCart }: { item: any, onAddToCart: (it
               {item.name}
             </h3>
             <p style={{
-              color: '#ff6b35',
+              color: '#667eea',
               fontSize: '1rem',
               lineHeight: 1.5,
               marginBottom: '1.5rem'
@@ -775,14 +1227,14 @@ const FuturisticMenuCard = ({ item, onAddToCart }: { item: any, onAddToCart: (it
             </p>
           </div>
           <div style={{
-            background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             color: 'white',
             padding: '1rem 1.5rem',
             borderRadius: '25px',
             fontWeight: '800',
             fontSize: '1.3rem',
             marginLeft: '1.5rem',
-            boxShadow: '0 10px 30px rgba(255, 107, 53, 0.3)'
+            boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)'
           }}>
             ${(item.price_cents / 100).toFixed(2)}
           </div>
@@ -794,14 +1246,14 @@ const FuturisticMenuCard = ({ item, onAddToCart }: { item: any, onAddToCart: (it
           justifyContent: 'space-between',
           alignItems: 'center',
           paddingTop: '1.5rem',
-          borderTop: '2px solid rgba(255, 107, 53, 0.1)'
+          borderTop: '2px solid rgba(102, 126, 234, 0.1)'
         }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
             gap: '1.5rem',
             fontSize: '0.95rem',
-            color: '#ff6b35'
+            color: '#667eea'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Clock style={{ width: '18px', height: '18px' }} />
@@ -814,6 +1266,7 @@ const FuturisticMenuCard = ({ item, onAddToCart }: { item: any, onAddToCart: (it
               </div>
             )}
           </div>
+          
           <UltraButton
             variant="ghost"
             size="sm"
@@ -825,18 +1278,8 @@ const FuturisticMenuCard = ({ item, onAddToCart }: { item: any, onAddToCart: (it
           >{""}</UltraButton>
         </div>
       </div>
-    </div>
+    </FuturisticCard>
   );
 };
-
-/**
- * Helper: getItemsByCategory
- * Replace this with your actual logic to filter menu items by category.
- */
-function getItemsByCategory(categoryId: string) {
-  // This should filter your menu items by categoryId.
-  // Replace with your actual menu items data source.
-  return [];
-}
 
 export default RestaurantDetail;
