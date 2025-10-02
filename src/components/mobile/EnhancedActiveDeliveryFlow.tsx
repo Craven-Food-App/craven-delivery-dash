@@ -401,15 +401,7 @@ const App: React.FC<AppProps> = ({
     <div className="min-h-screen bg-gray-100 flex flex-col">
       {/* Fixed Top Section: Map & Payout */}
       <div className="relative z-10 shadow-xl bg-white rounded-b-3xl overflow-hidden">
-        {/* REPLACED MOCK MAP COMPONENT WITH MAPBOX STATIC MAP */}
-        <MapboxStaticMap
-          destinationName={getCurrentDestination.name}
-          type={getCurrentDestination.type}
-          currentCoords={getCurrentDestination.currentCoords}
-          destinationCoords={getCurrentDestination.destinationCoords}
-        />
-        
-        {/* Progress and Header */}
+        {/* Progress and Header - MOVED TO TOP */}
         <div className="p-4 bg-orange-600 text-white">
           <ProgressMock value={getStepProgress()} className="h-1 bg-orange-300 mb-2" />
           <div className="flex justify-between items-center mb-3">
@@ -423,6 +415,14 @@ const App: React.FC<AppProps> = ({
           <h1 className="text-2xl font-extrabold">{getCurrentDestination.name}</h1>
           <p className="text-sm font-light text-orange-100">{getCurrentDestination.address}</p>
         </div>
+        
+        {/* REPLACED MOCK MAP COMPONENT WITH MAPBOX STATIC MAP */}
+        <MapboxStaticMap
+          destinationName={getCurrentDestination.name}
+          type={getCurrentDestination.type}
+          currentCoords={getCurrentDestination.currentCoords}
+          destinationCoords={getCurrentDestination.destinationCoords}
+        />
 
         {/* Payout Strip (Walmart Spark style) */}
         <div className="bg-gray-800 text-white p-3 flex justify-between items-center">
