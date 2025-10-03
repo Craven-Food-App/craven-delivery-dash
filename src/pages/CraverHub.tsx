@@ -106,7 +106,7 @@ const CraverHub = () => {
                 <img 
                   src={becomeDriverHero} 
                   alt="Become a Craver Driver" 
-                  className="w-full h-auto rounded-lg shadow-2xl"
+                  className="w-full h-auto"
                 />
               </div>
             </div>
