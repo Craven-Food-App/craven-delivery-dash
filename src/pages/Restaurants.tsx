@@ -1,5 +1,6 @@
 // src/pages/Restaurants.tsx
 import React, { useState, useRef } from "react";
+import "./Restaurants.css";
 
 const Restaurants: React.FC = () => {
   const [address, setAddress] = useState("");
