@@ -228,6 +228,32 @@ const CustomerDashboard = () => {
   // Get the tab from URL parameters, default to "orders"
   const tabFromUrl = searchParams.get('tab') || 'orders';
 
+  // Helper function to get user's first name
+  const getUserFirstName = () => {
+    if (!user) return '';
+    
+    // Try to get first name from user metadata
+    if (user.user_metadata?.first_name) {
+      return user.user_metadata.first_name;
+    }
+    
+    // Try to get from raw user metadata
+    if (user.raw_user_meta_data?.first_name) {
+      return user.raw_user_meta_data.first_name;
+    }
+    
+    // Fall back to extracting from email or full name
+    if (user.user_metadata?.full_name) {
+      return user.user_metadata.full_name.split(' ')[0];
+    }
+    
+    if (user.email) {
+      return user.email.split('@')[0].split('.')[0];
+    }
+    
+    return 'Friend';
+  };
+
   useEffect(() => {
     fetchUserData();
   }, []);
@@ -441,7 +467,7 @@ const CustomerDashboard = () => {
             WebkitTextFillColor: 'transparent',
             marginBottom: '1rem'
           }}>
-            Welcome Back!
+            Welcome {getUserFirstName()}!
           </h1>
           <p style={{
             fontSize: '1.125rem',
