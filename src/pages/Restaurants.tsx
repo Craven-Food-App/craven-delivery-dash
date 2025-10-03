@@ -199,7 +199,7 @@ const Restaurants = () => {
     }
   ];
 
-  // Combine all restaurants
+  // Combine all restaurants and prioritize active ones
   const allRestaurants = [...activeRestaurants, ...inactiveRestaurants];
 
   // Filter restaurants based on search criteria
@@ -214,11 +214,254 @@ const Restaurants = () => {
     return matchesSearch && matchesCuisine;
   });
 
+  // Group restaurants by category with active restaurants first
+  const getRestaurantsByCategory = () => {
+    if (cuisineFilter !== 'all') {
+      // If a specific cuisine is selected, show only that category
+      return [{
+        name: cuisineFilter,
+        restaurants: filteredRestaurants.sort((a, b) => {
+          if (a.isActive && !b.isActive) return -1;
+          if (!a.isActive && b.isActive) return 1;
+          return 0;
+        })
+      }];
+    }
+
+    // Group by cuisine and prioritize active restaurants within each group
+    const grouped = filteredRestaurants.reduce((acc, restaurant) => {
+      if (!acc[restaurant.cuisine]) {
+        acc[restaurant.cuisine] = [];
+      }
+      acc[restaurant.cuisine].push(restaurant);
+      return acc;
+    }, {} as Record<string, typeof filteredRestaurants>);
+
+    // Sort each category to have active restaurants first
+    Object.keys(grouped).forEach(cuisine => {
+      grouped[cuisine].sort((a, b) => {
+        if (a.isActive && !b.isActive) return -1;
+        if (!a.isActive && b.isActive) return 1;
+        return 0;
+      });
+    });
+
+    // Convert to array and sort categories by whether they have active restaurants
+    return Object.entries(grouped)
+      .map(([name, restaurants]) => ({ name, restaurants }))
+      .sort((a, b) => {
+        const aHasActive = a.restaurants.some(r => r.isActive);
+        const bHasActive = b.restaurants.some(r => r.isActive);
+        if (aHasActive && !bHasActive) return -1;
+        if (!aHasActive && bHasActive) return 1;
+        return 0;
+      });
+  };
+
   const handleRestaurantClick = (restaurant: any) => {
     if (restaurant.isActive) {
       navigate(`/restaurant/${restaurant.id}`);
     }
   };
+
+  const RestaurantCard = ({ restaurant }: { restaurant: any }) => (
+    <div
+      onClick={() => handleRestaurantClick(restaurant)}
+      style={{
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,248,240,0.9) 100%)',
+        borderRadius: '25px',
+        overflow: 'hidden',
+        boxShadow: restaurant.isActive 
+          ? '0 15px 40px rgba(255, 107, 53, 0.15)'
+          : '0 10px 30px rgba(150, 150, 150, 0.15)',
+        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+        cursor: restaurant.isActive ? 'pointer' : 'not-allowed',
+        border: '2px solid rgba(255, 183, 0, 0.2)',
+        backdropFilter: 'blur(15px)',
+        position: 'relative',
+        opacity: restaurant.isActive ? 1 : 0.7,
+        filter: restaurant.isActive ? 'none' : 'grayscale(70%)',
+        minWidth: '300px'
+      }}
+      onMouseEnter={(e) => {
+        if (restaurant.isActive) {
+          e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
+          e.currentTarget.style.boxShadow = '0 25px 60px rgba(255, 107, 53, 0.25)';
+          e.currentTarget.style.border = '2px solid #ff6b35';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (restaurant.isActive) {
+          e.currentTarget.style.transform = 'translateY(0) scale(1)';
+          e.currentTarget.style.boxShadow = '0 15px 40px rgba(255, 107, 53, 0.15)';
+          e.currentTarget.style.border = '2px solid rgba(255, 183, 0, 0.2)';
+        }
+      }}
+    >
+      {/* Inactive Restaurant Overlay */}
+      {!restaurant.isActive && (
+        <div style={{
+          position: 'absolute',
+          top: '1rem',
+          right: '1rem',
+          background: 'rgba(150, 150, 150, 0.9)',
+          borderRadius: '10px',
+          padding: '0.5rem',
+          zIndex: 2,
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+        }}>
+          <Building style={{
+            width: '20px',
+            height: '20px',
+            color: 'white'
+          }} />
+        </div>
+      )}
+
+      {/* Restaurant Image */}
+      <div style={{
+        height: '200px',
+        backgroundImage: `url(${restaurant.image})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        position: 'relative'
+      }}>
+        {/* Delivery Fee Badge */}
+        <div style={{
+          position: 'absolute',
+          top: '1rem',
+          left: '1rem',
+          zIndex: 1
+        }}>
+          <Badge style={{
+            background: restaurant.isActive 
+              ? 'linear-gradient(135deg, #ff6b35 0%, #f97316 100%)'
+              : 'rgba(150, 150, 150, 0.8)',
+            color: 'white',
+            fontWeight: '700',
+            padding: '0.5rem 1rem',
+            borderRadius: '15px',
+            boxShadow: restaurant.isActive 
+              ? '0 4px 15px rgba(255, 107, 53, 0.4)'
+              : '0 4px 15px rgba(150, 150, 150, 0.3)'
+          }}>
+            ${restaurant.deliveryFee} delivery
+          </Badge>
+        </div>
+      </div>
+
+      {/* Restaurant Info */}
+      <div style={{ padding: '1.5rem' }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: '1rem'
+        }}>
+          <div style={{ flex: 1 }}>
+            <h3 style={{
+              fontSize: '1.25rem',
+              fontWeight: '800',
+              color: restaurant.isActive ? '#8b4513' : '#999',
+              marginBottom: '0.5rem'
+            }}>
+              {restaurant.name}
+            </h3>
+            <p style={{
+              color: restaurant.isActive ? '#d2691e' : '#888',
+              fontSize: '0.9rem',
+              marginBottom: '0.5rem',
+              fontWeight: '600'
+            }}>
+              {restaurant.cuisine}
+            </p>
+            <p style={{
+              color: restaurant.isActive ? '#a0522d' : '#888',
+              fontSize: '0.85rem',
+              lineHeight: '1.4'
+            }}>
+              {restaurant.description}
+            </p>
+          </div>
+        </div>
+
+        {/* Rating and Delivery Info */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingTop: '1rem',
+          borderTop: `1px solid ${restaurant.isActive ? 'rgba(255, 183, 0, 0.3)' : 'rgba(150, 150, 150, 0.3)'}`
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <Star style={{
+              width: '16px',
+              height: '16px',
+              fill: restaurant.isActive ? '#ffb700' : '#ccc',
+              color: restaurant.isActive ? '#ffb700' : '#ccc'
+            }} />
+            <span style={{
+              fontSize: '0.9rem',
+              fontWeight: '700',
+              color: restaurant.isActive ? '#d2691e' : '#999'
+            }}>
+              {restaurant.rating}
+            </span>
+            <span style={{
+              fontSize: '0.85rem',
+              color: restaurant.isActive ? '#a0522d' : '#888'
+            }}>
+              ({restaurant.reviews}+)
+            </span>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <Clock style={{
+              width: '16px',
+              height: '16px',
+              color: restaurant.isActive ? '#d2691e' : '#999'
+            }} />
+            <span style={{
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              color: restaurant.isActive ? '#d2691e' : '#999'
+            }}>
+              {restaurant.deliveryTime}
+            </span>
+          </div>
+        </div>
+
+        {/* Coming Soon Badge for Inactive Restaurants */}
+        {!restaurant.isActive && (
+          <div style={{
+            marginTop: '1rem',
+            padding: '0.75rem',
+            background: 'rgba(150, 150, 150, 0.2)',
+            borderRadius: '15px',
+            textAlign: 'center'
+          }}>
+            <span style={{
+              fontSize: '0.9rem',
+              fontWeight: '700',
+              color: '#888'
+            }}>
+              🏗️ Opening Soon
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const restaurantCategories = getRestaurantsByCategory();
 
   return (
     <div style={{ 
@@ -678,257 +921,116 @@ const Restaurants = () => {
             </div>
           </div>
 
-          {/* All Restaurants Section */}
-          <div style={{ marginBottom: '3rem' }}>
-            <h2 style={{
-              fontSize: '2.5rem',
-              fontWeight: '800',
-              background: 'linear-gradient(135deg, #ff6b35 0%, #f97316 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              marginBottom: '1rem'
+          {/* Restaurant Categories */}
+          {restaurantCategories.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '4rem 2rem',
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,248,240,0.9) 100%)',
+              borderRadius: '25px',
+              border: '2px solid rgba(255, 183, 0, 0.2)',
+              backdropFilter: 'blur(15px)'
             }}>
-              All Restaurants
-            </h2>
-            {(searchQuery || location || cuisineFilter !== 'all') && (
-              <div style={{ marginBottom: '2rem' }}>
-                <p style={{
-                  fontSize: '1.1rem',
-                  color: '#d2691e',
-                  fontWeight: '600'
-                }}>
-                  {searchQuery && `Searching for "${searchQuery}"`}
-                  {location && ` • Delivering to: ${location}`}
-                  {cuisineFilter !== 'all' && ` • ${cuisineFilter} cuisine`}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Restaurant Grid */}
-          <div>
-            {filteredRestaurants.length === 0 ? (
-              <div style={{
-                textAlign: 'center',
-                padding: '4rem 2rem',
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,248,240,0.9) 100%)',
-                borderRadius: '25px',
-                border: '2px solid rgba(255, 183, 0, 0.2)',
-                backdropFilter: 'blur(15px)'
+              <h3 style={{
+                fontSize: '1.5rem',
+                fontWeight: '700',
+                color: '#8b4513',
+                marginBottom: '1rem'
               }}>
-                <h3 style={{
-                  fontSize: '1.5rem',
-                  fontWeight: '700',
-                  color: '#8b4513',
-                  marginBottom: '1rem'
-                }}>
-                  No restaurants found
-                </h3>
-                <p style={{ color: '#d2691e', fontSize: '1.1rem' }}>
-                  Try adjusting your search criteria or browse our featured restaurants above.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredRestaurants.map((restaurant) => (
-                  <div
-                    key={restaurant.id}
-                    onClick={() => handleRestaurantClick(restaurant)}
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,248,240,0.9) 100%)',
-                      borderRadius: '25px',
-                      overflow: 'hidden',
-                      boxShadow: restaurant.isActive 
-                        ? '0 15px 40px rgba(255, 107, 53, 0.15)'
-                        : '0 10px 30px rgba(150, 150, 150, 0.15)',
-                      transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                      cursor: restaurant.isActive ? 'pointer' : 'not-allowed',
-                      border: '2px solid rgba(255, 183, 0, 0.2)',
-                      backdropFilter: 'blur(15px)',
-                      position: 'relative',
-                      opacity: restaurant.isActive ? 1 : 0.7,
-                      filter: restaurant.isActive ? 'none' : 'grayscale(70%)'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (restaurant.isActive) {
-                        e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
-                        e.currentTarget.style.boxShadow = '0 25px 60px rgba(255, 107, 53, 0.25)';
-                        e.currentTarget.style.border = '2px solid #ff6b35';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (restaurant.isActive) {
-                        e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                        e.currentTarget.style.boxShadow = '0 15px 40px rgba(255, 107, 53, 0.15)';
-                        e.currentTarget.style.border = '2px solid rgba(255, 183, 0, 0.2)';
-                      }
-                    }}
-                  >
-                    {/* Inactive Restaurant Overlay */}
-                    {!restaurant.isActive && (
+                No restaurants found
+              </h3>
+              <p style={{ color: '#d2691e', fontSize: '1.1rem' }}>
+                Try adjusting your search criteria or browse our featured restaurants above.
+              </p>
+            </div>
+          ) : (
+            restaurantCategories.map((category, categoryIndex) => {
+              const cuisineType = cuisineTypes.find(c => c.name === category.name);
+              const hasActiveRestaurants = category.restaurants.some(r => r.isActive);
+              
+              return (
+                <div key={categoryIndex} style={{ marginBottom: '4rem' }}>
+                  {/* Category Header */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    marginBottom: '2rem'
+                  }}>
+                    {cuisineType && (
                       <div style={{
-                        position: 'absolute',
-                        top: '1rem',
-                        right: '1rem',
-                        background: 'rgba(150, 150, 150, 0.9)',
-                        borderRadius: '10px',
-                        padding: '0.5rem',
-                        zIndex: 2,
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+                        width: '4rem',
+                        height: '4rem',
+                        background: `linear-gradient(135deg, ${cuisineType.color}30 0%, ${cuisineType.color}50 100%)`,
+                        borderRadius: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '2rem',
+                        boxShadow: `0 8px 25px ${cuisineType.color}40`
                       }}>
-                        <Building style={{
-                          width: '20px',
-                          height: '20px',
-                          color: 'white'
-                        }} />
+                        {cuisineType.emoji}
                       </div>
                     )}
-
-                    {/* Restaurant Image */}
-                    <div style={{
-                      height: '200px',
-                      backgroundImage: `url(${restaurant.image})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      position: 'relative'
-                    }}>
-                      {/* Delivery Fee Badge */}
+                    <div>
+                      <h3 style={{
+                        fontSize: '2rem',
+                        fontWeight: '800',
+                        background: 'linear-gradient(135deg, #ff6b35 0%, #f97316 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        marginBottom: '0.5rem'
+                      }}>
+                        {category.name} Restaurants
+                      </h3>
                       <div style={{
-                        position: 'absolute',
-                        top: '1rem',
-                        left: '1rem',
-                        zIndex: 1
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '1rem'
                       }}>
                         <Badge style={{
-                          background: restaurant.isActive 
-                            ? 'linear-gradient(135deg, #ff6b35 0%, #f97316 100%)'
+                          background: hasActiveRestaurants 
+                            ? 'linear-gradient(135deg, #28a745 0%, #20c997 100%)'
                             : 'rgba(150, 150, 150, 0.8)',
                           color: 'white',
-                          fontWeight: '700',
                           padding: '0.5rem 1rem',
                           borderRadius: '15px',
-                          boxShadow: restaurant.isActive 
-                            ? '0 4px 15px rgba(255, 107, 53, 0.4)'
-                            : '0 4px 15px rgba(150, 150, 150, 0.3)'
+                          fontWeight: '700'
                         }}>
-                          ${restaurant.deliveryFee} delivery
+                          {category.restaurants.filter(r => r.isActive).length} Available Now
                         </Badge>
+                        {category.restaurants.filter(r => !r.isActive).length > 0 && (
+                          <Badge style={{
+                            background: 'rgba(150, 150, 150, 0.8)',
+                            color: 'white',
+                            padding: '0.5rem 1rem',
+                            borderRadius: '15px',
+                            fontWeight: '700'
+                          }}>
+                            {category.restaurants.filter(r => !r.isActive).length} Opening Soon
+                          </Badge>
+                        )}
                       </div>
-                    </div>
-
-                    {/* Restaurant Info */}
-                    <div style={{ padding: '1.5rem' }}>
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
-                        marginBottom: '1rem'
-                      }}>
-                        <div style={{ flex: 1 }}>
-                          <h3 style={{
-                            fontSize: '1.25rem',
-                            fontWeight: '800',
-                            color: restaurant.isActive ? '#8b4513' : '#999',
-                            marginBottom: '0.5rem'
-                          }}>
-                            {restaurant.name}
-                          </h3>
-                          <p style={{
-                            color: restaurant.isActive ? '#d2691e' : '#888',
-                            fontSize: '0.9rem',
-                            marginBottom: '0.5rem',
-                            fontWeight: '600'
-                          }}>
-                            {restaurant.cuisine}
-                          </p>
-                          <p style={{
-                            color: restaurant.isActive ? '#a0522d' : '#888',
-                            fontSize: '0.85rem',
-                            lineHeight: '1.4'
-                          }}>
-                            {restaurant.description}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Rating and Delivery Info */}
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        paddingTop: '1rem',
-                        borderTop: `1px solid ${restaurant.isActive ? 'rgba(255, 183, 0, 0.3)' : 'rgba(150, 150, 150, 0.3)'}`
-                      }}>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem'
-                        }}>
-                          <Star style={{
-                            width: '16px',
-                            height: '16px',
-                            fill: restaurant.isActive ? '#ffb700' : '#ccc',
-                            color: restaurant.isActive ? '#ffb700' : '#ccc'
-                          }} />
-                          <span style={{
-                            fontSize: '0.9rem',
-                            fontWeight: '700',
-                            color: restaurant.isActive ? '#d2691e' : '#999'
-                          }}>
-                            {restaurant.rating}
-                          </span>
-                          <span style={{
-                            fontSize: '0.85rem',
-                            color: restaurant.isActive ? '#a0522d' : '#888'
-                          }}>
-                            ({restaurant.reviews}+)
-                          </span>
-                        </div>
-
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem'
-                        }}>
-                          <Clock style={{
-                            width: '16px',
-                            height: '16px',
-                            color: restaurant.isActive ? '#d2691e' : '#999'
-                          }} />
-                          <span style={{
-                            fontSize: '0.9rem',
-                            fontWeight: '600',
-                            color: restaurant.isActive ? '#d2691e' : '#999'
-                          }}>
-                            {restaurant.deliveryTime}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Coming Soon Badge for Inactive Restaurants */}
-                      {!restaurant.isActive && (
-                        <div style={{
-                          marginTop: '1rem',
-                          padding: '0.75rem',
-                          background: 'rgba(150, 150, 150, 0.2)',
-                          borderRadius: '15px',
-                          textAlign: 'center'
-                        }}>
-                          <span style={{
-                            fontSize: '0.9rem',
-                            fontWeight: '700',
-                            color: '#888'
-                          }}>
-                            🏗️ Opening Soon
-                          </span>
-                        </div>
-                      )}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+
+                  {/* Horizontal Scrolling Restaurant Cards */}
+                  <div style={{
+                    display: 'flex',
+                    gap: '2rem',
+                    overflowX: 'auto',
+                    paddingBottom: '1rem',
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#ff6b35 transparent'
+                  }}>
+                    {category.restaurants.map((restaurant) => (
+                      <RestaurantCard key={restaurant.id} restaurant={restaurant} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </section>
 
