@@ -651,46 +651,50 @@ const RestaurantMenuPage = () => {
         </div>
       </div>
 
-      {/* Category Tabs */}
-      <div style={{
-        position: 'sticky',
-        top: showHeader ? '76px' : '0',
-        zIndex: 50,
-        background: 'white',
-        borderBottom: '1px solid #e9ecef',
-        padding: '12px 0'
-      }}>
-        <div style={{
-          display: 'flex',
-          gap: '8px',
-          overflowX: 'auto',
-          padding: '0 16px',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none'
-        }}>
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              onClick={() => scrollToCategory(category.id)}
-              style={{
-                padding: '8px 16px',
-                border: selectedCategory === category.id ? '2px solid #FF6B35' : '1px solid #e9ecef',
-                borderRadius: '20px',
-                background: selectedCategory === category.id ? '#FFE5DB' : 'white',
-                color: selectedCategory === category.id ? '#FF6B35' : '#6c757d',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                transition: 'all 0.2s ease'
+            {/* Category Tabs */}
+            <div style={{
+              position: 'sticky',
+              top: showHeader ? '76px' : '0',
+              zIndex: 50,
+              background: 'white',
+              borderBottom: '1px solid #e9ecef',
+              padding: '12px 0'
+            }}>
+              <div style={{
+                display: 'flex',
+                gap: '8px',
+                overflowX: 'auto',
+                padding: '0 16px',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none'
               }}
-            >
-              {category.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
+              className="scrollbar-hide"
+              >
+                {categories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => scrollToCategory(category.id)}
+                    style={{
+                      padding: '8px 16px',
+                      border: selectedCategory === category.id ? '2px solid #FF6B35' : '1px solid #e9ecef',
+                      borderRadius: '20px',
+                      background: selectedCategory === category.id ? '#FFE5DB' : 'white',
+                      color: selectedCategory === category.id ? '#FF6B35' : '#6c757d',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      transition: 'all 0.2s ease',
+                      flexShrink: 0,
+                      minWidth: 'fit-content'
+                    }}
+                  >
+                    {category.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+      
       {/* Menu Items */}
       <div style={{ padding: '20px 16px 100px' }}>
         {searchQuery ? (
