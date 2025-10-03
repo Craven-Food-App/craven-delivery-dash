@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CraverApplicationForm } from "@/components/CraverApplicationForm";
-import becomeDriverHero from "@/assets/20251002_2239_Animated Logo Driver_remix_01k6kyy1m7f108g2r5qjd0a8x8.png";
+import becomeDriverHero from "@/assets/20251002_2239_Animated-Logo-Driver_remix_01k6kyy1m7f108g2r5qjd0a8x8.png";
 
 
 const CraverHub = () => {
