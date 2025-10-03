@@ -104,24 +104,24 @@ const UltraButton = ({
 
   const variants = {
     primary: {
-      background: 'linear-gradient(135deg, #a27b4bff 0%, #a27b4bff 25%, #d68a32ff 50%, #f5576c 75%, #4facfe 100%)',
+      background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 25%, #ffb347 50%, #ff8c42 75%, #ff7f50 100%)',
       backgroundSize: '300% 300%',
       animation: 'gradientShift 6s ease infinite',
       color: 'white',
       boxShadow: glow 
-        ? '0 0 40px rgba(102, 126, 234, 0.6), 0 20px 40px rgba(0, 0, 0, 0.15)'
-        : '0 20px 40px rgba(102, 126, 234, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
+        ? '0 0 40px rgba(255, 107, 53, 0.6), 0 20px 40px rgba(0, 0, 0, 0.15)'
+        : '0 20px 40px rgba(255, 107, 53, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
     },
     secondary: {
       background: 'rgba(255, 255, 255, 0.95)',
       backdropFilter: 'blur(20px)',
-      border: '1px solid rgba(102, 126, 234, 0.2)',
+      border: '1px solid rgba(255, 107, 53, 0.2)',
       color: '#4a5568',
       boxShadow: '0 15px 35px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9)'
     },
     ghost: {
       background: 'transparent',
-      color: '#a27b4bff',
+      color: '#ff6b35',
       boxShadow: 'none'
     },
     danger: {
@@ -178,8 +178,8 @@ const UltraButton = ({
           e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
           if (variant === 'primary') {
             e.currentTarget.style.boxShadow = glow
-              ? '0 0 60px rgba(102, 126, 234, 0.8), 0 25px 50px rgba(0, 0, 0, 0.2)'
-              : '0 25px 50px rgba(102, 126, 234, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+              ? '0 0 60px rgba(255, 107, 53, 0.8), 0 25px 50px rgba(0, 0, 0, 0.2)'
+              : '0 25px 50px rgba(255, 107, 53, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
           }
         }
       }}
@@ -188,8 +188,8 @@ const UltraButton = ({
           e.currentTarget.style.transform = 'translateY(0) scale(1)';
           if (variant === 'primary') {
             e.currentTarget.style.boxShadow = glow
-              ? '0 0 40px rgba(102, 126, 234, 0.6), 0 20px 40px rgba(0, 0, 0, 0.15)'
-              : '0 20px 40px rgba(102, 126, 234, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
+              ? '0 0 40px rgba(255, 107, 53, 0.6), 0 20px 40px rgba(0, 0, 0, 0.15)'
+              : '0 20px 40px rgba(255, 107, 53, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
           }
         }
       }}
@@ -232,10 +232,10 @@ const FuturisticCard = ({
       boxShadow: '0 15px 35px rgba(0, 0, 0, 0.1)'
     },
     gradient: {
-      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 248, 255, 0.9) 100%)',
+      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 248, 240, 0.9) 100%)',
       backdropFilter: 'blur(20px)',
-      border: '1px solid rgba(102, 126, 234, 0.1)',
-      boxShadow: '0 20px 40px rgba(102, 126, 234, 0.1)'
+      border: '1px solid rgba(255, 107, 53, 0.1)',
+      boxShadow: '0 20px 40px rgba(255, 107, 53, 0.1)'
     }
   };
 
@@ -274,10 +274,10 @@ const FuturisticCard = ({
 const NeonBadge = ({ children, variant = 'default', icon = null, pulse = false }) => {
   const variants = {
     default: {
-      background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)',
-      color: '#a27b4bff',
-      border: '1px solid rgba(102, 126, 234, 0.3)',
-      boxShadow: '0 0 20px rgba(102, 126, 234, 0.2)'
+      background: 'linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(247, 147, 30, 0.15) 100%)',
+      color: '#ff6b35',
+      border: '1px solid rgba(255, 107, 53, 0.3)',
+      boxShadow: '0 0 20px rgba(255, 107, 53, 0.2)'
     },
     success: {
       background: 'linear-gradient(135deg, rgba(46, 204, 113, 0.15) 0%, rgba(39, 174, 96, 0.15) 100%)',
@@ -286,23 +286,23 @@ const NeonBadge = ({ children, variant = 'default', icon = null, pulse = false }
       boxShadow: '0 0 20px rgba(46, 204, 113, 0.2)'
     },
     featured: {
-      background: 'linear-gradient(135deg, #a27b4bff 0%, #d68a32ff 100%)',
+      background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
       color: 'white',
       border: 'none',
-      boxShadow: '0 0 30px rgba(102, 126, 234, 0.5)'
+      boxShadow: '0 0 30px rgba(255, 107, 53, 0.5)'
     },
     popular: {
-      background: 'linear-gradient(135deg, #d68a32ff 0%, #f5576c 100%)',
+      background: 'linear-gradient(135deg, #ffb347 0%, #ff8c42 100%)',
       color: 'white',
       border: 'none',
-      boxShadow: '0 0 30px rgba(240, 147, 251, 0.5)'
+      boxShadow: '0 0 30px rgba(255, 179, 71, 0.5)'
     },
     neon: {
       background: 'transparent',
-      color: ' #ff5100ff',
-      border: '2px solid #fa773aff',
-      boxShadow: '0 0 20px #fa773aff, inset 0 0 20px rgba(0, 245, 255, 0.1)',
-      textShadow: '0 0 10px #fa773aff'
+      color: '#ff8c42',
+      border: '2px solid #ff8c42',
+      boxShadow: '0 0 20px #ff8c42, inset 0 0 20px rgba(255, 140, 66, 0.1)',
+      textShadow: '0 0 10px #ff8c42'
     }
   };
 
@@ -446,7 +446,7 @@ const RestaurantDetail = () => {
     return (
       <div style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #a27b4bff 0%, #764ba2 25%, #d68a32ff 50%, #f5576c 75%, #4facfe 100%)',
+        background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 25%, #ffb347 50%, #ff8c42 75%, #ff7f50 100%)',
         backgroundSize: '400% 400%',
         animation: 'gradientShift 8s ease infinite',
         display: 'flex',
@@ -458,8 +458,8 @@ const RestaurantDetail = () => {
             width: '80px',
             height: '80px',
             border: '4px solid transparent',
-            borderTop: '4px solid #a27b4bff',
-            borderRight: '4px solid #d68a32ff',
+            borderTop: '4px solid #ff6b35',
+            borderRight: '4px solid #ffb347',
             borderRadius: '50%',
             animation: 'spin 1.5s linear infinite',
             margin: '0 auto 2rem'
@@ -468,7 +468,7 @@ const RestaurantDetail = () => {
             color: 'white', 
             fontSize: '2rem', 
             fontWeight: '800',
-            background: 'linear-gradient(135deg, #a27b4bff 0%, #d68a32ff 100%)',
+            background: 'linear-gradient(135deg, #ff6b35 0%, #ffb347 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif'
@@ -484,7 +484,7 @@ const RestaurantDetail = () => {
     return (
       <div style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #a27b4bff 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
@@ -530,7 +530,7 @@ const RestaurantDetail = () => {
           position: 'absolute',
           inset: 0,
           background: `
-            linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.8) 25%, rgba(240, 147, 251, 0.7) 50%, rgba(245, 87, 108, 0.8) 75%, rgba(79, 172, 254, 0.9) 100%),
+            linear-gradient(135deg, rgba(255, 107, 53, 0.9) 0%, rgba(247, 147, 30, 0.8) 25%, rgba(255, 179, 71, 0.7) 50%, rgba(255, 140, 66, 0.8) 75%, rgba(255, 127, 80, 0.9) 100%),
             url(${restaurantImages[activeImageIndex]})
           `,
           backgroundSize: '400% 400%, cover',
@@ -578,8 +578,8 @@ const RestaurantDetail = () => {
               icon={<Heart style={{
                 width: '24px',
                 height: '24px',
-                fill: isFavorited ? '#d68a32ff' : 'transparent',
-                color: isFavorited ? '#d68a32ff' : 'white'
+                fill: isFavorited ? '#ffb347' : 'transparent',
+                color: isFavorited ? '#ffb347' : 'white'
               }} />}
               style={{ borderRadius: '50%', width: '60px', height: '60px', padding: 0 }}
             >{""}</UltraButton>
@@ -770,7 +770,7 @@ const RestaurantDetail = () => {
               </UltraButton>
             ))}
             
-            <div style={{ width: '1px', height: '40px', background: 'rgba(102, 126, 234, 0.2)' }} />
+            <div style={{ width: '1px', height: '40px', background: 'rgba(255, 107, 53, 0.2)' }} />
             
             <UltraButton
               variant={cart.length > 0 ? 'primary' : 'secondary'}
@@ -786,7 +786,7 @@ const RestaurantDetail = () => {
                   position: 'absolute',
                   top: '-10px',
                   right: '-10px',
-                  background: 'linear-gradient(135deg, #d68a32ff 0%, #f5576c 100%)',
+                  background: 'linear-gradient(135deg, #ffb347 0%, #ff8c42 100%)',
                   color: 'white',
                   borderRadius: '50%',
                   width: '28px',
@@ -796,7 +796,7 @@ const RestaurantDetail = () => {
                   justifyContent: 'center',
                   fontSize: '0.8rem',
                   fontWeight: '800',
-                  boxShadow: '0 0 20px rgba(240, 147, 251, 0.6)'
+                  boxShadow: '0 0 20px rgba(255, 179, 71, 0.6)'
                 }}>
                   {cart.reduce((sum, item) => sum + item.quantity, 0)}
                 </span>
@@ -822,7 +822,7 @@ const RestaurantDetail = () => {
                 transform: 'translateY(-50%)',
                 width: '24px',
                 height: '24px',
-                color: '#a27b4bff'
+                color: '#ff6b35'
               }} />
               <input
                 type="text"
@@ -832,7 +832,7 @@ const RestaurantDetail = () => {
                 style={{
                   width: '100%',
                   padding: '1.25rem 1.5rem 1.25rem 4rem',
-                  border: '2px solid rgba(102, 126, 234, 0.2)',
+                  border: '2px solid rgba(255, 107, 53, 0.2)',
                   borderRadius: '25px',
                   fontSize: '1.1rem',
                   background: 'rgba(255, 255, 255, 0.9)',
@@ -843,11 +843,11 @@ const RestaurantDetail = () => {
                   transition: 'all 0.3s ease'
                 }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#a27b4bff';
-                  e.currentTarget.style.boxShadow = '0 0 30px rgba(102, 126, 234, 0.3)';
+                  e.currentTarget.style.borderColor = '#ff6b35';
+                  e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 107, 53, 0.3)';
                 }}
                 onBlur={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.2)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 107, 53, 0.2)';
                   e.currentTarget.style.boxShadow = 'none';
                 }}
               />
@@ -888,7 +888,7 @@ const RestaurantDetail = () => {
               style={{ 
                 whiteSpace: 'nowrap',
                 boxShadow: selectedCategory === category.id 
-                  ? '0 0 30px rgba(102, 126, 234, 0.4)' 
+                  ? '0 0 30px rgba(255, 107, 53, 0.4)' 
                   : '0 8px 25px rgba(0, 0, 0, 0.08)'
               }}
             >
@@ -911,7 +911,7 @@ const RestaurantDetail = () => {
               fontSize: '3rem',
               fontWeight: '900',
               marginBottom: '3rem',
-              background: 'linear-gradient(135deg, #a27b4bff 0%, #764ba2 50%, #d68a32ff 100%)',
+              background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ffb347 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               textAlign: 'center'
@@ -920,11 +920,11 @@ const RestaurantDetail = () => {
             </h2>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
               gap: '2rem'
             }}>
               {filteredItems.map((item) => (
-                <FuturisticMenuCard key={item.id} item={item} onAddToCart={addToCart} />
+                <SimpleMenuCard key={item.id} item={item} onAddToCart={addToCart} onViewDetails={setSelectedItem} />
               ))}
             </div>
           </div>
@@ -946,7 +946,7 @@ const RestaurantDetail = () => {
                   <h2 style={{
                     fontSize: '3rem',
                     fontWeight: '900',
-                    background: 'linear-gradient(135deg, #ead666ff 0%, #a28f4bff 50%, #fbe493ff 100%)',
+                    background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ffb347 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     textAlign: 'center'
@@ -961,7 +961,7 @@ const RestaurantDetail = () => {
                 {category.description && (
                   <p style={{
                     fontSize: '1.2rem',
-                    color: '#a27b4bff',
+                    color: '#ff6b35',
                     marginBottom: '3rem',
                     fontWeight: '500',
                     textAlign: 'center',
@@ -974,11 +974,11 @@ const RestaurantDetail = () => {
                 
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
                   gap: '2rem'
                 }}>
                   {categoryItems.map((item) => (
-                    <FuturisticMenuCard key={item.id} item={item} onAddToCart={addToCart} />
+                    <SimpleMenuCard key={item.id} item={item} onAddToCart={addToCart} onViewDetails={setSelectedItem} />
                   ))}
                 </div>
               </div>
@@ -986,6 +986,234 @@ const RestaurantDetail = () => {
           })
         )}
       </div>
+
+      {/* Item Details Modal */}
+      {selectedItem && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(20px)',
+          zIndex: 1001,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '2rem'
+        }}>
+          <FuturisticCard variant="default" hoverable={false} style={{ 
+            maxWidth: '600px', 
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            position: 'relative'
+          }}>
+            <UltraButton
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedItem(null)}
+              icon={<X style={{ width: '24px', height: '24px' }} />}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                borderRadius: '50%',
+                width: '48px',
+                height: '48px',
+                padding: 0,
+                zIndex: 10
+              }}
+            >{""}</UltraButton>
+
+            <div style={{
+              height: '300px',
+              background: `
+                linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 179, 71, 0.1) 100%),
+                url(${selectedItem.image_url || '/placeholder-food.jpg'})
+              `,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              borderRadius: '25px 25px 0 0',
+              position: 'relative'
+            }}>
+              {/* Badges */}
+              <div style={{
+                position: 'absolute',
+                top: '1.5rem',
+                left: '1.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.75rem'
+              }}>
+                {selectedItem.chef_recommended && (
+                  <NeonBadge variant="featured" icon={<ChefHat style={{ width: '14px', height: '14px' }} />}>
+                    Chef's Special
+                  </NeonBadge>
+                )}
+                {selectedItem.is_featured && (
+                  <NeonBadge variant="popular" icon={<TrendingUp style={{ width: '14px', height: '14px' }} />} pulse>
+                    Trending
+                  </NeonBadge>
+                )}
+              </div>
+
+              {/* Dietary Icons */}
+              <div style={{
+                position: 'absolute',
+                top: '1.5rem',
+                right: '4rem',
+                display: 'flex',
+                gap: '0.75rem'
+              }}>
+                {selectedItem.is_vegetarian && (
+                  <div style={{
+                    background: 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)',
+                    color: 'white',
+                    padding: '0.75rem',
+                    borderRadius: '50%',
+                    width: '40px',
+                    height: '40px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 8px 25px rgba(46, 204, 113, 0.3)'
+                  }}>
+                    <Leaf style={{ width: '18px', height: '18px' }} />
+                  </div>
+                )}
+                {selectedItem.is_gluten_free && (
+                  <div style={{
+                    background: 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)',
+                    color: 'white',
+                    padding: '0.75rem',
+                    borderRadius: '50%',
+                    width: '40px',
+                    height: '40px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.8rem',
+                    fontWeight: '800',
+                    boxShadow: '0 8px 25px rgba(155, 89, 182, 0.3)'
+                  }}>
+                    GF
+                  </div>
+                )}
+              </div>
+
+              {/* Spice Level */}
+              {selectedItem.spice_level && selectedItem.spice_level > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: '1.5rem',
+                  left: '1.5rem',
+                  display: 'flex',
+                  gap: '4px',
+                  background: 'rgba(0, 0, 0, 0.6)',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '20px',
+                  backdropFilter: 'blur(10px)'
+                }}>
+                  {[...Array(3)].map((_, i) => (
+                    <span
+                      key={i}
+                      style={{
+                        fontSize: '1.2rem',
+                        opacity: i < selectedItem.spice_level! ? 1 : 0.3,
+                        filter: i < selectedItem.spice_level! ? 'drop-shadow(0 0 8px #ff6b35)' : 'none'
+                      }}
+                    >
+                      🌶️
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={{ padding: '2rem' }}>
+              <div style={{ marginBottom: '2rem' }}>
+                <h3 style={{
+                  fontSize: '2rem',
+                  fontWeight: '800',
+                  color: '#2d3748',
+                  marginBottom: '1rem'
+                }}>
+                  {selectedItem.name}
+                </h3>
+                <p style={{
+                  color: '#ff6b35',
+                  fontSize: '1.1rem',
+                  lineHeight: 1.6,
+                  marginBottom: '2rem'
+                }}>
+                  {selectedItem.description}
+                </p>
+                
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '2rem'
+                }}>
+                  <div style={{
+                    background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+                    color: 'white',
+                    padding: '1rem 2rem',
+                    borderRadius: '25px',
+                    fontWeight: '800',
+                    fontSize: '1.5rem',
+                    boxShadow: '0 10px 30px rgba(255, 107, 53, 0.3)'
+                  }}>
+                    ${(selectedItem.price_cents / 100).toFixed(2)}
+                  </div>
+                  
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '2rem',
+                    color: '#ff6b35',
+                    fontSize: '1rem'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Clock style={{ width: '20px', height: '20px' }} />
+                      {selectedItem.preparation_time} min
+                    </div>
+                    {selectedItem.calories && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Zap style={{ width: '20px', height: '20px' }} />
+                        {selectedItem.calories} cal
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <UltraButton
+                  variant="primary"
+                  size="lg"
+                  glow
+                  onClick={() => {
+                    addToCart(selectedItem);
+                    setSelectedItem(null);
+                  }}
+                  icon={<Plus style={{ width: '20px', height: '20px' }} />}
+                  style={{ flex: 1 }}
+                >
+                  Add to Cart
+                </UltraButton>
+                
+                <UltraButton
+                  variant="ghost"
+                  size="lg"
+                  icon={<Heart style={{ width: '20px', height: '20px' }} />}
+                  onClick={() => {}}
+                  style={{ width: '60px' }}
+                >{""}</UltraButton>
+              </div>
+            </div>
+          </FuturisticCard>
+        </div>
+      )}
 
       {/* Floating Cart Summary */}
       {cart.length > 0 && (
@@ -1004,7 +1232,7 @@ const RestaurantDetail = () => {
             icon={<ShoppingCart style={{ width: '28px', height: '28px' }} />}
             style={{
               animation: 'float 3s ease-in-out infinite',
-              boxShadow: '0 25px 60px rgba(234, 201, 102, 0.4)'
+              boxShadow: '0 25px 60px rgba(255, 107, 53, 0.4)'
             }}
           >
             {cart.reduce((sum, item) => sum + item.quantity, 0)} items • ${(getCartTotal().total / 100).toFixed(2)}
@@ -1041,8 +1269,16 @@ const RestaurantDetail = () => {
   );
 };
 
-// Futuristic Menu Item Card
-const FuturisticMenuCard = ({ item, onAddToCart }: { item: MenuItem; onAddToCart: (item: MenuItem) => void }) => {
+// Simple Menu Item Card (shows only image, name, price)
+const SimpleMenuCard = ({ 
+  item, 
+  onAddToCart, 
+  onViewDetails 
+}: { 
+  item: MenuItem; 
+  onAddToCart: (item: MenuItem) => void;
+  onViewDetails: (item: MenuItem) => void;
+}) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -1057,141 +1293,99 @@ const FuturisticMenuCard = ({ item, onAddToCart }: { item: MenuItem; onAddToCart
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={() => onViewDetails(item)}
     >
-      {/* Animated Glow Effect */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        background: 'linear-gradient(135deg, rgba(234, 181, 102, 0.1) 0%, rgba(251, 213, 147, 0.1) 100%)',
-        opacity: isHovered ? 1 : 0,
-        transition: 'opacity 0.4s ease'
-      }} />
+      {/* Simple badges for featured items */}
+      {(item.chef_recommended || item.is_featured) && (
+        <div style={{
+          position: 'absolute',
+          top: '1rem',
+          left: '1rem',
+          zIndex: 20
+        }}>
+          {item.chef_recommended && (
+            <NeonBadge variant="featured" icon={<ChefHat style={{ width: '12px', height: '12px' }} />}>
+              Chef's
+            </NeonBadge>
+          )}
+        </div>
+      )}
 
-      {/* Premium Badges */}
-      <div style={{
-        position: 'absolute',
-        top: '1.5rem',
-        left: '1.5rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.75rem',
-        zIndex: 20
-      }}>
-        {item.chef_recommended && (
-          <NeonBadge variant="featured" icon={<ChefHat style={{ width: '14px', height: '14px' }} />}>
-            Chef's Special
-          </NeonBadge>
-        )}
-        {item.is_featured && (
-          <NeonBadge variant="popular" icon={<TrendingUp style={{ width: '14px', height: '14px' }} />} pulse>
-            Trending
-          </NeonBadge>
-        )}
-      </div>
+      {/* Quick dietary indicators */}
+      {(item.is_vegetarian || item.is_gluten_free) && (
+        <div style={{
+          position: 'absolute',
+          top: '1rem',
+          right: '1rem',
+          display: 'flex',
+          gap: '0.5rem',
+          zIndex: 20
+        }}>
+          {item.is_vegetarian && (
+            <div style={{
+              background: '#2ecc71',
+              color: 'white',
+              padding: '0.5rem',
+              borderRadius: '50%',
+              width: '28px',
+              height: '28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.7rem'
+            }}>
+              <Leaf style={{ width: '12px', height: '12px' }} />
+            </div>
+          )}
+          {item.is_gluten_free && (
+            <div style={{
+              background: '#9b59b6',
+              color: 'white',
+              padding: '0.5rem',
+              borderRadius: '50%',
+              width: '28px',
+              height: '28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.6rem',
+              fontWeight: '800'
+            }}>
+              GF
+            </div>
+          )}
+        </div>
+      )}
 
-      {/* Dietary Information */}
+      {/* Image */}
       <div style={{
-        position: 'absolute',
-        top: '1.5rem',
-        right: '1.5rem',
-        display: 'flex',
-        gap: '0.75rem',
-        zIndex: 20
-      }}>
-        {item.is_vegetarian && (
-          <div style={{
-            background: 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)',
-            color: 'white',
-            padding: '0.75rem',
-            borderRadius: '50%',
-            width: '40px',
-            height: '40px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 8px 25px rgba(46, 204, 113, 0.3)'
-          }}>
-            <Leaf style={{ width: '18px', height: '18px' }} />
-          </div>
-        )}
-        {item.is_gluten_free && (
-          <div style={{
-            background: 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)',
-            color: 'white',
-            padding: '0.75rem',
-            borderRadius: '50%',
-            width: '40px',
-            height: '40px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '0.8rem',
-            fontWeight: '800',
-            boxShadow: '0 8px 25px rgba(228, 119, 18, 0.3)'
-          }}>
-            GF
-          </div>
-        )}
-      </div>
-
-      {/* Enhanced Image Container */}
-      <div style={{
-        height: '250px',
+        height: '200px',
         background: `
-          linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(240, 147, 251, 0.1) 100%),
+          linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 179, 71, 0.1) 100%),
           url(${item.image_url || '/placeholder-food.jpg'})
         `,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         borderRadius: '25px 25px 0 0',
-        position: 'relative',
-        overflow: 'hidden'
+        position: 'relative'
       }}>
-        {/* Spice Level Indicator */}
-        {item.spice_level && item.spice_level > 0 && (
-          <div style={{
-            position: 'absolute',
-            bottom: '1.5rem',
-            left: '1.5rem',
-            display: 'flex',
-            gap: '4px',
-            background: 'rgba(0, 0, 0, 0.6)',
-            padding: '0.75rem 1rem',
-            borderRadius: '20px',
-            backdropFilter: 'blur(10px)'
-          }}>
-            {[...Array(3)].map((_, i) => (
-              <span
-                key={i}
-                style={{
-                  fontSize: '1.2rem',
-                  opacity: i < item.spice_level! ? 1 : 0.3,
-                  filter: i < item.spice_level! ? 'drop-shadow(0 0 8px #ff6b35)' : 'none'
-                }}
-              >
-                🌶️
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Futuristic Add Button */}
+        {/* Quick Add Button */}
         <UltraButton
           variant="primary"
-          size="md"
+          size="sm"
           glow
           onClick={(e) => {
             e?.stopPropagation();
             onAddToCart(item);
           }}
-          icon={<Plus style={{ width: '24px', height: '24px' }} />}
+          icon={<Plus style={{ width: '20px', height: '20px' }} />}
           style={{
             position: 'absolute',
-            bottom: '1.5rem',
-            right: '1.5rem',
+            bottom: '1rem',
+            right: '1rem',
             borderRadius: '50%',
-            width: '56px',
-            height: '56px',
+            width: '44px',
+            height: '44px',
             padding: 0,
             transform: isHovered ? 'scale(1.1)' : 'scale(1)',
             transition: 'transform 0.3s ease'
@@ -1199,83 +1393,45 @@ const FuturisticMenuCard = ({ item, onAddToCart }: { item: MenuItem; onAddToCart
         >{""}</UltraButton>
       </div>
 
-      {/* Enhanced Content */}
-      <div style={{ padding: '2rem' }}>
+      {/* Content */}
+      <div style={{ padding: '1.5rem' }}>
+        <h3 style={{
+          fontSize: '1.3rem',
+          fontWeight: '800',
+          color: '#2d3748',
+          marginBottom: '1rem',
+          lineHeight: 1.3
+        }}>
+          {item.name}
+        </h3>
+        
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: '1.5rem'
+          alignItems: 'center'
         }}>
-          <div style={{ flex: 1 }}>
-            <h3 style={{
-              fontSize: '1.5rem',
-              fontWeight: '800',
-              color: '#2d3748',
-              marginBottom: '0.75rem',
-              lineHeight: 1.3
-            }}>
-              {item.name}
-            </h3>
-            <p style={{
-              color: '#a27b4bff',
-              fontSize: '1rem',
-              lineHeight: 1.5,
-              marginBottom: '1.5rem'
-            }}>
-              {item.description}
-            </p>
-          </div>
           <div style={{
-            background: 'linear-gradient(135deg, #a27b4bff 0%, #764ba2 100%)',
+            background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
             color: 'white',
-            padding: '1rem 1.5rem',
-            borderRadius: '25px',
+            padding: '0.75rem 1.25rem',
+            borderRadius: '20px',
             fontWeight: '800',
-            fontSize: '1.3rem',
-            marginLeft: '1.5rem',
-            boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)'
+            fontSize: '1.2rem',
+            boxShadow: '0 8px 25px rgba(255, 107, 53, 0.3)'
           }}>
             ${(item.price_cents / 100).toFixed(2)}
           </div>
-        </div>
-
-        {/* Enhanced Footer */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          paddingTop: '1.5rem',
-          borderTop: '2px solid rgba(102, 126, 234, 0.1)'
-        }}>
+          
           <div style={{
+            color: '#ff6b35',
+            fontSize: '0.9rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '1.5rem',
-            fontSize: '0.95rem',
-            color: '#a27b4bff'
+            gap: '0.5rem'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Clock style={{ width: '18px', height: '18px' }} />
-              {item.preparation_time} min
-            </div>
-            {item.calories && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Zap style={{ width: '18px', height: '18px' }} />
-                {item.calories} cal
-              </div>
-            )}
+            <Clock style={{ width: '16px', height: '16px' }} />
+            {item.preparation_time}m
           </div>
-          
-          <UltraButton
-            variant="ghost"
-            size="sm"
-            icon={<Heart style={{ width: '16px', height: '16px' }} />}
-            onClick={(e) => {
-              e?.stopPropagation();
-              // Handle favorite logic
-            }}
-          >{""}</UltraButton>
         </div>
       </div>
     </FuturisticCard>
