@@ -678,34 +678,32 @@ const Restaurants = () => {
             </div>
           </div>
 
-          {/* Results Header */}
-          {(searchQuery || location || cuisineFilter !== 'all') && (
-            <div style={{ marginBottom: '3rem' }}>
-              <h2 style={{
-                fontSize: '2.5rem',
-                fontWeight: '800',
-                background: 'linear-gradient(135deg, #ff6b35 0%, #f97316 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                marginBottom: '1rem'
-              }}>
-                {searchQuery ? `Results for "${searchQuery}"` : 'Restaurants Near You'}
-              </h2>
-              {location && (
+          {/* All Restaurants Section */}
+          <div style={{ marginBottom: '3rem' }}>
+            <h2 style={{
+              fontSize: '2.5rem',
+              fontWeight: '800',
+              background: 'linear-gradient(135deg, #ff6b35 0%, #f97316 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              marginBottom: '1rem'
+            }}>
+              All Restaurants
+            </h2>
+            {(searchQuery || location || cuisineFilter !== 'all') && (
+              <div style={{ marginBottom: '2rem' }}>
                 <p style={{
-                  color: '#d2691e',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
                   fontSize: '1.1rem',
+                  color: '#d2691e',
                   fontWeight: '600'
                 }}>
-                  <MapPin style={{ width: '20px', height: '20px' }} />
-                  Delivering to: {location}
+                  {searchQuery && `Searching for "${searchQuery}"`}
+                  {location && ` • Delivering to: ${location}`}
+                  {cuisineFilter !== 'all' && ` • ${cuisineFilter} cuisine`}
                 </p>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
 
           {/* Restaurant Grid */}
           <div>
