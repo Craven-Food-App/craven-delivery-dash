@@ -208,7 +208,8 @@ const FuturisticCard = ({
   variant = 'default',
   style = {},
   onMouseEnter,
-  onMouseLeave
+  onMouseLeave,
+  onClick
 }: {
   children: any;
   className?: string;
@@ -217,6 +218,7 @@ const FuturisticCard = ({
   style?: React.CSSProperties;
   onMouseEnter?: React.MouseEventHandler<HTMLDivElement>;
   onMouseLeave?: React.MouseEventHandler<HTMLDivElement>;
+  onClick?: React.MouseEventHandler<HTMLDivElement>;
 }) => {
   const variants = {
     default: {
@@ -252,6 +254,7 @@ const FuturisticCard = ({
         ...style 
       }}
       className={className}
+      onClick={onClick}
       onMouseEnter={onMouseEnter ? onMouseEnter : (e) => {
         if (hoverable) {
           e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
