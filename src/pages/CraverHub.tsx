@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CraverApplicationForm } from "@/components/CraverApplicationForm";
-import CraverRoutineVideo from "@/components/CraverRoutineVideo";
+import becomeDriverHero from "@/assets/20251002_2239_Animated Logo Driver_remix_01k6kyy1m7f108g2r5qjd0a8x8.png";
 
 
 const CraverHub = () => {
@@ -100,9 +100,15 @@ const CraverHub = () => {
               </div>
             </div>
             
-            {/* Right side - Enhanced video animation */}
-            <div className="lg:pl-8">
-              <CraverRoutineVideo />
+            {/* Right side - Hero image */}
+            <div className="lg:pl-8 flex justify-center">
+              <div className="relative max-w-2xl">
+                <img 
+                  src={becomeDriverHero} 
+                  alt="Become a Craver Driver" 
+                  className="w-full h-auto rounded-lg shadow-2xl"
+                />
+              </div>
             </div>
           </div>
         </div>
