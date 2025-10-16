@@ -158,7 +158,7 @@ const ContactUs = () => {
                 Speak with our customer service team
               </p>
               <Button variant="outline" className="w-full">
-                1-800-CRAVE-N
+                216-435-0821
               </Button>
             </CardContent>
           </Card>

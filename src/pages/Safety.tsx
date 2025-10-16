@@ -64,7 +64,7 @@ const Safety = () => {
               </Button>
               <Button variant="outline" size="lg" className="border-red-300 text-red-700 hover:bg-red-50">
                 <Phone className="h-4 w-4 mr-2" />
-                Safety Line: 1-800-SAFE-NOW
+                Safety Line: 216-435-0821
               </Button>
               <ChatButton
                 type="customer_support"

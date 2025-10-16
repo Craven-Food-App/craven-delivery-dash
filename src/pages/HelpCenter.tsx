@@ -115,7 +115,7 @@ const HelpCenter = () => {
             </ChatButton>
             <Button variant="secondary" className="bg-white/10 hover:bg-white/20 text-white border-white/20">
               <Phone className="h-4 w-4 mr-2" />
-              Call 1-800-CRAVE-N
+              Call 216-435-0821
             </Button>
             <Button variant="secondary" className="bg-white/10 hover:bg-white/20 text-white border-white/20">
               <Mail className="h-4 w-4 mr-2" />
@@ -238,7 +238,7 @@ const HelpCenter = () => {
               />
               <Button variant="outline" size="lg">
                 <Phone className="h-4 w-4 mr-2" />
-                1-800-CRAVE-N
+                216-435-0821
               </Button>
               <Button variant="outline" size="lg">
                 <Mail className="h-4 w-4 mr-2" />
