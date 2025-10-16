@@ -246,6 +246,22 @@ export const MobileDriverDashboard: React.FC = () => {
       return () => clearInterval(timer);
     }
   }, [driverState]);
+
+  // Listen for schedule status changes to sync CRAVE NOW button
+  useEffect(() => {
+    const handleStatusChange = (event: CustomEvent) => {
+      const { status } = event.detail;
+      if (status === 'online' && driverState === 'offline') {
+        setDriverState('online_searching');
+      } else if (status === 'offline' && driverState !== 'offline') {
+        setDriverState('offline');
+        setEndTime(null);
+      }
+    };
+    
+    window.addEventListener('driverStatusChange', handleStatusChange as EventListener);
+    return () => window.removeEventListener('driverStatusChange', handleStatusChange as EventListener);
+  }, [driverState]);
   const handleGoOnline = async () => {
     try {
       const {

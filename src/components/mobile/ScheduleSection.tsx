@@ -543,6 +543,11 @@ export default function ScheduleSection() {
     const newStatus = currentStatus === 'online' ? 'offline' : 'online';
     setCurrentStatus(newStatus);
     
+    // Dispatch event to sync with CRAVE NOW button in main dashboard
+    window.dispatchEvent(new CustomEvent('driverStatusChange', { 
+      detail: { status: newStatus } 
+    }));
+    
     // Update driver profile status in database
     try {
       const { data: { user } } = await supabase.auth.getUser();
