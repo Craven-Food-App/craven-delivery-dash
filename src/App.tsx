@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -34,6 +34,9 @@ import Testing from "./pages/Testing";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import CookiePolicy from "./pages/CookiePolicy";
+import AdminGuide from "./pages/AdminGuide";
+import RestaurantGuide from "./pages/RestaurantGuide";
+import DriverGuide from "./pages/DriverGuide";
 import ChatButton from "./components/chat/ChatButton";
 
 const queryClient = new QueryClient();
@@ -104,7 +107,10 @@ const App = () => {
 
           {/* Footer pages */}
           <Route path="/help" element={<HelpCenter />} />
-          <Route path="/safety" element={<Safety />} />
+            <Route path="/safety" element={<Safety />} />
+            <Route path="/admin-guide" element={<AdminGuide />} />
+            <Route path="/restaurant-guide" element={<RestaurantGuide />} />
+            <Route path="/driver-guide" element={<DriverGuide />} />
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/partner" element={<PartnerWithUs />} />
           <Route path="/about" element={<AboutUs />} />
