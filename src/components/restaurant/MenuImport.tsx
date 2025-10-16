@@ -160,18 +160,52 @@ export const MenuImport = ({ restaurantId, onImportComplete, isOpen, onClose }: 
         return;
       }
 
-      // Batch insert new items only
-      const menuItemsData = newItems.map((item, index) => ({
-        restaurant_id: restaurantId,
-        name: item.name,
-        description: item.description,
-        price_cents: Math.round(item.price * 100),
-        is_vegetarian: item.dietary?.vegetarian || false,
-        is_vegan: item.dietary?.vegan || false,
-        is_gluten_free: item.dietary?.glutenFree || false,
-        is_available: true,
-        display_order: index,
-        category_id: null, // TODO: Map categories if needed
+      // Batch insert new items with category mapping
+      const menuItemsData = await Promise.all(newItems.map(async (item, index) => {
+        let categoryId = null;
+        
+        // Try to match or create category based on item data
+        if (item.category) {
+          const { data: existingCategory } = await supabase
+            .from('menu_categories')
+            .select('id')
+            .eq('restaurant_id', restaurantId)
+            .ilike('name', item.category)
+            .single();
+          
+          if (existingCategory) {
+            categoryId = existingCategory.id;
+          } else {
+            // Create new category
+            const { data: newCategory } = await supabase
+              .from('menu_categories')
+              .insert({
+                restaurant_id: restaurantId,
+                name: item.category,
+                display_order: index,
+                is_active: true
+              })
+              .select('id')
+              .single();
+            
+            if (newCategory) {
+              categoryId = newCategory.id;
+            }
+          }
+        }
+        
+        return {
+          restaurant_id: restaurantId,
+          name: item.name,
+          description: item.description,
+          price_cents: Math.round(item.price * 100),
+          is_vegetarian: item.dietary?.vegetarian || false,
+          is_vegan: item.dietary?.vegan || false,
+          is_gluten_free: item.dietary?.glutenFree || false,
+          is_available: true,
+          display_order: index,
+          category_id: categoryId
+        };
       }));
 
       const { error } = await supabase

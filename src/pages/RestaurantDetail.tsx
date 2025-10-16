@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Star, Clock, Truck, Plus, Minus, ShoppingCart, TrendingUp, Award, X, 
   ChevronLeft, Utensils, Zap, Heart, Share2, MapPin, Phone, Camera,
-  Navigation, MessageCircle, CheckCircle, Filter, Search, ChefHat, Leaf
+  Navigation, MessageCircle, CheckCircle, Filter, Search, ChefHat, Leaf, DollarSign
 } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { toast as showToast } from 'sonner';
@@ -278,6 +278,13 @@ const RestaurantDetail = () => {
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    vegetarian: false,
+    vegan: false,
+    glutenFree: false,
+    priceRange: 'all' as 'all' | 'under10' | 'under20' | 'under30'
+  });
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [showCart, setShowCart] = useState(false);
   const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
@@ -381,10 +388,25 @@ const RestaurantDetail = () => {
     return menuItems.filter(item => item.category_id === categoryId);
   };
 
-  const filteredItems = menuItems.filter(item =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredItems = menuItems.filter(item => {
+    // Search filter
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Dietary filters
+    const matchesDietary = (!filters.vegetarian || item.is_vegetarian) &&
+      (!filters.vegan || item.is_vegan) &&
+      (!filters.glutenFree || item.is_gluten_free);
+    
+    // Price filter
+    const priceInDollars = item.price_cents / 100;
+    const matchesPrice = filters.priceRange === 'all' ||
+      (filters.priceRange === 'under10' && priceInDollars < 10) ||
+      (filters.priceRange === 'under20' && priceInDollars < 20) ||
+      (filters.priceRange === 'under30' && priceInDollars < 30);
+    
+    return matchesSearch && matchesDietary && matchesPrice;
+  });
 
   if (loading) {
     return (
@@ -649,9 +671,20 @@ const RestaurantDetail = () => {
             <PremiumButton
                 variant="secondary"
                 icon={<Filter style={{ width: '16px', height: '16px' }} />}
-                onClick={() => { /* TODO: Implement filter logic */ }}
+                onClick={() => setShowFilters(true)}
               >
               Filters
+              {(filters.vegetarian || filters.vegan || filters.glutenFree || filters.priceRange !== 'all') && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-4px',
+                  right: '-4px',
+                  background: '#ff6b35',
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%'
+                }} />
+              )}
             </PremiumButton>
             
             <PremiumButton
@@ -832,6 +865,166 @@ const RestaurantDetail = () => {
           display: none;
         }
       `}</style>
+
+      {/* Filter Dialog */}
+      {showFilters && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem'
+          }}
+          onClick={() => setShowFilters(false)}
+        >
+          <div onClick={(e) => e.stopPropagation()}>
+            <PremiumCard
+              hoverable={false}
+              style={{
+                maxWidth: '500px',
+                width: '100%',
+                padding: '2rem'
+              }}
+            >
+              <div style={{ marginBottom: '2rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#ff6b35' }}>
+                  Filter Menu
+                </h3>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '0.5rem'
+                  }}
+                >
+                  <X style={{ width: '24px', height: '24px', color: '#8b4513' }} />
+                </button>
+              </div>
+            </div>
+
+            {/* Dietary Preferences */}
+            <div style={{ marginBottom: '2rem' }}>
+              <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#8b4513', marginBottom: '1rem' }}>
+                <Leaf style={{ width: '16px', height: '16px', display: 'inline', marginRight: '0.5rem' }} />
+                Dietary Preferences
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {[
+                  { key: 'vegetarian', label: 'Vegetarian', icon: '🥬' },
+                  { key: 'vegan', label: 'Vegan', icon: '🌱' },
+                  { key: 'glutenFree', label: 'Gluten-Free', icon: '🌾' }
+                ].map(option => (
+                  <label
+                    key={option.key}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      padding: '0.75rem',
+                      border: `2px solid ${(filters as any)[option.key] ? '#ff6b35' : 'rgba(255, 183, 0, 0.2)'}`,
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      background: (filters as any)[option.key] ? 'rgba(255, 107, 53, 0.1)' : 'transparent'
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={(filters as any)[option.key]}
+                      onChange={(e) => setFilters({ ...filters, [option.key]: e.target.checked })}
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        cursor: 'pointer',
+                        accentColor: '#ff6b35'
+                      }}
+                    />
+                    <span style={{ fontSize: '1.5rem' }}>{option.icon}</span>
+                    <span style={{ fontWeight: '500', color: '#8b4513' }}>{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Price Range */}
+            <div style={{ marginBottom: '2rem' }}>
+              <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#8b4513', marginBottom: '1rem' }}>
+                <DollarSign style={{ width: '16px', height: '16px', display: 'inline', marginRight: '0.5rem' }} />
+                Price Range
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                {[
+                  { value: 'all', label: 'All Prices' },
+                  { value: 'under10', label: 'Under $10' },
+                  { value: 'under20', label: 'Under $20' },
+                  { value: 'under30', label: 'Under $30' }
+                ].map(option => (
+                  <label
+                    key={option.value}
+                    style={{
+                      padding: '0.75rem',
+                      border: `2px solid ${filters.priceRange === option.value ? '#ff6b35' : 'rgba(255, 183, 0, 0.2)'}`,
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      fontWeight: '500',
+                      color: '#8b4513',
+                      transition: 'all 0.2s',
+                      background: filters.priceRange === option.value ? 'rgba(255, 107, 53, 0.1)' : 'transparent'
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="priceRange"
+                      value={option.value}
+                      checked={filters.priceRange === option.value}
+                      onChange={(e) => setFilters({ ...filters, priceRange: e.target.value as any })}
+                      style={{ display: 'none' }}
+                    />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <PremiumButton
+                variant="secondary"
+                onClick={() => {
+                  setFilters({
+                    vegetarian: false,
+                    vegan: false,
+                    glutenFree: false,
+                    priceRange: 'all'
+                  });
+                }}
+                style={{ flex: 1 }}
+              >
+                Clear All
+              </PremiumButton>
+              <PremiumButton
+                variant="primary"
+                onClick={() => setShowFilters(false)}
+                style={{ flex: 1 }}
+              >
+                Apply Filters
+              </PremiumButton>
+            </div>
+            </PremiumCard>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
