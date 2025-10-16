@@ -417,169 +417,170 @@ export const EarningsSection = () => {
   const todayAvgPerDelivery = today.deliveries > 0 ? today.total / today.deliveries : 0;
   const weekGoalProgress = (currentWeek.total / currentWeek.goal) * 100;
   
-  return (
-    <div className="min-h-screen bg-gray-50 pb-16 font-sans">
-      
-      {/* User ID Display - MANDATORY FOR MULTI-USER APPS */}
-      <div className="p-2 text-center bg-gray-100 text-xs text-gray-600 border-b">
-          Your Driver ID: <span className="font-mono font-bold text-orange-600 break-all">{userId || 'N/A'}</span>
-      </div>
+  return (
+    <div className="min-h-screen bg-gray-50 pb-20 font-sans">
+      <div className="max-w-4xl mx-auto">
+        {/* User ID Display - MANDATORY FOR MULTI-USER APPS */}
+        <div className="p-2 text-center bg-gray-100 text-xs text-gray-600 border-b">
+            Your Driver ID: <span className="font-mono font-bold text-orange-600 break-all">{userId || 'N/A'}</span>
+        </div>
 
-      {/* Earnings Header with Gradient Background (ORANGE) - Fully Responsive Header */}
-      <div className="bg-gradient-to-b from-orange-600 to-orange-700 text-white shadow-lg p-4 md:p-6">
-        <div className="flex items-center justify-between pt-4 pb-2">
-          <h1 className="text-xl md:text-2xl font-bold">Your Earnings</h1>
-          <HelpCircle className="h-6 w-6 text-orange-200 hover:text-white transition-colors cursor-pointer" />
-        </div>
-        
-        {/* Daily Earnings Bar Chart - Fluid Layout */}
-        <div className="px-0 pb-6">
-          <p className="text-orange-200 text-center mb-6 text-sm">Confirmed Earnings for Current Week</p>
-          <div className="flex items-end justify-between gap-1 mb-6 h-36">
-            {currentWeek.dailyEarnings.map((day, index) => {
-              const height = maxWeeklyEarning > 0 ? (day.amount / maxWeeklyEarning) * 100 : 0;
-              const isToday = day.date === new Date().getDate();
-              
-              return (
-                <div key={index} className="flex flex-col items-center w-1/7 min-w-[1.5rem] sm:min-w-8">
-                  {/* Amount Label */}
-                  <div className="h-6 flex items-end justify-center">
-                    {day.amount > 0 && (
-                      <span className={`text-white text-[10px] sm:text-xs font-medium whitespace-nowrap ${isToday ? 'font-bold' : ''}`}>
-                        ${day.amount.toFixed(0)}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {/* Bar */}
-                  <div className="h-20 w-full flex items-end justify-center">
-                    <div 
-                      className={`w-6 ${isToday ? 'bg-yellow-400 shadow-md' : 'bg-green-400'} rounded-t transition-all duration-500`}
-                      style={{ height: day.amount > 0 ? `${Math.max(5, height)}%` : '4px' }}
-                    />
-                  </div>
-                  
-                  {/* Day/Date Labels */}
-                  <div className="h-8 flex items-center justify-center w-full">
-                    <div className={`text-[10px] sm:text-xs font-medium ${isToday ? 'text-white font-bold' : 'text-orange-200'}`}>
-                      {day.day}
+        {/* Earnings Header with Gradient Background (ORANGE) - Fully Responsive Header */}
+        <div className="bg-gradient-to-b from-orange-600 to-orange-700 text-white shadow-lg p-4 sm:p-6">
+          <div className="flex items-center justify-between pt-4 pb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold">Your Earnings</h1>
+            <HelpCircle className="h-6 w-6 text-orange-200 hover:text-white transition-colors cursor-pointer" />
+          </div>
+        
+          {/* Daily Earnings Bar Chart - Fluid Layout */}
+          <div className="px-0 pb-6">
+            <p className="text-orange-200 text-center mb-6 text-sm">Confirmed Earnings for Current Week</p>
+            <div className="flex items-end justify-between gap-1 sm:gap-2 mb-6 h-36">
+              {currentWeek.dailyEarnings.map((day, index) => {
+                const height = maxWeeklyEarning > 0 ? (day.amount / maxWeeklyEarning) * 100 : 0;
+                const isToday = day.date === new Date().getDate();
+                
+                return (
+                  <div key={index} className="flex flex-col items-center flex-1">
+                    {/* Amount Label */}
+                    <div className="h-6 flex items-end justify-center">
+                      {day.amount > 0 && (
+                        <span className={`text-white text-[10px] sm:text-xs font-medium whitespace-nowrap ${isToday ? 'font-bold' : ''}`}>
+                          ${day.amount.toFixed(0)}
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* Bar */}
+                    <div className="h-20 w-full flex items-end justify-center">
+                      <div 
+                        className={`w-full max-w-[2.5rem] ${isToday ? 'bg-yellow-400 shadow-md' : 'bg-green-400'} rounded-t transition-all duration-500`}
+                        style={{ height: day.amount > 0 ? `${Math.max(5, height)}%` : '4px' }}
+                      />
+                    </div>
+                    
+                    {/* Day/Date Labels */}
+                    <div className="h-8 flex items-center justify-center w-full">
+                      <div className={`text-[10px] sm:text-xs font-medium ${isToday ? 'text-white font-bold' : 'text-orange-200'}`}>
+                        {day.day}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        
-        {/* Current Week Summary & Goal */}
-        <Card className="mx-4 mb-4 bg-orange-700/30 border-0 shadow-lg">
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-orange-200 text-xs">Week Total ({currentWeek.weekRange})</p>
-                <p className="text-3xl md:text-4xl font-extrabold text-white">${currentWeek.total.toFixed(2)}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-orange-200 text-xs">Goal: ${currentWeek.goal}</p>
-                <Badge variant="success" className="bg-yellow-400 text-gray-900 font-bold">
-                  {Math.min(100, weekGoalProgress).toFixed(0)}%
-                </Badge>
-              </div>
-            </div>
-            <Progress 
-              value={weekGoalProgress}
-              className="bg-orange-400 h-1.5"
-            />
-          </CardContent>
-        </Card>
+                );
+              })}
+            </div>
+          </div>
+        
+          {/* Current Week Summary & Goal */}
+          <Card className="mx-4 mb-4 bg-orange-700/30 border-0 shadow-lg">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <p className="text-orange-200 text-xs sm:text-sm">Week Total ({currentWeek.weekRange})</p>
+                  <p className="text-3xl sm:text-4xl font-extrabold text-white">${currentWeek.total.toFixed(2)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-orange-200 text-xs sm:text-sm">Goal: ${currentWeek.goal}</p>
+                  <Badge variant="success" className="bg-yellow-400 text-gray-900 font-bold">
+                    {Math.min(100, weekGoalProgress).toFixed(0)}%
+                  </Badge>
+                </div>
+              </div>
+              <Progress 
+                value={weekGoalProgress}
+                className="bg-orange-400 h-1.5"
+              />
+            </CardContent>
+          </Card>
 
-        {/* Quick Actions - Responsive Grid */}
-        <div className="p-4 pt-0 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Button 
-              className="h-16 flex flex-col items-center justify-center gap-1 bg-green-500 hover:bg-green-600 text-white border-0 shadow-xl transition-transform transform hover:scale-[1.02] active:scale-95"
-              onClick={() => setShowCashoutModal(true)}
-              disabled={instantPay.available < INSTANT_CASHOUT_FEE}
-            >
-              <Zap className="h-5 w-5" />
-              <span className="text-xs font-semibold">CashApp Pay</span>
-              <span className="text-xs font-bold">${Math.max(0, instantPay.available).toFixed(2)}</span>
-            </Button>
-            <Button 
-              className="h-16 flex flex-col items-center justify-center gap-1 bg-white/20 border-white/50 text-white hover:bg-white/30"
-              variant="outline"
-              onClick={() => console.log("Navigating to Payment Settings")}
-            >
-              <CreditCard className="h-5 w-5" />
-              <span className="text-xs">Manage</span>
-              <span className="text-xs font-semibold">Payments</span>
-            </Button>
-          </div>
-        </div>
-      </div>
+          {/* Quick Actions - Responsive Grid */}
+          <div className="p-4 pt-0 space-y-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <Button 
+                className="h-16 sm:h-20 flex flex-col items-center justify-center gap-1 bg-green-500 hover:bg-green-600 text-white border-0 shadow-xl transition-transform transform hover:scale-[1.02] active:scale-95"
+                onClick={() => setShowCashoutModal(true)}
+                disabled={instantPay.available < INSTANT_CASHOUT_FEE}
+              >
+                <Zap className="h-5 w-5 sm:h-6 sm:w-6" />
+                <span className="text-xs sm:text-sm font-semibold">CashApp Pay</span>
+                <span className="text-xs sm:text-sm font-bold">${Math.max(0, instantPay.available).toFixed(2)}</span>
+              </Button>
+              <Button 
+                className="h-16 sm:h-20 flex flex-col items-center justify-center gap-1 bg-white/20 border-white/50 text-white hover:bg-white/30"
+                variant="outline"
+                onClick={() => console.log("Navigating to Payment Settings")}
+              >
+                <CreditCard className="h-5 w-5 sm:h-6 sm:w-6" />
+                <span className="text-xs sm:text-sm">Manage</span>
+                <span className="text-xs sm:text-sm font-semibold">Payments</span>
+              </Button>
+            </div>
+          </div>
+        </div>
 
-      {/* White Background Content */}
-      <div className="bg-white p-4 md:p-6">
+        {/* White Background Content */}
+        <div className="bg-white p-4 sm:p-6">
 
-        {/* Today's Stats - Responsive Grid */}
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Today's Performance</h2>
-          <Card>
-            <CardContent className="p-4 space-y-3">
-              <div className="flex justify-around text-center flex-wrap gap-4">
-                <div className="space-y-1 w-1/4 min-w-[70px]">
-                  <Clock className="h-5 w-5 text-orange-500 mx-auto" />
-                  <p className="text-xs text-gray-500">Active Time</p>
-                  <p className="font-semibold text-sm">{today.activeTime}</p>
-                </div>
-                <div className="space-y-1 w-1/4 min-w-[70px]">
-                  <Calendar className="h-5 w-5 text-orange-500 mx-auto" />
-                  <p className="text-xs text-gray-500">Deliveries</p>
-                  <p className="font-semibold text-sm">{today.deliveries}</p>
-                </div>
-                <div className="space-y-1 w-1/4 min-w-[70px]">
-                  <DollarSign className="h-5 w-5 text-orange-500 mx-auto" />
-                  <p className="text-xs text-gray-500">Avg / Del</p>
-                  <p className="font-semibold text-sm">${todayAvgPerDelivery.toFixed(2)}</p>
-                </div>
-              </div>
-              <Separator />
-              <div className="text-xs text-gray-600 space-y-1">
-                <div className="flex justify-between"><span>Base Pay</span> <span className="font-medium">${today.basePay.toFixed(2)}</span></div>
-                <div className="flex justify-between"><span>Customer Tips</span> <span className="font-medium">${today.tips.toFixed(2)}</span></div>
-                <div className="flex justify-between"><span>Bonuses</span> <span className="font-medium">${today.bonuses.toFixed(2)}</span></div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Recent Deliveries */}
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Recent Deliveries</h2>
-          <Card>
-            {deliveryHistory.slice(0, 5).map((delivery, index) => (
-              <div key={delivery.id}>
-                <div className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800 break-words max-w-[200px]">{delivery.restaurant}</p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(delivery.date).toLocaleDateString()} - {delivery.time}
-                    </p>
+          {/* Today's Stats - Responsive Grid */}
+          <div className="mb-6">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Today's Performance</h2>
+            <Card>
+              <CardContent className="p-4 sm:p-6 space-y-4">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="space-y-2">
+                    <Clock className="h-6 w-6 text-orange-500 mx-auto" />
+                    <p className="text-xs sm:text-sm text-gray-500">Active Time</p>
+                    <p className="font-semibold text-sm sm:text-base">{today.activeTime}</p>
                   </div>
-                  <div className="text-right flex flex-col items-end">
-                    <p className="text-lg font-bold text-green-600">${delivery.earnings.toFixed(2)}</p>
-                    <p className="text-xs text-gray-500">{delivery.distance.toFixed(1)} mi</p>
+                  <div className="space-y-2">
+                    <Calendar className="h-6 w-6 text-orange-500 mx-auto" />
+                    <p className="text-xs sm:text-sm text-gray-500">Deliveries</p>
+                    <p className="font-semibold text-sm sm:text-base">{today.deliveries}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <DollarSign className="h-6 w-6 text-orange-500 mx-auto" />
+                    <p className="text-xs sm:text-sm text-gray-500">Avg / Del</p>
+                    <p className="font-semibold text-sm sm:text-base">${todayAvgPerDelivery.toFixed(2)}</p>
                   </div>
                 </div>
-                {index < deliveryHistory.length - 1 && index < 4 && <Separator className="mx-4" />}
-              </div>
-            ))}
-          </Card>
-          <Button variant="secondary" className="w-full mt-4 h-10 bg-orange-500 text-white hover:bg-orange-600">
-            View All History <ChevronRight className="h-4 w-4 ml-2" />
-          </Button>
-        </div>
-      </div>
+                <Separator />
+                <div className="text-sm text-gray-600 space-y-2">
+                  <div className="flex justify-between"><span>Base Pay</span> <span className="font-medium">${today.basePay.toFixed(2)}</span></div>
+                  <div className="flex justify-between"><span>Customer Tips</span> <span className="font-medium">${today.tips.toFixed(2)}</span></div>
+                  <div className="flex justify-between"><span>Bonuses</span> <span className="font-medium">${today.bonuses.toFixed(2)}</span></div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recent Deliveries */}
+          <div className="mb-6">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3">Recent Deliveries</h2>
+            <Card>
+              {deliveryHistory.slice(0, 5).map((delivery, index) => (
+                <div key={delivery.id}>
+                  <div className="flex items-center justify-between p-4 sm:p-5 hover:bg-gray-50 transition-colors cursor-pointer gap-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm sm:text-base font-semibold text-gray-800 truncate">{delivery.restaurant}</p>
+                      <p className="text-xs sm:text-sm text-gray-500">
+                        {new Date(delivery.date).toLocaleDateString()} - {delivery.time}
+                      </p>
+                    </div>
+                    <div className="text-right flex flex-col items-end shrink-0">
+                      <p className="text-lg sm:text-xl font-bold text-green-600">${delivery.earnings.toFixed(2)}</p>
+                      <p className="text-xs sm:text-sm text-gray-500">{delivery.distance.toFixed(1)} mi</p>
+                    </div>
+                  </div>
+                  {index < deliveryHistory.length - 1 && index < 4 && <Separator className="mx-4" />}
+                </div>
+              ))}
+            </Card>
+            <Button variant="secondary" className="w-full mt-4 h-10 sm:h-12 bg-orange-500 text-white hover:bg-orange-600 text-sm sm:text-base">
+              View All History <ChevronRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      </div>
       
       {/* Instant Cashout Modal */}
       <InstantCashoutModal
