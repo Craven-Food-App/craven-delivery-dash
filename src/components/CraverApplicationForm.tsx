@@ -28,6 +28,8 @@ interface ApplicationData {
   email: string;
   phone: string;
   dateOfBirth?: Date;
+  password: string;
+  confirmPassword: string;
   
   // Address
   streetAddress: string;
@@ -69,6 +71,8 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
     lastName: "",
     email: "",
     phone: "",
+    password: "",
+    confirmPassword: "",
     streetAddress: "",
     city: "",
     state: "",
@@ -92,56 +96,49 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
   const [user, setUser] = useState(null);
   const { toast } = useToast();
 
-  // Check authentication and prefill data on mount
+  // Check for existing session and prefill data if available
   useEffect(() => {
-    const checkAuthAndPrefill = async () => {
+    const checkSessionAndPrefill = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({
-          title: "Authentication Required",
-          description: "Please log in to apply as a Craver.",
-          variant: "destructive"
-        });
-        onClose();
-        return;
-      }
+      
+      if (session) {
+        setUser(session.user);
 
-      setUser(session.user);
+        // Prefill user data from profile and addresses
+        try {
+          const [profileResponse, addressResponse] = await Promise.all([
+            supabase.from('user_profiles').select('*').eq('user_id', session.user.id).single(),
+            supabase.from('delivery_addresses').select('*').eq('user_id', session.user.id).eq('is_default', true).single()
+          ]);
 
-      // Prefill user data from profile and addresses
-      try {
-        const [profileResponse, addressResponse] = await Promise.all([
-          supabase.from('user_profiles').select('*').eq('user_id', session.user.id).single(),
-          supabase.from('delivery_addresses').select('*').eq('user_id', session.user.id).eq('is_default', true).single()
-        ]);
+          const profile = profileResponse.data;
+          const address = addressResponse.data;
 
-        const profile = profileResponse.data;
-        const address = addressResponse.data;
+          if (profile || address) {
+            setData(prev => ({
+              ...prev,
+              firstName: profile?.full_name?.split(' ')[0] || prev.firstName,
+              lastName: profile?.full_name?.split(' ').slice(1).join(' ') || prev.lastName,
+              email: session.user.email || prev.email,
+              phone: profile?.phone || prev.phone,
+              streetAddress: address?.street_address || prev.streetAddress,
+              city: address?.city || prev.city,
+              state: address?.state || prev.state,
+              zipCode: address?.zip_code || prev.zipCode,
+            }));
 
-        if (profile || address) {
-          setData(prev => ({
-            ...prev,
-            firstName: profile?.full_name?.split(' ')[0] || prev.firstName,
-            lastName: profile?.full_name?.split(' ').slice(1).join(' ') || prev.lastName,
-            email: session.user.email || prev.email,
-            phone: profile?.phone || prev.phone,
-            streetAddress: address?.street_address || prev.streetAddress,
-            city: address?.city || prev.city,
-            state: address?.state || prev.state,
-            zipCode: address?.zip_code || prev.zipCode,
-          }));
-
-          toast({
-            title: "Information Pre-filled",
-            description: "We've filled in your information from your profile and saved addresses.",
-          });
+            toast({
+              title: "Information Pre-filled",
+              description: "We've filled in your information from your profile and saved addresses.",
+            });
+          }
+        } catch (error) {
+          console.log('No existing profile/address data to prefill');
         }
-      } catch (error) {
-        console.log('No existing profile/address data to prefill');
       }
     };
 
-    checkAuthAndPrefill();
+    checkSessionAndPrefill();
   }, []);
 
   const totalSteps = 5;
@@ -172,10 +169,21 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
   };
 
   const handleSubmit = async () => {
-    if (!user) {
+    // Validate passwords match
+    if (data.password !== data.confirmPassword) {
       toast({
-        title: "Authentication Required",
-        description: "Please log in to submit your application.",
+        title: "Password Mismatch",
+        description: "Passwords do not match. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate password length
+    if (data.password.length < 6) {
+      toast({
+        title: "Invalid Password",
+        description: "Password must be at least 6 characters long.",
         variant: "destructive"
       });
       return;
@@ -183,7 +191,42 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
 
     setLoading(true);
     try {
-      // Create application with authenticated user
+      let userId = user?.id;
+
+      // If no existing user, create new account
+      if (!user) {
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: {
+            data: {
+              full_name: `${data.firstName} ${data.lastName}`,
+              phone: data.phone
+            },
+            emailRedirectTo: `${window.location.origin}/`
+          }
+        });
+
+        if (authError) {
+          throw new Error(authError.message);
+        }
+
+        if (!authData.user) {
+          throw new Error("Failed to create user account");
+        }
+
+        userId = authData.user.id;
+
+        // Create user profile
+        await supabase.from('user_profiles').insert({
+          user_id: userId,
+          full_name: `${data.firstName} ${data.lastName}`,
+          phone: data.phone,
+          role: 'driver'
+        });
+      }
+
+      // Create application with user ID
       const applicationId = crypto.randomUUID();
 
       // Upload documents
@@ -199,7 +242,7 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
       const { error } = await supabase
         .from('craver_applications')
         .insert({
-          user_id: user.id, // Set authenticated user's ID
+          user_id: userId,
           first_name: data.firstName,
           last_name: data.lastName,
           email: data.email,
@@ -258,7 +301,7 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
   const isStepValid = (step: number): boolean => {
     switch (step) {
       case 1:
-        return !!(data.firstName && data.lastName && data.email && data.phone && data.dateOfBirth);
+        return !!(data.firstName && data.lastName && data.email && data.phone && data.dateOfBirth && data.password && data.confirmPassword && data.password === data.confirmPassword && data.password.length >= 6);
       case 2:
         return !!(data.streetAddress && data.city && data.state && data.zipCode);
       case 3:
@@ -348,6 +391,31 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
                 onChange={(e) => updateData('phone', e.target.value)}
                 placeholder="(555) 123-4567"
               />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">Password *</Label>
+              <Input
+                id="password"
+                type="password"
+                value={data.password}
+                onChange={(e) => updateData('password', e.target.value)}
+                placeholder="Minimum 6 characters"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password *</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={data.confirmPassword}
+                onChange={(e) => updateData('confirmPassword', e.target.value)}
+                placeholder="Re-enter password"
+              />
+              {data.password && data.confirmPassword && data.password !== data.confirmPassword && (
+                <p className="text-sm text-destructive">Passwords do not match</p>
+              )}
             </div>
             
             <div className="space-y-2">
