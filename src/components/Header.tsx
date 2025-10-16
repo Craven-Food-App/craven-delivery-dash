@@ -225,7 +225,7 @@ const Header = () => {
 
         {/* Mobile Menu Overlay */}
         {isMobileMenuOpen && (
-          <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-border shadow-lg z-50">
+          <div className="md:hidden absolute top-full left-0 right-0 bg-background border-b border-border shadow-lg z-50">
             <div className="container mx-auto px-4 py-6 space-y-4">
               {/* Mobile Navigation */}
               <nav className="space-y-4">
@@ -275,7 +275,7 @@ const Header = () => {
                     </Button>
                     <Button 
                       variant="outline" 
-                      className="w-full justify-start text-lg h-12 text-red-600 border-red-200 hover:bg-red-50"
+                      className="w-full justify-start text-lg h-12 text-destructive border-destructive/20 hover:bg-destructive/10"
                       onClick={() => {
                         setIsMobileMenuOpen(false);
                         handleSignOut();
