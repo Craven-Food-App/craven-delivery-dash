@@ -130,79 +130,14 @@ export const LiveDriverTesting = () => {
 
     setIsSendingTest(true);
     try {
-      const { data: restaurants } = await supabase.from('restaurants').select('*').limit(1);
-      if (!restaurants || restaurants.length === 0) throw new Error('No restaurants found.');
-
-      const restaurant = restaurants[0];
-      const { data: order } = await supabase
-        .from('orders')
-        .insert({
-          restaurant_id: restaurant.id,
-          customer_id: (await supabase.auth.getUser()).data.user?.id,
-          order_status: 'pending',
-          total_cents: 2599,
-          subtotal_cents: 2299,
-          tax_cents: 200,
-          tip_cents: 100,
-          delivery_fee_cents: 0,
-          delivery_address: {
-            street: '123 Test Street',
-            city: 'Test City',
-            state: 'TS',
-            zip: '12345',
-            latitude: 40.7128,
-            longitude: -74.0060,
-          },
-        })
-        .select()
-        .single();
-
-      const { error: orderUpdateError } = await supabase
-        .from('orders')
-        .update({ driver_id: selectedDriver, order_status: 'confirmed' })
-        .eq('id', order.id);
-      if (orderUpdateError) {
-        console.warn('Order update failed (likely RLS):', orderUpdateError.message);
+      const { data: result, error: fnError } = await supabase.functions.invoke('create-test-order', {
+        body: { driverId: selectedDriver }
+      });
+      if (fnError || !result) {
+        throw new Error((fnError as any)?.message || 'Failed to create test order');
       }
 
-      const distanceKm = 3.2;
-      const expiresAt = new Date(Date.now() + 30_000).toISOString();
-      const estimatedTime = Math.ceil(distanceKm * 3);
-
-      // Create order assignment record
-      const { data: assignment, error: assignmentError } = await supabase
-        .from('order_assignments')
-        .insert({
-          order_id: order.id,
-          driver_id: selectedDriver,
-          status: 'pending',
-          expires_at: expiresAt
-        })
-        .select()
-        .single();
-      if (assignmentError) {
-        console.warn('Assignment insert failed (likely RLS):', assignmentError.message);
-      }
-
-      const notificationPayload = {
-        type: 'order_assignment',
-        assignment_id: assignment?.id || `${order.id}-test`,
-        order_id: order.id,
-        restaurant_name: restaurant.name || 'Test Restaurant',
-        pickup_address: {
-          street: restaurant.address || 'Test Pickup Address',
-          city: restaurant.city || 'Test City',
-          state: restaurant.state || 'TS',
-          zip: restaurant.zip_code || '12345',
-        },
-        dropoff_address: order.delivery_address,
-        payout_cents: 500,
-        distance_km: distanceKm,
-        distance_mi: (distanceKm * 0.621371).toFixed(1),
-        expires_at: expiresAt,
-        estimated_time: estimatedTime,
-        isTestOrder: true,
-      };
+      const { notificationPayload, restaurant } = result as any;
 
       // Send notification via driver-specific channel
       const driverChannel = supabase.channel(`driver_${selectedDriver}`);
@@ -229,7 +164,7 @@ export const LiveDriverTesting = () => {
       // Create notification record
       await supabase.from('order_notifications').insert({
         user_id: selectedDriver,
-        order_id: order.id,
+        order_id: (notificationPayload as any).order_id,
         title: `Test Order: ${restaurant.name || 'Test Restaurant'}`,
         message: `Test pickup - this is a test order`,
         notification_type: 'order_assignment'
