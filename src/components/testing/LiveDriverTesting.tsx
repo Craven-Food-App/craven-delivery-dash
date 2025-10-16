@@ -163,27 +163,67 @@ export const LiveDriverTesting = () => {
       const expiresAt = new Date(Date.now() + 30_000).toISOString();
       const estimatedTime = Math.ceil(distanceKm * 3);
 
-      await supabase.channel(`driver_${selectedDriver}`).send({
+      // Create order assignment record
+      const { data: assignment } = await supabase
+        .from('order_assignments')
+        .insert({
+          order_id: order.id,
+          driver_id: selectedDriver,
+          status: 'pending',
+          expires_at: expiresAt
+        })
+        .select()
+        .single();
+
+      const notificationPayload = {
+        type: 'order_assignment',
+        assignment_id: assignment?.id || `${order.id}-test`,
+        order_id: order.id,
+        restaurant_name: restaurant.name || 'Test Restaurant',
+        pickup_address: {
+          street: restaurant.address || 'Test Pickup Address',
+          city: restaurant.city || 'Test City',
+          state: restaurant.state || 'TS',
+          zip: restaurant.zip_code || '12345',
+        },
+        dropoff_address: order.delivery_address,
+        payout_cents: 500,
+        distance_km: distanceKm,
+        distance_mi: (distanceKm * 0.621371).toFixed(1),
+        expires_at: expiresAt,
+        estimated_time: estimatedTime,
+        isTestOrder: true,
+      };
+
+      // Send notification via driver-specific channel
+      const driverChannel = supabase.channel(`driver_${selectedDriver}`);
+      await driverChannel.subscribe();
+      await driverChannel.send({
         type: 'broadcast',
         event: 'order_assignment',
+        payload: notificationPayload,
+      });
+
+      // Also send via user notifications channel
+      const userChannel = supabase.channel(`user_notifications_${selectedDriver}`);
+      await userChannel.subscribe();
+      await userChannel.send({
+        type: 'broadcast',
+        event: 'push_notification',
         payload: {
-          assignment_id: `${order.id}-test`,
-          order_id: order.id,
-          restaurant_name: restaurant.name || 'Test Restaurant',
-          pickup_address: {
-            street: restaurant.address || 'Test Pickup Address',
-            city: restaurant.city || 'Test City',
-            state: restaurant.state || 'TS',
-            zip: restaurant.zip_code || '12345',
-          },
-          dropoff_address: order.delivery_address,
-          payout_cents: 500,
-          distance_km: distanceKm,
-          distance_mi: (distanceKm * 0.621371).toFixed(1),
-          expires_at: expiresAt,
-          estimated_time: estimatedTime,
-          isTestOrder: true,
-        },
+          title: `Test Order: ${restaurant.name || 'Test Restaurant'}`,
+          message: `Test pickup - this is a test order`,
+          data: notificationPayload
+        }
+      });
+
+      // Create notification record
+      await supabase.from('order_notifications').insert({
+        user_id: selectedDriver,
+        order_id: order.id,
+        title: `Test Order: ${restaurant.name || 'Test Restaurant'}`,
+        message: `Test pickup - this is a test order`,
+        notification_type: 'order_assignment'
       });
 
       toast({
