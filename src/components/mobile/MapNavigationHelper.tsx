@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Navigation, ExternalLink, Map as MapIcon, Phone } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useNavigation } from '@/hooks/useNavigation';
 
 interface NavigationDestination {
   address: string;
@@ -23,38 +23,8 @@ export const MapNavigationHelper: React.FC<MapNavigationHelperProps> = ({
   type,
   onNavigate
 }) => {
-  const [preferredMapApp, setPreferredMapApp] = useState<string>('google_maps');
-
-  // Load user's preferred map app from settings
-  useEffect(() => {
-    const loadPreferredMap = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: profile } = await supabase
-            .from('user_profiles')
-            .select('settings')
-            .eq('user_id', user.id)
-            .single();
-          
-          const settings = profile?.settings as any;
-          if (settings?.preferredMapApp && typeof settings.preferredMapApp === 'string') {
-            setPreferredMapApp(settings.preferredMapApp);
-          } else {
-            // Also check localStorage as fallback
-            const localPref = localStorage.getItem('preferred_map_app');
-            if (localPref) {
-              setPreferredMapApp(localPref);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error loading map preference:', error);
-      }
-    };
-    
-    loadPreferredMap();
-  }, []);
+  const { navigationSettings } = useNavigation();
+  const preferredMapApp = navigationSettings.provider;
   
   const openInMaps = (app?: 'google' | 'apple' | 'waze') => {
     // Use preferred app if no specific app is requested
@@ -68,7 +38,6 @@ export const MapNavigationHelper: React.FC<MapNavigationHelperProps> = ({
     let appName = '';
     
     switch (mapApp) {
-      case 'google_maps':
       case 'google':
         appName = 'Google Maps';
         if (coords) {
@@ -78,7 +47,6 @@ export const MapNavigationHelper: React.FC<MapNavigationHelperProps> = ({
         }
         break;
         
-      case 'apple_maps':
       case 'apple':
         appName = 'Apple Maps';
         if (coords) {
@@ -129,10 +97,10 @@ export const MapNavigationHelper: React.FC<MapNavigationHelperProps> = ({
 
   const getMapAppName = () => {
     const names: { [key: string]: string } = {
-      'google_maps': 'Google Maps',
-      'apple_maps': 'Apple Maps',
+      'google': 'Google Maps',
+      'apple': 'Apple Maps',
       'waze': 'Waze',
-      'mapbox': 'Mapbox'
+      'mapbox': "Crave'N Navigation"
     };
     return names[preferredMapApp] || 'Maps';
   };
@@ -165,7 +133,7 @@ export const MapNavigationHelper: React.FC<MapNavigationHelperProps> = ({
 
           {/* Alternative Navigation Options */}
           <div className="grid grid-cols-2 gap-2">
-            {preferredMapApp !== 'google_maps' && (
+            {preferredMapApp !== 'google' && (
               <Button 
                 onClick={() => openInMaps('google')}
                 variant="outline"
@@ -176,7 +144,7 @@ export const MapNavigationHelper: React.FC<MapNavigationHelperProps> = ({
               </Button>
             )}
 
-            {preferredMapApp !== 'apple_maps' && /iPad|iPhone|iPod/.test(navigator.userAgent) && (
+            {preferredMapApp !== 'apple' && /iPad|iPhone|iPod/.test(navigator.userAgent) && (
               <Button 
                 onClick={() => openInMaps('apple')}
                 variant="outline"
