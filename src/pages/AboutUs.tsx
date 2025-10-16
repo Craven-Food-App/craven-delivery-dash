@@ -2,110 +2,86 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  Heart, 
-  Target, 
-  Users, 
-  Truck, 
-  Store, 
-  Globe, 
-  Award, 
-  TrendingUp,
-  MapPin,
-  Clock,
-  Star,
-  Zap
-} from 'lucide-react';
+import { Heart, Target, Users, Truck, Store, Globe, Award, TrendingUp, MapPin, Clock, Star, Zap } from 'lucide-react';
 import Footer from '@/components/Footer';
-
 const AboutUs = () => {
-  const stats = [
-    { icon: Users, label: 'Active Users', value: '500K+' },
-    { icon: Store, label: 'Restaurant Partners', value: '10K+' },
-    { icon: Truck, label: 'Delivery Drivers', value: '25K+' },
-    { icon: Globe, label: 'Cities Served', value: '100+' },
-  ];
-
-  const values = [
-    {
-      icon: Heart,
-      title: 'Customer First',
-      description: 'Every decision we make is centered around creating the best possible experience for our customers.'
-    },
-    {
-      icon: Zap,
-      title: 'Speed & Reliability',
-      description: 'We leverage technology to ensure fast, accurate deliveries that you can count on every time.'
-    },
-    {
-      icon: Users,
-      title: 'Community Focus',
-      description: 'We believe in supporting local restaurants and creating opportunities for drivers in every community.'
-    },
-    {
-      icon: Star,
-      title: 'Quality Excellence',
-      description: 'From our platform to our partnerships, we maintain the highest standards in everything we do.'
-    }
-  ];
-
-  const timeline = [
-    {
-      year: '2020',
-      title: 'The Beginning',
-      description: 'Crave\'n was founded with a simple mission: make food delivery faster, more reliable, and more affordable for everyone.'
-    },
-    {
-      year: '2021',
-      title: 'Rapid Growth',
-      description: 'Expanded to 25 cities and onboarded over 1,000 restaurant partners, establishing our presence in major metropolitan areas.'
-    },
-    {
-      year: '2022',
-      title: 'Technology Innovation',
-      description: 'Launched our AI-powered routing system and real-time tracking, reducing delivery times by 30% on average.'
-    },
-    {
-      year: '2023',
-      title: 'National Expansion',
-      description: 'Reached 100+ cities across the country and introduced our driver benefits program and safety features.'
-    },
-    {
-      year: '2024',
-      title: 'Platform Evolution',
-      description: 'Introduced advanced features like group ordering, corporate catering, and our award-winning customer support platform.'
-    }
-  ];
-
-  const team = [
-    {
-      name: 'Sarah Johnson',
-      role: 'CEO & Co-Founder',
-      image: '/placeholder.svg',
-      bio: 'Former tech executive with 15+ years in logistics and marketplace platforms.'
-    },
-    {
-      name: 'Mike Chen',
-      role: 'CTO & Co-Founder',
-      image: '/placeholder.svg',
-      bio: 'Tech innovator specializing in real-time systems and mobile application development.'
-    },
-    {
-      name: 'Elena Rodriguez',
-      role: 'Head of Operations',
-      image: '/placeholder.svg',
-      bio: 'Operations expert with deep experience in supply chain and logistics optimization.'
-    },
-    {
-      name: 'David Thompson',
-      role: 'Head of Partnerships',
-      image: '/placeholder.svg',
-      bio: 'Restaurant industry veteran focused on building meaningful partnerships with local businesses.'
-    }
-  ];
-
-  return (
-    <div className="min-h-screen bg-background">
+  const stats = [{
+    icon: Users,
+    label: 'Active Users',
+    value: '500K+'
+  }, {
+    icon: Store,
+    label: 'Restaurant Partners',
+    value: '10K+'
+  }, {
+    icon: Truck,
+    label: 'Delivery Drivers',
+    value: '25K+'
+  }, {
+    icon: Globe,
+    label: 'Cities Served',
+    value: '100+'
+  }];
+  const values = [{
+    icon: Heart,
+    title: 'Customer First',
+    description: 'Every decision we make is centered around creating the best possible experience for our customers.'
+  }, {
+    icon: Zap,
+    title: 'Speed & Reliability',
+    description: 'We leverage technology to ensure fast, accurate deliveries that you can count on every time.'
+  }, {
+    icon: Users,
+    title: 'Community Focus',
+    description: 'We believe in supporting local restaurants and creating opportunities for drivers in every community.'
+  }, {
+    icon: Star,
+    title: 'Quality Excellence',
+    description: 'From our platform to our partnerships, we maintain the highest standards in everything we do.'
+  }];
+  const timeline = [{
+    year: '2020',
+    title: 'The Beginning',
+    description: 'Crave\'n was founded with a simple mission: make food delivery faster, more reliable, and more affordable for everyone.'
+  }, {
+    year: '2021',
+    title: 'Rapid Growth',
+    description: 'Expanded to 25 cities and onboarded over 1,000 restaurant partners, establishing our presence in major metropolitan areas.'
+  }, {
+    year: '2022',
+    title: 'Technology Innovation',
+    description: 'Launched our AI-powered routing system and real-time tracking, reducing delivery times by 30% on average.'
+  }, {
+    year: '2023',
+    title: 'National Expansion',
+    description: 'Reached 100+ cities across the country and introduced our driver benefits program and safety features.'
+  }, {
+    year: '2024',
+    title: 'Platform Evolution',
+    description: 'Introduced advanced features like group ordering, corporate catering, and our award-winning customer support platform.'
+  }];
+  const team = [{
+    name: 'Sarah Johnson',
+    role: 'CEO & Co-Founder',
+    image: '/placeholder.svg',
+    bio: 'Former tech executive with 15+ years in logistics and marketplace platforms.'
+  }, {
+    name: 'Mike Chen',
+    role: 'CTO & Co-Founder',
+    image: '/placeholder.svg',
+    bio: 'Tech innovator specializing in real-time systems and mobile application development.'
+  }, {
+    name: 'Elena Rodriguez',
+    role: 'Head of Operations',
+    image: '/placeholder.svg',
+    bio: 'Operations expert with deep experience in supply chain and logistics optimization.'
+  }, {
+    name: 'David Thompson',
+    role: 'Head of Partnerships',
+    image: '/placeholder.svg',
+    bio: 'Restaurant industry veteran focused on building meaningful partnerships with local businesses.'
+  }];
+  return <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
         <div className="container mx-auto px-4 py-16 text-center">
@@ -114,9 +90,7 @@ const AboutUs = () => {
             We're on a mission to connect people with their favorite food, 
             support local restaurants, and create opportunities for drivers in communities everywhere.
           </p>
-          <Badge variant="secondary" className="bg-white/20 text-white text-lg px-4 py-2">
-            Founded in 2020 • 100+ Cities • 500K+ Happy Customers
-          </Badge>
+          <Badge variant="secondary" className="bg-white/20 text-white text-lg px-4 py-2">Founded in 2025 • 100+ Cities • 20K+ Happy Customers</Badge>
         </div>
       </div>
 
@@ -124,17 +98,15 @@ const AboutUs = () => {
         {/* Stats Section */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
           {stats.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <Card key={index} className="text-center">
+          const Icon = stat.icon;
+          return <Card key={index} className="text-center">
                 <CardContent className="p-6">
                   <Icon className="h-8 w-8 mx-auto mb-3 text-primary" />
                   <h3 className="text-2xl font-bold text-primary">{stat.value}</h3>
                   <p className="text-sm text-muted-foreground">{stat.label}</p>
                 </CardContent>
-              </Card>
-            );
-          })}
+              </Card>;
+        })}
         </div>
 
         {/* Mission & Vision */}
@@ -177,9 +149,8 @@ const AboutUs = () => {
           <h2 className="text-3xl font-bold text-center mb-8">Our Core Values</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {values.map((value, index) => {
-              const Icon = value.icon;
-              return (
-                <Card key={index}>
+            const Icon = value.icon;
+            return <Card key={index}>
                   <CardHeader>
                     <Icon className="h-8 w-8 text-primary mb-2" />
                     <CardTitle className="text-lg">{value.title}</CardTitle>
@@ -187,9 +158,8 @@ const AboutUs = () => {
                   <CardContent>
                     <p className="text-muted-foreground">{value.description}</p>
                   </CardContent>
-                </Card>
-              );
-            })}
+                </Card>;
+          })}
           </div>
         </div>
 
@@ -197,15 +167,12 @@ const AboutUs = () => {
         <div className="mb-16">
           <h2 className="text-3xl font-bold text-center mb-8">Our Journey</h2>
           <div className="max-w-4xl mx-auto">
-            {timeline.map((item, index) => (
-              <div key={index} className="flex gap-6 mb-8">
+            {timeline.map((item, index) => <div key={index} className="flex gap-6 mb-8">
                 <div className="flex flex-col items-center">
                   <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold">
                     {item.year.slice(-2)}
                   </div>
-                  {index !== timeline.length - 1 && (
-                    <div className="w-px h-16 bg-border mt-4"></div>
-                  )}
+                  {index !== timeline.length - 1 && <div className="w-px h-16 bg-border mt-4"></div>}
                 </div>
                 <div className="flex-1 pb-8">
                   <div className="flex items-center gap-2 mb-2">
@@ -214,8 +181,7 @@ const AboutUs = () => {
                   </div>
                   <p className="text-muted-foreground">{item.description}</p>
                 </div>
-              </div>
-            ))}
+              </div>)}
           </div>
         </div>
 
@@ -223,8 +189,7 @@ const AboutUs = () => {
         <div className="mb-16">
           <h2 className="text-3xl font-bold text-center mb-8">Leadership Team</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {team.map((member, index) => (
-              <Card key={index} className="text-center">
+            {team.map((member, index) => <Card key={index} className="text-center">
                 <CardContent className="p-6">
                   <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/60 rounded-full mx-auto mb-4 flex items-center justify-center">
                     <Users className="h-8 w-8 text-white" />
@@ -233,8 +198,7 @@ const AboutUs = () => {
                   <p className="text-primary text-sm mb-3">{member.role}</p>
                   <p className="text-xs text-muted-foreground">{member.bio}</p>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
         </div>
 
@@ -354,21 +318,22 @@ const AboutUs = () => {
       </div>
 
       <Footer />
-    </div>
-  );
+    </div>;
 };
 
 // Add missing CheckCircle and Trophy imports
-const CheckCircle = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+const CheckCircle = ({
+  className
+}: {
+  className?: string;
+}) => <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-);
-
-const Trophy = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  </svg>;
+const Trophy = ({
+  className
+}: {
+  className?: string;
+}) => <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-  </svg>
-);
-
+  </svg>;
 export default AboutUs;
