@@ -10,6 +10,8 @@ interface AddressSuggestion {
   center: [number, number]; // [lng, lat]
   place_type: string[];
   address: string;
+  text?: string; // Street name from Mapbox
+  properties?: any; // Additional properties including unit numbers
   context?: any[]; // Mapbox context for parsing address components
 }
 
@@ -98,7 +100,9 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           place_name: feature.place_name,
           center: feature.center,
           place_type: feature.place_type,
-          address: feature.place_name,
+          address: feature.address || '', // House number
+          text: feature.text || '', // Street name
+          properties: feature.properties,
           context: feature.context
         }));
       }
@@ -213,8 +217,21 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       }
     }
     
-    // Extract street address (first part, without unit numbers in parentheses)
-    const street = parts[0] || '';
+    // Build street address from Mapbox components
+    let street = '';
+    
+    // Use Mapbox's address (house number) and text (street name) if available
+    if (suggestion.address && suggestion.text) {
+      street = `${suggestion.address} ${suggestion.text}`;
+      
+      // Check for unit number in properties
+      if (suggestion.properties?.unit) {
+        street += ` ${suggestion.properties.unit}`;
+      }
+    } else {
+      // Fallback: extract from place_name (first part only)
+      street = parts[0] || '';
+    }
     
     return {
       street,
