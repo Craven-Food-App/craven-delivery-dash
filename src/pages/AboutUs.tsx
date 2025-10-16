@@ -8,15 +8,15 @@ const AboutUs = () => {
   const stats = [{
     icon: Users,
     label: 'Active Users',
-    value: '500K+'
+    value: '20K'
   }, {
     icon: Store,
     label: 'Restaurant Partners',
-    value: '10K+'
+    value: '5K+'
   }, {
     icon: Truck,
     label: 'Delivery Drivers',
-    value: '25K+'
+    value: '1K+'
   }, {
     icon: Globe,
     label: 'Cities Served',
@@ -90,7 +90,7 @@ const AboutUs = () => {
             We're on a mission to connect people with their favorite food, 
             support local restaurants, and create opportunities for drivers in communities everywhere.
           </p>
-          <Badge variant="secondary" className="bg-white/20 text-white text-lg px-4 py-2">Founded in 2025 • 100+ Cities • 20K+ Happy Customers</Badge>
+          <Badge variant="secondary" className="bg-white/20 text-white text-lg px-4 py-2">Founded in 2025 • 100+ Cities • 20K Active Users</Badge>
         </div>
       </div>
 
