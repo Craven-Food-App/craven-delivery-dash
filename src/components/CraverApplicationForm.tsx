@@ -217,13 +217,23 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
 
         userId = authData.user.id;
 
+        // Wait for the session to be established
+        if (!authData.session) {
+          throw new Error("Authentication session not established. Please check your email to confirm your account, then try again.");
+        }
+
         // Create user profile
-        await supabase.from('user_profiles').insert({
+        const { error: profileError } = await supabase.from('user_profiles').insert({
           user_id: userId,
           full_name: `${data.firstName} ${data.lastName}`,
           phone: data.phone,
           role: 'driver'
         });
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          throw new Error(`Failed to create user profile: ${profileError.message}`);
+        }
       }
 
       // Create application with user ID
@@ -239,7 +249,7 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
       }
 
       // Submit application with user_id
-      const { error } = await supabase
+      const { error: applicationError } = await supabase
         .from('craver_applications')
         .insert({
           user_id: userId,
@@ -276,21 +286,22 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
           profile_photo: documentPaths.profilePhoto
         });
 
-      if (error) {
-        throw error;
+      if (applicationError) {
+        console.error('Application submission error:', applicationError);
+        throw new Error(`Failed to submit application: ${applicationError.message}`);
       }
 
       toast({
         title: "Application Submitted!",
-        description: "We'll review your application and get back to you within 3-5 business days."
+        description: user ? "We'll review your application and get back to you within 3-5 business days." : "Account created! Please check your email to verify your account. We'll review your application within 3-5 business days."
       });
       
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Submission error:', error);
       toast({
         title: "Submission Failed",
-        description: "Please try again or contact support.",
+        description: error.message || "Please try again or contact customerservice@cravenusa.com for support.",
         variant: "destructive"
       });
     } finally {
