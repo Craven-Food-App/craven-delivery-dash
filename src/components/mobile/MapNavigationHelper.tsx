@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Navigation, ExternalLink, Map as MapIcon, Phone } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface NavigationDestination {
   address: string;
@@ -21,18 +23,54 @@ export const MapNavigationHelper: React.FC<MapNavigationHelperProps> = ({
   type,
   onNavigate
 }) => {
+  const [preferredMapApp, setPreferredMapApp] = useState<string>('google_maps');
+
+  // Load user's preferred map app from settings
+  useEffect(() => {
+    const loadPreferredMap = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('settings')
+            .eq('user_id', user.id)
+            .single();
+          
+          const settings = profile?.settings as any;
+          if (settings?.preferredMapApp && typeof settings.preferredMapApp === 'string') {
+            setPreferredMapApp(settings.preferredMapApp);
+          } else {
+            // Also check localStorage as fallback
+            const localPref = localStorage.getItem('preferred_map_app');
+            if (localPref) {
+              setPreferredMapApp(localPref);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading map preference:', error);
+      }
+    };
+    
+    loadPreferredMap();
+  }, []);
   
-  const openInMaps = (app: 'google' | 'apple' | 'waze') => {
+  const openInMaps = (app?: 'google' | 'apple' | 'waze') => {
+    // Use preferred app if no specific app is requested
+    const mapApp = app || preferredMapApp;
     const address = encodeURIComponent(destination.address);
     const coords = destination.latitude && destination.longitude 
       ? `${destination.latitude},${destination.longitude}`
       : null;
     
     let url = '';
+    let appName = '';
     
-    switch (app) {
+    switch (mapApp) {
+      case 'google_maps':
       case 'google':
-        // Google Maps - works on all platforms
+        appName = 'Google Maps';
         if (coords) {
           url = `https://www.google.com/maps/dir/?api=1&destination=${coords}&destination_place_id=${address}`;
         } else {
@@ -40,8 +78,9 @@ export const MapNavigationHelper: React.FC<MapNavigationHelperProps> = ({
         }
         break;
         
+      case 'apple_maps':
       case 'apple':
-        // Apple Maps - works on iOS devices
+        appName = 'Apple Maps';
         if (coords) {
           url = `http://maps.apple.com/?daddr=${coords}`;
         } else {
@@ -50,18 +89,35 @@ export const MapNavigationHelper: React.FC<MapNavigationHelperProps> = ({
         break;
         
       case 'waze':
-        // Waze - popular among drivers
+        appName = 'Waze';
         if (coords) {
           url = `https://waze.com/ul?ll=${coords}&navigate=yes`;
         } else {
           url = `https://waze.com/ul?q=${address}&navigate=yes`;
         }
         break;
+        
+      default:
+        // Fallback to Google Maps
+        appName = 'Google Maps';
+        url = `https://www.google.com/maps/dir/?api=1&destination=${address}`;
+        break;
     }
     
     if (url) {
-      window.open(url, '_blank');
-      onNavigate?.();
+      try {
+        // Use location.href for mobile to trigger deep links
+        if (window.navigator.userAgent.includes('Mobile')) {
+          window.location.href = url;
+        } else {
+          window.open(url, '_blank');
+        }
+        toast.success(`Opening ${appName} for navigation`);
+        onNavigate?.();
+      } catch (error) {
+        console.error('Error opening navigation:', error);
+        toast.error('Failed to open navigation app');
+      }
     }
   };
 
@@ -71,8 +127,15 @@ export const MapNavigationHelper: React.FC<MapNavigationHelperProps> = ({
     alert(`Call ${phoneNumber} - Feature coming soon!`);
   };
 
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const isAndroid = /Android/.test(navigator.userAgent);
+  const getMapAppName = () => {
+    const names: { [key: string]: string } = {
+      'google_maps': 'Google Maps',
+      'apple_maps': 'Apple Maps',
+      'waze': 'Waze',
+      'mapbox': 'Mapbox'
+    };
+    return names[preferredMapApp] || 'Maps';
+  };
 
   return (
     <Card className="bg-blue-50 border-blue-200">
@@ -91,36 +154,44 @@ export const MapNavigationHelper: React.FC<MapNavigationHelperProps> = ({
             </div>
           </div>
 
-          {/* Navigation Options */}
-          <div className="grid grid-cols-2 gap-2">
-            {/* Google Maps - Universal */}
-            <Button 
-              onClick={() => openInMaps('google')}
-              variant="outline"
-              className="flex items-center gap-2 h-12 text-sm border-blue-300 text-blue-700 hover:bg-blue-100"
-            >
-              <Navigation className="h-4 w-4" />
-              Google Maps
-            </Button>
+          {/* Primary Navigation Button - Uses preferred map */}
+          <Button 
+            onClick={() => openInMaps()}
+            className="flex items-center gap-2 h-14 text-base w-full bg-orange-600 hover:bg-orange-700 text-white shadow-lg"
+          >
+            <Navigation className="h-5 w-5" />
+            Open {getMapAppName()}
+          </Button>
 
-            {/* Apple Maps - iOS only */}
-            {isIOS && (
+          {/* Alternative Navigation Options */}
+          <div className="grid grid-cols-2 gap-2">
+            {preferredMapApp !== 'google_maps' && (
+              <Button 
+                onClick={() => openInMaps('google')}
+                variant="outline"
+                className="flex items-center gap-2 h-10 text-sm"
+              >
+                <Navigation className="h-4 w-4" />
+                Google Maps
+              </Button>
+            )}
+
+            {preferredMapApp !== 'apple_maps' && /iPad|iPhone|iPod/.test(navigator.userAgent) && (
               <Button 
                 onClick={() => openInMaps('apple')}
                 variant="outline"
-                className="flex items-center gap-2 h-12 text-sm border-blue-300 text-blue-700 hover:bg-blue-100"
+                className="flex items-center gap-2 h-10 text-sm"
               >
                 <MapIcon className="h-4 w-4" />
                 Apple Maps
               </Button>
             )}
 
-            {/* Waze - Popular with drivers (Android only for reliability) */}
-            {isAndroid && (
+            {preferredMapApp !== 'waze' && (
               <Button 
                 onClick={() => openInMaps('waze')}
                 variant="outline"
-                className="flex items-center gap-2 h-12 text-sm border-purple-300 text-purple-700 hover:bg-purple-100"
+                className="flex items-center gap-2 h-10 text-sm"
               >
                 <Navigation className="h-4 w-4" />
                 Waze
