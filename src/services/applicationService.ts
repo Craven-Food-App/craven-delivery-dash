@@ -129,10 +129,22 @@ export class ApplicationService {
         license_number: data.licenseNumber,
         license_state: data.licenseState,
         license_expiry: data.licenseExpiry,
+        
+        // Tax Information - Full SSN (encrypted in DB)
+        ssn_encrypted: data.ssn.replace(/\D/g, ''), // Store digits only
         ssn_last_four: data.ssn.replace(/\D/g, '').slice(-4),
+        
+        // Payout Information
+        payout_method: data.payoutMethod as any,
+        
+        // Direct Deposit Information (if applicable)
         bank_account_type: data.payoutMethod === 'direct_deposit' ? data.bankAccountType : null,
         routing_number: data.payoutMethod === 'direct_deposit' ? data.routingNumber : null,
+        account_number_encrypted: data.payoutMethod === 'direct_deposit' ? data.accountNumber : null,
         account_number_last_four: data.payoutMethod === 'direct_deposit' ? data.accountNumber.slice(-4) : null,
+        
+        // Cash App Information (if applicable)
+        cash_tag: data.payoutMethod === 'cashapp' ? data.cashTag : null,
         drivers_license: documentPaths.driversLicenseFront || 'pending',
         drivers_license_front: documentPaths.driversLicenseFront,
         drivers_license_back: documentPaths.driversLicenseBack,

@@ -124,6 +124,23 @@ export const ReviewStep = ({ data, files, existingUser, onBack, onEdit, onSubmit
         ]}
       />
 
+      <InfoSection
+        title="Payment & Tax Information"
+        step={4}
+        items={[
+          { label: "SSN", value: data.ssn ? `***-**-${data.ssn.replace(/\D/g, '').slice(-4)}` : '' },
+          { label: "Payout Method", value: data.payoutMethod === 'direct_deposit' ? 'Direct Deposit' : data.payoutMethod === 'cashapp' ? 'Cash App' : '' },
+          ...(data.payoutMethod === 'direct_deposit' ? [
+            { label: "Account Type", value: data.bankAccountType },
+            { label: "Routing #", value: data.routingNumber },
+            { label: "Account #", value: data.accountNumber ? `***${data.accountNumber.slice(-4)}` : '' },
+          ] : []),
+          ...(data.payoutMethod === 'cashapp' ? [
+            { label: "Cash Tag", value: data.cashTag },
+          ] : []),
+        ]}
+      />
+
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Documents</CardTitle>

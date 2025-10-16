@@ -182,9 +182,11 @@ export type Database = {
       }
       craver_applications: {
         Row: {
+          account_number_encrypted: string | null
           account_number_last_four: string | null
           background_check: boolean | null
           bank_account_type: string | null
+          cash_tag: string | null
           city: string
           created_at: string | null
           date_of_birth: string
@@ -202,9 +204,11 @@ export type Database = {
           license_number: string | null
           license_plate: string
           license_state: string | null
+          payout_method: string | null
           phone: string
           profile_photo: string | null
           routing_number: string | null
+          ssn_encrypted: string | null
           ssn_last_four: string | null
           state: string
           status: string | null
@@ -221,9 +225,11 @@ export type Database = {
           zip_code: string
         }
         Insert: {
+          account_number_encrypted?: string | null
           account_number_last_four?: string | null
           background_check?: boolean | null
           bank_account_type?: string | null
+          cash_tag?: string | null
           city: string
           created_at?: string | null
           date_of_birth: string
@@ -241,9 +247,11 @@ export type Database = {
           license_number?: string | null
           license_plate: string
           license_state?: string | null
+          payout_method?: string | null
           phone: string
           profile_photo?: string | null
           routing_number?: string | null
+          ssn_encrypted?: string | null
           ssn_last_four?: string | null
           state: string
           status?: string | null
@@ -260,9 +268,11 @@ export type Database = {
           zip_code: string
         }
         Update: {
+          account_number_encrypted?: string | null
           account_number_last_four?: string | null
           background_check?: boolean | null
           bank_account_type?: string | null
+          cash_tag?: string | null
           city?: string
           created_at?: string | null
           date_of_birth?: string
@@ -280,9 +290,11 @@ export type Database = {
           license_number?: string | null
           license_plate?: string
           license_state?: string | null
+          payout_method?: string | null
           phone?: string
           profile_photo?: string | null
           routing_number?: string | null
+          ssn_encrypted?: string | null
           ssn_last_four?: string | null
           state?: string
           status?: string | null
