@@ -1,4 +1,4 @@
-import React, { lazy } from "react";
+import React, { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -112,9 +112,21 @@ const App = () => {
           {/* Footer pages */}
           <Route path="/help" element={<HelpCenter />} />
             <Route path="/safety" element={<Safety />} />
-            <Route path="/admin-guide" element={<AdminGuide />} />
-            <Route path="/restaurant-guide" element={<RestaurantGuide />} />
-            <Route path="/driver-guide" element={<DriverGuide />} />
+            <Route path="/admin-guide" element={
+              <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+                <AdminGuide />
+              </Suspense>
+            } />
+            <Route path="/restaurant-guide" element={
+              <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+                <RestaurantGuide />
+              </Suspense>
+            } />
+            <Route path="/driver-guide" element={
+              <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+                <DriverGuide />
+              </Suspense>
+            } />
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/partner" element={<PartnerWithUs />} />
           <Route path="/about" element={<AboutUs />} />

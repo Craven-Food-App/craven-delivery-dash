@@ -19,7 +19,6 @@ import { PhoneOrderPOS } from "@/components/restaurant/PhoneOrderPOS";
 import { EmployeeManagement } from "@/components/restaurant/EmployeeManagement";
 import RestaurantBottomNav from "@/components/mobile/RestaurantBottomNav";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useState } from "react";
 
 interface Restaurant {
   id: string;
