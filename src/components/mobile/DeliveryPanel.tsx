@@ -18,6 +18,7 @@ import {
   ClipboardList
 } from 'lucide-react';
 import { CustomerNavigationStep } from './CustomerNavigationStep';
+import { useNavigation as realUseNavigation } from '@/hooks/useNavigation';
 
 // --- MAPBOX CONFIGURATION ---
 // Using the API key provided by the user to generate a static map image.
@@ -364,7 +365,13 @@ const App: React.FC<AppProps> = ({
         deliveryInstructions={orderDetails.delivery_notes}
         onCall={() => toast({ title: "Calling customer...", description: "Feature coming soon!" })}
         onMessage={() => toast({ title: "Messaging customer...", description: "Feature coming soon!" })}
-        onDirections={() => window.open(`https://maps.google.com/maps?q=${encodeURIComponent(getCurrentDestination.address)}`, '_blank')}
+        onDirections={() => {
+          const { openExternalNavigation } = realUseNavigation();
+          openExternalNavigation({
+            address: getCurrentDestination.address,
+            name: orderDetails.customer_name
+          });
+        }}
       />
     );
   }

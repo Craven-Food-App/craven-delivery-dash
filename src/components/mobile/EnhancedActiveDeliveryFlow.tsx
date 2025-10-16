@@ -18,6 +18,7 @@ import {
   ClipboardList
 } from 'lucide-react';
 import { CustomerNavigationStep } from './CustomerNavigationStep';
+import { useNavigation } from '@/hooks/useNavigation';
 
 // --- MAPBOX CONFIGURATION ---
 // Using the API key provided by the user to generate a static map image.
@@ -113,9 +114,7 @@ const MapboxStaticMap = ({ destinationName, type, currentCoords, destinationCoor
 const useToast = () => ({
   toast: (options) => console.log(`[TOAST]: ${options.title} - ${options.description}`),
 });
-const useNavigation = () => ({
-  navigationSettings: { provider: 'external' } // Force external nav for simplicity
-});
+// Remove mock useNavigation - using real one from imports
 const supabase = {
   from: (table) => ({
     select: (cols) => ({
@@ -365,7 +364,13 @@ const App: React.FC<AppProps> = ({
         deliveryInstructions={orderDetails.delivery_notes}
         onCall={() => toast({ title: "Calling customer...", description: "Feature coming soon!" })}
         onMessage={() => toast({ title: "Messaging customer...", description: "Feature coming soon!" })}
-        onDirections={() => window.open(`https://maps.google.com/maps?q=${encodeURIComponent(getCurrentDestination.address)}`, '_blank')}
+        onDirections={() => {
+          const { openExternalNavigation } = useNavigation();
+          openExternalNavigation({
+            address: getCurrentDestination.address,
+            name: orderDetails.customer_name
+          });
+        }}
       />
     );
   }
