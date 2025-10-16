@@ -13,6 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MenuItemModal } from './MenuItemModal';
 import { AddressAutocomplete } from '@/components/common/AddressAutocomplete';
+import { MobilePOSCart } from './MobilePOSCart';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MenuItem {
   id: string;
@@ -84,6 +86,7 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetchMenuCategories();
@@ -445,9 +448,9 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 p-6 h-[calc(100vh-100px)]">
+      <div className={`grid gap-6 p-4 md:p-6 ${isMobile ? 'grid-cols-1 pb-24' : 'grid-cols-1 lg:grid-cols-5 h-[calc(100vh-100px)]'}`}>
         {/* Menu Items - Left Side */}
-        <div className="lg:col-span-3 space-y-4">
+        <div className={`space-y-4 ${!isMobile && 'lg:col-span-3'}`}>
           {/* Search */}
           <Card className="border-0 shadow-lg bg-card/95 backdrop-blur-sm">
             <CardContent className="p-4">
@@ -483,8 +486,8 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
           </Card>
 
           {/* Menu Grid */}
-          <ScrollArea className="flex-1">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-4">
+          <ScrollArea className={isMobile ? "h-[calc(100vh-280px)]" : "flex-1"}>
+            <div className={`grid gap-3 md:gap-4 pb-4 ${isMobile ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}`}>
               {filteredMenuItems.map((item) => (
                 <Card 
                   key={item.id} 
@@ -521,8 +524,9 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
           </ScrollArea>
         </div>
 
-        {/* Order Summary & Customer Info - Right Side */}
-        <div className="lg:col-span-2 space-y-4 flex flex-col h-full">
+        {/* Order Summary & Customer Info - Right Side (Desktop Only) */}
+        {!isMobile && (
+          <div className="lg:col-span-2 space-y-4 flex flex-col h-full">
           {/* Customer Information */}
           <Card className="border-0 shadow-lg bg-card/95 backdrop-blur-sm">
             <CardContent className="p-4 space-y-4">
@@ -712,7 +716,35 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
             </CardContent>
           </Card>
         </div>
+        )}
       </div>
+
+      {/* Mobile Cart Drawer */}
+      {isMobile && (
+        <MobilePOSCart
+          cart={cart}
+          customerInfo={customerInfo}
+          orderType={orderType}
+          paymentMethod={paymentMethod}
+          isValidAddress={isValidAddress}
+          isSubmitting={isSubmitting}
+          totals={totals}
+          onUpdateQuantity={updateQuantity}
+          onUpdateInstructions={updateSpecialInstructions}
+          onCustomerInfoChange={(info) => setCustomerInfo(prev => ({ ...prev, ...info }))}
+          onOrderTypeChange={setOrderType}
+          onPaymentMethodChange={setPaymentMethod}
+          onAddressSelect={(data) => {
+            setCustomerInfo(prev => ({
+              ...prev,
+              address: data.address,
+              addressCoordinates: data.coordinates
+            }));
+          }}
+          onValidAddressChange={setIsValidAddress}
+          onSubmit={handleSubmitOrder}
+        />
+      )}
 
       {selectedMenuItem && (
         <MenuItemModal

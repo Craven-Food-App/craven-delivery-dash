@@ -17,6 +17,9 @@ import { NewOrderAlert } from "@/components/restaurant/NewOrderAlert";
 import { RestaurantCustomerOrderManagement } from "@/components/restaurant/RestaurantCustomerOrderManagement";
 import { PhoneOrderPOS } from "@/components/restaurant/PhoneOrderPOS";
 import { EmployeeManagement } from "@/components/restaurant/EmployeeManagement";
+import RestaurantBottomNav from "@/components/mobile/RestaurantBottomNav";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useState } from "react";
 
 interface Restaurant {
   id: string;
@@ -43,8 +46,10 @@ interface Restaurant {
 const RestaurantDashboard = () => {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetchRestaurant();
@@ -168,15 +173,17 @@ const RestaurantDashboard = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="menu">Menu</TabsTrigger>
-            <TabsTrigger value="pos">Phone Orders</TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="employees">Employees</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          {!isMobile && (
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="menu">Menu</TabsTrigger>
+              <TabsTrigger value="pos">Phone Orders</TabsTrigger>
+              <TabsTrigger value="orders">Orders</TabsTrigger>
+              <TabsTrigger value="employees">Employees</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
+          )}
 
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -294,6 +301,13 @@ const RestaurantDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {isMobile && (
+        <RestaurantBottomNav 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab} 
+        />
+      )}
     </div>
   );
 };
