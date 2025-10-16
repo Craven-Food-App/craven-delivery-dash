@@ -32,7 +32,8 @@ site_url = "https://44d88461-c1ea-4d22-93fe-ebc1a7d81db9.lovableproject.com"
 additional_redirect_urls = ["https://localhost:3000"]
 jwt_expiry = 3600
 enable_signup = true
-enable_confirmations = false
+enable_confirmations = true
+password_min_length = 8
 
 [functions.register-push-subscription]
 verify_jwt = false
