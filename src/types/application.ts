@@ -28,12 +28,18 @@ export interface ApplicationData {
   licenseExpiry: string;
   
   // Tax Information
-  ssnLastFour: string;
+  ssn: string;
   
-  // Banking Information
+  // Payout Information
+  payoutMethod: 'direct_deposit' | 'cashapp' | '';
+  
+  // Banking Information (for Direct Deposit)
   bankAccountType: 'checking' | 'savings' | '';
   routingNumber: string;
-  accountNumberLastFour: string;
+  accountNumber: string;
+  
+  // Cash App Information
+  cashTag: string;
 }
 
 export interface ApplicationFiles {
@@ -73,10 +79,12 @@ export const INITIAL_APPLICATION_DATA: ApplicationData = {
   licenseNumber: "",
   licenseState: "",
   licenseExpiry: "",
-  ssnLastFour: "",
+  ssn: "",
+  payoutMethod: "",
   bankAccountType: "",
   routingNumber: "",
-  accountNumberLastFour: ""
+  accountNumber: "",
+  cashTag: ""
 };
 
 export const US_STATES = [

@@ -50,13 +50,23 @@ export const validateStep = (step: number, data: ApplicationData, files: Applica
       break;
 
     case 4: // Banking & Tax
-      if (!data.ssnLastFour?.trim()) errors.push('Last 4 digits of SSN is required');
-      else if (!/^\d{4}$/.test(data.ssnLastFour)) errors.push('SSN must be exactly 4 digits');
-      if (!data.bankAccountType) errors.push('Bank account type is required');
-      if (!data.routingNumber?.trim()) errors.push('Routing number is required');
-      else if (!/^\d{9}$/.test(data.routingNumber)) errors.push('Routing number must be exactly 9 digits');
-      if (!data.accountNumberLastFour?.trim()) errors.push('Last 4 digits of account number is required');
-      else if (!/^\d{4}$/.test(data.accountNumberLastFour)) errors.push('Account number must be exactly 4 digits');
+      if (!data.ssn?.trim()) errors.push('Social Security Number is required');
+      else if (!/^\d{9}$/.test(data.ssn.replace(/-/g, ''))) errors.push('SSN must be exactly 9 digits');
+      
+      if (!data.payoutMethod) errors.push('Payout method is required');
+      
+      if (data.payoutMethod === 'direct_deposit') {
+        if (!data.bankAccountType) errors.push('Bank account type is required');
+        if (!data.routingNumber?.trim()) errors.push('Routing number is required');
+        else if (!/^\d{9}$/.test(data.routingNumber)) errors.push('Routing number must be exactly 9 digits');
+        if (!data.accountNumber?.trim()) errors.push('Account number is required');
+        else if (!/^\d{4,17}$/.test(data.accountNumber)) errors.push('Account number must be 4-17 digits');
+      }
+      
+      if (data.payoutMethod === 'cashapp') {
+        if (!data.cashTag?.trim()) errors.push('Cash Tag is required');
+        else if (!data.cashTag.startsWith('$')) errors.push('Cash Tag must start with $');
+      }
       break;
 
     case 5: // Documents
