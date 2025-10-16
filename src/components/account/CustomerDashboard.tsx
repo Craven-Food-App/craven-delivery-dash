@@ -6,12 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { User, Package, MapPin, CreditCard, Clock, Star, Heart, Plus, TrendingUp, Award, Zap } from "lucide-react";
+import { User, Package, MapPin, CreditCard, Clock, Star, Heart, Plus, TrendingUp, Award, Zap, Gift } from "lucide-react";
 import Header from "@/components/Header";
 import { AccountSection } from "@/components/account/AccountSection";
 import RestaurantGrid from "@/components/RestaurantGrid";
 import OrderTrackingBox from "@/components/OrderTrackingBox";
 import OrderDetailsModal from "@/components/OrderDetailsModal";
+import { LoyaltyDashboard } from "@/components/loyalty/LoyaltyDashboard";
 
 interface Order {
   id: string;
@@ -493,6 +494,7 @@ const CustomerDashboard = () => {
             {[
               { value: 'orders', label: 'Order History', icon: Package },
               { value: 'active', label: 'Active Orders', icon: Clock },
+              { value: 'rewards', label: 'Rewards', icon: Gift },
               { value: 'favorites', label: 'Favorites', icon: Heart },
               { value: 'account', label: 'Account', icon: User }
             ].map((tab) => {
@@ -854,6 +856,13 @@ const CustomerDashboard = () => {
               </div>
             )}
           </ModernCard>
+        )}
+
+
+        {tabFromUrl === 'rewards' && (
+          <div>
+            <LoyaltyDashboard userId={user?.id} />
+          </div>
         )}
 
         {tabFromUrl === 'favorites' && (

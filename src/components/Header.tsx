@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { MapPin, Search, User, ShoppingCart, ChevronDown, LogOut, Menu, X } from "lucide-react";
+import { MapPin, Search, User, ShoppingCart, ChevronDown, LogOut, Menu, X, Gift } from "lucide-react";
 import { Link } from "react-router-dom";
 import cravenLogo from "@/assets/craven-logo.png";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import AuthModal from "./auth/AuthModal";
 import AddressSelector from "./address/AddressSelector";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface User {
   id: string;
@@ -142,6 +143,8 @@ const Header = () => {
 
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center space-x-2">
+              <ThemeToggle />
+              
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -175,6 +178,10 @@ const Header = () => {
                     <DropdownMenuItem onClick={() => window.location.href = '/customer-dashboard'}>
                       <User className="mr-2 h-4 w-4" />
                       <span>My Orders</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => window.location.href = '/customer-dashboard?tab=rewards'}>
+                      <Gift className="mr-2 h-4 w-4" />
+                      <span>Rewards</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>
