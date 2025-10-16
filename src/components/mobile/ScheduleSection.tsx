@@ -440,27 +440,65 @@ export default function ScheduleSection() {
   useEffect(() => {
     fetchScheduleData();
     
-    // Check current driver status on mount
-    const checkDriverStatus = async () => {
+    let channel: any = null;
+    
+    // Check current driver status on mount and set up realtime
+    const initStatusSync = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: profileData } = await supabase
+        if (!user) return;
+        
+        // Check both driver_profiles and driver_sessions for online status
+        const [profileResult, sessionResult] = await Promise.all([
+          supabase
             .from('driver_profiles')
-            .select('status')
+            .select('status, is_available')
             .eq('user_id', user.id)
-            .single();
-          
-          if (profileData && profileData.status === 'online') {
-            setCurrentStatus('online');
-          }
+            .single(),
+          supabase
+            .from('driver_sessions')
+            .select('is_online')
+            .eq('driver_id', user.id)
+            .single()
+        ]);
+        
+        const isOnline = 
+          (profileResult.data?.status === 'online' && profileResult.data?.is_available) ||
+          sessionResult.data?.is_online;
+        
+        if (isOnline) {
+          setCurrentStatus('online');
+        } else {
+          setCurrentStatus('offline');
         }
+        
+        // Set up realtime subscription for driver_profiles changes
+        channel = supabase
+          .channel('driver-status-changes')
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'driver_profiles',
+              filter: `user_id=eq.${user.id}`
+            },
+            (payload) => {
+              const newStatus = payload.new as any;
+              if (newStatus.status === 'online' && newStatus.is_available) {
+                setCurrentStatus('online');
+              } else if (newStatus.status === 'offline') {
+                setCurrentStatus('offline');
+              }
+            }
+          )
+          .subscribe();
       } catch (error) {
         console.error('Error checking driver status:', error);
       }
     };
     
-    checkDriverStatus();
+    initStatusSync();
     
     // Listen for driver status changes from main dashboard
     const handleStatusChange = (event: CustomEvent) => {
@@ -469,7 +507,13 @@ export default function ScheduleSection() {
     };
     
     window.addEventListener('driverStatusChange', handleStatusChange as EventListener);
-    return () => window.removeEventListener('driverStatusChange', handleStatusChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('driverStatusChange', handleStatusChange as EventListener);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, [fetchScheduleData]);
 
   // Re-check status every minute
