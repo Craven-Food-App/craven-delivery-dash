@@ -109,14 +109,38 @@ serve(async (req) => {
     const expiresAt = new Date(Date.now() + expiresInMs).toISOString();
     const estimatedTime = Math.ceil(distanceKm * 3);
 
-    const delivery_address = {
-      street: "123 Test Street",
-      city: "Test City",
-      state: "TS",
-      zip: "12345",
-      latitude: 40.7128,
-      longitude: -74.0060,
-    } as const;
+    // Get real customer profile data
+    const { data: customerProfile } = await service
+      .from("user_profiles")
+      .select("full_name, phone")
+      .eq("user_id", callerId)
+      .single();
+
+    // Get real delivery address for customer or use restaurant location as fallback
+    const { data: deliveryAddresses } = await service
+      .from("delivery_addresses")
+      .select("*")
+      .eq("user_id", callerId)
+      .order("is_default", { ascending: false })
+      .limit(1);
+
+    const delivery_address = deliveryAddresses?.[0] 
+      ? {
+          street: deliveryAddresses[0].street_address,
+          city: deliveryAddresses[0].city,
+          state: deliveryAddresses[0].state,
+          zip: deliveryAddresses[0].zip_code,
+          latitude: restaurant.latitude || 40.7128,
+          longitude: restaurant.longitude || -74.0060,
+        }
+      : {
+          street: restaurant.address || "123 Test Street",
+          city: restaurant.city || "Test City",
+          state: restaurant.state || "TS",
+          zip: restaurant.zip_code || "12345",
+          latitude: restaurant.latitude || 40.7128,
+          longitude: restaurant.longitude || -74.0060,
+        };
 
     // Create order as confirmed and assigned to selected driver
     const { data: order, error: orderErr } = await service
@@ -132,6 +156,16 @@ serve(async (req) => {
         tip_cents: 100,
         delivery_fee_cents: 0,
         delivery_address,
+        customer_name: customerProfile?.full_name || "Test Customer",
+        customer_phone: customerProfile?.phone || null,
+        pickup_address: {
+          street: restaurant.address || "Restaurant Address",
+          city: restaurant.city || "City",
+          state: restaurant.state || "ST",
+          zip: restaurant.zip_code || "00000",
+          latitude: restaurant.latitude || 40.7128,
+          longitude: restaurant.longitude || -74.0060,
+        },
       })
       .select("*")
       .single();
