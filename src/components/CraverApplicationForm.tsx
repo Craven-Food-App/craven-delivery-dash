@@ -193,9 +193,10 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
     try {
       let userId = user?.id;
 
-      // If no existing user, create new account
+      // If no existing user, create or sign in to account
+      let newAccountCreated = false;
       if (!user) {
-        const { data: authData, error: authError } = await supabase.auth.signUp({
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: data.email,
           password: data.password,
           options: {
@@ -207,32 +208,45 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
           }
         });
 
-        if (authError) {
-          throw new Error(authError.message);
-        }
+        if (signUpError) {
+          const msg = (signUpError as any)?.message || '';
+          const status = (signUpError as any)?.status;
+          if (status === 422 || /already.*registered/i.test(msg)) {
+            // Try signing in with the provided password
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+              email: data.email,
+              password: data.password
+            });
+            if (signInError || !signInData.user) {
+              throw new Error("This email is already registered. Please enter your existing password or reset it, then try again.");
+            }
+            userId = signInData.user.id;
+          } else {
+            throw new Error(msg || "Failed to create account");
+          }
+        } else {
+          if (!signUpData.user) {
+            throw new Error("Failed to create user account");
+          }
+          userId = signUpData.user.id;
+          newAccountCreated = true;
 
-        if (!authData.user) {
-          throw new Error("Failed to create user account");
-        }
+          // Ensure session exists (email confirmation may be required)
+          if (!signUpData.session) {
+            throw new Error("Account created. Please check your email to confirm your account, then reopen the application to submit.");
+          }
 
-        userId = authData.user.id;
-
-        // Wait for the session to be established
-        if (!authData.session) {
-          throw new Error("Authentication session not established. Please check your email to confirm your account, then try again.");
-        }
-
-        // Create user profile
-        const { error: profileError } = await supabase.from('user_profiles').insert({
-          user_id: userId,
-          full_name: `${data.firstName} ${data.lastName}`,
-          phone: data.phone,
-          role: 'driver'
-        });
-
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-          throw new Error(`Failed to create user profile: ${profileError.message}`);
+          // Create basic user profile (non-blocking)
+          const { error: profileError } = await supabase.from('user_profiles').insert({
+            user_id: userId,
+            full_name: `${data.firstName} ${data.lastName}`,
+            phone: data.phone,
+            role: 'driver'
+          });
+          if (profileError) {
+            console.error('Profile creation error:', profileError);
+            // Do not block submission if profile creation fails
+          }
         }
       }
 
@@ -293,7 +307,9 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
 
       toast({
         title: "Application Submitted!",
-        description: user ? "We'll review your application and get back to you within 3-5 business days." : "Account created! Please check your email to verify your account. We'll review your application within 3-5 business days."
+        description: newAccountCreated
+          ? "Account created! Please check your email to verify your account. We'll review your application within 3-5 business days."
+          : "We'll review your application and get back to you within 3-5 business days."
       });
       
       onClose();
