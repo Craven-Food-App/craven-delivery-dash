@@ -58,25 +58,17 @@ const AboutUs = () => {
   }];
   const team = [{
     name: 'Torrance Stroman',
-    role: 'CEO & Co-Founder',
+    role: 'CEO & Founder',
     image: '/placeholder.svg',
-    bio: 'Former tech executive with 15+ years in logistics and marketplace platforms.'
-  }, {
-    name: 'Mike Chen',
-    role: 'CTO & Co-Founder',
-    image: '/placeholder.svg',
-    bio: 'Tech innovator specializing in real-time systems and mobile application development.'
-  }, {
-    name: 'Elena Rodriguez',
-    role: 'Head of Operations',
-    image: '/placeholder.svg',
-    bio: 'Operations expert with deep experience in supply chain and logistics optimization.'
-  }, {
-    name: 'David Thompson',
-    role: 'Head of Partnerships',
-    image: '/placeholder.svg',
-    bio: 'Restaurant industry veteran focused on building meaningful partnerships with local businesses.'
+    bio: 'Visionary entrepreneur with a passion for revolutionizing food delivery and supporting local communities.'
   }];
+  
+  const futureRoles = [
+    'Chief Technology Officer',
+    'VP of Operations', 
+    'Head of Marketing',
+    'Director of Partnerships'
+  ];
   return <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
@@ -183,8 +175,12 @@ const AboutUs = () => {
 
         {/* Leadership Team */}
         <div className="mb-16">
-          <h2 className="text-3xl font-bold text-center mb-8">Leadership Team</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <h2 className="text-3xl font-bold text-center mb-4">Leadership Team</h2>
+          <p className="text-center text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Building the future of food delivery, one delivery at a time.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {team.map((member, index) => <Card key={index} className="text-center">
                 <CardContent className="p-6">
                   <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/60 rounded-full mx-auto mb-4 flex items-center justify-center">
@@ -196,6 +192,23 @@ const AboutUs = () => {
                 </CardContent>
               </Card>)}
           </div>
+
+          <Card className="bg-gradient-to-r from-primary/5 to-primary/10">
+            <CardContent className="p-8 text-center">
+              <h3 className="text-xl font-bold mb-3">We're Growing!</h3>
+              <p className="text-muted-foreground mb-4">
+                We're actively building our leadership team. Join us as we scale and shape the future of food delivery.
+              </p>
+              <div className="flex flex-wrap justify-center gap-2 mb-4">
+                {futureRoles.map((role, i) => (
+                  <Badge key={i} variant="outline">{role} - Coming Soon</Badge>
+                ))}
+              </div>
+              <Button onClick={() => window.location.href = '/careers'}>
+                View Open Positions
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Awards & Recognition */}

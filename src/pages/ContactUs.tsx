@@ -277,11 +277,14 @@ const ContactUs = () => {
               </CardHeader>
               <CardContent>
                 <address className="not-italic text-muted-foreground">
-                  Crave'n Headquarters<br />
-                  1234 Delivery Ave<br />
-                  Food City, FC 12345<br />
+                  Crave'N Headquarters<br />
+                  Coming Soon<br />
                   United States
                 </address>
+                <p className="text-sm text-muted-foreground mt-4">
+                  We're a digital-first company currently establishing our physical presence. 
+                  For all inquiries, please use our digital channels above.
+                </p>
               </CardContent>
             </Card>
 
@@ -300,16 +303,21 @@ const ContactUs = () => {
                   </div>
                   <div className="flex justify-between">
                     <span>Phone Support:</span>
-                    <span>6 AM - 12 AM EST</span>
+                    <span>Coming Soon</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Email Response:</span>
                     <span>Within 24 hours</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Emergency Line:</span>
-                    <span className="text-red-600 font-medium">24/7</span>
+                    <span>Form Submissions:</span>
+                    <span>Within 24 hours</span>
                   </div>
+                </div>
+                <div className="mt-4 pt-4 border-t">
+                  <p className="text-xs text-muted-foreground">
+                    For urgent delivery issues, please use the in-app live chat feature for fastest response.
+                  </p>
                 </div>
               </CardContent>
             </Card>
