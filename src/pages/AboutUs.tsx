@@ -210,7 +210,7 @@ const AboutUs = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
               <div>
                 <Trophy className="h-12 w-12 text-yellow-500 mx-auto mb-3" />
-                <h4 className="font-semibold mb-2">Best Food Delivery App 2023</h4>
+                <h4 className="font-semibold mb-2">Best Food Delivery App 2025</h4>
                 <p className="text-sm text-muted-foreground">TechCrunch Awards</p>
               </div>
               <div>
@@ -221,7 +221,7 @@ const AboutUs = () => {
               <div>
                 <TrendingUp className="h-12 w-12 text-green-500 mx-auto mb-3" />
                 <h4 className="font-semibold mb-2">Fastest Growing Platform</h4>
-                <p className="text-sm text-muted-foreground">Industry Report 2023</p>
+                <p className="text-sm text-muted-foreground">Industry Report 2025</p>
               </div>
             </div>
           </CardContent>
