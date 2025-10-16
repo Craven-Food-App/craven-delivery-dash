@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import RestaurantGrid from "@/components/RestaurantGrid";
@@ -22,12 +23,43 @@ const Index = () => {
     if (address) setDeliveryAddress(address);
   }, [searchParams]);
 
+  // JSON-LD Structured Data
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "FoodEstablishment",
+    "name": "Crave'N",
+    "description": "Food delivery from local restaurants",
+    "url": "https://craven.app",
+    "logo": "https://craven.app/craven-logo.png",
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": "US"
+    },
+    "servesCuisine": ["American", "Italian", "Chinese", "Mexican", "Indian", "Japanese", "Thai"],
+    "priceRange": "$$",
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "reviewCount": "2500"
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <Hero />
-      <MobileBottomNav />
-    </div>
+    <>
+      <Helmet>
+        <script type="application/ld+json">
+          {JSON.stringify(structuredData)}
+        </script>
+      </Helmet>
+      
+      <div className="min-h-screen bg-background">
+        <Header />
+        <Hero />
+        <RestaurantGrid searchQuery={searchQuery} deliveryAddress={deliveryAddress} />
+        <Footer />
+        <MobileBottomNav />
+      </div>
+    </>
   );
 };
 
