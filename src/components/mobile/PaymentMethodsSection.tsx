@@ -1,51 +1,181 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Plus, Trash2, CreditCard, Building2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Plus, Trash2, CreditCard, Building2, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PaymentMethodsSectionProps {
   onBack: () => void;
 }
 
+interface PaymentMethod {
+  id: string;
+  payment_type: string;
+  account_identifier: string;
+  is_primary: boolean;
+}
+
 export const PaymentMethodsSection: React.FC<PaymentMethodsSectionProps> = ({ onBack }) => {
   const [showAddForm, setShowAddForm] = useState(false);
-  const [bankDetails, setBankDetails] = useState({
-    account_holder_name: '',
-    account_number: '',
-    routing_number: '',
-    account_type: '',
-    bank_name: ''
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [paymentDetails, setPaymentDetails] = useState({
+    payment_type: 'cashapp',
+    account_identifier: '',
   });
   const { toast } = useToast();
 
-  const handleAddBankAccount = () => {
-    // Validate form
-    if (!bankDetails.account_holder_name || !bankDetails.account_number || !bankDetails.routing_number) {
+  useEffect(() => {
+    fetchPaymentMethods();
+  }, []);
+
+  const fetchPaymentMethods = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('driver_payment_methods')
+        .select('*')
+        .eq('driver_id', user.id)
+        .order('is_primary', { ascending: false });
+
+      if (error) throw error;
+      setPaymentMethods(data || []);
+    } catch (error) {
+      console.error('Error fetching payment methods:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddPaymentMethod = async () => {
+    if (!paymentDetails.account_identifier) {
       toast({
         title: "Missing information",
-        description: "Please fill in all required fields.",
+        description: "Please enter your payment account details.",
         variant: "destructive"
       });
       return;
     }
 
-    toast({
-      title: "Bank account added",
-      description: "Your payout method has been set up successfully."
-    });
-    
-    setShowAddForm(false);
-    setBankDetails({
-      account_holder_name: '',
-      account_number: '',
-      routing_number: '',
-      account_type: '',
-      bank_name: ''
-    });
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('driver_payment_methods')
+        .insert({
+          driver_id: user.id,
+          payment_type: paymentDetails.payment_type,
+          account_identifier: paymentDetails.account_identifier,
+          is_primary: paymentMethods.length === 0,
+          is_verified: false
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Payment method added",
+        description: "Your payout method has been set up successfully."
+      });
+      
+      setShowAddForm(false);
+      setPaymentDetails({
+        payment_type: 'cashapp',
+        account_identifier: '',
+      });
+      fetchPaymentMethods();
+    } catch (error) {
+      toast({
+        title: "Error adding payment method",
+        description: "Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('driver_payment_methods')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Payment method removed",
+      });
+      fetchPaymentMethods();
+    } catch (error) {
+      toast({
+        title: "Error removing payment method",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSetPrimary = async (id: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Unset all as primary
+      await supabase
+        .from('driver_payment_methods')
+        .update({ is_primary: false })
+        .eq('driver_id', user.id);
+
+      // Set selected as primary
+      const { error } = await supabase
+        .from('driver_payment_methods')
+        .update({ is_primary: true })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Primary method updated",
+      });
+      fetchPaymentMethods();
+    } catch (error) {
+      toast({
+        title: "Error updating primary method",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const formatAccountIdentifier = (type: string, identifier: string) => {
+    switch (type) {
+      case 'cashapp':
+        return identifier.startsWith('$') ? identifier : `$${identifier}`;
+      case 'venmo':
+        return identifier.startsWith('@') ? identifier : `@${identifier}`;
+      default:
+        return identifier;
+    }
+  };
+
+  const getMethodDisplayName = (type: string) => {
+    switch (type) {
+      case 'cashapp':
+        return 'Cash App';
+      case 'paypal':
+        return 'PayPal';
+      case 'venmo':
+        return 'Venmo';
+      case 'zelle':
+        return 'Zelle';
+      default:
+        return type.charAt(0).toUpperCase() + type.slice(1);
+    }
   };
 
   return (
@@ -82,94 +212,117 @@ export const PaymentMethodsSection: React.FC<PaymentMethodsSectionProps> = ({ on
             </CardContent>
           </Card>
 
-          {/* Current Payment Method */}
+          {/* Current Payment Methods */}
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Current Payout Method</CardTitle>
+                <CardTitle className="text-lg">Payment Methods</CardTitle>
                 <Button
                   onClick={() => setShowAddForm(true)}
                   size="sm"
                   className="bg-primary hover:bg-primary/90"
                 >
                   <Plus className="h-4 w-4 mr-1" />
-                  Add Bank
+                  Add Method
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-6 text-muted-foreground">
-                <CreditCard className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No payment method added yet</p>
-                <p className="text-sm">Add a bank account to receive payouts</p>
-              </div>
+              {loading ? (
+                <div className="animate-pulse space-y-3">
+                  <div className="h-16 bg-muted rounded"></div>
+                </div>
+              ) : paymentMethods.length === 0 ? (
+                <div className="text-center py-6 text-muted-foreground">
+                  <CreditCard className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>No payment method added yet</p>
+                  <p className="text-sm">Add CashApp, PayPal, or other method</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {paymentMethods.map((method) => (
+                    <div key={method.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <CreditCard className="h-5 w-5 text-primary" />
+                        <div>
+                          <div className="font-medium flex items-center gap-2">
+                            {getMethodDisplayName(method.payment_type)}
+                            {method.is_primary && (
+                              <Badge variant="secondary" className="text-xs">Primary</Badge>
+                            )}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {formatAccountIdentifier(method.payment_type, method.account_identifier)}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {!method.is_primary && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSetPrimary(method.id)}
+                          >
+                            Set Primary
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(method.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Add Bank Account Form */}
+          {/* Add Payment Method Form */}
           {showAddForm && (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Add Bank Account</CardTitle>
+                <CardTitle className="text-lg">Add Payment Method</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="account_holder">Account Holder Name *</Label>
-                  <Input
-                    id="account_holder"
-                    value={bankDetails.account_holder_name}
-                    onChange={(e) => setBankDetails({ ...bankDetails, account_holder_name: e.target.value })}
-                    placeholder="Full name as it appears on account"
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="routing_number">Routing Number *</Label>
-                  <Input
-                    id="routing_number"
-                    value={bankDetails.routing_number}
-                    onChange={(e) => setBankDetails({ ...bankDetails, routing_number: e.target.value })}
-                    placeholder="9-digit routing number"
-                    maxLength={9}
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="account_number">Account Number *</Label>
-                  <Input
-                    id="account_number"
-                    value={bankDetails.account_number}
-                    onChange={(e) => setBankDetails({ ...bankDetails, account_number: e.target.value })}
-                    placeholder="Account number"
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="account_type">Account Type</Label>
+                  <Label htmlFor="payment_type">Payment Type</Label>
                   <Select
-                    value={bankDetails.account_type}
-                    onValueChange={(value) => setBankDetails({ ...bankDetails, account_type: value })}
+                    value={paymentDetails.payment_type}
+                    onValueChange={(value) => setPaymentDetails({ ...paymentDetails, payment_type: value })}
                   >
                     <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Select account type" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="checking">Checking</SelectItem>
-                      <SelectItem value="savings">Savings</SelectItem>
+                      <SelectItem value="cashapp">Cash App</SelectItem>
+                      <SelectItem value="paypal">PayPal</SelectItem>
+                      <SelectItem value="venmo">Venmo</SelectItem>
+                      <SelectItem value="zelle">Zelle</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <Label htmlFor="bank_name">Bank Name (Optional)</Label>
+                  <Label htmlFor="account_identifier">
+                    {paymentDetails.payment_type === 'cashapp' && 'CashTag (e.g., $username)'}
+                    {paymentDetails.payment_type === 'paypal' && 'PayPal Email'}
+                    {paymentDetails.payment_type === 'venmo' && 'Venmo Username (e.g., @username)'}
+                    {paymentDetails.payment_type === 'zelle' && 'Phone or Email'}
+                  </Label>
                   <Input
-                    id="bank_name"
-                    value={bankDetails.bank_name}
-                    onChange={(e) => setBankDetails({ ...bankDetails, bank_name: e.target.value })}
-                    placeholder="Your bank name"
+                    id="account_identifier"
+                    value={paymentDetails.account_identifier}
+                    onChange={(e) => setPaymentDetails({ ...paymentDetails, account_identifier: e.target.value })}
+                    placeholder={
+                      paymentDetails.payment_type === 'cashapp' ? '$username' :
+                      paymentDetails.payment_type === 'venmo' ? '@username' :
+                      paymentDetails.payment_type === 'paypal' ? 'email@example.com' :
+                      'Phone or email'
+                    }
                     className="mt-1"
                   />
                 </div>
@@ -183,16 +336,16 @@ export const PaymentMethodsSection: React.FC<PaymentMethodsSectionProps> = ({ on
                     Cancel
                   </Button>
                   <Button
-                    onClick={handleAddBankAccount}
+                    onClick={handleAddPaymentMethod}
                     className="flex-1 bg-primary hover:bg-primary/90"
                   >
-                    Add Account
+                    Add Method
                   </Button>
                 </div>
 
                 <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                  <strong>Security:</strong> Your banking information is encrypted and secure. 
-                  We use bank-level security to protect your data.
+                  <strong>Note:</strong> For instant payouts, we recommend Cash App. 
+                  Make sure your account details are correct.
                 </div>
               </CardContent>
             </Card>

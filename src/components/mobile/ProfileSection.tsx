@@ -47,6 +47,53 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ onBack }) => {
     }
   };
 
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Upload to storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const { error: uploadError, data } = await supabase.storage
+        .from('craver-documents')
+        .upload(`profile-photos/${fileName}`, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('craver-documents')
+        .getPublicUrl(`profile-photos/${fileName}`);
+
+      // Update profile
+      const { error: updateError } = await supabase
+        .from('craver_applications')
+        .update({ profile_photo: publicUrl })
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      setProfile({ ...profile, profile_photo: publicUrl });
+      toast({
+        title: "Photo updated",
+        description: "Your profile photo has been updated."
+      });
+    } catch (error) {
+      toast({
+        title: "Error uploading photo",
+        description: "Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSave = async () => {
     setLoading(true);
     try {
@@ -135,10 +182,25 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ onBack }) => {
                     <User className="h-8 w-8" />
                   </AvatarFallback>
                 </Avatar>
-                <Button variant="outline" disabled={!isEditing} className="flex-1">
-                  <Camera className="h-4 w-4 mr-2" />
-                  Change Photo
-                </Button>
+                <label htmlFor="photo-upload" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    disabled={loading}
+                    className="w-full"
+                    type="button"
+                    onClick={() => document.getElementById('photo-upload')?.click()}
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    Change Photo
+                  </Button>
+                  <input
+                    id="photo-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                  />
+                </label>
               </div>
             </CardContent>
           </Card>
