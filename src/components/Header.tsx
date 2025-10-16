@@ -252,6 +252,12 @@ const Header = () => {
                 </a>
               </nav>
 
+              {/* Mobile Theme Toggle */}
+              <div className="flex items-center justify-between pb-4">
+                <span className="text-sm font-medium text-foreground">Theme</span>
+                <ThemeToggle />
+              </div>
+
               {/* Mobile Auth Section */}
               <div className="pt-4 border-t border-border">
                 {user ? (
