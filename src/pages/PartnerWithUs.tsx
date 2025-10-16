@@ -559,7 +559,7 @@ ${formData.message}
             </Button>
             <Button variant="outline">
               <Mail className="h-4 w-4 mr-2" />
-              partners@craven.com
+              customerservice@cravenusa.com
             </Button>
           </div>
         </div>

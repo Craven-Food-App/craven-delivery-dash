@@ -116,7 +116,7 @@ const Careers = () => {
                   We're not currently hiring, but we're always interested in connecting with talented individuals. 
                   Send us your resume and we'll keep you in mind for future opportunities.
                 </p>
-                <Button size="lg" onClick={() => window.location.href = 'mailto:careers@craven.com'}>
+                <Button size="lg" onClick={() => window.location.href = 'mailto:customerservice@cravenusa.com'}>
                   <Mail className="h-4 w-4 mr-2" />
                   Send Your Resume
                 </Button>

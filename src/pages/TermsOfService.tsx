@@ -190,7 +190,7 @@ const TermsOfService = () => {
                 For questions about these Terms, contact us:
               </p>
               <ul className="list-none mb-4 text-muted-foreground">
-                <li><strong>Email:</strong> legal@craven.com</li>
+                <li><strong>Email:</strong> customerservice@cravenusa.com</li>
                 <li><strong>Phone:</strong> 1-800-CRAVE-N</li>
                 <li><strong>Mail:</strong> Crave'N Legal Department, [Company Address]</li>
               </ul>

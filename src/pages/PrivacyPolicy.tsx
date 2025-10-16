@@ -109,7 +109,7 @@ const PrivacyPolicy = () => {
                 <li><strong>Restriction:</strong> Limit how we use your data</li>
               </ul>
               <p className="text-muted-foreground">
-                To exercise these rights, contact us at privacy@craven.com
+                To exercise these rights, contact us at customerservice@cravenusa.com
               </p>
             </section>
 
@@ -147,7 +147,7 @@ const PrivacyPolicy = () => {
                 If you have questions or concerns about this Privacy Policy, please contact us:
               </p>
               <ul className="list-none mb-4 text-muted-foreground">
-                <li><strong>Email:</strong> privacy@craven.com</li>
+                <li><strong>Email:</strong> customerservice@cravenusa.com</li>
                 <li><strong>Phone:</strong> 1-800-CRAVE-N</li>
                 <li><strong>Mail:</strong> Crave'N Privacy Team, [Company Address]</li>
               </ul>

@@ -215,7 +215,7 @@ const CookiePolicy = () => {
                 If you have questions about our use of cookies, please contact us:
               </p>
               <ul className="list-none mb-4 text-muted-foreground">
-                <li><strong>Email:</strong> privacy@craven.com</li>
+                <li><strong>Email:</strong> customerservice@cravenusa.com</li>
                 <li><strong>Phone:</strong> 1-800-CRAVE-N</li>
               </ul>
               <p className="text-muted-foreground">
