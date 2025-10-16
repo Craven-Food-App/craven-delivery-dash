@@ -57,7 +57,7 @@ const AboutUs = () => {
     description: 'Reached 20K active users and introduced our driver benefits program, safety features, and award-winning customer support platform.'
   }];
   const team = [{
-    name: 'Sarah Johnson',
+    name: 'Torrance Stroman',
     role: 'CEO & Co-Founder',
     image: '/placeholder.svg',
     bio: 'Former tech executive with 15+ years in logistics and marketplace platforms.'
