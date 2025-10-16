@@ -34,10 +34,12 @@ import Testing from "./pages/Testing";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import CookiePolicy from "./pages/CookiePolicy";
-import AdminGuide from "./pages/AdminGuide";
-import RestaurantGuide from "./pages/RestaurantGuide";
-import DriverGuide from "./pages/DriverGuide";
 import ChatButton from "./components/chat/ChatButton";
+
+// Lazy load guide pages
+const AdminGuide = lazy(() => import("./pages/AdminGuide"));
+const RestaurantGuide = lazy(() => import("./pages/RestaurantGuide"));
+const DriverGuide = lazy(() => import("./pages/DriverGuide"));
 
 const queryClient = new QueryClient();
 
