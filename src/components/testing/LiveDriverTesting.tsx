@@ -157,14 +157,20 @@ export const LiveDriverTesting = () => {
         .select()
         .single();
 
-      await supabase.from('orders').update({ driver_id: selectedDriver, order_status: 'confirmed' }).eq('id', order.id);
+      const { error: orderUpdateError } = await supabase
+        .from('orders')
+        .update({ driver_id: selectedDriver, order_status: 'confirmed' })
+        .eq('id', order.id);
+      if (orderUpdateError) {
+        console.warn('Order update failed (likely RLS):', orderUpdateError.message);
+      }
 
       const distanceKm = 3.2;
       const expiresAt = new Date(Date.now() + 30_000).toISOString();
       const estimatedTime = Math.ceil(distanceKm * 3);
 
       // Create order assignment record
-      const { data: assignment } = await supabase
+      const { data: assignment, error: assignmentError } = await supabase
         .from('order_assignments')
         .insert({
           order_id: order.id,
@@ -174,6 +180,9 @@ export const LiveDriverTesting = () => {
         })
         .select()
         .single();
+      if (assignmentError) {
+        console.warn('Assignment insert failed (likely RLS):', assignmentError.message);
+      }
 
       const notificationPayload = {
         type: 'order_assignment',
@@ -225,6 +234,19 @@ export const LiveDriverTesting = () => {
         message: `Test pickup - this is a test order`,
         notification_type: 'order_assignment'
       });
+
+      // Send push via edge function as reliable delivery channel
+      const { error: pushError } = await supabase.functions.invoke('send-push-notification', {
+        body: {
+          userId: selectedDriver,
+          title: `Test Order: ${restaurant.name || 'Test Restaurant'}`,
+          message: 'Test pickup - this is a test order',
+          data: notificationPayload
+        }
+      });
+      if (pushError) {
+        console.warn('send-push-notification failed:', (pushError as any)?.message || pushError);
+      }
 
       toast({
         title: 'Test Order Sent!',
