@@ -440,6 +440,28 @@ export default function ScheduleSection() {
   useEffect(() => {
     fetchScheduleData();
     
+    // Check current driver status on mount
+    const checkDriverStatus = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profileData } = await supabase
+            .from('driver_profiles')
+            .select('status')
+            .eq('user_id', user.id)
+            .single();
+          
+          if (profileData && profileData.status === 'online') {
+            setCurrentStatus('online');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking driver status:', error);
+      }
+    };
+    
+    checkDriverStatus();
+    
     // Listen for driver status changes from main dashboard
     const handleStatusChange = (event: CustomEvent) => {
       const { status } = event.detail;
