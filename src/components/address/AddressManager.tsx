@@ -242,6 +242,15 @@ const AddressManager: React.FC<AddressManagerProps> = ({
                   <AddressAutocomplete
                     value={formData.street_address}
                     onChange={(value) => setFormData(prev => ({ ...prev, street_address: value }))}
+                    onAddressParsed={(parsed) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        street_address: parsed.street,
+                        city: parsed.city,
+                        state: parsed.state,
+                        zip_code: parsed.zipCode
+                      }));
+                    }}
                     placeholder="123 Main St, City, State 12345"
                     required
                   />
@@ -412,6 +421,15 @@ const AddressManager: React.FC<AddressManagerProps> = ({
               <AddressAutocomplete
                 value={formData.street_address}
                 onChange={(value) => setFormData(prev => ({ ...prev, street_address: value }))}
+                onAddressParsed={(parsed) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    street_address: parsed.street,
+                    city: parsed.city,
+                    state: parsed.state,
+                    zip_code: parsed.zipCode
+                  }));
+                }}
                 placeholder="123 Main St, City, State 12345"
                 required
               />

@@ -490,6 +490,15 @@ export const CraverApplicationForm: React.FC<CraverApplicationFormProps> = ({ on
               <AddressAutocomplete
                 value={data.streetAddress}
                 onChange={(value) => updateData('streetAddress', value)}
+                onAddressParsed={(parsed) => {
+                  setData(prev => ({
+                    ...prev,
+                    streetAddress: parsed.street,
+                    city: parsed.city,
+                    state: parsed.state,
+                    zipCode: parsed.zipCode
+                  }));
+                }}
                 placeholder="123 Main Street, City, State 12345"
                 required
               />

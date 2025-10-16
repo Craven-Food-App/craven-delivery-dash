@@ -10,12 +10,21 @@ interface AddressSuggestion {
   center: [number, number]; // [lng, lat]
   place_type: string[];
   address: string;
+  context?: any[]; // Mapbox context for parsing address components
+}
+
+interface ParsedAddress {
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
 }
 
 interface AddressAutocompleteProps {
   value: string;
   onChange: (value: string, coordinates?: { lat: number; lng: number }) => void;
   onValidAddress?: (isValid: boolean, suggestion?: AddressSuggestion) => void;
+  onAddressParsed?: (parsed: ParsedAddress) => void;
   placeholder?: string;
   className?: string;
   required?: boolean;
@@ -26,6 +35,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   value,
   onChange,
   onValidAddress,
+  onAddressParsed,
   placeholder = "Enter address...",
   className,
   required = false,
@@ -88,7 +98,8 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           place_name: feature.place_name,
           center: feature.center,
           place_type: feature.place_type,
-          address: feature.place_name
+          address: feature.place_name,
+          context: feature.context
         }));
       }
 
@@ -169,12 +180,64 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     };
   }, [value]);
 
+  const parseAddress = (suggestion: AddressSuggestion): ParsedAddress => {
+    const parts = suggestion.place_name.split(',').map(p => p.trim());
+    
+    // Try to extract from Mapbox context
+    let city = '';
+    let state = '';
+    let zipCode = '';
+    
+    if (suggestion.context && Array.isArray(suggestion.context)) {
+      for (const ctx of suggestion.context) {
+        if (ctx.id.startsWith('place.')) {
+          city = ctx.text;
+        } else if (ctx.id.startsWith('region.')) {
+          state = ctx.short_code?.replace('US-', '') || ctx.text;
+        } else if (ctx.id.startsWith('postcode.')) {
+          zipCode = ctx.text;
+        }
+      }
+    }
+    
+    // Fallback parsing from place_name if context not available
+    if (!city || !state) {
+      // Format: "Street Address, City, State ZIP, Country"
+      if (parts.length >= 3) {
+        city = city || parts[1];
+        const stateZip = parts[2];
+        const stateMatch = stateZip.match(/([A-Z]{2})/);
+        const zipMatch = stateZip.match(/(\d{5})/);
+        state = state || (stateMatch ? stateMatch[1] : '');
+        zipCode = zipCode || (zipMatch ? zipMatch[1] : '');
+      }
+    }
+    
+    // Extract street address (first part, without unit numbers in parentheses)
+    const street = parts[0] || '';
+    
+    return {
+      street,
+      city,
+      state,
+      zipCode
+    };
+  };
+
   const handleSuggestionClick = (suggestion: AddressSuggestion) => {
     const [lng, lat] = suggestion.center;
-    onChange(suggestion.place_name, { lat, lng });
+    const parsed = parseAddress(suggestion);
+    
+    // Only set street address in the field
+    onChange(parsed.street, { lat, lng });
     setShowSuggestions(false);
     setIsValidAddress(true);
     onValidAddress?.(true, suggestion);
+    
+    // Call the parsed address callback
+    if (onAddressParsed) {
+      onAddressParsed(parsed);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
