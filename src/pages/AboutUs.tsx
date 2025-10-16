@@ -40,25 +40,21 @@ const AboutUs = () => {
     description: 'From our platform to our partnerships, we maintain the highest standards in everything we do.'
   }];
   const timeline = [{
-    year: '2020',
+    year: '2025',
     title: 'The Beginning',
     description: 'Crave\'n was founded with a simple mission: make food delivery faster, more reliable, and more affordable for everyone.'
   }, {
-    year: '2021',
+    year: '2025',
     title: 'Rapid Growth',
-    description: 'Expanded to 25 cities and onboarded over 1,000 restaurant partners, establishing our presence in major metropolitan areas.'
+    description: 'Quickly expanded to 100+ cities and onboarded over 5,000 restaurant partners, establishing our presence in major metropolitan areas.'
   }, {
-    year: '2022',
-    title: 'Technology Innovation',
-    description: 'Launched our AI-powered routing system and real-time tracking, reducing delivery times by 30% on average.'
+    year: '2025',
+    title: 'Platform Innovation',
+    description: 'Launched our AI-powered routing system, real-time tracking, and built a network of 1,000+ dedicated delivery drivers.'
   }, {
-    year: '2023',
-    title: 'National Expansion',
-    description: 'Reached 100+ cities across the country and introduced our driver benefits program and safety features.'
-  }, {
-    year: '2024',
-    title: 'Platform Evolution',
-    description: 'Introduced advanced features like group ordering, corporate catering, and our award-winning customer support platform.'
+    year: '2025',
+    title: 'Community Impact',
+    description: 'Reached 20K active users and introduced our driver benefits program, safety features, and award-winning customer support platform.'
   }];
   const team = [{
     name: 'Sarah Johnson',
