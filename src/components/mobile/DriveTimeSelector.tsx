@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -75,28 +75,85 @@ export const DriveTimeSelector: React.FC<DriveTimeSelectorProps> = ({ open, onCl
   const [timeOptions] = useState(() => generateTimeOptions());
   const [selectedIndex, setSelectedIndex] = useState(7); // Default to about 4 hours out
   const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const rafRef = useRef<number | null>(null);
   const itemHeight = 56; // Height of each item in pixels
 
   useEffect(() => {
     if (open && scrollRef.current) {
       // Scroll to selected item when opening
-      const scrollTop = selectedIndex * itemHeight - (scrollRef.current.offsetHeight / 2) + (itemHeight / 2);
-      scrollRef.current.scrollTop = scrollTop;
+      setTimeout(() => {
+        if (scrollRef.current) {
+          const scrollTop = selectedIndex * itemHeight - (scrollRef.current.offsetHeight / 2) + (itemHeight / 2);
+          scrollRef.current.scrollTo({ top: scrollTop, behavior: 'instant' });
+        }
+      }, 100);
     }
-  }, [open, selectedIndex]);
+  }, [open, selectedIndex, itemHeight]);
 
-  const handleScroll = () => {
+  const updateSelectedIndex = useCallback(() => {
     if (!scrollRef.current) return;
     
     const scrollTop = scrollRef.current.scrollTop;
     const containerHeight = scrollRef.current.offsetHeight;
     const centerPosition = scrollTop + containerHeight / 2;
-    const newIndex = Math.round(centerPosition / itemHeight);
     
-    if (newIndex >= 0 && newIndex < timeOptions.length && newIndex !== selectedIndex) {
-      setSelectedIndex(newIndex);
+    // More accurate calculation with bounds checking
+    const calculatedIndex = Math.max(0, Math.min(
+      Math.round(centerPosition / itemHeight),
+      timeOptions.length - 1
+    ));
+    
+    if (calculatedIndex !== selectedIndex) {
+      setSelectedIndex(calculatedIndex);
     }
-  };
+  }, [itemHeight, selectedIndex, timeOptions.length]);
+
+  const handleScroll = useCallback(() => {
+    // Cancel any pending RAF
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+    }
+    
+    // Use RAF for smooth updates
+    rafRef.current = requestAnimationFrame(() => {
+      updateSelectedIndex();
+    });
+
+    // Clear existing timeout
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+
+    // Snap to nearest item after scrolling stops
+    scrollTimeoutRef.current = setTimeout(() => {
+      if (scrollRef.current) {
+        const scrollTop = scrollRef.current.scrollTop;
+        const containerHeight = scrollRef.current.offsetHeight;
+        const centerPosition = scrollTop + containerHeight / 2;
+        const targetIndex = Math.max(0, Math.min(
+          Math.round(centerPosition / itemHeight),
+          timeOptions.length - 1
+        ));
+        
+        const targetScrollTop = targetIndex * itemHeight - (containerHeight / 2) + (itemHeight / 2);
+        scrollRef.current.scrollTo({ top: targetScrollTop, behavior: 'smooth' });
+        setSelectedIndex(targetIndex);
+      }
+    }, 150);
+  }, [itemHeight, timeOptions.length, updateSelectedIndex]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, []);
 
   const handleSelect = () => {
     onSelect(timeOptions[selectedIndex].minutes);
@@ -113,27 +170,44 @@ export const DriveTimeSelector: React.FC<DriveTimeSelectorProps> = ({ open, onCl
           
           <div className="relative h-64 overflow-hidden">
             {/* Selection indicator */}
-            <div className="absolute left-0 right-0 top-1/2 transform -translate-y-1/2 h-14 border-t-2 border-b-2 border-orange-500 bg-orange-50/50 pointer-events-none z-10" />
+            <div className="absolute left-0 right-0 top-1/2 transform -translate-y-1/2 h-14 border-t-2 border-b-2 border-orange-500 bg-orange-50/50 pointer-events-none z-10 transition-all duration-200" />
             
             {/* Scrollable time options */}
             <div
               ref={scrollRef}
-              className="h-full overflow-y-scroll scrollbar-hide"
+              className="h-full overflow-y-auto scrollbar-hide scroll-smooth"
               onScroll={handleScroll}
-              style={{ paddingTop: '104px', paddingBottom: '104px' }}
+              style={{ 
+                paddingTop: '104px', 
+                paddingBottom: '104px',
+                scrollSnapType: 'y mandatory',
+                WebkitOverflowScrolling: 'touch'
+              }}
             >
-              {timeOptions.map((option, index) => (
-                <div
-                  key={option.minutes}
-                  className={`h-14 flex items-center justify-center text-lg font-medium transition-colors ${
-                    index === selectedIndex 
-                      ? 'text-orange-600 font-semibold' 
-                      : 'text-muted-foreground'
-                  }`}
-                >
-                  {option.label}
-                </div>
-              ))}
+              {timeOptions.map((option, index) => {
+                const distance = Math.abs(index - selectedIndex);
+                const opacity = Math.max(0.3, 1 - (distance * 0.2));
+                const scale = Math.max(0.85, 1 - (distance * 0.05));
+                
+                return (
+                  <div
+                    key={option.minutes}
+                    className={`h-14 flex items-center justify-center text-lg font-medium transition-all duration-200 ${
+                      index === selectedIndex 
+                        ? 'text-orange-600 font-bold' 
+                        : 'text-muted-foreground'
+                    }`}
+                    style={{
+                      scrollSnapAlign: 'center',
+                      scrollSnapStop: 'always',
+                      opacity,
+                      transform: `scale(${scale})`
+                    }}
+                  >
+                    {option.label}
+                  </div>
+                );
+              })}
             </div>
           </div>
           
