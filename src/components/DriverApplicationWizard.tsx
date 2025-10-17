@@ -21,7 +21,7 @@ const STEPS = [
   { number: 1, title: "Account Setup", component: AccountSetupStep },
   { number: 2, title: "Address", component: AddressStep },
   { number: 3, title: "Vehicle & License", component: VehicleStep },
-  { number: 4, title: "Banking & Tax", component: BankingStep },
+  { number: 4, title: "Background Check", component: BankingStep },
   { number: 5, title: "Documents", component: DocumentsStep },
   { number: 6, title: "Review", component: null }, // Special case
 ];
