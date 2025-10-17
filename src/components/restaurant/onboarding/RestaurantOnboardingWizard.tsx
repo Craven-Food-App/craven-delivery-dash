@@ -250,8 +250,8 @@ const RestaurantOnboardingWizard = () => {
     updateData({ contactPhone: `${countryCode} ${phoneNumber}` });
     setShowMobileModal(false);
     toast.success("Mobile number added successfully");
-    // Navigate to setup dashboard
-    navigate("/restaurant/setup");
+    // Navigate to merchant portal
+    navigate("/merchant-portal");
   };
 
   const handleRemindLater = () => {
@@ -267,8 +267,8 @@ const RestaurantOnboardingWizard = () => {
   const handleReminderClose = () => {
     setShowReminderModal(false);
     toast.info("We'll remind you tomorrow");
-    // Navigate to setup dashboard even without phone
-    navigate("/restaurant/setup");
+    // Navigate to merchant portal even without phone
+    navigate("/merchant-portal");
   };
 
   const CurrentStepComponent = STEPS[currentStep].component;

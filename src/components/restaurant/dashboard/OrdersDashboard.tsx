@@ -18,7 +18,7 @@ const OrdersDashboard = () => {
               <p className="text-sm text-muted-foreground">
                 Track all your orders from every channel in real-time. For even more transaction details, go to{" "}
                 <button 
-                  onClick={() => navigate('/restaurant/setup')} 
+                  onClick={() => navigate('/merchant-portal')} 
                   className="text-primary hover:underline"
                 >
                   Transactions
