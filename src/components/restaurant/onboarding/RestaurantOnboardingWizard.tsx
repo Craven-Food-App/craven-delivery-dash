@@ -2,16 +2,11 @@ import { useState } from "react";
 import OnboardingHeader from "./OnboardingHeader";
 import OnboardingSidebar from "./OnboardingSidebar";
 import OrderMethodStep from "./steps/OrderMethodStep";
-import { QualificationStep } from "./steps/QualificationStep";
-import { BasicInfoStep } from "./steps/BasicInfoStep";
-import { BusinessDetailsStep } from "./steps/BusinessDetailsStep";
-import { LocationStep } from "./steps/LocationStep";
 import StoreHoursStep from "./steps/StoreHoursStep";
 import MenuSetupMethodStep from "./steps/MenuSetupMethodStep";
 import { MenuBuilderStep } from "./steps/MenuBuilderStep";
+import PricingPlanStep from "./steps/PricingPlanStep";
 import { EnhancedBankingStep } from "./steps/EnhancedBankingStep";
-import { OwnerVerificationStep } from "./steps/OwnerVerificationStep";
-import { ReviewStep } from "./steps/ReviewStep";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -164,64 +159,28 @@ const STEPS = [
     number: 1,
   },
   {
-    id: "qualification",
-    title: "Qualification",
-    component: QualificationStep,
-    number: 2,
-  },
-  {
-    id: "basic-info",
-    title: "Get started",
-    component: BasicInfoStep,
-    number: 3,
-  },
-  {
-    id: "business",
-    title: "Business details",
-    component: BusinessDetailsStep,
-    number: 4,
-  },
-  {
-    id: "location",
-    title: "Location",
-    component: LocationStep,
-    number: 5,
-  },
-  {
     id: "hours",
     title: "Store hours",
     component: StoreHoursStep,
-    number: 6,
+    number: 2,
   },
   {
-    id: "menu-method",
-    title: "Menu setup",
-    component: MenuSetupMethodStep,
-    number: 7,
-  },
-  {
-    id: "menu-builder",
-    title: "Menu builder",
+    id: "menu",
+    title: "Menu",
     component: MenuBuilderStep,
-    number: 8,
+    number: 3,
   },
   {
-    id: "owner",
-    title: "Owner verification",
-    component: OwnerVerificationStep,
-    number: 9,
+    id: "pricing",
+    title: "Pricing plan",
+    component: PricingPlanStep,
+    number: 4,
   },
   {
-    id: "banking",
+    id: "payout",
     title: "Payout info",
     component: EnhancedBankingStep,
-    number: 10,
-  },
-  {
-    id: "review",
-    title: "Review & submit",
-    component: ReviewStep,
-    number: 11,
+    number: 5,
   },
 ];
 
@@ -293,9 +252,7 @@ const RestaurantOnboardingWizard = () => {
           data={data}
           updateData={updateData}
           onNext={handleNext}
-          onBack={handleBack}
-          isFirstStep={currentStep === 0}
-          isLastStep={currentStep === STEPS.length - 1}
+          onBack={currentStep === 0 ? undefined : handleBack}
         />
       </main>
     </div>
