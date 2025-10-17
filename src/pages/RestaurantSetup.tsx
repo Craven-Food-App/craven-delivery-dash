@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import InsightsDashboard from "@/components/restaurant/dashboard/InsightsDashboard";
 import CustomersDashboard from "@/components/restaurant/dashboard/CustomersDashboard";
+import MenuDashboard from "@/components/restaurant/dashboard/MenuDashboard";
 import { 
   Home, 
   TrendingUp, 
@@ -25,7 +26,7 @@ import {
 } from "lucide-react";
 
 const RestaurantSetup = () => {
-  const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'customers'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'customers' | 'menu'>('home');
   const [prepareStoreExpanded, setPrepareStoreExpanded] = useState(true);
   const restaurantName = "Craven Inc";
   const userName = "Torrance";
@@ -108,10 +109,16 @@ const RestaurantSetup = () => {
               <span className="text-sm font-medium">Orders</span>
             </button>
             
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-foreground">
+            <button 
+              onClick={() => setActiveTab('menu')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg ${
+                activeTab === 'menu' 
+                  ? 'bg-orange-50 text-orange-600' 
+                  : 'hover:bg-muted text-foreground'
+              }`}
+            >
               <MenuIcon className="w-5 h-5" />
               <span className="text-sm font-medium">Menu</span>
-              <ChevronDown className="w-4 h-4 ml-auto" />
             </button>
             
             <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-foreground">
@@ -338,6 +345,8 @@ const RestaurantSetup = () => {
           <InsightsDashboard />
         ) : activeTab === 'customers' ? (
           <CustomersDashboard />
+        ) : activeTab === 'menu' ? (
+          <MenuDashboard />
         ) : null}
       </main>
 
