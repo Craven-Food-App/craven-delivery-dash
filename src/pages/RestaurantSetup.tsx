@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import InsightsDashboard from "@/components/restaurant/dashboard/InsightsDashboard";
@@ -29,6 +30,7 @@ import {
 } from "lucide-react";
 
 const RestaurantSetup = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'customers' | 'menu' | 'financials' | 'settings' | 'commerce'>('home');
   const [prepareStoreExpanded, setPrepareStoreExpanded] = useState(true);
   const restaurantName = "Craven Inc";
@@ -174,7 +176,10 @@ const RestaurantSetup = () => {
               </div>
             </button>
             
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-foreground">
+            <button 
+              onClick={() => navigate('/restaurant/request-delivery')}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-foreground"
+            >
               <Tablet className="w-5 h-5" />
               <span className="text-sm font-medium">Request a delivery</span>
             </button>
