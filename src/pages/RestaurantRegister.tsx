@@ -187,6 +187,15 @@ const RestaurantRegister = () => {
         throw error;
       }
 
+      // Send restaurant welcome email (non-blocking)
+      supabase.functions.invoke('send-restaurant-welcome-email', {
+        body: {
+          restaurantName: data.name,
+          ownerEmail: user.email || data.email,
+          ownerName: user.email?.split('@')[0] || 'Restaurant Owner'
+        }
+      }).catch(err => console.error('Failed to send welcome email:', err));
+
       toast({
         title: "Restaurant registered successfully!",
         description: "Your restaurant has been submitted for review. You can now manage your restaurant from the dashboard."

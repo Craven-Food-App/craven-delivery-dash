@@ -170,6 +170,14 @@ const Auth: React.FC = () => {
           title: "Account Created!",
           description: "Please check your email to confirm your account.",
         });
+
+        // Send welcome email (non-blocking)
+        supabase.functions.invoke('send-customer-welcome-email', {
+          body: {
+            customerName: email.split('@')[0],
+            customerEmail: email
+          }
+        }).catch(err => console.error('Failed to send welcome email:', err));
       }
     } catch (error: any) {
       console.error('Sign up error:', error);
