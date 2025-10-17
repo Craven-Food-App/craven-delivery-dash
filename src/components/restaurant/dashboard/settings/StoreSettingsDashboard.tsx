@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Instagram, Image, Video, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Instagram, Image, Video, Plus, ExternalLink } from "lucide-react";
 import ImageCropper from "@/components/common/ImageCropper";
 
 const StoreSettingsDashboard = () => {
@@ -10,6 +11,8 @@ const StoreSettingsDashboard = () => {
   const [cropperOpen, setCropperOpen] = useState(false);
   const [currentImageSrc, setCurrentImageSrc] = useState("");
   const [currentImageType, setCurrentImageType] = useState<"header" | "logo">("header");
+  const [instagramHandle, setInstagramHandle] = useState("");
+  const [isEditingInstagram, setIsEditingInstagram] = useState(false);
   const headerInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -174,19 +177,65 @@ const StoreSettingsDashboard = () => {
                 Connect your Instagram account to feature content directly on Crave'N.
               </p>
 
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Instagram className="w-6 h-6 text-pink-600" />
-                  <div>
-                    <h3 className="font-semibold">Connect account</h3>
-                    <p className="text-sm text-muted-foreground">Log in to connect your account to Crave'N.</p>
+              {!instagramHandle || isEditingInstagram ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className="text-sm font-medium">@</span>
+                      <Input
+                        placeholder="yourusername"
+                        value={instagramHandle}
+                        onChange={(e) => setInstagramHandle(e.target.value.replace(/[^a-zA-Z0-9._]/g, ''))}
+                        className="flex-1"
+                      />
+                    </div>
+                    <Button 
+                      variant="destructive"
+                      onClick={() => {
+                        if (instagramHandle) {
+                          setIsEditingInstagram(false);
+                        }
+                      }}
+                      disabled={!instagramHandle}
+                    >
+                      Save
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Enter your Instagram username to link your profile.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Instagram className="w-6 h-6 text-pink-600" />
+                    <div>
+                      <h3 className="font-semibold">@{instagramHandle}</h3>
+                      <p className="text-sm text-muted-foreground">Connected Instagram account</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => window.open(`https://instagram.com/${instagramHandle}`, '_blank')}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      View
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setIsEditingInstagram(true)}
+                    >
+                      Edit
+                    </Button>
                   </div>
                 </div>
-                <Button variant="destructive">Connect</Button>
-              </div>
+              )}
 
               <p className="text-xs text-muted-foreground mt-4">
-                By tapping "Connect", Merchant agrees to the terms of the Merchant Media Addendum ("MMA") and (1) directs Crave'N to (a) use text and images from identified accounts (2) grants Crave'N a license per the MMA to all Merchant Media from such accounts and (4) represents that Merchant owns Merchant Media or otherwise has all necessary rights in and to the Merchant Media to grant such a license to Crave'N.
+                By connecting your Instagram, Merchant agrees to the terms of the Merchant Media Addendum ("MMA") and (1) directs Crave'N to (a) use text and images from identified accounts (2) grants Crave'N a license per the MMA to all Merchant Media from such accounts and (4) represents that Merchant owns Merchant Media or otherwise has all necessary rights in and to the Merchant Media to grant such a license to Crave'N.
               </p>
             </CardContent>
           </Card>
