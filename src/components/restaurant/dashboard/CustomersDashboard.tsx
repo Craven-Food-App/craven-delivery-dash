@@ -36,15 +36,15 @@ const CustomersDashboard = () => {
       if (!restaurantResult.data) return;
 
       // Get unique customers  
-      const ordersResult = await supabase
-        .from('orders')
+      const query: any = supabase.from('orders');
+      const ordersResult = await query
         .select('customer_id, total_cents')
         .eq('restaurant_id', restaurantResult.data.id)
-        .eq('status', 'completed') as unknown as { data: any[]; error: any };
+        .eq('status', 'completed');
       
       const orders = ordersResult.data || [];
-
-      if (orders) {
+      
+      if (orders.length > 0) {
         const uniqueCustomers = new Set(orders.map((o: any) => o.customer_id)).size;
         const totalRevenue = orders.reduce((sum: number, o: any) => sum + (o.total_cents || 0), 0);
         const avgOrder = orders.length > 0 ? totalRevenue / orders.length : 0;

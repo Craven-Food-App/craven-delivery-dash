@@ -48,17 +48,17 @@ const InsightsDashboard = () => {
         case "last-90-days": startDate.setDate(startDate.getDate() - 90); break;
       }
 
-      const ordersResult = await supabase
-        .from('orders')
+      const query: any = supabase.from('orders');
+      const ordersResult = await query
         .select('total_cents')
         .eq('restaurant_id', restaurantResult.data.id)
         .eq('status', 'completed')
         .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString()) as unknown as { data: any[]; error: any };
+        .lte('created_at', endDate.toISOString());
       
       const orders = ordersResult.data || [];
-
-      if (orders && orders.length > 0) {
+      
+      if (orders.length > 0) {
         const totalRevenue = orders.reduce((sum: number, o: any) => sum + (o.total_cents || 0), 0);
         const avgOrder = totalRevenue / orders.length;
 
