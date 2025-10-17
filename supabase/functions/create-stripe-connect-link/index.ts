@@ -45,13 +45,14 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const { returnUrl, refreshUrl } = body;
 
-    // Get restaurant for this user (pick most recently created)
+    // Get restaurant for this user (pick most recently created) - array query to avoid PostgREST single error
+    console.log('Fetching latest restaurant for owner via range(0,0)', { ownerId: user.id });
     const { data: restaurantsData, error: restaurantError } = await supabase
       .from('restaurants')
-      .select('id, name, email, stripe_connect_account_id')
+      .select('id, name, email, stripe_connect_account_id, created_at')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false })
-      .limit(1);
+      .range(0, 0);
 
     if (restaurantError) {
       console.error('Database error fetching restaurant:', restaurantError.message);
