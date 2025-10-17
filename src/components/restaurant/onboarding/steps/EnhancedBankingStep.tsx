@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CreditCard, Shield, AlertCircle } from 'lucide-react';
+import { validateRoutingNumber } from '@/utils/bankingValidation';
 
 interface EnhancedBankingStepProps {
   data: any;
@@ -14,9 +15,12 @@ interface EnhancedBankingStepProps {
 }
 
 export function EnhancedBankingStep({ data, updateData, onNext, onBack }: EnhancedBankingStepProps) {
+  const isRoutingNumberValid = data.routingNumber?.length === 9 && validateRoutingNumber(data.routingNumber);
+  const showRoutingError = data.routingNumber?.length === 9 && !isRoutingNumberValid;
+  
   const isValid = 
     data.bankAccountType &&
-    data.routingNumber?.length === 9 &&
+    isRoutingNumberValid &&
     data.accountNumber?.length >= 4 &&
     data.w9Completed;
 
@@ -61,8 +65,13 @@ export function EnhancedBankingStep({ data, updateData, onNext, onBack }: Enhanc
               const value = e.target.value.replace(/\D/g, '');
               updateData({ routingNumber: value });
             }}
+            className={showRoutingError ? 'border-red-500' : ''}
           />
-          <p className="text-xs text-muted-foreground">9-digit bank routing number</p>
+          {showRoutingError ? (
+            <p className="text-xs text-red-600">Invalid routing number. Please enter a valid 9-digit bank routing number.</p>
+          ) : (
+            <p className="text-xs text-muted-foreground">9-digit bank routing number</p>
+          )}
         </div>
 
         <div className="space-y-2">
