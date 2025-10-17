@@ -29,7 +29,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: fromEmail,
       to: [driverEmail],
-      subject: "🚗 Welcome to Crave'N - Start Your Driver Application",
+      subject: "🎉 You're Approved! Complete Your Onboarding",
       html: `
         <!DOCTYPE html>
         <html>
@@ -45,70 +45,71 @@ const handler = async (req: Request): Promise<Response> => {
                     <!-- Header with Orange Banner -->
                     <tr>
                       <td style="background: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%); padding: 40px; text-align: center; border-radius: 8px 8px 0 0;">
-                        <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: bold;">🚗 Welcome to Crave'N!</h1>
+                        <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: bold;">🎉 Congratulations!</h1>
+                        <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 18px;">You're Approved!</p>
                       </td>
                     </tr>
                     
                     <!-- Main Content -->
                     <tr>
                       <td style="padding: 40px;">
-                        <h2 style="margin: 0 0 20px 0; color: #1a1a1a; font-size: 24px;">Hi ${driverName}!</h2>
+                        <h2 style="margin: 0 0 20px 0; color: #1a1a1a; font-size: 24px;">Hi ${driverName}! 👋</h2>
                         
                         <p style="margin: 0 0 20px 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                          Thank you for your interest in becoming a Crave'N driver! We're excited to have you join our delivery team.
+                          Great news! Your application to become a Crave'N driver has been <strong>approved</strong>. Welcome to the team! 🚗🍔
                         </p>
                         
+                        <div style="background-color: #e8f5e9; border-left: 4px solid #4caf50; padding: 20px; margin: 30px 0;">
+                          <h3 style="margin: 0 0 15px 0; color: #2e7d32; font-size: 18px;">💵 First Delivery Bonus</h3>
+                          <p style="margin: 0; color: #2e7d32; font-size: 15px; line-height: 1.6;">
+                            Earn an extra <strong>$25</strong> when you complete your first delivery!
+                          </p>
+                        </div>
+                        
                         <div style="background-color: #fff5ec; border-left: 4px solid #ff6b00; padding: 20px; margin: 30px 0;">
-                          <h3 style="margin: 0 0 15px 0; color: #ff6b00; font-size: 18px;">🚀 Complete Your Driver Application</h3>
+                          <h3 style="margin: 0 0 15px 0; color: #ff6b00; font-size: 18px;">📋 What's Next?</h3>
                           <p style="margin: 0 0 15px 0; color: #4a4a4a; font-size: 15px; line-height: 1.8;">
-                            To start delivering with Crave'N, you'll need to complete your driver application. The process is quick and straightforward:
+                            Complete a quick 10-15 minute onboarding process to get started:
                           </p>
                           <ol style="margin: 0; padding-left: 20px; color: #4a4a4a; font-size: 15px; line-height: 1.8;">
-                            <li>Personal information and contact details</li>
-                            <li>Driver's license and vehicle information</li>
-                            <li>Insurance and background check documents</li>
-                            <li>Banking details for payouts</li>
-                            <li>Review and submit your application</li>
+                            <li>Watch a short orientation video</li>
+                            <li>Pass a simple safety quiz</li>
+                            <li>Complete your W-9 tax form</li>
+                            <li>Set up your payout method</li>
+                            <li>Review the test delivery process</li>
                           </ol>
                         </div>
                         
                         <div style="text-align: center; margin: 40px 0 30px 0;">
-                          <a href="${Deno.env.get("SUPABASE_URL")?.replace('https://xaxbucnjlrfkccsfiddq.supabase.co', 'https://44d88461-c1ea-4d22-93fe-ebc1a7d81db9.lovableproject.com')}/driver-auth" 
+                          <a href="https://44d88461-c1ea-4d22-93fe-ebc1a7d81db9.lovableproject.com/craver-hub" 
                              style="display: inline-block; background: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 6px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);">
-                            Start Your Application
+                            Start Onboarding Now →
                           </a>
                         </div>
                         
                         <div style="background-color: #f9f9f9; padding: 20px; border-radius: 6px; margin: 30px 0;">
-                          <h3 style="margin: 0 0 10px 0; color: #1a1a1a; font-size: 16px;">📋 What You'll Need</h3>
+                          <h3 style="margin: 0 0 10px 0; color: #1a1a1a; font-size: 16px;">📊 Quick Stats</h3>
                           <ul style="margin: 10px 0 0 0; padding-left: 20px; color: #4a4a4a; font-size: 14px; line-height: 1.8;">
-                            <li>Valid driver's license</li>
-                            <li>Proof of vehicle insurance</li>
-                            <li>Vehicle registration</li>
-                            <li>Social Security Number (for background check)</li>
-                            <li>Banking information for direct deposit</li>
+                            <li>Average earnings: <strong>$15-$25/hour</strong></li>
+                            <li>Daily automatic payouts available</li>
+                            <li>Flexible schedule - work when you want</li>
+                            <li>24/7 support for drivers</li>
                           </ul>
                         </div>
                         
-                        <div style="background-color: #e8f5e9; border: 1px solid #4caf50; padding: 15px; border-radius: 6px; margin: 20px 0;">
-                          <p style="margin: 0; color: #2e7d32; font-size: 14px; line-height: 1.6;">
-                            <strong>⏱️ Average Application Time:</strong> Most drivers complete their application in 10-15 minutes!
+                        <div style="background-color: #e3f2fd; border: 1px solid #2196f3; padding: 15px; border-radius: 6px; margin: 20px 0;">
+                          <p style="margin: 0; color: #1565c0; font-size: 14px; line-height: 1.6;">
+                            <strong>⏱️ Important:</strong> Complete your onboarding within the next 7 days to maintain your approval status and claim your first delivery bonus!
                           </p>
                         </div>
                         
-                        <div style="background-color: #fff9e6; border-left: 4px solid #ffc107; padding: 20px; margin: 30px 0;">
-                          <h3 style="margin: 0 0 10px 0; color: #f57c00; font-size: 16px;">💰 Why Drive with Crave'N?</h3>
-                          <ul style="margin: 10px 0 0 0; padding-left: 20px; color: #4a4a4a; font-size: 14px; line-height: 1.8;">
-                            <li>Flexible schedule - work when you want</li>
-                            <li>Competitive pay with 100% of tips</li>
-                            <li>Fast daily payouts available</li>
-                            <li>Easy-to-use driver app</li>
-                            <li>24/7 driver support</li>
-                          </ul>
-                        </div>
-                        
                         <p style="margin: 30px 0 0 0; color: #4a4a4a; font-size: 14px; line-height: 1.6;">
-                          Questions about the application process? Contact our driver support team at <a href="mailto:drivers@craven.com" style="color: #ff6b00; text-decoration: none;">drivers@craven.com</a>
+                          Questions? Reply to this email or check out our <a href="https://44d88461-c1ea-4d22-93fe-ebc1a7d81db9.lovableproject.com/driver-guide" style="color: #ff6b00; text-decoration: none;">Driver Guide</a>.
+                        </p>
+                        
+                        <p style="margin: 20px 0 0 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+                          Welcome aboard! 🧡<br>
+                          <strong>The Crave'N Team</strong>
                         </p>
                       </td>
                     </tr>
@@ -116,7 +117,7 @@ const handler = async (req: Request): Promise<Response> => {
                     <!-- Footer -->
                     <tr>
                       <td style="background-color: #f9f9f9; padding: 30px; text-align: center; border-radius: 0 0 8px 8px; border-top: 1px solid #e5e5e5;">
-                        <p style="margin: 0 0 10px 0; color: #1a1a1a; font-size: 16px; font-weight: bold;">Ready to Hit the Road? 🛣️</p>
+                        <p style="margin: 0 0 10px 0; color: #1a1a1a; font-size: 16px; font-weight: bold;">Ready to Start Earning? 💰</p>
                         <p style="margin: 0; color: #898989; font-size: 12px;">
                           © ${new Date().getFullYear()} Crave'N. All rights reserved.
                         </p>

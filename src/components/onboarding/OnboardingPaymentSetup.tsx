@@ -90,7 +90,7 @@ export const OnboardingPaymentSetup = ({ onNext }: OnboardingPaymentSetupProps) 
           Payment Setup
         </CardTitle>
         <CardDescription>
-          Add a payment method to receive your earnings
+          Choose how you'd like to receive your earnings. This is your first time setting up payment information.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">

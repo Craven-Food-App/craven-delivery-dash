@@ -186,6 +186,7 @@ export type Database = {
           account_number_last_four: string | null
           background_check: boolean | null
           bank_account_type: string | null
+          business_name: string | null
           cash_tag: string | null
           city: string
           created_at: string | null
@@ -219,6 +220,7 @@ export type Database = {
           state: string
           status: string | null
           street_address: string
+          tax_classification: string | null
           updated_at: string | null
           user_id: string | null
           vehicle_color: string
@@ -228,6 +230,7 @@ export type Database = {
           vehicle_registration: string | null
           vehicle_type: string
           vehicle_year: number
+          w9_document: string | null
           zip_code: string
         }
         Insert: {
@@ -235,6 +238,7 @@ export type Database = {
           account_number_last_four?: string | null
           background_check?: boolean | null
           bank_account_type?: string | null
+          business_name?: string | null
           cash_tag?: string | null
           city: string
           created_at?: string | null
@@ -268,6 +272,7 @@ export type Database = {
           state: string
           status?: string | null
           street_address: string
+          tax_classification?: string | null
           updated_at?: string | null
           user_id?: string | null
           vehicle_color: string
@@ -277,6 +282,7 @@ export type Database = {
           vehicle_registration?: string | null
           vehicle_type: string
           vehicle_year: number
+          w9_document?: string | null
           zip_code: string
         }
         Update: {
@@ -284,6 +290,7 @@ export type Database = {
           account_number_last_four?: string | null
           background_check?: boolean | null
           bank_account_type?: string | null
+          business_name?: string | null
           cash_tag?: string | null
           city?: string
           created_at?: string | null
@@ -317,6 +324,7 @@ export type Database = {
           state?: string
           status?: string | null
           street_address?: string
+          tax_classification?: string | null
           updated_at?: string | null
           user_id?: string | null
           vehicle_color?: string
@@ -326,6 +334,7 @@ export type Database = {
           vehicle_registration?: string | null
           vehicle_type?: string
           vehicle_year?: number
+          w9_document?: string | null
           zip_code?: string
         }
         Relationships: []
@@ -586,6 +595,7 @@ export type Database = {
           safety_quiz_passed: boolean | null
           updated_at: string | null
           user_id: string
+          w9_completed: boolean | null
         }
         Insert: {
           application_id?: string | null
@@ -600,6 +610,7 @@ export type Database = {
           safety_quiz_passed?: boolean | null
           updated_at?: string | null
           user_id: string
+          w9_completed?: boolean | null
         }
         Update: {
           application_id?: string | null
@@ -614,6 +625,7 @@ export type Database = {
           safety_quiz_passed?: boolean | null
           updated_at?: string | null
           user_id?: string
+          w9_completed?: boolean | null
         }
         Relationships: [
           {

@@ -8,6 +8,7 @@ import { CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { OnboardingWelcome } from "./OnboardingWelcome";
 import { OnboardingVideo } from "./OnboardingVideo";
 import { OnboardingSafetyQuiz } from "./OnboardingSafetyQuiz";
+import { OnboardingW9Step } from "./OnboardingW9Step";
 import { OnboardingPaymentSetup } from "./OnboardingPaymentSetup";
 import { OnboardingTestDelivery } from "./OnboardingTestDelivery";
 import { OnboardingComplete } from "./OnboardingComplete";
@@ -18,6 +19,7 @@ interface OnboardingProgress {
   profile_creation_completed: boolean;
   orientation_video_watched: boolean;
   safety_quiz_passed: boolean;
+  w9_completed: boolean;
   payment_method_added: boolean;
   onboarding_completed_at: string | null;
 }
@@ -26,6 +28,7 @@ const ONBOARDING_STEPS = [
   { id: 'welcome', title: 'Welcome', component: OnboardingWelcome },
   { id: 'video', title: 'Orientation', component: OnboardingVideo },
   { id: 'safety', title: 'Safety Quiz', component: OnboardingSafetyQuiz },
+  { id: 'w9', title: 'Tax Form', component: OnboardingW9Step },
   { id: 'payment', title: 'Payment Setup', component: OnboardingPaymentSetup },
   { id: 'test', title: 'Test Delivery', component: OnboardingTestDelivery },
   { id: 'complete', title: 'Complete', component: OnboardingComplete },
@@ -61,12 +64,14 @@ export const DriverOnboardingWizard = () => {
           setCurrentStepIndex(1);
         } else if (!data.safety_quiz_passed) {
           setCurrentStepIndex(2);
-        } else if (!data.payment_method_added) {
+        } else if (!data.w9_completed) {
           setCurrentStepIndex(3);
-        } else if (!data.onboarding_completed_at) {
+        } else if (!data.payment_method_added) {
           setCurrentStepIndex(4);
-        } else {
+        } else if (!data.onboarding_completed_at) {
           setCurrentStepIndex(5);
+        } else {
+          setCurrentStepIndex(6);
         }
       }
     } catch (error: any) {
@@ -114,6 +119,9 @@ export const DriverOnboardingWizard = () => {
         break;
       case 'safety':
         await updateProgress({ safety_quiz_passed: true });
+        break;
+      case 'w9':
+        await updateProgress({ w9_completed: true });
         break;
       case 'payment':
         await updateProgress({ payment_method_added: true });

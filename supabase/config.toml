@@ -56,6 +56,9 @@ verify_jwt = true
 [functions.send-driver-welcome-email]
 verify_jwt = true
 
+[functions.generate-w9]
+verify_jwt = true
+
 [functions.send-customer-welcome-email]
 verify_jwt = true
 
