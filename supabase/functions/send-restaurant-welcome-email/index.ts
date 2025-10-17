@@ -25,8 +25,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Sending restaurant welcome email to ${ownerEmail} for ${restaurantName}`);
 
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Crave'N <onboarding@resend.dev>";
+
     const emailResponse = await resend.emails.send({
-      from: "Crave'N <onboarding@resend.dev>",
+      from: fromEmail,
       to: [ownerEmail],
       subject: "🎉 Welcome to Crave'N Partner Network!",
       html: `

@@ -25,8 +25,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Sending approval email to ${driverEmail} for application ${applicationId}`);
 
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Crave'N <onboarding@resend.dev>";
+
     const emailResponse = await resend.emails.send({
-      from: "Crave'N <onboarding@resend.dev>",
+      from: fromEmail,
       to: [driverEmail],
       subject: "🎉 Your Crave'N Driver Application has been Approved!",
       html: `
