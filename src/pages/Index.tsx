@@ -47,6 +47,8 @@ const Index = () => {
   return (
     <>
       <Helmet>
+        <title>Crave'N - CraveMore Membership | Zero Delivery Fees & Exclusive Benefits</title>
+        <meta name="description" content="Join CraveMore for $8.99/month and enjoy zero delivery fees, priority support, and exclusive perks. Limited lifetime memberships available for $249." />
         <script type="application/ld+json">
           {JSON.stringify(structuredData)}
         </script>
@@ -55,7 +57,6 @@ const Index = () => {
       <div className="min-h-screen bg-background">
         <Header />
         <Hero />
-        <RestaurantGrid searchQuery={searchQuery} deliveryAddress={deliveryAddress} />
         <Footer />
         <MobileBottomNav />
       </div>

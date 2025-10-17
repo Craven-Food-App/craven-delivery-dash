@@ -58,7 +58,9 @@ const TransactionsDashboard = () => {
 
       if (response.data) setPayoutData(response.data);
 
-      const ordersQuery = await supabase
+      // Fetch orders - TS has deep instantiation issues with long Supabase query chains
+      // @ts-expect-error - Supabase type inference depth limit
+      const ordersResponse = await supabase
         .from('orders')
         .select('id, order_number, total_cents, created_at')
         .eq('restaurant_id', restaurantQuery.data.id)
@@ -68,7 +70,7 @@ const TransactionsDashboard = () => {
         .order('created_at', { ascending: false })
         .limit(50);
 
-      setTransactions(ordersQuery.data || []);
+      setTransactions(ordersResponse.data || []);
     } catch (error) {
       console.error('Error:', error);
       toast({ title: "Error", description: "Failed to load data", variant: "destructive" });
