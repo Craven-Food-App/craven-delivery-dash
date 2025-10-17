@@ -1,9 +1,37 @@
+import { useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Instagram, Image, Video } from "lucide-react";
+import { Instagram, Image, Video, Plus } from "lucide-react";
+import ImageCropper from "@/components/common/ImageCropper";
 
 const StoreSettingsDashboard = () => {
+  const [headerPhoto, setHeaderPhoto] = useState<string | null>(null);
+  const [logoPhoto, setLogoPhoto] = useState<string | null>(null);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [currentImageSrc, setCurrentImageSrc] = useState("");
+  const [currentImageType, setCurrentImageType] = useState<"header" | "logo">("header");
+  const headerInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageSelect = (type: "header" | "logo", file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setCurrentImageSrc(e.target?.result as string);
+      setCurrentImageType(type);
+      setCropperOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    const url = URL.createObjectURL(croppedBlob);
+    if (currentImageType === "header") {
+      setHeaderPhoto(url);
+    } else {
+      setLogoPhoto(url);
+    }
+    setCropperOpen(false);
+  };
   return (
     <div className="space-y-6 pb-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -76,6 +104,16 @@ const StoreSettingsDashboard = () => {
               </p>
 
               <div className="space-y-4">
+                <input
+                  ref={headerInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageSelect("header", file);
+                  }}
+                />
                 <div className="border-2 border-dashed rounded-lg p-6 text-center">
                   <div className="flex justify-center mb-4">
                     <div className="w-12 h-12 rounded bg-muted flex items-center justify-center">
@@ -86,9 +124,19 @@ const StoreSettingsDashboard = () => {
                   <p className="text-sm text-muted-foreground mb-4">
                     Add a photo to make sure your store shows up in search and categories.
                   </p>
-                  <Button>Add photo</Button>
+                  <Button onClick={() => headerInputRef.current?.click()}>Add photo</Button>
                 </div>
 
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageSelect("logo", file);
+                  }}
+                />
                 <div className="border-2 border-dashed rounded-lg p-6 text-center">
                   <div className="flex justify-center mb-4">
                     <div className="w-12 h-12 rounded bg-muted flex items-center justify-center">
@@ -99,7 +147,7 @@ const StoreSettingsDashboard = () => {
                   <p className="text-sm text-muted-foreground mb-4">
                     Add a logo to make sure your store shows up in search and categories.
                   </p>
-                  <Button>Add logo</Button>
+                  <Button onClick={() => logoInputRef.current?.click()}>Add logo</Button>
                 </div>
 
                 <div className="border-2 border-dashed rounded-lg p-6 text-center">
@@ -155,16 +203,56 @@ const StoreSettingsDashboard = () => {
               </p>
 
               <div className="bg-muted rounded-lg overflow-hidden">
-                <div className="h-32 bg-gradient-to-br from-gray-200 to-gray-100 flex items-center justify-center">
-                  <p className="text-sm text-muted-foreground">
-                    Add a header photo and video to attract new customers
-                  </p>
+                <div className="relative h-32 bg-gradient-to-br from-gray-200 to-gray-100 flex items-center justify-center">
+                  {headerPhoto ? (
+                    <>
+                      <img src={headerPhoto} alt="Header" className="w-full h-full object-cover" />
+                      <button
+                        onClick={() => headerInputRef.current?.click()}
+                        className="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-50"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        Add a header photo and video to attract new customers
+                      </p>
+                      <button
+                        onClick={() => headerInputRef.current?.click()}
+                        className="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-50"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
                 </div>
                 
                 <div className="p-4">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-16 h-16 rounded-lg bg-gray-300 flex items-center justify-center">
-                      <span className="text-xs">Logo</span>
+                    <div className="relative w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
+                      {logoPhoto ? (
+                        <>
+                          <img src={logoPhoto} alt="Logo" className="w-full h-full object-cover" />
+                          <button
+                            onClick={() => logoInputRef.current?.click()}
+                            className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center"
+                          >
+                            <Plus className="w-4 h-4 text-white" />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-xs">Logo</span>
+                          <button
+                            onClick={() => logoInputRef.current?.click()}
+                            className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center"
+                          >
+                            <Plus className="w-4 h-4 text-white" />
+                          </button>
+                        </>
+                      )}
                     </div>
                     <h4 className="font-semibold text-lg">InveroInc</h4>
                   </div>
@@ -179,6 +267,15 @@ const StoreSettingsDashboard = () => {
           </Card>
         </div>
       </div>
+
+      <ImageCropper
+        isOpen={cropperOpen}
+        onClose={() => setCropperOpen(false)}
+        imageSrc={currentImageSrc}
+        onCropComplete={handleCropComplete}
+        aspectRatio={currentImageType === "header" ? 16 / 9 : 1}
+        cropShape={currentImageType === "logo" ? "round" : "rect"}
+      />
     </div>
   );
 };
