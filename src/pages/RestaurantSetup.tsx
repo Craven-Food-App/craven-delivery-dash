@@ -9,6 +9,7 @@ import FinancialsDashboard from "@/components/restaurant/dashboard/FinancialsDas
 import SettingsDashboard from "@/components/restaurant/dashboard/SettingsDashboard";
 import CommercePlatformDashboard from "@/components/restaurant/dashboard/CommercePlatformDashboard";
 import ReportsDashboard from "@/components/restaurant/dashboard/insights/ReportsDashboard";
+import OrdersDashboard from "@/components/restaurant/dashboard/OrdersDashboard";
 import { 
   Home, 
   TrendingUp, 
@@ -32,7 +33,7 @@ import {
 
 const RestaurantSetup = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'reports' | 'customers' | 'menu' | 'financials' | 'settings' | 'commerce'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'reports' | 'customers' | 'orders' | 'menu' | 'financials' | 'settings' | 'commerce'>('home');
   const [prepareStoreExpanded, setPrepareStoreExpanded] = useState(true);
   const restaurantName = "Craven Inc";
   const userName = "Torrance";
@@ -117,7 +118,14 @@ const RestaurantSetup = () => {
               <span className="text-sm font-medium">Customers</span>
             </button>
             
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-foreground">
+            <button 
+              onClick={() => setActiveTab('orders')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg ${
+                activeTab === 'orders' 
+                  ? 'bg-orange-50 text-orange-600' 
+                  : 'hover:bg-muted text-foreground'
+              }`}
+            >
               <Package className="w-5 h-5" />
               <span className="text-sm font-medium">Orders</span>
             </button>
@@ -385,6 +393,8 @@ const RestaurantSetup = () => {
           <ReportsDashboard />
         ) : activeTab === 'customers' ? (
           <CustomersDashboard />
+        ) : activeTab === 'orders' ? (
+          <OrdersDashboard />
         ) : activeTab === 'menu' ? (
           <MenuDashboard />
         ) : activeTab === 'financials' ? (
