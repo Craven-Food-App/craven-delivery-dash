@@ -29,9 +29,9 @@ const SolutionsCenter = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-12">
         
-        {/* DoorDash Top Picks */}
+        {/* Crave'N Top Picks */}
         <section>
-          <h2 className="text-2xl font-bold mb-6">DoorDash Top Picks</h2>
+          <h2 className="text-2xl font-bold mb-6">Crave'N Top Picks</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <Card className="overflow-hidden">
               <div className="h-32 bg-gradient-to-br from-orange-300 to-orange-400 flex items-center justify-center">
@@ -231,9 +231,9 @@ const SolutionsCenter = () => {
                 <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-4">
                   <Package className="w-6 h-6 text-green-600" />
                 </div>
-                <h3 className="font-bold mb-2">DashPass</h3>
+                <h3 className="font-bold mb-2">CravePass</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  DashPass subscribers ordering on Crave'N have higher order frequency. <a href="#" className="text-primary underline">Learn More</a>
+                  CravePass subscribers ordering on Crave'N have higher order frequency. <a href="#" className="text-primary underline">Learn More</a>
                 </p>
                 <Button variant="outline" className="w-full">Purchase product</Button>
               </CardContent>
@@ -277,7 +277,7 @@ const SolutionsCenter = () => {
                 </div>
                 <h3 className="font-bold mb-2">Drive On-Demand</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Use Dashers to fulfill your own orders from phone, online, or third-party apps. <a href="#" className="text-primary underline">Learn More</a>
+                  Use Cravers to fulfill your own orders from phone, online, or third-party apps. <a href="#" className="text-primary underline">Learn More</a>
                 </p>
                 <Button variant="outline" className="w-full">Add Channel</Button>
               </CardContent>

@@ -21,7 +21,7 @@ const IntegrationsDashboard = () => {
     { name: "Tabit", category: "Point of sale (POS) system", featured: false },
     { name: "Zytle", category: "Point of sale (POS) system", featured: false },
     { name: "Toast", category: "Point of sale (POS) system", featured: false },
-    { name: "DoorDash for WooCommerce", category: "Point of sale (POS) system", featured: false },
+    { name: "Crave'N for WooCommerce", category: "Point of sale (POS) system", featured: false },
     { name: "NCR", category: "Point of sale (POS) system", featured: false },
     { name: "Ordermark", category: "Point of sale (POS) system", featured: false },
     { name: "HungerRush", category: "Point of sale (POS) system", featured: false },

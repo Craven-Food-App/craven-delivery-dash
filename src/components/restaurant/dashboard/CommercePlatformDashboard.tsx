@@ -280,7 +280,7 @@ const CommercePlatformDashboard = () => {
                           <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                           <div className="text-sm">
                             <div className="font-medium">Online Ordering with live tracking</div>
-                            <div className="text-muted-foreground">Your customers can order through an Online Ordering link that's embedded in DoorDash</div>
+                            <div className="text-muted-foreground">Your customers can order through an Online Ordering link that's embedded in Crave'N</div>
                           </div>
                         </div>
                         <div className="flex gap-3">
@@ -308,7 +308,7 @@ const CommercePlatformDashboard = () => {
                           <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                           <div className="text-sm">
                             <div className="font-medium">Built-in delivery and customer support</div>
-                            <div className="text-muted-foreground">Work with Dashers to fulfill online orders, backed by customer support from ordering to delivery</div>
+                            <div className="text-muted-foreground">Work with Cravers to fulfill online orders, backed by customer support from ordering to delivery</div>
                           </div>
                         </div>
                       </div>
@@ -392,7 +392,7 @@ const CommercePlatformDashboard = () => {
                           <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                           <div className="text-sm">
                             <div className="font-medium">Branded mobile app</div>
-                            <div className="text-muted-foreground">Get a custom mobile app that lets you directly connect with loyal fans. Plus, you can double your orders when you make this app available on DashPass and DoorDash for both iOS and Android.</div>
+                            <div className="text-muted-foreground">Get a custom mobile app that lets you directly connect with loyal fans. Plus, you can double your orders when you make this app available on CravePass and Crave'N for both iOS and Android.</div>
                           </div>
                         </div>
                         <div className="flex gap-3">

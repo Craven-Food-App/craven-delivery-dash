@@ -55,7 +55,7 @@ const PricingPlansDashboard = () => {
                 <div className="flex justify-between items-center py-3 border-b">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">Reach high-value customers with</span>
-                    <span className="text-orange-600 font-semibold">DashPass</span>
+                    <span className="text-orange-600 font-semibold">CravePass</span>
                     <HelpCircle className="w-4 h-4 text-muted-foreground" />
                   </div>
                   <span className="text-lg font-semibold">Yes</span>

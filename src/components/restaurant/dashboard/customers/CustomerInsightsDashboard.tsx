@@ -61,7 +61,7 @@ const CustomerInsightsDashboard = () => {
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>{subValue}</span>
-          <span className="text-primary">DashPass customers</span>
+          <span className="text-primary">CravePass customers</span>
         </div>
       </CardContent>
     </Card>
@@ -117,7 +117,7 @@ const CustomerInsightsDashboard = () => {
           />
         </div>
         <p className="text-xs text-muted-foreground mt-4">
-          DashPass is a loyalty subscription service for customers. DashPass customers frequently place high-value orders.
+          CravePass is a loyalty subscription service for customers. CravePass customers frequently place high-value orders.
         </p>
         <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
           <span>Last updated on Oct 15, 2025</span>
