@@ -10,6 +10,7 @@ import SettingsDashboard from "@/components/restaurant/dashboard/SettingsDashboa
 import CommercePlatformDashboard from "@/components/restaurant/dashboard/CommercePlatformDashboard";
 import ReportsDashboard from "@/components/restaurant/dashboard/insights/ReportsDashboard";
 import OrdersDashboard from "@/components/restaurant/dashboard/OrdersDashboard";
+import StoreAvailabilityDashboard from "@/components/restaurant/dashboard/StoreAvailabilityDashboard";
 import { 
   Home, 
   TrendingUp, 
@@ -33,7 +34,7 @@ import {
 
 const RestaurantSetup = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'reports' | 'customers' | 'orders' | 'menu' | 'financials' | 'settings' | 'commerce'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'reports' | 'customers' | 'orders' | 'menu' | 'availability' | 'financials' | 'settings' | 'commerce'>('home');
   const [prepareStoreExpanded, setPrepareStoreExpanded] = useState(true);
   const restaurantName = "Craven Inc";
   const userName = "Torrance";
@@ -142,7 +143,14 @@ const RestaurantSetup = () => {
               <span className="text-sm font-medium">Menu</span>
             </button>
             
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-foreground">
+            <button 
+              onClick={() => setActiveTab('availability')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg ${
+                activeTab === 'availability' 
+                  ? 'bg-orange-50 text-orange-600' 
+                  : 'hover:bg-muted text-foreground'
+              }`}
+            >
               <Calendar className="w-5 h-5" />
               <span className="text-sm font-medium">Store availability</span>
             </button>
@@ -397,6 +405,8 @@ const RestaurantSetup = () => {
           <OrdersDashboard />
         ) : activeTab === 'menu' ? (
           <MenuDashboard />
+        ) : activeTab === 'availability' ? (
+          <StoreAvailabilityDashboard />
         ) : activeTab === 'financials' ? (
           <FinancialsDashboard />
         ) : activeTab === 'settings' ? (
