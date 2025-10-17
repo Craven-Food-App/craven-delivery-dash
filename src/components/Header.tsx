@@ -111,7 +111,7 @@ const Header = () => {
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex space-x-6">
               <a href="/restaurants" className="text-foreground hover:text-primary transition-colors">Restaurants</a>
-              <a href="/craver" className="text-foreground hover:text-primary transition-colors">Become a Driver</a>
+              <a href="/feeder" className="text-foreground hover:text-primary transition-colors">Become a Feeder</a>
             </nav>
 
             {/* Desktop Location/Address Selector */}
@@ -237,11 +237,11 @@ const Header = () => {
                   Restaurants
                 </a>
                 <a 
-                  href="/craver" 
+                  href="/feeder" 
                   className="block text-lg font-semibold text-foreground hover:text-primary"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  Become a Driver
+                  Become a Feeder
                 </a>
                 <a 
                   href="/admin" 

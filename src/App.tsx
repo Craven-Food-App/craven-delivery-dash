@@ -8,7 +8,7 @@ import { Capacitor } from "@capacitor/core";
 import MobileBottomNav from "@/components/mobile/MobileBottomNav";
 import Index from "./pages/Index";
 import DriverAuth from "./pages/DriverAuth";
-import CraverHub from "./pages/CraverHub";
+import FeederHub from "./pages/FeederHub";
 import OnboardingWizard from "./components/onboarding/OnboardingWizard";
 import OnboardingGuard from "./components/onboarding/OnboardingGuard";
 import CustomerDashboard from "./pages/CustomerDashboard";
@@ -62,9 +62,9 @@ const App = () => {
           <Sonner />
           <AccessGuard fallback={
             <div className="flex flex-col items-center justify-center min-h-screen p-4">
-              <h1 className="text-2xl font-bold mb-4">Craver Access Required</h1>
+              <h1 className="text-2xl font-bold mb-4">Feeder Access Required</h1>
               <p className="text-muted-foreground text-center mb-4">
-                You need an approved Craver application to access the mobile portal.
+                You need an approved Feeder application to access the mobile portal.
               </p>
             </div>
           }>
@@ -88,7 +88,7 @@ const App = () => {
           <Route path="/restaurants" element={<Restaurants />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/driver/auth" element={<DriverAuth />} />
-          <Route path="/craver" element={<CraverHub />} />
+          <Route path="/feeder" element={<FeederHub />} />
           <Route path="/onboarding" element={
             <OnboardingGuard>
               <OnboardingWizard />
@@ -98,12 +98,12 @@ const App = () => {
           <Route path="/mobile" element={
             <AccessGuard fallback={
               <div className="flex flex-col items-center justify-center min-h-screen p-4">
-                <h1 className="text-2xl font-bold mb-4">Craver Access Required</h1>
+                <h1 className="text-2xl font-bold mb-4">Feeder Access Required</h1>
                 <p className="text-muted-foreground text-center mb-4">
-                  You need an approved Craver application to access the mobile portal.
+                  You need an approved Feeder application to access the mobile portal.
                 </p>
-                <Link to="/craver" className="text-primary hover:underline">
-                  Apply to become a Craver →
+                <Link to="/feeder" className="text-primary hover:underline">
+                  Apply to become a Feeder →
                 </Link>
               </div>
             }>

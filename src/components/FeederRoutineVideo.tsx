@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Play, Pause, Car, MapPin, Camera, CameraIcon, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const CraverRoutineVideo = () => {
+const FeederRoutineVideo = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -469,4 +469,4 @@ const CraverRoutineVideo = () => {
   );
 };
 
-export default CraverRoutineVideo;
+export default FeederRoutineVideo;

@@ -10,7 +10,7 @@ import { DriverApplicationWizard } from "@/components/DriverApplicationWizard";
 import becomeDriverHero from "@/assets/20251002_2239_Animated-Logo-Driver_remix_01k6kyy1m7f108g2r5qjd0a8x8.png";
 
 
-const CraverHub = () => {
+const FeederHub = () => {
   const navigate = useNavigate();
   const [showApplicationForm, setShowApplicationForm] = useState(false);
   const benefits = [
@@ -32,7 +32,7 @@ const CraverHub = () => {
     {
       icon: CheckCircle,
       title: "Easy Sign-Up",
-      description: "Get started in minutes. Most Cravers are approved and earning within days."
+      description: "Get started in minutes. Most Feeders are approved and earning within days."
     }
   ];
 
@@ -64,12 +64,12 @@ const CraverHub = () => {
               <div className="flex items-center mb-6">
                 <Car className="h-12 w-12 text-primary mr-4" />
                 <h1 className="text-4xl md:text-6xl font-bold text-foreground">
-                  Become a <span className="text-primary">Craver</span>
+                  Become a <span className="text-primary">Feeder</span>
                 </h1>
               </div>
               <p className="text-xl text-muted-foreground max-w-2xl">
                 Deliver delicious food and earn great money on your own schedule. 
-                Join thousands of Cravers making a difference in their communities.
+                Join thousands of Feeders making a difference in their communities.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button 
@@ -91,11 +91,11 @@ const CraverHub = () => {
               <div className="flex items-center gap-6 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <span>4.8/5 Craver Rating</span>
+                  <span>4.8/5 Feeder Rating</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>50,000+ Active Cravers</span>
+                  <span>50,000+ Active Feeders</span>
                 </div>
               </div>
             </div>
@@ -105,7 +105,7 @@ const CraverHub = () => {
               <div className="relative max-w-2xl">
                 <img 
                   src={becomeDriverHero} 
-                  alt="Become a Craver Driver" 
+                  alt="Become a Feeder Driver" 
                   className="w-full h-auto"
                 />
               </div>
@@ -118,9 +118,9 @@ const CraverHub = () => {
       <section className="py-16 bg-muted/20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Why Cravers Love What They Do</h2>
+            <h2 className="text-3xl font-bold mb-4">Why Feeders Love What They Do</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Discover the benefits that make being a Craver more than just a job.
+              Discover the benefits that make being a Feeder more than just a job.
             </p>
           </div>
           
@@ -185,7 +185,7 @@ const CraverHub = () => {
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4">Simple Requirements</h2>
               <p className="text-muted-foreground">
-                Getting started as a Craver is easier than you think.
+                Getting started as a Feeder is easier than you think.
               </p>
             </div>
             
@@ -206,16 +206,16 @@ const CraverHub = () => {
       {/* CTA Section */}
       <section className="py-16 bg-gradient-to-r from-primary/10 to-secondary/10">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Start Craving Success?</h2>
+          <h2 className="text-3xl font-bold mb-4">Ready to Start Feeding Success?</h2>
           <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join our community of Cravers and start earning money delivering the food people love.
+            Join our community of Feeders and start earning money delivering the food people love.
           </p>
           <Button 
             size="lg" 
             className="text-lg px-8 py-6"
             onClick={() => setShowApplicationForm(true)}
           >
-            Apply to Become a Craver
+            Apply to Become a Feeder
           </Button>
           <p className="text-sm text-muted-foreground mt-4">
             Application takes less than 5 minutes
@@ -232,4 +232,4 @@ const CraverHub = () => {
   );
 };
 
-export default CraverHub;
+export default FeederHub;

@@ -217,7 +217,7 @@ const ApplicationReview: React.FC = () => {
 
       toast({
         title: "Application Rejected",
-        description: "The Craver application has been rejected.",
+        description: "The Feeder application has been rejected.",
         variant: "destructive",
       });
 
@@ -263,7 +263,7 @@ const ApplicationReview: React.FC = () => {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Craver Applications</h1>
+        <h1 className="text-3xl font-bold">Feeder Applications</h1>
       </div>
 
       {/* Stats Cards */}

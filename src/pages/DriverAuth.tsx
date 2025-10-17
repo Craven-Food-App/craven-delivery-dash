@@ -154,7 +154,7 @@ const DriverAuth = () => {
                 className="w-full" 
                 onClick={handleApplyRedirect}
               >
-                Apply to Become a Driver
+                Apply to Become a Feeder
               </Button>
               <p className="text-sm text-muted-foreground text-center">
                 Your account will be created when you submit your application

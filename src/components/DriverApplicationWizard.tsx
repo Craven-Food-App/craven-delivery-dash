@@ -164,7 +164,7 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
         {/* Progress header */}
         <div className="p-6 border-b">
           <div className="mb-4">
-            <h1 className="text-2xl font-bold text-primary">Craver Application</h1>
+            <h1 className="text-2xl font-bold text-primary">Feeder Application</h1>
             <p className="text-sm text-muted-foreground">Step {currentStep} of {STEPS.length}</p>
           </div>
           

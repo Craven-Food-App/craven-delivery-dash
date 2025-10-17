@@ -259,7 +259,7 @@ ${formData.message}
 
           <TabsContent value="driver" className="space-y-8">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-4">Become a Driver</h2>
+              <h2 className="text-3xl font-bold mb-4">Become a Feeder</h2>
               <p className="text-xl text-muted-foreground">
                 Earn money on your schedule with flexible delivery opportunities
               </p>

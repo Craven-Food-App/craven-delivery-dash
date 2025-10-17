@@ -55,7 +55,7 @@ const HelpCenter = () => {
     },
     {
       question: "How do I become a driver?",
-      answer: "To become a Crave'n driver, complete our online application, upload required documents (license, insurance, vehicle registration), and pass our background check.",
+      answer: "To become a Crave'n Feeder, complete our online application, upload required documents (license, insurance, vehicle registration), and pass our background check.",
       category: "driver"
     },
     {
