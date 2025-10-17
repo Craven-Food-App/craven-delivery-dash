@@ -186,7 +186,10 @@ const RestaurantSetup = () => {
           </div>
 
           <div className="mt-4">
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-foreground">
+            <button 
+              onClick={() => navigate('/restaurant/solutions')}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-foreground"
+            >
               <Plus className="w-5 h-5" />
               <span className="text-sm font-medium">Add solutions</span>
             </button>
