@@ -6,6 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Building2, ChevronLeft } from 'lucide-react';
 import { validateRoutingNumber } from '@/utils/bankingValidation';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface EnhancedBankingStepProps {
   data: any;
@@ -16,9 +18,47 @@ interface EnhancedBankingStepProps {
 
 export function EnhancedBankingStep({ data, updateData, onNext, onBack }: EnhancedBankingStepProps) {
   const [showManualBankEntry, setShowManualBankEntry] = useState(false);
+  const [isConnectingStripe, setIsConnectingStripe] = useState(false);
   
   const isRoutingNumberValid = data.routingNumber?.length === 9 && validateRoutingNumber(data.routingNumber);
   const showRoutingError = data.routingNumber?.length === 9 && !isRoutingNumberValid;
+
+  const handleStripeConnect = async () => {
+    try {
+      setIsConnectingStripe(true);
+      
+      // Get user session
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) {
+        toast.error('Please sign in to continue');
+        return;
+      }
+
+      // Create Stripe Connect account
+      const { data: result, error } = await supabase.functions.invoke('create-stripe-connect-account', {
+        body: {
+          email: user.email,
+          businessName: data.restaurantName || 'My Restaurant',
+          restaurantId: data.restaurantId,
+          refreshUrl: window.location.href,
+          returnUrl: window.location.href,
+        },
+      });
+
+      if (error) throw error;
+
+      // Store Stripe account ID
+      updateData({ stripeAccountId: result.accountId });
+
+      // Redirect to Stripe onboarding
+      window.location.href = result.onboardingUrl;
+    } catch (error) {
+      console.error('Error connecting to Stripe:', error);
+      toast.error('Failed to connect to Stripe. Please try again.');
+    } finally {
+      setIsConnectingStripe(false);
+    }
+  };
   
   const isValid = 
     data.legalName?.trim() &&
@@ -80,11 +120,12 @@ export function EnhancedBankingStep({ data, updateData, onNext, onBack }: Enhanc
                 </div>
                 <Button 
                   variant="outline"
-                  onClick={() => setShowManualBankEntry(true)}
+                  onClick={handleStripeConnect}
+                  disabled={isConnectingStripe}
                   className="w-full sm:w-auto touch-manipulation"
                   size="sm"
                 >
-                  Connect
+                  {isConnectingStripe ? 'Connecting...' : 'Connect'}
                 </Button>
               </div>
             </div>
