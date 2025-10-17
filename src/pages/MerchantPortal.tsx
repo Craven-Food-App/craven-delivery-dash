@@ -18,6 +18,9 @@ import OrdersDashboard from "@/components/restaurant/dashboard/OrdersDashboard";
 import StoreAvailabilityDashboard from "@/components/restaurant/dashboard/StoreAvailabilityDashboard";
 import RequestDeliveryDashboard from "@/components/restaurant/dashboard/RequestDeliveryDashboard";
 import { HomeDashboard } from "@/components/merchant/HomeDashboard";
+import { MenuManagement } from "@/components/restaurant/MenuManagement";
+import { RestaurantSettings } from "@/components/restaurant/RestaurantSettings";
+import RestaurantHours from "@/components/restaurant/RestaurantHours";
 import { Home, TrendingUp, FileText, Users, Package, Menu as MenuIcon, Calendar, DollarSign, Settings, ChevronDown, CheckCircle2, Tablet, Store, ChevronUp, Plus, HelpCircle, MessageCircle, Mail, Clock, CheckCircle } from "lucide-react";
 const RestaurantSetup = () => {
   const navigate = useNavigate();
@@ -501,7 +504,51 @@ const RestaurantSetup = () => {
           </div>
         </div>
           )
-        ) : activeTab === 'insights' ? <InsightsDashboard /> : activeTab === 'reports' ? <ReportsDashboard /> : activeTab === 'customers' ? <CustomersDashboard /> : activeTab === 'orders' ? <OrdersDashboard /> : activeTab === 'menu' ? <MenuDashboard /> : activeTab === 'availability' ? <StoreAvailabilityDashboard /> : activeTab === 'financials' ? <FinancialsDashboard /> : activeTab === 'settings' ? <SettingsDashboard /> : activeTab === 'commerce' ? <CommercePlatformDashboard /> : activeTab === 'request-delivery' ? <RequestDeliveryDashboard /> : null}
+        ) : activeTab === 'insights' ? (
+          <InsightsDashboard />
+        ) : activeTab === 'reports' ? (
+          <ReportsDashboard />
+        ) : activeTab === 'customers' ? (
+          <CustomersDashboard />
+        ) : activeTab === 'orders' ? (
+          <OrdersDashboard />
+        ) : activeTab === 'menu' ? (
+          <div className="max-w-7xl mx-auto p-8">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold mb-2">Menu Management</h1>
+              <p className="text-sm text-muted-foreground">Manage your restaurant's menu items and categories</p>
+            </div>
+            <MenuManagement restaurantId={restaurant?.id || ''} />
+          </div>
+        ) : activeTab === 'availability' ? (
+          <div className="max-w-7xl mx-auto p-8">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold mb-2">Store Availability</h1>
+              <p className="text-sm text-muted-foreground">Manage your restaurant's operating hours</p>
+            </div>
+            <RestaurantHours restaurantId={restaurant?.id || ''} />
+            <StoreAvailabilityDashboard />
+          </div>
+        ) : activeTab === 'financials' ? (
+          <FinancialsDashboard />
+        ) : activeTab === 'settings' ? (
+          <div className="max-w-7xl mx-auto p-8">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold mb-2">Restaurant Settings</h1>
+              <p className="text-sm text-muted-foreground">Manage your restaurant's information and settings</p>
+            </div>
+            {restaurant && (
+              <RestaurantSettings 
+                restaurant={restaurant} 
+                onUpdate={() => refreshData()} 
+              />
+            )}
+          </div>
+        ) : activeTab === 'commerce' ? (
+          <CommercePlatformDashboard />
+        ) : activeTab === 'request-delivery' ? (
+          <RequestDeliveryDashboard />
+        ) : null}
       </main>
 
       {/* Right Sidebar - Store Preview */}

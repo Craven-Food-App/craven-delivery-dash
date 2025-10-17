@@ -12,6 +12,16 @@ interface Restaurant {
   phone: string | null;
   address: string | null;
   description: string | null;
+  cuisine_type: string | null;
+  email: string | null;
+  city: string | null;
+  state: string | null;
+  zip_code: string | null;
+  delivery_fee_cents: number;
+  min_delivery_time: number;
+  max_delivery_time: number;
+  is_active: boolean;
+  image_url: string | null;
 }
 
 export const useRestaurantData = () => {
@@ -30,7 +40,7 @@ export const useRestaurantData = () => {
 
         const { data, error } = await supabase
           .from('restaurants')
-          .select('id, name, owner_id, setup_deadline, logo_url, header_image_url, instagram_handle, phone, address, description, auto_descriptions_enabled, chat_enabled, alcohol_enabled, verification_notes')
+          .select('id, name, owner_id, setup_deadline, logo_url, header_image_url, instagram_handle, phone, address, description, cuisine_type, email, city, state, zip_code, delivery_fee_cents, min_delivery_time, max_delivery_time, is_active, image_url, auto_descriptions_enabled, chat_enabled, alcohol_enabled, verification_notes')
           .eq('owner_id', user.id)
           .order('created_at', { ascending: false })
           .limit(1)
