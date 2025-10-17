@@ -110,6 +110,9 @@ const ApplicationReview: React.FC = () => {
 
   const handleApprove = async (applicationId: string, notes: string) => {
     try {
+      const application = applications.find(app => app.id === applicationId);
+      if (!application) throw new Error('Application not found');
+
       const { error } = await supabase
         .from('craver_applications')
         .update({
@@ -123,10 +126,37 @@ const ApplicationReview: React.FC = () => {
         throw error;
       }
 
-      toast({
-        title: "Application Approved",
-        description: "The Craver application has been approved successfully.",
-      });
+      // Send approval email
+      try {
+        const { error: emailError } = await supabase.functions.invoke('send-approval-email', {
+          body: {
+            driverName: `${application.first_name} ${application.last_name}`,
+            driverEmail: application.email,
+            applicationId: applicationId,
+          },
+        });
+
+        if (emailError) {
+          console.error('Error sending approval email:', emailError);
+          toast({
+            title: "Application Approved",
+            description: "Application approved, but email notification failed to send.",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Application Approved",
+            description: "The driver has been approved and notified via email.",
+          });
+        }
+      } catch (emailError) {
+        console.error('Error sending approval email:', emailError);
+        toast({
+          title: "Application Approved",
+          description: "Application approved, but email notification failed to send.",
+          variant: "default",
+        });
+      }
 
       fetchApplications();
     } catch (error) {
