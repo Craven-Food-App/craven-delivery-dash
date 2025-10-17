@@ -277,21 +277,27 @@ const RestaurantOnboardingWizard = () => {
     <div className="min-h-screen bg-background w-full">
       <OnboardingHeader onSave={handleSave} />
       
-      <OnboardingSidebar
-        steps={STEPS}
-        currentStep={STEPS[currentStep].number}
-        completedSteps={completedSteps}
-        storeName={data.restaurantName}
-        onStepClick={handleStepClick}
-      />
-
-      <main className="ml-64 pt-16 min-h-screen w-full">
-        <CurrentStepComponent
-          data={data}
-          updateData={updateData}
-          onNext={handleNext}
-          onBack={currentStep === 0 ? undefined : handleBack}
+      {/* Sidebar - Hidden on mobile */}
+      <div className="hidden lg:block">
+        <OnboardingSidebar
+          steps={STEPS}
+          currentStep={STEPS[currentStep].number}
+          completedSteps={completedSteps}
+          storeName={data.restaurantName}
+          onStepClick={handleStepClick}
         />
+      </div>
+
+      {/* Main Content - Responsive */}
+      <main className="lg:ml-64 pt-16 min-h-screen w-full px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto lg:max-w-none">
+        <div className="py-6 sm:py-8 lg:py-12">
+          <CurrentStepComponent
+            data={data}
+            updateData={updateData}
+            onNext={handleNext}
+            onBack={currentStep === 0 ? undefined : handleBack}
+          />
+        </div>
       </main>
 
       <MobileVerificationModal

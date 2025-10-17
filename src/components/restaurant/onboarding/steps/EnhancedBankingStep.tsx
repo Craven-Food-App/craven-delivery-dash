@@ -34,37 +34,37 @@ export function EnhancedBankingStep({ data, updateData, onNext, onBack }: Enhanc
     data.termsAgreed;
 
   return (
-    <div className="space-y-6">
-      <div className="mb-6">
+    <div className="space-y-4 sm:space-y-6 pb-6 sm:pb-8">
+      <div className="mb-4 sm:mb-6">
         <button 
           onClick={onBack}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 sm:mb-4 touch-manipulation"
         >
           <ChevronLeft className="w-4 h-4" />
           Back
         </button>
-        <h2 className="text-3xl font-bold mb-2">Last step — verify your payout info</h2>
-        <p className="text-muted-foreground">
+        <h2 className="text-2xl sm:text-3xl font-bold mb-2">Last step — verify your payout info</h2>
+        <p className="text-sm sm:text-base text-muted-foreground">
           Add your business and bank account info to receive payouts.
         </p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Bank Account Information */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Bank account information</h3>
+        <div className="space-y-3 sm:space-y-4">
+          <h3 className="text-base sm:text-lg font-semibold">Bank account information</h3>
           
           {!showManualBankEntry ? (
-            <div className="border rounded-lg p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-start gap-3">
-                  <Building2 className="w-5 h-5 text-muted-foreground mt-0.5" />
-                  <div>
-                    <p className="font-medium">Connect to your bank</p>
-                    <p className="text-sm text-muted-foreground">
+            <div className="border rounded-lg p-3 sm:p-4 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-start gap-3 flex-1">
+                  <Building2 className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm sm:text-base">Connect to your bank</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Use Stripe's secure setup to{' '}
                       <button 
-                        className="text-blue-600 hover:underline"
+                        className="text-blue-600 hover:underline touch-manipulation"
                         onClick={() => setShowManualBankEntry(true)}
                       >
                         link
@@ -81,20 +81,22 @@ export function EnhancedBankingStep({ data, updateData, onNext, onBack }: Enhanc
                 <Button 
                   variant="outline"
                   onClick={() => setShowManualBankEntry(true)}
+                  className="w-full sm:w-auto touch-manipulation"
+                  size="sm"
                 >
                   Connect
                 </Button>
               </div>
             </div>
           ) : (
-            <div className="border rounded-lg p-4 space-y-4">
+            <div className="border rounded-lg p-3 sm:p-4 space-y-3 sm:space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="bankAccountType">Account Type *</Label>
+                <Label htmlFor="bankAccountType" className="text-sm sm:text-base">Account Type *</Label>
                 <Select
                   value={data.bankAccountType || ''}
                   onValueChange={(value) => updateData({ bankAccountType: value })}
                 >
-                  <SelectTrigger id="bankAccountType">
+                  <SelectTrigger id="bankAccountType" className="h-10 sm:h-11 touch-manipulation">
                     <SelectValue placeholder="Select account type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -105,7 +107,7 @@ export function EnhancedBankingStep({ data, updateData, onNext, onBack }: Enhanc
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="routingNumber">Routing Number *</Label>
+                <Label htmlFor="routingNumber" className="text-sm sm:text-base">Routing Number *</Label>
                 <Input
                   id="routingNumber"
                   type="text"
@@ -116,7 +118,7 @@ export function EnhancedBankingStep({ data, updateData, onNext, onBack }: Enhanc
                     const value = e.target.value.replace(/\D/g, '');
                     updateData({ routingNumber: value });
                   }}
-                  className={showRoutingError ? 'border-red-500' : ''}
+                  className={`h-10 sm:h-11 ${showRoutingError ? 'border-red-500' : ''}`}
                 />
                 {showRoutingError ? (
                   <p className="text-xs text-red-600">Invalid routing number. Please enter a valid 9-digit bank routing number.</p>
@@ -126,24 +128,26 @@ export function EnhancedBankingStep({ data, updateData, onNext, onBack }: Enhanc
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="accountNumber">Account Number *</Label>
+                <Label htmlFor="accountNumber" className="text-sm sm:text-base">Account Number *</Label>
                 <Input
                   id="accountNumber"
                   type="password"
                   placeholder="••••••••••"
                   value={data.accountNumber || ''}
                   onChange={(e) => updateData({ accountNumber: e.target.value })}
+                  className="h-10 sm:h-11"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="accountNumberConfirm">Confirm Account Number *</Label>
+                <Label htmlFor="accountNumberConfirm" className="text-sm sm:text-base">Confirm Account Number *</Label>
                 <Input
                   id="accountNumberConfirm"
                   type="text"
                   placeholder="Re-enter account number"
                   value={data.accountNumberConfirm || ''}
                   onChange={(e) => updateData({ accountNumberConfirm: e.target.value })}
+                  className="h-10 sm:h-11"
                 />
                 {data.accountNumber && data.accountNumberConfirm && data.accountNumber !== data.accountNumberConfirm && (
                   <p className="text-xs text-red-600">Account numbers don't match</p>
@@ -155,7 +159,7 @@ export function EnhancedBankingStep({ data, updateData, onNext, onBack }: Enhanc
           {!showManualBankEntry && (
             <button
               onClick={() => setShowManualBankEntry(true)}
-              className="text-sm text-blue-600 hover:underline"
+              className="text-xs sm:text-sm text-blue-600 hover:underline touch-manipulation"
             >
               Enter bank info manually
             </button>
@@ -163,54 +167,57 @@ export function EnhancedBankingStep({ data, updateData, onNext, onBack }: Enhanc
         </div>
 
         {/* Business Information */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Business information</h3>
-          <p className="text-sm text-muted-foreground">
+        <div className="space-y-3 sm:space-y-4">
+          <h3 className="text-base sm:text-lg font-semibold">Business information</h3>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             We're required to collect and verify your business info for compliance and tax purposes.
           </p>
 
           <div className="space-y-2">
-            <Label htmlFor="legalName">Your legal name *</Label>
+            <Label htmlFor="legalName" className="text-sm sm:text-base">Your legal name *</Label>
             <Input
               id="legalName"
               type="text"
               placeholder="Jane Smith"
               value={data.legalName || ''}
               onChange={(e) => updateData({ legalName: e.target.value })}
+              className="h-10 sm:h-11"
             />
             <p className="text-xs text-muted-foreground">As it appears on legal or tax documents</p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="dateOfBirth">Date of birth *</Label>
+            <Label htmlFor="dateOfBirth" className="text-sm sm:text-base">Date of birth *</Label>
             <Input
               id="dateOfBirth"
               type="date"
               placeholder="MM/DD/YYYY"
               value={data.dateOfBirth || ''}
               onChange={(e) => updateData({ dateOfBirth: e.target.value })}
+              className="h-10 sm:h-11"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="legalBusinessName">Legal business name *</Label>
+            <Label htmlFor="legalBusinessName" className="text-sm sm:text-base">Legal business name *</Label>
             <Input
               id="legalBusinessName"
               type="text"
               placeholder="10000 Ontario, Inc."
               value={data.legalBusinessName || ''}
               onChange={(e) => updateData({ legalBusinessName: e.target.value })}
+              className="h-10 sm:h-11"
             />
             <p className="text-xs text-muted-foreground">As it appears on legal or tax documents</p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="businessType">Type of business *</Label>
+            <Label htmlFor="businessType" className="text-sm sm:text-base">Type of business *</Label>
             <Select
               value={data.businessType || ''}
               onValueChange={(value) => updateData({ businessType: value })}
             >
-              <SelectTrigger id="businessType">
+              <SelectTrigger id="businessType" className="h-10 sm:h-11 touch-manipulation">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
               <SelectContent>
@@ -224,7 +231,7 @@ export function EnhancedBankingStep({ data, updateData, onNext, onBack }: Enhanc
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="websiteUrl">
+            <Label htmlFor="websiteUrl" className="text-sm sm:text-base">
               Website URL <span className="text-muted-foreground font-normal">(Optional)</span>
             </Label>
             <Input
@@ -233,16 +240,17 @@ export function EnhancedBankingStep({ data, updateData, onNext, onBack }: Enhanc
               placeholder="https://www.example.com"
               value={data.websiteUrl || ''}
               onChange={(e) => updateData({ websiteUrl: e.target.value })}
+              className="h-10 sm:h-11"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="locationCount">How many locations do you have? *</Label>
+            <Label htmlFor="locationCount" className="text-sm sm:text-base">How many locations do you have? *</Label>
             <Select
               value={data.locationCount || ''}
               onValueChange={(value) => updateData({ locationCount: value })}
             >
-              <SelectTrigger id="locationCount">
+              <SelectTrigger id="locationCount" className="h-10 sm:h-11 touch-manipulation">
                 <SelectValue placeholder="Select a number" />
               </SelectTrigger>
               <SelectContent>
@@ -257,7 +265,7 @@ export function EnhancedBankingStep({ data, updateData, onNext, onBack }: Enhanc
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="einTaxId">
+            <Label htmlFor="einTaxId" className="text-sm sm:text-base">
               EIN/Tax ID number <span className="text-muted-foreground font-normal">(Optional)</span>
             </Label>
             <Input
@@ -270,6 +278,7 @@ export function EnhancedBankingStep({ data, updateData, onNext, onBack }: Enhanc
                 const value = e.target.value.replace(/[^\d-]/g, '');
                 updateData({ einTaxId: value });
               }}
+              className="h-10 sm:h-11"
             />
             <p className="text-xs text-muted-foreground">
               Optional for setup. Required once your sales exceed IRS reporting thresholds.
@@ -278,13 +287,14 @@ export function EnhancedBankingStep({ data, updateData, onNext, onBack }: Enhanc
         </div>
 
         {/* Terms Agreement */}
-        <div className="flex items-start gap-2 pt-4">
+        <div className="flex items-start gap-2 pt-3 sm:pt-4">
           <Checkbox
             id="termsAgreed"
             checked={data.termsAgreed || false}
             onCheckedChange={(checked) => updateData({ termsAgreed: checked })}
+            className="mt-0.5"
           />
-          <Label htmlFor="termsAgreed" className="text-sm cursor-pointer leading-normal">
+          <Label htmlFor="termsAgreed" className="text-xs sm:text-sm cursor-pointer leading-normal">
             By clicking 'Finish setup', I agree to 'Crave'N Merchant Sign-Up Sheet' including the{' '}
             <a href="/terms-of-service" target="_blank" className="text-blue-600 hover:underline">
               Terms of Service
@@ -294,12 +304,11 @@ export function EnhancedBankingStep({ data, updateData, onNext, onBack }: Enhanc
         </div>
       </div>
 
-      <div className="pt-6">
+      <div className="pt-4 sm:pt-6 sticky bottom-0 bg-background pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:static">
         <Button 
           onClick={onNext} 
           disabled={!isValid || (showManualBankEntry && data.accountNumber !== data.accountNumberConfirm)}
-          size="lg"
-          className="w-full bg-red-600 hover:bg-red-700"
+          className="w-full h-12 sm:h-11 bg-red-600 hover:bg-red-700 text-base sm:text-sm touch-manipulation"
         >
           Finish setup
         </Button>
