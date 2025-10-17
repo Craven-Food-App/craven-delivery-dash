@@ -7,6 +7,7 @@ import MenuSetupMethodStep from "./steps/MenuSetupMethodStep";
 import { MenuBuilderStep } from "./steps/MenuBuilderStep";
 import PricingPlanStep from "./steps/PricingPlanStep";
 import { EnhancedBankingStep } from "./steps/EnhancedBankingStep";
+import MobileVerificationModal from "./MobileVerificationModal";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -188,6 +189,8 @@ const RestaurantOnboardingWizard = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [showMobileModal, setShowMobileModal] = useState(false);
+  const [wizardCompleted, setWizardCompleted] = useState(false);
 
   const handleNext = () => {
     // Mark current step as completed
@@ -198,6 +201,12 @@ const RestaurantOnboardingWizard = () => {
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      // Wizard completed, check if phone number exists
+      setWizardCompleted(true);
+      if (!data.contactPhone) {
+        setShowMobileModal(true);
+      }
     }
   };
 
@@ -233,6 +242,19 @@ const RestaurantOnboardingWizard = () => {
     }
   };
 
+  const handleMobileSubmit = (phoneNumber: string, countryCode: string) => {
+    updateData({ contactPhone: `${countryCode} ${phoneNumber}` });
+    setShowMobileModal(false);
+    toast.success("Mobile number added successfully");
+    // Proceed to next screen after modal
+  };
+
+  const handleRemindLater = () => {
+    setShowMobileModal(false);
+    toast.info("We'll remind you tomorrow");
+    // Proceed to next screen even without phone
+  };
+
   const CurrentStepComponent = STEPS[currentStep].component;
 
   return (
@@ -255,6 +277,13 @@ const RestaurantOnboardingWizard = () => {
           onBack={currentStep === 0 ? undefined : handleBack}
         />
       </main>
+
+      <MobileVerificationModal
+        open={showMobileModal}
+        onClose={() => setShowMobileModal(false)}
+        onSubmit={handleMobileSubmit}
+        onRemindLater={handleRemindLater}
+      />
     </div>
   );
 };
