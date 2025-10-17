@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, Check } from "lucide-react";
+import { AlertCircle, Check, Info, Target, DollarSign, ShoppingBag, Zap, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRestaurantData } from "@/hooks/useRestaurantData";
 import { toast } from "sonner";
@@ -151,66 +151,182 @@ const PricingPlansDashboard = () => {
         </TabsContent>
 
         <TabsContent value="all-plans" className="space-y-6 mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {plans.map((plan) => {
-              const isCurrent = currentPlan?.tier === plan.tier;
-              return (
-                <Card key={plan.id} className={isCurrent ? 'border-primary border-2' : ''}>
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-xl font-semibold">{plan.name}</h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Tier: {plan.tier.charAt(0).toUpperCase() + plan.tier.slice(1)}
-                        </p>
-                      </div>
-                      {isCurrent && (
-                        <span className="px-3 py-1 bg-primary text-primary-foreground rounded-full text-xs font-medium">
-                          Current Plan
-                        </span>
-                      )}
-                    </div>
+          <h2 className="text-2xl font-bold">All plans</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Basic Plan */}
+            <Card className={currentPlan?.tier === 'basic' ? 'border-primary border-2' : ''}>
+              <CardContent className="p-6 space-y-6">
+                <div>
+                  <h3 className="text-xl font-bold mb-1">Basic</h3>
+                  <p className="text-sm text-muted-foreground">Save on cost</p>
+                  <p className="text-sm text-muted-foreground">Offer delivery and pickup to customers who already know you</p>
+                </div>
 
-                    <div className="space-y-3 mb-6">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Delivery commission</span>
-                        <span className="font-semibold">{plan.delivery_commission_percent}%</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Pickup commission</span>
-                        <span className="font-semibold">{plan.pickup_commission_percent}%</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Monthly fee</span>
-                        <span className="font-semibold">
-                          ${(plan.monthly_fee_cents / 100).toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
+                {/* What you pay */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Info className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-sm">What you pay</span>
+                  </div>
+                  <p className="text-sm">15% commission per delivery order</p>
+                  <p className="text-sm">6% commission per pickup order</p>
+                </div>
 
-                    <div className="border-t pt-4 mb-4">
-                      <h4 className="font-semibold text-sm mb-3">Features</h4>
-                      <ul className="space-y-2">
-                        {(plan.features as string[]).slice(0, 4).map((feature, index) => (
-                          <li key={index} className="flex items-start gap-2">
-                            <Check className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm">{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                {/* Standard reach */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Target className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-sm">Standard reach</span>
+                  </div>
+                  <p className="text-sm">Reach customers close to you</p>
+                </div>
 
-                    <Button 
-                      variant={isCurrent ? "outline" : "default"}
-                      className="w-full"
-                      disabled={isCurrent}
-                    >
-                      {isCurrent ? 'Current Plan' : 'Contact to Upgrade'}
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                {/* Customers pay higher fees */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-sm">Customers pay higher fees</span>
+                  </div>
+                  <p className="text-sm">Customers pay more for delivery when ordering from you</p>
+                </div>
+
+                {/* Online ordering */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <ShoppingBag className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-sm">Online ordering</span>
+                  </div>
+                  <p className="text-sm">Get commission-free online ordering through your own website. You only pay payment processing fees.</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Plus Plan */}
+            <Card className={currentPlan?.tier === 'plus' ? 'border-primary border-2' : ''}>
+              <CardContent className="p-6 space-y-6">
+                <div>
+                  <h3 className="text-xl font-bold mb-1">Plus</h3>
+                  <p className="text-sm text-muted-foreground">Reach more customers</p>
+                  <p className="text-sm text-muted-foreground">Get discovered by new customers in your local area</p>
+                </div>
+
+                {/* What you pay */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Info className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-sm">What you pay</span>
+                  </div>
+                  <p className="text-sm">25% commission per delivery order</p>
+                  <p className="text-sm">5% commission per pickup order</p>
+                </div>
+
+                {/* Expanded reach */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Target className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-sm">Expanded reach</span>
+                  </div>
+                  <p className="text-sm">Reach customers across your local area</p>
+                </div>
+
+                {/* Customers pay lower fees */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-sm">Customers pay lower fees</span>
+                  </div>
+                  <p className="text-sm">Customers pay less for delivery when ordering from you</p>
+                </div>
+
+                {/* Online ordering */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <ShoppingBag className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-sm">Online ordering</span>
+                  </div>
+                  <p className="text-sm">Get commission-free online ordering through your own website. You only pay payment processing fees.</p>
+                </div>
+
+                {/* Access to DashPass members */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-sm">Access to DashPass members</span>
+                  </div>
+                  <p className="text-sm">Businesses with DashPass typically see a 30% increase in earnings, as members order twice as often and spend 2.5 times more annually than regular customers.</p>
+                  <p className="text-sm">You'll be promoted with $0 delivery and lower service fees, making it easier for customers to find you on DoorDash.</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Premier Plan */}
+            <Card className={currentPlan?.tier === 'premier' ? 'border-primary border-2' : ''}>
+              <CardContent className="p-6 space-y-6">
+                <div>
+                  <h3 className="text-xl font-bold mb-1">Premier</h3>
+                  <p className="text-sm text-muted-foreground">Maximize sales</p>
+                  <p className="text-sm text-muted-foreground">Stand out to new customers</p>
+                </div>
+
+                {/* What you pay */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Info className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-sm">What you pay</span>
+                  </div>
+                  <p className="text-sm">30% commission per delivery order</p>
+                  <p className="text-sm">5% commission per pickup order</p>
+                </div>
+
+                {/* Maximum reach */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Target className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-sm">Maximum reach</span>
+                  </div>
+                  <p className="text-sm">Reach customers farther from your local area</p>
+                </div>
+
+                {/* Customers pay the lowest fees */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-sm">Customers pay the lowest fees</span>
+                  </div>
+                  <p className="text-sm">Customers pay the least for delivery when ordering from you</p>
+                </div>
+
+                {/* Online ordering */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <ShoppingBag className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-sm">Online ordering</span>
+                  </div>
+                  <p className="text-sm">Get commission-free online ordering through your own website. You only pay payment processing fees.</p>
+                </div>
+
+                {/* Access to DashPass members */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-sm">Access to DashPass members</span>
+                  </div>
+                  <p className="text-sm">Businesses with DashPass typically see a 30% increase in earnings, as members order twice as often and spend 2.5 times more annually than regular customers.</p>
+                  <p className="text-sm">You'll be promoted with $0 delivery and lower service fees, making it easier for customers to find you on DoorDash.</p>
+                </div>
+
+                {/* 6-month order guarantee */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-sm">6-month order guarantee</span>
+                  </div>
+                  <p className="text-sm">If you receive fewer than 20 orders in any of your first 6 months, we'll refund your entire commission for that month.</p>
+                  <a href="#" className="text-sm text-primary underline">Learn more</a>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>
