@@ -43,16 +43,41 @@ serve(async (req) => {
     console.log('User authenticated:', user.id);
 
     const body = await req.json().catch(() => ({}));
-    const { returnUrl, refreshUrl } = body;
+    const { returnUrl, refreshUrl, restaurantId } = body as { returnUrl?: string; refreshUrl?: string; restaurantId?: string };
 
-    // Get restaurant for this user (pick most recently created) - array query to avoid PostgREST single error
-    console.log('Fetching latest restaurant for owner via range(0,0)', { ownerId: user.id });
-    const { data: restaurantsData, error: restaurantError } = await supabase
-      .from('restaurants')
-      .select('id, name, email, stripe_connect_account_id, created_at')
-      .eq('owner_id', user.id)
-      .order('created_at', { ascending: false })
-      .range(0, 0);
+    let restaurant: any = null;
+    let restaurantError: any = null;
+
+    if (restaurantId) {
+      console.log('Fetching restaurant by provided id', { restaurantId });
+      const res = await supabase
+        .from('restaurants')
+        .select('id, name, email, stripe_connect_account_id, owner_id, created_at')
+        .eq('id', restaurantId)
+        .maybeSingle();
+      restaurant = res.data;
+      restaurantError = res.error;
+
+      // Security: ensure the authenticated user owns this restaurant
+      if (restaurant && restaurant.owner_id !== user.id) {
+        console.error('User does not own the specified restaurant');
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } else {
+      // Fallback: pick most recently created restaurant for this owner (array query to avoid PostgREST single error)
+      console.log('Fetching latest restaurant for owner via range(0,0)', { ownerId: user.id });
+      const res = await supabase
+        .from('restaurants')
+        .select('id, name, email, stripe_connect_account_id, created_at')
+        .eq('owner_id', user.id)
+        .order('created_at', { ascending: false })
+        .range(0, 0);
+      restaurant = res.data?.[0];
+      restaurantError = res.error;
+    }
 
     if (restaurantError) {
       console.error('Database error fetching restaurant:', restaurantError.message);
@@ -61,8 +86,6 @@ serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    const restaurant = restaurantsData?.[0];
 
     if (!restaurant) {
       console.error('No restaurant found for user:', user.id);

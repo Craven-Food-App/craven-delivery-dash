@@ -78,7 +78,7 @@ const BankAccountDashboard = () => {
       
       const returnUrl = `${window.location.origin}/merchant-portal?tab=settings&subtab=bank-account`;
       const { data, error } = await supabase.functions.invoke('create-stripe-connect-link', {
-        body: { returnUrl, refreshUrl: returnUrl }
+        body: { returnUrl, refreshUrl: returnUrl, restaurantId: restaurant.id }
       });
       
       if (error) {
