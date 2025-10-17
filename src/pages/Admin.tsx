@@ -1,6 +1,7 @@
 import React from 'react';
 import AdminAccessGuard from '@/components/AdminAccessGuard';
 import ApplicationReview from '@/components/admin/ApplicationReview';
+import OnboardingDashboard from '@/components/admin/OnboardingDashboard';
 import LiveDashboard from '@/components/admin/LiveDashboard';
 import ChatPortal from '@/components/admin/ChatPortal';
 import { NotificationSettingsManager } from '@/components/admin/NotificationSettingsManager';
@@ -9,7 +10,7 @@ import CommissionSettingsManager from '@/components/admin/CommissionSettingsMana
 import { PromoCodeManager } from '@/components/admin/PromoCodeManager';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Shield, BarChart3, Users, MessageCircle, Bell, DollarSign, Tags } from 'lucide-react';
+import { ArrowLeft, Shield, BarChart3, Users, MessageCircle, Bell, DollarSign, Tags, GraduationCap } from 'lucide-react';
 import cravenLogo from "@/assets/craven-logo.png";
 
 const Admin: React.FC = () => {
@@ -44,7 +45,7 @@ const Admin: React.FC = () => {
         {/* Main Content */}
         <main className="container mx-auto px-4 py-6">
           <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="grid w-full grid-cols-7 mb-6">
+            <TabsList className="grid w-full grid-cols-8 mb-6">
               <TabsTrigger value="dashboard" className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4" />
                 Live Dashboard
@@ -71,7 +72,11 @@ const Admin: React.FC = () => {
               </TabsTrigger>
               <TabsTrigger value="applications" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                Craver Applications
+                Applications
+              </TabsTrigger>
+              <TabsTrigger value="onboarding" className="flex items-center gap-2">
+                <GraduationCap className="h-4 w-4" />
+                Onboarding
               </TabsTrigger>
             </TabsList>
             
@@ -101,6 +106,10 @@ const Admin: React.FC = () => {
             
             <TabsContent value="applications" className="space-y-4">
               <ApplicationReview />
+            </TabsContent>
+            
+            <TabsContent value="onboarding" className="space-y-4">
+              <OnboardingDashboard />
             </TabsContent>
           </Tabs>
         </main>

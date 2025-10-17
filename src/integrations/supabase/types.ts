@@ -195,6 +195,7 @@ export type Database = {
           drivers_license_front: string | null
           email: string
           first_name: string
+          i9_document: string | null
           id: string
           insurance_document: string | null
           insurance_policy: string
@@ -204,6 +205,8 @@ export type Database = {
           license_number: string | null
           license_plate: string
           license_state: string | null
+          onboarding_completed_at: string | null
+          onboarding_started_at: string | null
           payout_method: string | null
           phone: string
           profile_photo: string | null
@@ -238,6 +241,7 @@ export type Database = {
           drivers_license_front?: string | null
           email: string
           first_name: string
+          i9_document?: string | null
           id?: string
           insurance_document?: string | null
           insurance_policy: string
@@ -247,6 +251,8 @@ export type Database = {
           license_number?: string | null
           license_plate: string
           license_state?: string | null
+          onboarding_completed_at?: string | null
+          onboarding_started_at?: string | null
           payout_method?: string | null
           phone: string
           profile_photo?: string | null
@@ -281,6 +287,7 @@ export type Database = {
           drivers_license_front?: string | null
           email?: string
           first_name?: string
+          i9_document?: string | null
           id?: string
           insurance_document?: string | null
           insurance_policy?: string
@@ -290,6 +297,8 @@ export type Database = {
           license_number?: string | null
           license_plate?: string
           license_state?: string | null
+          onboarding_completed_at?: string | null
+          onboarding_started_at?: string | null
           payout_method?: string | null
           phone?: string
           profile_photo?: string | null
@@ -553,6 +562,59 @@ export type Database = {
           timestamp?: string
         }
         Relationships: []
+      }
+      driver_onboarding_progress: {
+        Row: {
+          application_id: string | null
+          created_at: string | null
+          current_step: string
+          first_delivery_bonus_eligible: boolean | null
+          id: string
+          onboarding_completed_at: string | null
+          orientation_video_watched: boolean | null
+          payment_method_added: boolean | null
+          profile_creation_completed: boolean | null
+          safety_quiz_passed: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          application_id?: string | null
+          created_at?: string | null
+          current_step?: string
+          first_delivery_bonus_eligible?: boolean | null
+          id?: string
+          onboarding_completed_at?: string | null
+          orientation_video_watched?: boolean | null
+          payment_method_added?: boolean | null
+          profile_creation_completed?: boolean | null
+          safety_quiz_passed?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          application_id?: string | null
+          created_at?: string | null
+          current_step?: string
+          first_delivery_bonus_eligible?: boolean | null
+          id?: string
+          onboarding_completed_at?: string | null
+          orientation_video_watched?: boolean | null
+          payment_method_added?: boolean | null
+          profile_creation_completed?: boolean | null
+          safety_quiz_passed?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_onboarding_progress_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "craver_applications"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       driver_payment_methods: {
         Row: {

@@ -82,7 +82,13 @@ const ApplicationReview: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('craver_applications')
-        .select('*')
+        .select(`
+          *,
+          driver_onboarding_progress!driver_onboarding_progress_application_id_fkey (
+            onboarding_completed_at,
+            current_step
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) {

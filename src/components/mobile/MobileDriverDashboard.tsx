@@ -157,9 +157,9 @@ export const MobileDriverDashboard: React.FC = () => {
     };
   };
 
-  // Check session persistence on component mount
+  // Check session persistence and onboarding on component mount
   useEffect(() => {
-    checkSessionPersistence();
+    checkOnboardingAndSession();
 
     // Simulate loading time for the loading screen
     const loadingTimer = setTimeout(() => {
@@ -167,6 +167,31 @@ export const MobileDriverDashboard: React.FC = () => {
     }, 2500);
     return () => clearTimeout(loadingTimer);
   }, []);
+
+  const checkOnboardingAndSession = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Check onboarding completion first
+      const { data: application } = await supabase
+        .from('craver_applications')
+        .select('onboarding_completed_at')
+        .eq('user_id', user.id)
+        .single();
+
+      // If onboarding not complete, redirect
+      if (!application?.onboarding_completed_at) {
+        window.location.href = '/onboarding';
+        return;
+      }
+
+      // Then check session persistence
+      checkSessionPersistence();
+    } catch (error) {
+      console.error('Error checking onboarding:', error);
+    }
+  };
   const checkSessionPersistence = async () => {
     try {
       const {
