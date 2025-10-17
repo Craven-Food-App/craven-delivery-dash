@@ -392,7 +392,7 @@ const CommercePlatformDashboard = () => {
                           <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                           <div className="text-sm">
                             <div className="font-medium">Branded mobile app</div>
-                            <div className="text-muted-foreground">Get a custom mobile app that lets you directly connect with loyal fans. Plus, you can double your orders when you make this app available on CravePass and Crave'N for both iOS and Android.</div>
+                            <div className="text-muted-foreground">Get a custom mobile app that lets you directly connect with loyal fans. Plus, you can double your orders when you make this app available on CraveMore and Crave'N for both iOS and Android.</div>
                           </div>
                         </div>
                         <div className="flex gap-3">
