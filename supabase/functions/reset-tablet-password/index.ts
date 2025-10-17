@@ -25,17 +25,20 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // Get restaurant owned by this user
-    const { data: restaurant, error: restaurantError } = await supabase
+    // Get restaurant owned by this user (pick most recently created)
+    const { data: restaurantsData, error: restaurantError } = await supabase
       .from('restaurants')
-      .select('id, name, email, owner_id')
+      .select('id, name, email, owner_id, created_at')
       .eq('owner_id', user.id)
-      .maybeSingle();
+      .order('created_at', { ascending: false })
+      .limit(1);
 
     if (restaurantError) {
       console.error('Database error:', restaurantError);
       throw new Error(`Database error: ${restaurantError.message}`);
     }
+
+    const restaurant = restaurantsData?.[0];
 
     if (!restaurant) {
       console.error(`No restaurant found for user ${user.id}`);
