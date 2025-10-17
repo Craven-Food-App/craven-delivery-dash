@@ -17,7 +17,7 @@ import ReportsDashboard from "@/components/restaurant/dashboard/insights/Reports
 import OrdersDashboard from "@/components/restaurant/dashboard/OrdersDashboard";
 import StoreAvailabilityDashboard from "@/components/restaurant/dashboard/StoreAvailabilityDashboard";
 import RequestDeliveryDashboard from "@/components/restaurant/dashboard/RequestDeliveryDashboard";
-import { Home, TrendingUp, FileText, Users, Package, Menu as MenuIcon, Calendar, DollarSign, Settings, ChevronDown, CheckCircle2, Tablet, Store, ChevronUp, Plus, HelpCircle, MessageCircle, Mail } from "lucide-react";
+import { Home, TrendingUp, FileText, Users, Package, Menu as MenuIcon, Calendar, DollarSign, Settings, ChevronDown, CheckCircle2, Tablet, Store, ChevronUp, Plus, HelpCircle, MessageCircle, Mail, Clock, CheckCircle } from "lucide-react";
 const RestaurantSetup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -261,12 +261,15 @@ const RestaurantSetup = () => {
                   <div className="flex gap-4">
                     <div className="flex-shrink-0">
                       <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        progress?.business_info_verified ? 'bg-green-500' : 'bg-foreground'
+                        progress?.business_info_verified ? 'bg-green-500' : 'bg-orange-500'
                       }`}>
                         {progress?.business_info_verified ? (
-                          <CheckCircle2 className="w-6 h-6 text-white" />
+                          <div className="relative">
+                            <Clock className="w-6 h-6 text-white" />
+                            <CheckCircle className="w-4 h-4 text-white absolute -bottom-1 -right-1 bg-green-500 rounded-full" />
+                          </div>
                         ) : (
-                          <MenuIcon className="w-6 h-6 text-background" />
+                          <Clock className="w-6 h-6 text-white" />
                         )}
                       </div>
                     </div>
@@ -290,12 +293,15 @@ const RestaurantSetup = () => {
                   <div className="flex gap-4">
                     <div className="flex-shrink-0">
                       <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        progress?.menu_preparation_status === 'ready' ? 'bg-green-500' : 'bg-foreground'
+                        progress?.menu_preparation_status === 'ready' ? 'bg-green-500' : 'bg-orange-500'
                       }`}>
                         {progress?.menu_preparation_status === 'ready' ? (
-                          <CheckCircle2 className="w-6 h-6 text-white" />
+                          <div className="relative">
+                            <Clock className="w-6 h-6 text-white" />
+                            <CheckCircle className="w-4 h-4 text-white absolute -bottom-1 -right-1 bg-green-500 rounded-full" />
+                          </div>
                         ) : (
-                          <MenuIcon className="w-6 h-6 text-background" />
+                          <Clock className="w-6 h-6 text-white" />
                         )}
                       </div>
                     </div>
