@@ -11,6 +11,7 @@ import CommercePlatformDashboard from "@/components/restaurant/dashboard/Commerc
 import ReportsDashboard from "@/components/restaurant/dashboard/insights/ReportsDashboard";
 import OrdersDashboard from "@/components/restaurant/dashboard/OrdersDashboard";
 import StoreAvailabilityDashboard from "@/components/restaurant/dashboard/StoreAvailabilityDashboard";
+import RequestDeliveryDashboard from "@/components/restaurant/dashboard/RequestDeliveryDashboard";
 import { 
   Home, 
   TrendingUp, 
@@ -34,7 +35,7 @@ import {
 
 const RestaurantSetup = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'reports' | 'customers' | 'orders' | 'menu' | 'availability' | 'financials' | 'settings' | 'commerce'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'reports' | 'customers' | 'orders' | 'menu' | 'availability' | 'financials' | 'settings' | 'commerce' | 'request-delivery'>('home');
   const [prepareStoreExpanded, setPrepareStoreExpanded] = useState(true);
   const restaurantName = "Craven Inc";
   const userName = "Torrance";
@@ -201,7 +202,7 @@ const RestaurantSetup = () => {
             </button>
             
             <button 
-              onClick={() => navigate('/restaurant/request-delivery')}
+              onClick={() => setActiveTab('request-delivery')}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-foreground"
             >
               <Tablet className="w-5 h-5" />
@@ -413,6 +414,8 @@ const RestaurantSetup = () => {
           <SettingsDashboard />
         ) : activeTab === 'commerce' ? (
           <CommercePlatformDashboard />
+        ) : activeTab === 'request-delivery' ? (
+          <RequestDeliveryDashboard />
         ) : null}
       </main>
 
