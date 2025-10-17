@@ -210,6 +210,9 @@ export type Database = {
           payout_method: string | null
           phone: string
           profile_photo: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewer_notes: string | null
           routing_number: string | null
           ssn_encrypted: string | null
           ssn_last_four: string | null
@@ -256,6 +259,9 @@ export type Database = {
           payout_method?: string | null
           phone: string
           profile_photo?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
           routing_number?: string | null
           ssn_encrypted?: string | null
           ssn_last_four?: string | null
@@ -302,6 +308,9 @@ export type Database = {
           payout_method?: string | null
           phone?: string
           profile_photo?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
           routing_number?: string | null
           ssn_encrypted?: string | null
           ssn_last_four?: string | null
