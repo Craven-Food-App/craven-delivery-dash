@@ -59,14 +59,23 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
           description: "Please check your email to verify your account."
         });
 
-        // Send welcome email for customers (non-blocking)
-        if (activeTab === 'customer' && data.user) {
-          supabase.functions.invoke('send-customer-welcome-email', {
-            body: {
-              customerName: fullName || email.split('@')[0],
-              customerEmail: email
-            }
-          }).catch(err => console.error('Failed to send welcome email:', err));
+        // Send welcome email (non-blocking)
+        if (data.user) {
+          if (activeTab === 'customer') {
+            supabase.functions.invoke('send-customer-welcome-email', {
+              body: {
+                customerName: fullName || email.split('@')[0],
+                customerEmail: email
+              }
+            }).catch(err => console.error('Failed to send welcome email:', err));
+          } else if (activeTab === 'driver') {
+            supabase.functions.invoke('send-driver-welcome-email', {
+              body: {
+                driverName: fullName || email.split('@')[0],
+                driverEmail: email
+              }
+            }).catch(err => console.error('Failed to send driver welcome email:', err));
+          }
         }
 
         onClose();

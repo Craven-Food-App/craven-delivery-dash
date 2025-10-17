@@ -90,6 +90,17 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
       // Step 3: Submit application
       await ApplicationService.submitApplication(userId!, data, documentPaths);
 
+      // Step 4: Send welcome email (non-blocking)
+      if (isNewUser) {
+        const { supabase } = await import('@/integrations/supabase/client');
+        supabase.functions.invoke('send-driver-welcome-email', {
+          body: {
+            driverName: `${data.firstName} ${data.lastName}`,
+            driverEmail: data.email
+          }
+        }).catch(err => console.error('Failed to send driver welcome email:', err));
+      }
+
       // Clear draft and show success
       clearDraft();
       
