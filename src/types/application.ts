@@ -48,7 +48,6 @@ export interface ApplicationFiles {
   driversLicenseBack?: File;
   insuranceDocument?: File;
   vehicleRegistration?: File;
-  i9Document?: File;
 }
 
 export interface ApplicationStepProps {
