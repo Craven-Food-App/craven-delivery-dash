@@ -4,6 +4,7 @@ import SalesDashboard from "./insights/SalesDashboard";
 import ProductMixDashboard from "./insights/ProductMixDashboard";
 import OperationsQualityDashboard from "./insights/OperationsQualityDashboard";
 import MostLovedDashboard from "./insights/MostLovedDashboard";
+import ReportsDashboard from "./insights/ReportsDashboard";
 
 const InsightsDashboard = () => {
   return (
@@ -17,6 +18,7 @@ const InsightsDashboard = () => {
               <TabsTrigger value="product-mix">Product Mix</TabsTrigger>
               <TabsTrigger value="operations">Operations Quality</TabsTrigger>
               <TabsTrigger value="most-loved">Most Loved</TabsTrigger>
+              <TabsTrigger value="reports">Reports</TabsTrigger>
             </TabsList>
 
             <TabsContent value="sales" className="mt-6">
@@ -33,6 +35,10 @@ const InsightsDashboard = () => {
 
             <TabsContent value="most-loved" className="mt-6">
               <MostLovedDashboard />
+            </TabsContent>
+
+            <TabsContent value="reports" className="mt-6">
+              <ReportsDashboard />
             </TabsContent>
           </Tabs>
         </div>
