@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Check, Sparkles, Zap, Shield, Clock } from "lucide-react";
+import cravemoreIcon from "@/assets/cravemore-icon.png";
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -76,6 +77,11 @@ const Hero = () => {
       <section className="py-16 px-4 bg-muted/30">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
+            <img 
+              src={cravemoreIcon} 
+              alt="CraveMore" 
+              className="w-24 h-24 mx-auto mb-6 animate-fade-in"
+            />
             <div className="inline-flex items-center gap-2 bg-orange-500/10 text-orange-600 dark:text-orange-400 px-6 py-2 rounded-full mb-4">
               <Sparkles className="w-5 h-5" />
               <span className="font-semibold">Introducing CraveMore</span>
