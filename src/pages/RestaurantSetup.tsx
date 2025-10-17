@@ -5,6 +5,7 @@ import InsightsDashboard from "@/components/restaurant/dashboard/InsightsDashboa
 import CustomersDashboard from "@/components/restaurant/dashboard/CustomersDashboard";
 import MenuDashboard from "@/components/restaurant/dashboard/MenuDashboard";
 import FinancialsDashboard from "@/components/restaurant/dashboard/FinancialsDashboard";
+import SettingsDashboard from "@/components/restaurant/dashboard/SettingsDashboard";
 import { 
   Home, 
   TrendingUp, 
@@ -27,7 +28,7 @@ import {
 } from "lucide-react";
 
 const RestaurantSetup = () => {
-  const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'customers' | 'menu' | 'financials'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'customers' | 'menu' | 'financials' | 'settings'>('home');
   const [prepareStoreExpanded, setPrepareStoreExpanded] = useState(true);
   const restaurantName = "Craven Inc";
   const userName = "Torrance";
@@ -139,10 +140,16 @@ const RestaurantSetup = () => {
               <span className="text-sm font-medium">Financials</span>
             </button>
             
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-foreground">
+            <button 
+              onClick={() => setActiveTab('settings')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg ${
+                activeTab === 'settings' 
+                  ? 'bg-orange-50 text-orange-600' 
+                  : 'hover:bg-muted text-foreground'
+              }`}
+            >
               <Settings className="w-5 h-5" />
               <span className="text-sm font-medium">Settings</span>
-              <ChevronDown className="w-4 h-4 ml-auto" />
             </button>
           </div>
 
@@ -356,6 +363,8 @@ const RestaurantSetup = () => {
           <MenuDashboard />
         ) : activeTab === 'financials' ? (
           <FinancialsDashboard />
+        ) : activeTab === 'settings' ? (
+          <SettingsDashboard />
         ) : null}
       </main>
 
