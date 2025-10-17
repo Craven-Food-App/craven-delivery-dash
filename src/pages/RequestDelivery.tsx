@@ -32,7 +32,7 @@ const RequestDelivery = () => {
           </button>
           <h1 className="text-3xl font-bold mb-2">Request deliveries with Drive On-Demand</h1>
           <p className="text-muted-foreground">
-            Fill out a form to tap into the Craver network and request deliveries whenever you need them.
+            Fill out a form to tap into the Feeder network and request deliveries whenever you need them.
           </p>
         </div>
       </div>
@@ -60,7 +60,7 @@ const RequestDelivery = () => {
               </p>
             </div>
 
-            {/* Use Dashers on your schedule */}
+            {/* Use Feeders on your schedule */}
             <div className="text-center">
               <div className="w-32 h-32 mx-auto mb-4 rounded-full bg-orange-50 flex items-center justify-center">
                 <div className="flex gap-2">
@@ -72,9 +72,9 @@ const RequestDelivery = () => {
                   </div>
                 </div>
               </div>
-              <h3 className="font-bold mb-2">Use Cravers on your schedule</h3>
+              <h3 className="font-bold mb-2">Use Feeders on your schedule</h3>
               <p className="text-sm text-muted-foreground">
-                Request a Craver for now, later, or whenever you have an order to go.
+                Request a Feeder for now, later, or whenever you have an order to go.
               </p>
             </div>
 
@@ -146,7 +146,7 @@ const RequestDelivery = () => {
         <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
           <p className="text-sm text-muted-foreground">
             <strong>Note:</strong> By requesting a delivery, you agree to pay the delivery fee. 
-            A Craver will be assigned to pick up and deliver your order. You can track the delivery 
+            A Feeder will be assigned to pick up and deliver your order. You can track the delivery 
             status in real-time through your merchant dashboard.
           </p>
         </div>

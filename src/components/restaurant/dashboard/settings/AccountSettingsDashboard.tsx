@@ -97,9 +97,9 @@ const AccountSettingsDashboard = () => {
         <CardContent className="p-6">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <h2 className="text-xl font-semibold mb-2">Craver pickup instructions</h2>
+              <h2 className="text-xl font-semibold mb-2">Feeder pickup instructions</h2>
               <p className="text-sm text-muted-foreground mb-4">
-                Provide Cravers with instructions to help them navigate your store and improve the order delivery experience.
+                Provide Feeders with instructions to help them navigate your store and improve the order delivery experience.
               </p>
             </div>
           </div>
@@ -111,7 +111,7 @@ const AccountSettingsDashboard = () => {
                 <Button variant="outline" size="sm">Edit</Button>
               </div>
               <p className="text-sm text-muted-foreground">
-                Add pickup instructions to help Cravers navigate your store when picking up orders. This will ultimately improve your customer's delivery experience.
+                Add pickup instructions to help Feeders navigate your store when picking up orders. This will ultimately improve your customer's delivery experience.
               </p>
             </div>
 

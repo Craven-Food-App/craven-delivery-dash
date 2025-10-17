@@ -308,7 +308,7 @@ const CommercePlatformDashboard = () => {
                           <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                           <div className="text-sm">
                             <div className="font-medium">Built-in delivery and customer support</div>
-                            <div className="text-muted-foreground">Work with Cravers to fulfill online orders, backed by customer support from ordering to delivery</div>
+                            <div className="text-muted-foreground">Work with Feeders to fulfill online orders, backed by customer support from ordering to delivery</div>
                           </div>
                         </div>
                       </div>

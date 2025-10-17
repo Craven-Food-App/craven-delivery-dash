@@ -277,7 +277,7 @@ const SolutionsCenter = () => {
                 </div>
                 <h3 className="font-bold mb-2">Drive On-Demand</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Use Cravers to fulfill your own orders from phone, online, or third-party apps. <a href="#" className="text-primary underline">Learn More</a>
+                  Use Feeders to fulfill your own orders from phone, online, or third-party apps. <a href="#" className="text-primary underline">Learn More</a>
                 </p>
                 <Button variant="outline" className="w-full">Add Channel</Button>
               </CardContent>
