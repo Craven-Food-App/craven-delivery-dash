@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowRight, ArrowLeft, Building2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Building2, Upload, FileCheck, Shield } from 'lucide-react';
 import { OnboardingData } from '../RestaurantOnboardingWizard';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface BusinessDetailsStepProps {
   data: OnboardingData;
@@ -21,13 +23,63 @@ const cuisineTypes = [
 ];
 
 export function BusinessDetailsStep({ data, updateData, onNext, onBack }: BusinessDetailsStepProps) {
+  const [uploading, setUploading] = useState<string | null>(null);
+
+  const uploadFile = async (file: File, fileType: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error('You must be logged in to upload files');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size must be less than 10MB');
+      return;
+    }
+
+    setUploading(fileType);
+    
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}/${fileType}_${Date.now()}.${fileExt}`;
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('restaurant-documents')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('restaurant-documents')
+        .getPublicUrl(fileName);
+
+      updateData({ [fileType]: publicUrl });
+      toast.success('Document uploaded successfully');
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast.error(error.message || 'Failed to upload file');
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, fileType: string) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      uploadFile(file, fileType);
+    }
+  };
+
   const isValid =
     data.legalBusinessName.trim().length >= 2 &&
     data.businessType &&
     data.ein.trim().length >= 9 &&
     data.yearsInBusiness &&
     data.cuisineType &&
-    data.description.trim().length >= 20;
+    data.description.trim().length >= 20 &&
+    data.businessLicenseUrl &&
+    data.insuranceCertificateUrl &&
+    data.healthPermitUrl;
 
   return (
     <div className="space-y-6">
@@ -137,6 +189,111 @@ export function BusinessDetailsStep({ data, updateData, onNext, onBack }: Busine
             {data.description.length}/500 characters (minimum 20)
           </p>
         </div>
+
+        {/* Required Business Documents */}
+        <div className="space-y-4 pt-6 border-t">
+          <h3 className="text-lg font-semibold">Required Business Documents</h3>
+          
+          {/* Business License */}
+          <div className="space-y-2">
+            <Label htmlFor="businessLicenseUrl">Business License *</Label>
+            <div className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary/50 transition-colors">
+              {data.businessLicenseUrl ? (
+                <div className="flex items-center justify-center gap-2 text-green-600">
+                  <FileCheck className="w-5 h-5" />
+                  <span className="text-sm font-medium">License Uploaded</span>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Upload className="w-6 h-6 mx-auto text-gray-400" />
+                  <div className="text-sm text-gray-600">
+                    <label htmlFor="businessLicenseUrl" className="cursor-pointer text-primary hover:text-primary/80">
+                      Upload business license
+                    </label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">PDF, PNG, or JPG (max 10MB)</p>
+                </div>
+              )}
+              <input
+                id="businessLicenseUrl"
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg"
+                onChange={(e) => handleFileUpload(e, 'businessLicenseUrl')}
+                disabled={uploading === 'businessLicenseUrl'}
+                className="hidden"
+              />
+            </div>
+          </div>
+
+          {/* Insurance Certificate */}
+          <div className="space-y-2">
+            <Label htmlFor="insuranceCertificateUrl">Certificate of Insurance (General Liability, Min $1M) *</Label>
+            <div className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary/50 transition-colors">
+              {data.insuranceCertificateUrl ? (
+                <div className="flex items-center justify-center gap-2 text-green-600">
+                  <FileCheck className="w-5 h-5" />
+                  <span className="text-sm font-medium">Insurance Uploaded</span>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Upload className="w-6 h-6 mx-auto text-gray-400" />
+                  <div className="text-sm text-gray-600">
+                    <label htmlFor="insuranceCertificateUrl" className="cursor-pointer text-primary hover:text-primary/80">
+                      Upload insurance certificate
+                    </label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">PDF, PNG, or JPG (max 10MB)</p>
+                </div>
+              )}
+              <input
+                id="insuranceCertificateUrl"
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg"
+                onChange={(e) => handleFileUpload(e, 'insuranceCertificateUrl')}
+                disabled={uploading === 'insuranceCertificateUrl'}
+                className="hidden"
+              />
+            </div>
+          </div>
+
+          {/* Health Permit */}
+          <div className="space-y-2">
+            <Label htmlFor="healthPermitUrl">Health Permit / Food Handler's Certificate *</Label>
+            <div className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary/50 transition-colors">
+              {data.healthPermitUrl ? (
+                <div className="flex items-center justify-center gap-2 text-green-600">
+                  <FileCheck className="w-5 h-5" />
+                  <span className="text-sm font-medium">Permit Uploaded</span>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Upload className="w-6 h-6 mx-auto text-gray-400" />
+                  <div className="text-sm text-gray-600">
+                    <label htmlFor="healthPermitUrl" className="cursor-pointer text-primary hover:text-primary/80">
+                      Upload health permit
+                    </label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">PDF, PNG, or JPG (max 10MB)</p>
+                </div>
+              )}
+              <input
+                id="healthPermitUrl"
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg"
+                onChange={(e) => handleFileUpload(e, 'healthPermitUrl')}
+                disabled={uploading === 'healthPermitUrl'}
+                className="hidden"
+              />
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
+            <Shield className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-blue-900">
+              All documents are securely encrypted. We review these to ensure compliance with local regulations.
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="flex justify-between pt-6 border-t">
@@ -144,8 +301,8 @@ export function BusinessDetailsStep({ data, updateData, onNext, onBack }: Busine
           <ArrowLeft className="mr-2 w-4 h-4" />
           Back
         </Button>
-        <Button onClick={onNext} disabled={!isValid} size="lg">
-          Continue
+        <Button onClick={onNext} disabled={!isValid || uploading !== null} size="lg">
+          {uploading ? 'Uploading...' : 'Continue'}
           <ArrowRight className="ml-2 w-4 h-4" />
         </Button>
       </div>

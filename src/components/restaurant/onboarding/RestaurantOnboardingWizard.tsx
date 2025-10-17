@@ -3,15 +3,23 @@ import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
+import { QualificationStep } from './steps/QualificationStep';
 import { BasicInfoStep } from './steps/BasicInfoStep';
 import { BusinessDetailsStep } from './steps/BusinessDetailsStep';
+import { OwnerVerificationStep } from './steps/OwnerVerificationStep';
 import { LocationStep } from './steps/LocationStep';
 import { HoursStep } from './steps/HoursStep';
-import { MenuSetupStep } from './steps/MenuSetupStep';
-import { BankingStep } from './steps/BankingStep';
+import { MenuBuilderStep } from './steps/MenuBuilderStep';
+import { EnhancedBankingStep } from './steps/EnhancedBankingStep';
 import { ReviewStep } from './steps/ReviewStep';
 
 export interface OnboardingData {
+  // Qualification
+  restaurantType: string;
+  hasPhysicalLocation: boolean;
+  expectedMonthlyOrders: number;
+  posSystem: string;
+  
   // Basic Info
   restaurantName: string;
   contactName: string;
@@ -25,6 +33,14 @@ export interface OnboardingData {
   yearsInBusiness: string;
   cuisineType: string;
   description: string;
+  businessLicenseUrl: string;
+  insuranceCertificateUrl: string;
+  healthPermitUrl: string;
+  
+  // Owner Verification
+  ownerIdUrl: string;
+  ssnLast4: string;
+  backgroundCheckAuthorized: boolean;
   
   // Location
   streetAddress: string;
@@ -47,6 +63,7 @@ export interface OnboardingData {
   logoUrl: string;
   coverImageUrl: string;
   menuPdfUrl: string;
+  menuItems: any[];
   
   // Delivery Settings
   deliveryRadius: number;
@@ -59,10 +76,19 @@ export interface OnboardingData {
   bankAccountType: 'checking' | 'savings' | '';
   routingNumber: string;
   accountNumber: string;
+  accountNumberConfirm: string;
   w9Completed: boolean;
+  
+  // Marketing
+  marketingOptIn: boolean;
+  commissionTier: string;
 }
 
 const INITIAL_DATA: OnboardingData = {
+  restaurantType: '',
+  hasPhysicalLocation: true,
+  expectedMonthlyOrders: 0,
+  posSystem: '',
   restaurantName: '',
   contactName: '',
   contactPhone: '',
@@ -73,6 +99,12 @@ const INITIAL_DATA: OnboardingData = {
   yearsInBusiness: '',
   cuisineType: '',
   description: '',
+  businessLicenseUrl: '',
+  insuranceCertificateUrl: '',
+  healthPermitUrl: '',
+  ownerIdUrl: '',
+  ssnLast4: '',
+  backgroundCheckAuthorized: false,
   streetAddress: '',
   city: '',
   state: '',
@@ -89,6 +121,7 @@ const INITIAL_DATA: OnboardingData = {
   logoUrl: '',
   coverImageUrl: '',
   menuPdfUrl: '',
+  menuItems: [],
   deliveryRadius: 5,
   minPrepTime: 20,
   maxPrepTime: 40,
@@ -97,17 +130,22 @@ const INITIAL_DATA: OnboardingData = {
   bankAccountType: '',
   routingNumber: '',
   accountNumber: '',
+  accountNumberConfirm: '',
   w9Completed: false,
+  marketingOptIn: false,
+  commissionTier: 'basic',
 };
 
 const STEPS = [
-  { id: 1, name: 'Get Started', component: BasicInfoStep },
-  { id: 2, name: 'Business Details', component: BusinessDetailsStep },
-  { id: 3, name: 'Location', component: LocationStep },
-  { id: 4, name: 'Hours', component: HoursStep },
-  { id: 5, name: 'Menu & Photos', component: MenuSetupStep },
-  { id: 6, name: 'Banking', component: BankingStep },
-  { id: 7, name: 'Review', component: ReviewStep },
+  { id: 1, name: 'Qualification', component: QualificationStep },
+  { id: 2, name: 'Get Started', component: BasicInfoStep },
+  { id: 3, name: 'Business Info', component: BusinessDetailsStep },
+  { id: 4, name: 'Owner Verify', component: OwnerVerificationStep },
+  { id: 5, name: 'Location', component: LocationStep },
+  { id: 6, name: 'Hours', component: HoursStep },
+  { id: 7, name: 'Menu', component: MenuBuilderStep },
+  { id: 8, name: 'Banking', component: EnhancedBankingStep },
+  { id: 9, name: 'Review', component: ReviewStep },
 ];
 
 export default function RestaurantOnboardingWizard() {

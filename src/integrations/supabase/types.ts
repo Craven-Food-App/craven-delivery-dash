@@ -1849,7 +1849,10 @@ export type Database = {
       restaurants: {
         Row: {
           address: string
+          background_check_authorized: boolean | null
+          business_license_url: string | null
           city: string | null
+          commission_tier: string | null
           created_at: string | null
           cuisine_type: string | null
           delivery_fee_cents: number | null
@@ -1857,28 +1860,42 @@ export type Database = {
           description: string | null
           email: string | null
           estimated_delivery_time: number | null
+          expected_monthly_orders: number | null
+          has_physical_location: boolean | null
+          health_permit_url: string | null
           id: string
           image_url: string | null
+          insurance_certificate_url: string | null
           is_active: boolean | null
           is_promoted: boolean
           latitude: number | null
           logo_url: string | null
           longitude: number | null
+          marketing_opt_in: boolean | null
           max_delivery_time: number | null
           min_delivery_time: number | null
           minimum_order_cents: number | null
           name: string
+          onboarding_status: string | null
           owner_id: string | null
+          owner_id_url: string | null
           phone: string | null
+          pos_system: string | null
           rating: number | null
+          restaurant_type: string | null
+          ssn_last4: string | null
           state: string | null
           total_reviews: number
           updated_at: string | null
+          verification_notes: Json | null
           zip_code: string | null
         }
         Insert: {
           address: string
+          background_check_authorized?: boolean | null
+          business_license_url?: string | null
           city?: string | null
+          commission_tier?: string | null
           created_at?: string | null
           cuisine_type?: string | null
           delivery_fee_cents?: number | null
@@ -1886,28 +1903,42 @@ export type Database = {
           description?: string | null
           email?: string | null
           estimated_delivery_time?: number | null
+          expected_monthly_orders?: number | null
+          has_physical_location?: boolean | null
+          health_permit_url?: string | null
           id?: string
           image_url?: string | null
+          insurance_certificate_url?: string | null
           is_active?: boolean | null
           is_promoted?: boolean
           latitude?: number | null
           logo_url?: string | null
           longitude?: number | null
+          marketing_opt_in?: boolean | null
           max_delivery_time?: number | null
           min_delivery_time?: number | null
           minimum_order_cents?: number | null
           name: string
+          onboarding_status?: string | null
           owner_id?: string | null
+          owner_id_url?: string | null
           phone?: string | null
+          pos_system?: string | null
           rating?: number | null
+          restaurant_type?: string | null
+          ssn_last4?: string | null
           state?: string | null
           total_reviews?: number
           updated_at?: string | null
+          verification_notes?: Json | null
           zip_code?: string | null
         }
         Update: {
           address?: string
+          background_check_authorized?: boolean | null
+          business_license_url?: string | null
           city?: string | null
+          commission_tier?: string | null
           created_at?: string | null
           cuisine_type?: string | null
           delivery_fee_cents?: number | null
@@ -1915,23 +1946,34 @@ export type Database = {
           description?: string | null
           email?: string | null
           estimated_delivery_time?: number | null
+          expected_monthly_orders?: number | null
+          has_physical_location?: boolean | null
+          health_permit_url?: string | null
           id?: string
           image_url?: string | null
+          insurance_certificate_url?: string | null
           is_active?: boolean | null
           is_promoted?: boolean
           latitude?: number | null
           logo_url?: string | null
           longitude?: number | null
+          marketing_opt_in?: boolean | null
           max_delivery_time?: number | null
           min_delivery_time?: number | null
           minimum_order_cents?: number | null
           name?: string
+          onboarding_status?: string | null
           owner_id?: string | null
+          owner_id_url?: string | null
           phone?: string | null
+          pos_system?: string | null
           rating?: number | null
+          restaurant_type?: string | null
+          ssn_last4?: string | null
           state?: string | null
           total_reviews?: number
           updated_at?: string | null
+          verification_notes?: Json | null
           zip_code?: string | null
         }
         Relationships: []
