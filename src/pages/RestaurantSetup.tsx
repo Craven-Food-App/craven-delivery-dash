@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import InsightsDashboard from "@/components/restaurant/dashboard/InsightsDashboard";
 import { 
   Home, 
   TrendingUp, 
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 
 const RestaurantSetup = () => {
+  const [activeTab, setActiveTab] = useState<'home' | 'insights'>('home');
   const [prepareStoreExpanded, setPrepareStoreExpanded] = useState(true);
   const restaurantName = "Craven Inc";
   const userName = "Torrance";
@@ -59,15 +61,28 @@ const RestaurantSetup = () => {
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto p-2">
           <div className="space-y-1">
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100">
+            <button 
+              onClick={() => setActiveTab('home')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg ${
+                activeTab === 'home' 
+                  ? 'bg-orange-50 text-orange-600' 
+                  : 'hover:bg-muted text-foreground'
+              }`}
+            >
               <Home className="w-5 h-5" />
               <span className="text-sm font-medium">Home</span>
             </button>
             
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-foreground">
+            <button 
+              onClick={() => setActiveTab('insights')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg ${
+                activeTab === 'insights' 
+                  ? 'bg-orange-50 text-orange-600' 
+                  : 'hover:bg-muted text-foreground'
+              }`}
+            >
               <TrendingUp className="w-5 h-5" />
               <span className="text-sm font-medium">Insights</span>
-              <ChevronDown className="w-4 h-4 ml-auto" />
             </button>
             
             <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-foreground">
@@ -151,6 +166,7 @@ const RestaurantSetup = () => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
+        {activeTab === 'home' ? (
         <div className="max-w-5xl mx-auto p-8">
           <div className="mb-8">
             <p className="text-sm text-muted-foreground mb-2">Welcome, {userName}</p>
@@ -311,6 +327,9 @@ const RestaurantSetup = () => {
             </Card>
           </div>
         </div>
+        ) : (
+          <InsightsDashboard />
+        )}
       </main>
 
       {/* Right Sidebar - Store Preview */}
