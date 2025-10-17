@@ -28,12 +28,18 @@ serve(async (req) => {
     // Get restaurant owned by this user
     const { data: restaurant, error: restaurantError } = await supabase
       .from('restaurants')
-      .select('id, name, email')
+      .select('id, name, email, owner_id')
       .eq('owner_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (restaurantError || !restaurant) {
-      throw new Error('Restaurant not found');
+    if (restaurantError) {
+      console.error('Database error:', restaurantError);
+      throw new Error(`Database error: ${restaurantError.message}`);
+    }
+
+    if (!restaurant) {
+      console.error(`No restaurant found for user ${user.id}`);
+      throw new Error('No restaurant found for your account. Please contact support.');
     }
 
     // Generate a random 8-character password

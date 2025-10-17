@@ -65,15 +65,29 @@ const AccountSettingsDashboard = () => {
   const handleResetTabletPassword = async () => {
     setSaving(true);
     try {
-      const { data, error } = await supabase.functions.invoke('reset-tablet-password');
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("Please sign in again");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('reset-tablet-password', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
       
       if (error) throw error;
       
-      toast.success(data.message);
-      console.log('New credentials:', data);
-    } catch (error) {
+      toast.success(data.message || "Password reset successfully");
+      if (data.password && data.username) {
+        toast.info(`Username: ${data.username}`, { duration: 10000 });
+        toast.info(`New Password: ${data.password}`, { duration: 10000 });
+      }
+    } catch (error: any) {
       console.error("Error resetting password:", error);
-      toast.error("Failed to reset tablet password");
+      toast.error(error.message || "Failed to reset tablet password");
     } finally {
       setSaving(false);
     }
