@@ -6,6 +6,7 @@ import CustomersDashboard from "@/components/restaurant/dashboard/CustomersDashb
 import MenuDashboard from "@/components/restaurant/dashboard/MenuDashboard";
 import FinancialsDashboard from "@/components/restaurant/dashboard/FinancialsDashboard";
 import SettingsDashboard from "@/components/restaurant/dashboard/SettingsDashboard";
+import CommercePlatformDashboard from "@/components/restaurant/dashboard/CommercePlatformDashboard";
 import { 
   Home, 
   TrendingUp, 
@@ -28,7 +29,7 @@ import {
 } from "lucide-react";
 
 const RestaurantSetup = () => {
-  const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'customers' | 'menu' | 'financials' | 'settings'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'customers' | 'menu' | 'financials' | 'settings' | 'commerce'>('home');
   const [prepareStoreExpanded, setPrepareStoreExpanded] = useState(true);
   const restaurantName = "Craven Inc";
   const userName = "Torrance";
@@ -158,7 +159,14 @@ const RestaurantSetup = () => {
               Channels
             </div>
             
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-foreground">
+            <button 
+              onClick={() => setActiveTab('commerce')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg ${
+                activeTab === 'commerce' 
+                  ? 'bg-orange-50 text-orange-600' 
+                  : 'hover:bg-muted text-foreground'
+              }`}
+            >
               <Store className="w-5 h-5" />
               <div className="flex-1 text-left">
                 <div className="text-sm font-medium">Commerce Platform</div>
@@ -365,6 +373,8 @@ const RestaurantSetup = () => {
           <FinancialsDashboard />
         ) : activeTab === 'settings' ? (
           <SettingsDashboard />
+        ) : activeTab === 'commerce' ? (
+          <CommercePlatformDashboard />
         ) : null}
       </main>
 
