@@ -1,8 +1,83 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Check, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const IntegrationsDashboard = () => {
+  const { toast } = useToast();
+  const [restaurant, setRestaurant] = useState<any>(null);
+  const [connectedIntegrations, setConnectedIntegrations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: restaurantData } = await supabase
+        .from('restaurants')
+        .select('*')
+        .eq('owner_id', user.id)
+        .single();
+
+      if (!restaurantData) return;
+      setRestaurant(restaurantData);
+
+      const { data: integrationsData } = await supabase
+        .from('restaurant_integrations')
+        .select('*')
+        .eq('restaurant_id', restaurantData.id);
+
+      setConnectedIntegrations(integrationsData || []);
+    } catch (error) {
+      console.error('Error fetching integrations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isConnected = (providerName: string) => {
+    return connectedIntegrations.some(i => i.provider_name === providerName && i.status === 'connected');
+  };
+
+  const connectIntegration = async (providerName: string) => {
+    try {
+      if (!restaurant) return;
+
+      const { error } = await supabase
+        .from('restaurant_integrations')
+        .insert({
+          restaurant_id: restaurant.id,
+          integration_type: 'pos',
+          provider_name: providerName,
+          status: 'connected'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Connected to ${providerName}`,
+      });
+      fetchData();
+    } catch (error) {
+      console.error('Error connecting integration:', error);
+      toast({
+        title: "Error",
+        description: "Failed to connect integration",
+        variant: "destructive",
+      });
+    }
+  };
+
   const integrations = [
     // POS Systems
     { name: "Checkmate", category: "Point of sale (POS) system", featured: false },
@@ -92,28 +167,57 @@ const IntegrationsDashboard = () => {
         </div>
 
         {/* Integration Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {integrations.map((integration, index) => (
-            <Card key={index}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
-                      <span className="text-lg">{integration.name.charAt(0)}</span>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <Skeleton key={i} className="h-20 w-full" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {integrations.map((integration, index) => {
+              const connected = isConnected(integration.name);
+              return (
+                <Card key={index} className={connected ? "border-green-500 bg-green-50" : ""}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
+                          <span className="text-lg">{integration.name.charAt(0)}</span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold text-sm">{integration.name}</h4>
+                            {connected && (
+                              <Badge variant="default" className="text-xs">
+                                <Check className="w-3 h-3 mr-1" />
+                                Connected
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">{integration.category}</p>
+                        </div>
+                      </div>
+                      {connected ? (
+                        <Button variant="ghost" size="sm">
+                          Disconnect
+                        </Button>
+                      ) : (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => connectIntegration(integration.name)}
+                        >
+                          Connect
+                        </Button>
+                      )}
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-sm">{integration.name}</h4>
-                      <p className="text-xs text-muted-foreground">{integration.category}</p>
-                    </div>
-                  </div>
-                  <Button variant="link" size="sm">
-                    Learn more
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

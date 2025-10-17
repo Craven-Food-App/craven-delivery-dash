@@ -1,109 +1,202 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ChevronLeft, ChevronRight, Plus, Info } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const StoreAvailabilityDashboard = () => {
+  const { toast } = useToast();
+  const [restaurant, setRestaurant] = useState<any>(null);
+  const [hours, setHours] = useState<any[]>([]);
+  const [specialHours, setSpecialHours] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isActive, setIsActive] = useState(false);
+  const [showSpecialHoursDialog, setShowSpecialHoursDialog] = useState(false);
+  const [newSpecialHours, setNewSpecialHours] = useState({
+    name: "",
+    start_date: "",
+    end_date: "",
+    is_closed: false,
+    open_time: "",
+    close_time: ""
+  });
+
+  const days = [
+    { label: "Monday", value: 1 },
+    { label: "Tuesday", value: 2 },
+    { label: "Wednesday", value: 3 },
+    { label: "Thursday", value: 4 },
+    { label: "Friday", value: 5 },
+    { label: "Saturday", value: 6 },
+    { label: "Sunday", value: 0 },
+  ];
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: restaurantData } = await supabase
+        .from('restaurants')
+        .select('*')
+        .eq('owner_id', user.id)
+        .single();
+
+      if (!restaurantData) return;
+
+      setRestaurant(restaurantData);
+      setIsActive(restaurantData.is_active || false);
+
+      const { data: hoursData } = await supabase
+        .from('restaurant_hours')
+        .select('*')
+        .eq('restaurant_id', restaurantData.id)
+        .order('day_of_week');
+
+      setHours(hoursData || []);
+
+      const { data: specialData } = await supabase
+        .from('restaurant_special_hours')
+        .select('*')
+        .eq('restaurant_id', restaurantData.id)
+        .order('start_date', { ascending: false });
+
+      setSpecialHours(specialData || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateStoreStatus = async (active: boolean) => {
+    try {
+      const response = await supabase.functions.invoke('update-store-hours', {
+        body: {
+          restaurantId: restaurant.id,
+          isActive: active
+        }
+      });
+
+      if (response.error) throw response.error;
+
+      setIsActive(active);
+      toast({
+        title: "Success",
+        description: `Store is now ${active ? 'active' : 'inactive'}`,
+      });
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update store status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const addSpecialHours = async () => {
+    try {
+      const response = await supabase.functions.invoke('update-store-hours', {
+        body: {
+          restaurantId: restaurant.id,
+          specialHours: newSpecialHours
+        }
+      });
+
+      if (response.error) throw response.error;
+
+      toast({
+        title: "Success",
+        description: "Special hours added successfully",
+      });
+
+      setShowSpecialHoursDialog(false);
+      setNewSpecialHours({
+        name: "",
+        start_date: "",
+        end_date: "",
+        is_closed: false,
+        open_time: "",
+        close_time: ""
+      });
+      fetchData();
+    } catch (error) {
+      console.error('Error adding special hours:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add special hours",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteSpecialHours = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('restaurant_special_hours')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Special hours removed",
+      });
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting special hours:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete special hours",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) return <div>Loading...</div>;
+
   return (
     <div className="w-full h-full bg-background">
       <div className="max-w-7xl mx-auto px-6 py-8">
         <h1 className="text-3xl font-bold mb-8">Store availability</h1>
 
-        {/* Store Status and Ordering Channel */}
+        {/* Store Status */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Store Status */}
           <Card>
             <CardHeader>
               <CardTitle>Store status</CardTitle>
             </CardHeader>
             <CardContent>
-              <RadioGroup defaultValue="inactive">
+              <RadioGroup value={isActive ? "active" : "inactive"} onValueChange={(v) => updateStoreStatus(v === "active")}>
                 <div className="flex items-center space-x-2 mb-4">
+                  <RadioGroupItem value="active" id="active" />
+                  <Label htmlFor="active" className="font-semibold">Active</Label>
+                </div>
+                <div className="flex items-center space-x-2">
                   <RadioGroupItem value="inactive" id="inactive" />
                   <Label htmlFor="inactive" className="font-semibold">Inactive</Label>
                 </div>
               </RadioGroup>
-              <p className="text-sm text-muted-foreground mb-4">
-                This store is unavailable on CraveDash. View the status of your ordering channels to determine how you can begin accepting orders.
+              <p className="text-sm text-muted-foreground mt-4">
+                {isActive ? "Your store is currently accepting orders" : "Your store is not accepting orders"}
               </p>
-              <button className="text-sm text-primary hover:underline">
-                View status history
-              </button>
-            </CardContent>
-          </Card>
-
-          {/* Ordering Channel */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Ordering channel</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h3 className="font-semibold mb-1">
-                    Marketplace{" "}
-                    <button className="text-sm text-primary hover:underline font-normal">
-                      View store page
-                    </button>
-                  </h3>
-                  <p className="text-sm text-orange-600">
-                    This store is permanently inactive or has been inactive for a long period of time.
-                  </p>
-                </div>
-                <RadioGroup defaultValue="inactive">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="inactive" id="marketplace-inactive" />
-                    <Label htmlFor="marketplace-inactive" className="text-sm">Inactive</Label>
-                  </div>
-                </RadioGroup>
-              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Schedule Busy Mode */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Schedule busy mode</CardTitle>
-            <CardDescription>
-              Choose when to add extra prep time during the week. You can adjust your schedule anytime.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="border rounded-lg">
-              {/* Table Header */}
-              <div className="grid grid-cols-3 gap-4 p-4 border-b bg-muted/30">
-                <div className="text-sm font-medium">Day</div>
-                <div className="text-sm font-medium">Store hours</div>
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  Additional prep time
-                  <Info className="w-4 h-4 text-muted-foreground" />
-                </div>
-              </div>
-
-              {/* Empty State */}
-              <div className="flex flex-col items-center justify-center py-12">
-                <div className="w-24 h-24 mb-4">
-                  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="20" y="15" width="60" height="70" rx="4" fill="#BFDBFE" stroke="#3B82F6" strokeWidth="2"/>
-                    <rect x="30" y="25" width="15" height="15" fill="#10B981"/>
-                    <rect x="50" y="25" width="20" height="15" fill="#EF4444"/>
-                    <rect x="30" y="45" width="25" height="15" fill="#8B5CF6"/>
-                    <circle cx="70" cy="75" r="15" fill="#F97316"/>
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold mb-2">No schedule yet</h3>
-                <p className="text-sm text-muted-foreground mb-4 text-center max-w-md">
-                  Scheduling busy mode can help minimize early Feeder arrivals and reduce wait times at your store.
-                </p>
-                <Button variant="outline">Schedule busy mode</Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Regular Menu Hours */}
+        {/* Regular Hours */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Regular menu hours</CardTitle>
@@ -112,66 +205,150 @@ const StoreAvailabilityDashboard = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col items-center justify-center py-12 border rounded-lg">
-              <div className="w-20 h-20 mb-4">
-                <svg viewBox="0 0 80 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="10" y="10" width="60" height="80" rx="4" fill="white" stroke="#D1D5DB" strokeWidth="2"/>
-                  <line x1="20" y1="25" x2="60" y2="25" stroke="#E5E7EB" strokeWidth="2"/>
-                  <line x1="20" y1="35" x2="60" y2="35" stroke="#E5E7EB" strokeWidth="2"/>
-                  <line x1="20" y1="45" x2="50" y2="45" stroke="#E5E7EB" strokeWidth="2"/>
-                  <line x1="20" y1="55" x2="55" y2="55" stroke="#E5E7EB" strokeWidth="2"/>
-                  <line x1="20" y1="65" x2="45" y2="65" stroke="#E5E7EB" strokeWidth="2"/>
-                </svg>
+            {hours.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No hours configured yet
               </div>
-              <p className="text-sm text-primary">
-                There are no menus for your store
-              </p>
-            </div>
+            ) : (
+              <div className="space-y-4">
+                {days.map(day => {
+                  const dayHours = hours.find(h => h.day_of_week === day.value);
+                  return (
+                    <div key={day.value} className="flex items-center justify-between border-b pb-3">
+                      <span className="font-medium">{day.label}</span>
+                      {dayHours?.is_closed ? (
+                        <span className="text-muted-foreground">Closed</span>
+                      ) : dayHours ? (
+                        <span>{dayHours.open_time} - {dayHours.close_time}</span>
+                      ) : (
+                        <span className="text-muted-foreground">Not set</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Special Hours and Closures */}
+        {/* Special Hours */}
         <Card>
           <CardHeader>
             <div className="flex items-start justify-between">
               <div>
                 <CardTitle>Special hours and closures</CardTitle>
                 <CardDescription>
-                  Add special hours or closures for holidays, special events, or other exceptional events. This will temporarily replace your regular menu hours.
+                  Add special hours or closures for holidays, special events, or other exceptional events.
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <div className="border rounded-lg">
-              {/* Table Header */}
-              <div className="grid grid-cols-2 gap-4 p-4 border-b bg-muted/30">
-                <div className="text-sm font-medium">Name</div>
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium">Dates</div>
-                  <div className="flex items-center gap-2">
-                    <button className="p-1 hover:bg-muted rounded">
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button className="p-1 hover:bg-muted rounded">
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Empty State - No special hours yet */}
-              <div className="p-8 text-center">
-                <p className="text-sm text-muted-foreground">
+              {specialHours.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground">
                   No special hours or closures scheduled
-                </p>
-              </div>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {specialHours.map(sh => (
+                    <div key={sh.id} className="p-4 flex items-center justify-between">
+                      <div>
+                        <div className="font-medium">{sh.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {sh.start_date} - {sh.end_date}
+                        </div>
+                        {sh.is_closed ? (
+                          <span className="text-sm text-destructive">Closed</span>
+                        ) : (
+                          <span className="text-sm">{sh.open_time} - {sh.close_time}</span>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteSpecialHours(sh.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <Button variant="outline" className="mt-4">
-              <Plus className="w-4 h-4 mr-2" />
-              Add new
-            </Button>
+            <Dialog open={showSpecialHoursDialog} onOpenChange={setShowSpecialHoursDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="mt-4">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add new
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add special hours or closure</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Name</Label>
+                    <Input
+                      value={newSpecialHours.name}
+                      onChange={e => setNewSpecialHours({ ...newSpecialHours, name: e.target.value })}
+                      placeholder="e.g., Thanksgiving, Staff Party"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Start Date</Label>
+                      <Input
+                        type="date"
+                        value={newSpecialHours.start_date}
+                        onChange={e => setNewSpecialHours({ ...newSpecialHours, start_date: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label>End Date</Label>
+                      <Input
+                        type="date"
+                        value={newSpecialHours.end_date}
+                        onChange={e => setNewSpecialHours({ ...newSpecialHours, end_date: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="is-closed"
+                      checked={newSpecialHours.is_closed}
+                      onCheckedChange={(checked) => setNewSpecialHours({ ...newSpecialHours, is_closed: !!checked })}
+                    />
+                    <Label htmlFor="is-closed">Store is closed during this time</Label>
+                  </div>
+                  {!newSpecialHours.is_closed && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Open Time</Label>
+                        <Input
+                          type="time"
+                          value={newSpecialHours.open_time}
+                          onChange={e => setNewSpecialHours({ ...newSpecialHours, open_time: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Close Time</Label>
+                        <Input
+                          type="time"
+                          value={newSpecialHours.close_time}
+                          onChange={e => setNewSpecialHours({ ...newSpecialHours, close_time: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  <Button onClick={addSpecialHours} className="w-full">
+                    Add Special Hours
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </CardContent>
         </Card>
       </div>

@@ -1965,6 +1965,56 @@ export type Database = {
           },
         ]
       }
+      restaurant_integrations: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          credentials_encrypted: Json | null
+          error_message: string | null
+          id: string
+          integration_type: string
+          last_synced_at: string | null
+          provider_name: string
+          restaurant_id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          credentials_encrypted?: Json | null
+          error_message?: string | null
+          id?: string
+          integration_type: string
+          last_synced_at?: string | null
+          provider_name: string
+          restaurant_id: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          credentials_encrypted?: Json | null
+          error_message?: string | null
+          id?: string
+          integration_type?: string
+          last_synced_at?: string | null
+          provider_name?: string
+          restaurant_id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_integrations_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_onboarding_progress: {
         Row: {
           admin_notes: string | null
@@ -2235,6 +2285,109 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "restaurant_report_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_special_hours: {
+        Row: {
+          close_time: string | null
+          created_at: string | null
+          end_date: string
+          id: string
+          is_closed: boolean | null
+          name: string
+          open_time: string | null
+          restaurant_id: string
+          start_date: string
+          updated_at: string | null
+        }
+        Insert: {
+          close_time?: string | null
+          created_at?: string | null
+          end_date: string
+          id?: string
+          is_closed?: boolean | null
+          name: string
+          open_time?: string | null
+          restaurant_id: string
+          start_date: string
+          updated_at?: string | null
+        }
+        Update: {
+          close_time?: string | null
+          created_at?: string | null
+          end_date?: string
+          id?: string
+          is_closed?: boolean | null
+          name?: string
+          open_time?: string | null
+          restaurant_id?: string
+          start_date?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_special_hours_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_users: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          email: string
+          first_name: string | null
+          id: string
+          invited_at: string | null
+          invited_by: string | null
+          last_name: string | null
+          restaurant_id: string
+          role: string
+          status: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email: string
+          first_name?: string | null
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          last_name?: string | null
+          restaurant_id: string
+          role: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email?: string
+          first_name?: string | null
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          last_name?: string | null
+          restaurant_id?: string
+          role?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_users_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
         ]

@@ -7,6 +7,15 @@ schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
+[functions.invite-restaurant-user]
+verify_jwt = true
+
+[functions.update-store-hours]
+verify_jwt = true
+
+[functions.calculate-restaurant-payouts]
+verify_jwt = true
+
 [db]
 port = 54322
 
