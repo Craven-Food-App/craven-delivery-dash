@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Plus, Trash2 } from "lucide-react";
@@ -79,32 +78,6 @@ const StoreAvailabilityDashboard = () => {
     }
   };
 
-  const updateStoreStatus = async (active: boolean) => {
-    try {
-      const response = await supabase.functions.invoke('update-store-hours', {
-        body: {
-          restaurantId: restaurant.id,
-          isActive: active
-        }
-      });
-
-      if (response.error) throw response.error;
-
-      setIsActive(active);
-      toast({
-        title: "Success",
-        description: `Store is now ${active ? 'active' : 'inactive'}`,
-      });
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update store status",
-        variant: "destructive",
-      });
-    }
-  };
-
   const addSpecialHours = async () => {
     try {
       const response = await supabase.functions.invoke('update-store-hours', {
@@ -172,26 +145,32 @@ const StoreAvailabilityDashboard = () => {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <h1 className="text-3xl font-bold mb-8">Store availability</h1>
 
-        {/* Store Status */}
+        {/* Store Status - Read Only */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <Card>
             <CardHeader>
               <CardTitle>Store status</CardTitle>
             </CardHeader>
             <CardContent>
-              <RadioGroup value={isActive ? "active" : "inactive"} onValueChange={(v) => updateStoreStatus(v === "active")}>
-                <div className="flex items-center space-x-2 mb-4">
-                  <RadioGroupItem value="active" id="active" />
-                  <Label htmlFor="active" className="font-semibold">Active</Label>
+              <div className="space-y-4">
+                <div className={`p-4 rounded-lg border-2 ${isActive ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-semibold text-lg mb-1">
+                        {isActive ? "Active" : "Inactive"}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {isActive 
+                          ? "Your store is currently accepting orders" 
+                          : "Your store is not accepting orders"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="inactive" id="inactive" />
-                  <Label htmlFor="inactive" className="font-semibold">Inactive</Label>
-                </div>
-              </RadioGroup>
-              <p className="text-sm text-muted-foreground mt-4">
-                {isActive ? "Your store is currently accepting orders" : "Your store is not accepting orders"}
-              </p>
+                <p className="text-sm text-muted-foreground">
+                  Only Crave'N administrators can change your store's active status. Contact support if you need assistance.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>

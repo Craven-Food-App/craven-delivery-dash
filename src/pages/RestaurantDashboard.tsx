@@ -95,33 +95,6 @@ const RestaurantDashboard = () => {
     }
   };
 
-  const toggleActiveStatus = async () => {
-    if (!restaurant) return;
-
-    try {
-      const { error } = await supabase
-        .from("restaurants")
-        .update({ is_active: !restaurant.is_active })
-        .eq("id", restaurant.id);
-
-      if (error) throw error;
-
-      setRestaurant({ ...restaurant, is_active: !restaurant.is_active });
-      toast({
-        title: restaurant.is_active ? "Restaurant deactivated" : "Restaurant activated",
-        description: restaurant.is_active 
-          ? "Your restaurant is now offline and won't accept orders."
-          : "Your restaurant is now online and accepting orders!"
-      });
-    } catch (error) {
-      console.error("Error updating restaurant status:", error);
-      toast({
-        title: "Error updating status",
-        description: "There was a problem updating your restaurant status.",
-        variant: "destructive"
-      });
-    }
-  };
 
   if (loading) {
     return (
@@ -195,14 +168,11 @@ const RestaurantDashboard = () => {
                   <div className="text-2xl font-bold">
                     {restaurant.is_active ? "Online" : "Offline"}
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="mt-2"
-                    onClick={toggleActiveStatus}
-                  >
-                    {restaurant.is_active ? "Go Offline" : "Go Online"}
-                  </Button>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {restaurant.is_active 
+                      ? "Your restaurant is accepting orders" 
+                      : "Contact Crave'N support to activate your restaurant"}
+                  </p>
                 </CardContent>
               </Card>
 
