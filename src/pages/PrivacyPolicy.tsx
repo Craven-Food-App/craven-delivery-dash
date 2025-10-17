@@ -39,7 +39,10 @@ const PrivacyPolicy = () => {
                 <li>Driver's license and vehicle information</li>
                 <li>Background check results</li>
                 <li>Real-time location data (only while actively delivering)</li>
-                <li>Banking information for payouts (encrypted)</li>
+                <li>Banking information for ACH payouts including bank account numbers and routing numbers (encrypted and stored securely)</li>
+                <li>Payment method preferences (Cash App, bank accounts)</li>
+                <li>Earnings and payout history</li>
+                <li>Tax information (W-9, SSN/EIN for IRS reporting)</li>
               </ul>
 
               <h3 className="text-xl font-semibold mb-3">Restaurant Partner Information</h3>
@@ -47,6 +50,10 @@ const PrivacyPolicy = () => {
                 <li>Business name, address, and contact information</li>
                 <li>Menu items and pricing</li>
                 <li>Order and sales data</li>
+                <li>Banking information for ACH deposits via Stripe Connect (bank account numbers, routing numbers)</li>
+                <li>Business tax identification numbers (EIN)</li>
+                <li>Business owner verification documents</li>
+                <li>Revenue and payout transaction history</li>
               </ul>
 
               <h3 className="text-xl font-semibold mb-3">Automatically Collected Information</h3>
@@ -68,6 +75,11 @@ const PrivacyPolicy = () => {
                 <li>Manage CraveMore membership subscriptions and benefits</li>
                 <li>Process recurring subscription payments</li>
                 <li>Apply membership discounts and benefits to orders</li>
+                <li><strong>Process ACH bank transfers and payouts</strong> to drivers and restaurant partners</li>
+                <li><strong>Verify bank account ownership</strong> for fraud prevention</li>
+                <li><strong>Calculate and distribute earnings</strong> through daily automated payout systems</li>
+                <li><strong>Generate tax documentation</strong> (1099 forms) for independent contractors</li>
+                <li>Comply with financial regulations and reporting requirements</li>
                 <li>Improve our services and user experience</li>
                 <li>Comply with legal obligations</li>
                 <li>Send promotional communications (with your consent)</li>
@@ -80,10 +92,15 @@ const PrivacyPolicy = () => {
               <ul className="list-disc pl-6 mb-4 text-muted-foreground">
                 <li><strong>Restaurants:</strong> Order details and delivery addresses</li>
                 <li><strong>Drivers:</strong> Pickup and delivery information</li>
-                <li><strong>Payment Processors:</strong> Stripe and other secure payment services</li>
+                <li><strong>Payment Processors:</strong> Stripe (including Stripe Connect for ACH transfers), Cash App, and other secure payment services for processing bank transfers and payouts</li>
+                <li><strong>Banking Partners:</strong> Your bank account information is shared with our payment processors to facilitate ACH deposits and withdrawals</li>
+                <li><strong>Tax Authorities:</strong> Earnings and tax information as required by law (IRS 1099 reporting)</li>
                 <li><strong>Service Providers:</strong> Analytics, marketing, and technical support</li>
                 <li><strong>Legal Authorities:</strong> When required by law or to protect rights</li>
               </ul>
+              <p className="text-muted-foreground mb-4">
+                <strong>Financial Data Protection:</strong> Banking information is encrypted in transit and at rest. We use industry-standard security measures including tokenization and PCI-DSS compliant processors. Bank account numbers are never stored in plain text.
+              </p>
               <p className="text-muted-foreground">
                 We do not sell your personal information to third parties.
               </p>
@@ -95,11 +112,18 @@ const PrivacyPolicy = () => {
                 We implement appropriate technical and organizational measures to protect your personal information, including:
               </p>
               <ul className="list-disc pl-6 mb-4 text-muted-foreground">
-                <li>Encryption of sensitive data in transit and at rest</li>
-                <li>Secure authentication and access controls</li>
-                <li>Regular security audits and monitoring</li>
-                <li>Compliance with industry security standards</li>
+                <li>Encryption of sensitive data in transit (TLS/SSL) and at rest (AES-256)</li>
+                <li><strong>Banking Data Protection:</strong> All bank account numbers and routing numbers are encrypted and tokenized</li>
+                <li><strong>PCI-DSS Compliance:</strong> Payment processing through certified payment processors</li>
+                <li>Secure authentication and access controls with role-based permissions</li>
+                <li>Regular security audits and penetration testing</li>
+                <li>Compliance with industry security standards (SOC 2, PCI-DSS)</li>
+                <li>Secure data centers with 24/7 monitoring</li>
+                <li>Two-factor authentication for sensitive account operations</li>
               </ul>
+              <p className="text-muted-foreground mb-4">
+                <strong>ACH Transfer Security:</strong> All bank transfers are processed through regulated financial institutions and use bank-level encryption standards.
+              </p>
             </section>
 
             <section className="mb-8">
