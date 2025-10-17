@@ -61,7 +61,7 @@ const OnboardingDashboard: React.FC = () => {
         .from('driver_onboarding_progress')
         .select(`
           *,
-          user_profiles!driver_onboarding_progress_user_id_fkey (
+          user_profiles (
             full_name,
             phone
           )
