@@ -35,25 +35,31 @@ const PrivacyPolicy = () => {
               </ul>
               
               <h3 className="text-xl font-semibold mb-3">Driver Information</h3>
+              <p className="text-sm text-muted-foreground mb-2 italic">
+                We collect this information to compensate drivers for delivery services and comply with tax laws.
+              </p>
               <ul className="list-disc pl-6 mb-4 text-muted-foreground">
                 <li>Driver's license and vehicle information</li>
                 <li>Background check results</li>
                 <li>Real-time location data (only while actively delivering)</li>
-                <li>Banking information for ACH payouts including bank account numbers and routing numbers (encrypted and stored securely)</li>
+                <li>Banking information for ACH payouts including bank account numbers and routing numbers (encrypted and stored securely) - <strong>Required to pay you for deliveries</strong></li>
                 <li>Payment method preferences (Cash App, bank accounts)</li>
-                <li>Earnings and payout history</li>
-                <li>Tax information (W-9, SSN/EIN for IRS reporting)</li>
+                <li>Earnings and payout history - <strong>Required for accurate compensation and tax reporting</strong></li>
+                <li>Tax information (W-9, SSN/EIN for IRS reporting) - <strong>Required by law for payments over $600/year</strong></li>
               </ul>
 
               <h3 className="text-xl font-semibold mb-3">Restaurant Partner Information</h3>
+              <p className="text-sm text-muted-foreground mb-2 italic">
+                We collect this information to transfer revenue from food sales and comply with financial regulations.
+              </p>
               <ul className="list-disc pl-6 mb-4 text-muted-foreground">
                 <li>Business name, address, and contact information</li>
                 <li>Menu items and pricing</li>
                 <li>Order and sales data</li>
-                <li>Banking information for ACH deposits via Stripe Connect (bank account numbers, routing numbers)</li>
-                <li>Business tax identification numbers (EIN)</li>
-                <li>Business owner verification documents</li>
-                <li>Revenue and payout transaction history</li>
+                <li>Banking information for ACH deposits via Stripe Connect (bank account numbers, routing numbers) - <strong>Required to pay you for customer orders</strong></li>
+                <li>Business tax identification numbers (EIN) - <strong>Required by law for business transactions and tax reporting</strong></li>
+                <li>Business owner verification documents - <strong>Required to prevent fraud and comply with Know Your Customer (KYC) regulations</strong></li>
+                <li>Revenue and payout transaction history - <strong>Required for accurate accounting and tax compliance</strong></li>
               </ul>
 
               <h3 className="text-xl font-semibold mb-3">Automatically Collected Information</h3>
@@ -67,6 +73,19 @@ const PrivacyPolicy = () => {
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">3. How We Use Your Information</h2>
+              
+              <h3 className="text-xl font-semibold mb-3">Why We Need Your Banking Information</h3>
+              <p className="text-muted-foreground mb-4">
+                We collect and use banking information for specific, lawful purposes:
+              </p>
+              <ul className="list-disc pl-6 mb-4 text-muted-foreground">
+                <li><strong>To Pay You:</strong> We need bank account details to transfer money you've earned through our platform. Without this information, we cannot compensate you for your work.</li>
+                <li><strong>Legal Compliance:</strong> Federal law requires us to collect tax information (W-9, SSN/EIN) for anyone earning over $600 per year and issue 1099 forms to the IRS.</li>
+                <li><strong>Fraud Prevention:</strong> Bank verification helps us ensure accounts are legitimate and prevent unauthorized access to funds.</li>
+                <li><strong>Financial Regulations:</strong> We must comply with Anti-Money Laundering (AML) and Know Your Customer (KYC) regulations.</li>
+              </ul>
+
+              <h3 className="text-xl font-semibold mb-3 mt-6">General Uses of Your Information</h3>
               <ul className="list-disc pl-6 mb-4 text-muted-foreground">
                 <li>Process and fulfill your orders</li>
                 <li>Facilitate communication between customers, drivers, and restaurants</li>
