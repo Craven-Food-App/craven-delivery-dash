@@ -47,14 +47,203 @@ const CommercePlatformDashboard = () => {
               <TabsTrigger value="packages">Growth packages</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview" className="mt-6">
-              <Card>
-                <CardContent className="p-6">
-                  <p className="text-center text-muted-foreground">
-                    Overview content coming soon...
+            <TabsContent value="overview" className="mt-6 space-y-12">
+              {/* Banner */}
+              <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-4 flex items-center justify-between">
+                <p className="text-sm text-foreground">
+                  📋 We are reviewing your menu submission and will get back to you within 2 business days.
+                </p>
+                <Button variant="link" className="text-primary">
+                  View Submission Status
+                </Button>
+              </div>
+
+              {/* Hero Section */}
+              <div className="grid md:grid-cols-2 gap-8 items-center">
+                <div className="space-y-6">
+                  <h2 className="text-3xl md:text-4xl font-bold leading-tight">
+                    Get listed on Marketplace, and get commission-free* orders on your own channels
+                  </h2>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm">Get new customers without the commission fees</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm">Get free commission-free Online Ordering on your own channels</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm">Turn RSVP into a pre-order, through your social media</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm">Connect with advanced features network</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm">Get a marketing budget to reach new customers with ads, unlimited marketing credits</p>
+                    </div>
+                  </div>
+
+                  <Button className="bg-[#FF4D00] hover:bg-[#FF4D00]/90 text-white">
+                    Request Online Ordering demo
+                  </Button>
+
+                  <p className="text-xs text-muted-foreground">
+                    *Pricing info: $0/mo per store commission-free via online; $0/mo per store commission via offline
                   </p>
-                </CardContent>
-              </Card>
+                </div>
+
+                <div className="relative">
+                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-8 h-96 flex items-center justify-center">
+                    <div className="text-center space-y-4">
+                      <div className="w-64 h-64 bg-white rounded-lg shadow-lg mx-auto flex items-center justify-center">
+                        <div className="space-y-2">
+                          <div className="w-48 h-32 bg-gray-200 rounded mx-auto"></div>
+                          <div className="space-y-1">
+                            <div className="w-40 h-3 bg-gray-300 rounded mx-auto"></div>
+                            <div className="w-32 h-3 bg-gray-200 rounded mx-auto"></div>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground">Platform Preview</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Social Proof Section */}
+              <div className="space-y-8 pt-8 border-t">
+                <h2 className="text-3xl font-bold text-center">
+                  Join the thousands of businesses that<br />grow with Commerce Platform
+                </h2>
+
+                {/* Brand Logos */}
+                <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 py-8">
+                  <div className="text-2xl font-bold text-muted-foreground">MAGNOLIA BAKERY</div>
+                  <div className="text-2xl font-bold text-muted-foreground">goodwin</div>
+                  <div className="text-2xl font-bold text-muted-foreground">HeyJoe</div>
+                  <div className="text-2xl font-bold text-muted-foreground">BAN BAN DYNASTY</div>
+                  <div className="text-2xl font-bold text-muted-foreground italic">Levain BAKERY</div>
+                </div>
+
+                {/* Testimonials Carousel */}
+                <div className="relative">
+                  <div className="flex items-center justify-center gap-4">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={prevTestimonial}
+                      className="absolute left-0 top-1/2 -translate-y-1/2 z-10"
+                    >
+                      <ChevronLeft className="w-6 h-6" />
+                    </Button>
+
+                    <div className="max-w-4xl mx-auto px-12">
+                      <Card className="bg-gradient-to-br from-green-50 to-green-100">
+                        <CardContent className="p-8">
+                          <div className="grid md:grid-cols-2 gap-6">
+                            <div className="bg-white rounded-lg p-4">
+                              <div className="w-full h-64 bg-gray-200 rounded flex items-center justify-center">
+                                <p className="text-muted-foreground">Success Story Image</p>
+                              </div>
+                            </div>
+                            <div className="space-y-4">
+                              <h3 className="text-xl font-bold text-primary">
+                                {testimonials[currentTestimonial].title}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                {testimonials[currentTestimonial].description}
+                              </p>
+                              <div>
+                                <div className="font-semibold">{testimonials[currentTestimonial].author}</div>
+                                <div className="text-sm text-muted-foreground">{testimonials[currentTestimonial].role}</div>
+                              </div>
+                              <Button variant="link" className="p-0 h-auto text-primary">
+                                Read success story →
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={nextTestimonial}
+                      className="absolute right-0 top-1/2 -translate-y-1/2 z-10"
+                    >
+                      <ChevronRight className="w-6 h-6" />
+                    </Button>
+                  </div>
+
+                  {/* Carousel Indicators */}
+                  <div className="flex justify-center gap-2 mt-4">
+                    {testimonials.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentTestimonial(index)}
+                        className={`w-2 h-2 rounded-full transition-all ${
+                          index === currentTestimonial ? "bg-primary w-8" : "bg-muted-foreground/30"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Features Section */}
+              <div className="space-y-8 pt-8 border-t">
+                <div className="text-center space-y-2">
+                  <h2 className="text-3xl font-bold">Features that help your business thrive</h2>
+                  <p className="text-muted-foreground">
+                    Commerce Platform brings together a power set of tools to get more out of new and repeat orders from loyal customers and new fans
+                  </p>
+                </div>
+
+                {/* Feature 1: Grow direct sales */}
+                <div className="grid md:grid-cols-2 gap-8 items-center">
+                  <div className="bg-gradient-to-br from-orange-400 to-orange-500 rounded-lg h-64"></div>
+                  <div className="space-y-4">
+                    <h3 className="text-2xl font-bold">Grow direct sales with Online Ordering</h3>
+                    <p className="text-muted-foreground">
+                      A beautiful and easy-to-use online ordering platform built for restaurants. Offer customers the convenience they want with a fully integrated online ordering system that streamlines your operation. <a href="#" className="text-primary underline">Learn more</a>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Feature 2: Mobile app */}
+                <div className="grid md:grid-cols-2 gap-8 items-center">
+                  <div className="order-2 md:order-1 space-y-4">
+                    <h3 className="text-2xl font-bold">Get your own mobile app and meet customers where they are - on their phones</h3>
+                    <p className="text-muted-foreground">
+                      Customers in the US order from mobile phones 60% of the time and increasingly want to order from their phone. When you choose to build a mobile app alongside your online ordering website, you're meeting consumers' preference for the mobile experience.
+                    </p>
+                    <Button variant="link" className="p-0 text-primary">Learn more →</Button>
+                  </div>
+                  <div className="order-1 md:order-2 bg-gradient-to-br from-orange-400 via-orange-300 to-purple-400 rounded-lg h-64"></div>
+                </div>
+
+                {/* Feature 3: Direct marketing */}
+                <div className="grid md:grid-cols-2 gap-8 items-center">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-gradient-to-br from-orange-300 to-orange-400 rounded-lg h-48"></div>
+                    <div className="bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg h-48"></div>
+                    <div className="bg-gradient-to-br from-purple-300 to-purple-400 rounded-lg h-48"></div>
+                  </div>
+                  <div className="space-y-4">
+                    <h3 className="text-2xl font-bold">Increase customer engagement and drive reorders with direct marketing</h3>
+                    <p className="text-muted-foreground">
+                      Keep customers coming back with email marketing campaigns and automated triggered emails with our built-in marketing, celebrating and incentivizing loyalty with email and push notification capabilities. Our marketing team will help you customize your email marketing.
+                    </p>
+                    <Button variant="link" className="p-0 text-primary">Learn more →</Button>
+                  </div>
+                </div>
+              </div>
             </TabsContent>
 
             <TabsContent value="packages" className="space-y-12 mt-6">
