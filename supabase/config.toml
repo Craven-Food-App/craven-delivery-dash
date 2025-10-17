@@ -73,3 +73,6 @@ verify_jwt = false
 
 [functions.create-stripe-connect-account]
 verify_jwt = true
+
+[functions.create-stripe-financial-connection]
+verify_jwt = true

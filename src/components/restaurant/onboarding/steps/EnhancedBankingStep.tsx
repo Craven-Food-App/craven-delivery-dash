@@ -34,27 +34,39 @@ export function EnhancedBankingStep({ data, updateData, onNext, onBack }: Enhanc
         return;
       }
 
-      // Create Stripe Connect account
-      const { data: result, error } = await supabase.functions.invoke('create-stripe-connect-account', {
+      // Create Financial Connections session
+      const { data: result, error } = await supabase.functions.invoke('create-stripe-financial-connection', {
         body: {
-          email: user.email,
-          businessName: data.restaurantName || 'My Restaurant',
-          restaurantId: data.restaurantId,
-          refreshUrl: window.location.href,
-          returnUrl: window.location.href,
+          restaurantId: data.restaurantId || user.id,
         },
       });
 
       if (error) throw error;
 
-      // Store Stripe account ID
-      updateData({ stripeAccountId: result.accountId });
+      // Load Stripe.js
+      const stripePublishableKey = 'pk_test_51QWlM4RsKJ4xfVZhfqCEBdDhEI7mYYAcvZ5p4mU3xHuLvUIJC0zP8F5RLcEzFRQdG6zP8F5RLcEzFRQdG6';
+      const stripe = await (window as any).Stripe(stripePublishableKey);
+      
+      // Launch the Financial Connections flow
+      const { financialConnectionsSession, error: sessionError } = await stripe.collectFinancialConnectionsAccounts({
+        clientSecret: result.clientSecret,
+      });
 
-      // Redirect to Stripe onboarding
-      window.location.href = result.onboardingUrl;
+      if (sessionError) {
+        throw sessionError;
+      }
+
+      if (financialConnectionsSession) {
+        // Store the connected account
+        updateData({ 
+          stripeFinancialConnectionId: financialConnectionsSession.id,
+          bankConnected: true 
+        });
+        toast.success('Bank account connected successfully!');
+      }
     } catch (error) {
       console.error('Error connecting to Stripe:', error);
-      toast.error('Failed to connect to Stripe. Please try again.');
+      toast.error('Failed to connect bank account. Please try again.');
     } finally {
       setIsConnectingStripe(false);
     }
