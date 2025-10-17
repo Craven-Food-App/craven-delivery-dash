@@ -280,11 +280,11 @@ const RestaurantSetup = () => {
             </div>
           </Card>
 
-          {/* Continue DoorDash setup */}
+          {/* Continue Crave'N setup */}
           <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-4">Continue your DoorDash setup</h2>
+            <h2 className="text-xl font-semibold mb-4">Continue your Crave'N setup</h2>
             <p className="text-sm text-muted-foreground mb-4">
-              While our team is preparing your Marketplace store, continue your DoorDash setup to maximize sales.
+              While our team is preparing your Marketplace store, continue your Crave'N setup to maximize sales.
             </p>
 
             <Card className="p-6">
@@ -292,9 +292,8 @@ const RestaurantSetup = () => {
                 <div className="flex-shrink-0">
                   <div className="w-16 h-16">
                     <div className="relative">
-                      <Store className="w-12 h-12 text-orange-500" />
-                      <div className="absolute bottom-0 right-0 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-xs">📍</span>
+                      <div className="w-full h-full rounded-full bg-orange-100 flex items-center justify-center">
+                        <Store className="h-8 w-8 text-orange-600" />
                       </div>
                     </div>
                   </div>
@@ -302,7 +301,7 @@ const RestaurantSetup = () => {
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg mb-2">Add another store or a new business</h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    We noticed you signed up for more than one store location. Continue setting up your business on DoorDash by adding another store or business now.
+                    We noticed you signed up for more than one store location. Continue setting up your business on Crave'N by adding another store or business now.
                   </p>
                   <Button className="bg-orange-500 hover:bg-orange-600 text-white">
                     Add store or business
@@ -320,7 +319,7 @@ const RestaurantSetup = () => {
           <h3 className="font-semibold mb-1">Your store preview</h3>
           <p className="text-xs text-muted-foreground">
             For illustrative purposes only.{" "}
-            <button className="text-primary hover:underline">View on DoorDash</button>
+            <button className="text-primary hover:underline">View on Crave'N</button>
           </p>
         </div>
 

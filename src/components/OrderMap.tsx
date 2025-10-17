@@ -88,7 +88,7 @@ const OrderMap: React.FC<OrderMapProps> = ({ orders, activeOrder, onOrderClick }
           </CardContent>
         </Card>
 
-        {/* Orders Grid - DoorDash Style */}
+        {/* Orders Grid */}
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-4">
