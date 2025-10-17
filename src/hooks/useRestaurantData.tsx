@@ -9,6 +9,9 @@ interface Restaurant {
   logo_url: string | null;
   header_image_url: string | null;
   instagram_handle: string | null;
+  phone: string | null;
+  address: string | null;
+  description: string | null;
 }
 
 export const useRestaurantData = () => {
@@ -27,7 +30,7 @@ export const useRestaurantData = () => {
 
         const { data, error } = await supabase
           .from('restaurants')
-          .select('id, name, owner_id, setup_deadline, logo_url, header_image_url, instagram_handle')
+          .select('id, name, owner_id, setup_deadline, logo_url, header_image_url, instagram_handle, phone, address, description')
           .eq('owner_id', user.id)
           .order('created_at', { ascending: false })
           .limit(1)

@@ -1,11 +1,18 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Instagram, Image, Video, Plus, ExternalLink } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Instagram, Image, Plus, ExternalLink } from "lucide-react";
 import ImageCropper from "@/components/common/ImageCropper";
+import { supabase } from "@/integrations/supabase/client";
+import { useRestaurantData } from "@/hooks/useRestaurantData";
+import { toast } from "sonner";
 
 const StoreSettingsDashboard = () => {
+  const { restaurant, loading } = useRestaurantData();
   const [headerPhoto, setHeaderPhoto] = useState<string | null>(null);
   const [logoPhoto, setLogoPhoto] = useState<string | null>(null);
   const [cropperOpen, setCropperOpen] = useState(false);
@@ -13,8 +20,27 @@ const StoreSettingsDashboard = () => {
   const [currentImageType, setCurrentImageType] = useState<"header" | "logo">("header");
   const [instagramHandle, setInstagramHandle] = useState("");
   const [isEditingInstagram, setIsEditingInstagram] = useState(false);
+  const [storeName, setStoreName] = useState("");
+  const [storePhone, setStorePhone] = useState("");
+  const [storeAddress, setStoreAddress] = useState("");
+  const [storeWebsite, setStoreWebsite] = useState("");
+  const [storeDescription, setStoreDescription] = useState("");
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const headerInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (restaurant) {
+      setStoreName(restaurant.name || "");
+      setStorePhone(restaurant.phone || "");
+      setStoreAddress(restaurant.address || "");
+      setStoreDescription(restaurant.description || "");
+      setHeaderPhoto(restaurant.header_image_url || null);
+      setLogoPhoto(restaurant.logo_url || null);
+      setInstagramHandle(restaurant.instagram_handle || "");
+    }
+  }, [restaurant]);
 
   const handleImageSelect = (type: "header" | "logo", file: File) => {
     const reader = new FileReader();
@@ -26,15 +52,88 @@ const StoreSettingsDashboard = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleCropComplete = (croppedBlob: Blob) => {
-    const url = URL.createObjectURL(croppedBlob);
-    if (currentImageType === "header") {
-      setHeaderPhoto(url);
-    } else {
-      setLogoPhoto(url);
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setSaving(true);
+    try {
+      const fileExt = 'jpg';
+      const fileName = `${restaurant?.id}/${currentImageType}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('restaurant-images')
+        .upload(filePath, croppedBlob, {
+          contentType: 'image/jpeg',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('restaurant-images')
+        .getPublicUrl(filePath);
+
+      const updateField = currentImageType === 'header' ? 'header_image_url' : 'logo_url';
+      const { error: updateError } = await supabase
+        .from('restaurants')
+        .update({ [updateField]: publicUrl })
+        .eq('id', restaurant?.id);
+
+      if (updateError) throw updateError;
+
+      if (currentImageType === 'header') {
+        setHeaderPhoto(publicUrl);
+      } else {
+        setLogoPhoto(publicUrl);
+      }
+
+      toast.success(`${currentImageType === 'header' ? 'Header' : 'Logo'} updated successfully`);
+      setCropperOpen(false);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Failed to upload image');
+    } finally {
+      setSaving(false);
     }
-    setCropperOpen(false);
   };
+
+  const handleSaveField = async (field: string, value: string) => {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('restaurants')
+        .update({ [field]: value })
+        .eq('id', restaurant?.id);
+
+      if (error) throw error;
+      toast.success('Updated successfully');
+      setEditingField(null);
+    } catch (error) {
+      console.error('Error updating field:', error);
+      toast.error('Failed to update');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveInstagram = async () => {
+    if (instagramHandle) {
+      await handleSaveField('instagram_handle', instagramHandle);
+      setIsEditingInstagram(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6 pb-8">
+        <Card>
+          <CardContent className="p-20 text-center">
+            <p>Loading settings...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 pb-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -46,50 +145,162 @@ const StoreSettingsDashboard = () => {
               <h2 className="text-xl font-semibold mb-6">Store details</h2>
               
               <div className="space-y-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-semibold mb-1">Store name</h3>
-                    <p>InveroInc</p>
+                {/* Store Name */}
+                {editingField === 'name' ? (
+                  <Dialog open={editingField === 'name'} onOpenChange={(open) => !open && setEditingField(null)}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Edit Store Name</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Store Name</Label>
+                          <Input
+                            value={storeName}
+                            onChange={(e) => setStoreName(e.target.value)}
+                          />
+                        </div>
+                        <Button 
+                          onClick={() => handleSaveField('name', storeName)}
+                          disabled={saving}
+                          className="w-full"
+                        >
+                          {saving ? "Saving..." : "Save"}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                ) : (
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-semibold mb-1">Store name</h3>
+                      <p>{storeName || 'Not set'}</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => setEditingField('name')}>Edit</Button>
                   </div>
-                  <Button variant="outline" size="sm">Edit</Button>
-                </div>
+                )}
 
-                <div className="flex justify-between items-start pt-4 border-t">
-                  <div>
-                    <h3 className="font-semibold mb-1">Address</h3>
-                    <p className="text-sm">6759 Nebraska Ave, Toledo, OH 43615, USA</p>
+                {/* Address */}
+                {editingField === 'address' ? (
+                  <Dialog open={editingField === 'address'} onOpenChange={(open) => !open && setEditingField(null)}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Edit Address</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Address</Label>
+                          <Textarea
+                            value={storeAddress}
+                            onChange={(e) => setStoreAddress(e.target.value)}
+                          />
+                        </div>
+                        <Button 
+                          onClick={() => handleSaveField('address', storeAddress)}
+                          disabled={saving}
+                          className="w-full"
+                        >
+                          {saving ? "Saving..." : "Save"}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                ) : (
+                  <div className="flex justify-between items-start pt-4 border-t">
+                    <div>
+                      <h3 className="font-semibold mb-1">Address</h3>
+                      <p className="text-sm">{storeAddress || 'Not set'}</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => setEditingField('address')}>Edit</Button>
                   </div>
-                  <Button variant="outline" size="sm">Edit</Button>
-                </div>
+                )}
 
-                <div className="flex justify-between items-start pt-4 border-t">
-                  <div>
-                    <h3 className="font-semibold mb-1">Phone number</h3>
-                    <p className="text-sm">5672251495</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      This phone number is used to send or confirm orders and verify your store is open
-                    </p>
+                {/* Phone */}
+                {editingField === 'phone' ? (
+                  <Dialog open={editingField === 'phone'} onOpenChange={(open) => !open && setEditingField(null)}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Edit Phone Number</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Phone Number</Label>
+                          <Input
+                            value={storePhone}
+                            onChange={(e) => setStorePhone(e.target.value)}
+                            type="tel"
+                          />
+                        </div>
+                        <Button 
+                          onClick={() => handleSaveField('phone', storePhone)}
+                          disabled={saving}
+                          className="w-full"
+                        >
+                          {saving ? "Saving..." : "Save"}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                ) : (
+                  <div className="flex justify-between items-start pt-4 border-t">
+                    <div>
+                      <h3 className="font-semibold mb-1">Phone number</h3>
+                      <p className="text-sm">{storePhone || 'Not set'}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        This phone number is used to send or confirm orders and verify your store is open
+                      </p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => setEditingField('phone')}>Edit</Button>
                   </div>
-                  <Button variant="outline" size="sm">Edit</Button>
-                </div>
+                )}
 
-                <div className="flex justify-between items-start pt-4 border-t">
-                  <div>
-                    <h3 className="font-semibold mb-1">Website</h3>
-                    <p className="text-sm text-muted-foreground">Add your website to your Crave'N store page</p>
+                {/* Description */}
+                {editingField === 'description' ? (
+                  <Dialog open={editingField === 'description'} onOpenChange={(open) => !open && setEditingField(null)}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Edit Description</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Description</Label>
+                          <Textarea
+                            value={storeDescription}
+                            onChange={(e) => setStoreDescription(e.target.value)}
+                            rows={4}
+                          />
+                        </div>
+                        <Button 
+                          onClick={() => handleSaveField('description', storeDescription)}
+                          disabled={saving}
+                          className="w-full"
+                        >
+                          {saving ? "Saving..." : "Save"}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                ) : (
+                  <div className="flex justify-between items-start pt-4 border-t">
+                    <div className="flex-1">
+                      <h3 className="font-semibold mb-1">Description</h3>
+                      {storeDescription ? (
+                        <p className="text-sm">{storeDescription}</p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Write a short description of your store for customers to read on your Crave'N store page
+                        </p>
+                      )}
+                    </div>
+                    <Button 
+                      variant={storeDescription ? "outline" : "destructive"} 
+                      size="sm" 
+                      onClick={() => setEditingField('description')}
+                    >
+                      {storeDescription ? "Edit" : "Add"}
+                    </Button>
                   </div>
-                  <Button variant="destructive" size="sm">Add</Button>
-                </div>
-
-                <div className="flex justify-between items-start pt-4 border-t">
-                  <div>
-                    <h3 className="font-semibold mb-1">Description</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Write a short description of your store for customers to read on your Crave'N store page
-                    </p>
-                  </div>
-                  <Button variant="destructive" size="sm">Add</Button>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -98,12 +309,8 @@ const StoreSettingsDashboard = () => {
           <Card>
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold mb-2">Brand assets</h2>
-              <p className="text-sm text-muted-foreground mb-4">
-                Showcase your brand on Crave'N by adding photos and videos.{" "}
-                <a href="#" className="text-primary underline">View media guidelines</a>
-              </p>
-              <p className="text-xs text-muted-foreground mb-6">
-                These assets will be applied to all of your stores.
+              <p className="text-sm text-muted-foreground mb-6">
+                Showcase your brand on Crave'N by adding photos.
               </p>
 
               <div className="space-y-4">
@@ -200,19 +407,6 @@ const StoreSettingsDashboard = () => {
                     <Button onClick={() => logoInputRef.current?.click()}>Add logo</Button>
                   </div>
                 )}
-
-                <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                  <div className="flex justify-center mb-4">
-                    <div className="w-12 h-12 rounded bg-muted flex items-center justify-center">
-                      <Video className="w-6 h-6 text-muted-foreground" />
-                    </div>
-                  </div>
-                  <h3 className="font-semibold mb-1">Header video</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Elevate your store with a header video to attract new customers and highlight your menu. This will only appear in the app.
-                  </p>
-                  <Button>Add video</Button>
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -239,14 +433,10 @@ const StoreSettingsDashboard = () => {
                     </div>
                     <Button 
                       variant="destructive"
-                      onClick={() => {
-                        if (instagramHandle) {
-                          setIsEditingInstagram(false);
-                        }
-                      }}
-                      disabled={!instagramHandle}
+                      onClick={handleSaveInstagram}
+                      disabled={!instagramHandle || saving}
                     >
-                      Save
+                      {saving ? "Saving..." : "Save"}
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -281,66 +471,27 @@ const StoreSettingsDashboard = () => {
                   </div>
                 </div>
               )}
-
-              <p className="text-xs text-muted-foreground mt-4">
-                By connecting your Instagram, Merchant agrees to the terms of the Merchant Media Addendum ("MMA") and (1) directs Crave'N to (a) use text and images from identified accounts (2) grants Crave'N a license per the MMA to all Merchant Media from such accounts and (4) represents that Merchant owns Merchant Media or otherwise has all necessary rights in and to the Merchant Media to grant such a license to Crave'N.
-              </p>
             </CardContent>
           </Card>
         </div>
 
         {/* Right Sidebar - 1/3 width */}
         <div className="lg:col-span-1">
-          <Card>
+          <Card className="sticky top-4">
             <CardContent className="p-6">
               <h3 className="font-semibold mb-4">Your store preview</h3>
               <p className="text-xs text-muted-foreground mb-4">
-                For illustrative purposes only.{" "}
-                <a href="#" className="text-primary underline">View on Crave'N</a> to highlight your brand.
+                Preview how your store appears to customers
               </p>
 
               <div className="bg-muted rounded-lg overflow-hidden">
                 <div className="relative h-32 bg-gradient-to-br from-gray-200 to-gray-100 flex items-center justify-center">
                   {headerPhoto ? (
-                    <>
-                      <img src={headerPhoto} alt="Header" className="w-full h-full object-cover" />
-                      <label
-                        className="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-50 cursor-pointer"
-                      >
-                        <Plus className="w-4 h-4" />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleImageSelect("header", file);
-                            e.currentTarget.value = "";
-                          }}
-                        />
-                      </label>
-                    </>
+                    <img src={headerPhoto} alt="Header" className="w-full h-full object-cover" />
                   ) : (
-                    <>
-                      <p className="text-sm text-muted-foreground">
-                        Add a header photo and video to attract new customers
-                      </p>
-                      <label
-                        className="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-50 cursor-pointer"
-                      >
-                        <Plus className="w-4 h-4" />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleImageSelect("header", file);
-                            e.currentTarget.value = "";
-                          }}
-                        />
-                      </label>
-                    </>
+                    <p className="text-sm text-muted-foreground px-4 text-center">
+                      Add a header photo
+                    </p>
                   )}
                 </div>
                 
@@ -348,52 +499,25 @@ const StoreSettingsDashboard = () => {
                   <div className="flex items-center gap-3 mb-4">
                     <div className="relative w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
                       {logoPhoto ? (
-                        <>
-                          <img src={logoPhoto} alt="Logo" className="w-full h-full object-cover" />
-                          <label
-                            className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
-                          >
-                            <Plus className="w-4 h-4 text-white" />
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="absolute inset-0 opacity-0 cursor-pointer"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) handleImageSelect("logo", file);
-                                e.currentTarget.value = "";
-                              }}
-                            />
-                          </label>
-                        </>
+                        <img src={logoPhoto} alt="Logo" className="w-full h-full object-cover" />
                       ) : (
-                        <>
-                          <span className="text-xs">Logo</span>
-                          <label
-                            className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
-                          >
-                            <Plus className="w-4 h-4 text-white" />
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="absolute inset-0 opacity-0 cursor-pointer"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) handleImageSelect("logo", file);
-                                e.currentTarget.value = "";
-                              }}
-                            />
-                          </label>
-                        </>
+                        <span className="text-xs">Logo</span>
                       )}
                     </div>
-                    <h4 className="font-semibold text-lg">InveroInc</h4>
+                    <div>
+                      <h4 className="font-bold">{storeName || 'Your Store'}</h4>
+                      <p className="text-xs text-muted-foreground">
+                        {storeDescription ? storeDescription.substring(0, 50) + '...' : 'Add description'}
+                      </p>
+                    </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <div className="h-20 bg-gray-200 rounded" />
-                    <div className="h-20 bg-gray-200 rounded" />
-                  </div>
+                  
+                  {instagramHandle && (
+                    <div className="flex items-center gap-2 pt-3 border-t">
+                      <Instagram className="w-4 h-4 text-pink-600" />
+                      <span className="text-sm">@{instagramHandle}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -401,14 +525,17 @@ const StoreSettingsDashboard = () => {
         </div>
       </div>
 
-      <ImageCropper
-        isOpen={cropperOpen}
-        onClose={() => setCropperOpen(false)}
-        imageSrc={currentImageSrc}
-        onCropComplete={handleCropComplete}
-        aspectRatio={currentImageType === "header" ? 16 / 9 : 1}
-        cropShape={currentImageType === "logo" ? "round" : "rect"}
-      />
+      {/* Image Cropper Dialog */}
+      {cropperOpen && (
+        <ImageCropper
+          isOpen={cropperOpen}
+          onClose={() => setCropperOpen(false)}
+          imageSrc={currentImageSrc}
+          onCropComplete={handleCropComplete}
+          aspectRatio={currentImageType === "header" ? 16 / 9 : 1}
+          cropShape={currentImageType === "logo" ? "round" : "rect"}
+        />
+      )}
     </div>
   );
 };
