@@ -8,6 +8,7 @@ import { MenuBuilderStep } from "./steps/MenuBuilderStep";
 import PricingPlanStep from "./steps/PricingPlanStep";
 import { EnhancedBankingStep } from "./steps/EnhancedBankingStep";
 import MobileVerificationModal from "./MobileVerificationModal";
+import PhoneNumberReminderModal from "./PhoneNumberReminderModal";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -190,6 +191,7 @@ const RestaurantOnboardingWizard = () => {
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [showMobileModal, setShowMobileModal] = useState(false);
+  const [showReminderModal, setShowReminderModal] = useState(false);
   const [wizardCompleted, setWizardCompleted] = useState(false);
 
   const handleNext = () => {
@@ -251,6 +253,16 @@ const RestaurantOnboardingWizard = () => {
 
   const handleRemindLater = () => {
     setShowMobileModal(false);
+    setShowReminderModal(true);
+  };
+
+  const handleAddPhoneFromReminder = () => {
+    setShowReminderModal(false);
+    setShowMobileModal(true);
+  };
+
+  const handleReminderClose = () => {
+    setShowReminderModal(false);
     toast.info("We'll remind you tomorrow");
     // Proceed to next screen even without phone
   };
@@ -283,6 +295,12 @@ const RestaurantOnboardingWizard = () => {
         onClose={() => setShowMobileModal(false)}
         onSubmit={handleMobileSubmit}
         onRemindLater={handleRemindLater}
+      />
+
+      <PhoneNumberReminderModal
+        open={showReminderModal}
+        onClose={handleReminderClose}
+        onAddPhone={handleAddPhoneFromReminder}
       />
     </div>
   );
