@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CheckCircle2, AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRestaurantData } from "@/hooks/useRestaurantData";
 import { toast } from "sonner";
@@ -22,56 +24,129 @@ const BankAccountDashboard = () => {
   const { restaurant, loading: restaurantLoading } = useRestaurantData();
   const [stripeStatus, setStripeStatus] = useState<StripeConnectStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [creatingLink, setCreatingLink] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    if (restaurant?.id) {
-      fetchStripeStatus();
-    }
-  }, [restaurant?.id]);
+    const fetchStripeStatus = async () => {
+      if (!restaurant?.id) {
+        setLoading(false);
+        setError("No restaurant found. Please complete restaurant setup first.");
+        return;
+      }
 
-  const fetchStripeStatus = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('get-stripe-connect-status');
-      
-      if (error) throw error;
-      setStripeStatus(data);
-    } catch (error) {
-      console.error('Error fetching Stripe status:', error);
-      toast.error('Failed to load banking information');
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const { data, error } = await supabase.functions.invoke('get-stripe-connect-status');
+        
+        if (error) {
+          console.error('Stripe status error:', error);
+          throw new Error(error.message || 'Failed to fetch Stripe status');
+        }
+        
+        setStripeStatus(data);
+        setRetryCount(0);
+      } catch (err: any) {
+        console.error('Error fetching Stripe status:', err);
+        const errorMessage = err.message || 'Failed to load banking status';
+        setError(errorMessage);
+        
+        // Only show toast on first error, not on retries
+        if (retryCount === 0) {
+          toast.error(errorMessage);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStripeStatus();
+  }, [restaurant?.id, retryCount]);
 
   const handleEditBankAccount = async () => {
+    if (!restaurant?.id) {
+      toast.error("Please complete restaurant setup first");
+      return;
+    }
+
     setCreatingLink(true);
     try {
+      setError(null);
+      
       const returnUrl = `${window.location.origin}/merchant-portal?tab=settings&subtab=bank-account`;
       const { data, error } = await supabase.functions.invoke('create-stripe-connect-link', {
         body: { returnUrl, refreshUrl: returnUrl }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Link creation error:', error);
+        throw new Error(error.message || 'Failed to create Stripe link');
+      }
       
-      // Redirect to Stripe onboarding
-      window.location.href = data.url;
-    } catch (error) {
-      console.error('Error creating Stripe link:', error);
-      toast.error('Failed to open banking setup');
+      if (data?.url) {
+        toast.success("Redirecting to Stripe...");
+        window.location.href = data.url;
+      } else {
+        throw new Error('No redirect URL received');
+      }
+    } catch (err: any) {
+      console.error('Error creating Stripe link:', err);
+      const errorMessage = err.message || 'Failed to open banking setup';
+      setError(errorMessage);
+      toast.error(errorMessage);
       setCreatingLink(false);
     }
+  };
+
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
   };
 
   if (restaurantLoading || loading) {
     return (
       <div className="space-y-6 pb-8">
+        <Skeleton className="h-4 w-full max-w-2xl" />
         <Card>
-          <CardContent className="p-20 text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-            <p>Loading banking information...</p>
+          <CardContent className="p-6 space-y-4">
+            <div className="flex justify-between items-start">
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-96" />
+              </div>
+              <Skeleton className="h-10 w-32" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
+            </div>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="p-6">
+            <Skeleton className="h-6 w-48 mb-4" />
+            <Skeleton className="h-20 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error && !stripeStatus) {
+    return (
+      <div className="space-y-6 pb-8">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>{error}</span>
+            <Button onClick={handleRetry} variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
@@ -85,6 +160,13 @@ const BankAccountDashboard = () => {
       <p className="text-muted-foreground">
         Here is where you will find a summary of your banking information.
       </p>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       {/* Bank Account Information */}
       <Card>

@@ -13,37 +13,76 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Get Stripe Connect Status - Request received');
+    
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('No authorization header provided');
+      return new Response(
+        JSON.stringify({ error: 'No authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const authHeader = req.headers.get('Authorization')!;
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user } } = await supabase.auth.getUser(token);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
-    if (!user) {
-      throw new Error('Unauthorized');
+    if (authError || !user) {
+      console.error('Authentication failed:', authError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Authentication failed' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    console.log('User authenticated:', user.id);
 
     // Get restaurant for this user
     const { data: restaurant, error: restaurantError } = await supabase
       .from('restaurants')
       .select('id, stripe_connect_account_id, stripe_onboarding_complete')
       .eq('owner_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (restaurantError || !restaurant) {
-      throw new Error('Restaurant not found');
+    if (restaurantError) {
+      console.error('Database error fetching restaurant:', restaurantError.message);
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch restaurant data' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!restaurant) {
+      console.log('No restaurant found for user:', user.id);
+      return new Response(
+        JSON.stringify({
+          hasAccount: false,
+          accountId: null,
+          onboardingComplete: false,
+          detailsSubmitted: false,
+          chargesEnabled: false,
+          payoutsEnabled: false
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // If no Stripe account exists yet
     if (!restaurant.stripe_connect_account_id) {
+      console.log('No Stripe account connected for restaurant');
       return new Response(
         JSON.stringify({ 
           hasAccount: false,
           onboardingComplete: false,
-          accountId: null
+          accountId: null,
+          chargesEnabled: false,
+          payoutsEnabled: false,
+          detailsSubmitted: false
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -53,14 +92,24 @@ serve(async (req) => {
     }
 
     // Fetch account details from Stripe
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+    console.log('Fetching Stripe account:', restaurant.stripe_connect_account_id);
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
+    if (!stripeSecretKey) {
+      console.error('Stripe secret key not configured');
+      return new Response(
+        JSON.stringify({ error: 'Stripe not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     });
 
     const account = await stripe.accounts.retrieve(restaurant.stripe_connect_account_id);
     
     // Update restaurant with latest Stripe status
-    await supabase
+    const { error: updateError } = await supabase
       .from('restaurants')
       .update({
         stripe_charges_enabled: account.charges_enabled,
@@ -68,6 +117,12 @@ serve(async (req) => {
         stripe_onboarding_complete: account.details_submitted && account.charges_enabled && account.payouts_enabled
       })
       .eq('id', restaurant.id);
+
+    if (updateError) {
+      console.error('Failed to update restaurant Stripe status:', updateError.message);
+    } else {
+      console.log('Successfully updated Stripe status in database');
+    }
 
     return new Response(
       JSON.stringify({
@@ -89,10 +144,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error getting Stripe Connect status:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || 'Internal server error' }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400
+        status: 500
       }
     );
   }
