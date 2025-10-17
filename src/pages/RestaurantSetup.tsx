@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import InsightsDashboard from "@/components/restaurant/dashboard/InsightsDashboard";
 import CustomersDashboard from "@/components/restaurant/dashboard/CustomersDashboard";
 import MenuDashboard from "@/components/restaurant/dashboard/MenuDashboard";
+import FinancialsDashboard from "@/components/restaurant/dashboard/FinancialsDashboard";
 import { 
   Home, 
   TrendingUp, 
@@ -26,7 +27,7 @@ import {
 } from "lucide-react";
 
 const RestaurantSetup = () => {
-  const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'customers' | 'menu'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'customers' | 'menu' | 'financials'>('home');
   const [prepareStoreExpanded, setPrepareStoreExpanded] = useState(true);
   const restaurantName = "Craven Inc";
   const userName = "Torrance";
@@ -126,10 +127,16 @@ const RestaurantSetup = () => {
               <span className="text-sm font-medium">Store availability</span>
             </button>
             
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-foreground">
+            <button 
+              onClick={() => setActiveTab('financials')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg ${
+                activeTab === 'financials' 
+                  ? 'bg-orange-50 text-orange-600' 
+                  : 'hover:bg-muted text-foreground'
+              }`}
+            >
               <DollarSign className="w-5 h-5" />
               <span className="text-sm font-medium">Financials</span>
-              <ChevronDown className="w-4 h-4 ml-auto" />
             </button>
             
             <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-foreground">
@@ -347,6 +354,8 @@ const RestaurantSetup = () => {
           <CustomersDashboard />
         ) : activeTab === 'menu' ? (
           <MenuDashboard />
+        ) : activeTab === 'financials' ? (
+          <FinancialsDashboard />
         ) : null}
       </main>
 
