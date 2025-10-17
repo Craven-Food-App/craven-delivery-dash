@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, TrendingUp, Receipt, CreditCard } from "lucide-react";
+import { Folder, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRestaurantData } from "@/hooks/useRestaurantData";
 import { format } from "date-fns";
@@ -17,40 +18,47 @@ interface Transaction {
 
 const TransactionsDashboard = () => {
   const { restaurant } = useRestaurantData();
+  const [dateRange, setDateRange] = useState("last-7-days");
+  const [channel, setChannel] = useState("all");
+  const [transactionType, setTransactionType] = useState("all");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [dateRange, setDateRange] = useState("7d");
   const [loading, setLoading] = useState(true);
-  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState("20");
 
   useEffect(() => {
     if (restaurant?.id) {
       fetchTransactions();
     }
-  }, [restaurant?.id, dateRange]);
+  }, [restaurant?.id, dateRange, transactionType]);
 
   const fetchTransactions = async () => {
     try {
       let daysAgo = 7;
-      if (dateRange === "30d") daysAgo = 30;
-      if (dateRange === "90d") daysAgo = 90;
+      if (dateRange === "last-30-days") daysAgo = 30;
+      if (dateRange === "last-3-months") daysAgo = 90;
 
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - daysAgo);
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("orders")
         .select("id, order_number, customer_name, total_cents, created_at, order_status")
         .eq("restaurant_id", restaurant?.id)
         .gte("created_at", startDate.toISOString())
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      // Filter by transaction type
+      if (transactionType === "orders") {
+        query = query.in("order_status", ["pending", "confirmed", "preparing", "ready", "picked_up", "delivered"]);
+      } else if (transactionType === "refunds") {
+        query = query.eq("order_status", "cancelled");
+      }
 
-      const typedData = (data || []) as Transaction[];
-      setTransactions(typedData);
-      
-      const revenue = typedData.reduce((sum, t) => sum + (t.total_cents || 0), 0);
-      setTotalRevenue(revenue);
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setTransactions((data || []) as Transaction[]);
     } catch (error) {
       console.error("Error fetching transactions:", error);
     } finally {
@@ -58,128 +66,163 @@ const TransactionsDashboard = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-6 pb-8">
-        <Card>
-          <CardContent className="flex items-center justify-center py-20">
-            <DollarSign className="w-10 h-10 animate-pulse text-muted-foreground" />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (transactions.length === 0) {
-    return (
-      <div className="space-y-6 pb-8">
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-20">
-            <div className="w-20 h-20 mb-6">
-              <div className="w-full h-full rounded-lg bg-muted flex items-center justify-center">
-                <DollarSign className="w-10 h-10 text-muted-foreground" />
-              </div>
-            </div>
-            
-            <h2 className="text-2xl font-bold mb-4">No transactions yet</h2>
-            
-            <p className="text-sm text-center max-w-md">
-              Transaction history will appear here once you start processing orders.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const completedTransactions = transactions.filter(t => 
-    t.order_status === 'delivered' || t.order_status === 'completed'
-  );
+  const totalPages = Math.ceil(transactions.length / parseInt(rowsPerPage));
+  const startIndex = (currentPage - 1) * parseInt(rowsPerPage);
+  const endIndex = startIndex + parseInt(rowsPerPage);
+  const currentTransactions = transactions.slice(startIndex, endIndex);
 
   return (
     <div className="space-y-6 pb-8">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Transaction History</h3>
-        <Select value={dateRange} onValueChange={setDateRange}>
-          <SelectTrigger className="w-40">
+      <p className="text-muted-foreground">
+        All charges from all orders, campaigns, fees, and adjustments associated with your Crave'N account. To track real-time orders, go to{" "}
+        <a href="#" className="text-primary underline">Orders</a>.
+      </p>
+
+      <div className="flex flex-wrap gap-4 items-center justify-between">
+        <div className="flex gap-4 items-center">
+          <Select value={dateRange} onValueChange={setDateRange}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="last-7-days">Last 7 days</SelectItem>
+              <SelectItem value="last-30-days">Last 30 days</SelectItem>
+              <SelectItem value="last-3-months">Last 3 months</SelectItem>
+              <SelectItem value="custom">Custom range</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={channel} onValueChange={setChannel}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All channels</SelectItem>
+              <SelectItem value="marketplace">Marketplace</SelectItem>
+              <SelectItem value="storefront">Storefront</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Button variant="destructive">
+          Create report
+        </Button>
+      </div>
+
+      <div className="flex justify-end">
+        <Button variant="link" className="text-sm">
+          Show details
+        </Button>
+      </div>
+
+      <div>
+        <Select value={transactionType} onValueChange={setTransactionType}>
+          <SelectTrigger className="w-64">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="7d">Last 7 days</SelectItem>
-            <SelectItem value="30d">Last 30 days</SelectItem>
-            <SelectItem value="90d">Last 90 days</SelectItem>
+            <SelectItem value="all">All transaction types</SelectItem>
+            <SelectItem value="orders">Orders</SelectItem>
+            <SelectItem value="adjustments">Adjustments</SelectItem>
+            <SelectItem value="fees">Fees</SelectItem>
+            <SelectItem value="refunds">Refunds</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {loading ? (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${(totalRevenue / 100).toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">{transactions.length} transactions</p>
+          <CardContent className="flex items-center justify-center py-20">
+            <div className="animate-pulse text-muted-foreground">Loading transactions...</div>
           </CardContent>
         </Card>
-
+      ) : currentTransactions.length === 0 ? (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed Orders</CardTitle>
-            <Receipt className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{completedTransactions.length}</div>
-            <p className="text-xs text-muted-foreground">Successfully delivered</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Transaction</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${transactions.length > 0 ? (totalRevenue / transactions.length / 100).toFixed(2) : '0.00'}
+          <CardContent className="flex flex-col items-center justify-center py-20">
+            <div className="w-24 h-24 mb-6">
+              <Folder className="w-full h-full text-orange-400" strokeWidth={1.5} />
             </div>
-            <p className="text-xs text-muted-foreground">Per order</p>
+            
+            <h3 className="text-xl font-semibold mb-2">No transactions available</h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Missing a transaction?{" "}
+              <a href="#" className="text-primary underline">Contact us</a> for help.
+            </p>
           </CardContent>
         </Card>
-      </div>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="border-b bg-muted/50">
+                  <tr>
+                    <th className="text-left p-4 font-medium">Order #</th>
+                    <th className="text-left p-4 font-medium">Customer</th>
+                    <th className="text-left p-4 font-medium">Date</th>
+                    <th className="text-left p-4 font-medium">Status</th>
+                    <th className="text-right p-4 font-medium">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentTransactions.map((transaction) => (
+                    <tr key={transaction.id} className="border-b hover:bg-muted/50 transition-colors">
+                      <td className="p-4 font-medium">{transaction.order_number}</td>
+                      <td className="p-4">{transaction.customer_name || 'Guest'}</td>
+                      <td className="p-4 text-muted-foreground">
+                        {format(new Date(transaction.created_at), 'MMM d, yyyy h:mm a')}
+                      </td>
+                      <td className="p-4">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary capitalize">
+                          {transaction.order_status}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right font-semibold">
+                        ${(transaction.total_cents / 100).toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Transactions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {transactions.map(transaction => (
-              <div
-                key={transaction.id}
-                className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <CreditCard className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-semibold">{transaction.order_number}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {transaction.customer_name || 'Guest'} • {format(new Date(transaction.created_at), 'MMM d, yyyy h:mm a')}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold">${(transaction.total_cents / 100).toFixed(2)}</p>
-                  <p className="text-sm text-muted-foreground capitalize">{transaction.order_status}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-muted-foreground">{transactions.length} results</span>
+        
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <span className="text-sm px-3">{currentPage}</span>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            disabled={currentPage >= totalPages}
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+          
+          <Select value={rowsPerPage} onValueChange={setRowsPerPage}>
+            <SelectTrigger className="w-32 ml-4">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="20">Rows per page: 20</SelectItem>
+              <SelectItem value="50">Rows per page: 50</SelectItem>
+              <SelectItem value="100">Rows per page: 100</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
     </div>
   );
 };
