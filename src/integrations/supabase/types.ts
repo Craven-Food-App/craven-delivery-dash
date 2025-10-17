@@ -1988,6 +1988,215 @@ export type Database = {
           },
         ]
       }
+      restaurant_report_executions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          file_path: string | null
+          file_size_bytes: number | null
+          id: string
+          report_id: string
+          row_count: number | null
+          schedule_id: string | null
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          file_path?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          report_id: string
+          row_count?: number | null
+          schedule_id?: string | null
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          file_path?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          report_id?: string
+          row_count?: number | null
+          schedule_id?: string | null
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_report_executions_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_report_executions_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_report_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_report_schedules: {
+        Row: {
+          created_at: string
+          day_of_month: number | null
+          day_of_week: number | null
+          email_recipients: string[]
+          frequency: string
+          id: string
+          is_active: boolean
+          last_run_at: string | null
+          next_run_at: string | null
+          report_id: string
+          time_of_day: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_month?: number | null
+          day_of_week?: number | null
+          email_recipients?: string[]
+          frequency: string
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          next_run_at?: string | null
+          report_id: string
+          time_of_day?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_month?: number | null
+          day_of_week?: number | null
+          email_recipients?: string[]
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          next_run_at?: string | null
+          report_id?: string
+          time_of_day?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_report_schedules_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_report_templates: {
+        Row: {
+          available_filters: Json
+          category: string
+          created_at: string
+          default_columns: Json
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sql_query: string
+          updated_at: string
+        }
+        Insert: {
+          available_filters?: Json
+          category: string
+          created_at?: string
+          default_columns?: Json
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sql_query: string
+          updated_at?: string
+        }
+        Update: {
+          available_filters?: Json
+          category?: string
+          created_at?: string
+          default_columns?: Json
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sql_query?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      restaurant_reports: {
+        Row: {
+          columns: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          filters: Json
+          format: string
+          id: string
+          is_scheduled: boolean
+          name: string
+          restaurant_id: string
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          columns?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          filters?: Json
+          format?: string
+          id?: string
+          is_scheduled?: boolean
+          name: string
+          restaurant_id: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          columns?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          filters?: Json
+          format?: string
+          id?: string
+          is_scheduled?: boolean
+          name?: string
+          restaurant_id?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_reports_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_reports_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_report_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_verification_tasks: {
         Row: {
           assigned_admin_id: string | null
