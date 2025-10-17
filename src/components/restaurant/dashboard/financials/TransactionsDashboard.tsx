@@ -1,228 +1,187 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Folder, ChevronLeft, ChevronRight } from "lucide-react";
+import { DollarSign, TrendingUp, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useRestaurantData } from "@/hooks/useRestaurantData";
-import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
-interface Transaction {
-  id: string;
-  order_number: string;
-  customer_name: string;
-  total_cents: number;
-  created_at: string;
-  order_status: string;
+interface PayoutData {
+  totalRevenue: number;
+  totalCommission: number;
+  netPayout: number;
+  orderCount: number;
+  commissionRate: number;
 }
 
 const TransactionsDashboard = () => {
-  const { restaurant } = useRestaurantData();
-  const [dateRange, setDateRange] = useState("last-7-days");
-  const [channel, setChannel] = useState("all");
-  const [transactionType, setTransactionType] = useState("all");
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState("20");
+  const [payoutData, setPayoutData] = useState<PayoutData | null>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [dateRange, setDateRange] = useState("last-7-days");
 
   useEffect(() => {
-    if (restaurant?.id) {
-      fetchTransactions();
-    }
-  }, [restaurant?.id, dateRange, transactionType]);
+    fetchData();
+  }, [dateRange]);
 
-  const fetchTransactions = async () => {
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      let daysAgo = 7;
-      if (dateRange === "last-30-days") daysAgo = 30;
-      if (dateRange === "last-3-months") daysAgo = 90;
+      const userQuery = await supabase.auth.getUser();
+      if (!userQuery.data?.user) return;
 
+      const restaurantQuery = await supabase
+        .from('restaurants')
+        .select('id')
+        .eq('owner_id', userQuery.data.user.id)
+        .single();
+
+      if (!restaurantQuery.data) return;
+
+      const endDate = new Date().toISOString();
       const startDate = new Date();
-      startDate.setDate(startDate.getDate() - daysAgo);
-
-      let query = supabase
-        .from("orders")
-        .select("id, order_number, customer_name, total_cents, created_at, order_status")
-        .eq("restaurant_id", restaurant?.id)
-        .gte("created_at", startDate.toISOString())
-        .order("created_at", { ascending: false });
-
-      // Filter by transaction type
-      if (transactionType === "orders") {
-        query = query.in("order_status", ["pending", "confirmed", "preparing", "ready", "picked_up", "delivered"]);
-      } else if (transactionType === "refunds") {
-        query = query.eq("order_status", "cancelled");
+      
+      switch (dateRange) {
+        case "last-7-days": startDate.setDate(startDate.getDate() - 7); break;
+        case "last-30-days": startDate.setDate(startDate.getDate() - 30); break;
+        case "last-90-days": startDate.setDate(startDate.getDate() - 90); break;
       }
 
-      const { data, error } = await query;
+      const response = await supabase.functions.invoke('calculate-restaurant-payouts', {
+        body: {
+          restaurantId: restaurantQuery.data.id,
+          startDate: startDate.toISOString(),
+          endDate
+        }
+      });
 
-      if (error) throw error;
-      setTransactions((data || []) as Transaction[]);
+      if (response.data) setPayoutData(response.data);
+
+      const ordersQuery = await supabase
+        .from('orders')
+        .select('id, order_number, total_cents, created_at')
+        .eq('restaurant_id', restaurantQuery.data.id)
+        .eq('status', 'completed')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      setTransactions(ordersQuery.data || []);
     } catch (error) {
-      console.error("Error fetching transactions:", error);
+      console.error('Error:', error);
+      toast({ title: "Error", description: "Failed to load data", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
-  const totalPages = Math.ceil(transactions.length / parseInt(rowsPerPage));
-  const startIndex = (currentPage - 1) * parseInt(rowsPerPage);
-  const endIndex = startIndex + parseInt(rowsPerPage);
-  const currentTransactions = transactions.slice(startIndex, endIndex);
+  const formatCurrency = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+  const getTimeAgo = (date: string) => {
+    const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
+  };
 
   return (
-    <div className="space-y-6 pb-8">
-      <p className="text-muted-foreground">
-        All charges from all orders, campaigns, fees, and adjustments associated with your Crave'N account. To track real-time orders, go to{" "}
-        <a href="#" className="text-primary underline">Orders</a>.
-      </p>
-
-      <div className="flex flex-wrap gap-4 items-center justify-between">
-        <div className="flex gap-4 items-center">
-          <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="last-7-days">Last 7 days</SelectItem>
-              <SelectItem value="last-30-days">Last 30 days</SelectItem>
-              <SelectItem value="last-3-months">Last 3 months</SelectItem>
-              <SelectItem value="custom">Custom range</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={channel} onValueChange={setChannel}>
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All channels</SelectItem>
-              <SelectItem value="marketplace">Marketplace</SelectItem>
-              <SelectItem value="storefront">Storefront</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <Button variant="destructive">
-          Create report
-        </Button>
-      </div>
-
+    <div className="space-y-6">
       <div className="flex justify-end">
-        <Button variant="link" className="text-sm">
-          Show details
-        </Button>
-      </div>
-
-      <div>
-        <Select value={transactionType} onValueChange={setTransactionType}>
-          <SelectTrigger className="w-64">
+        <Select value={dateRange} onValueChange={setDateRange}>
+          <SelectTrigger className="w-48">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All transaction types</SelectItem>
-            <SelectItem value="orders">Orders</SelectItem>
-            <SelectItem value="adjustments">Adjustments</SelectItem>
-            <SelectItem value="fees">Fees</SelectItem>
-            <SelectItem value="refunds">Refunds</SelectItem>
+            <SelectItem value="last-7-days">Last 7 days</SelectItem>
+            <SelectItem value="last-30-days">Last 30 days</SelectItem>
+            <SelectItem value="last-90-days">Last 90 days</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       {loading ? (
-        <Card>
-          <CardContent className="flex items-center justify-center py-20">
-            <div className="animate-pulse text-muted-foreground">Loading transactions...</div>
-          </CardContent>
-        </Card>
-      ) : currentTransactions.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-20">
-            <div className="w-24 h-24 mb-6">
-              <Folder className="w-full h-full text-orange-400" strokeWidth={1.5} />
-            </div>
-            
-            <h3 className="text-xl font-semibold mb-2">No transactions available</h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              Missing a transaction?{" "}
-              <a href="#" className="text-primary underline">Contact us</a> for help.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-32" />)}
+        </div>
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="border-b bg-muted/50">
-                  <tr>
-                    <th className="text-left p-4 font-medium">Order #</th>
-                    <th className="text-left p-4 font-medium">Customer</th>
-                    <th className="text-left p-4 font-medium">Date</th>
-                    <th className="text-left p-4 font-medium">Status</th>
-                    <th className="text-right p-4 font-medium">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentTransactions.map((transaction) => (
-                    <tr key={transaction.id} className="border-b hover:bg-muted/50 transition-colors">
-                      <td className="p-4 font-medium">{transaction.order_number}</td>
-                      <td className="p-4">{transaction.customer_name || 'Guest'}</td>
-                      <td className="p-4 text-muted-foreground">
-                        {format(new Date(transaction.created_at), 'MMM d, yyyy h:mm a')}
-                      </td>
-                      <td className="p-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary capitalize">
-                          {transaction.order_status}
-                        </span>
-                      </td>
-                      <td className="p-4 text-right font-semibold">
-                        ${(transaction.total_cents / 100).toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {payoutData ? formatCurrency(payoutData.totalRevenue) : "$0.00"}
+              </div>
+              <p className="text-xs text-muted-foreground">From {payoutData?.orderCount || 0} orders</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Commission</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {payoutData ? formatCurrency(payoutData.totalCommission) : "$0.00"}
+              </div>
+              <p className="text-xs text-muted-foreground">{payoutData?.commissionRate || 0}% platform fee</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Net Payout</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {payoutData ? formatCurrency(payoutData.netPayout) : "$0.00"}
+              </div>
+              <p className="text-xs text-muted-foreground">After commission</p>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">{transactions.length} results</span>
-        
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <span className="text-sm px-3">{currentPage}</span>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            disabled={currentPage >= totalPages}
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-          
-          <Select value={rowsPerPage} onValueChange={setRowsPerPage}>
-            <SelectTrigger className="w-32 ml-4">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="20">Rows per page: 20</SelectItem>
-              <SelectItem value="50">Rows per page: 50</SelectItem>
-              <SelectItem value="100">Rows per page: 100</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Transactions</CardTitle>
+          <CardDescription>Completed orders and payment details</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-16" />)}
+            </div>
+          ) : transactions.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No transactions found for this period
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {transactions.map(t => (
+                <div key={t.id} className="flex justify-between border-b pb-3">
+                  <div>
+                    <div className="font-medium">{t.order_number}</div>
+                    <div className="text-sm text-muted-foreground">{getTimeAgo(t.created_at)}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold">{formatCurrency(t.total_cents || 0)}</div>
+                    <div className="text-xs text-muted-foreground">Completed</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
