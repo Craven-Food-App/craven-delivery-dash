@@ -17,6 +17,7 @@ import ReportsDashboard from "@/components/restaurant/dashboard/insights/Reports
 import OrdersDashboard from "@/components/restaurant/dashboard/OrdersDashboard";
 import StoreAvailabilityDashboard from "@/components/restaurant/dashboard/StoreAvailabilityDashboard";
 import RequestDeliveryDashboard from "@/components/restaurant/dashboard/RequestDeliveryDashboard";
+import { HomeDashboard } from "@/components/merchant/HomeDashboard";
 import { Home, TrendingUp, FileText, Users, Package, Menu as MenuIcon, Calendar, DollarSign, Settings, ChevronDown, CheckCircle2, Tablet, Store, ChevronUp, Plus, HelpCircle, MessageCircle, Mail, Clock, CheckCircle } from "lucide-react";
 const RestaurantSetup = () => {
   const navigate = useNavigate();
@@ -235,7 +236,17 @@ const RestaurantSetup = () => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
-        {activeTab === 'home' ? <div className="max-w-5xl mx-auto p-8">
+        {activeTab === 'home' ? (
+          readiness?.ready ? (
+            <div className="max-w-7xl mx-auto p-8">
+              <div className="mb-8">
+                <p className="text-sm text-muted-foreground mb-2">Welcome back, {userName}</p>
+                <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+              </div>
+              <HomeDashboard restaurantId={restaurant?.id || ''} />
+            </div>
+          ) : (
+            <div className="max-w-5xl mx-auto p-8">
           <div className="mb-8">
             <p className="text-sm text-muted-foreground mb-2">Welcome, {userName}</p>
             <h1 className="text-3xl font-bold mb-2">Set up your store</h1>
@@ -244,7 +255,7 @@ const RestaurantSetup = () => {
             </p>
           </div>
 
-          {/* Prepare your store section */}
+          {/* ... keep existing code (Prepare your store section, Go live section, Continue Crave'N setup) */}
           <Card className="p-6 mb-6">
             <button onClick={() => setPrepareStoreExpanded(!prepareStoreExpanded)} className="w-full flex items-center justify-between mb-4">
               <div>
@@ -254,7 +265,7 @@ const RestaurantSetup = () => {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">0 of 3 steps</span>
+                <span className="text-sm text-muted-foreground">{completedSteps} of 3 steps</span>
                 {prepareStoreExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
               </div>
             </button>
@@ -488,7 +499,9 @@ const RestaurantSetup = () => {
               </div>
             </Card>
           </div>
-        </div> : activeTab === 'insights' ? <InsightsDashboard /> : activeTab === 'reports' ? <ReportsDashboard /> : activeTab === 'customers' ? <CustomersDashboard /> : activeTab === 'orders' ? <OrdersDashboard /> : activeTab === 'menu' ? <MenuDashboard /> : activeTab === 'availability' ? <StoreAvailabilityDashboard /> : activeTab === 'financials' ? <FinancialsDashboard /> : activeTab === 'settings' ? <SettingsDashboard /> : activeTab === 'commerce' ? <CommercePlatformDashboard /> : activeTab === 'request-delivery' ? <RequestDeliveryDashboard /> : null}
+        </div>
+          )
+        ) : activeTab === 'insights' ? <InsightsDashboard /> : activeTab === 'reports' ? <ReportsDashboard /> : activeTab === 'customers' ? <CustomersDashboard /> : activeTab === 'orders' ? <OrdersDashboard /> : activeTab === 'menu' ? <MenuDashboard /> : activeTab === 'availability' ? <StoreAvailabilityDashboard /> : activeTab === 'financials' ? <FinancialsDashboard /> : activeTab === 'settings' ? <SettingsDashboard /> : activeTab === 'commerce' ? <CommercePlatformDashboard /> : activeTab === 'request-delivery' ? <RequestDeliveryDashboard /> : null}
       </main>
 
       {/* Right Sidebar - Store Preview */}
