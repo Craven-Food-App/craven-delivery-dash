@@ -1,19 +1,24 @@
-import React, { useState } from 'react';
-import { Progress } from '@/components/ui/progress';
-import { Card } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import { Check } from 'lucide-react';
-import { QualificationStep } from './steps/QualificationStep';
-import { BasicInfoStep } from './steps/BasicInfoStep';
-import { BusinessDetailsStep } from './steps/BusinessDetailsStep';
-import { OwnerVerificationStep } from './steps/OwnerVerificationStep';
-import { LocationStep } from './steps/LocationStep';
-import { HoursStep } from './steps/HoursStep';
-import { MenuBuilderStep } from './steps/MenuBuilderStep';
-import { EnhancedBankingStep } from './steps/EnhancedBankingStep';
-import { ReviewStep } from './steps/ReviewStep';
+import { useState } from "react";
+import OnboardingHeader from "./OnboardingHeader";
+import OnboardingSidebar from "./OnboardingSidebar";
+import OrderMethodStep from "./steps/OrderMethodStep";
+import { QualificationStep } from "./steps/QualificationStep";
+import { BasicInfoStep } from "./steps/BasicInfoStep";
+import { BusinessDetailsStep } from "./steps/BusinessDetailsStep";
+import { LocationStep } from "./steps/LocationStep";
+import StoreHoursStep from "./steps/StoreHoursStep";
+import MenuSetupMethodStep from "./steps/MenuSetupMethodStep";
+import { MenuBuilderStep } from "./steps/MenuBuilderStep";
+import { EnhancedBankingStep } from "./steps/EnhancedBankingStep";
+import { OwnerVerificationStep } from "./steps/OwnerVerificationStep";
+import { ReviewStep } from "./steps/ReviewStep";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export interface OnboardingData {
+  // Order Method
+  orderMethod?: string;
+  
   // Qualification
   restaurantType: string;
   hasPhysicalLocation: boolean;
@@ -50,7 +55,8 @@ export interface OnboardingData {
   latitude?: number;
   longitude?: number;
   
-  // Hours
+  // Store Hours
+  storeHours?: Record<number, { open: string; close: string; closed: boolean }>;
   hours: {
     [key: string]: {
       isOpen: boolean;
@@ -58,6 +64,9 @@ export interface OnboardingData {
       closeTime: string;
     };
   };
+  
+  // Menu Setup Method
+  menuSetupMethod?: string;
   
   // Menu & Photos
   logoUrl: string;
@@ -85,6 +94,7 @@ export interface OnboardingData {
 }
 
 const INITIAL_DATA: OnboardingData = {
+  orderMethod: "",
   restaurantType: '',
   hasPhysicalLocation: true,
   expectedMonthlyOrders: 0,
@@ -109,6 +119,16 @@ const INITIAL_DATA: OnboardingData = {
   city: '',
   state: '',
   zipCode: '',
+  menuSetupMethod: "",
+  storeHours: {
+    0: { open: "09:00", close: "22:00", closed: false },
+    1: { open: "09:00", close: "22:00", closed: false },
+    2: { open: "09:00", close: "22:00", closed: false },
+    3: { open: "09:00", close: "22:00", closed: false },
+    4: { open: "09:00", close: "22:00", closed: false },
+    5: { open: "09:00", close: "22:00", closed: false },
+    6: { open: "09:00", close: "22:00", closed: false },
+  },
   hours: {
     monday: { isOpen: true, openTime: '09:00', closeTime: '21:00' },
     tuesday: { isOpen: true, openTime: '09:00', closeTime: '21:00' },
@@ -137,112 +157,149 @@ const INITIAL_DATA: OnboardingData = {
 };
 
 const STEPS = [
-  { id: 1, name: 'Qualification', component: QualificationStep },
-  { id: 2, name: 'Get Started', component: BasicInfoStep },
-  { id: 3, name: 'Business Info', component: BusinessDetailsStep },
-  { id: 4, name: 'Owner Verify', component: OwnerVerificationStep },
-  { id: 5, name: 'Location', component: LocationStep },
-  { id: 6, name: 'Hours', component: HoursStep },
-  { id: 7, name: 'Menu', component: MenuBuilderStep },
-  { id: 8, name: 'Banking', component: EnhancedBankingStep },
-  { id: 9, name: 'Review', component: ReviewStep },
+  {
+    id: "order-method",
+    title: "Order method",
+    component: OrderMethodStep,
+    number: 1,
+  },
+  {
+    id: "qualification",
+    title: "Qualification",
+    component: QualificationStep,
+    number: 2,
+  },
+  {
+    id: "basic-info",
+    title: "Get started",
+    component: BasicInfoStep,
+    number: 3,
+  },
+  {
+    id: "business",
+    title: "Business details",
+    component: BusinessDetailsStep,
+    number: 4,
+  },
+  {
+    id: "location",
+    title: "Location",
+    component: LocationStep,
+    number: 5,
+  },
+  {
+    id: "hours",
+    title: "Store hours",
+    component: StoreHoursStep,
+    number: 6,
+  },
+  {
+    id: "menu-method",
+    title: "Menu setup",
+    component: MenuSetupMethodStep,
+    number: 7,
+  },
+  {
+    id: "menu-builder",
+    title: "Menu builder",
+    component: MenuBuilderStep,
+    number: 8,
+  },
+  {
+    id: "owner",
+    title: "Owner verification",
+    component: OwnerVerificationStep,
+    number: 9,
+  },
+  {
+    id: "banking",
+    title: "Payout info",
+    component: EnhancedBankingStep,
+    number: 10,
+  },
+  {
+    id: "review",
+    title: "Review & submit",
+    component: ReviewStep,
+    number: 11,
+  },
 ];
 
-export default function RestaurantOnboardingWizard() {
-  const [currentStep, setCurrentStep] = useState(1);
+const RestaurantOnboardingWizard = () => {
+  const [currentStep, setCurrentStep] = useState(0);
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
-
-  const progress = ((currentStep - 1) / (STEPS.length - 1)) * 100;
+  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
   const handleNext = () => {
-    if (currentStep < STEPS.length) {
+    // Mark current step as completed
+    if (!completedSteps.includes(STEPS[currentStep].number)) {
+      setCompletedSteps([...completedSteps, STEPS[currentStep].number]);
+    }
+    
+    if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handleBack = () => {
-    if (currentStep > 1) {
+    if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
-  const updateData = (updates: Partial<OnboardingData>) => {
-    setData({ ...data, ...updates });
+  const handleStepClick = (stepNumber: number) => {
+    const stepIndex = STEPS.findIndex(s => s.number === stepNumber);
+    if (stepIndex !== -1) {
+      setCurrentStep(stepIndex);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
-  const CurrentStepComponent = STEPS[currentStep - 1].component;
+  const updateData = (newData: Partial<OnboardingData>) => {
+    setData((prev) => ({ ...prev, ...newData }));
+  };
+
+  const handleSave = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        localStorage.setItem(`restaurant-onboarding-${user.id}`, JSON.stringify(data));
+        toast.success("Progress saved");
+      }
+    } catch (error) {
+      console.error("Save error:", error);
+      toast.error("Failed to save progress");
+    }
+  };
+
+  const CurrentStepComponent = STEPS[currentStep].component;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Partner with Crave'N
-          </h1>
-          <p className="text-lg text-gray-600">
-            Join thousands of restaurants delivering with us
-          </p>
-        </div>
+    <div className="min-h-screen bg-background w-full">
+      <OnboardingHeader onSave={handleSave} />
+      
+      <OnboardingSidebar
+        steps={STEPS}
+        currentStep={STEPS[currentStep].number}
+        completedSteps={completedSteps}
+        storeName={data.restaurantName}
+        onStepClick={handleStepClick}
+      />
 
-        {/* Progress Bar */}
-        <div className="max-w-4xl mx-auto mb-8">
-          <Progress value={progress} className="h-2 mb-4" />
-          
-          {/* Step Indicators */}
-          <div className="flex justify-between">
-            {STEPS.map((step, index) => (
-              <div key={step.id} className="flex flex-col items-center">
-                <div
-                  className={cn(
-                    'w-10 h-10 rounded-full flex items-center justify-center font-semibold mb-2 transition-all',
-                    currentStep > step.id
-                      ? 'bg-primary text-white'
-                      : currentStep === step.id
-                      ? 'bg-primary text-white ring-4 ring-primary/20'
-                      : 'bg-gray-200 text-gray-500'
-                  )}
-                >
-                  {currentStep > step.id ? (
-                    <Check className="w-5 h-5" />
-                  ) : (
-                    step.id
-                  )}
-                </div>
-                <p className="text-xs text-center hidden md:block text-gray-600">
-                  {step.name}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Step Content */}
-        <div className="max-w-3xl mx-auto">
-          <Card className="p-6 md:p-8 shadow-xl">
-            <CurrentStepComponent
-              data={data}
-              updateData={updateData}
-              onNext={handleNext}
-              onBack={handleBack}
-              isFirstStep={currentStep === 1}
-              isLastStep={currentStep === STEPS.length}
-            />
-          </Card>
-        </div>
-
-        {/* Help Text */}
-        <div className="text-center mt-8 text-sm text-gray-500">
-          <p>
-            Need help? Contact us at{' '}
-            <a href="mailto:partners@cravenusa.com" className="text-primary hover:underline">
-              partners@cravenusa.com
-            </a>
-          </p>
-        </div>
-      </div>
+      <main className="ml-64 pt-16 min-h-screen w-full">
+        <CurrentStepComponent
+          data={data}
+          updateData={updateData}
+          onNext={handleNext}
+          onBack={handleBack}
+          isFirstStep={currentStep === 0}
+          isLastStep={currentStep === STEPS.length - 1}
+        />
+      </main>
     </div>
   );
-}
+};
+
+export default RestaurantOnboardingWizard;
