@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import OnboardingHeader from "./OnboardingHeader";
 import OnboardingSidebar from "./OnboardingSidebar";
 import OrderMethodStep from "./steps/OrderMethodStep";
@@ -187,6 +188,7 @@ const STEPS = [
 ];
 
 const RestaurantOnboardingWizard = () => {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [data, setData] = useState<OnboardingData>(INITIAL_DATA);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
@@ -248,7 +250,8 @@ const RestaurantOnboardingWizard = () => {
     updateData({ contactPhone: `${countryCode} ${phoneNumber}` });
     setShowMobileModal(false);
     toast.success("Mobile number added successfully");
-    // Proceed to next screen after modal
+    // Navigate to setup dashboard
+    navigate("/restaurant/setup");
   };
 
   const handleRemindLater = () => {
@@ -264,7 +267,8 @@ const RestaurantOnboardingWizard = () => {
   const handleReminderClose = () => {
     setShowReminderModal(false);
     toast.info("We'll remind you tomorrow");
-    // Proceed to next screen even without phone
+    // Navigate to setup dashboard even without phone
+    navigate("/restaurant/setup");
   };
 
   const CurrentStepComponent = STEPS[currentStep].component;
