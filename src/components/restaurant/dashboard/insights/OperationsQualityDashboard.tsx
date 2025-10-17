@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertCircle, CheckCircle2, Download, Heart, Star, Clock, Package, XCircle, Target, Store } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
+import { useNavigate } from "react-router-dom";
 
 const OperationsQualityDashboard = () => {
+  const navigate = useNavigate();
   const sparklineData = [
     { value: 85 }, { value: 88 }, { value: 92 }, { value: 87 }, { value: 90 }, { value: 95 }, { value: 93 }
   ];
@@ -137,7 +139,11 @@ const OperationsQualityDashboard = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Achieve excellence in operations and get recognized with special perks and visibility.
               </p>
-              <Button variant="link" className="p-0 h-auto text-orange-600 font-semibold">
+              <Button 
+                variant="link" 
+                className="p-0 h-auto text-orange-600 font-semibold"
+                onClick={() => navigate('/restaurant/most-loved')}
+              >
                 Learn more →
               </Button>
             </div>
