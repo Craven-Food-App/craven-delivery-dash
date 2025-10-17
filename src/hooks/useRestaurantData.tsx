@@ -30,7 +30,7 @@ export const useRestaurantData = () => {
 
         const { data, error } = await supabase
           .from('restaurants')
-          .select('id, name, owner_id, setup_deadline, logo_url, header_image_url, instagram_handle, phone, address, description')
+          .select('id, name, owner_id, setup_deadline, logo_url, header_image_url, instagram_handle, phone, address, description, auto_descriptions_enabled, chat_enabled, alcohol_enabled, verification_notes')
           .eq('owner_id', user.id)
           .order('created_at', { ascending: false })
           .limit(1)

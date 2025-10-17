@@ -2248,10 +2248,13 @@ export type Database = {
       restaurants: {
         Row: {
           address: string
+          alcohol_enabled: boolean | null
+          auto_descriptions_enabled: boolean | null
           background_check_authorized: boolean | null
           banking_complete: boolean | null
           business_license_url: string | null
           business_verified_at: string | null
+          chat_enabled: boolean | null
           city: string | null
           commission_tier: string | null
           created_at: string | null
@@ -2292,6 +2295,7 @@ export type Database = {
           setup_deadline: string | null
           ssn_last4: string | null
           state: string | null
+          tablet_password: string | null
           tablet_shipped_at: string | null
           total_reviews: number
           updated_at: string | null
@@ -2300,10 +2304,13 @@ export type Database = {
         }
         Insert: {
           address: string
+          alcohol_enabled?: boolean | null
+          auto_descriptions_enabled?: boolean | null
           background_check_authorized?: boolean | null
           banking_complete?: boolean | null
           business_license_url?: string | null
           business_verified_at?: string | null
+          chat_enabled?: boolean | null
           city?: string | null
           commission_tier?: string | null
           created_at?: string | null
@@ -2344,6 +2351,7 @@ export type Database = {
           setup_deadline?: string | null
           ssn_last4?: string | null
           state?: string | null
+          tablet_password?: string | null
           tablet_shipped_at?: string | null
           total_reviews?: number
           updated_at?: string | null
@@ -2352,10 +2360,13 @@ export type Database = {
         }
         Update: {
           address?: string
+          alcohol_enabled?: boolean | null
+          auto_descriptions_enabled?: boolean | null
           background_check_authorized?: boolean | null
           banking_complete?: boolean | null
           business_license_url?: string | null
           business_verified_at?: string | null
+          chat_enabled?: boolean | null
           city?: string | null
           commission_tier?: string | null
           created_at?: string | null
@@ -2396,6 +2407,7 @@ export type Database = {
           setup_deadline?: string | null
           ssn_last4?: string | null
           state?: string | null
+          tablet_password?: string | null
           tablet_shipped_at?: string | null
           total_reviews?: number
           updated_at?: string | null

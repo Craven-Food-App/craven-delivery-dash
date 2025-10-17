@@ -23,23 +23,27 @@ const AccountSettingsDashboard = () => {
 
   useEffect(() => {
     if (restaurant?.id) {
-      // Load settings from restaurant settings if they exist
       fetchSettings();
     }
   }, [restaurant?.id]);
 
   const fetchSettings = async () => {
-    // Settings would be stored in restaurant preferences or settings
-    // For now using placeholder
+    const restaurantData = restaurant as any;
+    setAutoDescriptions(restaurantData?.auto_descriptions_enabled ?? true);
+    setChatEnabled(restaurantData?.chat_enabled ?? true);
+    setPickupInstructions(restaurantData?.verification_notes?.pickup_instructions || '');
+    setCustomerPickupInstructions(restaurantData?.verification_notes?.customer_pickup_instructions || '');
   };
 
-  const handleSavePickupInstructions = async () => {
+  const handleSaveSettings = async () => {
     setSaving(true);
     try {
       const existingNotes = (restaurant as any)?.verification_notes || {};
       const { error } = await supabase
         .from("restaurants")
         .update({
+          auto_descriptions_enabled: autoDescriptions,
+          chat_enabled: chatEnabled,
           verification_notes: {
             ...existingNotes,
             pickup_instructions: pickupInstructions,
@@ -49,10 +53,27 @@ const AccountSettingsDashboard = () => {
         .eq("id", restaurant?.id);
 
       if (error) throw error;
-      toast.success("Instructions saved successfully");
+      toast.success("Settings saved successfully");
     } catch (error) {
-      console.error("Error saving instructions:", error);
-      toast.error("Failed to save instructions");
+      console.error("Error saving settings:", error);
+      toast.error("Failed to save settings");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleResetTabletPassword = async () => {
+    setSaving(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('reset-tablet-password');
+      
+      if (error) throw error;
+      
+      toast.success(data.message);
+      console.log('New credentials:', data);
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      toast.error("Failed to reset tablet password");
     } finally {
       setSaving(false);
     }
@@ -133,6 +154,7 @@ const AccountSettingsDashboard = () => {
               <Switch 
                 checked={autoDescriptions} 
                 onCheckedChange={setAutoDescriptions}
+                disabled={saving}
               />
             </div>
 
@@ -161,7 +183,13 @@ const AccountSettingsDashboard = () => {
                   <p className="text-sm text-muted-foreground">Username:</p>
                   <p className="font-mono">{restaurant?.id?.slice(0, 15) || 'Not set'}</p>
                 </div>
-                <Button variant="outline">Reset password</Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleResetTabletPassword}
+                  disabled={saving}
+                >
+                  {saving ? "Resetting..." : "Reset password"}
+                </Button>
               </div>
             </div>
 
@@ -220,6 +248,7 @@ const AccountSettingsDashboard = () => {
                 <Switch 
                   checked={chatEnabled} 
                   onCheckedChange={setChatEnabled}
+                  disabled={saving}
                 />
               </div>
             </div>
@@ -287,11 +316,11 @@ const AccountSettingsDashboard = () => {
       {/* Save Button */}
       <div className="flex justify-end">
         <Button 
-          onClick={handleSavePickupInstructions}
+          onClick={handleSaveSettings}
           disabled={saving}
           size="lg"
         >
-          {saving ? "Saving..." : "Save Changes"}
+          {saving ? "Saving..." : "Save All Changes"}
         </Button>
       </div>
     </div>
