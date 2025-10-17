@@ -1,20 +1,14 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, AlertCircle } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { AlertCircle } from "lucide-react";
 import { ApplicationStepProps } from "@/types/application";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const AccountSetupStep = ({ data, onUpdate, onNext, isValid }: ApplicationStepProps) => {
-  const handleDateChange = (date: Date | undefined) => {
-    if (date) {
-      onUpdate('dateOfBirth', date.toISOString().split('T')[0]);
-    }
-  };
+  const maxDate = new Date();
+  maxDate.setFullYear(maxDate.getFullYear() - 18);
+  const minDate = new Date('1900-01-01');
 
   return (
     <div className="space-y-6">
@@ -78,30 +72,17 @@ export const AccountSetupStep = ({ data, onUpdate, onNext, isValid }: Applicatio
       </div>
 
       <div className="space-y-2">
-        <Label>Date of Birth *</Label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "w-full justify-start text-left font-normal",
-                !data.dateOfBirth && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {data.dateOfBirth ? format(new Date(data.dateOfBirth), "PPP") : "Pick your birth date"}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={data.dateOfBirth ? new Date(data.dateOfBirth) : undefined}
-              onSelect={handleDateChange}
-              disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
+        <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+        <Input
+          id="dateOfBirth"
+          type="date"
+          value={data.dateOfBirth || ''}
+          onChange={(e) => onUpdate('dateOfBirth', e.target.value)}
+          max={maxDate.toISOString().split('T')[0]}
+          min={minDate.toISOString().split('T')[0]}
+          required
+          className="w-full"
+        />
         <p className="text-xs text-muted-foreground">You must be at least 18 years old</p>
       </div>
 

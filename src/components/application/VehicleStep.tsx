@@ -2,10 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Car, Bike, Footprints } from "lucide-react";
-import { format } from "date-fns";
+import { Car, Bike, Footprints } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ApplicationStepProps, US_STATES } from "@/types/application";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,12 +15,8 @@ const VEHICLE_TYPES = [
 
 export const VehicleStep = ({ data, onUpdate, onNext, onBack, isValid }: ApplicationStepProps) => {
   const needsVehicleInfo = data.vehicleType && data.vehicleType !== 'walking';
-
-  const handleExpiryChange = (date: Date | undefined) => {
-    if (date) {
-      onUpdate('licenseExpiry', date.toISOString().split('T')[0]);
-    }
-  };
+  const minDate = new Date();
+  minDate.setDate(minDate.getDate() + 1); // License must be valid tomorrow at minimum
 
   return (
     <div className="space-y-6">
@@ -144,30 +137,16 @@ export const VehicleStep = ({ data, onUpdate, onNext, onBack, isValid }: Applica
           </div>
         </div>
         <div className="space-y-2">
-          <Label>Expiration Date *</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !data.licenseExpiry && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {data.licenseExpiry ? format(new Date(data.licenseExpiry), "PPP") : "Pick expiry date"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={data.licenseExpiry ? new Date(data.licenseExpiry) : undefined}
-                onSelect={handleExpiryChange}
-                disabled={(date) => date < new Date()}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+          <Label htmlFor="licenseExpiry">Expiration Date *</Label>
+          <Input
+            id="licenseExpiry"
+            type="date"
+            value={data.licenseExpiry || ''}
+            onChange={(e) => onUpdate('licenseExpiry', e.target.value)}
+            min={minDate.toISOString().split('T')[0]}
+            required
+            className="w-full"
+          />
         </div>
       </div>
 
