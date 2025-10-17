@@ -72,6 +72,7 @@ export const validateStep = (step: number, data: ApplicationData, files: Applica
     case 5: // Documents
       if (!files.profilePhoto) errors.push('Profile photo is required');
       if (!files.driversLicenseFront) errors.push('Driver\'s license (front) is required');
+      if (!files.i9Document) errors.push('I-9 form is required');
       break;
 
     default:

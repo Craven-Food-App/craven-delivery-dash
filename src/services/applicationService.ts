@@ -153,6 +153,7 @@ export class ApplicationService {
         insurance_provider: 'N/A',
         vehicle_registration: documentPaths.vehicleRegistration,
         profile_photo: documentPaths.profilePhoto,
+        i9_document: documentPaths.i9Document,
         status: 'pending'
       });
 

@@ -134,6 +134,15 @@ export const DocumentsStep = ({ files, onFileUpload, onNext, onBack, isValid }: 
         onRemove={() => {}}
       />
 
+      <FileUploadField
+        label="I-9 Form"
+        description="Employment Eligibility Verification (I-9) form"
+        required
+        file={files.i9Document}
+        onUpload={(file) => onFileUpload('i9Document', file)}
+        onRemove={() => {}}
+      />
+
       <div className="flex gap-3">
         <Button variant="outline" onClick={onBack} className="w-full" size="lg">
           Back
