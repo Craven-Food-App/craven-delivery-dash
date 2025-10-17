@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useRestaurantData } from "@/hooks/useRestaurantData";
+import { useRestaurantOnboarding } from "@/hooks/useRestaurantOnboarding";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 import InsightsDashboard from "@/components/restaurant/dashboard/InsightsDashboard";
 import CustomersDashboard from "@/components/restaurant/dashboard/CustomersDashboard";
 import MenuDashboard from "@/components/restaurant/dashboard/MenuDashboard";
@@ -15,11 +20,100 @@ import RequestDeliveryDashboard from "@/components/restaurant/dashboard/RequestD
 import { Home, TrendingUp, FileText, Users, Package, Menu as MenuIcon, Calendar, DollarSign, Settings, ChevronDown, CheckCircle2, Tablet, Store, ChevronUp, Plus, HelpCircle, MessageCircle, Mail } from "lucide-react";
 const RestaurantSetup = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'reports' | 'customers' | 'orders' | 'menu' | 'availability' | 'financials' | 'settings' | 'commerce' | 'request-delivery'>('home');
   const [prepareStoreExpanded, setPrepareStoreExpanded] = useState(true);
-  const restaurantName = "Craven Inc";
-  const userName = "Torrance";
-  const deadline = "Mon, Oct 27";
+  const [userName, setUserName] = useState("User");
+  
+  const { restaurant, loading: restaurantLoading } = useRestaurantData();
+  const { progress, readiness, loading: onboardingLoading, refreshData } = useRestaurantOnboarding(restaurant?.id);
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('full_name')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (profile?.full_name) {
+          setUserName(profile.full_name.split(' ')[0]);
+        }
+      }
+    };
+    fetchUserProfile();
+  }, []);
+
+  const handleCreateAdditionalLocation = async () => {
+    if (!restaurant) return;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('create-additional-location', {
+        body: {
+          parent_restaurant_id: restaurant.id,
+          location_data: {
+            name: `${restaurant.name} - New Location`,
+            address: "",
+            city: "",
+            state: "",
+            zip_code: ""
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "New location created successfully"
+      });
+
+      navigate('/restaurant/onboarding');
+    } catch (error) {
+      console.error('Error creating location:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create new location",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const completedSteps = [
+    progress?.business_info_verified,
+    progress?.menu_preparation_status === 'ready',
+    progress?.tablet_shipped
+  ].filter(Boolean).length;
+
+  const deadline = restaurant?.setup_deadline 
+    ? format(new Date(restaurant.setup_deadline), 'EEE, MMM d')
+    : readiness?.estimated_go_live 
+      ? format(new Date(readiness.estimated_go_live), 'EEE, MMM d')
+      : "Not set";
+
+  if (restaurantLoading || onboardingLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
+
+  if (!restaurant) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-2">No Restaurant Found</h2>
+          <p className="text-muted-foreground mb-4">Please complete restaurant onboarding first.</p>
+          <Button onClick={() => navigate('/restaurant/register')}>
+            Start Onboarding
+          </Button>
+        </Card>
+      </div>
+    );
+  }
   return <div className="flex h-screen bg-background">
       {/* Left Sidebar */}
       <aside className="w-64 border-r bg-card flex flex-col">
@@ -39,7 +133,7 @@ const RestaurantSetup = () => {
                 <Store className="w-4 h-4" />
               </div>
               <div className="text-left">
-                <div className="font-semibold text-sm">{restaurantName}</div>
+                <div className="font-semibold text-sm">{restaurant.name}</div>
                 <div className="text-xs text-muted-foreground">Store</div>
               </div>
             </div>
@@ -166,68 +260,126 @@ const RestaurantSetup = () => {
                 <Card className="p-6">
                   <div className="flex gap-4">
                     <div className="flex-shrink-0">
-                      <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
-                        <CheckCircle2 className="w-6 h-6 text-white" />
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        progress?.business_info_verified ? 'bg-green-500' : 'bg-foreground'
+                      }`}>
+                        {progress?.business_info_verified ? (
+                          <CheckCircle2 className="w-6 h-6 text-white" />
+                        ) : (
+                          <MenuIcon className="w-6 h-6 text-background" />
+                        )}
                       </div>
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-lg mb-2">Your business info was verified</h3>
+                      <h3 className="font-semibold text-lg mb-2">
+                        {progress?.business_info_verified 
+                          ? 'Your business info was verified' 
+                          : 'Business verification pending'}
+                      </h3>
                       <p className="text-sm text-muted-foreground">
-                        We've reviewed and verified your business info. No further action is needed.
+                        {progress?.business_info_verified
+                          ? "We've reviewed and verified your business info. No further action is needed."
+                          : "Our team is reviewing your business documents. This usually takes 1-2 business days."}
                       </p>
                     </div>
                   </div>
                 </Card>
 
-                {/* Menu in progress */}
+                {/* Menu preparation */}
                 <Card className="p-6">
                   <div className="flex gap-4">
                     <div className="flex-shrink-0">
-                      <div className="w-12 h-12 rounded-full bg-foreground flex items-center justify-center">
-                        <MenuIcon className="w-6 h-6 text-background" />
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        progress?.menu_preparation_status === 'ready' ? 'bg-green-500' : 'bg-foreground'
+                      }`}>
+                        {progress?.menu_preparation_status === 'ready' ? (
+                          <CheckCircle2 className="w-6 h-6 text-white" />
+                        ) : (
+                          <MenuIcon className="w-6 h-6 text-background" />
+                        )}
                       </div>
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-lg">We're preparing your menu</h3>
-                        <span className="text-xs font-medium text-teal-600 bg-teal-50 px-2 py-1 rounded">
-                          ✓ In progress
-                        </span>
+                        <h3 className="font-semibold text-lg">
+                          {progress?.menu_preparation_status === 'ready' 
+                            ? 'Your menu is ready' 
+                            : progress?.menu_preparation_status === 'in_progress'
+                              ? "We're preparing your menu"
+                              : 'Menu preparation not started'}
+                        </h3>
+                        {progress?.menu_preparation_status !== 'not_started' && (
+                          <span className={`text-xs font-medium px-2 py-1 rounded ${
+                            progress?.menu_preparation_status === 'ready'
+                              ? 'text-green-600 bg-green-50'
+                              : 'text-teal-600 bg-teal-50'
+                          }`}>
+                            {progress?.menu_preparation_status === 'ready' ? '✓ Complete' : '✓ In progress'}
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground mb-4">
-                        This usually takes 2 business days. You'll get an email when your menu is ready.
+                        {progress?.menu_preparation_status === 'ready'
+                          ? "Your menu has been prepared and is ready to go live."
+                          : "This usually takes 2 business days. You'll get an email when your menu is ready."}
                       </p>
                       
-                      <div className="bg-muted/50 p-4 rounded-lg">
-                        <h4 className="font-semibold text-sm mb-2">Add a store logo and header</h4>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          Stores with a logo and header image get up to 50% more monthly sales.
-                        </p>
-                        <Button variant="outline" size="sm">
-                          Add a header and logo
-                        </Button>
-                      </div>
+                      {!readiness?.details?.has_logo || !readiness?.details?.has_header ? (
+                        <div className="bg-muted/50 p-4 rounded-lg">
+                          <h4 className="font-semibold text-sm mb-2">Add a store logo and header</h4>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Stores with a logo and header image get up to 50% more monthly sales.
+                          </p>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setActiveTab('settings')}
+                          >
+                            Add a header and logo
+                          </Button>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 </Card>
 
-                {/* Tablet in transit */}
+                {/* Tablet status */}
                 <Card className="p-6">
                   <div className="flex gap-4">
                     <div className="flex-shrink-0">
-                      <div className="w-12 h-12 rounded-full bg-foreground flex items-center justify-center">
-                        <Tablet className="w-6 h-6 text-background" />
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        progress?.tablet_delivered_at ? 'bg-green-500' : progress?.tablet_shipped ? 'bg-foreground' : 'bg-muted'
+                      }`}>
+                        <Tablet className={`w-6 h-6 ${
+                          progress?.tablet_delivered_at || progress?.tablet_shipped ? 'text-white' : 'text-muted-foreground'
+                        }`} />
                       </div>
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-lg">Your tablet is in transit</h3>
-                        <span className="text-xs font-medium text-teal-600 bg-teal-50 px-2 py-1 rounded">
-                          ✓ In progress
-                        </span>
+                        <h3 className="font-semibold text-lg">
+                          {progress?.tablet_delivered_at
+                            ? 'Your tablet has been delivered'
+                            : progress?.tablet_shipped
+                              ? 'Your tablet is in transit'
+                              : 'Tablet not yet shipped'}
+                        </h3>
+                        {progress?.tablet_shipped && (
+                          <span className={`text-xs font-medium px-2 py-1 rounded ${
+                            progress?.tablet_delivered_at
+                              ? 'text-green-600 bg-green-50'
+                              : 'text-teal-600 bg-teal-50'
+                          }`}>
+                            {progress?.tablet_delivered_at ? '✓ Delivered' : '✓ In transit'}
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        We'll keep you updated on its status.
+                        {progress?.tablet_delivered_at
+                          ? "Your tablet has been delivered and is ready to use."
+                          : progress?.tablet_shipped
+                            ? "We'll keep you updated on its status."
+                            : "Your tablet will ship once business verification is complete."}
                       </p>
                     </div>
                   </div>
@@ -246,13 +398,44 @@ const RestaurantSetup = () => {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <h3 className="font-semibold text-lg">Go live with your store</h3>
-                  <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">
-                    🔥 Not ready
+                  <span className={`text-xs font-medium px-2 py-1 rounded ${
+                    readiness?.ready
+                      ? 'text-green-600 bg-green-50'
+                      : 'text-orange-600 bg-orange-50'
+                  }`}>
+                    {readiness?.ready ? '✓ Ready' : '🔥 Not ready'}
                   </span>
+                  {readiness && (
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Readiness: {readiness.score}%
+                    </span>
+                  )}
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  We recommend going live by <span className="font-medium text-foreground">{deadline}</span>. If you need more time, you can reschedule this date.
+                <p className="text-sm text-muted-foreground mb-2">
+                  {readiness?.ready
+                    ? `You're ready to go live! Your estimated launch date is ${deadline}.`
+                    : `We recommend going live by ${deadline}. Complete the items below to go live.`}
                 </p>
+                {readiness && readiness.blockers.length > 0 && (
+                  <div className="mt-3 p-3 bg-orange-50 rounded-lg">
+                    <p className="text-sm font-semibold text-orange-900 mb-1">Required to go live:</p>
+                    <ul className="text-sm text-orange-800 space-y-1">
+                      {readiness.blockers.map((blocker, idx) => (
+                        <li key={idx}>• {blocker}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {readiness && readiness.missing_items.length > 0 && (
+                  <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                    <p className="text-sm font-semibold text-blue-900 mb-1">Recommended items:</p>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      {readiness.missing_items.slice(0, 3).map((item, idx) => (
+                        <li key={idx}>• {item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
           </Card>
@@ -280,7 +463,10 @@ const RestaurantSetup = () => {
                   <p className="text-sm text-muted-foreground mb-4">
                     We noticed you signed up for more than one store location. Continue setting up your business on Crave'N by adding another store or business now.
                   </p>
-                  <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+                  <Button 
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                    onClick={handleCreateAdditionalLocation}
+                  >
                     Add store or business
                   </Button>
                 </div>

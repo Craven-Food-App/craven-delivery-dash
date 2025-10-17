@@ -76,3 +76,15 @@ verify_jwt = true
 
 [functions.create-stripe-financial-connection]
 verify_jwt = true
+
+[functions.calculate-restaurant-readiness]
+verify_jwt = true
+
+[functions.create-additional-location]
+verify_jwt = true
+
+[functions.admin-verify-business]
+verify_jwt = true
+
+[functions.update-menu-preparation-status]
+verify_jwt = true

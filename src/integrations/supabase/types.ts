@@ -1805,6 +1805,83 @@ export type Database = {
           },
         ]
       }
+      restaurant_go_live_checklist: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          is_blocker: boolean | null
+          is_completed: boolean | null
+          is_required: boolean | null
+          item_description: string | null
+          item_key: string
+          item_name: string
+          restaurant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_blocker?: boolean | null
+          is_completed?: boolean | null
+          is_required?: boolean | null
+          item_description?: string | null
+          item_key: string
+          item_name: string
+          restaurant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_blocker?: boolean | null
+          is_completed?: boolean | null
+          is_required?: boolean | null
+          item_description?: string | null
+          item_key?: string
+          item_name?: string
+          restaurant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_go_live_checklist_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_groups: {
+        Row: {
+          commission_tier: string | null
+          created_at: string | null
+          id: string
+          name: string
+          owner_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          commission_tier?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          owner_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          commission_tier?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          owner_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       restaurant_hours: {
         Row: {
           close_time: string | null
@@ -1846,11 +1923,126 @@ export type Database = {
           },
         ]
       }
+      restaurant_onboarding_progress: {
+        Row: {
+          admin_notes: string | null
+          business_info_verified: boolean | null
+          business_verified_at: string | null
+          created_at: string | null
+          go_live_ready: boolean | null
+          go_live_scheduled_at: string | null
+          id: string
+          menu_preparation_status:
+            | Database["public"]["Enums"]["menu_preparation_status"]
+            | null
+          menu_ready_at: string | null
+          restaurant_id: string
+          tablet_delivered_at: string | null
+          tablet_shipped: boolean | null
+          tablet_shipped_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          business_info_verified?: boolean | null
+          business_verified_at?: string | null
+          created_at?: string | null
+          go_live_ready?: boolean | null
+          go_live_scheduled_at?: string | null
+          id?: string
+          menu_preparation_status?:
+            | Database["public"]["Enums"]["menu_preparation_status"]
+            | null
+          menu_ready_at?: string | null
+          restaurant_id: string
+          tablet_delivered_at?: string | null
+          tablet_shipped?: boolean | null
+          tablet_shipped_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          business_info_verified?: boolean | null
+          business_verified_at?: string | null
+          created_at?: string | null
+          go_live_ready?: boolean | null
+          go_live_scheduled_at?: string | null
+          id?: string
+          menu_preparation_status?:
+            | Database["public"]["Enums"]["menu_preparation_status"]
+            | null
+          menu_ready_at?: string | null
+          restaurant_id?: string
+          tablet_delivered_at?: string | null
+          tablet_shipped?: boolean | null
+          tablet_shipped_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_onboarding_progress_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: true
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_verification_tasks: {
+        Row: {
+          assigned_admin_id: string | null
+          completed_at: string | null
+          completion_notes: string | null
+          created_at: string | null
+          id: string
+          restaurant_id: string
+          status: Database["public"]["Enums"]["verification_task_status"] | null
+          task_type: Database["public"]["Enums"]["verification_task_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_admin_id?: string | null
+          completed_at?: string | null
+          completion_notes?: string | null
+          created_at?: string | null
+          id?: string
+          restaurant_id: string
+          status?:
+            | Database["public"]["Enums"]["verification_task_status"]
+            | null
+          task_type: Database["public"]["Enums"]["verification_task_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_admin_id?: string | null
+          completed_at?: string | null
+          completion_notes?: string | null
+          created_at?: string | null
+          id?: string
+          restaurant_id?: string
+          status?:
+            | Database["public"]["Enums"]["verification_task_status"]
+            | null
+          task_type?: Database["public"]["Enums"]["verification_task_type"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_verification_tasks_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurants: {
         Row: {
           address: string
           background_check_authorized: boolean | null
+          banking_complete: boolean | null
           business_license_url: string | null
+          business_verified_at: string | null
           city: string | null
           commission_tier: string | null
           created_at: string | null
@@ -1861,10 +2053,13 @@ export type Database = {
           email: string | null
           estimated_delivery_time: number | null
           expected_monthly_orders: number | null
+          go_live_scheduled_at: string | null
           has_physical_location: boolean | null
+          header_image_url: string | null
           health_permit_url: string | null
           id: string
           image_url: string | null
+          instagram_handle: string | null
           insurance_certificate_url: string | null
           is_active: boolean | null
           is_promoted: boolean
@@ -1873,6 +2068,7 @@ export type Database = {
           longitude: number | null
           marketing_opt_in: boolean | null
           max_delivery_time: number | null
+          menu_ready_at: string | null
           min_delivery_time: number | null
           minimum_order_cents: number | null
           name: string
@@ -1882,9 +2078,12 @@ export type Database = {
           phone: string | null
           pos_system: string | null
           rating: number | null
+          readiness_score: number | null
           restaurant_type: string | null
+          setup_deadline: string | null
           ssn_last4: string | null
           state: string | null
+          tablet_shipped_at: string | null
           total_reviews: number
           updated_at: string | null
           verification_notes: Json | null
@@ -1893,7 +2092,9 @@ export type Database = {
         Insert: {
           address: string
           background_check_authorized?: boolean | null
+          banking_complete?: boolean | null
           business_license_url?: string | null
+          business_verified_at?: string | null
           city?: string | null
           commission_tier?: string | null
           created_at?: string | null
@@ -1904,10 +2105,13 @@ export type Database = {
           email?: string | null
           estimated_delivery_time?: number | null
           expected_monthly_orders?: number | null
+          go_live_scheduled_at?: string | null
           has_physical_location?: boolean | null
+          header_image_url?: string | null
           health_permit_url?: string | null
           id?: string
           image_url?: string | null
+          instagram_handle?: string | null
           insurance_certificate_url?: string | null
           is_active?: boolean | null
           is_promoted?: boolean
@@ -1916,6 +2120,7 @@ export type Database = {
           longitude?: number | null
           marketing_opt_in?: boolean | null
           max_delivery_time?: number | null
+          menu_ready_at?: string | null
           min_delivery_time?: number | null
           minimum_order_cents?: number | null
           name: string
@@ -1925,9 +2130,12 @@ export type Database = {
           phone?: string | null
           pos_system?: string | null
           rating?: number | null
+          readiness_score?: number | null
           restaurant_type?: string | null
+          setup_deadline?: string | null
           ssn_last4?: string | null
           state?: string | null
+          tablet_shipped_at?: string | null
           total_reviews?: number
           updated_at?: string | null
           verification_notes?: Json | null
@@ -1936,7 +2144,9 @@ export type Database = {
         Update: {
           address?: string
           background_check_authorized?: boolean | null
+          banking_complete?: boolean | null
           business_license_url?: string | null
+          business_verified_at?: string | null
           city?: string | null
           commission_tier?: string | null
           created_at?: string | null
@@ -1947,10 +2157,13 @@ export type Database = {
           email?: string | null
           estimated_delivery_time?: number | null
           expected_monthly_orders?: number | null
+          go_live_scheduled_at?: string | null
           has_physical_location?: boolean | null
+          header_image_url?: string | null
           health_permit_url?: string | null
           id?: string
           image_url?: string | null
+          instagram_handle?: string | null
           insurance_certificate_url?: string | null
           is_active?: boolean | null
           is_promoted?: boolean
@@ -1959,6 +2172,7 @@ export type Database = {
           longitude?: number | null
           marketing_opt_in?: boolean | null
           max_delivery_time?: number | null
+          menu_ready_at?: string | null
           min_delivery_time?: number | null
           minimum_order_cents?: number | null
           name?: string
@@ -1968,9 +2182,12 @@ export type Database = {
           phone?: string | null
           pos_system?: string | null
           rating?: number | null
+          readiness_score?: number | null
           restaurant_type?: string | null
+          setup_deadline?: string | null
           ssn_last4?: string | null
           state?: string | null
+          tablet_shipped_at?: string | null
           total_reviews?: number
           updated_at?: string | null
           verification_notes?: Json | null
@@ -2172,7 +2389,18 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      menu_preparation_status: "not_started" | "in_progress" | "ready"
+      verification_task_status:
+        | "pending"
+        | "in_progress"
+        | "completed"
+        | "rejected"
+      verification_task_type:
+        | "business_license_review"
+        | "menu_import"
+        | "quality_check"
+        | "insurance_review"
+        | "banking_review"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2299,6 +2527,21 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      menu_preparation_status: ["not_started", "in_progress", "ready"],
+      verification_task_status: [
+        "pending",
+        "in_progress",
+        "completed",
+        "rejected",
+      ],
+      verification_task_type: [
+        "business_license_review",
+        "menu_import",
+        "quality_check",
+        "insurance_review",
+        "banking_review",
+      ],
+    },
   },
 } as const
