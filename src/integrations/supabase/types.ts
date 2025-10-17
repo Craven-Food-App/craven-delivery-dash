@@ -1570,6 +1570,48 @@ export type Database = {
           },
         ]
       }
+      pricing_plans: {
+        Row: {
+          created_at: string | null
+          delivery_commission_percent: number
+          display_order: number | null
+          features: Json | null
+          id: string
+          is_active: boolean | null
+          monthly_fee_cents: number | null
+          name: string
+          pickup_commission_percent: number
+          tier: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          delivery_commission_percent: number
+          display_order?: number | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          monthly_fee_cents?: number | null
+          name: string
+          pickup_commission_percent: number
+          tier: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          delivery_commission_percent?: number
+          display_order?: number | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          monthly_fee_cents?: number | null
+          name?: string
+          pickup_commission_percent?: number
+          tier?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       promo_code_usage: {
         Row: {
           discount_applied_cents: number
