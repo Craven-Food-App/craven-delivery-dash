@@ -45,12 +45,13 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const { returnUrl, refreshUrl } = body;
 
-    // Get restaurant for this user
-    const { data: restaurant, error: restaurantError } = await supabase
+    // Get restaurant for this user (pick most recently created)
+    const { data: restaurantsData, error: restaurantError } = await supabase
       .from('restaurants')
       .select('id, name, email, stripe_connect_account_id')
       .eq('owner_id', user.id)
-      .maybeSingle();
+      .order('created_at', { ascending: false })
+      .limit(1);
 
     if (restaurantError) {
       console.error('Database error fetching restaurant:', restaurantError.message);
@@ -59,6 +60,8 @@ serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const restaurant = restaurantsData?.[0];
 
     if (!restaurant) {
       console.error('No restaurant found for user:', user.id);
