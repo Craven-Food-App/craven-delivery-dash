@@ -10,11 +10,12 @@ import {
   MapPin, 
   Calendar, 
   Phone, 
-  Mail, 
+  Mail as MailIcon, 
   FileText, 
   CheckCircle, 
   XCircle,
-  Eye
+  Eye,
+  Send
 } from 'lucide-react';
 import { formatDate } from 'date-fns';
 
@@ -52,13 +53,15 @@ interface ApplicationCardProps {
   onApprove: (id: string, notes: string) => void;
   onReject: (id: string, notes: string) => void;
   onViewDocument: (documentPath: string, documentName: string) => void;
+  onSendApprovalEmail?: (id: string) => void;
 }
 
 const ApplicationCard: React.FC<ApplicationCardProps> = ({ 
   application, 
   onApprove, 
   onReject, 
-  onViewDocument 
+  onViewDocument,
+  onSendApprovalEmail 
 }) => {
   const [reviewNotes, setReviewNotes] = React.useState('');
 
@@ -103,7 +106,7 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
         {/* Personal Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex items-center gap-2">
-            <Mail className="h-4 w-4 text-blue-600" />
+            <MailIcon className="h-4 w-4 text-blue-600" />
             <span className="text-sm">{application.email}</span>
           </div>
           
@@ -178,6 +181,20 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
             </Button>
           </div>
         </div>
+
+        {/* Send Email Button for Approved Applications */}
+        {application.status === 'approved' && onSendApprovalEmail && (
+          <div className="border-t pt-4">
+            <Button 
+              onClick={() => onSendApprovalEmail(application.id)}
+              variant="outline"
+              className="w-full flex items-center gap-2"
+            >
+              <Send className="h-4 w-4" />
+              Send Approval Email
+            </Button>
+          </div>
+        )}
 
         {/* Review Section */}
         {application.status === 'pending' && (

@@ -169,6 +169,37 @@ const ApplicationReview: React.FC = () => {
     }
   };
 
+  const handleSendApprovalEmail = async (applicationId: string) => {
+    try {
+      const application = applications.find(app => app.id === applicationId);
+      if (!application) throw new Error('Application not found');
+
+      const { error: emailError } = await supabase.functions.invoke('send-approval-email', {
+        body: {
+          driverName: `${application.first_name} ${application.last_name}`,
+          driverEmail: application.email,
+          applicationId: applicationId,
+        },
+      });
+
+      if (emailError) {
+        throw emailError;
+      }
+
+      toast({
+        title: "Email Sent",
+        description: "Approval email has been sent to the driver.",
+      });
+    } catch (error) {
+      console.error('Error sending approval email:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send approval email",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleReject = async (applicationId: string, notes: string) => {
     try {
       const { error } = await supabase
@@ -315,6 +346,7 @@ const ApplicationReview: React.FC = () => {
                     onApprove={handleApprove}
                     onReject={handleReject}
                     onViewDocument={handleViewDocument}
+                    onSendApprovalEmail={handleSendApprovalEmail}
                   />
                 ))
               )}
@@ -337,6 +369,7 @@ const ApplicationReview: React.FC = () => {
                     onApprove={handleApprove}
                     onReject={handleReject}
                     onViewDocument={handleViewDocument}
+                    onSendApprovalEmail={handleSendApprovalEmail}
                   />
                 ))
               )}
@@ -359,6 +392,7 @@ const ApplicationReview: React.FC = () => {
                     onApprove={handleApprove}
                     onReject={handleReject}
                     onViewDocument={handleViewDocument}
+                    onSendApprovalEmail={handleSendApprovalEmail}
                   />
                 ))
               )}
@@ -376,6 +410,7 @@ const ApplicationReview: React.FC = () => {
                   onApprove={handleApprove}
                   onReject={handleReject}
                   onViewDocument={handleViewDocument}
+                  onSendApprovalEmail={handleSendApprovalEmail}
                 />
               ))}
             </div>
