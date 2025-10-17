@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import InsightsDashboard from "@/components/restaurant/dashboard/InsightsDashboard";
+import CustomersDashboard from "@/components/restaurant/dashboard/CustomersDashboard";
 import { 
   Home, 
   TrendingUp, 
@@ -24,7 +25,7 @@ import {
 } from "lucide-react";
 
 const RestaurantSetup = () => {
-  const [activeTab, setActiveTab] = useState<'home' | 'insights'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'customers'>('home');
   const [prepareStoreExpanded, setPrepareStoreExpanded] = useState(true);
   const restaurantName = "Craven Inc";
   const userName = "Torrance";
@@ -90,10 +91,16 @@ const RestaurantSetup = () => {
               <span className="text-sm font-medium">Reports</span>
             </button>
             
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-foreground">
+            <button 
+              onClick={() => setActiveTab('customers')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg ${
+                activeTab === 'customers' 
+                  ? 'bg-orange-50 text-orange-600' 
+                  : 'hover:bg-muted text-foreground'
+              }`}
+            >
               <Users className="w-5 h-5" />
               <span className="text-sm font-medium">Customers</span>
-              <ChevronDown className="w-4 h-4 ml-auto" />
             </button>
             
             <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-foreground">
@@ -327,9 +334,11 @@ const RestaurantSetup = () => {
             </Card>
           </div>
         </div>
-        ) : (
+        ) : activeTab === 'insights' ? (
           <InsightsDashboard />
-        )}
+        ) : activeTab === 'customers' ? (
+          <CustomersDashboard />
+        ) : null}
       </main>
 
       {/* Right Sidebar - Store Preview */}
