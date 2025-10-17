@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ApplicationStepProps } from "@/types/application";
 import { Shield, DollarSign, CreditCard, Wallet } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export const BankingStep = ({ data, onUpdate, onNext, onBack, isValid }: ApplicationStepProps) => {
   const formatSSN = (value: string) => {
@@ -62,6 +63,25 @@ export const BankingStep = ({ data, onUpdate, onNext, onBack, isValid }: Applica
           </p>
         </div>
       </div>
+
+      <Card className="p-4 border-2">
+        <div className="flex items-start space-x-3">
+          <Checkbox
+            id="background_check_consent"
+            checked={data.backgroundCheckConsent}
+            onCheckedChange={(checked) => onUpdate('backgroundCheckConsent', checked as boolean)}
+          />
+          <div className="flex-1">
+            <Label htmlFor="background_check_consent" className="cursor-pointer">
+              <p className="text-sm font-medium">Background Check Authorization *</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                I authorize Crave'N to obtain a consumer report and/or investigative consumer report for employment purposes. 
+                I understand this may include criminal history, motor vehicle records, and employment verification as permitted by law.
+              </p>
+            </Label>
+          </div>
+        </div>
+      </Card>
 
 
       <div className="flex gap-3">

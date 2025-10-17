@@ -44,6 +44,89 @@ export type Database = {
         }
         Relationships: []
       }
+      background_check_reports: {
+        Row: {
+          admin_decision: string | null
+          admin_review_notes: string | null
+          admin_review_required: boolean | null
+          admin_reviewed_at: string | null
+          admin_reviewed_by: string | null
+          application_id: string
+          checkr_candidate_id: string | null
+          checkr_package: string | null
+          checkr_report_id: string | null
+          checkr_status: string | null
+          completed_at: string | null
+          created_at: string | null
+          criminal_records: Json | null
+          criminal_search_status: string | null
+          id: string
+          initiated_at: string | null
+          mvr_records: Json | null
+          mvr_status: string | null
+          ssn_trace_status: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          admin_decision?: string | null
+          admin_review_notes?: string | null
+          admin_review_required?: boolean | null
+          admin_reviewed_at?: string | null
+          admin_reviewed_by?: string | null
+          application_id: string
+          checkr_candidate_id?: string | null
+          checkr_package?: string | null
+          checkr_report_id?: string | null
+          checkr_status?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          criminal_records?: Json | null
+          criminal_search_status?: string | null
+          id?: string
+          initiated_at?: string | null
+          mvr_records?: Json | null
+          mvr_status?: string | null
+          ssn_trace_status?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          admin_decision?: string | null
+          admin_review_notes?: string | null
+          admin_review_required?: boolean | null
+          admin_reviewed_at?: string | null
+          admin_reviewed_by?: string | null
+          application_id?: string
+          checkr_candidate_id?: string | null
+          checkr_package?: string | null
+          checkr_report_id?: string | null
+          checkr_status?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          criminal_records?: Json | null
+          criminal_search_status?: string | null
+          id?: string
+          initiated_at?: string | null
+          mvr_records?: Json | null
+          mvr_status?: string | null
+          ssn_trace_status?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "background_check_reports_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "craver_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_conversations: {
         Row: {
           admin_id: string | null
@@ -185,6 +268,9 @@ export type Database = {
           account_number_encrypted: string | null
           account_number_last_four: string | null
           background_check: boolean | null
+          background_check_consent: boolean | null
+          background_check_consent_date: string | null
+          background_check_report_id: string | null
           bank_account_type: string | null
           business_name: string | null
           cash_tag: string | null
@@ -237,6 +323,9 @@ export type Database = {
           account_number_encrypted?: string | null
           account_number_last_four?: string | null
           background_check?: boolean | null
+          background_check_consent?: boolean | null
+          background_check_consent_date?: string | null
+          background_check_report_id?: string | null
           bank_account_type?: string | null
           business_name?: string | null
           cash_tag?: string | null
@@ -289,6 +378,9 @@ export type Database = {
           account_number_encrypted?: string | null
           account_number_last_four?: string | null
           background_check?: boolean | null
+          background_check_consent?: boolean | null
+          background_check_consent_date?: string | null
+          background_check_report_id?: string | null
           bank_account_type?: string | null
           business_name?: string | null
           cash_tag?: string | null
@@ -337,7 +429,15 @@ export type Database = {
           w9_document?: string | null
           zip_code?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "craver_applications_background_check_report_id_fkey"
+            columns: ["background_check_report_id"]
+            isOneToOne: false
+            referencedRelation: "background_check_reports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       craver_locations: {
         Row: {

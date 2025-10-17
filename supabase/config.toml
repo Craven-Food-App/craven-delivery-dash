@@ -64,3 +64,9 @@ verify_jwt = true
 
 [functions.send-restaurant-welcome-email]
 verify_jwt = true
+
+[functions.initiate-background-check]
+verify_jwt = true
+
+[functions.checkr-webhook]
+verify_jwt = false

@@ -4,13 +4,14 @@ import ApplicationReview from '@/components/admin/ApplicationReview';
 import OnboardingDashboard from '@/components/admin/OnboardingDashboard';
 import LiveDashboard from '@/components/admin/LiveDashboard';
 import ChatPortal from '@/components/admin/ChatPortal';
+import BackgroundCheckDashboard from '@/components/admin/BackgroundCheckDashboard';
 import { NotificationSettingsManager } from '@/components/admin/NotificationSettingsManager';
 import { PayoutSettingsManager } from '@/components/admin/PayoutSettingsManager';
 import CommissionSettingsManager from '@/components/admin/CommissionSettingsManager';
 import { PromoCodeManager } from '@/components/admin/PromoCodeManager';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Shield, BarChart3, Users, MessageCircle, Bell, DollarSign, Tags, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Shield, BarChart3, Users, MessageCircle, Bell, DollarSign, Tags, GraduationCap, FileCheck } from 'lucide-react';
 import cravenLogo from "@/assets/craven-logo.png";
 
 const Admin: React.FC = () => {
@@ -45,7 +46,7 @@ const Admin: React.FC = () => {
         {/* Main Content */}
         <main className="container mx-auto px-4 py-6">
           <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="grid w-full grid-cols-8 mb-6">
+            <TabsList className="grid w-full grid-cols-9 mb-6">
               <TabsTrigger value="dashboard" className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4" />
                 Live Dashboard
@@ -73,6 +74,10 @@ const Admin: React.FC = () => {
               <TabsTrigger value="applications" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Applications
+              </TabsTrigger>
+              <TabsTrigger value="background-checks" className="flex items-center gap-2">
+                <FileCheck className="h-4 w-4" />
+                Background Checks
               </TabsTrigger>
               <TabsTrigger value="onboarding" className="flex items-center gap-2">
                 <GraduationCap className="h-4 w-4" />
@@ -106,6 +111,10 @@ const Admin: React.FC = () => {
             
             <TabsContent value="applications" className="space-y-4">
               <ApplicationReview />
+            </TabsContent>
+            
+            <TabsContent value="background-checks" className="space-y-4">
+              <BackgroundCheckDashboard />
             </TabsContent>
             
             <TabsContent value="onboarding" className="space-y-4">

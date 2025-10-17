@@ -46,6 +46,13 @@ interface Application {
   created_at: string;
   updated_at: string;
   profile_photo?: string;
+  background_check_report_id?: string;
+  background_check_reports?: {
+    id: string;
+    status: string;
+    checkr_status: string | null;
+    admin_review_required: boolean;
+  };
 }
 
 interface ApplicationCardProps {
@@ -180,6 +187,34 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
               Insurance
             </Button>
           </div>
+        </div>
+
+        {/* Background Check Status */}
+        <div className="border-t pt-4">
+          <h4 className="font-semibold mb-3 flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Background Check
+          </h4>
+          {application.background_check_reports ? (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">Status:</span>
+                <Badge variant={
+                  application.background_check_reports.checkr_status === 'clear' ? 'default' :
+                  application.background_check_reports.checkr_status === 'consider' ? 'secondary' :
+                  application.background_check_reports.checkr_status === 'suspended' ? 'destructive' :
+                  'outline'
+                }>
+                  {application.background_check_reports.status}
+                </Badge>
+              </div>
+              {application.background_check_reports.admin_review_required && (
+                <Badge variant="secondary">Admin Review Required</Badge>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No background check initiated</p>
+          )}
         </div>
 
         {/* Send Email Button for Approved Applications */}

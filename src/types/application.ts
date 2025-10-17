@@ -40,6 +40,9 @@ export interface ApplicationData {
   
   // Cash App Information
   cashTag: string;
+
+  // Background Check
+  backgroundCheckConsent: boolean;
 }
 
 export interface ApplicationFiles {
@@ -84,7 +87,8 @@ export const INITIAL_APPLICATION_DATA: ApplicationData = {
   bankAccountType: "",
   routingNumber: "",
   accountNumber: "",
-  cashTag: ""
+  cashTag: "",
+  backgroundCheckConsent: false
 };
 
 export const US_STATES = [
