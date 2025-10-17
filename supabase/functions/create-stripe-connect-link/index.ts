@@ -152,11 +152,15 @@ serve(async (req) => {
         }
         
         console.log('Saved Stripe account ID to database');
-      } catch (stripeError) {
+      } catch (stripeError: any) {
+        const msg: string = stripeError?.raw?.message || String(stripeError?.message || stripeError);
         console.error('Error creating Stripe account:', stripeError);
+        const friendly = msg.includes('signed up for Connect')
+          ? 'Stripe Connect not enabled for this API key. Please enable Connect in your Stripe dashboard or provide a Connect-enabled secret key.'
+          : 'Failed to create Stripe account';
         return new Response(
-          JSON.stringify({ error: 'Failed to create Stripe account' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: friendly, details: msg }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     } else {
