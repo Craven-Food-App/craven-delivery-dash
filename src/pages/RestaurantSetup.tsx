@@ -119,10 +119,14 @@ const RestaurantSetup = () => {
       <aside className="w-64 border-r bg-card flex flex-col">
         {/* Logo */}
         <div className="p-4 border-b">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-orange-500 rounded"></div>
-            <span className="font-semibold text-lg">Merchant</span>
-          </div>
+              <div className="flex items-center gap-2">
+                <img 
+                  src="/merchant-logo.png" 
+                  alt="Crave'N" 
+                  className="h-6 w-auto"
+                />
+                <span className="font-semibold text-lg">Merchant</span>
+              </div>
         </div>
 
         {/* Restaurant Selector */}
