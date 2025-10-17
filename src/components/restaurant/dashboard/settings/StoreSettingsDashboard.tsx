@@ -207,24 +207,42 @@ const StoreSettingsDashboard = () => {
                   {headerPhoto ? (
                     <>
                       <img src={headerPhoto} alt="Header" className="w-full h-full object-cover" />
-                      <button
-                        onClick={() => headerInputRef.current?.click()}
-                        className="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-50"
+                      <label
+                        className="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-50 cursor-pointer"
                       >
                         <Plus className="w-4 h-4" />
-                      </button>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleImageSelect("header", file);
+                            e.currentTarget.value = "";
+                          }}
+                        />
+                      </label>
                     </>
                   ) : (
                     <>
                       <p className="text-sm text-muted-foreground">
                         Add a header photo and video to attract new customers
                       </p>
-                      <button
-                        onClick={() => headerInputRef.current?.click()}
-                        className="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-50"
+                      <label
+                        className="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-50 cursor-pointer"
                       >
                         <Plus className="w-4 h-4" />
-                      </button>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleImageSelect("header", file);
+                            e.currentTarget.value = "";
+                          }}
+                        />
+                      </label>
                     </>
                   )}
                 </div>
@@ -235,22 +253,40 @@ const StoreSettingsDashboard = () => {
                       {logoPhoto ? (
                         <>
                           <img src={logoPhoto} alt="Logo" className="w-full h-full object-cover" />
-                          <button
-                            onClick={() => logoInputRef.current?.click()}
-                            className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center"
+                          <label
+                            className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
                           >
                             <Plus className="w-4 h-4 text-white" />
-                          </button>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="absolute inset-0 opacity-0 cursor-pointer"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleImageSelect("logo", file);
+                                e.currentTarget.value = "";
+                              }}
+                            />
+                          </label>
                         </>
                       ) : (
                         <>
                           <span className="text-xs">Logo</span>
-                          <button
-                            onClick={() => logoInputRef.current?.click()}
-                            className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center"
+                          <label
+                            className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
                           >
                             <Plus className="w-4 h-4 text-white" />
-                          </button>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="absolute inset-0 opacity-0 cursor-pointer"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleImageSelect("logo", file);
+                                e.currentTarget.value = "";
+                              }}
+                            />
+                          </label>
                         </>
                       )}
                     </div>
