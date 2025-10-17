@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Heart, AlertCircle, MapPin, UserCheck, Star, Smile, Award } from "lucide-react";
+import { Heart, AlertCircle, MapPin, UserCheck, Star, Smile, Award, ChevronRight, Info } from "lucide-react";
 
 const MostLovedDashboard = () => {
   return (
@@ -119,14 +119,55 @@ const MostLovedDashboard = () => {
         <CardHeader>
           <CardTitle>Lifetime requirements</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="w-5 h-5 rounded border-2 border-muted-foreground" />
-            <span className="text-sm">At least 20 completed deliveries in the last 3 months (0 recipes)</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="w-5 h-5 rounded border-2 border-muted-foreground" />
-            <span className="text-sm">At least 100 5-star ratings in the last 3 months (0 recipes)</span>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Store logo and header images */}
+            <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 cursor-pointer transition-colors">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">Store logo and header images (both required)</span>
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Info className="w-4 h-4" />
+                <span className="text-sm">No data yet</span>
+              </div>
+            </div>
+
+            {/* Lifetime orders */}
+            <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 cursor-pointer transition-colors">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">Lifetime orders (25 or more required)</span>
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Info className="w-4 h-4" />
+                <span className="text-sm">No data yet</span>
+              </div>
+            </div>
+
+            {/* Menu markup rate */}
+            <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 cursor-pointer transition-colors">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">Menu markup rate (10% or lower markup rate)</span>
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Info className="w-4 h-4" />
+                <span className="text-sm">No data yet</span>
+              </div>
+            </div>
+
+            {/* Lifetime rating */}
+            <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 cursor-pointer transition-colors">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">Lifetime rating (4.50 or higher required)</span>
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Info className="w-4 h-4" />
+                <span className="text-sm">No data yet</span>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
