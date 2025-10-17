@@ -293,13 +293,14 @@ const RestaurantSetup = () => {
                   <div className="flex gap-4">
                     <div className="flex-shrink-0">
                       <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        progress?.menu_preparation_status === 'ready' ? 'bg-green-500' : 'bg-orange-500'
+                        progress?.menu_preparation_status === 'ready' 
+                          ? 'bg-green-500' 
+                          : progress?.menu_preparation_status === 'in_progress'
+                            ? 'bg-green-500'
+                            : 'bg-red-500'
                       }`}>
                         {progress?.menu_preparation_status === 'ready' ? (
-                          <div className="relative">
-                            <Clock className="w-6 h-6 text-white" />
-                            <CheckCircle className="w-4 h-4 text-white absolute -bottom-1 -right-1 bg-green-500 rounded-full" />
-                          </div>
+                          <CheckCircle className="w-6 h-6 text-white" />
                         ) : (
                           <Clock className="w-6 h-6 text-white" />
                         )}
@@ -314,15 +315,19 @@ const RestaurantSetup = () => {
                               ? "We're preparing your menu"
                               : 'Menu preparation not started'}
                         </h3>
-                        {progress?.menu_preparation_status !== 'not_started' && (
-                          <span className={`text-xs font-medium px-2 py-1 rounded ${
-                            progress?.menu_preparation_status === 'ready'
-                              ? 'text-green-600 bg-green-50'
-                              : 'text-teal-600 bg-teal-50'
-                          }`}>
-                            {progress?.menu_preparation_status === 'ready' ? '✓ Complete' : '✓ In progress'}
-                          </span>
-                        )}
+                        <span className={`text-xs font-medium px-2 py-1 rounded ${
+                          progress?.menu_preparation_status === 'ready'
+                            ? 'text-green-600 bg-green-50'
+                            : progress?.menu_preparation_status === 'in_progress'
+                              ? 'text-yellow-600 bg-yellow-50'
+                              : 'text-red-600 bg-red-50'
+                        }`}>
+                          {progress?.menu_preparation_status === 'ready' 
+                            ? 'Complete' 
+                            : progress?.menu_preparation_status === 'in_progress'
+                              ? 'In progress'
+                              : 'Not started'}
+                        </span>
                       </div>
                       <p className="text-sm text-muted-foreground mb-4">
                         {progress?.menu_preparation_status === 'ready'
