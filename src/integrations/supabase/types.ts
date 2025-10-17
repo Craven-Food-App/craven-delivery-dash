@@ -807,7 +807,7 @@ export type Database = {
           {
             foreignKeyName: "driver_profiles_user_id_fkey"
             columns: ["user_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
