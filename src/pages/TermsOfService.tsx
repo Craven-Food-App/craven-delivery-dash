@@ -42,7 +42,59 @@ const TermsOfService = () => {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">4. Orders and Payments</h2>
+              <h2 className="text-2xl font-semibold mb-4">4. CraveMore Membership Program</h2>
+              <p className="text-muted-foreground mb-4">
+                Crave'N offers an optional premium membership program called "CraveMore" with the following terms:
+              </p>
+              
+              <h3 className="text-xl font-semibold mb-3">Membership Plans</h3>
+              <ul className="list-disc pl-6 mb-4 text-muted-foreground">
+                <li><strong>Monthly Plan:</strong> $8.99 per month, billed monthly</li>
+                <li><strong>Annual Plan:</strong> $90.00 per year, billed annually (equivalent to $7.50/month)</li>
+                <li><strong>Lifetime Plan:</strong> $249.00 one-time payment (available only to the first 1,000 customers)</li>
+              </ul>
+
+              <h3 className="text-xl font-semibold mb-3">Membership Benefits</h3>
+              <ul className="list-disc pl-6 mb-4 text-muted-foreground">
+                <li>$0 delivery fees on all eligible orders</li>
+                <li>Exclusive member-only promotions and discounts</li>
+                <li>Priority customer support</li>
+                <li>Early access to new restaurant partners</li>
+                <li>Special rewards and loyalty benefits</li>
+              </ul>
+
+              <h3 className="text-xl font-semibold mb-3">Subscription Terms</h3>
+              <ul className="list-disc pl-6 mb-4 text-muted-foreground">
+                <li>Monthly and annual subscriptions automatically renew unless cancelled</li>
+                <li>You will be charged at the beginning of each billing cycle</li>
+                <li>Price changes will be communicated 30 days in advance</li>
+                <li>You may cancel your subscription at any time through your account settings</li>
+                <li>Cancellations take effect at the end of the current billing period</li>
+                <li>No refunds for partial billing periods</li>
+                <li>Lifetime memberships are non-refundable after the 30-day satisfaction guarantee period</li>
+              </ul>
+
+              <h3 className="text-xl font-semibold mb-3">Lifetime Membership Special Terms</h3>
+              <ul className="list-disc pl-6 mb-4 text-muted-foreground">
+                <li>Limited to the first 1,000 customers only</li>
+                <li>Provides all CraveMore benefits for the lifetime of your account</li>
+                <li>Non-transferable and tied to your account</li>
+                <li>Subject to account good standing and compliance with Terms</li>
+                <li>30-day money-back guarantee from date of purchase</li>
+              </ul>
+
+              <h3 className="text-xl font-semibold mb-3">Membership Eligibility</h3>
+              <ul className="list-disc pl-6 mb-4 text-muted-foreground">
+                <li>Must be 18 years or older</li>
+                <li>Valid payment method required</li>
+                <li>One membership per customer account</li>
+                <li>Benefits apply to orders placed within eligible service areas</li>
+                <li>Some restaurant partners and order types may be excluded</li>
+              </ul>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-2xl font-semibold mb-4">5. Orders and Payments</h2>
               <h3 className="text-xl font-semibold mb-3">Placing Orders</h3>
               <ul className="list-disc pl-6 mb-4 text-muted-foreground">
                 <li>All orders are subject to acceptance by the restaurant</li>
@@ -70,7 +122,7 @@ const TermsOfService = () => {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">5. Delivery Services</h2>
+              <h2 className="text-2xl font-semibold mb-4">6. Delivery Services</h2>
               <ul className="list-disc pl-6 mb-4 text-muted-foreground">
                 <li>Delivery times are estimates and not guaranteed</li>
                 <li>Drivers are independent contractors, not employees</li>
@@ -81,7 +133,7 @@ const TermsOfService = () => {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">6. Driver Terms</h2>
+              <h2 className="text-2xl font-semibold mb-4">7. Driver Terms</h2>
               <p className="text-muted-foreground mb-4">For users providing delivery services ("Drivers"):</p>
               <ul className="list-disc pl-6 mb-4 text-muted-foreground">
                 <li>Drivers are independent contractors, not employees</li>
@@ -95,7 +147,7 @@ const TermsOfService = () => {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">7. Restaurant Partner Terms</h2>
+              <h2 className="text-2xl font-semibold mb-4">8. Restaurant Partner Terms</h2>
               <ul className="list-disc pl-6 mb-4 text-muted-foreground">
                 <li>Maintain accurate menu information and pricing</li>
                 <li>Fulfill orders in a timely manner</li>
@@ -106,7 +158,7 @@ const TermsOfService = () => {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">8. Prohibited Conduct</h2>
+              <h2 className="text-2xl font-semibold mb-4">9. Prohibited Conduct</h2>
               <p className="text-muted-foreground mb-4">You agree not to:</p>
               <ul className="list-disc pl-6 mb-4 text-muted-foreground">
                 <li>Violate any laws or regulations</li>
@@ -121,14 +173,14 @@ const TermsOfService = () => {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">9. Intellectual Property</h2>
+              <h2 className="text-2xl font-semibold mb-4">10. Intellectual Property</h2>
               <p className="text-muted-foreground mb-4">
                 All content on Crave'N, including logos, text, graphics, and software, is the property of Crave'N or its licensors and is protected by copyright, trademark, and other intellectual property laws.
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">10. Disclaimers</h2>
+              <h2 className="text-2xl font-semibold mb-4">11. Disclaimers</h2>
               <p className="text-muted-foreground mb-4">
                 THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND. WE DO NOT GUARANTEE:
               </p>
@@ -141,7 +193,7 @@ const TermsOfService = () => {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">11. Limitation of Liability</h2>
+              <h2 className="text-2xl font-semibold mb-4">12. Limitation of Liability</h2>
               <p className="text-muted-foreground mb-4">
                 TO THE MAXIMUM EXTENT PERMITTED BY LAW, CRAVE'N SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOST PROFITS, DATA, OR GOODWILL.
               </p>
@@ -151,14 +203,14 @@ const TermsOfService = () => {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">12. Indemnification</h2>
+              <h2 className="text-2xl font-semibold mb-4">13. Indemnification</h2>
               <p className="text-muted-foreground mb-4">
                 You agree to indemnify and hold harmless Crave'N from any claims, damages, losses, or expenses arising from your use of the Service or violation of these Terms.
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">13. Dispute Resolution</h2>
+              <h2 className="text-2xl font-semibold mb-4">14. Dispute Resolution</h2>
               <h3 className="text-xl font-semibold mb-3">Arbitration Agreement</h3>
               <p className="text-muted-foreground mb-4">
                 Any disputes shall be resolved through binding arbitration rather than in court, except for small claims court matters.
@@ -171,21 +223,21 @@ const TermsOfService = () => {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">14. Modifications to Terms</h2>
+              <h2 className="text-2xl font-semibold mb-4">15. Modifications to Terms</h2>
               <p className="text-muted-foreground mb-4">
                 We reserve the right to modify these Terms at any time. We will notify you of material changes. Continued use of the Service after changes constitutes acceptance of the new Terms.
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">15. Termination</h2>
+              <h2 className="text-2xl font-semibold mb-4">16. Termination</h2>
               <p className="text-muted-foreground mb-4">
                 We may suspend or terminate your account at any time for any reason, including violation of these Terms. Upon termination, your right to use the Service ceases immediately.
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">16. Contact Information</h2>
+              <h2 className="text-2xl font-semibold mb-4">17. Contact Information</h2>
               <p className="text-muted-foreground mb-4">
                 For questions about these Terms, contact us:
               </p>

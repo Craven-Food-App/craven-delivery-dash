@@ -30,6 +30,8 @@ const PrivacyPolicy = () => {
                 <li>Delivery addresses</li>
                 <li>Payment information (processed securely through third-party payment processors)</li>
                 <li>Order history and preferences</li>
+                <li>CraveMore membership status and subscription information</li>
+                <li>Billing and payment history for membership subscriptions</li>
               </ul>
               
               <h3 className="text-xl font-semibold mb-3">Driver Information</h3>
@@ -63,6 +65,9 @@ const PrivacyPolicy = () => {
                 <li>Facilitate communication between customers, drivers, and restaurants</li>
                 <li>Process payments and prevent fraud</li>
                 <li>Send order updates and notifications</li>
+                <li>Manage CraveMore membership subscriptions and benefits</li>
+                <li>Process recurring subscription payments</li>
+                <li>Apply membership discounts and benefits to orders</li>
                 <li>Improve our services and user experience</li>
                 <li>Comply with legal obligations</li>
                 <li>Send promotional communications (with your consent)</li>
