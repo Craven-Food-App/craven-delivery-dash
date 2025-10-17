@@ -2337,6 +2337,10 @@ export type Database = {
           setup_deadline: string | null
           ssn_last4: string | null
           state: string | null
+          stripe_charges_enabled: boolean | null
+          stripe_connect_account_id: string | null
+          stripe_onboarding_complete: boolean | null
+          stripe_payouts_enabled: boolean | null
           tablet_password: string | null
           tablet_shipped_at: string | null
           total_reviews: number
@@ -2393,6 +2397,10 @@ export type Database = {
           setup_deadline?: string | null
           ssn_last4?: string | null
           state?: string | null
+          stripe_charges_enabled?: boolean | null
+          stripe_connect_account_id?: string | null
+          stripe_onboarding_complete?: boolean | null
+          stripe_payouts_enabled?: boolean | null
           tablet_password?: string | null
           tablet_shipped_at?: string | null
           total_reviews?: number
@@ -2449,6 +2457,10 @@ export type Database = {
           setup_deadline?: string | null
           ssn_last4?: string | null
           state?: string | null
+          stripe_charges_enabled?: boolean | null
+          stripe_connect_account_id?: string | null
+          stripe_onboarding_complete?: boolean | null
+          stripe_payouts_enabled?: boolean | null
           tablet_password?: string | null
           tablet_shipped_at?: string | null
           total_reviews?: number
