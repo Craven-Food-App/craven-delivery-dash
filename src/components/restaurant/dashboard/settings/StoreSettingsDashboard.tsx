@@ -117,18 +117,41 @@ const StoreSettingsDashboard = () => {
                     if (file) handleImageSelect("header", file);
                   }}
                 />
-                <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                  <div className="flex justify-center mb-4">
-                    <div className="w-12 h-12 rounded bg-muted flex items-center justify-center">
-                      <Image className="w-6 h-6 text-muted-foreground" />
+                {headerPhoto ? (
+                  <div className="border-2 rounded-lg overflow-hidden">
+                    <div className="relative">
+                      <img src={headerPhoto} alt="Header" className="w-full h-48 object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Button 
+                          onClick={() => headerInputRef.current?.click()}
+                          variant="secondary"
+                          size="sm"
+                        >
+                          Change photo
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold mb-1">Header photo</h3>
+                      <p className="text-sm text-muted-foreground">
+                        This photo appears at the top of your store page.
+                      </p>
                     </div>
                   </div>
-                  <h3 className="font-semibold mb-1">Header photo</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Add a photo to make sure your store shows up in search and categories.
-                  </p>
-                  <Button onClick={() => headerInputRef.current?.click()}>Add photo</Button>
-                </div>
+                ) : (
+                  <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                    <div className="flex justify-center mb-4">
+                      <div className="w-12 h-12 rounded bg-muted flex items-center justify-center">
+                        <Image className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                    </div>
+                    <h3 className="font-semibold mb-1">Header photo</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Add a photo to make sure your store shows up in search and categories.
+                    </p>
+                    <Button onClick={() => headerInputRef.current?.click()}>Add photo</Button>
+                  </div>
+                )}
 
                 <input
                   ref={logoInputRef}
@@ -140,18 +163,43 @@ const StoreSettingsDashboard = () => {
                     if (file) handleImageSelect("logo", file);
                   }}
                 />
-                <div className="border-2 border-dashed rounded-lg p-6 text-center">
-                  <div className="flex justify-center mb-4">
-                    <div className="w-12 h-12 rounded bg-muted flex items-center justify-center">
-                      <Image className="w-6 h-6 text-muted-foreground" />
+                {logoPhoto ? (
+                  <div className="border-2 rounded-lg overflow-hidden">
+                    <div className="relative flex justify-center p-6 bg-muted">
+                      <div className="relative">
+                        <img src={logoPhoto} alt="Logo" className="w-32 h-32 rounded-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center rounded-full">
+                          <Button 
+                            onClick={() => logoInputRef.current?.click()}
+                            variant="secondary"
+                            size="sm"
+                          >
+                            Change
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold mb-1">Logo</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Your logo appears on your store page and in search results.
+                      </p>
                     </div>
                   </div>
-                  <h3 className="font-semibold mb-1">Logo</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Add a logo to make sure your store shows up in search and categories.
-                  </p>
-                  <Button onClick={() => logoInputRef.current?.click()}>Add logo</Button>
-                </div>
+                ) : (
+                  <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                    <div className="flex justify-center mb-4">
+                      <div className="w-12 h-12 rounded bg-muted flex items-center justify-center">
+                        <Image className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                    </div>
+                    <h3 className="font-semibold mb-1">Logo</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Add a logo to make sure your store shows up in search and categories.
+                    </p>
+                    <Button onClick={() => logoInputRef.current?.click()}>Add logo</Button>
+                  </div>
+                )}
 
                 <div className="border-2 border-dashed rounded-lg p-6 text-center">
                   <div className="flex justify-center mb-4">
