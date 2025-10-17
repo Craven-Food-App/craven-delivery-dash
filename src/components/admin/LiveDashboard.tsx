@@ -50,7 +50,9 @@ const LiveDashboard = () => {
     totalOrders: 0,
     pendingOrders: 0,
     activeDrivers: 0,
-    totalRevenue: 0
+    totalRevenue: 0,
+    totalUsers: 0,
+    totalRestaurants: 0
   });
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -82,6 +84,20 @@ const LiveDashboard = () => {
 
       if (driversError) throw driversError;
 
+      // Fetch total users count
+      const { count: usersCount, error: usersError } = await supabase
+        .from('user_profiles')
+        .select('*', { count: 'exact', head: true });
+
+      if (usersError) console.error('Error fetching users count:', usersError);
+
+      // Fetch total restaurants count
+      const { count: restaurantsCount, error: restaurantsError } = await supabase
+        .from('restaurants')
+        .select('*', { count: 'exact', head: true });
+
+      if (restaurantsError) console.error('Error fetching restaurants count:', restaurantsError);
+
       setOrders(ordersData || []);
       setDrivers(
         (driversData || []).map((d: any) => ({
@@ -102,7 +118,9 @@ const LiveDashboard = () => {
         activeDrivers: driversData?.filter(driver => driver.is_available).length || 0,
         totalRevenue: todayOrders.reduce((sum, order) => 
           sum + (order.payment_status === 'paid' ? order.total_cents : 0), 0
-        )
+        ),
+        totalUsers: usersCount || 0,
+        totalRestaurants: restaurantsCount || 0
       });
 
     } catch (error) {
@@ -188,8 +206,8 @@ const LiveDashboard = () => {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
             <Card key={i}>
               <CardContent className="p-6">
                 <div className="animate-pulse">
@@ -207,7 +225,7 @@ const LiveDashboard = () => {
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-6 flex items-center gap-4">
             <Package className="h-8 w-8 text-blue-600" />
@@ -244,6 +262,26 @@ const LiveDashboard = () => {
             <div>
               <p className="text-sm font-medium text-muted-foreground">Today's Revenue</p>
               <p className="text-2xl font-bold">${(stats.totalRevenue / 100).toFixed(2)}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6 flex items-center gap-4">
+            <Users className="h-8 w-8 text-indigo-600" />
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Total Users</p>
+              <p className="text-2xl font-bold">{stats.totalUsers}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6 flex items-center gap-4">
+            <Package className="h-8 w-8 text-pink-600" />
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Total Restaurants</p>
+              <p className="text-2xl font-bold">{stats.totalRestaurants}</p>
             </div>
           </CardContent>
         </Card>
