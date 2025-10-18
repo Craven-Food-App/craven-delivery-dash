@@ -18,6 +18,7 @@ import { RestaurantCustomerOrderManagement } from "@/components/restaurant/Resta
 import StoreAvailabilityDashboard from "@/components/restaurant/dashboard/StoreAvailabilityDashboard";
 import RequestDeliveryDashboard from "@/components/restaurant/dashboard/RequestDeliveryDashboard";
 import { HomeDashboard } from "@/components/merchant/HomeDashboard";
+import MerchantWelcomeConfetti from "@/components/merchant/MerchantWelcomeConfetti";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +34,7 @@ const RestaurantSetup = () => {
   const [prepareStoreExpanded, setPrepareStoreExpanded] = useState(true);
   const [userName, setUserName] = useState("User");
   const [settingsTab, setSettingsTab] = useState<string>("account");
+  const [showWelcomeConfetti, setShowWelcomeConfetti] = useState(false);
   
   const { restaurants, selectedRestaurant: restaurant, loading: restaurantLoading, selectRestaurant } = useRestaurantSelector();
   const { progress, readiness, loading: onboardingLoading, refreshData } = useRestaurantOnboarding(restaurant?.id);
@@ -54,6 +56,17 @@ const RestaurantSetup = () => {
     };
     fetchUserProfile();
   }, []);
+
+  // Check for merchant welcome screen
+  useEffect(() => {
+    const checkWelcomeStatus = async () => {
+      if (restaurant && !restaurant.merchant_welcome_shown) {
+        setShowWelcomeConfetti(true);
+      }
+    };
+    
+    checkWelcomeStatus();
+  }, [restaurant]);
 
   const handleCreateAdditionalLocation = async () => {
     if (!restaurant) return;
@@ -605,6 +618,13 @@ const RestaurantSetup = () => {
 
       {/* Right Sidebar - Store Preview */}
       
+      {/* Merchant Welcome Confetti */}
+      {showWelcomeConfetti && (
+        <MerchantWelcomeConfetti
+          restaurantName={restaurant?.name || 'Your Restaurant'}
+          onComplete={() => setShowWelcomeConfetti(false)}
+        />
+      )}
     </div>;
 };
 export default RestaurantSetup;

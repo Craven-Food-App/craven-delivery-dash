@@ -6,13 +6,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { User, Package, MapPin, CreditCard, Clock, Star, Heart, Plus, TrendingUp, Award, Zap, Gift } from "lucide-react";
+import { User, Package, MapPin, CreditCard, Clock, Star, Heart, Plus, TrendingUp, Award, Zap, Gift, ChevronRight, ShoppingCart, Receipt, Star as StarIcon } from "lucide-react";
 import Header from "@/components/Header";
 import { AccountSection } from "@/components/account/AccountSection";
 import RestaurantGrid from "@/components/RestaurantGrid";
 import OrderTrackingBox from "@/components/OrderTrackingBox";
 import OrderDetailsModal from "@/components/OrderDetailsModal";
 import { LoyaltyDashboard } from "@/components/loyalty/LoyaltyDashboard";
+
+interface OrderItem {
+  id: string;
+  name: string;
+  quantity: number;
+  price_cents: number;
+}
 
 interface Order {
   id: string;
@@ -21,6 +28,8 @@ interface Order {
   total_cents: number;
   created_at: string;
   estimated_delivery_time: string;
+  items?: OrderItem[];
+  order_type?: 'personal' | 'business';
 }
 
 interface Restaurant {
@@ -223,6 +232,7 @@ const CustomerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
   const [detailsOrderId, setDetailsOrderId] = useState<string | null>(null);
+  const [orderTypeFilter, setOrderTypeFilter] = useState<'personal' | 'business'>('personal');
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -362,6 +372,46 @@ const CustomerDashboard = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  // Group orders by date
+  const groupOrdersByDate = (orders: Order[]) => {
+    const grouped: { [key: string]: Order[] } = {};
+    orders.forEach(order => {
+      const date = new Date(order.created_at).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      });
+      if (!grouped[date]) {
+        grouped[date] = [];
+      }
+      grouped[date].push(order);
+    });
+    return grouped;
+  };
+
+  // Get filtered orders based on type
+  const getFilteredOrders = () => {
+    return orders.filter(order => 
+      order.order_type === orderTypeFilter || 
+      (!order.order_type && orderTypeFilter === 'personal')
+    );
+  };
+
+  // Format order items for display
+  const formatOrderItems = (order: Order) => {
+    if (order.items && order.items.length > 0) {
+      return order.items.map(item => `${item.name}${item.quantity > 1 ? ` (${item.quantity})` : ''}`).join(' • ');
+    }
+    return 'Order details not available';
+  };
+
+  // Get item count
+  const getItemCount = (order: Order) => {
+    if (order.items && order.items.length > 0) {
+      return order.items.reduce((total, item) => total + item.quantity, 0);
+    }
+    return 1; // Default fallback
   };
 
   const handleViewOrderDetails = (orderId: string) => {
@@ -535,327 +585,627 @@ const CustomerDashboard = () => {
 
         {/* Tab Content */}
         {tabFromUrl === 'orders' && (
-          <ModernCard style={{ padding: '2rem' }}>
-            <div style={{
+          <div style={{ background: 'white', borderRadius: '12px', padding: '0' }}>
+            {/* Header */}
+            <div style={{ 
+              padding: '1.5rem 2rem', 
+              borderBottom: '1px solid #e5e7eb',
               display: 'flex',
               alignItems: 'center',
-              gap: '1rem',
-              marginBottom: '2rem'
+              justifyContent: 'space-between'
             }}>
-              <div style={{
-                background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-                padding: '1rem',
-                borderRadius: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Package style={{ width: '24px', height: '24px', color: 'white' }} />
-              </div>
               <div>
-                <h2 style={{
-                  fontSize: '1.5rem',
-                  fontWeight: '700',
-                  color: '#1f2937',
-                  marginBottom: '0.25rem'
+                <h1 style={{ 
+                  fontSize: '1.5rem', 
+                  fontWeight: '700', 
+                  color: '#111827',
+                  margin: 0
                 }}>
-                  Order History
-                </h2>
-                <p style={{ color: '#6b7280' }}>
-                  View and track all your past orders
+                  Orders
+                </h1>
+                <p style={{ 
+                  color: '#6b7280', 
+                  margin: '0.25rem 0 0 0',
+                  fontSize: '0.875rem'
+                }}>
+                  Completed
                 </p>
+              </div>
+              
+              {/* Personal/Business Tabs */}
+              <div style={{
+                display: 'flex',
+                background: '#f3f4f6',
+                borderRadius: '8px',
+                padding: '4px'
+              }}>
+                <button
+                  onClick={() => setOrderTypeFilter('personal')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: orderTypeFilter === 'personal' ? '#111827' : 'transparent',
+                    color: orderTypeFilter === 'personal' ? 'white' : '#374151',
+                    fontWeight: '500',
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  Personal
+                </button>
+                <button
+                  onClick={() => setOrderTypeFilter('business')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: orderTypeFilter === 'business' ? '#111827' : 'transparent',
+                    color: orderTypeFilter === 'business' ? 'white' : '#374151',
+                    fontWeight: '500',
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  Business
+                </button>
               </div>
             </div>
 
-            {orders.length === 0 ? (
-              <div style={{
-                textAlign: 'center',
-                padding: '4rem 2rem',
-                background: 'rgba(255, 107, 53, 0.05)',
-                borderRadius: '16px',
-                border: '2px dashed rgba(255, 107, 53, 0.2)'
-              }}>
-                <Package style={{
-                  width: '64px',
-                  height: '64px',
-                  color: '#ff6b35',
-                  margin: '0 auto 1.5rem'
-                }} />
-                <h3 style={{
-                  fontSize: '1.25rem',
-                  fontWeight: '600',
-                  color: '#ff6b35',
-                  marginBottom: '0.5rem'
-                }}>
-                  No orders yet
-                </h3>
-                <p style={{
-                  color: '#6b7280',
-                  marginBottom: '2rem'
-                }}>
-                  Start exploring restaurants and place your first order
-                </p>
-                <ModernButton
-                  variant="primary"
-                  onClick={() => navigate("/")}
-                  icon={<TrendingUp style={{ width: '18px', height: '18px' }} />}
-                >
-                  Browse Restaurants
-                </ModernButton>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {orders.map((order) => {
-                  const restaurant = restaurants[order.restaurant_id];
+            {/* Orders Content */}
+            <div style={{ padding: '0' }}>
+              {(() => {
+                const filteredOrders = getFilteredOrders();
+                const groupedOrders = groupOrdersByDate(filteredOrders);
+                const sortedDates = Object.keys(groupedOrders).sort((a, b) => {
+                  const dateA = new Date(a + ', ' + new Date().getFullYear());
+                  const dateB = new Date(b + ', ' + new Date().getFullYear());
+                  return dateB.getTime() - dateA.getTime();
+                });
+
+                if (filteredOrders.length === 0) {
                   return (
-                    <div
-                      key={order.id}
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.6)',
-                        borderRadius: '16px',
-                        padding: '1.5rem',
-                        border: '1px solid rgba(255, 107, 53, 0.1)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        transition: 'all 0.3s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.6)';
-                        e.currentTarget.style.transform = 'translateY(0)';
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        {restaurant?.image_url && (
-                          <img
-                            src={restaurant.image_url}
-                            alt={restaurant.name}
-                            style={{
-                              width: '60px',
-                              height: '60px',
-                              borderRadius: '12px',
-                              objectFit: 'cover',
-                              border: '2px solid rgba(255, 107, 53, 0.1)'
-                            }}
-                          />
-                        )}
-                        <div>
-                          <h3 style={{
-                            fontSize: '1.125rem',
-                            fontWeight: '600',
-                            color: '#1f2937',
-                            marginBottom: '0.25rem'
-                          }}>
-                            {restaurant?.name || 'Unknown Restaurant'}
-                          </h3>
-                          <p style={{
-                            fontSize: '0.875rem',
-                            color: '#6b7280',
-                            marginBottom: '0.25rem'
-                          }}>
-                            {formatDate(order.created_at)}
-                          </p>
-                          <p style={{
-                            fontSize: '1rem',
-                            fontWeight: '600',
-                            color: '#ff6b35'
-                          }}>
-                            {formatPrice(order.total_cents)}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <ModernBadge variant={getStatusVariant(order.order_status)}>
-                          {getStatusText(order.order_status)}
-                        </ModernBadge>
-                        <ModernButton
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewOrderDetails(order.id)}
-                        >
-                          View Details
-                        </ModernButton>
-                      </div>
+                    <div style={{
+                      textAlign: 'center',
+                      padding: '4rem 2rem',
+                      color: '#6b7280'
+                    }}>
+                      <Package style={{
+                        width: '48px',
+                        height: '48px',
+                        margin: '0 auto 1rem',
+                        color: '#9ca3af'
+                      }} />
+                      <h3 style={{
+                        fontSize: '1.125rem',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '0.5rem'
+                      }}>
+                        No orders found
+                      </h3>
+                      <p style={{ marginBottom: '1.5rem' }}>
+                        {orderTypeFilter === 'personal' 
+                          ? "You haven't placed any personal orders yet."
+                          : "You haven't placed any business orders yet."
+                        }
+                      </p>
+                      <button
+                        onClick={() => navigate("/")}
+                        style={{
+                          background: '#111827',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '0.75rem 1.5rem',
+                          fontWeight: '500',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Browse Restaurants
+                      </button>
                     </div>
                   );
-                })}
-              </div>
-            )}
-          </ModernCard>
+                }
+
+                return (
+                  <div style={{ padding: '0' }}>
+                    {sortedDates.map((date) => (
+                      <div key={date}>
+                        {/* Date Header */}
+                        <div style={{
+                          padding: '1rem 2rem 0.5rem',
+                          background: '#f9fafb',
+                          borderBottom: '1px solid #e5e7eb'
+                        }}>
+                          <h3 style={{
+                            fontSize: '1rem',
+                            fontWeight: '600',
+                            color: '#374151',
+                            margin: 0
+                          }}>
+                            {date}
+                          </h3>
+                        </div>
+
+                        {/* Orders for this date */}
+                        <div>
+                          {groupedOrders[date].map((order) => {
+                            const restaurant = restaurants[order.restaurant_id];
+                            return (
+                              <div
+                                key={order.id}
+                                style={{
+                                  padding: '1.5rem 2rem',
+                                  borderBottom: '1px solid #f3f4f6',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  cursor: 'pointer',
+                                  transition: 'background-color 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor = '#f9fafb';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                }}
+                                onClick={() => handleViewOrderDetails(order.id)}
+                              >
+                                {/* Left side - Restaurant info */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+                                  <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    background: '#3b82f6',
+                                    borderRadius: '8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}>
+                                    <Package style={{ width: '20px', height: '20px', color: 'white' }} />
+                                  </div>
+                                  
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                                      <h4 style={{
+                                        fontSize: '1rem',
+                                        fontWeight: '600',
+                                        color: '#111827',
+                                        margin: 0
+                                      }}>
+                                        {restaurant?.name || 'Unknown Restaurant'}
+                                      </h4>
+                                      <ChevronRight style={{ width: '16px', height: '16px', color: '#9ca3af' }} />
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                                      <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                                        {formatPrice(order.total_cents)}
+                                      </span>
+                                      <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                                        {getItemCount(order)} items
+                                      </span>
+                                      <span style={{ 
+                                        fontSize: '0.75rem', 
+                                        color: '#6b7280',
+                                        background: '#f3f4f6',
+                                        padding: '0.125rem 0.5rem',
+                                        borderRadius: '4px'
+                                      }}>
+                                        {order.order_type || 'Personal'}
+                                      </span>
+                                    </div>
+                                    
+                                    <p style={{
+                                      fontSize: '0.875rem',
+                                      color: '#6b7280',
+                                      margin: 0,
+                                      lineHeight: '1.4'
+                                    }}>
+                                      {formatOrderItems(order)}
+                                    </p>
+                                    
+                                    {/* Review section */}
+                                    <div style={{ 
+                                      display: 'flex', 
+                                      alignItems: 'center', 
+                                      gap: '0.5rem',
+                                      marginTop: '0.5rem'
+                                    }}>
+                                      <div style={{ display: 'flex', gap: '0.125rem' }}>
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                          <StarIcon 
+                                            key={star}
+                                            style={{ 
+                                              width: '14px', 
+                                              height: '14px', 
+                                              color: '#d1d5db',
+                                              fill: 'none',
+                                              strokeWidth: '1.5'
+                                            }} 
+                                          />
+                                        ))}
+                                      </div>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          // Handle review functionality
+                                        }}
+                                        style={{
+                                          background: 'none',
+                                          border: 'none',
+                                          color: '#6b7280',
+                                          fontSize: '0.875rem',
+                                          cursor: 'pointer',
+                                          textDecoration: 'underline'
+                                        }}
+                                      >
+                                        • Leave a review
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Right side - Action buttons */}
+                                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      // Handle reorder functionality
+                                    }}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '0.5rem',
+                                      padding: '0.5rem 1rem',
+                                      border: '1px solid #d1d5db',
+                                      borderRadius: '6px',
+                                      background: 'white',
+                                      color: '#374151',
+                                      fontSize: '0.875rem',
+                                      fontWeight: '500',
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.borderColor = '#9ca3af';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.borderColor = '#d1d5db';
+                                    }}
+                                  >
+                                    <ShoppingCart style={{ width: '16px', height: '16px' }} />
+                                    Reorder
+                                  </button>
+                                  
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      // Handle view receipt functionality
+                                    }}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '0.5rem',
+                                      padding: '0.5rem 1rem',
+                                      border: '1px solid #d1d5db',
+                                      borderRadius: '6px',
+                                      background: 'white',
+                                      color: '#374151',
+                                      fontSize: '0.875rem',
+                                      fontWeight: '500',
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.borderColor = '#9ca3af';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.borderColor = '#d1d5db';
+                                    }}
+                                  >
+                                    <Receipt style={{ width: '16px', height: '16px' }} />
+                                    View Receipt
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
         )}
 
         {tabFromUrl === 'active' && (
-          <ModernCard style={{ padding: '2rem' }}>
-            <div style={{
+          <div style={{ background: 'white', borderRadius: '12px', padding: '0' }}>
+            {/* Header */}
+            <div style={{ 
+              padding: '1.5rem 2rem', 
+              borderBottom: '1px solid #e5e7eb',
               display: 'flex',
               alignItems: 'center',
-              gap: '1rem',
-              marginBottom: '2rem'
+              justifyContent: 'space-between'
             }}>
-              <div style={{
-                background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-                padding: '1rem',
-                borderRadius: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Clock style={{ width: '24px', height: '24px', color: 'white' }} />
-              </div>
               <div>
-                <h2 style={{
-                  fontSize: '1.5rem',
-                  fontWeight: '700',
-                  color: '#1f2937',
-                  marginBottom: '0.25rem'
+                <h1 style={{ 
+                  fontSize: '1.5rem', 
+                  fontWeight: '700', 
+                  color: '#111827',
+                  margin: 0
                 }}>
                   Active Orders
-                </h2>
-                <p style={{ color: '#6b7280' }}>
+                </h1>
+                <p style={{ 
+                  color: '#6b7280', 
+                  margin: '0.25rem 0 0 0',
+                  fontSize: '0.875rem'
+                }}>
                   Track your current orders in real-time
                 </p>
               </div>
             </div>
 
-            {orders.filter(order => !['delivered', 'cancelled'].includes(order.order_status)).length === 0 ? (
-              <div style={{
-                textAlign: 'center',
-                padding: '4rem 2rem',
-                background: 'rgba(255, 107, 53, 0.05)',
-                borderRadius: '16px',
-                border: '2px dashed rgba(255, 107, 53, 0.2)'
-              }}>
-                <Clock style={{
-                  width: '64px',
-                  height: '64px',
-                  color: '#ff6b35',
-                  margin: '0 auto 1.5rem'
-                }} />
-                <h3 style={{
-                  fontSize: '1.25rem',
-                  fontWeight: '600',
-                  color: '#ff6b35',
-                  marginBottom: '0.5rem'
-                }}>
-                  No active orders
-                </h3>
-                <p style={{
-                  color: '#6b7280',
-                  marginBottom: '2rem'
-                }}>
-                  Place an order to track it here
-                </p>
-                <ModernButton
-                  variant="primary"
-                  onClick={() => navigate("/")}
-                  icon={<Zap style={{ width: '18px', height: '18px' }} />}
-                >
-                  Order Now
-                </ModernButton>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {orders
-                  .filter(order => !['delivered', 'cancelled'].includes(order.order_status))
-                  .map((order) => {
-                    const restaurant = restaurants[order.restaurant_id];
-                    return (
-                      <div
-                        key={order.id}
+            {/* Active Orders Content */}
+            <div style={{ padding: '0' }}>
+              {(() => {
+                const activeOrders = orders.filter(order => !['delivered', 'cancelled'].includes(order.order_status));
+                const groupedOrders = groupOrdersByDate(activeOrders);
+                const sortedDates = Object.keys(groupedOrders).sort((a, b) => {
+                  const dateA = new Date(a + ', ' + new Date().getFullYear());
+                  const dateB = new Date(b + ', ' + new Date().getFullYear());
+                  return dateB.getTime() - dateA.getTime();
+                });
+
+                if (activeOrders.length === 0) {
+                  return (
+                    <div style={{
+                      textAlign: 'center',
+                      padding: '4rem 2rem',
+                      color: '#6b7280'
+                    }}>
+                      <Clock style={{
+                        width: '48px',
+                        height: '48px',
+                        margin: '0 auto 1rem',
+                        color: '#9ca3af'
+                      }} />
+                      <h3 style={{
+                        fontSize: '1.125rem',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '0.5rem'
+                      }}>
+                        No active orders
+                      </h3>
+                      <p style={{ marginBottom: '1.5rem' }}>
+                        Place an order to track it here
+                      </p>
+                      <button
+                        onClick={() => navigate("/")}
                         style={{
-                          background: 'linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 179, 71, 0.05) 100%)',
-                          borderRadius: '16px',
-                          padding: '1.5rem',
-                          border: '2px solid rgba(255, 107, 53, 0.2)',
-                          position: 'relative',
-                          overflow: 'hidden'
+                          background: '#111827',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '0.75rem 1.5rem',
+                          fontWeight: '500',
+                          cursor: 'pointer'
                         }}
                       >
+                        Order Now
+                      </button>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div style={{ padding: '0' }}>
+                    {sortedDates.map((date) => (
+                      <div key={date}>
+                        {/* Date Header */}
                         <div style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          height: '4px',
-                          background: 'linear-gradient(90deg, #ff6b35 0%, #f7931e 50%, #ffb347 100%)',
-                          animation: 'pulse 2s infinite'
-                        }} />
-                        
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          marginBottom: '1rem'
+                          padding: '1rem 2rem 0.5rem',
+                          background: '#f9fafb',
+                          borderBottom: '1px solid #e5e7eb'
                         }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            {restaurant?.image_url && (
-                              <img
-                                src={restaurant.image_url}
-                                alt={restaurant.name}
-                                style={{
-                                  width: '60px',
-                                  height: '60px',
-                                  borderRadius: '12px',
-                                  objectFit: 'cover',
-                                  border: '2px solid rgba(255, 107, 53, 0.3)'
-                                }}
-                              />
-                            )}
-                            <div>
-                              <h3 style={{
-                                fontSize: '1.125rem',
-                                fontWeight: '600',
-                                color: '#1f2937',
-                                marginBottom: '0.25rem'
-                              }}>
-                                {restaurant?.name || 'Unknown Restaurant'}
-                              </h3>
-                              <p style={{
-                                fontSize: '0.875rem',
-                                color: '#6b7280'
-                              }}>
-                                Order #{order.id.slice(0, 8)}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <ModernBadge variant={getStatusVariant(order.order_status)}>
-                            {getStatusText(order.order_status)}
-                          </ModernBadge>
-                        </div>
-                        
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center'
-                        }}>
-                          <p style={{
-                            fontSize: '1.125rem',
+                          <h3 style={{
+                            fontSize: '1rem',
                             fontWeight: '600',
-                            color: '#ff6b35'
+                            color: '#374151',
+                            margin: 0
                           }}>
-                            {formatPrice(order.total_cents)}
-                          </p>
-                          <ModernButton
-                            variant="primary"
-                            size="sm"
-                            onClick={() => handleTrackOrder(order.id)}
-                            icon={<MapPin style={{ width: '16px', height: '16px' }} />}
-                          >
-                            Track Order
-                          </ModernButton>
+                            {date}
+                          </h3>
+                        </div>
+
+                        {/* Orders for this date */}
+                        <div>
+                          {groupedOrders[date].map((order) => {
+                            const restaurant = restaurants[order.restaurant_id];
+                            return (
+                              <div
+                                key={order.id}
+                                style={{
+                                  padding: '1.5rem 2rem',
+                                  borderBottom: '1px solid #f3f4f6',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  cursor: 'pointer',
+                                  transition: 'background-color 0.2s ease',
+                                  position: 'relative'
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor = '#f9fafb';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                }}
+                                onClick={() => handleTrackOrder(order.id)}
+                              >
+                                {/* Active order indicator */}
+                                <div style={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  height: '3px',
+                                  background: 'linear-gradient(90deg, #10b981 0%, #059669 100%)'
+                                }} />
+
+                                {/* Left side - Restaurant info */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+                                  <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    background: '#10b981',
+                                    borderRadius: '8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}>
+                                    <Clock style={{ width: '20px', height: '20px', color: 'white' }} />
+                                  </div>
+                                  
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                                      <h4 style={{
+                                        fontSize: '1rem',
+                                        fontWeight: '600',
+                                        color: '#111827',
+                                        margin: 0
+                                      }}>
+                                        {restaurant?.name || 'Unknown Restaurant'}
+                                      </h4>
+                                      <ChevronRight style={{ width: '16px', height: '16px', color: '#9ca3af' }} />
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                                      <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                                        {formatPrice(order.total_cents)}
+                                      </span>
+                                      <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                                        {getItemCount(order)} items
+                                      </span>
+                                      <span style={{ 
+                                        fontSize: '0.75rem', 
+                                        color: '#059669',
+                                        background: '#d1fae5',
+                                        padding: '0.125rem 0.5rem',
+                                        borderRadius: '4px',
+                                        fontWeight: '500'
+                                      }}>
+                                        {getStatusText(order.order_status)}
+                                      </span>
+                                    </div>
+                                    
+                                    <p style={{
+                                      fontSize: '0.875rem',
+                                      color: '#6b7280',
+                                      margin: 0,
+                                      lineHeight: '1.4'
+                                    }}>
+                                      {formatOrderItems(order)}
+                                    </p>
+                                    
+                                    {/* Order tracking info */}
+                                    <div style={{ 
+                                      display: 'flex', 
+                                      alignItems: 'center', 
+                                      gap: '0.5rem',
+                                      marginTop: '0.5rem'
+                                    }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                        <MapPin style={{ width: '14px', height: '14px', color: '#6b7280' }} />
+                                        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                                          Track your order
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Right side - Action buttons */}
+                                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleTrackOrder(order.id);
+                                    }}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '0.5rem',
+                                      padding: '0.5rem 1rem',
+                                      border: '1px solid #d1d5db',
+                                      borderRadius: '6px',
+                                      background: 'white',
+                                      color: '#374151',
+                                      fontSize: '0.875rem',
+                                      fontWeight: '500',
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.borderColor = '#9ca3af';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.borderColor = '#d1d5db';
+                                    }}
+                                  >
+                                    <MapPin style={{ width: '16px', height: '16px' }} />
+                                    Track Order
+                                  </button>
+                                  
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleViewOrderDetails(order.id);
+                                    }}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '0.5rem',
+                                      padding: '0.5rem 1rem',
+                                      border: '1px solid #d1d5db',
+                                      borderRadius: '6px',
+                                      background: 'white',
+                                      color: '#374151',
+                                      fontSize: '0.875rem',
+                                      fontWeight: '500',
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.borderColor = '#9ca3af';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.borderColor = '#d1d5db';
+                                    }}
+                                  >
+                                    <Receipt style={{ width: '16px', height: '16px' }} />
+                                    View Details
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
-                    );
-                  })}
-              </div>
-            )}
-          </ModernCard>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
         )}
 
 
