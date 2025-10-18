@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Instagram, Image, Plus, ExternalLink } from "lucide-react";
+import { AddressAutocomplete } from "@/components/common/AddressAutocomplete";
 import ImageCropper from "@/components/common/ImageCropper";
 import { supabase } from "@/integrations/supabase/client";
 import { useRestaurantData } from "@/hooks/useRestaurantData";
@@ -190,13 +191,35 @@ const StoreSettingsDashboard = () => {
                       <div className="space-y-4">
                         <div>
                           <Label>Address</Label>
-                          <Textarea
+                          <AddressAutocomplete
                             value={storeAddress}
-                            onChange={(e) => setStoreAddress(e.target.value)}
+                            onChange={(value, coordinates) => {
+                              setStoreAddress(value);
+                              // Store coordinates for later save if needed
+                              if (coordinates) {
+                                (window as any).__tempAddressCoords = coordinates;
+                              }
+                            }}
+                            placeholder="Enter restaurant address..."
+                            required
                           />
                         </div>
                         <Button 
-                          onClick={() => handleSaveField('address', storeAddress)}
+                          onClick={async () => {
+                            const coords = (window as any).__tempAddressCoords;
+                            await handleSaveField('address', storeAddress);
+                            // Also update coordinates if available
+                            if (coords && restaurant?.id) {
+                              await supabase
+                                .from('restaurants')
+                                .update({ 
+                                  latitude: coords.lat, 
+                                  longitude: coords.lng 
+                                })
+                                .eq('id', restaurant.id);
+                            }
+                            delete (window as any).__tempAddressCoords;
+                          }}
                           disabled={saving}
                           className="w-full"
                         >
