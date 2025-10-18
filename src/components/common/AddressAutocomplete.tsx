@@ -300,47 +300,78 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     const [lng, lat] = suggestion.center;
     
     console.log('Full suggestion object:', suggestion);
-    console.log('Place name parts:', suggestion.place_name.split(','));
     
-    // Parse the address manually from place_name
-    const parts = suggestion.place_name.split(',').map(p => p.trim());
-    console.log('Parts array:', parts);
-    
-    // Extract components - FIRST TWO PARTS GO TO STREET ADDRESS
-    const streetParts = parts.slice(0, 2); // Take first two parts
-    const street = streetParts.join(' ').trim(); // Combine with space, not comma
-    const city = parts[2] || '';  // Third part is city
-    const stateZipCountry = parts[3] || '';  // Fourth part has state/zip
-    
-    // Extract state and zip from fourth part
+    // Initialize variables
+    let street = '';
+    let city = '';
     let state = '';
     let zipCode = '';
+    let unitNumber = '';
     
-    if (stateZipCountry) {
-      // Look for state code (2 capital letters)
-      const stateMatch = stateZipCountry.match(/\b([A-Z]{2})\b/);
-      if (stateMatch) {
-        state = stateMatch[1];
-      }
+    // PRIORITY 1: Extract from Mapbox context (most accurate)
+    if (suggestion.context && Array.isArray(suggestion.context)) {
+      console.log('Mapbox context:', suggestion.context);
       
-      // Look for ZIP code (5 digits, optionally followed by dash and 4 more digits)
-      const zipMatch = stateZipCountry.match(/(\d{5}(-\d{4})?)/);
-      if (zipMatch) {
-        zipCode = zipMatch[1];
+      for (const ctx of suggestion.context) {
+        // Only extract city, state, and ZIP from context
+        if (ctx.id.startsWith('place.')) {
+          city = ctx.text; // This is the actual city
+          console.log('Found city from context:', city);
+        } else if (ctx.id.startsWith('region.')) {
+          state = ctx.short_code?.replace('US-', '') || ctx.text;
+          console.log('Found state from context:', state);
+        } else if (ctx.id.startsWith('postcode.')) {
+          zipCode = ctx.text;
+          console.log('Found ZIP from context:', zipCode);
+        }
+        // Ignore: district, locality, neighborhood, county, etc.
       }
     }
     
-    // Extract unit number from original street if present
-    let unitNumber = '';
-    let cleanStreet = street;
+    // Build street address from Mapbox address components
+    if (suggestion.address && suggestion.text) {
+      // Mapbox provides: address = house number, text = street name
+      street = `${suggestion.address} ${suggestion.text}`;
+      console.log('Street from Mapbox components:', street);
+    } else {
+      // Fallback: use first part of place_name
+      const parts = suggestion.place_name.split(',').map(p => p.trim());
+      street = parts[0] || '';
+      console.log('Fallback street from place_name:', street);
+    }
+    
+    // Extract unit number from street if present
     const unitMatch = street.match(/^(.*?)(?:\s+(?:apt|apartment|unit|ste|suite|#)\s*(\w+.*?))?$/i);
     if (unitMatch && unitMatch[2]) {
-      cleanStreet = unitMatch[1].trim();
+      street = unitMatch[1].trim();
       unitNumber = unitMatch[2];
+      console.log('Extracted unit:', unitNumber);
     }
     
-    console.log('Parsed components:', { 
-      street: cleanStreet, 
+    // FALLBACK: If context didn't provide city/state/zip, parse from place_name
+    if (!city || !state || !zipCode) {
+      const parts = suggestion.place_name.split(',').map(p => p.trim());
+      console.log('Fallback parsing from parts:', parts);
+      
+      // For US addresses: "Street, City, State ZIP, Country"
+      if (!city && parts[1]) {
+        city = parts[1];
+      }
+      
+      if (parts[2]) {
+        if (!state) {
+          const stateMatch = parts[2].match(/\b([A-Z]{2})\b/);
+          if (stateMatch) state = stateMatch[1];
+        }
+        if (!zipCode) {
+          const zipMatch = parts[2].match(/(\d{5}(-\d{4})?)/);
+          if (zipMatch) zipCode = zipMatch[1];
+        }
+      }
+    }
+    
+    console.log('Final parsed components:', { 
+      street, 
       city, 
       state, 
       zipCode, 
@@ -353,13 +384,13 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     setIsValidAddress(true);
     
     // Set the street address in the main field
-    onChange(cleanStreet, { lat, lng });
+    onChange(street, { lat, lng });
     onValidAddress?.(true, suggestion);
     
     // Call the parsed address callback
     if (onAddressParsed) {
       onAddressParsed({
-        street: cleanStreet,
+        street,
         city,
         state,
         zipCode,
