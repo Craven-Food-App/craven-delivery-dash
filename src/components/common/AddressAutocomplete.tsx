@@ -186,36 +186,71 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   }, [value]);
 
   const parseAddress = (suggestion: AddressSuggestion): ParsedAddress => {
+    console.log('Parsing address suggestion:', suggestion);
     const parts = suggestion.place_name.split(',').map(p => p.trim());
     
-    // Try to extract from Mapbox context
+    // Initialize variables
     let city = '';
     let state = '';
     let zipCode = '';
     let unitNumber = '';
     
+    // Extract from Mapbox context (most reliable)
     if (suggestion.context && Array.isArray(suggestion.context)) {
+      console.log('Mapbox context:', suggestion.context);
       for (const ctx of suggestion.context) {
         if (ctx.id.startsWith('place.')) {
           city = ctx.text;
+          console.log('Found city from context:', city);
         } else if (ctx.id.startsWith('region.')) {
           state = ctx.short_code?.replace('US-', '') || ctx.text;
+          console.log('Found state from context:', state);
         } else if (ctx.id.startsWith('postcode.')) {
           zipCode = ctx.text;
+          console.log('Found zip from context:', zipCode);
         }
       }
     }
     
-    // Fallback parsing from place_name if context not available
-    if (!city || !state) {
+    // Fallback parsing from place_name parts if context didn't provide values
+    if (!city || !state || !zipCode) {
+      console.log('Using fallback parsing from place_name parts:', parts);
       // Format: "Street Address, City, State ZIP, Country"
+      // Example: "6757 Nebraska Avenue, Toledo, Ohio 43615, United States"
       if (parts.length >= 3) {
-        city = city || parts[1];
-        const stateZip = parts[2];
-        const stateMatch = stateZip.match(/([A-Z]{2})/);
-        const zipMatch = stateZip.match(/(\d{5}(-\d{4})?)/);
-        state = state || (stateMatch ? stateMatch[1] : '');
-        zipCode = zipCode || (zipMatch ? zipMatch[1] : '');
+        // City is typically the second part
+        if (!city && parts[1]) {
+          city = parts[1];
+          console.log('Fallback city:', city);
+        }
+        
+        // State and ZIP are in the third part
+        const stateZipPart = parts[2] || '';
+        if (!state) {
+          // Look for 2-letter state code
+          const stateMatch = stateZipPart.match(/\b([A-Z]{2})\b/);
+          if (stateMatch) {
+            state = stateMatch[1];
+            console.log('Fallback state:', state);
+          } else {
+            // Look for full state name
+            const stateNameMatch = stateZipPart.match(/([A-Za-z\s]+)\s+\d{5}/);
+            if (stateNameMatch) {
+              // Convert state name to abbreviation if needed
+              const stateName = stateNameMatch[1].trim();
+              state = stateName; // You could add a state name to abbreviation map here
+              console.log('Fallback state name:', state);
+            }
+          }
+        }
+        
+        if (!zipCode) {
+          const zipMatch = stateZipPart.match(/(\d{5}(-\d{4})?)/);
+          if (zipMatch) {
+            zipCode = zipMatch[1];
+            console.log('Fallback zip:', zipCode);
+          }
+        }
       }
     }
     
@@ -225,31 +260,34 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     // Use Mapbox's address (house number) and text (street name) if available
     if (suggestion.address && suggestion.text) {
       street = `${suggestion.address} ${suggestion.text}`;
+      console.log('Street from Mapbox components:', street);
     } else {
-      // Fallback: extract from place_name (first part only)
+      // Fallback: extract from place_name (first part only, without unit info)
       const firstPart = parts[0] || '';
-      // Remove any unit/apt info from the street address
       const streetMatch = firstPart.match(/^(.*?)(?:\s+(?:apt|apartment|unit|ste|suite|#)\s*\w+.*)?$/i);
       street = streetMatch ? streetMatch[1].trim() : firstPart;
+      console.log('Fallback street:', street);
     }
     
-    // Extract unit/apartment number from properties or first part of place_name
-    if (suggestion.properties?.unit) {
+    // Extract unit/apartment number from the first part of place_name
+    const firstPart = parts[0] || '';
+    const unitMatch = firstPart.match(/(?:apt|apartment|unit|ste|suite|#)\s*(\w+.*?)(?:,|$)/i);
+    if (unitMatch) {
+      unitNumber = unitMatch[1].trim();
+      console.log('Found unit number:', unitNumber);
+    } else if (suggestion.properties?.unit) {
       unitNumber = suggestion.properties.unit;
-    } else {
-      // Try to extract from the first part of place_name
-      const firstPart = parts[0] || '';
-      const unitMatch = firstPart.match(/(?:apt|apartment|unit|ste|suite|#)\s*(\w+.*?)(?:,|$)/i);
-      if (unitMatch) {
-        unitNumber = unitMatch[1].trim();
-      }
+      console.log('Unit from properties:', unitNumber);
     }
+    
+    console.log('Final parsed address:', { street, city, state, zipCode, unitNumber });
     
     return {
       street,
       city,
       state,
-      zipCode
+      zipCode,
+      unitNumber
     };
   };
 
