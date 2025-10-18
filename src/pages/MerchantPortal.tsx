@@ -452,15 +452,52 @@ const RestaurantSetup = () => {
                               : "Your tablet will ship once business verification and menu preparation are complete."}
                       </p>
                       
+                      {progress?.tablet_shipping_label_url && (
+                        <div className="mt-3">
+                          <Button
+                            onClick={() => window.open(progress.tablet_shipping_label_url!, '_blank')}
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                          >
+                            <Package className="w-4 h-4 mr-2" />
+                            View Shipping Label
+                          </Button>
+                        </div>
+                      )}
+
                       {progress?.tablet_tracking_number && progress?.tablet_shipped && (
-                        <div className="bg-blue-50 p-3 rounded-lg">
-                          <p className="text-sm font-semibold mb-1">Tracking Information</p>
+                        <div className="bg-blue-50 p-3 rounded-lg mt-3 space-y-2">
+                          <p className="text-sm font-semibold">Tracking Information</p>
                           <p className="text-sm">
                             <span className="text-muted-foreground">Carrier:</span> {progress.tablet_shipping_carrier || 'USPS'}
                           </p>
                           <p className="text-sm">
                             <span className="text-muted-foreground">Tracking #:</span> {progress.tablet_tracking_number}
                           </p>
+                          {progress.tablet_shipped_at && (
+                            <p className="text-sm">
+                              <span className="text-muted-foreground">Shipped:</span> {format(new Date(progress.tablet_shipped_at), 'PPP')}
+                            </p>
+                          )}
+                          <Button
+                            onClick={() => {
+                              const carrier = progress.tablet_shipping_carrier || 'USPS';
+                              const trackingUrl = carrier === 'USPS' 
+                                ? `https://tools.usps.com/go/TrackConfirmAction?tLabels=${progress.tablet_tracking_number}`
+                                : carrier === 'UPS'
+                                ? `https://www.ups.com/track?tracknum=${progress.tablet_tracking_number}`
+                                : carrier === 'FedEx'
+                                ? `https://www.fedex.com/fedextrack/?trknbr=${progress.tablet_tracking_number}`
+                                : `https://www.dhl.com/en/express/tracking.html?AWB=${progress.tablet_tracking_number}`;
+                              window.open(trackingUrl, '_blank');
+                            }}
+                            variant="default"
+                            size="sm"
+                            className="w-full mt-2"
+                          >
+                            Track Package
+                          </Button>
                         </div>
                       )}
                     </div>

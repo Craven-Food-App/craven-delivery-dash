@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -16,9 +16,12 @@ import {
   MapPin,
   Phone,
   Mail,
-  Building2
+  Building2,
+  Printer,
+  Download
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { generateShippingLabel } from '@/utils/generateShippingLabel';
 
 interface RestaurantWithProgress {
   id: string;
@@ -39,6 +42,7 @@ interface RestaurantWithProgress {
     tablet_shipping_carrier: string | null;
     tablet_preparing_at: string | null;
     tablet_shipped_at: string | null;
+    tablet_shipping_label_url: string | null;
   };
 }
 
@@ -49,6 +53,9 @@ export const TabletShippingManagement = () => {
   const [trackingNumber, setTrackingNumber] = useState('');
   const [shippingCarrier, setShippingCarrier] = useState('USPS');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isGeneratingLabel, setIsGeneratingLabel] = useState(false);
+  const [generatedLabelUrl, setGeneratedLabelUrl] = useState<string | null>(null);
+  const [showTrackingInput, setShowTrackingInput] = useState(false);
 
   useEffect(() => {
     fetchRestaurants();
@@ -96,7 +103,8 @@ export const TabletShippingManagement = () => {
             tablet_tracking_number,
             tablet_shipping_carrier,
             tablet_preparing_at,
-            tablet_shipped_at
+            tablet_shipped_at,
+            tablet_shipping_label_url
           )
         `)
         .order('created_at', { ascending: false });
@@ -119,26 +127,80 @@ export const TabletShippingManagement = () => {
     }
   };
 
-  const handlePrepareShipment = async (restaurantId: string) => {
-    setIsProcessing(true);
+  const handleGenerateLabel = async (restaurant: RestaurantWithProgress) => {
+    setIsGeneratingLabel(true);
+    setSelectedRestaurant(restaurant);
+    
     try {
+      const { pdfUrl, labelUrl } = await generateShippingLabel({
+        id: restaurant.id,
+        name: restaurant.name,
+        address: restaurant.address,
+        city: restaurant.city || '',
+        state: restaurant.state || '',
+        zip_code: restaurant.zip_code || '',
+        phone: restaurant.phone || undefined,
+      });
+
+      // Update progress with label URL
       const { error } = await supabase
         .from('restaurant_onboarding_progress')
         .update({
           tablet_preparing_shipment: true,
-          tablet_preparing_at: new Date().toISOString()
+          tablet_preparing_at: new Date().toISOString(),
+          tablet_shipping_label_url: pdfUrl,
         })
-        .eq('restaurant_id', restaurantId);
+        .eq('restaurant_id', restaurant.id);
 
       if (error) throw error;
 
-      toast.success('Tablet marked as preparing for shipment');
+      setGeneratedLabelUrl(labelUrl);
+      setShowTrackingInput(true);
+
+      toast.success('Shipping label generated successfully');
       fetchRestaurants();
     } catch (error: any) {
-      toast.error('Failed to update status');
+      toast.error(`Failed to generate label: ${error.message}`);
       console.error(error);
     } finally {
-      setIsProcessing(false);
+      setIsGeneratingLabel(false);
+    }
+  };
+
+  const handlePrintLabel = () => {
+    if (generatedLabelUrl) {
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>Print Shipping Label</title>
+              <style>
+                body { margin: 0; padding: 0; }
+                img { width: 100%; height: auto; }
+                @media print {
+                  body { margin: 0; }
+                  img { width: 100%; height: auto; }
+                }
+              </style>
+            </head>
+            <body>
+              <img src="${generatedLabelUrl}" />
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+          printWindow.print();
+        }, 250);
+      }
+    }
+  };
+
+  const handleDownloadLabel = () => {
+    if (selectedRestaurant?.progress?.tablet_shipping_label_url) {
+      window.open(selectedRestaurant.progress.tablet_shipping_label_url, '_blank');
     }
   };
 
@@ -166,6 +228,8 @@ export const TabletShippingManagement = () => {
       setSelectedRestaurant(null);
       setTrackingNumber('');
       setShippingCarrier('USPS');
+      setGeneratedLabelUrl(null);
+      setShowTrackingInput(false);
       fetchRestaurants();
     } catch (error: any) {
       toast.error('Failed to mark as shipped');
@@ -247,31 +311,50 @@ export const TabletShippingManagement = () => {
       <CardContent>
         {showAction === 'ready' && (
           <Button
-            onClick={() => handlePrepareShipment(restaurant.id)}
-            disabled={isProcessing}
+            onClick={() => handleGenerateLabel(restaurant)}
+            disabled={isGeneratingLabel || isProcessing}
             className="w-full"
           >
-            <Package className="w-4 h-4 mr-2" />
-            Prepare Shipment
+            {isGeneratingLabel ? (
+              <>Generating Label...</>
+            ) : (
+              <>
+                <Printer className="w-4 h-4 mr-2" />
+                Generate Label
+              </>
+            )}
           </Button>
         )}
         {showAction === 'preparing' && (
-          <Button
-            onClick={() => {
-              setSelectedRestaurant(restaurant);
-              setTrackingNumber(restaurant.progress?.tablet_tracking_number || '');
-              setShippingCarrier(restaurant.progress?.tablet_shipping_carrier || 'USPS');
-            }}
-            disabled={isProcessing}
-            className="w-full"
-          >
-            <Truck className="w-4 h-4 mr-2" />
-            Mark as Shipped
-          </Button>
+          <div className="space-y-2">
+            {restaurant.progress?.tablet_shipping_label_url && (
+              <Button
+                onClick={() => window.open(restaurant.progress.tablet_shipping_label_url!, '_blank')}
+                variant="outline"
+                className="w-full"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download Label
+              </Button>
+            )}
+            <Button
+              onClick={() => {
+                setSelectedRestaurant(restaurant);
+                setShowTrackingInput(true);
+                setTrackingNumber(restaurant.progress?.tablet_tracking_number || '');
+                setShippingCarrier(restaurant.progress?.tablet_shipping_carrier || 'USPS');
+              }}
+              disabled={isProcessing}
+              className="w-full"
+            >
+              <Truck className="w-4 h-4 mr-2" />
+              Mark as Shipped
+            </Button>
+          </div>
         )}
         {showAction === 'shipped' && restaurant.progress?.tablet_tracking_number && (
-          <div className="bg-green-50 p-3 rounded-lg">
-            <p className="text-sm font-semibold mb-1">Tracking Information</p>
+          <div className="bg-green-50 p-3 rounded-lg space-y-2">
+            <p className="text-sm font-semibold">Tracking Information</p>
             <p className="text-sm">
               <span className="text-muted-foreground">Carrier:</span> {restaurant.progress.tablet_shipping_carrier || 'USPS'}
             </p>
@@ -281,6 +364,17 @@ export const TabletShippingManagement = () => {
             <p className="text-sm">
               <span className="text-muted-foreground">Shipped:</span> {format(new Date(restaurant.progress.tablet_shipped_at!), 'PPP')}
             </p>
+            {restaurant.progress?.tablet_shipping_label_url && (
+              <Button
+                onClick={() => window.open(restaurant.progress.tablet_shipping_label_url!, '_blank')}
+                variant="outline"
+                size="sm"
+                className="w-full mt-2"
+              >
+                <Download className="w-3 h-3 mr-2" />
+                View Label
+              </Button>
+            )}
           </div>
         )}
       </CardContent>
@@ -373,56 +467,132 @@ export const TabletShippingManagement = () => {
         )}
       </div>
 
-      {/* Shipping Dialog */}
-      <Dialog open={!!selectedRestaurant} onOpenChange={(open) => !open && setSelectedRestaurant(null)}>
-        <DialogContent>
+      {/* Shipping Label Dialog */}
+      <Dialog 
+        open={!!selectedRestaurant} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedRestaurant(null);
+            setGeneratedLabelUrl(null);
+            setShowTrackingInput(false);
+            setTrackingNumber('');
+            setShippingCarrier('USPS');
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Mark Tablet as Shipped</DialogTitle>
+            <DialogTitle>Shipping Label - {selectedRestaurant?.name}</DialogTitle>
+            <DialogDescription>
+              {!showTrackingInput 
+                ? 'Generate and print the shipping label' 
+                : 'Enter carrier tracking information to complete shipment'}
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">
-                <strong>Restaurant:</strong> {selectedRestaurant?.name}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                <strong>Shipping to:</strong> {selectedRestaurant?.address}, {selectedRestaurant?.city}, {selectedRestaurant?.state} {selectedRestaurant?.zip_code}
-              </p>
-            </div>
+            {/* Restaurant Address Summary */}
+            {!generatedLabelUrl && (
+              <div className="p-4 bg-muted rounded-lg space-y-2">
+                <div className="flex items-start gap-2">
+                  <MapPin className="w-5 h-5 text-muted-foreground mt-1" />
+                  <div>
+                    <p className="font-semibold">{selectedRestaurant?.name}</p>
+                    <p className="text-sm text-muted-foreground">{selectedRestaurant?.address}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedRestaurant?.city}, {selectedRestaurant?.state} {selectedRestaurant?.zip_code}
+                    </p>
+                  </div>
+                </div>
+                {selectedRestaurant?.phone && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Phone className="w-4 h-4" />
+                    <span>{selectedRestaurant.phone}</span>
+                  </div>
+                )}
+              </div>
+            )}
 
-            <div className="space-y-2">
-              <Label htmlFor="carrier">Shipping Carrier</Label>
-              <Select value={shippingCarrier} onValueChange={setShippingCarrier}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="USPS">USPS</SelectItem>
-                  <SelectItem value="UPS">UPS</SelectItem>
-                  <SelectItem value="FedEx">FedEx</SelectItem>
-                  <SelectItem value="DHL">DHL</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Generated Label Preview */}
+            {generatedLabelUrl && (
+              <div className="border rounded-lg p-4 bg-white">
+                <img 
+                  src={generatedLabelUrl} 
+                  alt="Shipping Label" 
+                  className="w-full h-auto"
+                />
+                <div className="flex gap-2 mt-4">
+                  <Button onClick={handlePrintLabel} variant="outline" className="flex-1">
+                    <Printer className="w-4 h-4 mr-2" />
+                    Print Label
+                  </Button>
+                  {selectedRestaurant?.progress?.tablet_shipping_label_url && (
+                    <Button onClick={handleDownloadLabel} variant="outline" className="flex-1">
+                      <Download className="w-4 h-4 mr-2" />
+                      Download PDF
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
 
-            <div className="space-y-2">
-              <Label htmlFor="tracking">Tracking Number</Label>
-              <Input
-                id="tracking"
-                value={trackingNumber}
-                onChange={(e) => setTrackingNumber(e.target.value)}
-                placeholder="Enter tracking number"
-              />
-            </div>
+            {/* Tracking Information Input */}
+            {showTrackingInput && (
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                <h4 className="font-semibold text-sm">Enter Carrier Tracking Information</h4>
+                <div>
+                  <Label htmlFor="carrier">Shipping Carrier</Label>
+                  <Select value={shippingCarrier} onValueChange={setShippingCarrier}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USPS">USPS</SelectItem>
+                      <SelectItem value="UPS">UPS</SelectItem>
+                      <SelectItem value="FedEx">FedEx</SelectItem>
+                      <SelectItem value="DHL">DHL</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <Button
-              onClick={handleMarkShipped}
-              disabled={isProcessing || !trackingNumber.trim()}
-              className="w-full"
-            >
-              <Truck className="w-4 h-4 mr-2" />
-              Mark as Shipped
-            </Button>
+                <div>
+                  <Label htmlFor="tracking">Tracking Number</Label>
+                  <Input
+                    id="tracking"
+                    value={trackingNumber}
+                    onChange={(e) => setTrackingNumber(e.target.value)}
+                    placeholder="Enter tracking number from carrier"
+                  />
+                </div>
+
+                <Button 
+                  onClick={handleMarkShipped} 
+                  disabled={isProcessing || !trackingNumber.trim()}
+                  className="w-full"
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Confirm Shipment
+                </Button>
+              </div>
+            )}
+
+            {/* Generate Label Button */}
+            {!generatedLabelUrl && !showTrackingInput && (
+              <Button 
+                onClick={() => selectedRestaurant && handleGenerateLabel(selectedRestaurant)}
+                disabled={isGeneratingLabel}
+                className="w-full"
+              >
+                {isGeneratingLabel ? (
+                  <>Generating Label...</>
+                ) : (
+                  <>
+                    <Printer className="w-4 h-4 mr-2" />
+                    Generate & Print Shipping Label
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>
