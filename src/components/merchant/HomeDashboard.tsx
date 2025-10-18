@@ -8,9 +8,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 interface HomeDashboardProps {
   restaurantId: string;
+  restaurant?: any;
+  readiness?: any;
 }
 
-export const HomeDashboard = ({ restaurantId }: HomeDashboardProps) => {
+export const HomeDashboard = ({ restaurantId, restaurant, readiness }: HomeDashboardProps) => {
   const navigate = useNavigate();
   const [stats, setStats] = useState({
     todaySales: 0,
@@ -88,8 +90,69 @@ export const HomeDashboard = ({ restaurantId }: HomeDashboardProps) => {
     return <div className="p-6">Loading dashboard...</div>;
   }
 
+  // Check for incomplete tasks
+  const hasIncompleteTasks = !restaurant?.banking_complete || 
+    !restaurant?.stripe_onboarding_complete || 
+    (readiness && (readiness.blockers.length > 0 || readiness.missing_items.length > 0));
+
   return (
     <div className="space-y-6">
+      {/* Incomplete Tasks Alert */}
+      {hasIncompleteTasks && (
+        <Card className="border-orange-200 dark:border-orange-900 bg-orange-500/10">
+          <CardHeader>
+            <CardTitle className="text-orange-900 dark:text-orange-100">Complete Your Setup</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {!restaurant?.banking_complete && (
+              <div className="flex items-start gap-3 p-3 bg-background rounded-lg">
+                <DollarSign className="h-5 w-5 text-orange-600 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-sm">Banking Information Required</p>
+                  <p className="text-sm text-muted-foreground">Add your bank account to receive payouts</p>
+                  <Button 
+                    size="sm" 
+                    className="mt-2"
+                    onClick={() => navigate('/merchant-portal?tab=settings&section=bank')}
+                  >
+                    Add Bank Account
+                  </Button>
+                </div>
+              </div>
+            )}
+            {!restaurant?.stripe_onboarding_complete && (
+              <div className="flex items-start gap-3 p-3 bg-background rounded-lg">
+                <Clock className="h-5 w-5 text-orange-600 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-sm">Payment Setup Incomplete</p>
+                  <p className="text-sm text-muted-foreground">Complete Stripe onboarding to accept payments</p>
+                  <Button 
+                    size="sm" 
+                    className="mt-2"
+                    onClick={() => navigate('/merchant-portal?tab=settings&section=bank')}
+                  >
+                    Complete Setup
+                  </Button>
+                </div>
+              </div>
+            )}
+            {readiness && readiness.blockers.length > 0 && (
+              <div className="flex items-start gap-3 p-3 bg-background rounded-lg">
+                <Clock className="h-5 w-5 text-orange-600 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-sm">Required to Go Live</p>
+                  <ul className="text-sm text-muted-foreground space-y-1 mt-1">
+                    {readiness.blockers.map((blocker: string, idx: number) => (
+                      <li key={idx}>• {blocker}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>

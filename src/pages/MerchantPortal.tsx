@@ -274,7 +274,11 @@ const RestaurantSetup = () => {
                 <p className="text-sm text-muted-foreground mb-2">Welcome back, {userName}</p>
                 <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
               </div>
-              <HomeDashboard restaurantId={restaurant?.id || ''} />
+              <HomeDashboard 
+                restaurantId={restaurant?.id || ''} 
+                restaurant={restaurant}
+                readiness={readiness}
+              />
             </div>
           ) : (
             <div className="max-w-5xl mx-auto p-8">
