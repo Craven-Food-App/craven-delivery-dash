@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import RestaurantGrid from '@/components/RestaurantGrid';
+import AccountPopup from '@/components/AccountPopup';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -112,6 +113,8 @@ const Restaurants = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [filteredRestaurants, setFilteredRestaurants] = useState<any[]>([]);
+  const [showAccountPopup, setShowAccountPopup] = useState(false);
+  const [accountPopupPosition, setAccountPopupPosition] = useState({ top: 0, left: 0 });
   
   const { toast } = useToast();
   const resultsRef = useRef<HTMLDivElement | null>(null);
@@ -328,8 +331,18 @@ const Restaurants = () => {
       window.location.href = '/customer-dashboard?tab=orders';
       return;
     } else if (categoryId === 'account') {
-      // Navigate to account page
-      window.location.href = '/customer-dashboard?tab=account';
+      // Show account popup next to the side menu
+      const sideMenuElement = document.querySelector('.side-menu-container');
+      if (sideMenuElement) {
+        const rect = sideMenuElement.getBoundingClientRect();
+        setAccountPopupPosition({
+          top: rect.top + 100, // Position below the account button
+          left: rect.right + 20 // Position to the right of the side menu
+        });
+      } else {
+        setAccountPopupPosition({ top: 100, left: 300 });
+      }
+      setShowAccountPopup(true);
       return;
     }
     
@@ -565,7 +578,7 @@ const Restaurants = () => {
 
       <div className="flex">
         {/* Right Side Navigation */}
-        <div className="hidden lg:block w-64 bg-gray-50 border-r border-gray-200 min-h-screen">
+        <div className="hidden lg:block w-64 bg-gray-50 border-r border-gray-200 min-h-screen side-menu-container">
           <div className="p-4">
             <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Browse</h3>
             <nav className="space-y-1">
@@ -890,6 +903,13 @@ const Restaurants = () => {
       )}
 
       <Footer />
+
+      {/* Account Popup */}
+      <AccountPopup 
+        isOpen={showAccountPopup}
+        onClose={() => setShowAccountPopup(false)}
+        position={accountPopupPosition}
+      />
     </div>
   );
 };
