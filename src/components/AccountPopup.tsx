@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Heart, Star, MessageCircle, Gift, Users, CreditCard, Zap, Shield } from 'lucide-react';
+import { User, Heart, Star, MessageCircle, Gift, Users, CreditCard, Zap, Shield, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AccountPopupProps {
@@ -37,7 +37,7 @@ const AccountPopup: React.FC<AccountPopupProps> = ({ isOpen, onClose, position }
         className="absolute bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden"
         style={{
           width: '320px', // ~4 inches
-          height: '560px', // ~7-8 inches
+          height: '680px', // ~8-9 inches to accommodate Account Settings
           top: position?.top || 100,
           left: position?.left || 100,
         }}
@@ -152,6 +152,50 @@ const AccountPopup: React.FC<AccountPopupProps> = ({ isOpen, onClose, position }
               </div>
               <div className="flex-1">
                 <p className="font-semibold text-gray-900">Get $20 in Credits</p>
+              </div>
+            </div>
+
+            {/* Account Settings Section */}
+            <div className="pt-4 border-t border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Account Settings</h3>
+              
+              {/* Account */}
+              <div className="py-3 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">Account</p>
+                    <p className="text-sm text-gray-500">{userName}</p>
+                  </div>
+                  <button className="text-sm text-blue-600 hover:text-blue-800 underline">
+                    Switch
+                  </button>
+                </div>
+              </div>
+
+              {/* Payment */}
+              <div className="py-3 border-b border-gray-100">
+                <p className="font-semibold text-gray-900 text-sm">Payment</p>
+              </div>
+
+              {/* Language */}
+              <div className="py-3 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <p className="font-semibold text-gray-900 text-sm">Language</p>
+                  <button className="flex items-center gap-2 px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50">
+                    <Globe className="w-4 h-4 text-gray-600" />
+                    <span className="text-sm text-gray-700">English (US)</span>
+                    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Sign Out */}
+              <div className="pt-3">
+                <button className="font-bold text-gray-900 hover:text-red-600 transition-colors">
+                  Sign Out
+                </button>
               </div>
             </div>
           </div>
