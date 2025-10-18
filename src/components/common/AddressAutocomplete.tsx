@@ -338,12 +338,12 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     if (suggestion.address && suggestion.text) {
       // Mapbox provides: address = house number, text = street name
       street = `${suggestion.address} ${suggestion.text}`;
-      console.log('Street from Mapbox components:', street);
+      console.log('✓ Street from Mapbox components:', street);
     } else {
-      // Fallback: use first part of place_name
+      // Fallback: use first part of place_name (should include full street)
       const parts = suggestion.place_name.split(',').map(p => p.trim());
       street = parts[0] || '';
-      console.log('Fallback street from place_name:', street);
+      console.log('✓ Fallback street from place_name:', street);
     }
     
     // Extract unit number from street if present
@@ -351,7 +351,8 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     if (unitMatch && unitMatch[2]) {
       street = unitMatch[1].trim();
       unitNumber = unitMatch[2];
-      console.log('Extracted unit:', unitNumber);
+      console.log('✓ Extracted unit:', unitNumber);
+      console.log('✓ Clean street:', street);
     }
     
     // FALLBACK: If context didn't provide city/state/zip, parse from place_name
@@ -359,48 +360,60 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       const parts = suggestion.place_name.split(',').map(p => p.trim());
       console.log('Fallback parsing from parts:', parts);
       
-      // Find state and ZIP first to help identify city
-      let stateIndex = -1;
-      let zipIndex = -1;
-      
+      // Find state and ZIP from all parts
       for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
         
-        // Look for state code (2 capital letters)
+        // Look for state code ANYWHERE in the address parts
         if (!state) {
-          const stateMatch = part.match(/\b([A-Z]{2})\b/);
+          // Try multiple patterns for state
+          const stateMatch = part.match(/\b([A-Z]{2})\b/) || // 2-letter code
+                            part.match(/\b(Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming)\b/i); // Full state name
+          
           if (stateMatch) {
-            state = stateMatch[1];
-            stateIndex = i;
-            console.log('Fallback state:', state, 'at index', i);
+            state = stateMatch[1].toUpperCase();
+            // Convert full state names to abbreviations if needed
+            const stateAbbr = {
+              'ALABAMA': 'AL', 'ALASKA': 'AK', 'ARIZONA': 'AZ', 'ARKANSAS': 'AR',
+              'CALIFORNIA': 'CA', 'COLORADO': 'CO', 'CONNECTICUT': 'CT', 'DELAWARE': 'DE',
+              'FLORIDA': 'FL', 'GEORGIA': 'GA', 'HAWAII': 'HI', 'IDAHO': 'ID',
+              'ILLINOIS': 'IL', 'INDIANA': 'IN', 'IOWA': 'IA', 'KANSAS': 'KS',
+              'KENTUCKY': 'KY', 'LOUISIANA': 'LA', 'MAINE': 'ME', 'MARYLAND': 'MD',
+              'MASSACHUSETTS': 'MA', 'MICHIGAN': 'MI', 'MINNESOTA': 'MN', 'MISSISSIPPI': 'MS',
+              'MISSOURI': 'MO', 'MONTANA': 'MT', 'NEBRASKA': 'NE', 'NEVADA': 'NV',
+              'NEW HAMPSHIRE': 'NH', 'NEW JERSEY': 'NJ', 'NEW MEXICO': 'NM', 'NEW YORK': 'NY',
+              'NORTH CAROLINA': 'NC', 'NORTH DAKOTA': 'ND', 'OHIO': 'OH', 'OKLAHOMA': 'OK',
+              'OREGON': 'OR', 'PENNSYLVANIA': 'PA', 'RHODE ISLAND': 'RI', 'SOUTH CAROLINA': 'SC',
+              'SOUTH DAKOTA': 'SD', 'TENNESSEE': 'TN', 'TEXAS': 'TX', 'UTAH': 'UT',
+              'VERMONT': 'VT', 'VIRGINIA': 'VA', 'WASHINGTON': 'WA', 'WEST VIRGINIA': 'WV',
+              'WISCONSIN': 'WI', 'WYOMING': 'WY'
+            };
+            state = stateAbbr[state] || state;
+            console.log('✓ Fallback state found:', state, 'in part:', part);
+            break;
           }
         }
         
-        // Look for ZIP code (5 digits, optionally with +4)
+        // Look for ZIP code
         if (!zipCode) {
           const zipMatch = part.match(/\b(\d{5}(-\d{4})?)\b/);
           if (zipMatch) {
             zipCode = zipMatch[1];
-            zipIndex = i;
-            console.log('Fallback ZIP:', zipCode, 'at index', i);
+            console.log('✓ Fallback ZIP found:', zipCode, 'in part:', part);
           }
         }
       }
       
-      // Now find city - it should be the part just before state/ZIP
+      // Find city - it should be a part that's not the street and not containing state/ZIP
       if (!city) {
-        if (stateIndex > 1) {
-          // City is likely the part before the state
-          city = parts[stateIndex - 1];
-          console.log('Fallback city (before state):', city);
-        } else if (zipIndex > 1) {
-          // City is likely the part before the ZIP
-          city = parts[zipIndex - 1];
-          console.log('Fallback city (before ZIP):', city);
-        } else if (parts.length > 2) {
-          // Last resort: take the second-to-last meaningful part
-          city = parts[parts.length - 2];
-          console.log('Fallback city (second-to-last):', city);
+        for (let i = 1; i < parts.length; i++) {
+          const part = parts[i];
+          // Skip parts that contain state codes or ZIP codes
+          if (!part.match(/\b([A-Z]{2})\b/) && !part.match(/\b(\d{5}(-\d{4})?)\b/)) {
+            city = part;
+            console.log('✓ Fallback city found:', city);
+            break;
+          }
         }
       }
     }
