@@ -41,6 +41,7 @@ export const useRestaurantSelector = () => {
 
         if (error) throw error;
 
+        console.log('Fetched restaurants for user:', user.id, 'data:', data);
         setRestaurants(data || []);
 
         // Load selected restaurant from localStorage or use CMIH Kitchen or first one

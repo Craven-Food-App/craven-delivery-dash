@@ -60,7 +60,8 @@ const RestaurantSetup = () => {
   // Check for merchant welcome screen
   useEffect(() => {
     const checkWelcomeStatus = async () => {
-      if (restaurant && !restaurant.merchant_welcome_shown) {
+      if (restaurant && (restaurant.merchant_welcome_shown === false || restaurant.merchant_welcome_shown === null)) {
+        console.log('Showing welcome confetti for restaurant:', restaurant.name, 'merchant_welcome_shown:', restaurant.merchant_welcome_shown);
         setShowWelcomeConfetti(true);
       }
     };
