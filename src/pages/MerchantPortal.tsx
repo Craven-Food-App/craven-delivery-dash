@@ -32,6 +32,7 @@ const RestaurantSetup = () => {
   const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'reports' | 'customers' | 'orders' | 'menu' | 'availability' | 'financials' | 'settings' | 'commerce' | 'request-delivery'>('home');
   const [prepareStoreExpanded, setPrepareStoreExpanded] = useState(true);
   const [userName, setUserName] = useState("User");
+  const [settingsTab, setSettingsTab] = useState<string>("account");
   
   const { restaurants, selectedRestaurant: restaurant, loading: restaurantLoading, selectRestaurant } = useRestaurantSelector();
   const { progress, readiness, loading: onboardingLoading, refreshData } = useRestaurantOnboarding(restaurant?.id);
@@ -376,7 +377,7 @@ const RestaurantSetup = () => {
                           : "This usually takes 2 business days. You'll get an email when your menu is ready."}
                       </p>
                       
-                      {!readiness?.details?.has_logo || !readiness?.details?.has_header ? (
+                      {(!readiness?.details?.has_logo || !readiness?.details?.has_header) && (!restaurant?.logo_url || !restaurant?.header_image_url) ? (
                         <div className="bg-muted/50 p-4 rounded-lg">
                           <h4 className="font-semibold text-sm mb-2">Add a store logo and header</h4>
                           <p className="text-sm text-muted-foreground mb-4">
@@ -385,7 +386,10 @@ const RestaurantSetup = () => {
                           <Button 
                             variant="outline" 
                             size="sm"
-                            onClick={() => setActiveTab('settings')}
+                            onClick={() => {
+                              setSettingsTab('store');
+                              setActiveTab('settings');
+                            }}
                           >
                             Add a header and logo
                           </Button>
@@ -527,7 +531,7 @@ const RestaurantSetup = () => {
           </div>
         </div>
           )
-        ) : activeTab === 'insights' ? <InsightsDashboard /> : activeTab === 'reports' ? <ReportsDashboard /> : activeTab === 'customers' ? <CustomersDashboard /> : activeTab === 'orders' ? <OrdersDashboard /> : activeTab === 'menu' ? <MenuDashboard restaurantId={restaurant.id} /> : activeTab === 'availability' ? <StoreAvailabilityDashboard /> : activeTab === 'financials' ? <FinancialsDashboard /> : activeTab === 'settings' ? <SettingsDashboard /> : activeTab === 'commerce' ? <CommercePlatformDashboard /> : activeTab === 'request-delivery' ? <RequestDeliveryDashboard /> : null}
+        ) : activeTab === 'insights' ? <InsightsDashboard /> : activeTab === 'reports' ? <ReportsDashboard /> : activeTab === 'customers' ? <CustomersDashboard /> : activeTab === 'orders' ? <OrdersDashboard /> : activeTab === 'menu' ? <MenuDashboard restaurantId={restaurant.id} /> : activeTab === 'availability' ? <StoreAvailabilityDashboard /> : activeTab === 'financials' ? <FinancialsDashboard /> : activeTab === 'settings' ? <SettingsDashboard defaultTab={settingsTab} /> : activeTab === 'commerce' ? <CommercePlatformDashboard /> : activeTab === 'request-delivery' ? <RequestDeliveryDashboard /> : null}
       </main>
 
       {/* Right Sidebar - Store Preview */}

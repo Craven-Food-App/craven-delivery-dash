@@ -7,13 +7,17 @@ import StoreCommunicationsDashboard from "./settings/StoreCommunicationsDashboar
 import BankAccountDashboard from "./settings/BankAccountDashboard";
 import IntegrationsDashboard from "./settings/IntegrationsDashboard";
 
-const SettingsDashboard = () => {
+interface SettingsDashboardProps {
+  defaultTab?: string;
+}
+
+const SettingsDashboard = ({ defaultTab = "account" }: SettingsDashboardProps) => {
   return (
     <div className="w-full h-full bg-background">
       <div className="border-b bg-card">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <h1 className="text-2xl font-bold mb-4">Settings</h1>
-          <Tabs defaultValue="account" className="w-full">
+          <Tabs defaultValue={defaultTab} className="w-full">
             <TabsList className="bg-muted flex-wrap h-auto">
               <TabsTrigger value="account">Account Settings</TabsTrigger>
               <TabsTrigger value="pricing">Pricing Plans</TabsTrigger>
