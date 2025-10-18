@@ -16,18 +16,27 @@ const RestaurantRegister = () => {
           return;
         }
 
-        const { data: restaurant } = await supabase
+        // Use a non-single query to handle users with multiple restaurants
+        const { data, error } = await supabase
           .from('restaurants')
           .select('id')
           .eq('owner_id', user.id)
-          .maybeSingle();
+          .order('created_at', { ascending: false })
+          .limit(1);
 
-        if (restaurant) {
+        if (error) {
+          console.error('Error fetching restaurants for redirect:', error);
+          setChecking(false);
+          return;
+        }
+
+        if (data && data.length > 0) {
           // Restaurant exists - redirect to merchant portal
           navigate('/merchant-portal');
-        } else {
-          setChecking(false);
+          return;
         }
+
+        setChecking(false);
       } catch (error) {
         console.error('Error checking restaurant:', error);
         setChecking(false);
