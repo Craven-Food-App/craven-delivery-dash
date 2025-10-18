@@ -330,7 +330,12 @@ const StoreSettingsDashboard = () => {
                       <img src={headerPhoto} alt="Header" className="w-full h-48 object-cover" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
                         <Button 
-                          onClick={() => headerInputRef.current?.click()}
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            headerInputRef.current?.click();
+                          }}
                           variant="secondary"
                           size="sm"
                         >
@@ -356,7 +361,16 @@ const StoreSettingsDashboard = () => {
                     <p className="text-sm text-muted-foreground mb-4">
                       Add a photo to make sure your store shows up in search and categories.
                     </p>
-                    <Button onClick={() => headerInputRef.current?.click()}>Add photo</Button>
+                    <Button 
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        headerInputRef.current?.click();
+                      }}
+                    >
+                      Add photo
+                    </Button>
                   </div>
                 )}
 
@@ -377,7 +391,12 @@ const StoreSettingsDashboard = () => {
                         <img src={logoPhoto} alt="Logo" className="w-32 h-32 rounded-full object-cover" />
                         <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center rounded-full">
                           <Button 
-                            onClick={() => logoInputRef.current?.click()}
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              logoInputRef.current?.click();
+                            }}
                             variant="secondary"
                             size="sm"
                           >
@@ -404,7 +423,16 @@ const StoreSettingsDashboard = () => {
                     <p className="text-sm text-muted-foreground mb-4">
                       Add a logo to make sure your store shows up in search and categories.
                     </p>
-                    <Button onClick={() => logoInputRef.current?.click()}>Add logo</Button>
+                    <Button 
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        logoInputRef.current?.click();
+                      }}
+                    >
+                      Add logo
+                    </Button>
                   </div>
                 )}
               </div>
