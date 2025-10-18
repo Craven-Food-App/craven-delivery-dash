@@ -86,8 +86,10 @@ export const useRestaurantOnboarding = (restaurantId: string | undefined) => {
   useEffect(() => {
     refreshData();
 
-    // Subscribe to real-time updates
-    const channel = supabase
+    if (!restaurantId) return;
+
+    // Subscribe to real-time updates for onboarding progress
+    const progressChannel = supabase
       .channel('onboarding-progress-changes')
       .on(
         'postgres_changes',
@@ -103,8 +105,44 @@ export const useRestaurantOnboarding = (restaurantId: string | undefined) => {
       )
       .subscribe();
 
+    // Subscribe to real-time updates for restaurant table changes
+    const restaurantChannel = supabase
+      .channel('restaurant-changes-readiness')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'restaurants',
+          filter: `id=eq.${restaurantId}`
+        },
+        () => {
+          refreshData();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to menu_items changes to recalculate when items are added
+    const menuChannel = supabase
+      .channel('menu-items-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'menu_items',
+          filter: `restaurant_id=eq.${restaurantId}`
+        },
+        () => {
+          refreshData();
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(progressChannel);
+      supabase.removeChannel(restaurantChannel);
+      supabase.removeChannel(menuChannel);
     };
   }, [restaurantId]);
 
