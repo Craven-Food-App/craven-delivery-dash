@@ -108,7 +108,7 @@ const ApplicationReview: React.FC = () => {
     }
   };
 
-  const handleApprove = async (applicationId: string, notes: string) => {
+  const handleApproveBackgroundCheck = async (applicationId: string, notes: string = '') => {
     try {
       const application = applications.find(app => app.id === applicationId);
       if (!application) throw new Error('Application not found');
@@ -116,9 +116,11 @@ const ApplicationReview: React.FC = () => {
       const { error } = await supabase
         .from('craver_applications')
         .update({
+          background_check: true,
+          background_check_approved_at: new Date().toISOString(),
           status: 'approved',
           reviewed_at: new Date().toISOString(),
-          reviewer_notes: notes
+          reviewer_notes: notes || 'Background check approved by admin'
         })
         .eq('id', applicationId);
 
@@ -126,47 +128,52 @@ const ApplicationReview: React.FC = () => {
         throw error;
       }
 
-      // Send approval email
+      // Send background check approval email
       try {
-        const { error: emailError } = await supabase.functions.invoke('send-approval-email', {
+        const { error: emailError } = await supabase.functions.invoke('send-driver-welcome-email', {
           body: {
             driverName: `${application.first_name} ${application.last_name}`,
             driverEmail: application.email,
-            applicationId: applicationId,
+            isBackgroundCheckApproval: true
           },
         });
 
         if (emailError) {
           console.error('Error sending approval email:', emailError);
           toast({
-            title: "Application Approved",
-            description: "Application approved, but email notification failed to send.",
+            title: "Background Check Approved",
+            description: "Approved successfully, but email notification failed to send.",
             variant: "default",
           });
         } else {
           toast({
-            title: "Application Approved",
-            description: "The driver has been approved and notified via email.",
+            title: "Background Check Approved ✅",
+            description: `${application.first_name} has been cleared to drive and notified via email.`,
           });
         }
       } catch (emailError) {
         console.error('Error sending approval email:', emailError);
         toast({
-          title: "Application Approved",
-          description: "Application approved, but email notification failed to send.",
+          title: "Background Check Approved",
+          description: "Approved successfully, but email notification failed to send.",
           variant: "default",
         });
       }
 
       fetchApplications();
     } catch (error) {
-      console.error('Error approving application:', error);
+      console.error('Error approving background check:', error);
       toast({
         title: "Error",
-        description: "Failed to approve application",
+        description: "Failed to approve background check",
         variant: "destructive",
       });
     }
+  };
+
+  const handleApprove = async (applicationId: string, notes: string) => {
+    // This now just calls the background check approval
+    await handleApproveBackgroundCheck(applicationId, notes);
   };
 
   const handleSendApprovalEmail = async (applicationId: string) => {

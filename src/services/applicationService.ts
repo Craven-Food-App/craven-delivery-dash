@@ -100,6 +100,26 @@ export class ApplicationService {
   }
 
   /**
+   * Get background check delay from admin settings
+   */
+  static async getBackgroundCheckDelay(): Promise<number> {
+    try {
+      const { data } = await supabase
+        .from('admin_settings')
+        .select('setting_value')
+        .eq('setting_key', 'background_check_delay_days')
+        .single();
+
+      if (data?.setting_value?.default) {
+        return parseInt(data.setting_value.default);
+      }
+      return 3; // Default to 3 days
+    } catch {
+      return 3; // Default to 3 days if setting not found
+    }
+  }
+
+  /**
    * Submit the complete application
    */
   static async submitApplication(
@@ -107,6 +127,11 @@ export class ApplicationService {
     data: ApplicationData,
     documentPaths: Record<string, string>
   ) {
+    // Get background check delay setting
+    const delayDays = await this.getBackgroundCheckDelay();
+    const now = new Date();
+    const estimatedCompletion = new Date(now.getTime() + delayDays * 24 * 60 * 60 * 1000);
+
     const { error } = await supabase
       .from('craver_applications')
       .insert({
@@ -154,7 +179,12 @@ export class ApplicationService {
         vehicle_registration: documentPaths.vehicleRegistration,
         profile_photo: documentPaths.profilePhoto,
         i9_document: documentPaths.i9Document,
-        status: 'pending'
+        status: 'under_review',
+        
+        // Background Check - Automatically initiated
+        background_check_initiated_at: now.toISOString(),
+        background_check_estimated_completion: estimatedCompletion.toISOString(),
+        background_check: false
       });
 
     if (error) {

@@ -5,6 +5,7 @@ import OnboardingDashboard from '@/components/admin/OnboardingDashboard';
 import LiveDashboard from '@/components/admin/LiveDashboard';
 import ChatPortal from '@/components/admin/ChatPortal';
 import BackgroundCheckDashboard from '@/components/admin/BackgroundCheckDashboard';
+import { BackgroundCheckSettings } from '@/components/admin/BackgroundCheckSettings';
 import RestaurantOnboardingDashboard from '@/components/admin/RestaurantOnboardingDashboard';
 import { RestaurantVerificationDashboard } from '@/components/admin/RestaurantVerificationDashboard';
 import { TabletShippingManagement } from '@/components/admin/TabletShippingManagement';
@@ -15,7 +16,7 @@ import { PromoCodeManager } from '@/components/admin/PromoCodeManager';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, BarChart3, Users, Store, Car, ShoppingBag, MessageCircle, Bell, DollarSign, Tags, GraduationCap, FileCheck, Shield, ChevronRight, Package } from 'lucide-react';
+import { ArrowLeft, BarChart3, Users, Store, Car, ShoppingBag, MessageCircle, Bell, DollarSign, Tags, GraduationCap, FileCheck, Shield, ChevronRight, Package, Settings } from 'lucide-react';
 import cravenLogo from "@/assets/craven-logo.png";
 import { cn } from '@/lib/utils';
 
@@ -46,6 +47,7 @@ const Admin: React.FC = () => {
       items: [
         { id: 'driver-applications', label: 'Applications', icon: Users },
         { id: 'driver-background', label: 'Background Checks', icon: FileCheck },
+        { id: 'driver-background-settings', label: 'BG Check Settings', icon: Settings },
         { id: 'driver-onboarding', label: 'Onboarding', icon: GraduationCap },
         { id: 'driver-payouts', label: 'Payouts', icon: DollarSign },
       ]
@@ -77,6 +79,8 @@ const Admin: React.FC = () => {
         return <ApplicationReview />;
       case 'driver-background':
         return <BackgroundCheckDashboard />;
+      case 'driver-background-settings':
+        return <BackgroundCheckSettings />;
       case 'driver-onboarding':
         return <OnboardingDashboard />;
       case 'driver-payouts':

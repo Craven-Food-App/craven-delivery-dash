@@ -7,11 +7,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Truck, Car } from "lucide-react";
+import { WelcomeConfetti } from "@/components/driver/WelcomeConfetti";
+import { BackgroundCheckStatus } from "@/components/driver/BackgroundCheckStatus";
 
 const DriverAuth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showWelcomeConfetti, setShowWelcomeConfetti] = useState(false);
+  const [showBackgroundCheckStatus, setShowBackgroundCheckStatus] = useState(false);
+  const [firstName, setFirstName] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -20,48 +25,68 @@ const DriverAuth = () => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Check if they're an approved craver
-        const { data: application } = await supabase
-          .from('craver_applications')
-          .select('status')
-          .eq('user_id', session.user.id)
-          .eq('status', 'approved')
-          .single();
-        
-        if (application) {
-          navigate('/mobile');
-        } else {
-          navigate('/craver-hub');
-        }
+        await handlePostLoginRouting(session.user.id);
       }
     };
     checkAuth();
   }, [navigate]);
+
+  const handlePostLoginRouting = async (userId: string) => {
+    try {
+      // Fetch application data
+      const { data: application } = await supabase
+        .from('craver_applications')
+        .select('status, first_name, background_check, background_check_approved_at, welcome_screen_shown, onboarding_completed_at')
+        .eq('user_id', userId)
+        .single();
+      
+      if (!application) {
+        navigate('/feeder');
+        return;
+      }
+
+      // If background check not approved yet, show status page
+      if (!application.background_check || !application.background_check_approved_at) {
+        setShowBackgroundCheckStatus(true);
+        return;
+      }
+
+      // If approved but haven't shown welcome confetti, show it!
+      if (application.background_check && !application.welcome_screen_shown) {
+        setFirstName(application.first_name);
+        setShowWelcomeConfetti(true);
+        return;
+      }
+
+      // If onboarding not complete, go to onboarding
+      if (!application.onboarding_completed_at) {
+        navigate('/onboarding');
+        return;
+      }
+
+      // All done, go to mobile dashboard
+      navigate('/mobile');
+    } catch (error) {
+      console.error('Error checking application status:', error);
+      navigate('/feeder');
+    }
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error, data } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
 
-      // Check if they're an approved craver after login
-      const { data: application } = await supabase
-        .from('craver_applications')
-        .select('status')
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-        .eq('status', 'approved')
-        .single();
-      
-      if (application) {
-        navigate('/mobile');
-      } else {
-        navigate('/craver-hub');
+      // Use the new routing logic
+      if (data.user) {
+        await handlePostLoginRouting(data.user.id);
       }
 
       toast({
@@ -174,6 +199,17 @@ const DriverAuth = () => {
           </Button>
         </div>
       </div>
+
+      {/* Welcome Confetti Overlay */}
+      {showWelcomeConfetti && (
+        <WelcomeConfetti 
+          firstName={firstName} 
+          onComplete={() => setShowWelcomeConfetti(false)} 
+        />
+      )}
+
+      {/* Background Check Status Overlay */}
+      {showBackgroundCheckStatus && <BackgroundCheckStatus />}
     </div>
   );
 };

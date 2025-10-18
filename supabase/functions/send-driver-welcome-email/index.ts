@@ -12,6 +12,7 @@ const corsHeaders = {
 interface DriverWelcomeEmailRequest {
   driverName: string;
   driverEmail: string;
+  isBackgroundCheckApproval?: boolean;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -20,16 +21,29 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { driverName, driverEmail }: DriverWelcomeEmailRequest = await req.json();
+    const { driverName, driverEmail, isBackgroundCheckApproval }: DriverWelcomeEmailRequest = await req.json();
 
-    console.log(`Sending driver onboarding welcome email to ${driverEmail}`);
+    console.log(`Sending driver ${isBackgroundCheckApproval ? 'background check approval' : 'welcome'} email to ${driverEmail}`);
 
     const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Crave'N <onboarding@resend.dev>";
+
+    // Different email content for background check approval
+    const subject = isBackgroundCheckApproval 
+      ? "🎉 You're Cleared to Drive with Crave'N!"
+      : "🎉 You're Approved! Complete Your Onboarding";
+
+    const headerTitle = isBackgroundCheckApproval
+      ? "Background Check Complete!"
+      : "Congratulations!";
+
+    const mainMessage = isBackgroundCheckApproval
+      ? "Excellent news! Your background check has been completed and you're cleared to drive with Crave'N. 🚗✨"
+      : "Great news! Your application to become a Crave'N driver has been <strong>approved</strong>. Welcome to the team! 🚗🍔";
 
     const emailResponse = await resend.emails.send({
       from: fromEmail,
       to: [driverEmail],
-      subject: "🎉 You're Approved! Complete Your Onboarding",
+      subject: subject,
       html: `
         <!DOCTYPE html>
         <html>
@@ -45,8 +59,8 @@ const handler = async (req: Request): Promise<Response> => {
                     <!-- Header with Orange Banner -->
                     <tr>
                       <td style="background: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%); padding: 40px; text-align: center; border-radius: 8px 8px 0 0;">
-                        <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: bold;">🎉 Congratulations!</h1>
-                        <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 18px;">You're Approved!</p>
+                        <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: bold;">🎉 ${headerTitle}</h1>
+                        <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 18px;">You're Cleared to Drive!</p>
                       </td>
                     </tr>
                     
@@ -56,7 +70,7 @@ const handler = async (req: Request): Promise<Response> => {
                         <h2 style="margin: 0 0 20px 0; color: #1a1a1a; font-size: 24px;">Hi ${driverName}! 👋</h2>
                         
                         <p style="margin: 0 0 20px 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                          Great news! Your application to become a Crave'N driver has been <strong>approved</strong>. Welcome to the team! 🚗🍔
+                          ${mainMessage}
                         </p>
                         
                         <div style="background-color: #e8f5e9; border-left: 4px solid #4caf50; padding: 20px; margin: 30px 0;">

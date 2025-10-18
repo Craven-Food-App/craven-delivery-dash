@@ -105,10 +105,10 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
       clearDraft();
       
       toast({
-        title: "Application Submitted!",
+        title: "Application Submitted! 🎉",
         description: isNewUser
-          ? "Check your email to verify your account. We'll review your application within 3-5 business days."
-          : "We'll review your application and notify you within 3-5 business days.",
+          ? "Background check initiated! Check your email to verify your account. Results expected in 1-5 business days (possibly more)."
+          : "Background check initiated! You'll receive an email when your results are ready. Expected in 1-5 business days (possibly more).",
       });
 
       onClose();
