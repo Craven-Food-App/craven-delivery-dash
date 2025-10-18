@@ -384,23 +384,26 @@ export const RestaurantVerificationDashboard = () => {
                                 docKey="business_license"
                               />
                               <DocumentCard
-                                label="Insurance Certificate"
-                                url={restaurant.insurance_certificate_url}
-                                icon={Shield}
-                                docKey="insurance_certificate"
-                              />
-                              <DocumentCard
-                                label="Health Permit"
-                                url={restaurant.health_permit_url}
-                                icon={Heart}
-                                docKey="health_permit"
-                              />
-                              <DocumentCard
                                 label="Owner ID"
                                 url={restaurant.owner_id_url}
                                 icon={FileText}
                                 docKey="owner_id"
                               />
+                              
+                              {/* Optional Documents Section */}
+                              <div className="pt-3 mt-3 border-t">
+                                <h4 className="text-sm font-semibold text-gray-600 mb-2">Optional Documents</h4>
+                                {restaurant.health_permit_url ? (
+                                  <DocumentCard
+                                    label="Health Permit (Optional)"
+                                    url={restaurant.health_permit_url}
+                                    icon={Heart}
+                                    docKey="health_permit"
+                                  />
+                                ) : (
+                                  <p className="text-xs text-gray-500 italic">No health permit uploaded</p>
+                                )}
+                              </div>
                             </div>
 
                             {/* Verification Notes */}

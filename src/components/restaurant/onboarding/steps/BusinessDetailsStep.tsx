@@ -77,9 +77,7 @@ export function BusinessDetailsStep({ data, updateData, onNext, onBack }: Busine
     data.yearsInBusiness &&
     data.cuisineType &&
     data.description.trim().length >= 20 &&
-    data.businessLicenseUrl &&
-    data.insuranceCertificateUrl &&
-    data.healthPermitUrl;
+    data.businessLicenseUrl;
 
   return (
     <div className="space-y-6">
@@ -225,40 +223,11 @@ export function BusinessDetailsStep({ data, updateData, onNext, onBack }: Busine
             </div>
           </div>
 
-          {/* Insurance Certificate */}
+          {/* Health Permit - Optional */}
           <div className="space-y-2">
-            <Label htmlFor="insuranceCertificateUrl">Certificate of Insurance (General Liability, Min $1M) *</Label>
-            <div className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary/50 transition-colors">
-              {data.insuranceCertificateUrl ? (
-                <div className="flex items-center justify-center gap-2 text-green-600">
-                  <FileCheck className="w-5 h-5" />
-                  <span className="text-sm font-medium">Insurance Uploaded</span>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Upload className="w-6 h-6 mx-auto text-gray-400" />
-                  <div className="text-sm text-gray-600">
-                    <label htmlFor="insuranceCertificateUrl" className="cursor-pointer text-primary hover:text-primary/80">
-                      Upload insurance certificate
-                    </label>
-                  </div>
-                  <p className="text-xs text-muted-foreground">PDF, PNG, or JPG (max 10MB)</p>
-                </div>
-              )}
-              <input
-                id="insuranceCertificateUrl"
-                type="file"
-                accept=".pdf,.png,.jpg,.jpeg"
-                onChange={(e) => handleFileUpload(e, 'insuranceCertificateUrl')}
-                disabled={uploading === 'insuranceCertificateUrl'}
-                className="hidden"
-              />
-            </div>
-          </div>
-
-          {/* Health Permit */}
-          <div className="space-y-2">
-            <Label htmlFor="healthPermitUrl">Health Permit / Food Handler's Certificate *</Label>
+            <Label htmlFor="healthPermitUrl">
+              Health Permit / Food Handler's Certificate (Optional)
+            </Label>
             <div className="border-2 border-dashed rounded-lg p-4 text-center hover:border-primary/50 transition-colors">
               {data.healthPermitUrl ? (
                 <div className="flex items-center justify-center gap-2 text-green-600">
@@ -270,7 +239,7 @@ export function BusinessDetailsStep({ data, updateData, onNext, onBack }: Busine
                   <Upload className="w-6 h-6 mx-auto text-gray-400" />
                   <div className="text-sm text-gray-600">
                     <label htmlFor="healthPermitUrl" className="cursor-pointer text-primary hover:text-primary/80">
-                      Upload health permit
+                      Upload health permit (optional)
                     </label>
                   </div>
                   <p className="text-xs text-muted-foreground">PDF, PNG, or JPG (max 10MB)</p>
@@ -285,12 +254,18 @@ export function BusinessDetailsStep({ data, updateData, onNext, onBack }: Busine
                 className="hidden"
               />
             </div>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2">
+              <Shield className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-amber-900">
+                While optional now, this document may be required at a later date or upon request by Crave'N for compliance verification.
+              </p>
+            </div>
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
             <Shield className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
             <p className="text-xs text-blue-900">
-              All documents are securely encrypted. We review these to ensure compliance with local regulations.
+              All documents are securely encrypted and used for verification purposes only. Additional documents may be requested by Crave'N to ensure compliance with local regulations.
             </p>
           </div>
         </div>
