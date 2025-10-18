@@ -4,10 +4,15 @@ import {
   Star, Clock, Truck, Plus, Minus, ShoppingCart, X, 
   ChevronLeft, Utensils, Heart, Share2, MapPin, Phone,
   Navigation, MessageCircle, CheckCircle, Filter, Search, ChefHat, Leaf,
-    Info, ArrowUp, Timer, Flame, Car
+    Info, ArrowUp, Timer, Flame, Car, Home, Store, Coffee, Calendar, 
+    User, Bell, Menu, Banana, Pill, PawPrint, Receipt
 } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { toast as showToast } from 'sonner';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import cravenLogo from "@/assets/craven-logo.png";
 
 // --- Type Definitions (matching your database) ---
 interface Restaurant {
@@ -25,6 +30,8 @@ interface Restaurant {
   rating: number;
   total_reviews: number;
   image_url: string;
+  header_image_url?: string;
+  logo_url?: string;
   latitude?: number;
   longitude?: number;
   is_open?: boolean;
@@ -91,9 +98,26 @@ const RestaurantMenuPage = () => {
     const [promos, setPromos] = useState<PromoCode[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // New state for header and side menu
+  const [searchQuery, setSearchQuery] = useState('');
+  const [location, setLocation] = useState('6759 Nebraska Ave');
+  const [deliveryMode, setDeliveryMode] = useState<'delivery' | 'pickup'>('delivery');
+  const [showAddressSelector, setShowAddressSelector] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showCart, setShowCart] = useState(false);
+  const [showMobileNav, setShowMobileNav] = useState(false);
+  const [isMenuCompressed, setIsMenuCompressed] = useState(true);
+  const [isMenuHovered, setIsMenuHovered] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showCartButton, setShowCartButton] = useState(false);
+  const cartButtonTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const { toast } = useToast();
     const [activeSection, setActiveSection] = useState('featured');
     const [isMenuFixed, setIsMenuFixed] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
     const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
            const [pickupInfo, setPickupInfo] = useState({
                address: '',
@@ -118,13 +142,128 @@ const RestaurantMenuPage = () => {
         }
     };
 
+    // Navigation categories for side menu
+    const navCategories = [
+        { id: 'all', label: 'All', icon: Home, active: activeCategory === 'all' },
+        { id: 'grocery', label: 'Grocery', icon: Banana, active: activeCategory === 'grocery' },
+        { id: 'convenience', label: 'Convenience', icon: Coffee, active: activeCategory === 'convenience' },
+        { id: 'dashmart', label: 'CraveMart', icon: Store, active: activeCategory === 'dashmart' },
+        { id: 'beauty', label: 'Beauty', icon: Heart, active: activeCategory === 'beauty' },
+        { id: 'pets', label: 'Pets', icon: PawPrint, active: activeCategory === 'pets' },
+        { id: 'health', label: 'Health', icon: Pill, active: activeCategory === 'health' },
+        { id: 'browse', label: 'Browse All', icon: Search, active: activeCategory === 'browse' },
+        { id: 'orders', label: 'Orders', icon: Receipt, active: activeCategory === 'orders' },
+        { id: 'account', label: 'Account', icon: User, active: activeCategory === 'account' }
+    ];
+
+    // Helper functions for header functionality
+    const handleAddressSearch = async (query: string) => {
+        if (query.length < 3) return;
+        
+        const mockSuggestions = [
+            `${query} Street, Toledo, OH`,
+            `${query} Avenue, Toledo, OH`,
+            `${query} Boulevard, Toledo, OH`,
+            `${query} Drive, Toledo, OH`,
+            `${query} Lane, Toledo, OH`
+        ];
+        setAddressSuggestions(mockSuggestions);
+    };
+
+    const selectAddress = (address: string) => {
+        setLocation(address);
+        setShowAddressSelector(false);
+        toast({
+            title: "Location Updated",
+            description: `Delivery address set to ${address}`,
+        });
+    };
+
+    const fetchNotifications = async () => {
+        const mockNotifications = [
+            {
+                id: 1,
+                title: "Order Update",
+                message: "Your order from CMIH Kitchen is being prepared",
+                time: "2 min ago",
+                read: false,
+                type: "order"
+            },
+            {
+                id: 2,
+                title: "New Deal Available",
+                message: "20% off your next order at McDonald's",
+                time: "1 hour ago",
+                read: false,
+                type: "promotion"
+            },
+            {
+                id: 3,
+                title: "Delivery Complete",
+                message: "Your order has been delivered successfully",
+                time: "3 hours ago",
+                read: true,
+                type: "delivery"
+            }
+        ];
+        setNotifications(mockNotifications);
+    };
+
+    const handleCategoryClick = (categoryId: string) => {
+        setActiveCategory(categoryId);
+        
+        if (categoryId === 'orders') {
+            navigate('/customer-dashboard?tab=orders');
+            return;
+        } else if (categoryId === 'account') {
+            navigate('/customer-dashboard?tab=account');
+            return;
+        }
+        
+        // For restaurant categories, navigate back to restaurants page
+        if (['all', 'browse', 'grocery', 'convenience', 'dashmart', 'beauty', 'pets', 'health'].includes(categoryId)) {
+            navigate('/restaurants');
+        }
+    };
+
+    const toggleMenuCompression = () => {
+        setIsMenuCompressed(!isMenuCompressed);
+    };
 
     // Fetch all data
   useEffect(() => {
     if (id) {
       fetchRestaurantData();
     }
+    fetchNotifications();
+    
+    // Auto-hide side menu when entering restaurant page
+    setIsMenuCompressed(true);
   }, [id]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('[data-dropdown]')) {
+        setShowAddressSelector(false);
+        setShowNotifications(false);
+        setShowCart(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Cleanup cart button timer on unmount
+  useEffect(() => {
+    return () => {
+      if (cartButtonTimerRef.current) {
+        clearTimeout(cartButtonTimerRef.current);
+      }
+    };
+  }, []);
 
     // Set pickup info when restaurant data is loaded
   useEffect(() => {
@@ -260,6 +399,15 @@ const RestaurantMenuPage = () => {
                    setCart([...cart, { ...item, quantity: 1, key: item.id }]);
     }
     showToast.success(`${item.name} added to cart!`);
+    
+    // Show cart button and set timer to hide after 3 seconds
+    setShowCartButton(true);
+    if (cartButtonTimerRef.current) {
+      clearTimeout(cartButtonTimerRef.current);
+    }
+    cartButtonTimerRef.current = setTimeout(() => {
+      setShowCartButton(false);
+    }, 3000);
   }, [cart]);
 
            const openItemModal = useCallback((item: MenuItem) => {
@@ -288,6 +436,16 @@ const RestaurantMenuPage = () => {
                        setCart([...cart, itemToAdd]);
                    }
                    showToast.success(`${selectedItem.name} added to cart!`);
+                   
+                   // Show cart button and set timer to hide after 3 seconds
+                   setShowCartButton(true);
+                   if (cartButtonTimerRef.current) {
+                     clearTimeout(cartButtonTimerRef.current);
+                   }
+                   cartButtonTimerRef.current = setTimeout(() => {
+                     setShowCartButton(false);
+                   }, 3000);
+                   
                    closeItemModal();
                }
            }, [selectedItem, modalQuantity, cart, closeItemModal]);
@@ -739,18 +897,308 @@ const RestaurantMenuPage = () => {
     }
 
   return (
-        <div className="bg-gray-50 min-h-screen font-sans text-gray-800 antialiased" style={{
-            WebkitFontSmoothing: 'antialiased',
-            MozOsxFontSmoothing: 'grayscale',
-            textRendering: 'optimizeLegibility'
-        }}>
+    <div className="min-h-screen bg-white">
+      {/* Enhanced Header */}
+      <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            {/* Left: Logo */}
+            <div className="flex items-center space-x-4">
+              <img src={cravenLogo} alt="CRAVE'N" className="h-10" />
+            </div>
+
+            {/* Center: Search */}
+            <div className="flex-1 max-w-2xl mx-8">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Input 
+                  placeholder="Search Crave'N" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-4 py-2 w-full border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                />
+              </div>
+            </div>
+
+            {/* Right: Location, Delivery/Pickup, Notifications, Cart */}
+            <div className="flex items-center space-x-4">
+              {/* Location Selector */}
+              <div className="relative">
+                <button 
+                  onClick={() => setShowAddressSelector(!showAddressSelector)}
+                  className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  <MapPin className="w-4 h-4" />
+                  <span className="text-sm font-medium max-w-32 truncate">{location}</span>
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                
+                {/* Address Selector Dropdown */}
+                {showAddressSelector && (
+                  <div data-dropdown className="absolute top-full left-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                    <div className="p-4">
+                      <h3 className="font-semibold text-gray-900 mb-3">Select delivery address</h3>
+                      <div className="space-y-2">
+                        <Input
+                          placeholder="Search for an address"
+                          onChange={(e) => handleAddressSearch(e.target.value)}
+                          className="w-full"
+                        />
+                        {addressSuggestions.length > 0 && (
+                          <div className="space-y-1">
+                            {addressSuggestions.map((address, index) => (
+                              <button
+                                key={index}
+                                onClick={() => selectAddress(address)}
+                                className="w-full text-left p-2 hover:bg-gray-100 rounded-md text-sm"
+                              >
+                                {address}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        <div className="pt-2 border-t">
+                          <button className="text-orange-600 text-sm font-medium">
+                            Add new address
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Delivery/Pickup Toggle */}
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button 
+                  onClick={() => setDeliveryMode('delivery')}
+                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                    deliveryMode === 'delivery' 
+                      ? 'bg-orange-500 text-white' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Delivery
+                </button>
+                <button 
+                  onClick={() => setDeliveryMode('pickup')}
+                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                    deliveryMode === 'pickup' 
+                      ? 'bg-orange-500 text-white' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Pickup
+                </button>
+              </div>
+
+              {/* Notifications */}
+              <div className="relative">
+                <button 
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="relative"
+                >
+                  <Bell className="w-6 h-6 text-gray-600 hover:text-gray-900 transition-colors" />
+                  {notifications.filter(n => !n.read).length > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                      {notifications.filter(n => !n.read).length}
+                    </span>
+                  )}
+                </button>
+                
+                {/* Notifications Dropdown */}
+                {showNotifications && (
+                  <div data-dropdown className="absolute top-full right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-semibold text-gray-900">Notifications</h3>
+                        <button className="text-sm text-orange-600">Mark all as read</button>
+                      </div>
+                      <div className="space-y-3 max-h-64 overflow-y-auto">
+                        {notifications.map((notification) => (
+                          <div 
+                            key={notification.id}
+                            className={`p-3 rounded-lg border ${
+                              notification.read ? 'bg-gray-50' : 'bg-orange-50 border-orange-200'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-medium text-sm text-gray-900">{notification.title}</h4>
+                                <p className="text-xs text-gray-600 mt-1">{notification.message}</p>
+                                <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                              </div>
+                              {!notification.read && (
+                                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Cart */}
+              <div className="relative">
+                <button 
+                  onClick={() => setShowCart(!showCart)}
+                  className="relative"
+                >
+                  <ShoppingCart className="w-6 h-6 text-gray-600 hover:text-gray-900 transition-colors" />
+                  {cart.length > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 text-white text-xs rounded-full flex items-center justify-center">
+                      {cart.length}
+                    </span>
+                  )}
+                </button>
+                
+                {/* Cart Dropdown */}
+                {showCart && (
+                  <div data-dropdown className="absolute top-full right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-semibold text-gray-900">Your Cart</h3>
+                        <button className="text-sm text-orange-600">Clear all</button>
+                      </div>
+                      {cart.length > 0 ? (
+                        <div className="space-y-3 max-h-64 overflow-y-auto">
+                          {cart.map((item, index) => (
+                            <div key={index} className="flex items-center justify-between p-2 border rounded-lg">
+                              <div className="flex-1">
+                                <h4 className="font-medium text-sm text-gray-900">{item.name}</h4>
+                                <p className="text-xs text-gray-600">${(item.price_cents / 100).toFixed(2)}</p>
+                              </div>
+                              <button 
+                                onClick={() => {
+                                  setCart(prev => prev.filter((_, i) => i !== index));
+                                }}
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
+                          <div className="pt-3 border-t">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="font-semibold">Total: ${(cart.reduce((total, item) => total + (item.price_cents * item.quantity), 0) / 100).toFixed(2)}</span>
+                            </div>
+                            <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                              Checkout
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <ShoppingCart className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                          <p className="text-gray-500 text-sm">Your cart is empty</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Menu */}
+              <button 
+                onClick={() => setShowMobileNav(!showMobileNav)}
+                className="lg:hidden p-2"
+              >
+                {showMobileNav ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative">
+        {/* Right Side Navigation - Fixed Overlay */}
+        <div 
+          className={`hidden lg:block fixed left-0 top-[64px] transition-all duration-300 ease-in-out ${
+            (isMenuCompressed && !isMenuHovered) ? 'w-16' : 'w-64'
+          } bg-gray-50 border-r border-gray-200 h-[calc(100vh-64px)] z-30 shadow-md`}
+          onMouseEnter={() => setIsMenuHovered(true)}
+          onMouseLeave={() => setIsMenuHovered(false)}
+        >
+          <div className="p-4">
+            {/* Hamburger Menu Button */}
+            <button 
+              onClick={toggleMenuCompression}
+              className="w-full flex items-center justify-center p-2 mb-4 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <Menu className="w-5 h-5 text-gray-600" />
+            </button>
+
+            {(!isMenuCompressed || isMenuHovered) && (
+              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Browse</h3>
+            )}
+            
+            <nav className="space-y-1">
+              {navCategories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => handleCategoryClick(category.id)}
+                  className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                >
+                  <category.icon className="w-5 h-5 flex-shrink-0" />
+                  {(!isMenuCompressed || isMenuHovered) && (
+                    <span className="font-medium">{category.label}</span>
+                  )}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </div>
+
+        {/* Mobile Navigation Overlay */}
+        {showMobileNav && (
+          <div className="lg:hidden fixed inset-0 z-50 bg-black bg-opacity-50">
+            <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-xl">
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">Menu</h2>
+                  <button 
+                    onClick={() => setShowMobileNav(false)}
+                    className="p-2 hover:bg-gray-100 rounded-lg"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <nav className="space-y-1">
+                  {navCategories.map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => {
+                        handleCategoryClick(category.id);
+                        setShowMobileNav(false);
+                      }}
+                  className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    >
+                      <category.icon className="w-5 h-5" />
+                      <span className="font-medium">{category.label}</span>
+                    </button>
+                  ))}
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Main Content */}
+        <div className="flex-1 relative">
+          <div className="bg-gray-50 min-h-screen font-sans text-gray-800 antialiased" style={{
+              WebkitFontSmoothing: 'antialiased',
+              MozOsxFontSmoothing: 'grayscale',
+              textRendering: 'optimizeLegibility'
+          }}>
             <div className="max-w-7xl mx-auto">
                        {/* --- Header Image Banner --- */}
                        <div className="relative h-64 overflow-hidden rounded-b-xl shadow-lg" style={{
                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
                        }}>
                     <img
-                        src={restaurant.image_url || 'https://placehold.co/1200x400/A31D24/ffffff?text=Restaurant'}
+                        src={restaurant.header_image_url || restaurant.image_url || 'https://placehold.co/1200x400/A31D24/ffffff?text=Restaurant'}
                         alt={restaurant.name}
                         className="w-full h-full object-cover"
             style={{
@@ -786,12 +1234,12 @@ const RestaurantMenuPage = () => {
                                {/* Restaurant Logo */}
                                <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-200 shadow-md">
                                    <img 
-                                       src={restaurant.logo_url || 'https://placehold.co/64x64/CCCCCC/666666?text=Logo'} 
+                                       src={restaurant.logo_url || restaurant.image_url || 'https://placehold.co/64x64/CCCCCC/666666?text=Logo'} 
                                        alt={`${restaurant.name} logo`}
                                        className="w-full h-full object-cover"
                                        onError={(e) => {
-                                           e.target.onerror = null;
-                                           e.target.src = 'https://placehold.co/64x64/CCCCCC/666666?text=Logo';
+                                           (e.target as HTMLImageElement).onerror = null;
+                                           (e.target as HTMLImageElement).src = 'https://placehold.co/64x64/CCCCCC/666666?text=Logo';
                                        }}
                                    />
                                </div>
@@ -837,7 +1285,7 @@ const RestaurantMenuPage = () => {
                                                </button>
                                                <button
                                                    onClick={() => setDeliveryMethod('pickup')}
-                                                   className={`px-5 py-2 rounded-md transition duration-200 ${deliveryMethod === 'pickup' ? 'bg-red-700 shadow-lg text-white font-bold' : 'text-gray-600 font-medium hover:bg-white'}`}
+                                                   className={`px-5 py-2 rounded-md transition duration-200 ${(deliveryMethod as string) === 'pickup' ? 'bg-red-700 shadow-lg text-white font-bold' : 'text-gray-600 font-medium hover:bg-white'}`}
                                                >
                                                    Pickup
                                                </button>
@@ -1085,8 +1533,14 @@ const RestaurantMenuPage = () => {
             </main>
 
                    {/* Floating Cart Button */}
-                   {cart.length > 0 && (
-                       <div className="fixed bottom-4 right-4 z-50">
+                   {cart.length > 0 && showCartButton && (
+                       <div 
+                         className="fixed bottom-4 right-4 z-50 transition-all duration-500 ease-in-out"
+                         style={{
+                           opacity: showCartButton ? 1 : 0,
+                           transform: showCartButton ? 'translateY(0)' : 'translateY(20px)'
+                         }}
+                       >
                            <button
                                onClick={() => navigate('/checkout')}
                                className="bg-red-700 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2 hover:bg-red-800 transition-all duration-200"
@@ -1109,6 +1563,9 @@ const RestaurantMenuPage = () => {
 
                    {/* Mapbox CSS */}
                    <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

@@ -56,9 +56,9 @@ const RestaurantCard = ({
         </div>
 
         {/* Content */}
-        <div className="p-4">
-          <div className="flex justify-between items-start mb-2">
-            <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors">
+        <div className="p-3">
+          <div className="flex justify-between items-start mb-1">
+            <h3 className="font-semibold text-base text-foreground group-hover:text-primary transition-colors">
               {name}
             </h3>
             <div className="flex items-center space-x-1 text-sm">
@@ -67,17 +67,17 @@ const RestaurantCard = ({
             </div>
           </div>
 
-          <p className="text-muted-foreground text-sm mb-3">{cuisine}</p>
+          <p className="text-muted-foreground text-xs mb-2">{cuisine}</p>
 
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-1">
-                <Clock className="h-4 w-4" />
+                <Clock className="h-3 w-3" />
                 <span>{deliveryTime}</span>
               </div>
               
               <div className="flex items-center space-x-1">
-                <Truck className="h-4 w-4" />
+                <Truck className="h-3 w-3" />
                 <span>{deliveryFee}</span>
               </div>
             </div>

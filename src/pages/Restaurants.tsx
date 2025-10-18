@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Search, 
   MapPin, 
@@ -35,7 +37,55 @@ import {
   Timer,
   Navigation,
   Menu,
-  X
+  X,
+  Sparkles,
+  Crown,
+  Gift,
+  Target,
+  TrendingDown,
+  Users,
+  Globe,
+  Smartphone,
+  Wifi,
+  CreditCard,
+  ShieldCheck,
+  TruckIcon,
+  MapIcon,
+  Phone,
+  MessageCircle,
+  Share2,
+  Bookmark,
+  Eye,
+  ThumbsUp,
+  RefreshCw,
+  ChevronDown,
+  SlidersHorizontal,
+  SortAsc,
+  Grid3X3,
+  List,
+  Layers,
+  Compass,
+  Zap as Lightning,
+  Star as StarIcon,
+  Clock as ClockIcon,
+  DollarSign as DollarIcon,
+  Truck as TruckIconAlt,
+  Navigation as NavigationIcon,
+  MapPin as MapPinIcon,
+  Phone as PhoneIcon,
+  MessageCircle as MessageIcon,
+  Share2 as ShareIcon,
+  Bookmark as BookmarkIcon,
+  Eye as EyeIcon,
+  ThumbsUp as ThumbsUpIcon,
+  RefreshCw as RefreshIcon,
+  ChevronDown as ChevronDownIcon,
+  SlidersHorizontal as SlidersIcon,
+  SortAsc as SortIcon,
+  Grid3X3 as GridIcon,
+  List as ListIcon,
+  Layers as LayersIcon,
+  Compass as CompassIcon
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,13 +94,26 @@ import cravenLogo from "@/assets/craven-logo.png";
 const Restaurants = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
-  const [location, setLocation] = useState(searchParams.get('location') || '');
+  const [location, setLocation] = useState(searchParams.get('location') || '6759 Nebraska Ave');
   const [cuisineFilter, setCuisineFilter] = useState(searchParams.get('cuisine') || 'all');
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'rating');
   const [weeklyDeals, setWeeklyDeals] = useState<any[]>([]);
   const [loadingDeals, setLoadingDeals] = useState(true);
   const [activeFilter, setActiveFilter] = useState('deals');
   const [showMobileNav, setShowMobileNav] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('all');
+  
+  // New state for enhanced functionality
+  const [deliveryMode, setDeliveryMode] = useState<'delivery' | 'pickup'>('delivery');
+  const [showAddressSelector, setShowAddressSelector] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showCart, setShowCart] = useState(false);
+  const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [cartItems, setCartItems] = useState<any[]>([]);
+  const [filteredRestaurants, setFilteredRestaurants] = useState<any[]>([]);
+  
+  const { toast } = useToast();
   const resultsRef = useRef<HTMLDivElement | null>(null);
   const weeklyDealsScrollRef = useRef<HTMLDivElement>(null);
   const featuredScrollRef = useRef<HTMLDivElement>(null);
@@ -66,6 +129,89 @@ const Restaurants = () => {
 
   const handleSearch = () => {
     resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  // Address selector functionality
+  const handleAddressSearch = async (query: string) => {
+    if (query.length < 3) return;
+    
+    // Mock address suggestions - in real app, this would call a geocoding API
+    const mockSuggestions = [
+      `${query} Street, Toledo, OH`,
+      `${query} Avenue, Toledo, OH`,
+      `${query} Boulevard, Toledo, OH`,
+      `${query} Drive, Toledo, OH`,
+      `${query} Lane, Toledo, OH`
+    ];
+    setAddressSuggestions(mockSuggestions);
+  };
+
+  const selectAddress = (address: string) => {
+    setLocation(address);
+    setShowAddressSelector(false);
+    toast({
+      title: "Location Updated",
+      description: `Delivery address set to ${address}`,
+    });
+  };
+
+  // Notifications functionality
+  const fetchNotifications = async () => {
+    // Mock notifications - in real app, this would fetch from database
+    const mockNotifications = [
+      {
+        id: 1,
+        title: "Order Update",
+        message: "Your order from CMIH Kitchen is being prepared",
+        time: "2 min ago",
+        read: false,
+        type: "order"
+      },
+      {
+        id: 2,
+        title: "New Deal Available",
+        message: "20% off your next order at McDonald's",
+        time: "1 hour ago",
+        read: false,
+        type: "promotion"
+      },
+      {
+        id: 3,
+        title: "Delivery Complete",
+        message: "Your order has been delivered successfully",
+        time: "3 hours ago",
+        read: true,
+        type: "delivery"
+      }
+    ];
+    setNotifications(mockNotifications);
+  };
+
+  // Cart functionality
+  const addToCart = (item: any) => {
+    setCartItems(prev => [...prev, item]);
+    toast({
+      title: "Added to Cart",
+      description: `${item.name} has been added to your cart`,
+    });
+  };
+
+  const removeFromCart = (itemId: string) => {
+    setCartItems(prev => prev.filter(item => item.id !== itemId));
+  };
+
+  const getCartTotal = () => {
+    return cartItems.reduce((total, item) => total + (item.price || 0), 0);
+  };
+
+  // Filter functionality
+  const applyFilters = () => {
+    // This would filter restaurants based on active filters
+    // For now, we'll just show a toast
+    toast({
+      title: "Filters Applied",
+      description: `Showing ${activeFilter} restaurants`,
+    });
   };
 
   // Scroll functions for horizontal sections
@@ -128,21 +274,70 @@ const Restaurants = () => {
   // Fetch deals on component mount
   useEffect(() => {
     fetchWeeklyDeals();
+    fetchNotifications();
+  }, []);
+
+  // Update filter options based on delivery mode
+  useEffect(() => {
+    const updatedFilters = filterOptions.map(filter => ({
+      ...filter,
+      active: filter.id === activeFilter
+    }));
+    // This would update the filter options in real implementation
+  }, [activeFilter, deliveryMode]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('[data-dropdown]')) {
+        setShowAddressSelector(false);
+        setShowNotifications(false);
+        setShowCart(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Navigation categories
   const navCategories = [
-    { id: 'home', label: 'Home', icon: Home, active: true },
-    { id: 'grocery', label: 'Grocery', icon: Store },
-    { id: 'convenience', label: 'Convenience', icon: Coffee },
-    { id: 'dashmart', label: 'CraveMart', icon: Store },
-    { id: 'beauty', label: 'Beauty', icon: Heart },
-    { id: 'pets', label: 'Pets', icon: Heart },
-    { id: 'health', label: 'Health', icon: Shield },
-    { id: 'browse', label: 'Browse All', icon: Search, active: true },
-    { id: 'orders', label: 'Orders', icon: Clock },
-    { id: 'account', label: 'Account', icon: User }
+    { id: 'all', label: 'All', icon: Home, active: activeCategory === 'all' },
+    { id: 'grocery', label: 'Grocery', icon: Store, active: activeCategory === 'grocery' },
+    { id: 'convenience', label: 'Convenience', icon: Coffee, active: activeCategory === 'convenience' },
+    { id: 'dashmart', label: 'CraveMart', icon: Store, active: activeCategory === 'dashmart' },
+    { id: 'beauty', label: 'Beauty', icon: Heart, active: activeCategory === 'beauty' },
+    { id: 'pets', label: 'Pets', icon: Heart, active: activeCategory === 'pets' },
+    { id: 'health', label: 'Health', icon: Shield, active: activeCategory === 'health' },
+    { id: 'browse', label: 'Browse All', icon: Search, active: activeCategory === 'browse' },
+    { id: 'orders', label: 'Orders', icon: Clock, active: activeCategory === 'orders' },
+    { id: 'account', label: 'Account', icon: User, active: activeCategory === 'account' }
   ];
+
+  const handleCategoryClick = (categoryId: string) => {
+    setActiveCategory(categoryId);
+    
+    // Handle different category types
+    if (categoryId === 'all' || categoryId === 'browse') {
+      setCuisineFilter('all');
+    } else if (['grocery', 'convenience', 'dashmart', 'beauty', 'pets', 'health'].includes(categoryId)) {
+      setCuisineFilter(categoryId);
+    } else if (categoryId === 'orders') {
+      // Navigate to orders page
+      window.location.href = '/customer-dashboard?tab=orders';
+      return;
+    } else if (categoryId === 'account') {
+      // Navigate to account page
+      window.location.href = '/customer-dashboard?tab=account';
+      return;
+    }
+    
+    // Scroll to results section for restaurant categories
+    if (['all', 'browse', 'grocery', 'convenience', 'dashmart', 'beauty', 'pets', 'health'].includes(categoryId)) {
+      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   // Filter options
   const filterOptions = [
@@ -180,41 +375,180 @@ const Restaurants = () => {
 
             {/* Right: Location, Delivery/Pickup, Notifications, Cart */}
             <div className="flex items-center space-x-4">
-              {/* Location */}
-              <div className="flex items-center space-x-1 text-gray-600">
-                <MapPin className="w-4 h-4" />
-                <span className="text-sm font-medium">6759 Nebraska Ave</span>
-                <ChevronRight className="w-4 h-4" />
+              {/* Location Selector */}
+              <div className="relative">
+                <button 
+                  onClick={() => setShowAddressSelector(!showAddressSelector)}
+                  className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  <MapPin className="w-4 h-4" />
+                  <span className="text-sm font-medium max-w-32 truncate">{location}</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                
+                {/* Address Selector Dropdown */}
+                {showAddressSelector && (
+                  <div data-dropdown className="absolute top-full left-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                    <div className="p-4">
+                      <h3 className="font-semibold text-gray-900 mb-3">Select delivery address</h3>
+                      <div className="space-y-2">
+                        <Input
+                          placeholder="Search for an address"
+                          onChange={(e) => handleAddressSearch(e.target.value)}
+                          className="w-full"
+                        />
+                        {addressSuggestions.length > 0 && (
+                          <div className="space-y-1">
+                            {addressSuggestions.map((address, index) => (
+                              <button
+                                key={index}
+                                onClick={() => selectAddress(address)}
+                                className="w-full text-left p-2 hover:bg-gray-100 rounded-md text-sm"
+                              >
+                                {address}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        <div className="pt-2 border-t">
+                          <button className="text-orange-600 text-sm font-medium">
+                            Add new address
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Delivery/Pickup Toggle */}
               <div className="flex bg-gray-100 rounded-lg p-1">
-                <button className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                  activeFilter === 'delivery' 
-                    ? 'bg-orange-500 text-white' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}>
+                <button 
+                  onClick={() => setDeliveryMode('delivery')}
+                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                    deliveryMode === 'delivery' 
+                      ? 'bg-orange-500 text-white' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
                   Delivery
                 </button>
-                <button className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                  activeFilter === 'pickup' 
-                    ? 'bg-orange-500 text-white' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}>
+                <button 
+                  onClick={() => setDeliveryMode('pickup')}
+                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                    deliveryMode === 'pickup' 
+                      ? 'bg-orange-500 text-white' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
                   Pickup
                 </button>
               </div>
 
               {/* Notifications */}
               <div className="relative">
-                <Bell className="w-6 h-6 text-gray-600" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">1</span>
+                <button 
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="relative"
+                >
+                  <Bell className="w-6 h-6 text-gray-600 hover:text-gray-900 transition-colors" />
+                  {notifications.filter(n => !n.read).length > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                      {notifications.filter(n => !n.read).length}
+                    </span>
+                  )}
+                </button>
+                
+                {/* Notifications Dropdown */}
+                {showNotifications && (
+                  <div data-dropdown className="absolute top-full right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-semibold text-gray-900">Notifications</h3>
+                        <button className="text-sm text-orange-600">Mark all as read</button>
+                      </div>
+                      <div className="space-y-3 max-h-64 overflow-y-auto">
+                        {notifications.map((notification) => (
+                          <div 
+                            key={notification.id}
+                            className={`p-3 rounded-lg border ${
+                              notification.read ? 'bg-gray-50' : 'bg-orange-50 border-orange-200'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-medium text-sm text-gray-900">{notification.title}</h4>
+                                <p className="text-xs text-gray-600 mt-1">{notification.message}</p>
+                                <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                              </div>
+                              {!notification.read && (
+                                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Cart */}
               <div className="relative">
-                <ShoppingCart className="w-6 h-6 text-gray-600" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">1</span>
+                <button 
+                  onClick={() => setShowCart(!showCart)}
+                  className="relative"
+                >
+                  <ShoppingCart className="w-6 h-6 text-gray-600 hover:text-gray-900 transition-colors" />
+                  {cartItems.length > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 text-white text-xs rounded-full flex items-center justify-center">
+                      {cartItems.length}
+                    </span>
+                  )}
+                </button>
+                
+                {/* Cart Dropdown */}
+                {showCart && (
+                  <div data-dropdown className="absolute top-full right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-semibold text-gray-900">Your Cart</h3>
+                        <button className="text-sm text-orange-600">Clear all</button>
+                      </div>
+                      {cartItems.length > 0 ? (
+                        <div className="space-y-3 max-h-64 overflow-y-auto">
+                          {cartItems.map((item, index) => (
+                            <div key={index} className="flex items-center justify-between p-2 border rounded-lg">
+                              <div className="flex-1">
+                                <h4 className="font-medium text-sm text-gray-900">{item.name}</h4>
+                                <p className="text-xs text-gray-600">${item.price?.toFixed(2) || '0.00'}</p>
+                              </div>
+                              <button 
+                                onClick={() => removeFromCart(item.id)}
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
+                          <div className="pt-3 border-t">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="font-semibold">Total: ${getCartTotal().toFixed(2)}</span>
+                            </div>
+                            <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                              Checkout
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <ShoppingCart className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                          <p className="text-gray-500 text-sm">Your cart is empty</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Mobile Menu */}
@@ -238,11 +572,8 @@ const Restaurants = () => {
               {navCategories.map((category) => (
                 <button
                   key={category.id}
-                  className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                    category.active 
-                      ? 'bg-orange-100 text-orange-600 border-l-4 border-orange-500' 
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                  }`}
+                  onClick={() => handleCategoryClick(category.id)}
+                  className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 >
                   <category.icon className="w-5 h-5" />
                   <span className="font-medium">{category.label}</span>
@@ -261,9 +592,12 @@ const Restaurants = () => {
                 {filterOptions.map((filter) => (
                   <button
                     key={filter.id}
-                    onClick={() => setActiveFilter(filter.id)}
+                    onClick={() => {
+                      setActiveFilter(filter.id);
+                      applyFilters();
+                    }}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
-                      filter.active 
+                      activeFilter === filter.id
                         ? 'bg-orange-500 text-white' 
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
@@ -347,7 +681,7 @@ const Restaurants = () => {
                     badge: "Free item on $15+"
                   }
                 ].map((restaurant, index) => (
-                  <div key={index} className="flex-shrink-0 w-80 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                  <div key={index} className="flex-shrink-0 w-64 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                     <div className="h-48 overflow-hidden rounded-t-xl">
                       <img
                         src={restaurant.image}
@@ -355,21 +689,21 @@ const Restaurants = () => {
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <div className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-gray-900">{restaurant.name}</h3>
+                    <div className="p-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-semibold text-gray-900 text-sm">{restaurant.name}</h3>
                         <ChevronRight className="w-4 h-4 text-green-500" />
                       </div>
-                      <div className="flex items-center text-sm text-gray-600 mb-2">
-                        <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 mr-1" />
+                      <div className="flex items-center text-xs text-gray-600 mb-1">
+                        <Star className="w-3 h-3 text-yellow-500 fill-yellow-500 mr-1" />
                         <span>{restaurant.rating} ★ ({restaurant.reviews}) • {restaurant.distance} • {restaurant.time}</span>
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold text-gray-900">{restaurant.deliveryFee}</p>
-                        <p className="text-sm text-gray-600">{restaurant.freeDelivery}</p>
+                      <div className="space-y-0.5">
+                        <p className="text-xs font-semibold text-gray-900">{restaurant.deliveryFee}</p>
+                        <p className="text-xs text-gray-600">{restaurant.freeDelivery}</p>
                         {restaurant.badge && (
-                          <div className="flex items-center text-orange-600 font-semibold text-sm">
-                            <Plus className="w-4 h-4 mr-1" />
+                          <div className="flex items-center text-orange-600 font-semibold text-xs">
+                            <Plus className="w-3 h-3 mr-1" />
                             <span>{restaurant.badge}</span>
                           </div>
                         )}
@@ -409,13 +743,13 @@ const Restaurants = () => {
               {loadingDeals ? (
                 <div className="flex space-x-6 overflow-x-auto pb-4">
                   {[...Array(6)].map((_, index) => (
-                    <div key={index} className="flex-shrink-0 w-80 bg-gray-200 rounded-xl animate-pulse">
+                    <div key={index} className="flex-shrink-0 w-64 bg-gray-200 rounded-xl animate-pulse">
                       <div className="h-48 bg-gray-300"></div>
-                      <div className="p-4">
-                        <div className="h-4 bg-gray-300 rounded mb-2"></div>
-                        <div className="h-3 bg-gray-300 rounded mb-2"></div>
-                        <div className="h-3 bg-gray-300 rounded mb-2"></div>
-                        <div className="h-3 bg-gray-300 rounded"></div>
+                      <div className="p-3">
+                        <div className="h-3 bg-gray-300 rounded mb-1"></div>
+                        <div className="h-2 bg-gray-300 rounded mb-1"></div>
+                        <div className="h-2 bg-gray-300 rounded mb-1"></div>
+                        <div className="h-2 bg-gray-300 rounded"></div>
                       </div>
                     </div>
                   ))}
@@ -451,7 +785,7 @@ const Restaurants = () => {
                     };
 
                     return (
-                      <div key={restaurant.id} className="flex-shrink-0 w-80 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                      <div key={restaurant.id} className="flex-shrink-0 w-64 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                         <div className="h-48 overflow-hidden rounded-t-xl">
                           <img
                             src={restaurant.promotion_image_url || restaurant.image_url || `https://placehold.co/320x192/FF6B35/ffffff?text=${encodeURIComponent(restaurant.name)}`}
@@ -462,22 +796,22 @@ const Restaurants = () => {
                             }}
                           />
                         </div>
-                        <div className="p-4">
-                          <h3 className="font-semibold text-gray-900 mb-1">{restaurant.name}</h3>
-                          <div className="flex items-center text-sm text-gray-600 mb-2">
-                            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 mr-1" />
+                        <div className="p-3">
+                          <h3 className="font-semibold text-gray-900 mb-1 text-sm">{restaurant.name}</h3>
+                          <div className="flex items-center text-xs text-gray-600 mb-1">
+                            <Star className="w-3 h-3 text-yellow-500 fill-yellow-500 mr-1" />
                             <span>{restaurant.rating.toFixed(1)} ★ • {restaurant.min_delivery_time}-{restaurant.max_delivery_time} min</span>
                           </div>
-                          <p className="text-sm font-semibold text-gray-900 mb-1">
+                          <p className="text-xs font-semibold text-gray-900 mb-1">
                             ${(restaurant.delivery_fee_cents / 100).toFixed(2)} delivery fee
                           </p>
-                          <p className="text-xs text-gray-500 mb-2">Sponsored</p>
-                          <div className="flex items-center text-orange-600 font-semibold">
-                            <Plus className="w-4 h-4 mr-1" />
+                          <p className="text-xs text-gray-500 mb-1">Sponsored</p>
+                          <div className="flex items-center text-orange-600 font-semibold text-xs">
+                            <Plus className="w-3 h-3 mr-1" />
                             <span>{formatPromotionTitle()}</span>
                           </div>
                           {restaurant.promotion_description && (
-                            <p className="text-xs text-gray-600 mt-1">{formatPromotionDescription()}</p>
+                            <p className="text-xs text-gray-600 mt-0.5">{formatPromotionDescription()}</p>
                           )}
                         </div>
                       </div>
@@ -539,11 +873,11 @@ const Restaurants = () => {
                 {navCategories.map((category) => (
                   <button
                     key={category.id}
-                    className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                      category.active 
-                        ? 'bg-orange-100 text-orange-600 border-l-4 border-orange-500' 
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                    }`}
+                    onClick={() => {
+                      handleCategoryClick(category.id);
+                      setShowMobileNav(false);
+                    }}
+                    className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   >
                     <category.icon className="w-5 h-5" />
                     <span className="font-medium">{category.label}</span>
