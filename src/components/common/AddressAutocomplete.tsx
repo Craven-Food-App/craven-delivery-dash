@@ -340,10 +340,14 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       street = `${suggestion.address} ${suggestion.text}`;
       console.log('✓ Street from Mapbox components:', street);
     } else {
-      // Fallback: use first part of place_name (should include full street)
+      // Fallback: use first TWO parts of place_name => "<house number> <street name>"
       const parts = suggestion.place_name.split(',').map(p => p.trim());
-      street = parts[0] || '';
-      console.log('✓ Fallback street from place_name:', street);
+      if (parts.length >= 2) {
+        street = `${parts[0]} ${parts[1]}`.trim();
+      } else {
+        street = parts[0] || '';
+      }
+      console.log('✓ Fallback street from parts[0]+parts[1]:', street);
     }
     
     // Extract unit number from street if present
