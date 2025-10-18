@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useRestaurantData } from "@/hooks/useRestaurantData";
+import { useRestaurantSelector } from "@/hooks/useRestaurantSelector";
 import { useRestaurantOnboarding } from "@/hooks/useRestaurantOnboarding";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -18,7 +18,14 @@ import OrdersDashboard from "@/components/restaurant/dashboard/OrdersDashboard";
 import StoreAvailabilityDashboard from "@/components/restaurant/dashboard/StoreAvailabilityDashboard";
 import RequestDeliveryDashboard from "@/components/restaurant/dashboard/RequestDeliveryDashboard";
 import { HomeDashboard } from "@/components/merchant/HomeDashboard";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Home, TrendingUp, FileText, Users, Package, Menu as MenuIcon, Calendar, DollarSign, Settings, ChevronDown, CheckCircle2, Tablet, Store, ChevronUp, Plus, HelpCircle, MessageCircle, Mail, Clock, CheckCircle } from "lucide-react";
+
 const RestaurantSetup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -26,7 +33,7 @@ const RestaurantSetup = () => {
   const [prepareStoreExpanded, setPrepareStoreExpanded] = useState(true);
   const [userName, setUserName] = useState("User");
   
-  const { restaurant, loading: restaurantLoading } = useRestaurantData();
+  const { restaurants, selectedRestaurant: restaurant, loading: restaurantLoading, selectRestaurant } = useRestaurantSelector();
   const { progress, readiness, loading: onboardingLoading, refreshData } = useRestaurantOnboarding(restaurant?.id);
 
   useEffect(() => {
@@ -132,18 +139,37 @@ const RestaurantSetup = () => {
 
         {/* Restaurant Selector */}
         <div className="p-4 border-b">
-          <button className="w-full flex items-center justify-between hover:bg-muted/50 p-2 rounded-lg">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center">
-                <Store className="w-4 h-4" />
-              </div>
-              <div className="text-left">
-                <div className="font-semibold text-sm">{restaurant.name}</div>
-                <div className="text-xs text-muted-foreground">Store</div>
-              </div>
-            </div>
-            <ChevronDown className="w-4 h-4 text-muted-foreground" />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="w-full flex items-center justify-between hover:bg-muted/50 p-2 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                    <Store className="w-4 h-4" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-semibold text-sm">{restaurant.name}</div>
+                    <div className="text-xs text-muted-foreground">Store {restaurants.length > 1 && `(${restaurants.length})`}</div>
+                  </div>
+                </div>
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              {restaurants.map((r) => (
+                <DropdownMenuItem
+                  key={r.id}
+                  onClick={() => selectRestaurant(r.id)}
+                  className={restaurant?.id === r.id ? 'bg-orange-50' : ''}
+                >
+                  <div className="flex items-center gap-2 w-full">
+                    <Store className="w-4 h-4" />
+                    <span className="flex-1">{r.name}</span>
+                    {restaurant?.id === r.id && <CheckCircle className="w-4 h-4 text-orange-600" />}
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Navigation */}
