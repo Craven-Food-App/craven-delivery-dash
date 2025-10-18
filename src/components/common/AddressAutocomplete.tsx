@@ -301,12 +301,13 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     const parts = suggestion.place_name.split(',').map(p => p.trim());
     console.log('Parts array:', parts);
     
-    // Extract components directly from the parts
-    const street = parts[0] || '';
-    const city = parts[1] || '';
-    const stateZipCountry = parts[2] || '';
+    // Extract components - FIRST TWO PARTS GO TO STREET ADDRESS
+    const streetParts = parts.slice(0, 2); // Take first two parts
+    const street = streetParts.join(' ').trim(); // Combine with space, not comma
+    const city = parts[2] || '';  // Third part is city
+    const stateZipCountry = parts[3] || '';  // Fourth part has state/zip
     
-    // Extract state and zip from third part
+    // Extract state and zip from fourth part
     let state = '';
     let zipCode = '';
     
@@ -324,13 +325,13 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       }
     }
     
-    // Extract unit number from street
+    // Extract unit number from original street if present
     let unitNumber = '';
     let cleanStreet = street;
     const unitMatch = street.match(/^(.*?)(?:\s+(?:apt|apartment|unit|ste|suite|#)\s*(\w+.*?))?$/i);
-    if (unitMatch) {
+    if (unitMatch && unitMatch[2]) {
       cleanStreet = unitMatch[1].trim();
-      unitNumber = unitMatch[2] || '';
+      unitNumber = unitMatch[2];
     }
     
     console.log('Parsed components:', { 
