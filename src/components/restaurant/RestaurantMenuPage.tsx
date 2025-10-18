@@ -1,1115 +1,563 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  Star, Clock, Truck, Plus, Minus, ShoppingCart, X, 
-  ChevronLeft, Utensils, Heart, Share2, MapPin, Phone,
-  Navigation, MessageCircle, CheckCircle, Filter, Search, ChefHat, Leaf,
-  Info, ArrowUp, Timer, Flame
-} from "lucide-react";
-import { supabase } from '@/integrations/supabase/client';
-import { toast as showToast } from 'sonner';
+import React, { useState, useEffect, useRef } from "react";
 
-// Types remain the same
-interface Restaurant {
-  id: string;
-  name: string;
-  description: string;
-  cuisine_type: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  delivery_fee_cents: number;
-  min_delivery_time: number;
-  max_delivery_time: number;
-  rating: number;
-  total_reviews: number;
-  image_url: string;
-  latitude?: number;
-  longitude?: number;
-  chef_name?: string;
-  established_year?: string;
-}
-
-interface MenuCategory {
-  id: string;
-  name: string;
-  description: string;
-  display_order: number;
-  icon?: string;
-}
-
-interface MenuItem {
-  id: string;
-  name: string;
-  description: string;
-  price_cents: number;
-  image_url: string;
-  is_available: boolean;
-  is_vegetarian: boolean;
-  is_vegan: boolean;
-  is_gluten_free: boolean;
-  category_id: string;
-  preparation_time: number;
-  is_featured?: boolean;
-  order_count?: number;
-  spice_level?: number;
-  calories?: number;
-  chef_recommended?: boolean;
-}
-
-interface CartItem extends MenuItem {
-  key: string;
-  quantity: number;
-  special_instructions?: string;
-  modifiers?: any[];
-}
-
-// Simplified Button Component for delivery app
-const DeliveryButton = ({ 
-  children, 
-  onClick, 
-  variant = 'primary', 
-  size = 'md', 
-  disabled = false,
-  className = '',
-  icon = null,
-  fullWidth = false,
-  style = {}
-}: {
-  children: any;
-  onClick: any;
-  variant?: string;
-  size?: string;
-  disabled?: boolean;
-  className?: string;
-  icon?: any;
-  fullWidth?: boolean;
-  style?: React.CSSProperties;
-}) => {
-  const baseStyles: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: '600',
-    borderRadius: '12px',
-    border: 'none',
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    transition: 'all 0.2s ease',
-    fontFamily: 'inherit',
-    width: fullWidth ? '100%' : 'auto',
-    gap: '8px'
+// --- Icon Utility Component (Using Inline SVGs for single-file adherence) ---
+// This component replaces the lucide script import for guaranteed rendering.
+const Icon = ({ name, className = "w-5 h-5", strokeWidth = 2, children }) => {
+  const iconMap = {
+    // Essential Icons
+    "share-2": <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v14" />,
+    heart: (
+      <path d="M19 14c1.49-1.46 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 1.24-4.5 3C10.5 4.24 9.26 3 7.5 3A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.04 3 5.5l7 7Z" />
+    ),
+    star: (
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    ),
+    clock: (
+      <>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 6v6l4 2" />
+      </>
+    ),
+    // FIX: Wrapped the multiple path elements in a React Fragment <>...</> to resolve compilation error
+    truck: (
+      <>
+        <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" />
+        <path d="M16 18h2a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2h-2" />
+        <path d="M14 6h7" />
+        <path d="M15 22l-1 2" />
+        <path d="M19 22l-1 2" />
+        <path d="M5 22l-1 2" />
+        <path d="M9 22l-1 2" />
+        <path d="M7 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
+        <path d="M17 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
+      </>
+    ),
+    "shopping-cart": (
+      <>
+        <circle cx="9" cy="21" r="1" />
+        <circle cx="20" cy="21" r="1" />
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+      </>
+    ),
+    search: (
+      <>
+        <circle cx="11" cy="11" r="8" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </>
+    ),
+    menu: (
+      <>
+        <line x1="4" y1="12" x2="20" y2="12" />
+        <line x1="4" y1="6" x2="20" y2="6" />
+        <line x1="4" y1="18" x2="20" y2="18" />
+      </>
+    ),
+    percent: (
+      <>
+        <line x1="19" y1="5" x2="5" y2="19" />
+        <circle cx="6.5" cy="6.5" r="2.5" />
+        <circle cx="17.5" cy="17.5" r="2.5" />
+      </>
+    ),
+    sparkles: (
+      <>
+        <path d="M10 4L12 6L14 4" />
+        <path d="M12 2V8" />
+        <path d="M8 8L10 10L8 12" />
+        <path d="M4 12H16" />
+        <path d="M14 10L16 8L18 10" />
+        <path d="M12 16V22" />
+        <path d="M10 18L12 20L14 18" />
+        <path d="M18 14L20 16L18 18" />
+        <path d="M22 16H18" />
+        <path d="M4 16H8" />
+        <path d="M6 14L8 12L6 10" />
+      </>
+    ),
+    burger: (
+      <>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 2a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0V3a1 1 0 0 0-1-1z" />
+        <path d="M2 12a10 10 0 0 0 20 0H2z" />
+        <path d="M17 14c-1 2-2 3-5 3s-4-1-5-3" />
+      </>
+    ), // Simple icon for burger
+    fries: (
+      <>
+        <rect x="3" y="10" width="18" height="12" rx="2" />
+        <path d="M7 10v4" />
+        <path d="M12 10v4" />
+        <path d="M17 10v4" />
+        <path d="M7 14v4" />
+        <path d="M12 14v4" />
+        <path d="M17 14v4" />
+      </>
+    ), // Simple icon for fries
+    coffee: (
+      <>
+        <path d="M17 6H3" />
+        <path d="M6 6v14" />
+        <path d="M14 10a4 4 0 0 1-4 4H6" />
+        <path d="M17 14c1.33 0 2-1 2-2s-.67-2-2-2" />
+      </>
+    ),
+    info: (
+      <>
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="16" x2="12" y2="12" />
+        <line x1="12" y1="8" x2="12" y2="8" />
+      </>
+    ),
+    plus: (
+      <>
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="5" y1="12" x2="19" y2="12" />
+      </>
+    ),
+    // Default Placeholder
+    default: <circle cx="12" cy="12" r="10" stroke="currentColor" fill="none" />,
   };
 
-  const variants = {
-    primary: {
-      background: '#FF6B35',
-      color: 'white',
-      boxShadow: '0 2px 8px rgba(255, 107, 53, 0.3)'
-    },
-    secondary: {
-      background: '#f8f9fa',
-      color: '#495057',
-      border: '1px solid #e9ecef'
-    },
-    outline: {
-      background: 'transparent',
-      color: '#FF6B35',
-      border: '1px solid #FF6B35'
-    },
-    ghost: {
-      background: 'transparent',
-      color: '#6c757d',
-      border: 'none'
-    }
-  };
+  const SvgContent = iconMap[name] || iconMap["default"];
 
-  const sizes = {
-    sm: { fontSize: '14px', padding: '8px 16px', minHeight: '36px' },
-    md: { fontSize: '16px', padding: '12px 20px', minHeight: '44px' },
-    lg: { fontSize: '18px', padding: '16px 24px', minHeight: '52px' }
-  };
+  // If SvgContent is an array of elements (Fragment), wrap it in a fragment for rendering.
+  const Content = Array.isArray(SvgContent) ? <>{SvgContent}</> : SvgContent;
 
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        ...baseStyles,
-        ...variants[variant],
-        ...sizes[size],
-        opacity: disabled ? 0.6 : 1,
-        ...style
-      }}
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
       className={className}
     >
-      {icon && icon}
+      {Content}
       {children}
-    </button>
+    </svg>
   );
 };
 
-// Mobile-first Card Component
-const DeliveryCard = ({
-  children,
-  className = '',
-  style = {},
-  onClick
-}: {
-  children: any;
-  className?: string;
-  style?: React.CSSProperties;
-  onClick?: React.MouseEventHandler<HTMLDivElement>;
-}) => {
-  return (
-    <div
-      style={{ 
-        backgroundColor: 'white',
-        borderRadius: '16px',
-        boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-        ...style
-      }}
-      className={className}
-      onClick={onClick}
-      onMouseEnter={(e) => {
-        if (onClick) {
-          e.currentTarget.style.transform = 'translateY(-2px)';
-          e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.12)';
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (onClick) {
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = '0 2px 12px rgba(0, 0, 0, 0.08)';
-        }
-      }}
-    >
-      {children}
-    </div>
-  );
+// --- Tailwind Configuration (Self-Contained) ---
+const tailwindConfig = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ["Inter", "sans-serif"],
+      },
+      colors: {
+        "dd-orange": "#ff7a00",
+        "dd-lightgray": "#f5f5f5",
+        "dd-dark": "#1f2937",
+      },
+    },
+  },
 };
 
-// Badge Component
-const Badge = ({ children, variant = 'default', icon = null }) => {
-  const variants = {
-    default: { background: '#f8f9fa', color: '#495057' },
-    success: { background: '#d4edda', color: '#155724' },
-    warning: { background: '#fff3cd', color: '#856404' },
-    primary: { background: '#FFE5DB', color: '#FF6B35' },
-    featured: { background: '#FF6B35', color: 'white' }
-  };
+// --- Main Application Component ---
+const App = () => {
+  const [serviceType, setServiceType] = useState("delivery");
+  const [activeSection, setActiveSection] = useState("full-menu");
+  const sectionRefs = useRef({});
 
-  return (
-    <span
-      style={{
-        ...variants[variant],
-        padding: '4px 8px',
-        borderRadius: '8px',
-        fontSize: '12px',
-        fontWeight: '600',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '4px'
-      }}
-    >
-      {icon && icon}
-      {children}
-    </span>
-  );
-};
-
-const RestaurantMenuPage = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
-  const [categories, setCategories] = useState<MenuCategory[]>([]);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
-  const [showCart, setShowCart] = useState(false);
-  const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [isFavorited, setIsFavorited] = useState(false);
-  const [showHeader, setShowHeader] = useState(false);
-
+  // 1. Scroll Logic for Active Sidebar Link
   useEffect(() => {
-    if (id) {
-      fetchRestaurantData();
-    }
-  }, [id]);
+    const sections = ["full-menu", "deals", "featured", "burgers", "sides", "drinks"];
+    const updateActiveLink = () => {
+      let currentActiveId = "full-menu";
+      const offset = 200; // Offset accounts for sticky header height
 
-  // Scroll handler for sticky header
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowHeader(window.scrollY > 200);
+      sections.forEach((id) => {
+        const section = document.getElementById(id);
+        if (section) {
+          // Check if the section's top is visible or just above the offset line
+          if (window.scrollY >= section.offsetTop - offset) {
+            currentActiveId = id;
+          }
+        }
+      });
+      setActiveSection(currentActiveId);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
-  const fetchRestaurantData = async () => {
-    try {
-      setLoading(true);
-      
-      const { data: restaurantData, error: restaurantError } = await supabase
-        .from('restaurants')
-        .select('*')
-        .eq('id', id)
-        .single();
+    // Attach listener
+    window.addEventListener("scroll", updateActiveLink);
 
-      if (restaurantError) throw restaurantError;
-      setRestaurant(restaurantData);
+    // Initial check on load
+    updateActiveLink();
 
-      const { data: categoriesData } = await supabase
-        .from('menu_categories')
-        .select('*')
-        .eq('restaurant_id', id)
-        .order('display_order');
+    // Cleanup listener
+    return () => window.removeEventListener("scroll", updateActiveLink);
+  }, []); // Run only on mount and unmount
 
-      const { data: menuData } = await supabase
-        .from('menu_items')
-        .select('*')
-        .eq('restaurant_id', id)
-        .eq('is_available', true);
+  // 2. Helper function to create Nav Links
+  const NavLink = ({ id, iconName, label }) => {
+    const isActive = activeSection === id;
 
-      setCategories(categoriesData || []);
-      setMenuItems(
-        (menuData || []).map((item: any) => ({
-          ...item,
-          spice_level: item.spice_level !== undefined && item.spice_level !== null
-            ? Number(item.spice_level)
-            : undefined
-        }))
-      );
-      
-      if (categoriesData?.length > 0) {
-        setSelectedCategory(categoriesData[0].id);
+    const baseClasses = "nav-link flex items-center p-3 rounded-xl transition duration-150";
+    const activeClasses = "text-dd-dark bg-white border-l-4 border-dd-orange shadow-sm";
+    const inactiveClasses = "text-gray-700 hover:bg-white";
+
+    const iconActiveClasses = "text-dd-orange";
+    const iconInactiveClasses = "text-gray-500";
+
+    // Scroll to section on click
+    const handleClick = (e) => {
+      e.preventDefault();
+      const section = document.getElementById(id);
+      if (section) {
+        // Scroll behavior matching HTML's smooth scroll
+        window.scrollTo({
+          top: section.offsetTop - 120, // Adjust for sticky header
+          behavior: "smooth",
+        });
       }
-    } catch (error: any) {
-      console.error('Error fetching restaurant data:', error);
-      showToast.error("Failed to load restaurant details");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const addToCart = useCallback((item: MenuItem, quantity: number = 1) => {
-    const existingItem = cart.find(cartItem => cartItem.id === item.id);
-    if (existingItem) {
-      setCart(cart.map(cartItem =>
-        cartItem.id === item.id
-          ? { ...cartItem, quantity: cartItem.quantity + quantity }
-          : cartItem
-      ));
-    } else {
-      setCart([...cart, { ...item, quantity, key: item.id }]);
-    }
-    
-    showToast.success(`${item.name} added to cart!`);
-  }, [cart]);
-
-  const removeFromCart = useCallback((itemId: string) => {
-    setCart(cart.filter(item => item.id !== itemId));
-  }, [cart]);
-
-  const updateCartQuantity = useCallback((itemId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(itemId);
-      return;
-    }
-    setCart(cart.map(item =>
-      item.id === itemId ? { ...item, quantity } : item
-    ));
-  }, [cart, removeFromCart]);
-
-  const getCartTotal = () => {
-    const subtotal = cart.reduce((total, item) => total + (item.price_cents * item.quantity), 0);
-    const deliveryFee = deliveryMethod === 'delivery' ? (restaurant?.delivery_fee_cents || 0) : 0;
-    const tax = Math.round(subtotal * 0.08);
-    
-    return {
-      subtotal,
-      deliveryFee,
-      tax,
-      total: subtotal + deliveryFee + tax
     };
-  };
 
-  const getItemsByCategory = (categoryId: string) => {
-    return menuItems.filter(item => item.category_id === categoryId);
-  };
-
-  const filteredItems = menuItems.filter(item =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const scrollToCategory = (categoryId: string) => {
-    setSelectedCategory(categoryId);
-    const element = document.getElementById(`category-${categoryId}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
-
-  if (loading) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: '#f8f9fa',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '20px'
-      }}>
-        <DeliveryCard style={{ padding: '40px', textAlign: 'center', maxWidth: '400px' }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            border: '4px solid #f3f3f3',
-            borderTop: '4px solid #FF6B35',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 20px'
-          }} />
-          <h3 style={{ color: '#495057', fontSize: '18px', fontWeight: '600' }}>
-            Loading restaurant menu...
-          </h3>
-        </DeliveryCard>
-      </div>
+      <li>
+        <a
+          href={`#${id}`}
+          onClick={handleClick}
+          className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`}
+          data-id={id}
+        >
+          <Icon name={iconName} className={`w-5 h-5 mr-3 ${isActive ? iconActiveClasses : iconInactiveClasses}`} />
+          {label}
+        </a>
+      </li>
     );
-  }
-
-  if (!restaurant) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        background: '#f8f9fa',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '20px'
-      }}>
-        <DeliveryCard style={{ padding: '40px', textAlign: 'center', maxWidth: '400px' }}>
-          <h2 style={{ color: '#495057', fontSize: '24px', marginBottom: '20px' }}>
-            Restaurant Not Found
-          </h2>
-          <DeliveryButton 
-            variant="primary" 
-            size="lg"
-            onClick={() => navigate('/restaurants')}
-            icon={<ChevronLeft size={20} />}
-            fullWidth
-          >
-            Back to Restaurants
-          </DeliveryButton>
-        </DeliveryCard>
-      </div>
-    );
-  }
+  };
 
   return (
-    <div style={{ 
-      minHeight: '100vh',
-      background: '#f8f9fa',
-      fontFamily: 'system-ui, -apple-system, sans-serif'
-    }}>
-      {/* Sticky Header */}
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 100,
-        background: 'white',
-        borderBottom: '1px solid #e9ecef',
-        padding: '12px 16px',
-        transform: showHeader ? 'translateY(0)' : 'translateY(-100%)',
-        transition: 'transform 0.3s ease'
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          maxWidth: '768px',
-          margin: '0 auto'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <DeliveryButton
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(-1)}
-              icon={<ChevronLeft size={20} />}
-              style={{ padding: '8px' }}
-            >{""}</DeliveryButton>
-            <div>
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>{restaurant.name}</h3>
-              <p style={{ margin: 0, fontSize: '12px', color: '#6c757d' }}>
-                {restaurant.min_delivery_time}-{restaurant.max_delivery_time} min
-              </p>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <DeliveryButton
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsFavorited(!isFavorited)}
-              icon={<Heart size={20} fill={isFavorited ? '#FF6B35' : 'none'} color={isFavorited ? '#FF6B35' : '#6c757d'} />}
-              style={{ padding: '8px' }}
-            >{""}</DeliveryButton>
-            <DeliveryButton
-              variant="ghost"
-              size="sm"
-              icon={<Share2 size={20} />}
-              style={{ padding: '8px' }}
-              onClick={() => {}}
-            >{""}</DeliveryButton>
-          </div>
-        </div>
-      </div>
-
-      {/* Restaurant Header */}
-      <div style={{ position: 'relative' }}>
-        <div style={{
-          height: '240px',
-          background: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.5)), url(${restaurant.image_url || '/placeholder-restaurant.jpg'})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          padding: '16px'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <DeliveryButton
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(-1)}
-              icon={<ChevronLeft size={24} />}
-              style={{ 
-                backgroundColor: 'rgba(255,255,255,0.9)', 
-                color: '#495057',
-                borderRadius: '50%',
-                width: '40px',
-                height: '40px',
-                padding: 0
-              }}
-            >{""}</DeliveryButton>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <DeliveryButton
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsFavorited(!isFavorited)}
-                icon={<Heart size={20} fill={isFavorited ? '#FF6B35' : 'none'} color={isFavorited ? '#FF6B35' : 'white'} />}
-                style={{ 
-                  backgroundColor: 'rgba(255,255,255,0.9)', 
-                  borderRadius: '50%',
-                  width: '40px',
-                  height: '40px',
-                  padding: 0
-                }}
-              >{""}</DeliveryButton>
-              <DeliveryButton
-                variant="ghost"
-                size="sm"
-                icon={<Share2 size={20} />}
-                style={{ 
-                  backgroundColor: 'rgba(255,255,255,0.9)', 
-                  color: '#495057',
-                  borderRadius: '50%',
-                  width: '40px',
-                  height: '40px',
-                  padding: 0
-                }}
-                onClick={() => {}}
-              >{""}</DeliveryButton>
-            </div>
-          </div>
-          
-          <div>
-            <h1 style={{
-              fontSize: '28px',
-              fontWeight: '700',
-              margin: '0 0 8px 0',
-              color: 'white'
-            }}>
-              {restaurant.name}
-            </h1>
-            <p style={{
-              fontSize: '14px',
-              color: 'rgba(255,255,255,0.9)',
-              margin: 0
-            }}>
-              {restaurant.cuisine_type} • {restaurant.address}
-            </p>
-          </div>
-        </div>
-
-        {/* Restaurant Info Bar */}
-        <DeliveryCard style={{
-          margin: '-20px 16px 20px',
-          padding: '16px',
-          position: 'relative',
-          zIndex: 10
-        }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '16px',
-            textAlign: 'center'
-          }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginBottom: '4px' }}>
-                <Star size={16} fill="#FFD700" color="#FFD700" />
-                <span style={{ fontSize: '16px', fontWeight: '600' }}>{restaurant.rating}</span>
-              </div>
-              <p style={{ fontSize: '12px', color: '#6c757d', margin: 0 }}>{restaurant.total_reviews}+ reviews</p>
-            </div>
-            
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginBottom: '4px' }}>
-                <Clock size={16} color="#6c757d" />
-                <span style={{ fontSize: '16px', fontWeight: '600' }}>
-                  {restaurant.min_delivery_time}-{restaurant.max_delivery_time}
-                </span>
-              </div>
-              <p style={{ fontSize: '12px', color: '#6c757d', margin: 0 }}>minutes</p>
-            </div>
-            
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginBottom: '4px' }}>
-                <Truck size={16} color="#6c757d" />
-                <span style={{ fontSize: '16px', fontWeight: '600' }}>
-                  ${(restaurant.delivery_fee_cents / 100).toFixed(2)}
-                </span>
-              </div>
-              <p style={{ fontSize: '12px', color: '#6c757d', margin: 0 }}>delivery</p>
-            </div>
-          </div>
-        </DeliveryCard>
-      </div>
-
-      {/* Delivery Method Toggle */}
-      <div style={{ padding: '0 16px 20px' }}>
-        <DeliveryCard style={{ padding: '8px' }}>
-          <div style={{ display: 'flex', borderRadius: '8px', overflow: 'hidden' }}>
-            {(['delivery', 'pickup'] as const).map((method) => (
-              <button
-                key={method}
-                onClick={() => setDeliveryMethod(method)}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  border: 'none',
-                  background: deliveryMethod === method ? '#FF6B35' : 'transparent',
-                  color: deliveryMethod === method ? 'white' : '#6c757d',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  textTransform: 'capitalize',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {method}
-              </button>
-            ))}
-          </div>
-        </DeliveryCard>
-      </div>
-
-      {/* Search Bar */}
-      <div style={{ padding: '0 16px 20px' }}>
-        <div style={{ position: 'relative' }}>
-          <Search style={{
-            position: 'absolute',
-            left: '16px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            width: '20px',
-            height: '20px',
-            color: '#6c757d'
-          }} />
-          <input
-            type="text"
-            placeholder="Search menu items..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '16px 16px 16px 48px',
-              border: '1px solid #e9ecef',
-              borderRadius: '12px',
-              fontSize: '16px',
-              background: 'white',
-              outline: 'none',
-              boxSizing: 'border-box'
-            }}
+    <div className="bg-gray-100 font-sans text-dd-dark antialiased">
+      {/* --- Sticky Header/Banner --- */}
+      <header className="sticky top-0 z-30 bg-white shadow-lg">
+        <div className="relative h-56 sm:h-72 overflow-hidden">
+          {/* Banner Image */}
+          <img
+            src="https://placehold.co/1400x400/1E3A8A/ffffff?text=Premium+Restaurant+Interior"
+            alt="The Local Eatery interior and signature food"
+            className="w-full h-full object-cover"
           />
-        </div>
-      </div>
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
 
-            {/* Category Tabs */}
-            <div style={{
-              position: 'sticky',
-              top: showHeader ? '76px' : '0',
-              zIndex: 50,
-              background: 'white',
-              borderBottom: '1px solid #e9ecef',
-              padding: '12px 0'
-            }}>
-              <div style={{
-                display: 'flex',
-                gap: '8px',
-                overflowX: 'auto',
-                padding: '0 16px',
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none'
-              }}
-              className="scrollbar-hide"
-              >
-                {categories.map((category) => (
-                  <button
-                    key={category.id}
-                    onClick={() => scrollToCategory(category.id)}
-                    style={{
-                      padding: '8px 16px',
-                      border: selectedCategory === category.id ? '2px solid #FF6B35' : '1px solid #e9ecef',
-                      borderRadius: '20px',
-                      background: selectedCategory === category.id ? '#FFE5DB' : 'white',
-                      color: selectedCategory === category.id ? '#FF6B35' : '#6c757d',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                      transition: 'all 0.2s ease',
-                      flexShrink: 0,
-                      minWidth: 'fit-content'
-                    }}
-                  >
-                    {category.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-      
-      {/* Menu Items */}
-      <div style={{ padding: '20px 16px 100px' }}>
-        {searchQuery ? (
-          <div>
-            <h2 style={{
-              fontSize: '20px',
-              fontWeight: '600',
-              marginBottom: '16px',
-              color: '#495057'
-            }}>
-              Search Results ({filteredItems.length})
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {filteredItems.map((item) => (
-                <MenuItemCard key={item.id} item={item} onAddToCart={addToCart} cart={cart} updateCartQuantity={updateCartQuantity} />
-              ))}
+          {/* Top Right Icons */}
+          <div className="absolute top-4 right-4 flex space-x-3 text-white">
+            <button className="p-2 rounded-full bg-black/40 backdrop-blur-sm hover:bg-black/60 transition duration-200">
+              <Icon name="share-2" className="w-5 h-5" strokeWidth={3} />
+            </button>
+            <button className="p-2 rounded-full bg-black/40 backdrop-blur-sm hover:bg-black/60 transition duration-200">
+              <Icon name="heart" className="w-5 h-5 fill-white" strokeWidth={2} />
+            </button>
+          </div>
+
+          {/* Logo */}
+          <div className="absolute top-4 left-4">
+            <div className="text-xl font-black bg-white/90 text-dd-dark p-2 rounded-xl shadow-xl backdrop-blur-sm">
+              LOEAY
             </div>
           </div>
-        ) : (
-          categories.map((category) => {
-            const categoryItems = getItemsByCategory(category.id);
-            if (categoryItems.length === 0) return null;
-
-            return (
-              <div key={category.id} id={`category-${category.id}`} style={{ marginBottom: '32px' }}>
-                <h2 style={{
-                  fontSize: '20px',
-                  fontWeight: '600',
-                  marginBottom: '16px',
-                  color: '#495057'
-                }}>
-                  {category.name}
-                </h2>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {categoryItems.map((item) => (
-                    <MenuItemCard key={item.id} item={item} onAddToCart={addToCart} cart={cart} updateCartQuantity={updateCartQuantity} />
-                  ))}
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      {/* Floating Cart Button */}
-      {cart.length > 0 && (
-        <div style={{
-          position: 'fixed',
-          bottom: '20px',
-          left: '16px',
-          right: '16px',
-          zIndex: 1000
-        }}>
-          <DeliveryButton
-            variant="primary"
-            size="lg"
-            onClick={() => setShowCart(true)}
-            fullWidth
-            style={{
-              borderRadius: '16px',
-              boxShadow: '0 8px 24px rgba(255, 107, 53, 0.3)',
-              fontSize: '16px',
-              fontWeight: '700'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <ShoppingCart size={20} />
-                <span>{cart.reduce((sum, item) => sum + item.quantity, 0)} items</span>
-              </div>
-              <span>${(getCartTotal().total / 100).toFixed(2)}</span>
-            </div>
-          </DeliveryButton>
         </div>
-      )}
 
-      {/* Cart Modal */}
-      {showCart && (
-        <CartModal 
-          cart={cart}
-          restaurant={restaurant}
-          deliveryMethod={deliveryMethod}
-          onClose={() => setShowCart(false)}
-          updateQuantity={updateCartQuantity}
-          removeItem={removeFromCart}
-          getCartTotal={getCartTotal}
-        />
-      )}
-
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
-    </div>
-  );
-};
-
-// Menu Item Card Component
-const MenuItemCard = ({ 
-  item, 
-  onAddToCart,
-  cart,
-  updateCartQuantity
-}: { 
-  item: MenuItem; 
-  onAddToCart: (item: MenuItem) => void;
-  cart: CartItem[];
-  updateCartQuantity: (itemId: string, quantity: number) => void;
-}) => {
-  const cartItem = cart.find(cartItem => cartItem.id === item.id);
-  const quantity = cartItem?.quantity || 0;
-
-  return (
-    <DeliveryCard style={{ overflow: 'hidden' }}>
-      <div style={{ display: 'flex', gap: '12px', padding: '16px' }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ marginBottom: '8px' }}>
-            <h3 style={{
-              fontSize: '16px',
-              fontWeight: '600',
-              color: '#495057',
-              margin: '0 0 4px 0',
-              lineHeight: 1.3
-            }}>
-              {item.name}
-            </h3>
-            
-            {/* Badges */}
-            <div style={{ display: 'flex', gap: '6px', marginBottom: '8px', flexWrap: 'wrap' }}>
-              {item.is_vegetarian && (
-                <Badge variant="success" icon={<Leaf size={12} />}>Vegetarian</Badge>
-              )}
-              {item.chef_recommended && (
-                <Badge variant="featured" icon={<ChefHat size={12} />}>Chef's Choice</Badge>
-              )}
-              {item.spice_level && item.spice_level > 0 && (
-                <Badge variant="warning" icon={<Flame size={12} />}>
-                  Spicy {item.spice_level}
-                </Badge>
-              )}
-            </div>
-            
-            <p style={{
-              fontSize: '14px',
-              color: '#6c757d',
-              margin: '0 0 12px 0',
-              lineHeight: 1.4
-            }}>
-              {item.description}
-            </p>
-            
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <div style={{
-                fontSize: '18px',
-                fontWeight: '700',
-                color: '#FF6B35'
-              }}>
-                ${(item.price_cents / 100).toFixed(2)}
-              </div>
-              
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#6c757d', fontSize: '12px' }}>
-                  <Timer size={14} />
-                  {item.preparation_time}m
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Add to Cart Controls */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-            {quantity > 0 ? (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                background: '#f8f9fa',
-                borderRadius: '8px',
-                padding: '4px'
-              }}>
-                <DeliveryButton
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => updateCartQuantity(item.id, quantity - 1)}
-                  icon={<Minus size={16} />}
-                  style={{ 
-                    width: '32px', 
-                    height: '32px', 
-                    padding: 0,
-                    color: '#FF6B35'
-                  }}
-                >{""}</DeliveryButton>
-                
-                <span style={{
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  minWidth: '20px',
-                  textAlign: 'center'
-                }}>
-                  {quantity}
+        {/* Restaurant Info & Controls Container */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 bg-white border-b border-gray-200">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between">
+            {/* Restaurant Name and Details */}
+            <div className="mb-4 lg:mb-0">
+              <h1 className="text-4xl font-extrabold text-dd-dark">The Local Eatery</h1>
+              <p className="text-gray-500 text-sm mt-1">American • Gourmet Burgers • 6759 Nebraska Ave.</p>
+              <div className="flex items-center space-x-6 mt-3 text-base text-gray-700 font-medium">
+                <span className="flex items-center">
+                  <Icon name="star" className="w-4 h-4 text-dd-orange fill-dd-orange mr-1.5" />
+                  <strong className="text-dd-dark">4.7</strong>{" "}
+                  <span className="text-gray-500 ml-1">• 850+ ratings</span>
                 </span>
-                
-                <DeliveryButton
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => updateCartQuantity(item.id, quantity + 1)}
-                  icon={<Plus size={16} />}
-                  style={{ 
-                    width: '32px', 
-                    height: '32px', 
-                    padding: 0,
-                    color: '#FF6B35'
-                  }}
-                >{""}</DeliveryButton>
+                <span className="flex items-center">
+                  <Icon name="clock" className="w-4 h-4 text-gray-500 mr-1.5" />
+                  <strong className="text-dd-dark">25-35 min</strong>
+                </span>
+                <span className="flex items-center">
+                  <Icon name="truck" className="w-4 h-4 text-gray-500 mr-1.5" />
+                  <strong className="text-dd-dark">Free delivery</strong>
+                </span>
               </div>
-            ) : (
-              <DeliveryButton
-                variant="primary"
-                size="sm"
-                onClick={() => onAddToCart(item)}
-                icon={<Plus size={16} />}
-              >
-                Add
-              </DeliveryButton>
-            )}
+            </div>
+
+            {/* Delivery/Pickup Segmented Control & Cart Button */}
+            <div className="flex items-center space-x-4">
+              {/* Segmented Control */}
+              <div className="flex border border-gray-300 rounded-full p-1 bg-gray-200 text-sm font-semibold transition duration-300">
+                <button
+                  onClick={() => setServiceType("delivery")}
+                  className={`px-5 py-2 rounded-full transition duration-200 ${
+                    serviceType === "delivery" ? "bg-white shadow-lg text-dd-dark" : "text-gray-500 hover:bg-gray-200"
+                  }`}
+                >
+                  Delivery
+                </button>
+                <button
+                  onClick={() => setServiceType("pickup")}
+                  className={`px-5 py-2 rounded-full transition duration-200 ${
+                    serviceType === "pickup" ? "bg-white shadow-lg text-dd-dark" : "text-gray-500 hover:bg-gray-200"
+                  }`}
+                >
+                  Pickup
+                </button>
+              </div>
+
+              {/* Cart Button */}
+              <button className="bg-dd-orange text-white px-5 py-2.5 rounded-full font-bold flex items-center shadow-lg hover:shadow-xl hover:bg-dd-orange/95 transition duration-200">
+                <Icon name="shopping-cart" className="w-5 h-5 mr-2" />
+                View Cart (0)
+              </button>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className="mt-4">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search menu items..."
+                className="w-full py-3 pl-12 pr-4 text-base border border-gray-300 rounded-xl shadow-md focus:outline-none focus:ring-2 focus:ring-dd-orange focus:border-dd-orange transition duration-200"
+              />
+              <Icon
+                name="search"
+                className="w-5 h-5 text-gray-500 absolute left-4 top-1/2 transform -translate-y-1/2"
+              />
+            </div>
           </div>
         </div>
-        
-        {/* Item Image */}
-        <div style={{
-          width: '100px',
-          height: '100px',
-          borderRadius: '12px',
-          background: `url(${item.image_url || '/placeholder-food.jpg'})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          flexShrink: 0
-        }} />
-      </div>
-    </DeliveryCard>
-  );
-};
+      </header>
 
-// Cart Modal Component
-const CartModal = ({
-  cart,
-  restaurant,
-  deliveryMethod,
-  onClose,
-  updateQuantity,
-  removeItem,
-  getCartTotal
-}: {
-  cart: CartItem[];
-  restaurant: Restaurant;
-  deliveryMethod: 'delivery' | 'pickup';
-  onClose: () => void;
-  updateQuantity: (itemId: string, quantity: number) => void;
-  removeItem: (itemId: string) => void;
-  getCartTotal: () => { subtotal: number; deliveryFee: number; tax: number; total: number };
-}) => {
-  const totals = getCartTotal();
+      {/* --- Main Content Area: Sticky Sidebar & Menu Items --- */}
+      <main className="max-w-7xl mx-auto flex">
+        {/* Left Sidebar Navigation */}
+        <aside className="hidden lg:block w-64 pt-8 sticky top-[180px] z-20">
+          <nav className="sticky-sidebar pr-4">
+            <ul className="space-y-1 text-base font-medium">
+              <NavLink id="full-menu" iconName="menu" label="Full Menu" />
+              <NavLink id="deals" iconName="percent" label="Deals" />
+              <NavLink id="featured" iconName="sparkles" label="Featured Items" />
+              <NavLink id="burgers" iconName="burger" label="Burgers" />
+              <NavLink id="sides" iconName="fries" label="Sides" />
+              <NavLink id="drinks" iconName="coffee" label="Drinks" />
+            </ul>
 
-  return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0, 0, 0, 0.5)',
-      zIndex: 2000,
-      display: 'flex',
-      alignItems: 'flex-end',
-      padding: '0'
-    }}>
-      <div style={{
-        background: 'white',
-        width: '100%',
-        maxHeight: '90vh',
-        borderRadius: '20px 20px 0 0',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-        {/* Header */}
-        <div style={{
-          padding: '20px 16px',
-          borderBottom: '1px solid #e9ecef',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>Your Order</h2>
-          <DeliveryButton
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            icon={<X size={24} />}
-            style={{ padding: '8px' }}
-          >{""}</DeliveryButton>
-        </div>
+            <div className="mt-8 border-t pt-4">
+              <button className="flex items-center p-3 rounded-xl text-gray-700 hover:bg-white w-full text-left transition duration-150">
+                <Icon name="info" className="w-5 h-5 mr-3 text-gray-500" />
+                Store Info (Hours, Address)
+              </button>
+            </div>
+          </nav>
+        </aside>
 
-        {/* Cart Items */}
-        <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
-          {cart.map((item) => (
-            <div key={item.id} style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '12px 0',
-              borderBottom: '1px solid #f8f9fa'
-            }}>
-              <div style={{ flex: 1 }}>
-                <h4 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 4px 0' }}>
-                  {item.name}
-                </h4>
-                <p style={{ fontSize: '14px', color: '#6c757d', margin: 0 }}>
-                  ${(item.price_cents / 100).toFixed(2)} each
+        {/* Menu Item List */}
+        <div id="full-menu" className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-8 lg:ml-8">
+          {/* Deals Section */}
+          <section id="deals" className="mb-12 pt-1">
+            <h2 className="text-3xl font-extrabold mb-6">Deals & Benefits</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="bg-white p-5 rounded-xl card-shadow border border-dd-orange/30">
+                <p className="text-xl font-bold text-dd-orange">15% Off</p>
+                <p className="text-sm text-gray-600 mt-1">First order for new customers. Limited time offer.</p>
+              </div>
+              <div className="bg-white p-5 rounded-xl card-shadow border border-gray-200">
+                <p className="text-xl font-bold">Free Drink</p>
+                <p className="text-sm text-gray-600 mt-1">With any burger purchase over $10. Select drinks only.</p>
+              </div>
+              <div className="bg-white p-5 rounded-xl card-shadow border border-gray-200">
+                <p className="text-xl font-bold">Weekend Special</p>
+                <p className="text-sm text-gray-600 mt-1">Buy two sides, get one half off. Friday to Sunday.</p>
+              </div>
+            </div>
+          </section>
+
+          {/* Featured Items Section */}
+          <section id="featured" className="mb-12 pt-1">
+            <h2 className="text-3xl font-extrabold mb-6">Featured Items</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Item Card 1 */}
+              <div className="bg-white rounded-xl shadow-xl hover:shadow-2xl transition duration-300 overflow-hidden cursor-pointer border border-gray-200">
+                <img
+                  src="https://placehold.co/600x400/FF7A00/ffffff?text=Smashburger"
+                  alt="Smashburger Combo"
+                  className="w-full h-48 object-cover"
+                />
+                <div className="p-5">
+                  <h3 className="text-xl font-bold mb-1">Smashburger Combo</h3>
+                  <p className="text-gray-500 text-sm mb-3 line-clamp-2">
+                    Crispy, golden-brown onion crust served with tangy sauce and a side of fries.
+                  </p>
+                  <div className="flex justify-between items-center mt-3">
+                    <span className="text-xl font-black text-dd-dark">$12.99</span>
+                    <button className="bg-dd-orange text-white px-5 py-2 rounded-full font-bold text-base hover:bg-dd-orange/90 transition duration-150">
+                      + Add
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {/* Item Card 2 */}
+              <div className="bg-white rounded-xl shadow-xl hover:shadow-2xl transition duration-300 overflow-hidden cursor-pointer border border-gray-200">
+                <img
+                  src="https://placehold.co/600x400/9333ea/ffffff?text=Chicken+Sandwich"
+                  alt="Ultimate Chicken Sandwich"
+                  className="w-full h-48 object-cover"
+                />
+                <div className="p-5">
+                  <h3 className="text-xl font-bold mb-1">Ultimate Chicken Sandwich</h3>
+                  <p className="text-gray-500 text-sm mb-3 line-clamp-2">
+                    Tender chicken breast, pickle chips, house slaw, and premium brioche bun.
+                  </p>
+                  <div className="flex justify-between items-center mt-3">
+                    <span className="text-xl font-black text-dd-dark">$10.50</span>
+                    <button className="bg-dd-orange text-white px-5 py-2 rounded-full font-bold text-base hover:bg-dd-orange/90 transition duration-150">
+                      + Add
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {/* Item Card 3 */}
+              <div className="bg-white rounded-xl shadow-xl hover:shadow-2xl transition duration-300 overflow-hidden cursor-pointer border border-gray-200">
+                <img
+                  src="https://placehold.co/600x400/059669/ffffff?text=Onion+Rings"
+                  alt="Garlic Parmesan Rings"
+                  className="w-full h-48 object-cover"
+                />
+                <div className="p-5">
+                  <h3 className="text-xl font-bold mb-1">Garlic Parmesan Rings</h3>
+                  <p className="text-gray-500 text-sm mb-3 line-clamp-2">
+                    Thick-cut onion rings tossed in a savory garlic and cheese blend. Highly recommended.
+                  </p>
+                  <div className="flex justify-between items-center mt-3">
+                    <span className="text-xl font-black text-dd-dark">$5.99</span>
+                    <button className="bg-dd-orange text-white px-5 py-2 rounded-full font-bold text-base hover:bg-dd-orange/90 transition duration-150">
+                      + Add
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Burgers Section */}
+          <section id="burgers" className="mb-12 pt-1">
+            <h2 className="text-3xl font-extrabold mb-6 pt-4 border-t border-gray-200">Burgers</h2>
+            {/* List Item 1 */}
+            <div className="bg-white p-5 rounded-xl card-shadow mb-4 flex justify-between items-center hover:ring-2 hover:ring-dd-orange/20 transition duration-150 cursor-pointer">
+              <div className="flex-1 pr-6">
+                <h3 className="text-xl font-semibold">Classic Cheeseburger</h3>
+                <p className="text-gray-500 text-sm mt-1">
+                  Our signature patty with cheddar, lettuce, tomato, and secret sauce.
                 </p>
+                <span className="text-lg font-bold text-dd-dark mt-2 block">$9.50</span>
+                <span className="text-blue-600 text-xs mt-1 block hover:underline">Customize</span>
               </div>
-              
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: '#f8f9fa',
-                  borderRadius: '8px',
-                  padding: '4px'
-                }}>
-                  <DeliveryButton
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    icon={<Minus size={16} />}
-                    style={{ width: '32px', height: '32px', padding: 0 }}
-                  >{""}</DeliveryButton>
-                  
-                  <span style={{ fontSize: '16px', fontWeight: '600', minWidth: '20px', textAlign: 'center' }}>
-                    {item.quantity}
-                  </span>
-                  
-                  <DeliveryButton
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    icon={<Plus size={16} />}
-                    style={{ width: '32px', height: '32px', padding: 0 }}
-                  >{""}</DeliveryButton>
-                </div>
-                
-                <span style={{ fontSize: '16px', fontWeight: '600', minWidth: '60px', textAlign: 'right' }}>
-                  ${((item.price_cents * item.quantity) / 100).toFixed(2)}
-                </span>
+              <div className="relative w-28 h-28 flex-shrink-0">
+                <img
+                  src="https://placehold.co/112x112/f87171/ffffff?text=Burger"
+                  alt="Classic Cheeseburger"
+                  className="rounded-lg w-full h-full object-cover shadow-md"
+                />
+                <button className="absolute bottom-0 right-0 p-2 bg-dd-orange text-white rounded-full shadow-lg hover:bg-dd-orange/90 transition">
+                  <Icon name="plus" className="w-4 h-4" />
+                </button>
               </div>
             </div>
-          ))}
-        </div>
+            {/* List Item 2 */}
+            <div className="bg-white p-5 rounded-xl card-shadow mb-4 flex justify-between items-center hover:ring-2 hover:ring-dd-orange/20 transition duration-150 cursor-pointer">
+              <div className="flex-1 pr-6">
+                <h3 className="text-xl font-semibold">Mushroom Swiss Burger</h3>
+                <p className="text-gray-500 text-sm mt-1">
+                  A rich combination of sautéed mushrooms and melted Swiss cheese.
+                </p>
+                <span className="text-lg font-bold text-dd-dark mt-2 block">$10.99</span>
+                <span className="text-blue-600 text-xs mt-1 block hover:underline">Customize</span>
+              </div>
+              <div className="relative w-28 h-28 flex-shrink-0">
+                <img
+                  src="https://placehold.co/112x112/fbbf24/ffffff?text=Swiss"
+                  alt="Mushroom Swiss Burger"
+                  className="rounded-lg w-full h-full object-cover shadow-md"
+                />
+                <button className="absolute bottom-0 right-0 p-2 bg-dd-orange text-white rounded-full shadow-lg hover:bg-dd-orange/90 transition">
+                  <Icon name="plus" className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </section>
 
-        {/* Order Summary */}
-        <div style={{ padding: '16px', borderTop: '1px solid #e9ecef' }}>
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span>Subtotal</span>
-              <span>${(totals.subtotal / 100).toFixed(2)}</span>
-            </div>
-            {deliveryMethod === 'delivery' && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span>Delivery Fee</span>
-                <span>${(totals.deliveryFee / 100).toFixed(2)}</span>
+          {/* Sides Section */}
+          <section id="sides" className="mb-12 pt-1">
+            <h2 className="text-3xl font-extrabold mb-6 pt-4 border-t border-gray-200">Sides</h2>
+            {/* List Item 1 */}
+            <div className="bg-white p-5 rounded-xl card-shadow mb-4 flex justify-between items-center hover:ring-2 hover:ring-dd-orange/20 transition duration-150 cursor-pointer">
+              <div className="flex-1 pr-6">
+                <h3 className="text-xl font-semibold">Seasoned Fries</h3>
+                <p className="text-gray-500 text-sm mt-1">Crispy, perfectly salted fries with a side of ketchup.</p>
+                <span className="text-lg font-bold text-dd-dark mt-2 block">$3.99</span>
               </div>
-            )}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span>Tax</span>
-              <span>${(totals.tax / 100).toFixed(2)}</span>
+              <div className="relative w-28 h-28 flex-shrink-0">
+                <img
+                  src="https://placehold.co/112x112/60a5fa/ffffff?text=Fries"
+                  alt="Seasoned Fries"
+                  className="rounded-lg w-full h-full object-cover shadow-md"
+                />
+                <button className="absolute bottom-0 right-0 p-2 bg-dd-orange text-white rounded-full shadow-lg hover:bg-dd-orange/90 transition">
+                  <Icon name="plus" className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              fontSize: '18px',
-              fontWeight: '700',
-              borderTop: '1px solid #e9ecef',
-              paddingTop: '8px'
-            }}>
-              <span>Total</span>
-              <span>${(totals.total / 100).toFixed(2)}</span>
+          </section>
+
+          {/* Drinks Section */}
+          <section id="drinks" className="mb-12 pt-1">
+            <h2 className="text-3xl font-extrabold mb-6 pt-4 border-t border-gray-200">Drinks</h2>
+            {/* List Item 1 */}
+            <div className="bg-white p-5 rounded-xl card-shadow mb-4 flex justify-between items-center hover:ring-2 hover:ring-dd-orange/20 transition duration-150 cursor-pointer">
+              <div className="flex-1 pr-6">
+                <h3 className="text-xl font-semibold">House-made Lemonade</h3>
+                <p className="text-gray-500 text-sm mt-1">Freshly squeezed lemons with a hint of mint. Refillable.</p>
+                <span className="text-lg font-bold text-dd-dark mt-2 block">$3.50</span>
+              </div>
+              <div className="relative w-28 h-28 flex-shrink-0">
+                <img
+                  src="https://placehold.co/112x112/4ade80/ffffff?text=Drink"
+                  alt="Lemonade"
+                  className="rounded-lg w-full h-full object-cover shadow-md"
+                />
+                <button className="absolute bottom-0 right-0 p-2 bg-dd-orange text-white rounded-full shadow-lg hover:bg-dd-orange/90 transition">
+                  <Icon name="plus" className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-          </div>
-          
-          <DeliveryButton
-            variant="primary"
-            size="lg"
-            fullWidth
-            onClick={() => {
-              // Navigate to checkout
-              showToast.success('Proceeding to checkout...');
-            }}
-          >
-            Proceed to Checkout
-          </DeliveryButton>
+          </section>
         </div>
-      </div>
+      </main>
+
+      {/* Note: The <style> tag with custom CSS is moved into the JSX environment */}
+      <style>{`
+                /* Styles from the original HTML */
+                html { scroll-behavior: smooth; }
+                .sticky-sidebar {
+                    height: calc(100vh - 200px); 
+                    overflow-y: auto;
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+                .sticky-sidebar::-webkit-scrollbar {
+                    display: none;
+                }
+                .card-shadow {
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+                }
+            `}</style>
     </div>
   );
 };
 
-export default RestaurantMenuPage;
+export default App;
