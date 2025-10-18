@@ -43,8 +43,9 @@ const AccountPopup: React.FC<AccountPopupProps> = ({ isOpen, onClose, position }
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="p-6 pb-4">
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="p-6 pb-4 flex-shrink-0">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Account</h2>
           
           {/* User Profile */}
@@ -64,8 +65,8 @@ const AccountPopup: React.FC<AccountPopupProps> = ({ isOpen, onClose, position }
         </div>
 
         {/* Menu Items */}
-        <div className="px-6 pb-6">
-          <div className="space-y-0">
+        <div className="flex-1 overflow-y-auto px-6 pb-6">
+          <div className="space-y-0 min-h-0">
             {/* DashPass Promotion */}
             <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
               <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
@@ -199,6 +200,7 @@ const AccountPopup: React.FC<AccountPopupProps> = ({ isOpen, onClose, position }
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>
