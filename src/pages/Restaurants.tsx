@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
+import cravenLogo from "@/assets/craven-logo.png";
 
 const Restaurants = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -161,27 +162,7 @@ const Restaurants = () => {
           <div className="flex items-center justify-between h-16">
             {/* Left: Logo */}
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="relative">
-                  {/* CRAVE'N Logo with gradient and special effects */}
-                  <div className="text-2xl font-bold uppercase tracking-wider">
-                    <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent relative">
-                      C
-                      {/* Bitten effect particles */}
-                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full opacity-60"></div>
-                      <div className="absolute top-0 -right-2 w-1 h-1 bg-orange-400 rounded-full opacity-40"></div>
-                      <div className="absolute top-1 -right-1 w-1.5 h-1.5 bg-orange-600 rounded-full opacity-50"></div>
-                    </span>
-                    <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent">RAVE</span>
-                    <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent relative">
-                      '
-                      {/* Apostrophe dot */}
-                      <div className="absolute top-0 left-0 w-1 h-1 bg-orange-500 rounded-full"></div>
-                    </span>
-                    <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent">N</span>
-                  </div>
-                </div>
-              </div>
+              <img src={cravenLogo} alt="CRAVE'N" className="h-10" />
             </div>
 
             {/* Center: Search */}
