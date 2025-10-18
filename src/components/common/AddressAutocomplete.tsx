@@ -167,6 +167,11 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       clearTimeout(debounceRef.current);
     }
 
+    // Don't search if address is already validated
+    if (isValidAddress) {
+      return;
+    }
+
     debounceRef.current = setTimeout(() => {
       if (value.trim()) {
         fetchSuggestions(value.trim());
@@ -183,7 +188,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         clearTimeout(debounceRef.current);
       }
     };
-  }, [value]);
+  }, [value, isValidAddress]);
 
   const parseAddress = (suggestion: AddressSuggestion): ParsedAddress => {
     console.log('Parsing address suggestion:', suggestion);
@@ -342,10 +347,13 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       unitNumber 
     });
     
-    // Set the street address in the main field
-    onChange(cleanStreet, { lat, lng });
+    // STOP SEARCHING - Clear suggestions and set as valid
+    setSuggestions([]);
     setShowSuggestions(false);
     setIsValidAddress(true);
+    
+    // Set the street address in the main field
+    onChange(cleanStreet, { lat, lng });
     onValidAddress?.(true, suggestion);
     
     // Call the parsed address callback
@@ -364,6 +372,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     const newValue = e.target.value;
     onChange(newValue);
     
+    // Reset validation state when user starts typing new address
     if (newValue !== value) {
       setIsValidAddress(false);
       onValidAddress?.(false);
