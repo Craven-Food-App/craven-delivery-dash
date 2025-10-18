@@ -24,6 +24,10 @@ const StoreSettingsDashboard = () => {
   const [storeName, setStoreName] = useState("");
   const [storePhone, setStorePhone] = useState("");
   const [storeAddress, setStoreAddress] = useState("");
+  const [storeAddress2, setStoreAddress2] = useState("");
+  const [storeCity, setStoreCity] = useState("");
+  const [storeState, setStoreState] = useState("");
+  const [storeZip, setStoreZip] = useState("");
   const [storeWebsite, setStoreWebsite] = useState("");
   const [storeDescription, setStoreDescription] = useState("");
   const [editingField, setEditingField] = useState<string | null>(null);
@@ -36,6 +40,9 @@ const StoreSettingsDashboard = () => {
       setStoreName(restaurant.name || "");
       setStorePhone(restaurant.phone || "");
       setStoreAddress(restaurant.address || "");
+      setStoreCity(restaurant.city || "");
+      setStoreState(restaurant.state || "");
+      setStoreZip(restaurant.zip_code || "");
       setStoreDescription(restaurant.description || "");
       setHeaderPhoto(restaurant.header_image_url || null);
       setLogoPhoto(restaurant.logo_url || null);
@@ -184,46 +191,132 @@ const StoreSettingsDashboard = () => {
                 {/* Address */}
                 {editingField === 'address' ? (
                   <Dialog open={editingField === 'address'} onOpenChange={(open) => !open && setEditingField(null)}>
-                    <DialogContent>
+                    <DialogContent className="max-w-2xl">
                       <DialogHeader>
                         <DialogTitle>Edit Address</DialogTitle>
                       </DialogHeader>
                       <div className="space-y-4">
                         <div>
-                          <Label>Address</Label>
+                          <Label>Search Address</Label>
                           <AddressAutocomplete
                             value={storeAddress}
                             onChange={(value, coordinates) => {
                               setStoreAddress(value);
-                              // Store coordinates for later save if needed
                               if (coordinates) {
                                 (window as any).__tempAddressCoords = coordinates;
                               }
                             }}
-                            placeholder="Enter restaurant address..."
+                            onAddressParsed={(parsed) => {
+                              console.log('Address parsed:', parsed);
+                              setStoreAddress(parsed.street);
+                              setStoreCity(parsed.city);
+                              setStoreState(parsed.state);
+                              setStoreZip(parsed.zipCode);
+                            }}
+                            placeholder="Start typing to search address..."
                             required
                           />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Search and select your address to auto-fill all fields
+                          </p>
                         </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label>Address Line 1 (Street)*</Label>
+                            <Input
+                              value={storeAddress}
+                              onChange={(e) => setStoreAddress(e.target.value)}
+                              placeholder="123 Main St"
+                            />
+                          </div>
+                          <div>
+                            <Label>Address Line 2 (Unit/Apt)</Label>
+                            <Input
+                              value={storeAddress2}
+                              onChange={(e) => setStoreAddress2(e.target.value)}
+                              placeholder="Unit 5, Apt 2B, etc."
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <Label>City*</Label>
+                            <Input
+                              value={storeCity}
+                              onChange={(e) => setStoreCity(e.target.value)}
+                              placeholder="City"
+                            />
+                          </div>
+                          <div>
+                            <Label>State*</Label>
+                            <Input
+                              value={storeState}
+                              onChange={(e) => setStoreState(e.target.value.toUpperCase())}
+                              placeholder="CA"
+                              maxLength={2}
+                            />
+                          </div>
+                          <div>
+                            <Label>ZIP Code*</Label>
+                            <Input
+                              value={storeZip}
+                              onChange={(e) => setStoreZip(e.target.value)}
+                              placeholder="90210"
+                              maxLength={10}
+                            />
+                          </div>
+                        </div>
+                        
                         <Button 
                           onClick={async () => {
-                            const coords = (window as any).__tempAddressCoords;
-                            await handleSaveField('address', storeAddress);
-                            // Also update coordinates if available
-                            if (coords && restaurant?.id) {
-                              await supabase
+                            setSaving(true);
+                            try {
+                              const coords = (window as any).__tempAddressCoords;
+                              
+                              // Build full address for display
+                              const fullAddress = [
+                                storeAddress,
+                                storeAddress2,
+                                storeCity,
+                                storeState,
+                                storeZip
+                              ].filter(Boolean).join(', ');
+                              
+                              const updates: any = {
+                                address: storeAddress,
+                                city: storeCity,
+                                state: storeState,
+                                zip_code: storeZip
+                              };
+                              
+                              if (coords) {
+                                updates.latitude = coords.lat;
+                                updates.longitude = coords.lng;
+                              }
+                              
+                              const { error } = await supabase
                                 .from('restaurants')
-                                .update({ 
-                                  latitude: coords.lat, 
-                                  longitude: coords.lng 
-                                })
-                                .eq('id', restaurant.id);
+                                .update(updates)
+                                .eq('id', restaurant?.id);
+                              
+                              if (error) throw error;
+                              
+                              toast.success('Address updated successfully');
+                              setEditingField(null);
+                              delete (window as any).__tempAddressCoords;
+                            } catch (error) {
+                              console.error('Error updating address:', error);
+                              toast.error('Failed to update address');
+                            } finally {
+                              setSaving(false);
                             }
-                            delete (window as any).__tempAddressCoords;
                           }}
-                          disabled={saving}
+                          disabled={saving || !storeAddress || !storeCity || !storeState || !storeZip}
                           className="w-full"
                         >
-                          {saving ? "Saving..." : "Save"}
+                          {saving ? "Saving..." : "Save Address"}
                         </Button>
                       </div>
                     </DialogContent>
@@ -232,7 +325,15 @@ const StoreSettingsDashboard = () => {
                   <div className="flex justify-between items-start pt-4 border-t">
                     <div>
                       <h3 className="font-semibold mb-1">Address</h3>
-                      <p className="text-sm">{storeAddress || 'Not set'}</p>
+                      <p className="text-sm">
+                        {[
+                          storeAddress,
+                          storeAddress2,
+                          storeCity,
+                          storeState,
+                          storeZip
+                        ].filter(Boolean).join(', ') || 'Not set'}
+                      </p>
                     </div>
                     <Button variant="outline" size="sm" onClick={() => setEditingField('address')}>Edit</Button>
                   </div>
