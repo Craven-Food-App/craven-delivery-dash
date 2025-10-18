@@ -5,173 +5,190 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import { Loader2, CheckCircle, XCircle, Clock, AlertTriangle, User, Mail, Phone, MapPin, Calendar, Car, FileText } from 'lucide-react';
+import { format, differenceInDays, differenceInHours, isPast } from 'date-fns';
 
-interface BackgroundCheckReport {
+interface Application {
   id: string;
-  application_id: string;
   user_id: string;
-  checkr_candidate_id: string | null;
-  checkr_report_id: string | null;
-  checkr_status: string | null;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  date_of_birth: string;
+  street_address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  vehicle_type: string;
+  vehicle_make: string;
+  vehicle_model: string;
+  vehicle_year: number;
+  license_number: string;
+  license_state: string;
   status: string;
-  initiated_at: string;
-  completed_at: string | null;
-  criminal_search_status: string | null;
-  criminal_records: any;
-  mvr_status: string | null;
-  mvr_records: any;
-  ssn_trace_status: string | null;
-  admin_review_required: boolean;
-  admin_reviewed_by: string | null;
-  admin_review_notes: string | null;
-  admin_decision: string | null;
-  admin_reviewed_at: string | null;
-  craver_applications?: {
-    first_name: string;
-    last_name: string;
-    email: string;
-    date_of_birth: string;
-  };
+  background_check: boolean;
+  background_check_initiated_at: string;
+  background_check_estimated_completion: string;
+  background_check_approved_at: string | null;
+  created_at: string;
+  reviewer_notes: string | null;
 }
 
 export default function BackgroundCheckDashboard() {
-  const [reports, setReports] = useState<BackgroundCheckReport[]>([]);
-  const [applications, setApplications] = useState<any[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
-  const { toast } = useToast();
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    fetchData();
+    fetchApplications();
+    
+    // Set up realtime subscription
+    const channel = supabase
+      .channel('admin-background-checks')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'craver_applications'
+        },
+        () => {
+          fetchApplications();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  const fetchData = async () => {
+  const fetchApplications = async () => {
     try {
-      // Fetch existing reports
-      const { data: reportsData, error: reportsError } = await supabase
-        .from('background_check_reports')
-        .select(`
-          *,
-          craver_applications (
-            first_name,
-            last_name,
-            email,
-            date_of_birth
-          )
-        `)
-        .order('initiated_at', { ascending: false });
-
-      if (reportsError) throw reportsError;
-      setReports(reportsData || []);
-
-      // Fetch applications without background checks
-      const { data: appsData, error: appsError } = await supabase
+      const { data, error } = await supabase
         .from('craver_applications')
         .select('*')
-        .eq('status', 'approved')
-        .is('background_check_report_id', null);
+        .not('background_check_initiated_at', 'is', null)
+        .order('background_check_initiated_at', { ascending: false });
 
-      if (appsError) throw appsError;
-      setApplications(appsData || []);
+      if (error) throw error;
+      setApplications((data || []) as Application[]);
     } catch (error) {
-      console.error('Error fetching data:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load background check data',
-        variant: 'destructive',
-      });
+      console.error('Error fetching applications:', error);
+      toast.error('Failed to load background check data');
     } finally {
       setLoading(false);
     }
   };
 
-  const initiateBackgroundCheck = async (applicationId: string) => {
+  const approveBackgroundCheck = async (applicationId: string) => {
+    if (processingIds.has(applicationId)) return;
+    
+    setProcessingIds(new Set(processingIds).add(applicationId));
+    
     try {
-      const { data, error } = await supabase.functions.invoke('initiate-background-check', {
-        body: { application_id: applicationId },
-      });
+      const application = applications.find(app => app.id === applicationId);
+      if (!application) throw new Error('Application not found');
 
-      if (error) throw error;
-
-      toast({
-        title: 'Background Check Initiated',
-        description: data.message || 'Check will be completed in 1-3 business days',
-      });
-
-      fetchData();
-    } catch (error) {
-      console.error('Error initiating check:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to initiate background check',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const reviewReport = async (reportId: string, decision: 'approved' | 'rejected') => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
       const { error } = await supabase
-        .from('background_check_reports')
+        .from('craver_applications')
         .update({
-          admin_decision: decision,
-          admin_review_notes: reviewNotes[reportId] || '',
-          admin_reviewed_by: user?.id,
-          admin_reviewed_at: new Date().toISOString(),
+          background_check: true,
+          background_check_approved_at: new Date().toISOString(),
+          status: 'approved',
+          reviewer_notes: reviewNotes[applicationId] || 'Background check approved by admin'
         })
-        .eq('id', reportId);
+        .eq('id', applicationId);
 
       if (error) throw error;
 
-      // Update application
-      const report = reports.find(r => r.id === reportId);
-      if (report) {
-        await supabase
-          .from('craver_applications')
-          .update({ 
-            background_check: decision === 'approved',
-            status: decision === 'rejected' ? 'rejected' : 'approved'
-          })
-          .eq('id', report.application_id);
+      // Send approval email
+      try {
+        await supabase.functions.invoke('send-driver-welcome-email', {
+          body: {
+            driverName: `${application.first_name} ${application.last_name}`,
+            driverEmail: application.email,
+            isBackgroundCheckApproval: true
+          },
+        });
+      } catch (emailError) {
+        console.error('Email error:', emailError);
       }
 
-      toast({
-        title: `Application ${decision}`,
-        description: `Background check has been ${decision}`,
-      });
-
-      fetchData();
+      toast.success(`${application.first_name} ${application.last_name}'s background check approved! Email sent.`);
+      setReviewNotes({ ...reviewNotes, [applicationId]: '' });
+      fetchApplications();
     } catch (error) {
-      console.error('Error reviewing report:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to review background check',
-        variant: 'destructive',
+      console.error('Error approving background check:', error);
+      toast.error('Failed to approve background check');
+    } finally {
+      setProcessingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(applicationId);
+        return newSet;
       });
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const badges: Record<string, { variant: any; icon: any; label: string }> = {
-      clear: { variant: 'default', icon: CheckCircle, label: 'Clear' },
-      consider: { variant: 'secondary', icon: AlertTriangle, label: 'Review' },
-      suspended: { variant: 'destructive', icon: XCircle, label: 'Suspended' },
-      pending: { variant: 'outline', icon: Clock, label: 'Pending' },
-    };
+  const rejectBackgroundCheck = async (applicationId: string) => {
+    if (processingIds.has(applicationId)) return;
+    
+    if (!reviewNotes[applicationId]?.trim()) {
+      toast.error('Please add notes explaining the rejection');
+      return;
+    }
 
-    const badge = badges[status] || badges.pending;
-    const Icon = badge.icon;
+    setProcessingIds(new Set(processingIds).add(applicationId));
+    
+    try {
+      const application = applications.find(app => app.id === applicationId);
+      if (!application) throw new Error('Application not found');
 
-    return (
-      <Badge variant={badge.variant as any}>
-        <Icon className="w-3 h-3 mr-1" />
-        {badge.label}
-      </Badge>
-    );
+      const { error } = await supabase
+        .from('craver_applications')
+        .update({
+          background_check: false,
+          status: 'rejected',
+          reviewer_notes: reviewNotes[applicationId]
+        })
+        .eq('id', applicationId);
+
+      if (error) throw error;
+
+      toast.success(`Application rejected. ${application.first_name} will be notified.`);
+      setReviewNotes({ ...reviewNotes, [applicationId]: '' });
+      fetchApplications();
+    } catch (error) {
+      console.error('Error rejecting background check:', error);
+      toast.error('Failed to reject background check');
+    } finally {
+      setProcessingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(applicationId);
+        return newSet;
+      });
+    }
+  };
+
+  const getTimeRemaining = (estimatedCompletion: string) => {
+    const now = new Date();
+    const completion = new Date(estimatedCompletion);
+    const hoursLeft = differenceInHours(completion, now);
+    const daysLeft = differenceInDays(completion, now);
+    
+    if (isPast(completion)) {
+      return { text: 'Ready for review', color: 'text-green-600', isPastDue: true };
+    }
+    
+    if (hoursLeft < 24) {
+      return { text: `${hoursLeft}h remaining`, color: 'text-orange-600', isPastDue: false };
+    }
+    
+    return { text: `${daysLeft}d remaining`, color: 'text-blue-600', isPastDue: false };
   };
 
   if (loading) {
@@ -182,216 +199,333 @@ export default function BackgroundCheckDashboard() {
     );
   }
 
-  const pendingReports = reports.filter(r => r.status === 'pending' || r.status === 'in_progress');
-  const reviewRequiredReports = reports.filter(r => r.admin_review_required && !r.admin_decision);
-  const completedReports = reports.filter(r => r.admin_decision);
+  const pendingApprovals = applications.filter(app => 
+    !app.background_check && app.status === 'under_review'
+  );
+  
+  const approved = applications.filter(app => 
+    app.background_check && app.background_check_approved_at
+  );
+  
+  const rejected = applications.filter(app => 
+    app.status === 'rejected'
+  );
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">Background Check Dashboard</h2>
-        <p className="text-muted-foreground">Manage driver background checks via Checkr</p>
+        <h2 className="text-2xl font-bold">Background Check Management</h2>
+        <p className="text-muted-foreground">Review and approve Feeder background checks</p>
       </div>
 
+      {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Pending Checks</CardTitle>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Pending Review
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{applications.length}</div>
+            <div className="text-2xl font-bold text-orange-600">{pendingApprovals.length}</div>
+            <p className="text-xs text-muted-foreground">Awaiting approval</p>
           </CardContent>
         </Card>
+        
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <CheckCircle className="w-4 h-4" />
+              Approved
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pendingReports.length}</div>
+            <div className="text-2xl font-bold text-green-600">{approved.length}</div>
+            <p className="text-xs text-muted-foreground">Cleared to drive</p>
           </CardContent>
         </Card>
+        
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Needs Review</CardTitle>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <XCircle className="w-4 h-4" />
+              Rejected
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{reviewRequiredReports.length}</div>
+            <div className="text-2xl font-bold text-red-600">{rejected.length}</div>
+            <p className="text-xs text-muted-foreground">Not approved</p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Tabs */}
       <Tabs defaultValue="pending" className="w-full">
         <TabsList>
-          <TabsTrigger value="pending">Pending ({applications.length})</TabsTrigger>
-          <TabsTrigger value="progress">In Progress ({pendingReports.length})</TabsTrigger>
-          <TabsTrigger value="review">Review ({reviewRequiredReports.length})</TabsTrigger>
-          <TabsTrigger value="completed">Completed ({completedReports.length})</TabsTrigger>
+          <TabsTrigger value="pending">
+            Pending Review ({pendingApprovals.length})
+          </TabsTrigger>
+          <TabsTrigger value="approved">
+            Approved ({approved.length})
+          </TabsTrigger>
+          <TabsTrigger value="rejected">
+            Rejected ({rejected.length})
+          </TabsTrigger>
         </TabsList>
 
+        {/* Pending Review Tab */}
         <TabsContent value="pending" className="space-y-4">
-          {applications.map((app) => (
-            <Card key={app.id}>
-              <CardHeader>
-                <CardTitle>{app.first_name} {app.last_name}</CardTitle>
-                <CardDescription>{app.email}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium">DOB:</span> {app.date_of_birth}
-                  </div>
-                  <div>
-                    <span className="font-medium">Phone:</span> {app.phone}
-                  </div>
-                  <div>
-                    <span className="font-medium">Address:</span> {app.street_address}, {app.city}, {app.state}
-                  </div>
-                </div>
-                <Button onClick={() => initiateBackgroundCheck(app.id)}>
-                  Run Background Check ($25-35)
-                </Button>
+          {pendingApprovals.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center text-muted-foreground">
+                No applications pending background check approval
               </CardContent>
             </Card>
-          ))}
-          {applications.length === 0 && (
-            <p className="text-center text-muted-foreground py-8">No pending applications</p>
+          ) : (
+            pendingApprovals.map((app) => {
+              const timeRemaining = getTimeRemaining(app.background_check_estimated_completion);
+              const isProcessing = processingIds.has(app.id);
+              
+              return (
+                <Card key={app.id}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <User className="w-5 h-5" />
+                          {app.first_name} {app.last_name}
+                        </CardTitle>
+                        <CardDescription className="mt-2 space-y-1">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Mail className="w-3 h-3" />
+                            {app.email}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <Phone className="w-3 h-3" />
+                            {app.phone}
+                          </div>
+                        </CardDescription>
+                      </div>
+                      <Badge variant={timeRemaining.isPastDue ? "default" : "secondary"} className={timeRemaining.color}>
+                        <Clock className="w-3 h-3 mr-1" />
+                        {timeRemaining.text}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Application Details */}
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="font-medium text-muted-foreground">DOB:</span>
+                        <p>{format(new Date(app.date_of_birth), 'PP')}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-muted-foreground">License:</span>
+                        <p>{app.license_state} - {app.license_number}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-muted-foreground">Address:</span>
+                        <p>{app.city}, {app.state} {app.zip_code}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-muted-foreground">Vehicle:</span>
+                        <p>{app.vehicle_year} {app.vehicle_make} {app.vehicle_model}</p>
+                      </div>
+                    </div>
+
+                    {/* Timeline */}
+                    <div className="bg-muted p-4 rounded-lg space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Submitted:</span>
+                        <span className="font-medium">{format(new Date(app.created_at), 'PPp')}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Check Initiated:</span>
+                        <span className="font-medium">{format(new Date(app.background_check_initiated_at), 'PPp')}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Est. Completion:</span>
+                        <span className={`font-medium ${timeRemaining.color}`}>
+                          {format(new Date(app.background_check_estimated_completion), 'PPp')}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Admin Notes */}
+                    <div className="space-y-2">
+                      <Label htmlFor={`notes-${app.id}`}>Admin Notes (Optional)</Label>
+                      <Textarea
+                        id={`notes-${app.id}`}
+                        value={reviewNotes[app.id] || ''}
+                        onChange={(e) => setReviewNotes({ ...reviewNotes, [app.id]: e.target.value })}
+                        placeholder="Add any notes about this approval/rejection..."
+                        rows={2}
+                        disabled={isProcessing}
+                      />
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3">
+                      <Button
+                        onClick={() => approveBackgroundCheck(app.id)}
+                        disabled={isProcessing}
+                        className="flex-1 bg-green-600 hover:bg-green-700"
+                      >
+                        {isProcessing ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Approve Background Check
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        onClick={() => rejectBackgroundCheck(app.id)}
+                        disabled={isProcessing}
+                        variant="destructive"
+                        className="flex-1"
+                      >
+                        <XCircle className="w-4 h-4 mr-2" />
+                        Reject
+                      </Button>
+                    </div>
+
+                    {timeRemaining.isPastDue && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                        <p className="text-sm text-green-800 flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4" />
+                          <strong>Ready for Review:</strong> Estimated processing time has elapsed
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </TabsContent>
 
-        <TabsContent value="progress" className="space-y-4">
-          {pendingReports.map((report) => (
-            <Card key={report.id}>
-              <CardHeader>
-                <CardTitle>
-                  {report.craver_applications?.first_name} {report.craver_applications?.last_name}
-                </CardTitle>
-                <CardDescription>
-                  Initiated: {new Date(report.initiated_at).toLocaleDateString()}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span>Status:</span>
-                    {getStatusBadge(report.checkr_status || 'pending')}
-                  </div>
-                  {report.checkr_report_id && (
-                    <p className="text-sm text-muted-foreground">
-                      Report ID: {report.checkr_report_id}
-                    </p>
-                  )}
-                </div>
+        {/* Approved Tab */}
+        <TabsContent value="approved" className="space-y-4">
+          {approved.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center text-muted-foreground">
+                No approved background checks yet
               </CardContent>
             </Card>
-          ))}
-          {pendingReports.length === 0 && (
-            <p className="text-center text-muted-foreground py-8">No checks in progress</p>
-          )}
-        </TabsContent>
-
-        <TabsContent value="review" className="space-y-4">
-          {reviewRequiredReports.map((report) => (
-            <Card key={report.id}>
-              <CardHeader>
-                <CardTitle>
-                  {report.craver_applications?.first_name} {report.craver_applications?.last_name}
-                </CardTitle>
-                <CardDescription>
-                  Completed: {report.completed_at && new Date(report.completed_at).toLocaleDateString()}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <span className="font-medium">Criminal:</span> {getStatusBadge(report.criminal_search_status || 'pending')}
-                  </div>
-                  <div>
-                    <span className="font-medium">MVR:</span> {getStatusBadge(report.mvr_status || 'pending')}
-                  </div>
-                  <div>
-                    <span className="font-medium">SSN Trace:</span> {getStatusBadge(report.ssn_trace_status || 'pending')}
-                  </div>
-                  <div>
-                    <span className="font-medium">Overall:</span> {getStatusBadge(report.checkr_status || 'pending')}
-                  </div>
-                </div>
-
-                {report.criminal_records && (
-                  <div className="p-3 bg-muted rounded-md">
-                    <p className="font-medium mb-2">Criminal Records Found:</p>
-                    <pre className="text-sm overflow-auto">
-                      {JSON.stringify(report.criminal_records, null, 2)}
-                    </pre>
-                  </div>
-                )}
-
-                {report.mvr_records && (
-                  <div className="p-3 bg-muted rounded-md">
-                    <p className="font-medium mb-2">MVR Violations:</p>
-                    <pre className="text-sm overflow-auto">
-                      {JSON.stringify(report.mvr_records, null, 2)}
-                    </pre>
-                  </div>
-                )}
-
-                <Textarea
-                  placeholder="Review notes..."
-                  value={reviewNotes[report.id] || ''}
-                  onChange={(e) => setReviewNotes({ ...reviewNotes, [report.id]: e.target.value })}
-                />
-
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={() => reviewReport(report.id, 'approved')}
-                    variant="default"
-                  >
-                    Approve Application
-                  </Button>
-                  <Button 
-                    onClick={() => reviewReport(report.id, 'rejected')}
-                    variant="destructive"
-                  >
-                    Reject Application
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-          {reviewRequiredReports.length === 0 && (
-            <p className="text-center text-muted-foreground py-8">No reports need review</p>
-          )}
-        </TabsContent>
-
-        <TabsContent value="completed" className="space-y-4">
-          {completedReports.map((report) => (
-            <Card key={report.id}>
-              <CardHeader>
-                <CardTitle>
-                  {report.craver_applications?.first_name} {report.craver_applications?.last_name}
-                </CardTitle>
-                <CardDescription>
-                  Reviewed: {report.admin_reviewed_at && new Date(report.admin_reviewed_at).toLocaleDateString()}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">Decision:</span>
-                    <Badge variant={report.admin_decision === 'approved' ? 'default' : 'destructive'}>
-                      {report.admin_decision}
+          ) : (
+            approved.map((app) => (
+              <Card key={app.id}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        {app.first_name} {app.last_name}
+                      </CardTitle>
+                      <CardDescription className="mt-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Mail className="w-3 h-3" />
+                          {app.email}
+                        </div>
+                      </CardDescription>
+                    </div>
+                    <Badge variant="default" className="bg-green-600">
+                      Cleared to Drive
                     </Badge>
                   </div>
-                  {report.admin_review_notes && (
-                    <div className="p-3 bg-muted rounded-md text-sm">
-                      {report.admin_review_notes}
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Approved On:</span>
+                      <span className="font-medium">
+                        {format(new Date(app.background_check_approved_at!), 'PPp')}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Processing Time:</span>
+                      <span className="font-medium">
+                        {differenceInDays(
+                          new Date(app.background_check_approved_at!),
+                          new Date(app.background_check_initiated_at)
+                        )} days
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {app.reviewer_notes && (
+                    <div className="bg-muted p-3 rounded-lg">
+                      <p className="text-sm font-medium mb-1">Admin Notes:</p>
+                      <p className="text-sm text-muted-foreground">{app.reviewer_notes}</p>
                     </div>
                   )}
-                </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-sm pt-3 border-t">
+                    <div>
+                      <span className="text-muted-foreground">Vehicle:</span>
+                      <p className="font-medium">{app.vehicle_type}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Location:</span>
+                      <p className="font-medium">{app.city}, {app.state}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </TabsContent>
+
+        {/* Rejected Tab */}
+        <TabsContent value="rejected" className="space-y-4">
+          {rejected.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center text-muted-foreground">
+                No rejected applications
               </CardContent>
             </Card>
-          ))}
-          {completedReports.length === 0 && (
-            <p className="text-center text-muted-foreground py-8">No completed reviews</p>
+          ) : (
+            rejected.map((app) => (
+              <Card key={app.id}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <XCircle className="w-5 h-5 text-red-600" />
+                        {app.first_name} {app.last_name}
+                      </CardTitle>
+                      <CardDescription className="mt-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Mail className="w-3 h-3" />
+                          {app.email}
+                        </div>
+                      </CardDescription>
+                    </div>
+                    <Badge variant="destructive">
+                      Rejected
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {app.reviewer_notes && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <p className="text-sm font-medium text-red-900 mb-1">Rejection Reason:</p>
+                      <p className="text-sm text-red-800">{app.reviewer_notes}</p>
+                    </div>
+                  )}
+                  
+                  <div className="text-sm text-muted-foreground">
+                    Rejected on {app.background_check_approved_at && format(new Date(app.background_check_approved_at), 'PPp')}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
           )}
         </TabsContent>
       </Tabs>
