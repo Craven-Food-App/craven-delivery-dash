@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { CraveMoreText } from "@/components/ui/cravemore-text";
 
 const PrivacyPolicy = () => {
   return (
@@ -30,7 +31,7 @@ const PrivacyPolicy = () => {
                 <li>Delivery addresses</li>
                 <li>Payment information (processed securely through third-party payment processors)</li>
                 <li>Order history and preferences</li>
-                <li>CraveMore membership status and subscription information</li>
+                <li><CraveMoreText /> membership status and subscription information</li>
                 <li>Billing and payment history for membership subscriptions</li>
               </ul>
               
@@ -91,7 +92,7 @@ const PrivacyPolicy = () => {
                 <li>Facilitate communication between customers, drivers, and restaurants</li>
                 <li>Process payments and prevent fraud</li>
                 <li>Send order updates and notifications</li>
-                <li>Manage CraveMore membership subscriptions and benefits</li>
+                <li>Manage <CraveMoreText /> membership subscriptions and benefits</li>
                 <li>Process recurring subscription payments</li>
                 <li>Apply membership discounts and benefits to orders</li>
                 <li><strong>Process ACH bank transfers and payouts</strong> to drivers and restaurant partners</li>

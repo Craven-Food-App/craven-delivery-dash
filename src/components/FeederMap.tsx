@@ -18,13 +18,13 @@ interface Order {
   assigned_craver_id?: string | null;
 }
 
-interface DasherMapProps {
+interface FeederMapProps {
   orders: Order[];
   activeOrder: Order | null;
   onOrderClick: (order: Order) => void;
 }
 
-const DasherMap: React.FC<DasherMapProps> = ({ orders, activeOrder, onOrderClick }) => {
+const FeederMap: React.FC<FeederMapProps> = ({ orders, activeOrder, onOrderClick }) => {
   const pendingOrders = orders.filter(order => order.status === 'pending');
 
   // Convert coordinates to screen positions (San Francisco area)
@@ -210,4 +210,4 @@ const DasherMap: React.FC<DasherMapProps> = ({ orders, activeOrder, onOrderClick
   );
 };
 
-export default DasherMap;
+export default FeederMap;

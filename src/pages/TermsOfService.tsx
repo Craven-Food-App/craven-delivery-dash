@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { CraveMoreText } from "@/components/ui/cravemore-text";
 
 const TermsOfService = () => {
   return (
@@ -42,9 +43,9 @@ const TermsOfService = () => {
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">4. CraveMore Membership Program</h2>
+              <h2 className="text-2xl font-semibold mb-4">4. <CraveMoreText /> Membership Program</h2>
               <p className="text-muted-foreground mb-4">
-                Crave'N offers an optional premium membership program called "CraveMore" with the following terms:
+                Crave'N offers an optional premium membership program called "<CraveMoreText />" with the following terms:
               </p>
               
               <h3 className="text-xl font-semibold mb-3">Membership Plans</h3>
@@ -77,7 +78,7 @@ const TermsOfService = () => {
               <h3 className="text-xl font-semibold mb-3">Lifetime Membership Special Terms</h3>
               <ul className="list-disc pl-6 mb-4 text-muted-foreground">
                 <li>Limited to the first 1,000 customers only</li>
-                <li>Provides all CraveMore benefits for the lifetime of your account</li>
+                <li>Provides all <CraveMoreText /> benefits for the lifetime of your account</li>
                 <li>Non-transferable and tied to your account</li>
                 <li>Subject to account good standing and compliance with Terms</li>
                 <li>30-day money-back guarantee from date of purchase</li>

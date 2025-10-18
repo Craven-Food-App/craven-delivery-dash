@@ -6,6 +6,7 @@ import { AlertCircle, Check, Info, Target, DollarSign, ShoppingBag, Zap, Shield 
 import { supabase } from "@/integrations/supabase/client";
 import { useRestaurantData } from "@/hooks/useRestaurantData";
 import { toast } from "sonner";
+import { CraveMoreText } from "@/components/ui/cravemore-text";
 
 interface PricingPlan {
   id: string;
@@ -248,14 +249,14 @@ const PricingPlansDashboard = () => {
                   <p className="text-sm">Get commission-free online ordering through your own website. You only pay payment processing fees.</p>
                 </div>
 
-                {/* Access to DashPass members */}
+                {/* Access to CraveMore members */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-primary" />
-                    <span className="font-semibold text-sm">Access to DashPass members</span>
+                    <span className="font-semibold text-sm">Access to <CraveMoreText /> members</span>
                   </div>
-                  <p className="text-sm">Businesses with DashPass typically see a 30% increase in earnings, as members order twice as often and spend 2.5 times more annually than regular customers.</p>
-                  <p className="text-sm">You'll be promoted with $0 delivery and lower service fees, making it easier for customers to find you on DoorDash.</p>
+                  <p className="text-sm">Businesses with <CraveMoreText /> typically see a 30% increase in earnings, as members order twice as often and spend 2.5 times more annually than regular customers.</p>
+                  <p className="text-sm">You'll be promoted with $0 delivery and lower service fees, making it easier for customers to find you on Crave'N.</p>
                 </div>
               </CardContent>
             </Card>
@@ -306,14 +307,14 @@ const PricingPlansDashboard = () => {
                   <p className="text-sm">Get commission-free online ordering through your own website. You only pay payment processing fees.</p>
                 </div>
 
-                {/* Access to DashPass members */}
+                {/* Access to CraveMore members */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-primary" />
-                    <span className="font-semibold text-sm">Access to DashPass members</span>
+                    <span className="font-semibold text-sm">Access to <CraveMoreText /> members</span>
                   </div>
-                  <p className="text-sm">Businesses with DashPass typically see a 30% increase in earnings, as members order twice as often and spend 2.5 times more annually than regular customers.</p>
-                  <p className="text-sm">You'll be promoted with $0 delivery and lower service fees, making it easier for customers to find you on DoorDash.</p>
+                  <p className="text-sm">Businesses with <CraveMoreText /> typically see a 30% increase in earnings, as members order twice as often and spend 2.5 times more annually than regular customers.</p>
+                  <p className="text-sm">You'll be promoted with $0 delivery and lower service fees, making it easier for customers to find you on Crave'N.</p>
                 </div>
 
                 {/* 6-month order guarantee */}

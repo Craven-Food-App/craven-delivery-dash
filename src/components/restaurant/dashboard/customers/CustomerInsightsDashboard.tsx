@@ -7,6 +7,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { supabase } from "@/integrations/supabase/client";
 import { useRestaurantData } from "@/hooks/useRestaurantData";
+import { CraveMoreText } from "@/components/ui/cravemore-text";
 
 interface CustomerStats {
   total: number;
@@ -121,7 +122,7 @@ const CustomerInsightsDashboard = () => {
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>{subValue}</span>
-          <span className="text-primary">CraveMore customers</span>
+          <span className="text-primary"><CraveMoreText /> customers</span>
         </div>
       </CardContent>
     </Card>
@@ -180,7 +181,7 @@ const CustomerInsightsDashboard = () => {
           />
         </div>
         <p className="text-xs text-muted-foreground mt-4">
-          CraveMore is a loyalty subscription service for customers. CraveMore customers frequently place high-value orders.
+          <CraveMoreText /> is a loyalty subscription service for customers. <CraveMoreText /> customers frequently place high-value orders.
         </p>
         <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
           <span>Last updated on {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>

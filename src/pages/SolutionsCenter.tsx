@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Megaphone, Gift, TrendingUp, Wine, Percent, DollarSign, Instagram, Store, ShoppingBag, Package, Truck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { CraveMoreText } from "@/components/ui/cravemore-text";
 
 const SolutionsCenter = () => {
   const navigate = useNavigate();
@@ -231,9 +232,9 @@ const SolutionsCenter = () => {
                 <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-4">
                   <Package className="w-6 h-6 text-green-600" />
                 </div>
-                <h3 className="font-bold mb-2">CraveMore</h3>
+                <h3 className="font-bold mb-2"><CraveMoreText /></h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  CraveMore subscribers ordering on Crave'N have higher order frequency. <a href="#" className="text-primary underline">Learn More</a>
+                  <CraveMoreText /> subscribers ordering on Crave'N have higher order frequency. <a href="#" className="text-primary underline">Learn More</a>
                 </p>
                 <Button variant="outline" className="w-full">Purchase product</Button>
               </CardContent>

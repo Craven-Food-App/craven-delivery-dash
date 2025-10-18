@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Check, Sparkles, Zap, Shield, Clock } from "lucide-react";
 import cravemoreIcon from "@/assets/cravemore-icon.png";
+import { CraveMoreText } from "@/components/ui/cravemore-text";
 
 const Hero = () => {
   const navigate = useNavigate();
 
   const benefits = [
-    { icon: Zap, text: "Zero delivery fees with CraveMore" },
+    { icon: Zap, text: "Zero delivery fees with", highlight: true },
     { icon: Shield, text: "Priority customer support" },
     { icon: Clock, text: "Exclusive early access to new restaurants" },
     { icon: Sparkles, text: "Special member-only discounts" }
@@ -19,14 +20,14 @@ const Hero = () => {
       name: "Monthly",
       price: "$8.99",
       period: "per month",
-      features: ["All CraveMore benefits", "Cancel anytime", "Instant activation"]
+      features: ["All benefits", "Cancel anytime", "Instant activation"]
     },
     {
       name: "Annual",
       price: "$90.00",
       period: "per year",
       savings: "Save $17.88",
-      features: ["All CraveMore benefits", "2 months free", "Best value"],
+      features: ["All benefits", "2 months free", "Best value"],
       popular: true
     },
     {
@@ -34,7 +35,7 @@ const Hero = () => {
       price: "$249.00",
       period: "one-time",
       savings: "Limited to first 1,000 customers",
-      features: ["All CraveMore benefits", "Never pay again", "Exclusive founding member status"],
+      features: ["All benefits", "Never pay again", "Exclusive founding member status"],
       limited: true
     }
   ];
@@ -84,13 +85,13 @@ const Hero = () => {
             />
             <div className="inline-flex items-center gap-2 bg-orange-500/10 text-orange-600 dark:text-orange-400 px-6 py-2 rounded-full mb-4">
               <Sparkles className="w-5 h-5" />
-              <span className="font-semibold">Introducing CraveMore</span>
+              <span className="font-semibold">Introducing <CraveMoreText /></span>
             </div>
             <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
               Unlimited Perks, Zero Delivery Fees
             </h2>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Join CraveMore and unlock unlimited benefits designed to make every meal special
+              Join <CraveMoreText /> and unlock unlimited benefits designed to make every meal special
             </p>
           </div>
 
@@ -99,7 +100,10 @@ const Hero = () => {
             {benefits.map((benefit, index) => (
               <Card key={index} className="p-6 text-center hover:shadow-lg transition-shadow">
                 <benefit.icon className="w-12 h-12 mx-auto mb-4 text-orange-500" />
-                <p className="font-medium text-foreground">{benefit.text}</p>
+                <p className="font-medium text-foreground">
+                  {benefit.text}
+                  {benefit.highlight && <> <CraveMoreText className="justify-center mt-1" /></>}
+                </p>
               </Card>
             ))}
           </div>
@@ -168,7 +172,9 @@ const Hero = () => {
             onClick={() => navigate('/restaurants')}
             className="h-14 px-12 text-lg font-bold bg-white text-orange-500 hover:bg-white/90 shadow-2xl rounded-xl transform hover:scale-105 transition-all duration-300"
           >
-            Order Now & Join CraveMore
+            <span className="flex items-center gap-2">
+              Order Now & Join <CraveMoreText />
+            </span>
           </Button>
         </div>
       </section>
