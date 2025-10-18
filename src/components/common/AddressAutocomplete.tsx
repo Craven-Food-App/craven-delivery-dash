@@ -299,7 +299,10 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const handleSuggestionClick = (suggestion: AddressSuggestion) => {
     const [lng, lat] = suggestion.center;
     
+    console.log('=== ADDRESS PARSING DEBUG ===');
     console.log('Full suggestion object:', suggestion);
+    console.log('Place name:', suggestion.place_name);
+    console.log('Place name parts:', suggestion.place_name.split(','));
     
     // Initialize variables
     let street = '';
@@ -310,22 +313,25 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     
     // PRIORITY 1: Extract from Mapbox context (most accurate)
     if (suggestion.context && Array.isArray(suggestion.context)) {
-      console.log('Mapbox context:', suggestion.context);
+      console.log('Mapbox context available:', suggestion.context);
       
       for (const ctx of suggestion.context) {
+        console.log('Context item:', ctx);
         // Only extract city, state, and ZIP from context
         if (ctx.id.startsWith('place.')) {
           city = ctx.text; // This is the actual city
-          console.log('Found city from context:', city);
+          console.log('✓ Found city from context:', city);
         } else if (ctx.id.startsWith('region.')) {
           state = ctx.short_code?.replace('US-', '') || ctx.text;
-          console.log('Found state from context:', state);
+          console.log('✓ Found state from context:', state);
         } else if (ctx.id.startsWith('postcode.')) {
           zipCode = ctx.text;
-          console.log('Found ZIP from context:', zipCode);
+          console.log('✓ Found ZIP from context:', zipCode);
         }
         // Ignore: district, locality, neighborhood, county, etc.
       }
+    } else {
+      console.log('No Mapbox context available, will use fallback parsing');
     }
     
     // Build street address from Mapbox address components
@@ -353,19 +359,32 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       const parts = suggestion.place_name.split(',').map(p => p.trim());
       console.log('Fallback parsing from parts:', parts);
       
-      // For US addresses: "Street, City, State ZIP, Country"
-      if (!city && parts[1]) {
-        city = parts[1];
-      }
-      
-      if (parts[2]) {
-        if (!state) {
-          const stateMatch = parts[2].match(/\b([A-Z]{2})\b/);
-          if (stateMatch) state = stateMatch[1];
+      // For US addresses, iterate through all parts to find state and ZIP
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        
+        // Look for city (usually second part, but could be elsewhere)
+        if (!city && i === 1) {
+          city = part;
+          console.log('Fallback city:', city);
         }
+        
+        // Look for state code (2 capital letters)
+        if (!state) {
+          const stateMatch = part.match(/\b([A-Z]{2})\b/);
+          if (stateMatch) {
+            state = stateMatch[1];
+            console.log('Fallback state:', state);
+          }
+        }
+        
+        // Look for ZIP code (5 digits, optionally with +4)
         if (!zipCode) {
-          const zipMatch = parts[2].match(/(\d{5}(-\d{4})?)/);
-          if (zipMatch) zipCode = zipMatch[1];
+          const zipMatch = part.match(/\b(\d{5}(-\d{4})?)\b/);
+          if (zipMatch) {
+            zipCode = zipMatch[1];
+            console.log('Fallback ZIP:', zipCode);
+          }
         }
       }
     }
