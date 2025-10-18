@@ -1,551 +1,1115 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import {
-  Star,
-  Clock,
-  Truck,
-  Plus,
-  Minus,
-  ShoppingCart,
-  X,
-  ChevronLeft,
-  Utensils,
-  Heart,
-  Share2,
-  MapPin,
-  Phone,
-  Navigation,
-  MessageCircle,
-  CheckCircle,
-  Filter,
-  Search,
-  ChefHat,
-  Leaf,
-  Info,
-  ArrowUp,
-  Timer,
-  Flame,
+import React, { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from 'react-router-dom';
+import { 
+  Star, Clock, Truck, Plus, Minus, ShoppingCart, X, 
+  ChevronLeft, Utensils, Heart, Share2, MapPin, Phone,
+  Navigation, MessageCircle, CheckCircle, Filter, Search, ChefHat, Leaf,
+  Info, ArrowUp, Timer, Flame
 } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
+import { toast as showToast } from 'sonner';
 
-// Assuming these paths are configured in your environment
-// NOTE: These variables are imported but not used in the current component logic
-import { supabase } from "@/integrations/supabase/client";
-import { toast as showToast } from "sonner";
+// Types remain the same
+interface Restaurant {
+  id: string;
+  name: string;
+  description: string;
+  cuisine_type: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  delivery_fee_cents: number;
+  min_delivery_time: number;
+  max_delivery_time: number;
+  rating: number;
+  total_reviews: number;
+  image_url: string;
+  latitude?: number;
+  longitude?: number;
+  chef_name?: string;
+  established_year?: string;
+}
 
-// --- Mock Data Replication (UI/Data remains identical) ---
-const DEALS_MOCK_DATA = [
-  { id: 1, title: "15% Off up to $6", detail: "Add $30 to apply" },
-  { id: 2, title: "Platinum Dasher Perk", detail: "As a Platinum Dasher, you've unlocked 30% off (up to $1..." },
-  { id: 3, title: "Get $0 delivery fee", detail: "Plus, low service fee" },
-];
+interface MenuCategory {
+  id: string;
+  name: string;
+  description: string;
+  display_order: number;
+  icon?: string;
+}
 
-const FEATURED_ITEMS_MOCK_DATA = [
-  {
-    id: 101,
-    title: "Pick Two and Save: Make It a Meal",
-    price: "$11.79 • 84% (454)",
-    imageUrl: "https://placehold.co/100x100/A31D24/ffffff?text=Meal",
-  },
-  {
-    id: 102,
-    title: "Big Buford® Combo",
-    price: "$12.99 • 77% (216)",
-    imageUrl: "https://placehold.co/100x100/0F7D2B/ffffff?text=Buford",
-  },
-  {
-    id: 103,
-    title: "Baconzilla!® Combo",
-    price: "$12.99 • 86% (236)",
-    imageUrl: "https://placehold.co/100x100/D0A824/ffffff?text=Bacon",
-  },
-  {
-    id: 104,
-    title: "Fry-Seasoned Tenders",
-    price: "$9.79 • 84% (454)",
-    imageUrl: "https://placehold.co/100x100/1D4ED8/ffffff?text=Tenders",
-  },
-];
+interface MenuItem {
+  id: string;
+  name: string;
+  description: string;
+  price_cents: number;
+  image_url: string;
+  is_available: boolean;
+  is_vegetarian: boolean;
+  is_vegan: boolean;
+  is_gluten_free: boolean;
+  category_id: string;
+  preparation_time: number;
+  is_featured?: boolean;
+  order_count?: number;
+  spice_level?: number;
+  calories?: number;
+  chef_recommended?: boolean;
+}
 
-const MOST_ORDERED_ITEMS = [
-  {
-    id: 201,
-    title: "Famous Seasoned Fries",
-    price: "$3.99 • 92% (1.2k)",
-    imageUrl: "https://placehold.co/120x120/A31D24/ffffff?text=Fries",
-  },
-  {
-    id: 202,
-    title: "Big Buford® Combo",
-    price: "$10.99 • 85% (850)",
-    imageUrl: "https://placehold.co/120x120/0F7D2B/ffffff?text=Buford",
-  },
-  {
-    id: 203,
-    title: "Classic Milkshakes",
-    price: "$5.50 • 90% (520)",
-    imageUrl: "https://placehold.co/120x120/C4C4C4/000000?text=Shake",
-  },
-  {
-    id: 204,
-    title: "Chili Cheese Fries",
-    price: "$5.99 • 78% (310)",
-    imageUrl: "https://placehold.co/120x120/FFC300/000000?text=Chili",
-  },
-];
+interface CartItem extends MenuItem {
+  key: string;
+  quantity: number;
+  special_instructions?: string;
+  modifiers?: any[];
+}
 
-const LIMITED_TIME_ITEMS = [
-  {
-    id: 301,
-    title: "BBQ Brisket Buford Combo",
-    price: "$11.49 • 79% (345)",
-    imageUrl: "https://placehold.co/120x120/8B4513/ffffff?text=BBQ",
-  },
-  {
-    id: 302,
-    title: "GlowFix Unbeatable Meal Deal",
-    price: "$9.99 • 88% (420)",
-    imageUrl: "https://placehold.co/120x120/000000/ffffff?text=Deal",
-  },
-  {
-    id: 303,
-    title: "Lemonade Cooler",
-    price: "$3.49 • 95% (210)",
-    imageUrl: "https://placehold.co/120x120/FFD700/000000?text=Lemon",
-  },
-  {
-    id: 304,
-    title: "Crispy Onion Rings",
-    price: "$4.99 • 81% (180)",
-    imageUrl: "https://placehold.co/120x120/94A3B8/ffffff?text=Rings",
-  },
-];
+// Simplified Button Component for delivery app
+const DeliveryButton = ({ 
+  children, 
+  onClick, 
+  variant = 'primary', 
+  size = 'md', 
+  disabled = false,
+  className = '',
+  icon = null,
+  fullWidth = false,
+  style = {}
+}: {
+  children: any;
+  onClick: any;
+  variant?: string;
+  size?: string;
+  disabled?: boolean;
+  className?: string;
+  icon?: any;
+  fullWidth?: boolean;
+  style?: React.CSSProperties;
+}) => {
+  const baseStyles: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: '600',
+    borderRadius: '12px',
+    border: 'none',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    transition: 'all 0.2s ease',
+    fontFamily: 'inherit',
+    width: fullWidth ? '100%' : 'auto',
+    gap: '8px'
+  };
 
-const COMBO_MEALS = [
-  {
-    id: 401,
-    title: "Spicy Chicken Sandwich Combo",
-    price: "$9.59 • 81% (300)",
-    imageUrl: "https://placehold.co/100x100/F05252/ffffff?text=Spicy",
-  },
-  {
-    id: 402,
-    title: "Cheeseburger & Fries Combo",
-    price: "$8.29 • 88% (450)",
-    imageUrl: "https://placehold.co/100x100/3B82F6/ffffff?text=Burger",
-  },
-  {
-    id: 403,
-    title: "Crispy Fish Sandwich Combo",
-    price: "$10.49 • 75% (150)",
-    imageUrl: "https://placehold.co/100x100/6B7280/ffffff?text=Fish",
-  },
-  {
-    id: 404,
-    title: "The Big Chicken Box",
-    price: "$14.99 • 91% (550)",
-    imageUrl: "https://placehold.co/100x100/4F46E5/ffffff?text=Box",
-  },
-];
-
-// Combine all menu sections into one structure for simpler rendering in the loop
-const MENU_SECTIONS = [
-  { id: "featured", title: "Featured Items", items: FEATURED_ITEMS_MOCK_DATA },
-  { id: "most-ordered", title: "Most Ordered", items: MOST_ORDERED_ITEMS },
-  { id: "limited-time", title: "Limited Time Offerings", items: LIMITED_TIME_ITEMS },
-  { id: "combo-meals", title: "Combo Meals", items: COMBO_MEALS },
-  { id: "home-of-the-2for", title: "Home Of The 2-For", items: COMBO_MEALS }, // Reusing data for visual purposes
-  { id: "burgers", title: "Burgers", items: MOST_ORDERED_ITEMS }, // Reusing data
-  { id: "chicken", title: "Chicken", items: LIMITED_TIME_ITEMS }, // Reusing data
-  { id: "hot-dogs", title: "Hot Dogs & Chili", items: FEATURED_ITEMS_MOCK_DATA }, // Reusing data
-  { id: "fries", title: "Fries And Sides", items: MOST_ORDERED_ITEMS }, // Reusing data
-  { id: "every-day", title: "Every Day Deals", items: LIMITED_TIME_ITEMS }, // Reusing data
-  { id: "drinks", title: "Shakes And Drinks", items: COMBO_MEALS }, // Reusing data
-  { id: "kids", title: "Kids Meals", items: FEATURED_ITEMS_MOCK_DATA }, // Reusing data
-  { id: "desserts", title: "Desserts", items: MOST_ORDERED_ITEMS }, // Reusing data
-];
-
-const SIDEBAR_LINKS = MENU_SECTIONS.map((s) => ({
-  id: s.id,
-  label: s.title,
-  href: `#${s.id}`,
-}))
-  .concat([
-    // Reviews is a standalone section
-    { id: "reviews", label: "Reviews", href: "#reviews" },
-  ])
-  .sort((a, b) => {
-    // Keep 'featured' and 'reviews' at the top if they exist
-    if (a.id === "featured") return -1;
-    if (b.id === "featured") return 1;
-    if (a.id === "reviews") return -1;
-    if (b.id === "reviews") return 1;
-    return a.id.localeCompare(b.id);
-  });
-
-// --- Main Application Component ---
-const App = () => {
-  // Hooks imported from the user's request. Commented out calls to prevent
-  // "useParams/useNavigate must be in the context of a <Router>" error
-  // const { id } = useParams();
-  // const navigate = useNavigate();
-
-  const [activeSection, setActiveSection] = useState("featured");
-  const [isMenuFixed, setIsMenuFixed] = useState(false);
-  const tabsRef = useRef(null); // useRef is now imported
-
-  // Converted to useCallback to honor the import request
-  const scrollToSection = useCallback((id) => {
-    const section = document.getElementById(id);
-    if (section) {
-      const offset = tabsRef.current ? tabsRef.current.offsetHeight + 16 : 100;
-      window.scrollTo({
-        top: section.offsetTop - offset,
-        behavior: "smooth",
-      });
+  const variants = {
+    primary: {
+      background: '#FF6B35',
+      color: 'white',
+      boxShadow: '0 2px 8px rgba(255, 107, 53, 0.3)'
+    },
+    secondary: {
+      background: '#f8f9fa',
+      color: '#495057',
+      border: '1px solid #e9ecef'
+    },
+    outline: {
+      background: 'transparent',
+      color: '#FF6B35',
+      border: '1px solid #FF6B35'
+    },
+    ghost: {
+      background: 'transparent',
+      color: '#6c757d',
+      border: 'none'
     }
-  }, []);
+  };
 
-  // Observer to track which section is currently visible for active link highlighting
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          // Determine if the top of the section is visible near the top of the viewport
-          if (entry.isIntersecting && entry.boundingClientRect.top < 250) {
-            setActiveSection(entry.target.id);
-          }
-        });
-      },
-      {
-        rootMargin: "-100px 0px -50% 0px",
-        threshold: 0.1,
-      },
-    );
-
-    // Observe all menu sections
-    MENU_SECTIONS.concat([{ id: "reviews" }]).forEach((section) => {
-      const el = document.getElementById(section.id);
-      if (el) {
-        observer.observe(el);
-      }
-    });
-
-    return () => {
-      MENU_SECTIONS.concat([{ id: "reviews" }]).forEach((section) => {
-        const el = document.getElementById(section.id);
-        if (el) {
-          observer.unobserve(el);
-        }
-      });
-    };
-  }, []);
-
-  // Observer for fixing the menu sidebar based on scroll position
-  useEffect(() => {
-    const handleScroll = () => {
-      if (tabsRef.current) {
-        // This logic ensures the sidebar only becomes fixed when the sticky tabs bar is visible
-        const rightColumn = document.querySelector(".lg\\:col-span-9");
-        if (rightColumn) {
-          setIsMenuFixed(window.scrollY > rightColumn.offsetTop - 100); // Start fixing slightly before the content begins
-        }
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // --- UNIFIED MENU ITEM CARD (Grid Style) ---
-  const MenuItemCard = ({ item }) => (
-    <div className="w-full bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden cursor-pointer group transition duration-300 hover:shadow-2xl">
-      {/* Image Section - Prominent */}
-      <div className="h-32 overflow-hidden">
-        <img
-          src={item.imageUrl}
-          alt={item.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = "https://placehold.co/100x100/CCCCCC/666666?text=Item";
-          }}
-        />
-      </div>
-
-      {/* Text Section - Tighter Padding */}
-      <div className="p-3 relative">
-        <h4 className="text-base font-extrabold text-gray-800 line-clamp-2 leading-tight">{item.title}</h4>
-
-        {/* Price/Rating Block (Structured for less generic look) */}
-        <div className="mt-2 text-sm font-semibold">
-          <span className="text-gray-700">{item.price.split(" • ")[0]}</span>
-          {/* Rating part is usually the second element, displayed smaller/faded */}
-          <span className="text-xs text-gray-400 block">{item.price.split(" • ")[1]}</span>
-        </div>
-
-        {/* Plus button with enhanced styling and custom shadow (Using Lucide Plus) */}
-        <button
-          className="absolute -top-6 right-3 bg-red-700 text-white w-8 h-8 rounded-full flex items-center justify-center text-xl pb-1 hover:bg-red-800 transition duration-200"
-          style={{ boxShadow: "0 4px 6px -1px rgba(220, 38, 38, 0.4), 0 2px 4px -2px rgba(220, 38, 38, 0.4)" }}
-        >
-          <Plus className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
-  );
-
-  // Component for the Deals slider
-  const DealsSection = () => (
-    <div className="mb-8">
-      <h2 className="text-xl font-bold text-gray-800 mb-4">Deals & benefits</h2>
-
-      <div className="flex overflow-x-auto space-x-3 pb-2 snap-x snap-mandatory">
-        {DEALS_MOCK_DATA.map((deal) => (
-          <div
-            key={deal.id}
-            className="flex-shrink-0 w-[240px] sm:w-[300px] bg-white p-4 rounded-xl shadow-md border border-gray-200 snap-start relative"
-          >
-            <h3 className="text-base font-bold text-red-700 mb-1">{deal.title}</h3>
-            <p className="text-sm text-gray-500">{deal.detail}</p>
-            {/* Replaced Icon with Lucide ArrowUp (rotated) */}
-            <ArrowUp
-              className="w-4 h-4 text-red-700 absolute right-4 top-1/2 transform -translate-y-1/2 rotate-90"
-              strokeWidth={3}
-            />
-          </div>
-        ))}
-        <button className="flex-shrink-0 w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center self-center text-gray-600 hover:bg-gray-200 transition">
-          {/* Replaced Icon with Lucide ArrowUp (rotated) */}
-          <ArrowUp className="w-6 h-6 transform rotate-90" strokeWidth={3} />
-        </button>
-      </div>
-    </div>
-  );
-
-  // Store Info and Sidebar Component (Left Column)
-  const LeftColumn = () => (
-    // Sidebar fix to hide on mobile and only show/fix on large screens
-    <div
-      className={`pt-8 ${
-        isMenuFixed
-          ? "hidden lg:block fixed top-1 left-1/2 transform -translate-x-1/2 lg:translate-x-0 lg:left-auto lg:max-w-[calc(25%-1rem)] xl:max-w-[calc((1120px*0.25)-1rem)] w-full max-w-xs lg:w-auto"
-          : "hidden lg:block"
-      }`}
-    >
-      <div className="space-y-4">
-        {/* Store Info */}
-        <div className="text-sm space-y-2">
-          <h3 className="font-bold text-gray-700">Store Info</h3>
-          <div className="flex items-center text-green-600 font-semibold">
-            {/* Using Truck for DashPass - Closest available icon for Delivery/Pass */}
-            <Truck className="w-4 h-4 mr-1" />
-            <span>DashPass</span>
-          </div>
-          <p className="flex items-center space-x-1 text-red-700 font-semibold">
-            {/* Replaced Icon with Lucide Clock */}
-            <Clock className="w-4 h-4" />
-            <span>Closed • Order now, get it later</span>
-          </p>
-          <p className="flex items-center space-x-1 text-gray-600">
-            {/* Replaced Icon with Lucide Star (filled) */}
-            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-            <span>
-              4.1 <span className="text-gray-400">(20k+)</span> • 7.1 mi
-            </span>
-          </p>
-          <p className="flex items-center space-x-1 text-gray-600">
-            {/* Replaced Icon with Lucide MapPin */}
-            <MapPin className="w-4 h-4 inline-block -mt-1 mr-1 text-red-500" />
-            American
-          </p>
-          <button className="text-red-700 font-semibold text-sm hover:text-red-900 transition">See More</button>
-        </div>
-
-        {/* Full Menu Navigation */}
-        <nav className="border-t border-gray-200 pt-4 space-y-1">
-          <h3 className="font-bold text-gray-700 mb-2">Full Menu</h3>
-          <div className="text-xs text-gray-500 mb-3">9:00 AM - 3:45 AM</div>
-
-          <ul className="space-y-1 text-sm">
-            {SIDEBAR_LINKS.map((link) => (
-              <li key={link.id}>
-                <a
-                  href={link.href}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    scrollToSection(link.id);
-                  }}
-                  className={`block p-2 rounded-lg font-medium transition duration-150 
-                                        ${
-                                          activeSection === link.id
-                                            ? "bg-red-50 text-red-700 font-semibold border-l-4 border-red-700 -ml-2 pl-4"
-                                            : "text-gray-700 hover:bg-gray-50"
-                                        }`}
-                >
-                  {link.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </div>
-    </div>
-  );
+  const sizes = {
+    sm: { fontSize: '14px', padding: '8px 16px', minHeight: '36px' },
+    md: { fontSize: '16px', padding: '12px 20px', minHeight: '44px' },
+    lg: { fontSize: '18px', padding: '16px 24px', minHeight: '52px' }
+  };
 
   return (
-    <div className="bg-gray-50 min-h-screen font-sans text-gray-800 antialiased">
-      <div className="max-w-7xl mx-auto">
-        {/* --- Header Image Banner --- */}
-        <div className="relative h-64 overflow-hidden rounded-b-xl shadow-lg">
-          <img
-            src="https://placehold.co/1200x400/A31D24/ffffff?text=Checkers+&+Rally's+Limited+Time+Offer+-+BIG+BURGERS"
-            alt="Promotional Banner"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = "https://placehold.co/1200x400/A31D24/ffffff?text=Checkers+&+Rally's+Menu";
-            }}
-          />
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        ...baseStyles,
+        ...variants[variant],
+        ...sizes[size],
+        opacity: disabled ? 0.6 : 1,
+        ...style
+      }}
+      className={className}
+    >
+      {icon && icon}
+      {children}
+    </button>
+  );
+};
 
-          {/* Logo Overlay */}
-          <div className="absolute top-6 left-6 flex flex-col items-center p-2 bg-white rounded-xl shadow-xl">
-            <img
-              src="https://placehold.co/60x60/A31D24/ffffff?text=C&R"
-              alt="Checkers & Rally's Logo"
-              className="w-12 h-12"
-            />
-          </div>
-
-          {/* Status Bar Overlay */}
-          <div className="absolute bottom-0 left-0 right-0 h-12 bg-white flex items-center px-4 shadow-xl">
-            <p className="text-sm font-semibold text-gray-700 flex-1">
-              <span className="text-red-700">Closed</span> • Order now, get it later
-            </p>
-            {/* Replaced Icon with Lucide ArrowUp (rotated) */}
-            <ArrowUp className="w-5 h-5 text-gray-500 transform rotate-90" strokeWidth={3} />
-          </div>
-        </div>
-      </div>
-
-      {/* --- Main Content Layout --- */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* --- Restaurant Name & Search Bar (Full Width) --- */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-extrabold text-gray-900 mb-1">Checkers & Rally's</h1>
-          <div className="relative">
-            {/* Replaced Icon with Lucide Search */}
-            <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search Checkers & Rally's"
-              className="w-full py-3 pl-12 pr-4 text-sm border border-gray-300 rounded-full shadow-inner focus:outline-none focus:ring-2 focus:ring-red-500 transition"
-            />
-          </div>
-        </div>
-
-        {/* --- Two-Column Layout --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* LEFT: Sticky Store Info and Menu Sidebar */}
-          <div className="lg:col-span-3">
-            <div className="sticky top-4" style={{ top: "32px" }}>
-              <LeftColumn />
-            </div>
-          </div>
-
-          {/* RIGHT: Delivery Tabs, Price/Time, and Scrollable Menu Content */}
-          <div className="lg:col-span-9 min-w-0">
-            {/* Delivery Tabs and Price/Time (Sticky Top Bar) */}
-            <div
-              ref={tabsRef}
-              className="sticky top-0 bg-gray-50 pt-2 pb-4 z-20 border-b border-gray-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8"
-            >
-              <div className="flex justify-between items-center space-x-4">
-                {/* Delivery/Pickup Tabs */}
-                <div className="flex border border-gray-300 rounded-lg p-0.5 bg-gray-100 text-sm font-semibold transition duration-300">
-                  <button className="px-5 py-2 rounded-md bg-red-700 shadow-lg text-white font-bold transition duration-200">
-                    Delivery
-                  </button>
-                  <button className="px-5 py-2 rounded-md text-gray-600 font-medium hover:bg-white transition duration-200">
-                    Pickup
-                  </button>
-                  <button className="px-5 py-2 rounded-md text-gray-600 font-medium hover:bg-white transition duration-200 hidden sm:inline-block">
-                    Group Order
-                  </button>
-                </div>
-
-                {/* Price/Time Info Box */}
-                <div className="flex items-center space-x-2 text-sm text-right">
-                  <div className="flex flex-col text-xs text-gray-600 font-medium">
-                    <div className="bg-green-100 text-green-700 font-bold px-2 py-1 rounded-full whitespace-nowrap">
-                      $0.49 <span className="line-through text-gray-500">$0.00</span> delivery fee over $12
-                    </div>
-                    <p className="mt-1 text-gray-500">Long Distance Delivery • 7.1 mi</p>
-                  </div>
-                  <div className="hidden sm:block text-xs text-right">
-                    <p className="font-semibold text-gray-700">Opens 9:00 AM</p>
-                    <p className="text-gray-500">Order for later</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 1. Deals & Benefits (Scrollable Row) */}
-            <section id="deals" className="pt-8">
-              <DealsSection />
-            </section>
-
-            {/* 2. Reviews Section (Non-Grid) */}
-            <section
-              id="reviews"
-              className="mb-10 pt-20 -mt-20 p-5 bg-white rounded-xl shadow-xl border border-gray-100"
-            >
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-800">Reviews</h2>
-                <button className="text-sm font-semibold text-red-700 hover:text-red-900">Add Review</button>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="text-4xl font-extrabold text-red-700">4.1</div>
-                <div className="text-sm text-gray-600">
-                  <div className="flex items-center text-yellow-500">
-                    {/* Using Lucide Star (4 filled, 1 empty) */}
-                    <Star className="w-4 h-4 fill-yellow-500" />
-                    <Star className="w-4 h-4 fill-yellow-500" />
-                    <Star className="w-4 h-4 fill-yellow-500" />
-                    <Star className="w-4 h-4 fill-yellow-500" />
-                    <Star className="w-4 h-4 text-gray-300" />
-                  </div>
-                  <p className="mt-1">100+ ratings • 46 reviews</p>
-                </div>
-              </div>
-            </section>
-
-            {/* --- Dynamically Rendered Menu Sections (ALL in Grid Layout) --- */}
-            {MENU_SECTIONS.map((section) => (
-              <section key={section.id} id={section.id} className="mb-10 pt-20 -mt-20">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">{section.title}</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {section.items.map((item) => (
-                    <MenuItemCard key={item.id} item={item} />
-                  ))}
-                </div>
-                {/* Add a border separator for subsequent sections */}
-                <div className="mt-8 border-t border-gray-200"></div>
-              </section>
-            ))}
-          </div>
-        </div>
-      </main>
-
-      <style>{`
-                /* Global styles for smooth scrolling and intersection observer support */
-                html { scroll-behavior: smooth; }
-                /* Custom styles for the scrollable deals section to match the screenshot style */
-                .snap-x > * {
-                    scroll-snap-align: start;
-                }
-            `}</style>
+// Mobile-first Card Component
+const DeliveryCard = ({
+  children,
+  className = '',
+  style = {},
+  onClick
+}: {
+  children: any;
+  className?: string;
+  style?: React.CSSProperties;
+  onClick?: React.MouseEventHandler<HTMLDivElement>;
+}) => {
+  return (
+    <div
+      style={{ 
+        backgroundColor: 'white',
+        borderRadius: '16px',
+        boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        ...style
+      }}
+      className={className}
+      onClick={onClick}
+      onMouseEnter={(e) => {
+        if (onClick) {
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.12)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (onClick) {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 2px 12px rgba(0, 0, 0, 0.08)';
+        }
+      }}
+    >
+      {children}
     </div>
   );
 };
 
-export default App;
+// Badge Component
+const Badge = ({ children, variant = 'default', icon = null }) => {
+  const variants = {
+    default: { background: '#f8f9fa', color: '#495057' },
+    success: { background: '#d4edda', color: '#155724' },
+    warning: { background: '#fff3cd', color: '#856404' },
+    primary: { background: '#FFE5DB', color: '#FF6B35' },
+    featured: { background: '#FF6B35', color: 'white' }
+  };
+
+  return (
+    <span
+      style={{
+        ...variants[variant],
+        padding: '4px 8px',
+        borderRadius: '8px',
+        fontSize: '12px',
+        fontWeight: '600',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px'
+      }}
+    >
+      {icon && icon}
+      {children}
+    </span>
+  );
+};
+
+const RestaurantMenuPage = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [showCart, setShowCart] = useState(false);
+  const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [showHeader, setShowHeader] = useState(false);
+
+  useEffect(() => {
+    if (id) {
+      fetchRestaurantData();
+    }
+  }, [id]);
+
+  // Scroll handler for sticky header
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowHeader(window.scrollY > 200);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const fetchRestaurantData = async () => {
+    try {
+      setLoading(true);
+      
+      const { data: restaurantData, error: restaurantError } = await supabase
+        .from('restaurants')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (restaurantError) throw restaurantError;
+      setRestaurant(restaurantData);
+
+      const { data: categoriesData } = await supabase
+        .from('menu_categories')
+        .select('*')
+        .eq('restaurant_id', id)
+        .order('display_order');
+
+      const { data: menuData } = await supabase
+        .from('menu_items')
+        .select('*')
+        .eq('restaurant_id', id)
+        .eq('is_available', true);
+
+      setCategories(categoriesData || []);
+      setMenuItems(
+        (menuData || []).map((item: any) => ({
+          ...item,
+          spice_level: item.spice_level !== undefined && item.spice_level !== null
+            ? Number(item.spice_level)
+            : undefined
+        }))
+      );
+      
+      if (categoriesData?.length > 0) {
+        setSelectedCategory(categoriesData[0].id);
+      }
+    } catch (error: any) {
+      console.error('Error fetching restaurant data:', error);
+      showToast.error("Failed to load restaurant details");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addToCart = useCallback((item: MenuItem, quantity: number = 1) => {
+    const existingItem = cart.find(cartItem => cartItem.id === item.id);
+    if (existingItem) {
+      setCart(cart.map(cartItem =>
+        cartItem.id === item.id
+          ? { ...cartItem, quantity: cartItem.quantity + quantity }
+          : cartItem
+      ));
+    } else {
+      setCart([...cart, { ...item, quantity, key: item.id }]);
+    }
+    
+    showToast.success(`${item.name} added to cart!`);
+  }, [cart]);
+
+  const removeFromCart = useCallback((itemId: string) => {
+    setCart(cart.filter(item => item.id !== itemId));
+  }, [cart]);
+
+  const updateCartQuantity = useCallback((itemId: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeFromCart(itemId);
+      return;
+    }
+    setCart(cart.map(item =>
+      item.id === itemId ? { ...item, quantity } : item
+    ));
+  }, [cart, removeFromCart]);
+
+  const getCartTotal = () => {
+    const subtotal = cart.reduce((total, item) => total + (item.price_cents * item.quantity), 0);
+    const deliveryFee = deliveryMethod === 'delivery' ? (restaurant?.delivery_fee_cents || 0) : 0;
+    const tax = Math.round(subtotal * 0.08);
+    
+    return {
+      subtotal,
+      deliveryFee,
+      tax,
+      total: subtotal + deliveryFee + tax
+    };
+  };
+
+  const getItemsByCategory = (categoryId: string) => {
+    return menuItems.filter(item => item.category_id === categoryId);
+  };
+
+  const filteredItems = menuItems.filter(item =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const scrollToCategory = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    const element = document.getElementById(`category-${categoryId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: '#f8f9fa',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px'
+      }}>
+        <DeliveryCard style={{ padding: '40px', textAlign: 'center', maxWidth: '400px' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            border: '4px solid #f3f3f3',
+            borderTop: '4px solid #FF6B35',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 20px'
+          }} />
+          <h3 style={{ color: '#495057', fontSize: '18px', fontWeight: '600' }}>
+            Loading restaurant menu...
+          </h3>
+        </DeliveryCard>
+      </div>
+    );
+  }
+
+  if (!restaurant) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: '#f8f9fa',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px'
+      }}>
+        <DeliveryCard style={{ padding: '40px', textAlign: 'center', maxWidth: '400px' }}>
+          <h2 style={{ color: '#495057', fontSize: '24px', marginBottom: '20px' }}>
+            Restaurant Not Found
+          </h2>
+          <DeliveryButton 
+            variant="primary" 
+            size="lg"
+            onClick={() => navigate('/restaurants')}
+            icon={<ChevronLeft size={20} />}
+            fullWidth
+          >
+            Back to Restaurants
+          </DeliveryButton>
+        </DeliveryCard>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ 
+      minHeight: '100vh',
+      background: '#f8f9fa',
+      fontFamily: 'system-ui, -apple-system, sans-serif'
+    }}>
+      {/* Sticky Header */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 100,
+        background: 'white',
+        borderBottom: '1px solid #e9ecef',
+        padding: '12px 16px',
+        transform: showHeader ? 'translateY(0)' : 'translateY(-100%)',
+        transition: 'transform 0.3s ease'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          maxWidth: '768px',
+          margin: '0 auto'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <DeliveryButton
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(-1)}
+              icon={<ChevronLeft size={20} />}
+              style={{ padding: '8px' }}
+            >{""}</DeliveryButton>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>{restaurant.name}</h3>
+              <p style={{ margin: 0, fontSize: '12px', color: '#6c757d' }}>
+                {restaurant.min_delivery_time}-{restaurant.max_delivery_time} min
+              </p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <DeliveryButton
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsFavorited(!isFavorited)}
+              icon={<Heart size={20} fill={isFavorited ? '#FF6B35' : 'none'} color={isFavorited ? '#FF6B35' : '#6c757d'} />}
+              style={{ padding: '8px' }}
+            >{""}</DeliveryButton>
+            <DeliveryButton
+              variant="ghost"
+              size="sm"
+              icon={<Share2 size={20} />}
+              style={{ padding: '8px' }}
+              onClick={() => {}}
+            >{""}</DeliveryButton>
+          </div>
+        </div>
+      </div>
+
+      {/* Restaurant Header */}
+      <div style={{ position: 'relative' }}>
+        <div style={{
+          height: '240px',
+          background: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.5)), url(${restaurant.image_url || '/placeholder-restaurant.jpg'})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: '16px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <DeliveryButton
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(-1)}
+              icon={<ChevronLeft size={24} />}
+              style={{ 
+                backgroundColor: 'rgba(255,255,255,0.9)', 
+                color: '#495057',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                padding: 0
+              }}
+            >{""}</DeliveryButton>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <DeliveryButton
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsFavorited(!isFavorited)}
+                icon={<Heart size={20} fill={isFavorited ? '#FF6B35' : 'none'} color={isFavorited ? '#FF6B35' : 'white'} />}
+                style={{ 
+                  backgroundColor: 'rgba(255,255,255,0.9)', 
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  padding: 0
+                }}
+              >{""}</DeliveryButton>
+              <DeliveryButton
+                variant="ghost"
+                size="sm"
+                icon={<Share2 size={20} />}
+                style={{ 
+                  backgroundColor: 'rgba(255,255,255,0.9)', 
+                  color: '#495057',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  padding: 0
+                }}
+                onClick={() => {}}
+              >{""}</DeliveryButton>
+            </div>
+          </div>
+          
+          <div>
+            <h1 style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              margin: '0 0 8px 0',
+              color: 'white'
+            }}>
+              {restaurant.name}
+            </h1>
+            <p style={{
+              fontSize: '14px',
+              color: 'rgba(255,255,255,0.9)',
+              margin: 0
+            }}>
+              {restaurant.cuisine_type} • {restaurant.address}
+            </p>
+          </div>
+        </div>
+
+        {/* Restaurant Info Bar */}
+        <DeliveryCard style={{
+          margin: '-20px 16px 20px',
+          padding: '16px',
+          position: 'relative',
+          zIndex: 10
+        }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '16px',
+            textAlign: 'center'
+          }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginBottom: '4px' }}>
+                <Star size={16} fill="#FFD700" color="#FFD700" />
+                <span style={{ fontSize: '16px', fontWeight: '600' }}>{restaurant.rating}</span>
+              </div>
+              <p style={{ fontSize: '12px', color: '#6c757d', margin: 0 }}>{restaurant.total_reviews}+ reviews</p>
+            </div>
+            
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginBottom: '4px' }}>
+                <Clock size={16} color="#6c757d" />
+                <span style={{ fontSize: '16px', fontWeight: '600' }}>
+                  {restaurant.min_delivery_time}-{restaurant.max_delivery_time}
+                </span>
+              </div>
+              <p style={{ fontSize: '12px', color: '#6c757d', margin: 0 }}>minutes</p>
+            </div>
+            
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginBottom: '4px' }}>
+                <Truck size={16} color="#6c757d" />
+                <span style={{ fontSize: '16px', fontWeight: '600' }}>
+                  ${(restaurant.delivery_fee_cents / 100).toFixed(2)}
+                </span>
+              </div>
+              <p style={{ fontSize: '12px', color: '#6c757d', margin: 0 }}>delivery</p>
+            </div>
+          </div>
+        </DeliveryCard>
+      </div>
+
+      {/* Delivery Method Toggle */}
+      <div style={{ padding: '0 16px 20px' }}>
+        <DeliveryCard style={{ padding: '8px' }}>
+          <div style={{ display: 'flex', borderRadius: '8px', overflow: 'hidden' }}>
+            {(['delivery', 'pickup'] as const).map((method) => (
+              <button
+                key={method}
+                onClick={() => setDeliveryMethod(method)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  border: 'none',
+                  background: deliveryMethod === method ? '#FF6B35' : 'transparent',
+                  color: deliveryMethod === method ? 'white' : '#6c757d',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  textTransform: 'capitalize',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                {method}
+              </button>
+            ))}
+          </div>
+        </DeliveryCard>
+      </div>
+
+      {/* Search Bar */}
+      <div style={{ padding: '0 16px 20px' }}>
+        <div style={{ position: 'relative' }}>
+          <Search style={{
+            position: 'absolute',
+            left: '16px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: '20px',
+            height: '20px',
+            color: '#6c757d'
+          }} />
+          <input
+            type="text"
+            placeholder="Search menu items..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '16px 16px 16px 48px',
+              border: '1px solid #e9ecef',
+              borderRadius: '12px',
+              fontSize: '16px',
+              background: 'white',
+              outline: 'none',
+              boxSizing: 'border-box'
+            }}
+          />
+        </div>
+      </div>
+
+            {/* Category Tabs */}
+            <div style={{
+              position: 'sticky',
+              top: showHeader ? '76px' : '0',
+              zIndex: 50,
+              background: 'white',
+              borderBottom: '1px solid #e9ecef',
+              padding: '12px 0'
+            }}>
+              <div style={{
+                display: 'flex',
+                gap: '8px',
+                overflowX: 'auto',
+                padding: '0 16px',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none'
+              }}
+              className="scrollbar-hide"
+              >
+                {categories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => scrollToCategory(category.id)}
+                    style={{
+                      padding: '8px 16px',
+                      border: selectedCategory === category.id ? '2px solid #FF6B35' : '1px solid #e9ecef',
+                      borderRadius: '20px',
+                      background: selectedCategory === category.id ? '#FFE5DB' : 'white',
+                      color: selectedCategory === category.id ? '#FF6B35' : '#6c757d',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      transition: 'all 0.2s ease',
+                      flexShrink: 0,
+                      minWidth: 'fit-content'
+                    }}
+                  >
+                    {category.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+      
+      {/* Menu Items */}
+      <div style={{ padding: '20px 16px 100px' }}>
+        {searchQuery ? (
+          <div>
+            <h2 style={{
+              fontSize: '20px',
+              fontWeight: '600',
+              marginBottom: '16px',
+              color: '#495057'
+            }}>
+              Search Results ({filteredItems.length})
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {filteredItems.map((item) => (
+                <MenuItemCard key={item.id} item={item} onAddToCart={addToCart} cart={cart} updateCartQuantity={updateCartQuantity} />
+              ))}
+            </div>
+          </div>
+        ) : (
+          categories.map((category) => {
+            const categoryItems = getItemsByCategory(category.id);
+            if (categoryItems.length === 0) return null;
+
+            return (
+              <div key={category.id} id={`category-${category.id}`} style={{ marginBottom: '32px' }}>
+                <h2 style={{
+                  fontSize: '20px',
+                  fontWeight: '600',
+                  marginBottom: '16px',
+                  color: '#495057'
+                }}>
+                  {category.name}
+                </h2>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {categoryItems.map((item) => (
+                    <MenuItemCard key={item.id} item={item} onAddToCart={addToCart} cart={cart} updateCartQuantity={updateCartQuantity} />
+                  ))}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Floating Cart Button */}
+      {cart.length > 0 && (
+        <div style={{
+          position: 'fixed',
+          bottom: '20px',
+          left: '16px',
+          right: '16px',
+          zIndex: 1000
+        }}>
+          <DeliveryButton
+            variant="primary"
+            size="lg"
+            onClick={() => setShowCart(true)}
+            fullWidth
+            style={{
+              borderRadius: '16px',
+              boxShadow: '0 8px 24px rgba(255, 107, 53, 0.3)',
+              fontSize: '16px',
+              fontWeight: '700'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ShoppingCart size={20} />
+                <span>{cart.reduce((sum, item) => sum + item.quantity, 0)} items</span>
+              </div>
+              <span>${(getCartTotal().total / 100).toFixed(2)}</span>
+            </div>
+          </DeliveryButton>
+        </div>
+      )}
+
+      {/* Cart Modal */}
+      {showCart && (
+        <CartModal 
+          cart={cart}
+          restaurant={restaurant}
+          deliveryMethod={deliveryMethod}
+          onClose={() => setShowCart(false)}
+          updateQuantity={updateCartQuantity}
+          removeItem={removeFromCart}
+          getCartTotal={getCartTotal}
+        />
+      )}
+
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+// Menu Item Card Component
+const MenuItemCard = ({ 
+  item, 
+  onAddToCart,
+  cart,
+  updateCartQuantity
+}: { 
+  item: MenuItem; 
+  onAddToCart: (item: MenuItem) => void;
+  cart: CartItem[];
+  updateCartQuantity: (itemId: string, quantity: number) => void;
+}) => {
+  const cartItem = cart.find(cartItem => cartItem.id === item.id);
+  const quantity = cartItem?.quantity || 0;
+
+  return (
+    <DeliveryCard style={{ overflow: 'hidden' }}>
+      <div style={{ display: 'flex', gap: '12px', padding: '16px' }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ marginBottom: '8px' }}>
+            <h3 style={{
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#495057',
+              margin: '0 0 4px 0',
+              lineHeight: 1.3
+            }}>
+              {item.name}
+            </h3>
+            
+            {/* Badges */}
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '8px', flexWrap: 'wrap' }}>
+              {item.is_vegetarian && (
+                <Badge variant="success" icon={<Leaf size={12} />}>Vegetarian</Badge>
+              )}
+              {item.chef_recommended && (
+                <Badge variant="featured" icon={<ChefHat size={12} />}>Chef's Choice</Badge>
+              )}
+              {item.spice_level && item.spice_level > 0 && (
+                <Badge variant="warning" icon={<Flame size={12} />}>
+                  Spicy {item.spice_level}
+                </Badge>
+              )}
+            </div>
+            
+            <p style={{
+              fontSize: '14px',
+              color: '#6c757d',
+              margin: '0 0 12px 0',
+              lineHeight: 1.4
+            }}>
+              {item.description}
+            </p>
+            
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{
+                fontSize: '18px',
+                fontWeight: '700',
+                color: '#FF6B35'
+              }}>
+                ${(item.price_cents / 100).toFixed(2)}
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#6c757d', fontSize: '12px' }}>
+                  <Timer size={14} />
+                  {item.preparation_time}m
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Add to Cart Controls */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+            {quantity > 0 ? (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                background: '#f8f9fa',
+                borderRadius: '8px',
+                padding: '4px'
+              }}>
+                <DeliveryButton
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => updateCartQuantity(item.id, quantity - 1)}
+                  icon={<Minus size={16} />}
+                  style={{ 
+                    width: '32px', 
+                    height: '32px', 
+                    padding: 0,
+                    color: '#FF6B35'
+                  }}
+                >{""}</DeliveryButton>
+                
+                <span style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  minWidth: '20px',
+                  textAlign: 'center'
+                }}>
+                  {quantity}
+                </span>
+                
+                <DeliveryButton
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => updateCartQuantity(item.id, quantity + 1)}
+                  icon={<Plus size={16} />}
+                  style={{ 
+                    width: '32px', 
+                    height: '32px', 
+                    padding: 0,
+                    color: '#FF6B35'
+                  }}
+                >{""}</DeliveryButton>
+              </div>
+            ) : (
+              <DeliveryButton
+                variant="primary"
+                size="sm"
+                onClick={() => onAddToCart(item)}
+                icon={<Plus size={16} />}
+              >
+                Add
+              </DeliveryButton>
+            )}
+          </div>
+        </div>
+        
+        {/* Item Image */}
+        <div style={{
+          width: '100px',
+          height: '100px',
+          borderRadius: '12px',
+          background: `url(${item.image_url || '/placeholder-food.jpg'})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          flexShrink: 0
+        }} />
+      </div>
+    </DeliveryCard>
+  );
+};
+
+// Cart Modal Component
+const CartModal = ({
+  cart,
+  restaurant,
+  deliveryMethod,
+  onClose,
+  updateQuantity,
+  removeItem,
+  getCartTotal
+}: {
+  cart: CartItem[];
+  restaurant: Restaurant;
+  deliveryMethod: 'delivery' | 'pickup';
+  onClose: () => void;
+  updateQuantity: (itemId: string, quantity: number) => void;
+  removeItem: (itemId: string) => void;
+  getCartTotal: () => { subtotal: number; deliveryFee: number; tax: number; total: number };
+}) => {
+  const totals = getCartTotal();
+
+  return (
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0, 0, 0, 0.5)',
+      zIndex: 2000,
+      display: 'flex',
+      alignItems: 'flex-end',
+      padding: '0'
+    }}>
+      <div style={{
+        background: 'white',
+        width: '100%',
+        maxHeight: '90vh',
+        borderRadius: '20px 20px 0 0',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        {/* Header */}
+        <div style={{
+          padding: '20px 16px',
+          borderBottom: '1px solid #e9ecef',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <h2 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>Your Order</h2>
+          <DeliveryButton
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            icon={<X size={24} />}
+            style={{ padding: '8px' }}
+          >{""}</DeliveryButton>
+        </div>
+
+        {/* Cart Items */}
+        <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
+          {cart.map((item) => (
+            <div key={item.id} style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 0',
+              borderBottom: '1px solid #f8f9fa'
+            }}>
+              <div style={{ flex: 1 }}>
+                <h4 style={{ fontSize: '16px', fontWeight: '600', margin: '0 0 4px 0' }}>
+                  {item.name}
+                </h4>
+                <p style={{ fontSize: '14px', color: '#6c757d', margin: 0 }}>
+                  ${(item.price_cents / 100).toFixed(2)} each
+                </p>
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: '#f8f9fa',
+                  borderRadius: '8px',
+                  padding: '4px'
+                }}>
+                  <DeliveryButton
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                    icon={<Minus size={16} />}
+                    style={{ width: '32px', height: '32px', padding: 0 }}
+                  >{""}</DeliveryButton>
+                  
+                  <span style={{ fontSize: '16px', fontWeight: '600', minWidth: '20px', textAlign: 'center' }}>
+                    {item.quantity}
+                  </span>
+                  
+                  <DeliveryButton
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                    icon={<Plus size={16} />}
+                    style={{ width: '32px', height: '32px', padding: 0 }}
+                  >{""}</DeliveryButton>
+                </div>
+                
+                <span style={{ fontSize: '16px', fontWeight: '600', minWidth: '60px', textAlign: 'right' }}>
+                  ${((item.price_cents * item.quantity) / 100).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Order Summary */}
+        <div style={{ padding: '16px', borderTop: '1px solid #e9ecef' }}>
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span>Subtotal</span>
+              <span>${(totals.subtotal / 100).toFixed(2)}</span>
+            </div>
+            {deliveryMethod === 'delivery' && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span>Delivery Fee</span>
+                <span>${(totals.deliveryFee / 100).toFixed(2)}</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span>Tax</span>
+              <span>${(totals.tax / 100).toFixed(2)}</span>
+            </div>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: '18px',
+              fontWeight: '700',
+              borderTop: '1px solid #e9ecef',
+              paddingTop: '8px'
+            }}>
+              <span>Total</span>
+              <span>${(totals.total / 100).toFixed(2)}</span>
+            </div>
+          </div>
+          
+          <DeliveryButton
+            variant="primary"
+            size="lg"
+            fullWidth
+            onClick={() => {
+              // Navigate to checkout
+              showToast.success('Proceeding to checkout...');
+            }}
+          >
+            Proceed to Checkout
+          </DeliveryButton>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default RestaurantMenuPage;
