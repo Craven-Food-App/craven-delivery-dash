@@ -359,22 +359,20 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       const parts = suggestion.place_name.split(',').map(p => p.trim());
       console.log('Fallback parsing from parts:', parts);
       
-      // For US addresses, iterate through all parts to find state and ZIP
+      // Find state and ZIP first to help identify city
+      let stateIndex = -1;
+      let zipIndex = -1;
+      
       for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
-        
-        // Look for city (usually second part, but could be elsewhere)
-        if (!city && i === 1) {
-          city = part;
-          console.log('Fallback city:', city);
-        }
         
         // Look for state code (2 capital letters)
         if (!state) {
           const stateMatch = part.match(/\b([A-Z]{2})\b/);
           if (stateMatch) {
             state = stateMatch[1];
-            console.log('Fallback state:', state);
+            stateIndex = i;
+            console.log('Fallback state:', state, 'at index', i);
           }
         }
         
@@ -383,8 +381,26 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           const zipMatch = part.match(/\b(\d{5}(-\d{4})?)\b/);
           if (zipMatch) {
             zipCode = zipMatch[1];
-            console.log('Fallback ZIP:', zipCode);
+            zipIndex = i;
+            console.log('Fallback ZIP:', zipCode, 'at index', i);
           }
+        }
+      }
+      
+      // Now find city - it should be the part just before state/ZIP
+      if (!city) {
+        if (stateIndex > 1) {
+          // City is likely the part before the state
+          city = parts[stateIndex - 1];
+          console.log('Fallback city (before state):', city);
+        } else if (zipIndex > 1) {
+          // City is likely the part before the ZIP
+          city = parts[zipIndex - 1];
+          console.log('Fallback city (before ZIP):', city);
+        } else if (parts.length > 2) {
+          // Last resort: take the second-to-last meaningful part
+          city = parts[parts.length - 2];
+          console.log('Fallback city (second-to-last):', city);
         }
       }
     }
