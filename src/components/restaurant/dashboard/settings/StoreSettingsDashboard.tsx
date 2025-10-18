@@ -331,11 +331,7 @@ const StoreSettingsDashboard = () => {
                       <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
                         <Button 
                           type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            headerInputRef.current?.click();
-                          }}
+                          onClick={() => headerInputRef.current?.click()}
                           variant="secondary"
                           size="sm"
                         >
@@ -363,11 +359,7 @@ const StoreSettingsDashboard = () => {
                     </p>
                     <Button 
                       type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        headerInputRef.current?.click();
-                      }}
+                      onClick={() => headerInputRef.current?.click()}
                     >
                       Add photo
                     </Button>
@@ -392,11 +384,7 @@ const StoreSettingsDashboard = () => {
                         <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center rounded-full">
                           <Button 
                             type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              logoInputRef.current?.click();
-                            }}
+                            onClick={() => logoInputRef.current?.click()}
                             variant="secondary"
                             size="sm"
                           >
@@ -425,11 +413,7 @@ const StoreSettingsDashboard = () => {
                     </p>
                     <Button 
                       type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        logoInputRef.current?.click();
-                      }}
+                      onClick={() => logoInputRef.current?.click()}
                     >
                       Add logo
                     </Button>
