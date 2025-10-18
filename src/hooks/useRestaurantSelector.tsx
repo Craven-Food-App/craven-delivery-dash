@@ -20,6 +20,8 @@ export const useRestaurantSelector = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let channel: any;
+
     const fetchRestaurants = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -63,6 +65,33 @@ export const useRestaurantSelector = () => {
     };
 
     fetchRestaurants();
+
+    // Subscribe to real-time updates for restaurants table
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+
+      channel = supabase
+        .channel('restaurants-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'restaurants',
+            filter: `owner_id=eq.${user.id}`
+          },
+          () => {
+            fetchRestaurants();
+          }
+        )
+        .subscribe();
+    });
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, []);
 
   const selectRestaurant = (restaurantId: string) => {

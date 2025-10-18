@@ -377,7 +377,7 @@ const RestaurantSetup = () => {
                           : "This usually takes 2 business days. You'll get an email when your menu is ready."}
                       </p>
                       
-                      {(!readiness?.details?.has_logo || !readiness?.details?.has_header) && (!restaurant?.logo_url || !restaurant?.header_image_url) ? (
+                      {!restaurant?.logo_url || !restaurant?.header_image_url ? (
                         <div className="bg-muted/50 p-4 rounded-lg">
                           <h4 className="font-semibold text-sm mb-2">Add a store logo and header</h4>
                           <p className="text-sm text-muted-foreground mb-4">
