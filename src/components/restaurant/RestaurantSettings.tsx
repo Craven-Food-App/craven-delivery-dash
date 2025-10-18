@@ -519,6 +519,15 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
                 <AddressAutocomplete
                   value={formData.address}
                   onChange={(value) => handleInputChange('address', value)}
+                  onAddressParsed={(parsed) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      address: parsed.street,
+                      city: parsed.city,
+                      state: parsed.state,
+                      zip_code: parsed.zipCode
+                    }));
+                  }}
                   placeholder="123 Main St, City, State 12345"
                   required
                 />

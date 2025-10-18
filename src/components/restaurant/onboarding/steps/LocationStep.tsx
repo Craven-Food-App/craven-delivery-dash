@@ -38,6 +38,14 @@ export function LocationStep({ data, updateData, onNext, onBack }: LocationStepP
           <AddressAutocomplete
             value={data.streetAddress}
             onChange={(value) => updateData({ streetAddress: value })}
+            onAddressParsed={(parsed) => {
+              updateData({
+                streetAddress: parsed.street,
+                city: parsed.city,
+                state: parsed.state,
+                zipCode: parsed.zipCode
+              });
+            }}
             placeholder="123 Main Street"
             required
           />
