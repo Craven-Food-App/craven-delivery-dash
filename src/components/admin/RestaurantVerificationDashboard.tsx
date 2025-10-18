@@ -51,6 +51,7 @@ export const RestaurantVerificationDashboard = () => {
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [verificationNotes, setVerificationNotes] = useState('');
   const [isApproving, setIsApproving] = useState(false);
+  const [overriddenDocuments, setOverriddenDocuments] = useState<string[]>([]);
 
   useEffect(() => {
     fetchRestaurants();
@@ -84,7 +85,8 @@ export const RestaurantVerificationDashboard = () => {
             ...(selectedRestaurant?.verification_notes || {}),
             approved_by: (await supabase.auth.getUser()).data.user?.id,
             approved_at: new Date().toISOString(),
-            notes: verificationNotes
+            notes: verificationNotes,
+            overridden_documents: overriddenDocuments.length > 0 ? overriddenDocuments : undefined
           },
           onboarding_status: 'verified'
         })
@@ -94,6 +96,7 @@ export const RestaurantVerificationDashboard = () => {
 
       toast.success('Restaurant verified successfully');
       setVerificationNotes('');
+      setOverriddenDocuments([]);
       setSelectedRestaurant(null);
       fetchRestaurants();
     } catch (error: any) {
@@ -129,6 +132,7 @@ export const RestaurantVerificationDashboard = () => {
 
       toast.success('Restaurant verification rejected');
       setVerificationNotes('');
+      setOverriddenDocuments([]);
       setSelectedRestaurant(null);
       fetchRestaurants();
     } catch (error: any) {
@@ -168,37 +172,62 @@ export const RestaurantVerificationDashboard = () => {
     }
   };
 
-  const DocumentCard = ({ label, url, icon: Icon }: { label: string; url: string | null; icon: any }) => (
-    <Card className="hover:border-primary/50 transition-colors">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${url ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-400'}`}>
-              <Icon className="w-5 h-5" />
+  const toggleOverride = (docKey: string) => {
+    setOverriddenDocuments(prev => 
+      prev.includes(docKey) 
+        ? prev.filter(k => k !== docKey)
+        : [...prev, docKey]
+    );
+  };
+
+  const DocumentCard = ({ label, url, icon: Icon, docKey }: { label: string; url: string | null; icon: any; docKey: string }) => {
+    const isOverridden = overriddenDocuments.includes(docKey);
+    
+    return (
+      <Card className="hover:border-primary/50 transition-colors">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-lg ${url ? 'bg-green-50 text-green-600' : isOverridden ? 'bg-orange-50 text-orange-600' : 'bg-gray-50 text-gray-400'}`}>
+                <Icon className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">{label}</p>
+                {url ? (
+                  <p className="text-xs text-muted-foreground">Document uploaded</p>
+                ) : isOverridden ? (
+                  <p className="text-xs text-orange-600">Override enabled</p>
+                ) : (
+                  <p className="text-xs text-destructive">Not provided</p>
+                )}
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-sm">{label}</p>
-              {url ? (
-                <p className="text-xs text-muted-foreground">Document uploaded</p>
-              ) : (
-                <p className="text-xs text-destructive">Not provided</p>
+            <div className="flex items-center gap-2">
+              {url && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => window.open(url, '_blank')}
+                >
+                  <Eye className="w-4 h-4 mr-1" />
+                  View
+                </Button>
+              )}
+              {!url && !selectedRestaurant?.business_verified_at && (
+                <Button
+                  size="sm"
+                  variant={isOverridden ? "default" : "outline"}
+                  onClick={() => toggleOverride(docKey)}
+                >
+                  {isOverridden ? 'Override Active' : 'Override Required'}
+                </Button>
               )}
             </div>
           </div>
-          {url && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => window.open(url, '_blank')}
-            >
-              <Eye className="w-4 h-4 mr-1" />
-              View
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   if (loading) {
     return (
@@ -287,6 +316,7 @@ export const RestaurantVerificationDashboard = () => {
                             onClick={() => {
                               setSelectedRestaurant(restaurant);
                               setVerificationNotes('');
+                              setOverriddenDocuments([]);
                             }}
                           >
                             <FileText className="w-4 h-4 mr-2" />
@@ -319,21 +349,25 @@ export const RestaurantVerificationDashboard = () => {
                                 label="Business License"
                                 url={restaurant.business_license_url}
                                 icon={FileCheck}
+                                docKey="business_license"
                               />
                               <DocumentCard
                                 label="Insurance Certificate"
                                 url={restaurant.insurance_certificate_url}
                                 icon={Shield}
+                                docKey="insurance_certificate"
                               />
                               <DocumentCard
                                 label="Health Permit"
                                 url={restaurant.health_permit_url}
                                 icon={Heart}
+                                docKey="health_permit"
                               />
                               <DocumentCard
                                 label="Owner ID"
                                 url={restaurant.owner_id_url}
                                 icon={FileText}
+                                docKey="owner_id"
                               />
                             </div>
 
@@ -365,10 +399,10 @@ export const RestaurantVerificationDashboard = () => {
                                 <Button
                                   className="flex-1"
                                   onClick={() => handleApprove(restaurant.id)}
-                                  disabled={!hasAllDocuments(restaurant) || isApproving}
+                                  disabled={isApproving}
                                 >
                                   <CheckCircle className="w-4 h-4 mr-2" />
-                                  Approve & Verify
+                                  {hasAllDocuments(restaurant) ? 'Approve & Verify' : `Approve with ${overriddenDocuments.length} Override(s)`}
                                 </Button>
                                 <Button
                                   variant="destructive"
