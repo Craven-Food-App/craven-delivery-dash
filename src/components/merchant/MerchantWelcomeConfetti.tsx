@@ -2,9 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Store, CheckCircle, TrendingUp, Users, DollarSign, Star, Zap, Gift, Award, Target } from "lucide-react";
-import Confetti from 'react-confetti';
+import { 
+  TrendingUp, 
+  BarChart3, 
+  Users, 
+  Zap, 
+  ArrowRight, 
+  CheckCircle2,
+  Sparkles,
+  Target,
+  DollarSign,
+  Clock,
+  Shield
+} from "lucide-react";
 
 interface MerchantWelcomeConfettiProps {
   restaurantName: string;
@@ -15,35 +25,22 @@ const MerchantWelcomeConfetti: React.FC<MerchantWelcomeConfettiProps> = ({
   restaurantName, 
   onComplete 
 }) => {
-  const [showConfetti, setShowConfetti] = useState(true);
-  const [windowDimensions, setWindowDimensions] = useState({ width: 0, height: 0 });
+  const [step, setStep] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const updateDimensions = () => {
-      setWindowDimensions({
-        width: window.innerWidth,
-        height: window.innerHeight
-      });
-    };
+    // Animate through steps
+    const timers = [
+      setTimeout(() => setStep(1), 500),
+      setTimeout(() => setStep(2), 1200),
+      setTimeout(() => setStep(3), 1900),
+    ];
 
-    updateDimensions();
-    window.addEventListener('resize', updateDimensions);
-    return () => window.removeEventListener('resize', updateDimensions);
-  }, []);
-
-  useEffect(() => {
-    // Stop confetti after 5 seconds
-    const timer = setTimeout(() => {
-      setShowConfetti(false);
-    }, 5000);
-
-    return () => clearTimeout(timer);
+    return () => timers.forEach(t => clearTimeout(t));
   }, []);
 
   const handleContinue = async () => {
     try {
-      // Mark welcome screen as shown
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await supabase
@@ -61,134 +58,196 @@ const MerchantWelcomeConfetti: React.FC<MerchantWelcomeConfettiProps> = ({
     onComplete();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100">
-      {showConfetti && (
-        <Confetti
-          width={windowDimensions.width}
-          height={windowDimensions.height}
-          recycle={false}
-          numberOfPieces={200}
-          colors={['#ff6b35', '#f7931e', '#ffb347', '#ffd700', '#ff69b4']}
-        />
-      )}
-      
-      <div className="w-full max-w-2xl mx-4">
-        <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
-          <CardHeader className="text-center pb-4">
-            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mb-6">
-              <Store className="h-10 w-10 text-white" />
-            </div>
-            <CardTitle className="text-3xl font-bold text-gray-900 mb-2">
-              Welcome to Crave'N! 🎉
-            </CardTitle>
-            <p className="text-lg text-gray-600">
-              Your restaurant <span className="font-semibold text-orange-600">{restaurantName}</span> is now part of the Crave'N family!
-            </p>
-          </CardHeader>
+  const stats = [
+    { label: 'Active Customers', value: '50K+', icon: Users, color: 'text-blue-600' },
+    { label: 'Avg. Order Value', value: '$38', icon: DollarSign, color: 'text-green-600' },
+    { label: 'Delivery Time', value: '28min', icon: Clock, color: 'text-purple-600' },
+    { label: 'Merchant Support', value: '24/7', icon: Shield, color: 'text-orange-600' },
+  ];
 
-          <CardContent className="space-y-6">
-            {/* Success Message */}
-            <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
-              <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
-              <h3 className="text-xl font-semibold text-green-800 mb-2">
-                Restaurant Successfully Added!
-              </h3>
-              <p className="text-green-700">
-                Your restaurant is now live on the Crave'N platform and ready to start receiving orders.
+  const features = [
+    {
+      icon: BarChart3,
+      title: 'Real-Time Analytics',
+      description: 'Track orders, revenue, and customer insights instantly',
+      gradient: 'from-blue-500 to-cyan-500'
+    },
+    {
+      icon: Zap,
+      title: 'Instant Order Alerts',
+      description: 'Never miss an order with real-time notifications',
+      gradient: 'from-purple-500 to-pink-500'
+    },
+    {
+      icon: Target,
+      title: 'Marketing Tools',
+      description: 'Promote your restaurant and boost visibility',
+      gradient: 'from-orange-500 to-red-500'
+    },
+    {
+      icon: TrendingUp,
+      title: 'Growth Insights',
+      description: 'Data-driven recommendations to increase sales',
+      gradient: 'from-green-500 to-emerald-500'
+    },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      <div className="min-h-screen flex items-center justify-center p-4 md:p-8">
+        <div className="w-full max-w-6xl">
+          {/* Header Section */}
+          <div className="text-center mb-12 space-y-6">
+            {/* Animated Logo/Badge */}
+            <div 
+              className={`
+                inline-flex items-center justify-center w-20 h-20 mx-auto
+                bg-gradient-to-br from-slate-900 to-slate-700 rounded-2xl
+                transform transition-all duration-700 ease-out
+                ${step >= 1 ? 'scale-100 rotate-0 opacity-100' : 'scale-50 rotate-12 opacity-0'}
+                shadow-2xl shadow-slate-900/20
+              `}
+            >
+              <Sparkles className="w-10 h-10 text-white" />
+            </div>
+
+            {/* Welcome Message */}
+            <div 
+              className={`
+                space-y-3 transition-all duration-700 delay-300
+                ${step >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
+              `}
+            >
+              <h1 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight">
+                Welcome to Crave'N,
+                <br />
+                <span className="bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
+                  {restaurantName}
+                </span>
+              </h1>
+              <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
+                Your restaurant is now live and ready to receive orders. Let's grow your business together.
               </p>
             </div>
 
-            {/* What's Next Section */}
-            <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl p-6">
-              <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Target className="h-5 w-5 text-orange-600" />
-                What's Next?
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <TrendingUp className="h-4 w-4 text-white" />
+            {/* Status Badge */}
+            <div 
+              className={`
+                inline-flex items-center gap-2 px-4 py-2 
+                bg-green-50 border border-green-200 rounded-full
+                transition-all duration-700 delay-500
+                ${step >= 3 ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}
+              `}
+            >
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              <span className="text-sm font-semibold text-green-700">Restaurant Activated</span>
+            </div>
+          </div>
+
+          {/* Stats Grid */}
+          <div 
+            className={`
+              grid grid-cols-2 md:grid-cols-4 gap-4 mb-12
+              transition-all duration-700 delay-700
+              ${step >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
+            `}
+          >
+            {stats.map((stat, index) => (
+              <div 
+                key={stat.label}
+                className="bg-white border border-slate-200 rounded-xl p-6 text-center hover:shadow-lg transition-shadow"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <stat.icon className={`w-6 h-6 ${stat.color} mx-auto mb-2`} />
+                <div className="text-2xl font-bold text-slate-900 mb-1">{stat.value}</div>
+                <div className="text-sm text-slate-600">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Features Grid */}
+          <div 
+            className={`
+              grid md:grid-cols-2 gap-6 mb-12
+              transition-all duration-700 delay-900
+              ${step >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
+            `}
+          >
+            {features.map((feature, index) => (
+              <div 
+                key={feature.title}
+                className="group bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-xl hover:border-slate-300 transition-all duration-300"
+              >
+                <div className="flex items-start gap-4">
+                  <div className={`
+                    w-12 h-12 rounded-xl bg-gradient-to-br ${feature.gradient} 
+                    flex items-center justify-center flex-shrink-0
+                    group-hover:scale-110 transition-transform duration-300
+                  `}>
+                    <feature.icon className="w-6 h-6 text-white" />
                   </div>
-                  <div>
-                    <h5 className="font-medium text-gray-900">Start Receiving Orders</h5>
-                    <p className="text-sm text-gray-600">Your restaurant is now visible to customers</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Users className="h-4 w-4 text-white" />
-                  </div>
-                  <div>
-                    <h5 className="font-medium text-gray-900">Manage Your Menu</h5>
-                    <p className="text-sm text-gray-600">Add items and update your offerings</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <DollarSign className="h-4 w-4 text-white" />
-                  </div>
-                  <div>
-                    <h5 className="font-medium text-gray-900">Track Earnings</h5>
-                    <p className="text-sm text-gray-600">Monitor your revenue and payouts</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Star className="h-4 w-4 text-white" />
-                  </div>
-                  <div>
-                    <h5 className="font-medium text-gray-900">Build Your Reputation</h5>
-                    <p className="text-sm text-gray-600">Deliver great food and earn reviews</p>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-1">
+                      {feature.title}
+                    </h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                      {feature.description}
+                    </p>
                   </div>
                 </div>
               </div>
-            </div>
+            ))}
+          </div>
 
-            {/* Benefits Section */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-              <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Gift className="h-5 w-5 text-blue-600" />
-                Your Benefits
-              </h4>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Zap className="h-5 w-5 text-blue-600" />
-                  <span className="text-gray-700">Access to thousands of hungry customers</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Award className="h-5 w-5 text-blue-600" />
-                  <span className="text-gray-700">Professional delivery and customer service</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <TrendingUp className="h-5 w-5 text-blue-600" />
-                  <span className="text-gray-700">Real-time analytics and insights</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+          {/* CTA Section */}
+          <div 
+            className={`
+              bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-8 md:p-10 text-center
+              shadow-2xl shadow-slate-900/30
+              transition-all duration-700 delay-1100
+              ${step >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
+            `}
+          >
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+              Ready to Start Your Journey?
+            </h2>
+            <p className="text-slate-300 mb-8 max-w-xl mx-auto">
+              Access your merchant dashboard to manage orders, update your menu, and grow your business.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button 
                 onClick={handleContinue}
-                className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3"
+                size="lg"
+                className="
+                  bg-white text-slate-900 hover:bg-slate-100
+                  font-semibold px-8 py-6 text-lg
+                  shadow-xl hover:shadow-2xl
+                  transition-all duration-300
+                  group
+                "
               >
-                <Store className="h-5 w-5 mr-2" />
-                Go to Merchant Portal
+                Launch Merchant Portal
+                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
+              
               <Button 
-                variant="outline" 
+                variant="ghost"
+                size="lg"
                 onClick={() => navigate('/')}
-                className="flex-1 border-orange-300 text-orange-600 hover:bg-orange-50"
+                className="text-white hover:bg-white/10 px-8 py-6 text-lg"
               >
-                View Your Restaurant
+                Preview Your Restaurant
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* Footer Note */}
+          <div className="text-center mt-8 text-sm text-slate-500">
+            Need help getting started? Our support team is available 24/7 at{' '}
+            <span className="text-orange-600 font-medium">support@craven.com</span>
+          </div>
+        </div>
       </div>
     </div>
   );
