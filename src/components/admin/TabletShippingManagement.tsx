@@ -349,7 +349,7 @@ export const TabletShippingManagement = () => {
           </div>
         )}
         {showAction === 'shipped' && restaurant.progress?.tablet_tracking_number && (
-          <div className="bg-green-50 p-3 rounded-lg space-y-2">
+          <div className="bg-muted p-3 rounded-lg space-y-2">
             <p className="text-sm font-semibold">Tracking Information</p>
             <p className="text-sm">
               <span className="text-muted-foreground">Carrier:</span> {restaurant.progress.tablet_shipping_carrier || 'USPS'}
