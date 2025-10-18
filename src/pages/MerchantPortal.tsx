@@ -90,8 +90,10 @@ const RestaurantSetup = () => {
     }
   };
 
+  const isBusinessVerified = Boolean(progress?.business_info_verified) || Boolean(restaurant?.business_verified_at);
+
   const completedSteps = [
-    progress?.business_info_verified,
+    isBusinessVerified,
     progress?.menu_preparation_status === 'ready',
     progress?.tablet_shipped
   ].filter(Boolean).length;
@@ -303,9 +305,9 @@ const RestaurantSetup = () => {
                   <div className="flex gap-4">
                     <div className="flex-shrink-0">
                       <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        progress?.business_info_verified ? 'bg-green-500' : 'bg-orange-500'
+                        isBusinessVerified ? 'bg-green-500' : 'bg-orange-500'
                       }`}>
-                        {progress?.business_info_verified ? (
+                        {isBusinessVerified ? (
                           <div className="relative">
                             <Clock className="w-6 h-6 text-white" />
                             <CheckCircle className="w-4 h-4 text-white absolute -bottom-1 -right-1 bg-green-500 rounded-full" />
@@ -317,12 +319,12 @@ const RestaurantSetup = () => {
                     </div>
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg mb-2">
-                        {progress?.business_info_verified 
+                        {isBusinessVerified 
                           ? 'Your business info was verified' 
                           : 'Business verification pending'}
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        {progress?.business_info_verified
+                        {isBusinessVerified
                           ? "We've reviewed and verified your business info. No further action is needed."
                           : "Our team is reviewing your business documents. This usually takes 1-2 business days."}
                       </p>
@@ -377,11 +379,11 @@ const RestaurantSetup = () => {
                           : "This usually takes 2 business days. You'll get an email when your menu is ready."}
                       </p>
                       
-                      {!restaurant?.logo_url || !restaurant?.header_image_url ? (
+                      {!restaurant?.header_image_url ? (
                         <div className="bg-muted/50 p-4 rounded-lg">
-                          <h4 className="font-semibold text-sm mb-2">Add a store logo and header</h4>
+                          <h4 className="font-semibold text-sm mb-2">Add a store header</h4>
                           <p className="text-sm text-muted-foreground mb-4">
-                            Stores with a logo and header image get up to 50% more monthly sales.
+                            Stores with a header image get up to 50% more monthly sales.
                           </p>
                           <Button 
                             variant="outline" 
@@ -391,7 +393,7 @@ const RestaurantSetup = () => {
                               setActiveTab('settings');
                             }}
                           >
-                            Add a header and logo
+                            Add a header image
                           </Button>
                         </div>
                       ) : null}
