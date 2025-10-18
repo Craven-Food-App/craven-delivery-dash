@@ -77,13 +77,17 @@ export const RestaurantVerificationDashboard = () => {
   const handleApprove = async (restaurantId: string) => {
     setIsApproving(true);
     try {
-      const { error } = await supabase
+      // Get current user for audit trail
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // First update the restaurants table with verification notes
+      const { error: updateError } = await supabase
         .from('restaurants')
         .update({
           business_verified_at: new Date().toISOString(),
           verification_notes: {
             ...(selectedRestaurant?.verification_notes || {}),
-            approved_by: (await supabase.auth.getUser()).data.user?.id,
+            approved_by: user?.id,
             approved_at: new Date().toISOString(),
             notes: verificationNotes,
             overridden_documents: overriddenDocuments.length > 0 ? overriddenDocuments : undefined
@@ -92,7 +96,19 @@ export const RestaurantVerificationDashboard = () => {
         })
         .eq('id', restaurantId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // Update the onboarding progress table
+      const { error: progressError } = await supabase
+        .from('restaurant_onboarding_progress')
+        .update({
+          business_info_verified: true,
+          business_verified_at: new Date().toISOString(),
+          admin_notes: verificationNotes || 'Approved by admin'
+        })
+        .eq('restaurant_id', restaurantId);
+
+      if (progressError) throw progressError;
 
       toast.success('Restaurant verified successfully');
       setVerificationNotes('');
@@ -115,12 +131,16 @@ export const RestaurantVerificationDashboard = () => {
 
     setIsApproving(true);
     try {
-      const { error } = await supabase
+      // Get current user for audit trail
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Update the restaurants table
+      const { error: updateError } = await supabase
         .from('restaurants')
         .update({
           verification_notes: {
             ...(selectedRestaurant?.verification_notes || {}),
-            rejected_by: (await supabase.auth.getUser()).data.user?.id,
+            rejected_by: user?.id,
             rejected_at: new Date().toISOString(),
             notes: verificationNotes
           },
@@ -128,7 +148,19 @@ export const RestaurantVerificationDashboard = () => {
         })
         .eq('id', restaurantId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // Update the onboarding progress table
+      const { error: progressError } = await supabase
+        .from('restaurant_onboarding_progress')
+        .update({
+          business_info_verified: false,
+          business_verified_at: null,
+          admin_notes: verificationNotes
+        })
+        .eq('restaurant_id', restaurantId);
+
+      if (progressError) throw progressError;
 
       toast.success('Restaurant verification rejected');
       setVerificationNotes('');
