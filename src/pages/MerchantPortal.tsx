@@ -14,7 +14,7 @@ import FinancialsDashboard from "@/components/restaurant/dashboard/FinancialsDas
 import SettingsDashboard from "@/components/restaurant/dashboard/SettingsDashboard";
 import CommercePlatformDashboard from "@/components/restaurant/dashboard/CommercePlatformDashboard";
 import ReportsDashboard from "@/components/restaurant/dashboard/insights/ReportsDashboard";
-import OrdersDashboard from "@/components/restaurant/dashboard/OrdersDashboard";
+import { RestaurantCustomerOrderManagement } from "@/components/restaurant/RestaurantCustomerOrderManagement";
 import StoreAvailabilityDashboard from "@/components/restaurant/dashboard/StoreAvailabilityDashboard";
 import RequestDeliveryDashboard from "@/components/restaurant/dashboard/RequestDeliveryDashboard";
 import { HomeDashboard } from "@/components/merchant/HomeDashboard";
@@ -600,7 +600,7 @@ const RestaurantSetup = () => {
           </div>
         </div>
           )
-        ) : activeTab === 'insights' ? <InsightsDashboard /> : activeTab === 'reports' ? <ReportsDashboard /> : activeTab === 'customers' ? <CustomersDashboard /> : activeTab === 'orders' ? <OrdersDashboard /> : activeTab === 'menu' ? <MenuDashboard restaurantId={restaurant.id} /> : activeTab === 'availability' ? <StoreAvailabilityDashboard /> : activeTab === 'financials' ? <FinancialsDashboard /> : activeTab === 'settings' ? <SettingsDashboard defaultTab={settingsTab} /> : activeTab === 'commerce' ? <CommercePlatformDashboard /> : activeTab === 'request-delivery' ? <RequestDeliveryDashboard /> : null}
+        ) : activeTab === 'insights' ? <InsightsDashboard /> : activeTab === 'reports' ? <ReportsDashboard /> : activeTab === 'customers' ? <CustomersDashboard /> : activeTab === 'orders' ? <RestaurantCustomerOrderManagement restaurantId={restaurant.id} /> : activeTab === 'menu' ? <MenuDashboard restaurantId={restaurant.id} /> : activeTab === 'availability' ? <StoreAvailabilityDashboard /> : activeTab === 'financials' ? <FinancialsDashboard /> : activeTab === 'settings' ? <SettingsDashboard defaultTab={settingsTab} /> : activeTab === 'commerce' ? <CommercePlatformDashboard /> : activeTab === 'request-delivery' ? <RequestDeliveryDashboard /> : null}
       </main>
 
       {/* Right Sidebar - Store Preview */}

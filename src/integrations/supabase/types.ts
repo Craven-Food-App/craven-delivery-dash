@@ -528,6 +528,72 @@ export type Database = {
           },
         ]
       }
+      customer_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          customer_id: string
+          delivery_speed: number | null
+          food_quality: number | null
+          id: string
+          is_flagged: boolean | null
+          order_accuracy: number | null
+          order_id: string
+          rating: number
+          responded_at: string | null
+          response: string | null
+          restaurant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          customer_id: string
+          delivery_speed?: number | null
+          food_quality?: number | null
+          id?: string
+          is_flagged?: boolean | null
+          order_accuracy?: number | null
+          order_id: string
+          rating: number
+          responded_at?: string | null
+          response?: string | null
+          restaurant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          customer_id?: string
+          delivery_speed?: number | null
+          food_quality?: number | null
+          id?: string
+          is_flagged?: boolean | null
+          order_accuracy?: number | null
+          order_id?: string
+          rating?: number
+          responded_at?: string | null
+          response?: string | null
+          restaurant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_reviews_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_payout_batches: {
         Row: {
           created_at: string | null

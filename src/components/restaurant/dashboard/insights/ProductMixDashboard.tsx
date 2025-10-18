@@ -1,13 +1,89 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, TrendingUp, TrendingDown, Package } from "lucide-react";
-import { generateProductMixData } from "@/utils/restaurantDataGenerator";
+import { supabase } from "@/integrations/supabase/client";
+import { useRestaurantData } from "@/hooks/useRestaurantData";
 
 const ProductMixDashboard = () => {
+  const { restaurant } = useRestaurantData();
   const [searchQuery, setSearchQuery] = useState("");
-  const productData = generateProductMixData();
+  const [dateRange, setDateRange] = useState("last7");
+  const [productData, setProductData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (restaurant?.id) {
+      fetchProductMixData();
+    }
+  }, [restaurant?.id, dateRange]);
+
+  const fetchProductMixData = async () => {
+    try {
+      setLoading(true);
+      const days = dateRange === "last7" ? 7 : 30;
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      
+      // Fetch order items with menu item details
+      const { data: orderItems, error } = await supabase
+        .from("order_items")
+        .select(`
+          id,
+          menu_item_id,
+          quantity,
+          price_cents,
+          menu_items!inner(name),
+          orders!inner(created_at, restaurant_id, status)
+        `)
+        .eq("orders.restaurant_id", restaurant?.id)
+        .eq("orders.status", "completed")
+        .gte("orders.created_at", startDate.toISOString());
+
+      if (error) throw error;
+
+      // Aggregate by menu item
+      const itemMap = new Map();
+      orderItems?.forEach((item: any) => {
+        const itemName = item.menu_items.name;
+        if (!itemMap.has(itemName)) {
+          itemMap.set(itemName, {
+            name: itemName,
+            totalSold: 0,
+            grossSales: 0,
+            netPrice: 0,
+          });
+        }
+        const aggregated = itemMap.get(itemName);
+        aggregated.totalSold += item.quantity;
+        aggregated.grossSales += (item.price_cents / 100) * item.quantity;
+        aggregated.netPrice = item.price_cents / 100;
+      });
+
+      const products = Array.from(itemMap.values()).map((item, index) => ({
+        id: `item-${index}`,
+        name: item.name,
+        totalSold: item.totalSold,
+        totalSoldChange: 0, // Would need previous period comparison
+        grossSales: item.grossSales,
+        grossSalesChange: 0,
+        netPrice: item.netPrice,
+        priceChanges: 0,
+        customerDiscounts: 0,
+      }));
+
+      setProductData(products.sort((a, b) => b.totalSold - a.totalSold));
+    } catch (error) {
+      console.error("Error fetching product mix data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="p-6">Loading product mix data...</div>;
+  }
 
   const filteredData = productData.filter(item => 
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -17,23 +93,13 @@ const ProductMixDashboard = () => {
     <div className="space-y-6 pb-8">
       {/* Filters */}
       <div className="flex gap-4 items-center">
-        <Select defaultValue="last7">
+        <Select value={dateRange} onValueChange={setDateRange}>
           <SelectTrigger className="w-48">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="last7">Last 7 days</SelectItem>
             <SelectItem value="last30">Last 30 days</SelectItem>
-            <SelectItem value="custom">Custom range</SelectItem>
-          </SelectContent>
-        </Select>
-        <span className="text-sm text-muted-foreground">vs</span>
-        <Select defaultValue="7days-prior">
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="7days-prior">7 days prior</SelectItem>
           </SelectContent>
         </Select>
       </div>
