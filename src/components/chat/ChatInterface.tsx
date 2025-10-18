@@ -4,10 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Bot, User, Headphones } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Send, Bot, User, Headphones, MoreVertical, Paperclip, Smile, Phone, Video, Archive, Flag, Clock, Check, CheckCheck, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface Message {
   id: string;
@@ -15,6 +16,9 @@ interface Message {
   sender_type: 'customer' | 'driver' | 'admin' | 'ai';
   created_at: string;
   sender_id?: string;
+  is_read?: boolean;
+  message_type?: 'text' | 'image' | 'file' | 'location' | 'system';
+  metadata?: any;
 }
 
 interface Conversation {
@@ -42,14 +46,50 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [newMessage, setNewMessage] = useState('');
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
   const initializedRef = useRef(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleTyping = () => {
+    if (!isTyping) {
+      setIsTyping(true);
+      // Broadcast typing status
+      if (channelRef.current) {
+        channelRef.current.send({
+          type: 'broadcast',
+          event: 'typing',
+          payload: { user: currentUserType, conversationId }
+        });
+      }
+    }
+
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Set new timeout to stop typing indicator
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+      if (channelRef.current) {
+        channelRef.current.send({
+          type: 'broadcast',
+          event: 'stop_typing',
+          payload: { user: currentUserType, conversationId }
+        });
+      }
+    }, 1000);
   };
 
   useEffect(() => {
@@ -224,7 +264,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !conversation) return;
+    if (!newMessage.trim() || !conversation || sendingMessage) return;
 
     const messageContent = newMessage.trim();
     const tempMessage: Message = {
@@ -232,12 +272,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       content: messageContent,
       sender_type: currentUserType,
       created_at: new Date().toISOString(),
-      sender_id: undefined
+      sender_id: undefined,
+      is_read: false
     };
     
     // Optimistically add message to UI
     setMessages(prev => [...prev, tempMessage]);
     setNewMessage('');
+    setSendingMessage(true);
     setLoading(true);
 
     console.log('Sending message:', messageContent, 'to conversation:', conversation.id);
@@ -335,6 +377,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       });
     } finally {
       setLoading(false);
+      setSendingMessage(false);
     }
   };
 
@@ -371,6 +414,32 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
+  const getMessageStatus = (message: Message) => {
+    if (message.sender_type !== currentUserType) return null;
+    
+    if (sendingMessage && message.id.startsWith('temp-')) {
+      return <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />;
+    }
+    
+    if (message.is_read) {
+      return <CheckCheck className="h-3 w-3 text-blue-500" />;
+    }
+    
+    return <Check className="h-3 w-3 text-muted-foreground" />;
+  };
+
+  const formatMessageTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else {
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+  };
+
   // Cleanup subscription on unmount
   useEffect(() => {
     return () => {
@@ -393,30 +462,61 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }
 
   return (
-    <Card className="flex flex-col h-96">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b">
+    <div className="flex flex-col h-[600px] bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+      {/* Modern Header */}
+      <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+            {getSenderIcon(conversationType.includes('support') ? 'admin' : 'customer')}
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg">{conversation.subject || 'Chat Support'}</h3>
+            <div className="flex items-center gap-2 text-sm text-blue-100">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span>Online</span>
+              {conversation.priority !== 'normal' && (
+                <Badge variant={conversation.priority === 'urgent' ? 'destructive' : 'default'} className="text-xs">
+                  {conversation.priority.toUpperCase()}
+                </Badge>
+              )}
+            </div>
+          </div>
+        </div>
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold">{conversation.subject || 'Chat'}</h3>
-          <Badge variant={conversation.status === 'active' ? 'default' : 'secondary'}>
-            {conversation.status}
-          </Badge>
-          {conversation.priority !== 'normal' && (
-            <Badge variant={conversation.priority === 'high' || conversation.priority === 'urgent' ? 'destructive' : 'default'}>
-              {conversation.priority}
-            </Badge>
+          <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
+            <Phone className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
+            <Video className="h-4 w-4" />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>
+                <Archive className="h-4 w-4 mr-2" />
+                Archive Chat
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Flag className="h-4 w-4 mr-2" />
+                Flag Conversation
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {onClose && (
+            <Button variant="ghost" size="sm" onClick={onClose} className="text-white hover:bg-white/20">
+              ✕
+            </Button>
           )}
         </div>
-        {onClose && (
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            ✕
-          </Button>
-        )}
       </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
+      {/* Messages Area */}
+      <ScrollArea className="flex-1 bg-gray-50">
+        <div className="p-4 space-y-4">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -424,51 +524,111 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 message.sender_type === currentUserType ? 'flex-row-reverse' : 'flex-row'
               }`}
             >
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary/10">
+              <Avatar className="h-8 w-8 flex-shrink-0">
+                <AvatarFallback className={`${
+                  message.sender_type === currentUserType 
+                    ? 'bg-blue-500 text-white' 
+                    : message.sender_type === 'ai'
+                    ? 'bg-purple-500 text-white'
+                    : 'bg-gray-500 text-white'
+                }`}>
                   {getSenderIcon(message.sender_type)}
                 </AvatarFallback>
               </Avatar>
-              <div
-                className={`max-w-[70%] rounded-lg p-3 ${
-                  message.sender_type === currentUserType
-                    ? 'bg-primary text-primary-foreground'
-                    : message.sender_type === 'ai'
-                    ? 'bg-muted border border-border'
-                    : 'bg-secondary'
-                }`}
-              >
-                <div className="text-xs opacity-70 mb-1">
-                  {getSenderName(message.sender_type)} • {new Date(message.created_at).toLocaleTimeString()}
+              <div className={`max-w-[70%] ${message.sender_type === currentUserType ? 'flex flex-col items-end' : ''}`}>
+                <div
+                  className={`rounded-2xl px-4 py-3 ${
+                    message.sender_type === currentUserType
+                      ? 'bg-blue-500 text-white rounded-br-md'
+                      : message.sender_type === 'ai'
+                      ? 'bg-white border border-purple-200 text-gray-800 rounded-bl-md'
+                      : 'bg-white border border-gray-200 text-gray-800 rounded-bl-md'
+                  }`}
+                >
+                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                 </div>
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                <div className={`flex items-center gap-1 mt-1 text-xs text-gray-500 ${
+                  message.sender_type === currentUserType ? 'flex-row-reverse' : ''
+                }`}>
+                  <span>{formatMessageTime(message.created_at)}</span>
+                  {getMessageStatus(message)}
+                </div>
               </div>
             </div>
           ))}
+          
+          {/* Typing Indicator */}
+          {typingUsers.length > 0 && (
+            <div className="flex gap-3">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-gray-500 text-white">
+                  <User className="h-4 w-4" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-md px-4 py-3">
+                <div className="flex items-center gap-1">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
+                  <span className="text-xs text-gray-500 ml-2">typing...</span>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
 
-      {/* Input */}
-      <div className="p-4 border-t">
-        <div className="flex gap-2">
-          <Input
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type your message..."
-            disabled={loading || conversation.status !== 'active'}
-          />
+      {/* Enhanced Input Area */}
+      <div className="p-4 bg-white border-t border-gray-200">
+        <div className="flex items-end gap-2">
+          <div className="flex-1 relative">
+            <Input
+              value={newMessage}
+              onChange={(e) => {
+                setNewMessage(e.target.value);
+                handleTyping();
+              }}
+              onKeyPress={handleKeyPress}
+              placeholder="Type your message..."
+              disabled={loading || conversation.status !== 'active'}
+              className="pr-20 rounded-full border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+            />
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                className="h-6 w-6 p-0 hover:bg-gray-100"
+              >
+                <Smile className="h-4 w-4 text-gray-500" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 hover:bg-gray-100"
+              >
+                <Paperclip className="h-4 w-4 text-gray-500" />
+              </Button>
+            </div>
+          </div>
           <Button
             onClick={sendMessage}
-            disabled={!newMessage.trim() || loading || conversation.status !== 'active'}
-            size="icon"
+            disabled={!newMessage.trim() || loading || conversation.status !== 'active' || sendingMessage}
+            className="rounded-full bg-blue-500 hover:bg-blue-600 text-white px-6"
           >
-            <Send className="h-4 w-4" />
+            {sendingMessage ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>
-    </Card>
+    </div>
   );
 };
 
