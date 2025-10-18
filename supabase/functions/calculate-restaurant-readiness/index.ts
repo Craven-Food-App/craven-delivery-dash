@@ -167,6 +167,26 @@ serve(async (req) => {
       }
     }
 
+    // Check if ready for tablet shipment (business verified + menu ready)
+    const { data: progressData } = await supabase
+      .from('restaurant_onboarding_progress')
+      .select('tablet_preparing_shipment, tablet_shipped')
+      .eq('restaurant_id', restaurant_id)
+      .single();
+
+    const readyForTablet = restaurant.business_verified_at && menuItemCount && menuItemCount >= 10;
+    
+    // Auto-update tablet status to preparing if conditions are met and not already shipped
+    if (readyForTablet && progressData && !progressData.tablet_preparing_shipment && !progressData.tablet_shipped) {
+      await supabase
+        .from('restaurant_onboarding_progress')
+        .update({
+          tablet_preparing_shipment: true,
+          tablet_preparing_at: new Date().toISOString()
+        })
+        .eq('restaurant_id', restaurant_id);
+    }
+
     return new Response(
       JSON.stringify({
         score: readinessScore,

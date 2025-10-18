@@ -10,6 +10,10 @@ interface OnboardingProgress {
   tablet_shipped: boolean;
   tablet_shipped_at: string | null;
   tablet_delivered_at: string | null;
+  tablet_preparing_shipment: boolean;
+  tablet_preparing_at: string | null;
+  tablet_tracking_number: string | null;
+  tablet_shipping_carrier: string | null;
   go_live_ready: boolean;
   admin_notes: string | null;
 }

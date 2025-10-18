@@ -2030,8 +2030,13 @@ export type Database = {
           menu_ready_at: string | null
           restaurant_id: string
           tablet_delivered_at: string | null
+          tablet_preparing_at: string | null
+          tablet_preparing_shipment: boolean | null
           tablet_shipped: boolean | null
           tablet_shipped_at: string | null
+          tablet_shipping_carrier: string | null
+          tablet_shipping_label_url: string | null
+          tablet_tracking_number: string | null
           updated_at: string | null
         }
         Insert: {
@@ -2048,8 +2053,13 @@ export type Database = {
           menu_ready_at?: string | null
           restaurant_id: string
           tablet_delivered_at?: string | null
+          tablet_preparing_at?: string | null
+          tablet_preparing_shipment?: boolean | null
           tablet_shipped?: boolean | null
           tablet_shipped_at?: string | null
+          tablet_shipping_carrier?: string | null
+          tablet_shipping_label_url?: string | null
+          tablet_tracking_number?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -2066,8 +2076,13 @@ export type Database = {
           menu_ready_at?: string | null
           restaurant_id?: string
           tablet_delivered_at?: string | null
+          tablet_preparing_at?: string | null
+          tablet_preparing_shipment?: boolean | null
           tablet_shipped?: boolean | null
           tablet_shipped_at?: string | null
+          tablet_shipping_carrier?: string | null
+          tablet_shipping_label_url?: string | null
+          tablet_tracking_number?: string | null
           updated_at?: string | null
         }
         Relationships: [

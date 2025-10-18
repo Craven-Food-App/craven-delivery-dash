@@ -379,7 +379,7 @@ const RestaurantSetup = () => {
                           : "This usually takes 2 business days. You'll get an email when your menu is ready."}
                       </p>
                       
-                      {!restaurant?.header_image_url ? (
+                      {progress?.menu_preparation_status === 'ready' && !restaurant?.header_image_url ? (
                         <div className="bg-muted/50 p-4 rounded-lg">
                           <h4 className="font-semibold text-sm mb-2">Add a store header</h4>
                           <p className="text-sm text-muted-foreground mb-4">
@@ -406,10 +406,16 @@ const RestaurantSetup = () => {
                   <div className="flex gap-4">
                     <div className="flex-shrink-0">
                       <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        progress?.tablet_delivered_at ? 'bg-green-500' : progress?.tablet_shipped ? 'bg-foreground' : 'bg-muted'
+                        progress?.tablet_delivered_at 
+                          ? 'bg-green-500' 
+                          : progress?.tablet_shipped 
+                            ? 'bg-blue-500' 
+                            : progress?.tablet_preparing_shipment
+                              ? 'bg-yellow-500'
+                              : 'bg-muted'
                       }`}>
                         <Tablet className={`w-6 h-6 ${
-                          progress?.tablet_delivered_at || progress?.tablet_shipped ? 'text-white' : 'text-muted-foreground'
+                          progress?.tablet_delivered_at || progress?.tablet_shipped || progress?.tablet_preparing_shipment ? 'text-white' : 'text-muted-foreground'
                         }`} />
                       </div>
                     </div>
@@ -420,25 +426,43 @@ const RestaurantSetup = () => {
                             ? 'Your tablet has been delivered'
                             : progress?.tablet_shipped
                               ? 'Your tablet is in transit'
-                              : 'Tablet not yet shipped'}
+                              : progress?.tablet_preparing_shipment
+                                ? 'Tablet is preparing for shipment'
+                                : 'Tablet not yet shipped'}
                         </h3>
-                        {progress?.tablet_shipped && (
+                        {(progress?.tablet_shipped || progress?.tablet_preparing_shipment) && (
                           <span className={`text-xs font-medium px-2 py-1 rounded ${
                             progress?.tablet_delivered_at
                               ? 'text-green-600 bg-green-50'
-                              : 'text-teal-600 bg-teal-50'
+                              : progress?.tablet_shipped
+                                ? 'text-blue-600 bg-blue-50'
+                                : 'text-yellow-600 bg-yellow-50'
                           }`}>
-                            {progress?.tablet_delivered_at ? '✓ Delivered' : '✓ In transit'}
+                            {progress?.tablet_delivered_at ? '✓ Delivered' : progress?.tablet_shipped ? '✓ In transit' : '⏱ Preparing'}
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground mb-3">
                         {progress?.tablet_delivered_at
                           ? "Your tablet has been delivered and is ready to use."
                           : progress?.tablet_shipped
                             ? "We'll keep you updated on its status."
-                            : "Your tablet will ship once business verification is complete."}
+                            : progress?.tablet_preparing_shipment
+                              ? "Your tablet is being prepared for shipment. You'll receive tracking info soon."
+                              : "Your tablet will ship once business verification and menu preparation are complete."}
                       </p>
+                      
+                      {progress?.tablet_tracking_number && progress?.tablet_shipped && (
+                        <div className="bg-blue-50 p-3 rounded-lg">
+                          <p className="text-sm font-semibold mb-1">Tracking Information</p>
+                          <p className="text-sm">
+                            <span className="text-muted-foreground">Carrier:</span> {progress.tablet_shipping_carrier || 'USPS'}
+                          </p>
+                          <p className="text-sm">
+                            <span className="text-muted-foreground">Tracking #:</span> {progress.tablet_tracking_number}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </Card>

@@ -7,6 +7,7 @@ import ChatPortal from '@/components/admin/ChatPortal';
 import BackgroundCheckDashboard from '@/components/admin/BackgroundCheckDashboard';
 import RestaurantOnboardingDashboard from '@/components/admin/RestaurantOnboardingDashboard';
 import { RestaurantVerificationDashboard } from '@/components/admin/RestaurantVerificationDashboard';
+import { TabletShippingManagement } from '@/components/admin/TabletShippingManagement';
 import { NotificationSettingsManager } from '@/components/admin/NotificationSettingsManager';
 import { PayoutSettingsManager } from '@/components/admin/PayoutSettingsManager';
 import CommissionSettingsManager from '@/components/admin/CommissionSettingsManager';
@@ -14,7 +15,7 @@ import { PromoCodeManager } from '@/components/admin/PromoCodeManager';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, BarChart3, Users, Store, Car, ShoppingBag, MessageCircle, Bell, DollarSign, Tags, GraduationCap, FileCheck, Shield, ChevronRight } from 'lucide-react';
+import { ArrowLeft, BarChart3, Users, Store, Car, ShoppingBag, MessageCircle, Bell, DollarSign, Tags, GraduationCap, FileCheck, Shield, ChevronRight, Package } from 'lucide-react';
 import cravenLogo from "@/assets/craven-logo.png";
 import { cn } from '@/lib/utils';
 
@@ -34,6 +35,7 @@ const Admin: React.FC = () => {
       items: [
         { id: 'merchant-onboarding', label: 'Onboarding', icon: GraduationCap },
         { id: 'merchant-verification', label: 'Document Verification', icon: FileCheck },
+        { id: 'merchant-tablet', label: 'Tablet Shipping', icon: Package },
         { id: 'merchant-settings', label: 'Settings', icon: Shield },
       ]
     },
@@ -67,6 +69,8 @@ const Admin: React.FC = () => {
         return <RestaurantOnboardingDashboard />;
       case 'merchant-verification':
         return <RestaurantVerificationDashboard />;
+      case 'merchant-tablet':
+        return <TabletShippingManagement />;
       case 'merchant-settings':
         return <CommissionSettingsManager />;
       case 'driver-applications':
