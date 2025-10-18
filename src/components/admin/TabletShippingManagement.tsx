@@ -127,11 +127,13 @@ export const TabletShippingManagement = () => {
     }
   };
 
-  const handleGenerateLabel = async (restaurant: RestaurantWithProgress) => {
-    setIsGeneratingLabel(true);
+  const handlePrepareShipment = async (restaurant: RestaurantWithProgress) => {
+    // Open dialog and set restaurant first
     setSelectedRestaurant(restaurant);
+    setIsGeneratingLabel(true);
     
     try {
+      // Auto-generate the label
       const { pdfUrl, labelUrl } = await generateShippingLabel({
         id: restaurant.id,
         name: restaurant.name,
@@ -155,13 +157,12 @@ export const TabletShippingManagement = () => {
       if (error) throw error;
 
       setGeneratedLabelUrl(labelUrl);
-      setShowTrackingInput(true);
-
-      toast.success('Shipping label generated successfully');
+      toast.success('Shipping label generated! Ready to print.');
       fetchRestaurants();
     } catch (error: any) {
       toast.error(`Failed to generate label: ${error.message}`);
       console.error(error);
+      setSelectedRestaurant(null); // Close dialog on error
     } finally {
       setIsGeneratingLabel(false);
     }
@@ -311,18 +312,12 @@ export const TabletShippingManagement = () => {
       <CardContent>
         {showAction === 'ready' && (
           <Button
-            onClick={() => handleGenerateLabel(restaurant)}
+            onClick={() => handlePrepareShipment(restaurant)}
             disabled={isGeneratingLabel || isProcessing}
             className="w-full"
           >
-            {isGeneratingLabel ? (
-              <>Generating Label...</>
-            ) : (
-              <>
-                <Printer className="w-4 h-4 mr-2" />
-                Generate Label
-              </>
-            )}
+            <Package className="w-4 h-4 mr-2" />
+            Prepare Shipment
           </Button>
         )}
         {showAction === 'preparing' && (
@@ -334,12 +329,13 @@ export const TabletShippingManagement = () => {
                 className="w-full"
               >
                 <Download className="w-4 h-4 mr-2" />
-                Download Label
+                View Label
               </Button>
             )}
             <Button
               onClick={() => {
                 setSelectedRestaurant(restaurant);
+                setGeneratedLabelUrl(null); // Don't show preview, just tracking
                 setShowTrackingInput(true);
                 setTrackingNumber(restaurant.progress?.tablet_tracking_number || '');
                 setShippingCarrier(restaurant.progress?.tablet_shipping_carrier || 'USPS');
@@ -348,7 +344,7 @@ export const TabletShippingManagement = () => {
               className="w-full"
             >
               <Truck className="w-4 h-4 mr-2" />
-              Mark as Shipped
+              Enter Tracking & Ship
             </Button>
           </div>
         )}
@@ -482,17 +478,27 @@ export const TabletShippingManagement = () => {
       >
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Shipping Label - {selectedRestaurant?.name}</DialogTitle>
+            <DialogTitle>Prepare Shipment - {selectedRestaurant?.name}</DialogTitle>
             <DialogDescription>
-              {!showTrackingInput 
-                ? 'Generate and print the shipping label' 
-                : 'Enter carrier tracking information to complete shipment'}
+              {isGeneratingLabel 
+                ? 'Generating shipping label...' 
+                : generatedLabelUrl && !showTrackingInput
+                ? 'Print the label and prepare package for shipment'
+                : 'Enter tracking information after shipping'}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
-            {/* Restaurant Address Summary */}
-            {!generatedLabelUrl && (
+            {/* Generating State */}
+            {isGeneratingLabel && (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                <p className="text-muted-foreground">Generating shipping label...</p>
+              </div>
+            )}
+
+            {/* Restaurant Address */}
+            {!isGeneratingLabel && (
               <div className="p-4 bg-muted rounded-lg space-y-2">
                 <div className="flex items-start gap-2">
                   <MapPin className="w-5 h-5 text-muted-foreground mt-1" />
@@ -513,33 +519,57 @@ export const TabletShippingManagement = () => {
               </div>
             )}
 
-            {/* Generated Label Preview */}
-            {generatedLabelUrl && (
-              <div className="border rounded-lg p-4 bg-white">
-                <img 
-                  src={generatedLabelUrl} 
-                  alt="Shipping Label" 
-                  className="w-full h-auto"
-                />
-                <div className="flex gap-2 mt-4">
-                  <Button onClick={handlePrintLabel} variant="outline" className="flex-1">
+            {/* Step 1: Print Label */}
+            {!isGeneratingLabel && generatedLabelUrl && !showTrackingInput && (
+              <div className="space-y-4">
+                <div className="border rounded-lg p-4 bg-white">
+                  <img 
+                    src={generatedLabelUrl} 
+                    alt="Shipping Label" 
+                    className="w-full h-auto"
+                  />
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button onClick={handlePrintLabel} size="lg" className="flex-1">
                     <Printer className="w-4 h-4 mr-2" />
                     Print Label
                   </Button>
                   {selectedRestaurant?.progress?.tablet_shipping_label_url && (
-                    <Button onClick={handleDownloadLabel} variant="outline" className="flex-1">
+                    <Button onClick={handleDownloadLabel} variant="outline" size="lg" className="flex-1">
                       <Download className="w-4 h-4 mr-2" />
                       Download PDF
                     </Button>
                   )}
                 </div>
+
+                <Button 
+                  onClick={() => setShowTrackingInput(true)}
+                  variant="default"
+                  size="lg"
+                  className="w-full"
+                >
+                  <Truck className="w-4 h-4 mr-2" />
+                  I've Shipped the Package
+                </Button>
               </div>
             )}
 
-            {/* Tracking Information Input */}
-            {showTrackingInput && (
+            {/* Step 2: Enter Tracking */}
+            {!isGeneratingLabel && showTrackingInput && (
               <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
-                <h4 className="font-semibold text-sm">Enter Carrier Tracking Information</h4>
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">
+                    2
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold mb-1">Enter Carrier Tracking Information</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Enter the official tracking details from your shipping carrier
+                    </p>
+                  </div>
+                </div>
+
                 <div>
                   <Label htmlFor="carrier">Shipping Carrier</Label>
                   <Select value={shippingCarrier} onValueChange={setShippingCarrier}>
@@ -568,30 +598,13 @@ export const TabletShippingManagement = () => {
                 <Button 
                   onClick={handleMarkShipped} 
                   disabled={isProcessing || !trackingNumber.trim()}
+                  size="lg"
                   className="w-full"
                 >
                   <CheckCircle className="w-4 h-4 mr-2" />
-                  Confirm Shipment
+                  {isProcessing ? 'Marking as Shipped...' : 'Mark as Shipped'}
                 </Button>
               </div>
-            )}
-
-            {/* Generate Label Button */}
-            {!generatedLabelUrl && !showTrackingInput && (
-              <Button 
-                onClick={() => selectedRestaurant && handleGenerateLabel(selectedRestaurant)}
-                disabled={isGeneratingLabel}
-                className="w-full"
-              >
-                {isGeneratingLabel ? (
-                  <>Generating Label...</>
-                ) : (
-                  <>
-                    <Printer className="w-4 h-4 mr-2" />
-                    Generate & Print Shipping Label
-                  </>
-                )}
-              </Button>
             )}
           </div>
         </DialogContent>
