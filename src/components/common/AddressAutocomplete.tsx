@@ -360,60 +360,68 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       const parts = suggestion.place_name.split(',').map(p => p.trim());
       console.log('Fallback parsing from parts:', parts);
       
-      // Find state and ZIP from all parts
+      // Find state and ZIP first to help identify city
+      let stateIndex = -1;
+      let zipIndex = -1;
+      
       for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
         
-        // Look for state code ANYWHERE in the address parts
+        // ENHANCED STATE MATCHING - Look for state code (2 capital letters) OR full state names
         if (!state) {
-          // Try multiple patterns for state
-          const stateMatch = part.match(/\b([A-Z]{2})\b/) || // 2-letter code
-                            part.match(/\b(Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming)\b/i); // Full state name
+          const stateMatch = part.match(/\b([A-Z]{2})\b/) || 
+                            part.match(/\b(Ohio|California|Texas|Florida|New York|Illinois|Pennsylvania|Georgia|North Carolina|Michigan|New Jersey|Virginia|Washington|Arizona|Massachusetts|Tennessee|Indiana|Missouri|Maryland|Wisconsin|Colorado|Minnesota|South Carolina|Alabama|Louisiana|Kentucky|Oregon|Oklahoma|Connecticut|Utah|Iowa|Nevada|Arkansas|Mississippi|Kansas|New Mexico|Nebraska|West Virginia|Idaho|Hawaii|New Hampshire|Maine|Montana|Rhode Island|Delaware|South Dakota|North Dakota|Alaska|Vermont|Wyoming)\b/i);
           
           if (stateMatch) {
-            state = stateMatch[1].toUpperCase();
-            // Convert full state names to abbreviations if needed
+            let foundState = stateMatch[1].toUpperCase();
+            
+            // Convert full state names to abbreviations
             const stateAbbr = {
-              'ALABAMA': 'AL', 'ALASKA': 'AK', 'ARIZONA': 'AZ', 'ARKANSAS': 'AR',
-              'CALIFORNIA': 'CA', 'COLORADO': 'CO', 'CONNECTICUT': 'CT', 'DELAWARE': 'DE',
-              'FLORIDA': 'FL', 'GEORGIA': 'GA', 'HAWAII': 'HI', 'IDAHO': 'ID',
-              'ILLINOIS': 'IL', 'INDIANA': 'IN', 'IOWA': 'IA', 'KANSAS': 'KS',
-              'KENTUCKY': 'KY', 'LOUISIANA': 'LA', 'MAINE': 'ME', 'MARYLAND': 'MD',
-              'MASSACHUSETTS': 'MA', 'MICHIGAN': 'MI', 'MINNESOTA': 'MN', 'MISSISSIPPI': 'MS',
-              'MISSOURI': 'MO', 'MONTANA': 'MT', 'NEBRASKA': 'NE', 'NEVADA': 'NV',
-              'NEW HAMPSHIRE': 'NH', 'NEW JERSEY': 'NJ', 'NEW MEXICO': 'NM', 'NEW YORK': 'NY',
-              'NORTH CAROLINA': 'NC', 'NORTH DAKOTA': 'ND', 'OHIO': 'OH', 'OKLAHOMA': 'OK',
-              'OREGON': 'OR', 'PENNSYLVANIA': 'PA', 'RHODE ISLAND': 'RI', 'SOUTH CAROLINA': 'SC',
-              'SOUTH DAKOTA': 'SD', 'TENNESSEE': 'TN', 'TEXAS': 'TX', 'UTAH': 'UT',
-              'VERMONT': 'VT', 'VIRGINIA': 'VA', 'WASHINGTON': 'WA', 'WEST VIRGINIA': 'WV',
-              'WISCONSIN': 'WI', 'WYOMING': 'WY'
+              'OHIO': 'OH', 'CALIFORNIA': 'CA', 'TEXAS': 'TX', 'FLORIDA': 'FL', 'NEW YORK': 'NY',
+              'ILLINOIS': 'IL', 'PENNSYLVANIA': 'PA', 'GEORGIA': 'GA', 'NORTH CAROLINA': 'NC',
+              'MICHIGAN': 'MI', 'NEW JERSEY': 'NJ', 'VIRGINIA': 'VA', 'WASHINGTON': 'WA',
+              'ARIZONA': 'AZ', 'MASSACHUSETTS': 'MA', 'TENNESSEE': 'TN', 'INDIANA': 'IN',
+              'MISSOURI': 'MO', 'MARYLAND': 'MD', 'WISCONSIN': 'WI', 'COLORADO': 'CO',
+              'MINNESOTA': 'MN', 'SOUTH CAROLINA': 'SC', 'ALABAMA': 'AL', 'LOUISIANA': 'LA',
+              'KENTUCKY': 'KY', 'OREGON': 'OR', 'OKLAHOMA': 'OK', 'CONNECTICUT': 'CT',
+              'UTAH': 'UT', 'IOWA': 'IA', 'NEVADA': 'NV', 'ARKANSAS': 'AR', 'MISSISSIPPI': 'MS',
+              'KANSAS': 'KS', 'NEW MEXICO': 'NM', 'NEBRASKA': 'NE', 'WEST VIRGINIA': 'WV',
+              'IDAHO': 'ID', 'HAWAII': 'HI', 'NEW HAMPSHIRE': 'NH', 'MAINE': 'ME',
+              'MONTANA': 'MT', 'RHODE ISLAND': 'RI', 'DELAWARE': 'DE', 'SOUTH DAKOTA': 'SD',
+              'NORTH DAKOTA': 'ND', 'ALASKA': 'AK', 'VERMONT': 'VT', 'WYOMING': 'WY'
             };
-            state = stateAbbr[state] || state;
-            console.log('✓ Fallback state found:', state, 'in part:', part);
-            break;
+            
+            state = stateAbbr[foundState] || foundState;
+            stateIndex = i;
+            console.log('✓ Fallback state:', state, 'at index', i);
           }
         }
         
-        // Look for ZIP code
+        // Look for ZIP code (5 digits, optionally with +4)
         if (!zipCode) {
           const zipMatch = part.match(/\b(\d{5}(-\d{4})?)\b/);
           if (zipMatch) {
             zipCode = zipMatch[1];
-            console.log('✓ Fallback ZIP found:', zipCode, 'in part:', part);
+            zipIndex = i;
+            console.log('✓ Fallback ZIP:', zipCode, 'at index', i);
           }
         }
       }
       
-      // Find city - it should be a part that's not the street and not containing state/ZIP
+      // Now find city - it should be the part just before state/ZIP
       if (!city) {
-        for (let i = 1; i < parts.length; i++) {
-          const part = parts[i];
-          // Skip parts that contain state codes or ZIP codes
-          if (!part.match(/\b([A-Z]{2})\b/) && !part.match(/\b(\d{5}(-\d{4})?)\b/)) {
-            city = part;
-            console.log('✓ Fallback city found:', city);
-            break;
-          }
+        if (stateIndex > 1) {
+          // City is likely the part before the state
+          city = parts[stateIndex - 1];
+          console.log('✓ Fallback city (before state):', city);
+        } else if (zipIndex > 1) {
+          // City is likely the part before the ZIP
+          city = parts[zipIndex - 1];
+          console.log('✓ Fallback city (before ZIP):', city);
+        } else if (parts.length > 2) {
+          // Last resort: take the second-to-last meaningful part
+          city = parts[parts.length - 2];
+          console.log('✓ Fallback city (second-to-last):', city);
         }
       }
     }
