@@ -208,11 +208,22 @@ const StoreSettingsDashboard = () => {
                             }}
                             onAddressParsed={(parsed) => {
                               console.log('Address parsed:', parsed);
-                              setStoreAddress(parsed.street);
-                              setStoreAddress2(parsed.unitNumber || '');
-                              setStoreCity(parsed.city);
-                              setStoreState(parsed.state);
-                              setStoreZip(parsed.zipCode);
+                              
+                              // Clear all fields first
+                              setStoreAddress('');
+                              setStoreAddress2('');
+                              setStoreCity('');
+                              setStoreState('');
+                              setStoreZip('');
+                              
+                              // Then populate with parsed data
+                              setTimeout(() => {
+                                setStoreAddress(parsed.street || '');
+                                setStoreAddress2(parsed.unitNumber || '');
+                                setStoreCity(parsed.city || '');
+                                setStoreState(parsed.state || '');
+                                setStoreZip(parsed.zipCode || '');
+                              }, 10);
                             }}
                             placeholder="Start typing to search address..."
                             required

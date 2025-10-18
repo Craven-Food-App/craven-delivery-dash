@@ -293,22 +293,67 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
   const handleSuggestionClick = (suggestion: AddressSuggestion) => {
     const [lng, lat] = suggestion.center;
-    const parsed = parseAddress(suggestion);
     
-    // Set the full street address in the field
-    onChange(parsed.street, { lat, lng });
+    console.log('Full suggestion object:', suggestion);
+    console.log('Place name parts:', suggestion.place_name.split(','));
+    
+    // Parse the address manually from place_name
+    const parts = suggestion.place_name.split(',').map(p => p.trim());
+    console.log('Parts array:', parts);
+    
+    // Extract components directly from the parts
+    const street = parts[0] || '';
+    const city = parts[1] || '';
+    const stateZipCountry = parts[2] || '';
+    
+    // Extract state and zip from third part
+    let state = '';
+    let zipCode = '';
+    
+    if (stateZipCountry) {
+      // Look for state code (2 capital letters)
+      const stateMatch = stateZipCountry.match(/\b([A-Z]{2})\b/);
+      if (stateMatch) {
+        state = stateMatch[1];
+      }
+      
+      // Look for ZIP code (5 digits, optionally followed by dash and 4 more digits)
+      const zipMatch = stateZipCountry.match(/(\d{5}(-\d{4})?)/);
+      if (zipMatch) {
+        zipCode = zipMatch[1];
+      }
+    }
+    
+    // Extract unit number from street
+    let unitNumber = '';
+    let cleanStreet = street;
+    const unitMatch = street.match(/^(.*?)(?:\s+(?:apt|apartment|unit|ste|suite|#)\s*(\w+.*?))?$/i);
+    if (unitMatch) {
+      cleanStreet = unitMatch[1].trim();
+      unitNumber = unitMatch[2] || '';
+    }
+    
+    console.log('Parsed components:', { 
+      street: cleanStreet, 
+      city, 
+      state, 
+      zipCode, 
+      unitNumber 
+    });
+    
+    // Set the street address in the main field
+    onChange(cleanStreet, { lat, lng });
     setShowSuggestions(false);
     setIsValidAddress(true);
     onValidAddress?.(true, suggestion);
     
-    // Call the parsed address callback with unit number included
+    // Call the parsed address callback
     if (onAddressParsed) {
-      const parts = suggestion.place_name.split(',')[0] || '';
-      const unitMatch = parts.match(/(?:apt|apartment|unit|ste|suite|#)\s*(\w+.*?)(?:,|$)/i);
-      const unitNumber = unitMatch ? unitMatch[1].trim() : '';
-      
       onAddressParsed({
-        ...parsed,
+        street: cleanStreet,
+        city,
+        state,
+        zipCode,
         unitNumber
       });
     }
