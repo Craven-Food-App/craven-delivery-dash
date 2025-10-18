@@ -1,10 +1,11 @@
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense, useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
+import { supabase } from "@/integrations/supabase/client";
 import MobileBottomNav from "@/components/mobile/MobileBottomNav";
 import Index from "./pages/Index";
 import DriverAuth from "./pages/DriverAuth";
@@ -50,6 +51,22 @@ const DriverGuide = lazy(() => import("./pages/DriverGuide"));
 const queryClient = new QueryClient();
 
 const App = () => {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Check initial auth state
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   // Check if running on native mobile (iOS/Android)
   const isNative = Capacitor.isNativePlatform();
 
@@ -170,7 +187,7 @@ const App = () => {
         </div>
 
         {/* Global Mobile Bottom Navigation */}
-        <MobileBottomNav />
+        <MobileBottomNav user={user} />
       </BrowserRouter>
     </TooltipProvider>
     </ThemeProvider>

@@ -33,7 +33,7 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
     path: user ? '/customer-dashboard?tab=orders' : '/auth'
   }, {
     id: 'profile',
-    label: 'Profile',
+    label: 'Account',
     icon: User,
     path: user ? '/customer-dashboard?tab=account' : '/auth'
   }];
@@ -50,7 +50,17 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         <div className="flex h-full">
           {tabs.map(tab => {
           const Icon = tab.icon;
-          const isActive = location.pathname === tab.path;
+          // Check if current path matches, considering query parameters for customer-dashboard
+          const isActive = tab.id === 'home' 
+            ? location.pathname === '/' 
+            : tab.id === 'restaurants' 
+              ? location.pathname === '/restaurants'
+              : tab.id === 'orders'
+                ? location.pathname === '/customer-dashboard' && location.search.includes('tab=orders')
+                : tab.id === 'profile'
+                  ? location.pathname === '/customer-dashboard' && location.search.includes('tab=account')
+                  : location.pathname === tab.path;
+          
           return <Link key={tab.id} to={tab.path} className={cn("flex-1 flex flex-col items-center justify-center py-1 px-1 h-full transition-smooth relative", isActive ? "text-primary bg-primary/5" : "text-muted-foreground hover:text-foreground")}>
                 <Icon className="h-5 w-5 mb-1" />
                 <span className="text-[10px] font-medium leading-tight">{tab.label}</span>

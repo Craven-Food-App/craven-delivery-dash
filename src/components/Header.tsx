@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { MapPin, Search, User, ShoppingCart, ChevronDown, LogOut, Menu, X, Gift } from "lucide-react";
+import { MapPin, Search, User, ShoppingCart, ChevronDown, LogOut, Menu, X, Gift, Store } from "lucide-react";
 import { Link } from "react-router-dom";
 import cravenLogo from "@/assets/craven-logo.png";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useMerchantStatus } from "@/hooks/useMerchantStatus";
 import AuthModal from "./auth/AuthModal";
 import AddressSelector from "./address/AddressSelector";
 import { ThemeToggle } from "./ThemeToggle";
@@ -41,6 +42,7 @@ const Header = () => {
   const [selectedAddress, setSelectedAddress] = useState<any>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { toast } = useToast();
+  const { isMerchant, merchantLoading } = useMerchantStatus(user?.id || null);
 
   useEffect(() => {
     // Set up auth state listener
@@ -183,6 +185,15 @@ const Header = () => {
                       <Gift className="mr-2 h-4 w-4" />
                       <span>Rewards</span>
                     </DropdownMenuItem>
+                    {isMerchant && !merchantLoading && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => window.location.href = '/merchant-portal'}>
+                          <Store className="mr-2 h-4 w-4" />
+                          <span>Merchant Portal</span>
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="mr-2 h-4 w-4" />
@@ -273,6 +284,19 @@ const Header = () => {
                       <User className="mr-3 h-5 w-5" />
                       My Orders
                     </Button>
+                    {isMerchant && !merchantLoading && (
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start text-lg h-12"
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          window.location.href = '/merchant-portal';
+                        }}
+                      >
+                        <Store className="mr-3 h-5 w-5" />
+                        Merchant Portal
+                      </Button>
+                    )}
                     <Button 
                       variant="outline" 
                       className="w-full justify-start text-lg h-12 text-destructive border-destructive/20 hover:bg-destructive/10"

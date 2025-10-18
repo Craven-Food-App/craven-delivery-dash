@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, MapPin, Filter, Star, Clock, Zap, TrendingUp } from 'lucide-react';
+import { Search, MapPin, Filter, Star, Clock, Zap, TrendingUp, ChevronLeft, Plus } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
 
 const Restaurants = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -16,7 +17,10 @@ const Restaurants = () => {
   const [location, setLocation] = useState(searchParams.get('location') || '');
   const [cuisineFilter, setCuisineFilter] = useState(searchParams.get('cuisine') || 'all');
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'rating');
+  const [weeklyDeals, setWeeklyDeals] = useState<any[]>([]);
+  const [loadingDeals, setLoadingDeals] = useState(true);
   const resultsRef = useRef<HTMLDivElement | null>(null);
+  const weeklyDealsScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -30,6 +34,56 @@ const Restaurants = () => {
   const handleSearch = () => {
     resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+
+  // Weekly deals scroll functions
+  const scrollWeeklyDealsLeft = () => {
+    if (weeklyDealsScrollRef.current) {
+      weeklyDealsScrollRef.current.scrollBy({ left: -320, behavior: 'smooth' });
+    }
+  };
+
+  const scrollWeeklyDealsRight = () => {
+    if (weeklyDealsScrollRef.current) {
+      weeklyDealsScrollRef.current.scrollBy({ left: 320, behavior: 'smooth' });
+    }
+  };
+
+  // Fetch promoted restaurants for weekly deals
+  const fetchWeeklyDeals = async () => {
+    try {
+      setLoadingDeals(true);
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select(`
+          *,
+          promotion_title,
+          promotion_description,
+          promotion_discount_percentage,
+          promotion_discount_amount_cents,
+          promotion_minimum_order_cents,
+          promotion_maximum_discount_cents,
+          promotion_valid_until,
+          promotion_image_url
+        `)
+        .eq('is_promoted', true)
+        .eq('is_active', true)
+        .order('rating', { ascending: false })
+        .limit(6);
+
+      if (error) throw error;
+      setWeeklyDeals(data || []);
+    } catch (error) {
+      console.error('Error fetching weekly deals:', error);
+      setWeeklyDeals([]);
+    } finally {
+      setLoadingDeals(false);
+    }
+  };
+
+  // Fetch deals on component mount
+  useEffect(() => {
+    fetchWeeklyDeals();
+  }, []);
 
   const cuisineTypes = [
     { name: 'All Cuisines', value: 'all', color: '#ff6b35', emoji: '🍽️' },
@@ -189,6 +243,127 @@ const Restaurants = () => {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Weekly Deals Section */}
+      <section style={{
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(255,248,240,0.95) 100%)',
+        backdropFilter: 'blur(15px)',
+        padding: '3rem 0',
+        borderBottom: '1px solid rgba(255, 183, 0, 0.2)'
+      }}>
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-3xl font-extrabold text-red-700 mb-2">WEEKLY DEALS</h2>
+              <p className="text-lg text-gray-600">At select restaurants • Orders $12+</p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Button className="bg-red-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-800 transition duration-200">
+                See All
+              </Button>
+              <div className="flex space-x-2">
+                <button 
+                  onClick={scrollWeeklyDealsLeft}
+                  className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition duration-200"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button 
+                  onClick={scrollWeeklyDealsRight}
+                  className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition duration-200"
+                >
+                  <ChevronLeft className="w-5 h-5 rotate-180" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {loadingDeals ? (
+            <div className="flex space-x-6 overflow-x-hidden pb-4">
+              {[...Array(6)].map((_, index) => (
+                <div key={index} className="flex-shrink-0 w-80 bg-gray-200 rounded-xl animate-pulse">
+                  <div className="h-48 bg-gray-300"></div>
+                  <div className="p-4">
+                    <div className="h-4 bg-gray-300 rounded mb-2"></div>
+                    <div className="h-3 bg-gray-300 rounded mb-2"></div>
+                    <div className="h-3 bg-gray-300 rounded mb-2"></div>
+                    <div className="h-3 bg-gray-300 rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : weeklyDeals.length > 0 ? (
+            <div className="flex space-x-6 overflow-x-hidden pb-4 snap-x snap-mandatory" ref={weeklyDealsScrollRef}>
+              {weeklyDeals.map((restaurant) => {
+                // Format promotion details
+                const formatPromotionTitle = () => {
+                  if (restaurant.promotion_title) return restaurant.promotion_title;
+                  
+                  if (restaurant.promotion_discount_percentage) {
+                    const maxDiscount = restaurant.promotion_maximum_discount_cents 
+                      ? `, up to $${(restaurant.promotion_maximum_discount_cents / 100).toFixed(0)}`
+                      : '';
+                    return `${restaurant.promotion_discount_percentage}% off${maxDiscount}`;
+                  }
+                  
+                  if (restaurant.promotion_discount_amount_cents) {
+                    return `$${(restaurant.promotion_discount_amount_cents / 100).toFixed(2)} off`;
+                  }
+                  
+                  return '+ Featured Deal';
+                };
+
+                const formatPromotionDescription = () => {
+                  if (restaurant.promotion_description) return restaurant.promotion_description;
+                  
+                  if (restaurant.promotion_minimum_order_cents) {
+                    return `Valid on orders over $${(restaurant.promotion_minimum_order_cents / 100).toFixed(0)}`;
+                  }
+                  
+                  return 'Special promotion available';
+                };
+
+                return (
+                  <div key={restaurant.id} className="flex-shrink-0 w-80 bg-white rounded-xl shadow-md border border-gray-200 snap-start">
+                    <div className="h-48 overflow-hidden">
+                      <img
+                        src={restaurant.promotion_image_url || restaurant.image_url || `https://placehold.co/320x192/FF6B35/ffffff?text=${encodeURIComponent(restaurant.name)}`}
+                        alt={restaurant.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = `https://placehold.co/320x192/FF6B35/ffffff?text=${encodeURIComponent(restaurant.name)}`;
+                        }}
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-bold text-gray-900 mb-1">{restaurant.name}</h3>
+                      <div className="flex items-center text-sm text-gray-600 mb-2">
+                        <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 mr-1" />
+                        <span>{restaurant.rating.toFixed(1)} ★ • {restaurant.min_delivery_time}-{restaurant.max_delivery_time} min</span>
+                      </div>
+                      <p className="text-sm font-semibold text-gray-900 mb-1">
+                        ${(restaurant.delivery_fee_cents / 100).toFixed(2)} delivery fee
+                      </p>
+                      <p className="text-xs text-gray-500 mb-2">Sponsored</p>
+                      <div className="flex items-center text-red-700 font-semibold">
+                        <Plus className="w-4 h-4 mr-1" />
+                        <span>{formatPromotionTitle()}</span>
+                      </div>
+                      {restaurant.promotion_description && (
+                        <p className="text-xs text-gray-600 mt-1">{formatPromotionDescription()}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No weekly deals available at the moment.</p>
+            </div>
+          )}
         </div>
       </section>
 

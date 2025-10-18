@@ -5,7 +5,6 @@ import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import RestaurantGrid from "@/components/RestaurantGrid";
 import Footer from "@/components/Footer";
-import MobileBottomNav from "@/components/mobile/MobileBottomNav";
 import { Button } from "@/components/ui/button";
 import { Utensils, Truck } from "lucide-react";
 
@@ -58,7 +57,6 @@ const Index = () => {
         <Header />
         <Hero />
         <Footer />
-        <MobileBottomNav />
       </div>
     </>
   );
