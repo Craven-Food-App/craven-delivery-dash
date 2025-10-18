@@ -6,6 +6,7 @@ import LiveDashboard from '@/components/admin/LiveDashboard';
 import ChatPortal from '@/components/admin/ChatPortal';
 import BackgroundCheckDashboard from '@/components/admin/BackgroundCheckDashboard';
 import RestaurantOnboardingDashboard from '@/components/admin/RestaurantOnboardingDashboard';
+import { RestaurantVerificationDashboard } from '@/components/admin/RestaurantVerificationDashboard';
 import { NotificationSettingsManager } from '@/components/admin/NotificationSettingsManager';
 import { PayoutSettingsManager } from '@/components/admin/PayoutSettingsManager';
 import CommissionSettingsManager from '@/components/admin/CommissionSettingsManager';
@@ -32,6 +33,7 @@ const Admin: React.FC = () => {
       icon: Store,
       items: [
         { id: 'merchant-onboarding', label: 'Onboarding', icon: GraduationCap },
+        { id: 'merchant-verification', label: 'Document Verification', icon: FileCheck },
         { id: 'merchant-settings', label: 'Settings', icon: Shield },
       ]
     },
@@ -63,6 +65,8 @@ const Admin: React.FC = () => {
         return <LiveDashboard />;
       case 'merchant-onboarding':
         return <RestaurantOnboardingDashboard />;
+      case 'merchant-verification':
+        return <RestaurantVerificationDashboard />;
       case 'merchant-settings':
         return <CommissionSettingsManager />;
       case 'driver-applications':
