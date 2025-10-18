@@ -159,9 +159,10 @@ const MerchantWelcomeConfetti: React.FC<MerchantWelcomeConfettiProps> = ({
           width={windowDimensions.width}
           height={windowDimensions.height}
           recycle={false}
-          numberOfPieces={300}
-          colors={['#1e293b', '#334155', '#475569', '#64748b', '#94a3b8', '#f97316']}
-          gravity={0.15}
+          numberOfPieces={800}
+          colors={['#1e293b', '#334155', '#475569', '#64748b', '#94a3b8', '#f97316', '#fb923c', '#fdba74']}
+          gravity={0.2}
+          initialVelocityY={20}
         />
       )}
       
