@@ -38,12 +38,25 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
 
   const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const { width, height } = e.currentTarget;
+    const baseWidthPct = 80;
+    let widthPct = baseWidthPct;
+    let heightPct = baseWidthPct;
+
+    if (aspectRatio && aspectRatio > 0) {
+      const imageAspect = width / height; // W/H
+      heightPct = baseWidthPct * (imageAspect / aspectRatio);
+    }
+
+    // Clamp to sensible bounds
+    widthPct = Math.max(10, Math.min(100, widthPct));
+    heightPct = Math.max(10, Math.min(100, heightPct));
+
     const newCrop: Crop = {
       unit: '%',
-      x: 10,
-      y: 10,
-      width: 80,
-      height: aspectRatio ? (80 * height) / width / aspectRatio : 80,
+      x: (100 - widthPct) / 2,
+      y: (100 - heightPct) / 2,
+      width: widthPct,
+      height: heightPct,
     };
     setCrop(newCrop);
   };
