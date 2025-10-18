@@ -209,6 +209,7 @@ const StoreSettingsDashboard = () => {
                             onAddressParsed={(parsed) => {
                               console.log('Address parsed:', parsed);
                               setStoreAddress(parsed.street);
+                              setStoreAddress2(parsed.unitNumber || '');
                               setStoreCity(parsed.city);
                               setStoreState(parsed.state);
                               setStoreZip(parsed.zipCode);

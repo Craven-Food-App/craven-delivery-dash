@@ -20,6 +20,7 @@ interface ParsedAddress {
   city: string;
   state: string;
   zipCode: string;
+  unitNumber?: string;
 }
 
 interface AddressAutocompleteProps {
@@ -191,6 +192,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     let city = '';
     let state = '';
     let zipCode = '';
+    let unitNumber = '';
     
     if (suggestion.context && Array.isArray(suggestion.context)) {
       for (const ctx of suggestion.context) {
@@ -211,7 +213,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
         city = city || parts[1];
         const stateZip = parts[2];
         const stateMatch = stateZip.match(/([A-Z]{2})/);
-        const zipMatch = stateZip.match(/(\d{5})/);
+        const zipMatch = stateZip.match(/(\d{5}(-\d{4})?)/);
         state = state || (stateMatch ? stateMatch[1] : '');
         zipCode = zipCode || (zipMatch ? zipMatch[1] : '');
       }
@@ -223,14 +225,24 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     // Use Mapbox's address (house number) and text (street name) if available
     if (suggestion.address && suggestion.text) {
       street = `${suggestion.address} ${suggestion.text}`;
-      
-      // Check for unit number in properties
-      if (suggestion.properties?.unit) {
-        street += ` ${suggestion.properties.unit}`;
-      }
     } else {
       // Fallback: extract from place_name (first part only)
-      street = parts[0] || '';
+      const firstPart = parts[0] || '';
+      // Remove any unit/apt info from the street address
+      const streetMatch = firstPart.match(/^(.*?)(?:\s+(?:apt|apartment|unit|ste|suite|#)\s*\w+.*)?$/i);
+      street = streetMatch ? streetMatch[1].trim() : firstPart;
+    }
+    
+    // Extract unit/apartment number from properties or first part of place_name
+    if (suggestion.properties?.unit) {
+      unitNumber = suggestion.properties.unit;
+    } else {
+      // Try to extract from the first part of place_name
+      const firstPart = parts[0] || '';
+      const unitMatch = firstPart.match(/(?:apt|apartment|unit|ste|suite|#)\s*(\w+.*?)(?:,|$)/i);
+      if (unitMatch) {
+        unitNumber = unitMatch[1].trim();
+      }
     }
     
     return {
@@ -245,15 +257,22 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     const [lng, lat] = suggestion.center;
     const parsed = parseAddress(suggestion);
     
-    // Only set street address in the field
+    // Set the full street address in the field
     onChange(parsed.street, { lat, lng });
     setShowSuggestions(false);
     setIsValidAddress(true);
     onValidAddress?.(true, suggestion);
     
-    // Call the parsed address callback
+    // Call the parsed address callback with unit number included
     if (onAddressParsed) {
-      onAddressParsed(parsed);
+      const parts = suggestion.place_name.split(',')[0] || '';
+      const unitMatch = parts.match(/(?:apt|apartment|unit|ste|suite|#)\s*(\w+.*?)(?:,|$)/i);
+      const unitNumber = unitMatch ? unitMatch[1].trim() : '';
+      
+      onAddressParsed({
+        ...parsed,
+        unitNumber
+      });
     }
   };
 
