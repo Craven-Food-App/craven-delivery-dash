@@ -98,6 +98,8 @@ const RestaurantSetup = () => {
     progress?.tablet_shipped
   ].filter(Boolean).length;
 
+  const allStepsComplete = completedSteps === 3;
+
   const deadline = restaurant?.setup_deadline 
     ? format(new Date(restaurant.setup_deadline), 'EEE, MMM d')
     : readiness?.estimated_go_live 
@@ -266,7 +268,7 @@ const RestaurantSetup = () => {
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
         {activeTab === 'home' ? (
-          readiness?.ready ? (
+          allStepsComplete ? (
             <div className="max-w-7xl mx-auto p-8">
               <div className="mb-8">
                 <p className="text-sm text-muted-foreground mb-2">Welcome back, {userName}</p>
@@ -467,7 +469,7 @@ const RestaurantSetup = () => {
                       )}
 
                       {progress?.tablet_tracking_number && progress?.tablet_shipped && (
-                        <div className="bg-blue-50 p-3 rounded-lg mt-3 space-y-2">
+                        <div className="bg-muted p-3 rounded-lg mt-3 space-y-2">
                           <p className="text-sm font-semibold">Tracking Information</p>
                           <p className="text-sm">
                             <span className="text-muted-foreground">Carrier:</span> {progress.tablet_shipping_carrier || 'USPS'}
