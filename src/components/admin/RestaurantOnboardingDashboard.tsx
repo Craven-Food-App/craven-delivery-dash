@@ -65,7 +65,7 @@ const RestaurantOnboardingDashboard = () => {
   const updateMenuStatus = async (restaurantId: string, status: string) => {
     try {
       const { error } = await supabase.functions.invoke('update-menu-preparation-status', {
-        body: { restaurantId, status }
+        body: { restaurant_id: restaurantId, status }
       });
 
       if (error) throw error;
