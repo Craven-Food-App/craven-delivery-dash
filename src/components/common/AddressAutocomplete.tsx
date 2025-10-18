@@ -360,15 +360,33 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       const parts = suggestion.place_name.split(',').map(p => p.trim());
       console.log('Fallback parsing from parts:', parts);
       
-      // Find state and ZIP first to help identify city
-      let stateIndex = -1;
+      // Find ZIP first
       let zipIndex = -1;
       
       for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
         
-        // ENHANCED STATE MATCHING - Look for state code (2 capital letters) OR full state names
-        if (!state) {
+        // Look for ZIP code (5 digits, optionally with +4)
+        if (!zipCode) {
+          const zipMatch = part.match(/\b(\d{5}(-\d{4})?)\b/);
+          if (zipMatch) {
+            zipCode = zipMatch[1];
+            zipIndex = i;
+            console.log('✓ Fallback ZIP:', zipCode, 'at index', i);
+          }
+        }
+      }
+      
+      // Find state ONLY in the part that contains ZIP or adjacent parts (not in street name)
+      if (!state && zipIndex >= 0) {
+        // Look in the same part as ZIP and one part before it
+        const searchParts = [parts[zipIndex]];
+        if (zipIndex > 0) searchParts.unshift(parts[zipIndex - 1]);
+        
+        for (const part of searchParts) {
+          if (state) break;
+          
+          // Look for 2-letter state code OR full state name
           const stateMatch = part.match(/\b([A-Z]{2})\b/) || 
                             part.match(/\b(Ohio|California|Texas|Florida|New York|Illinois|Pennsylvania|Georgia|North Carolina|Michigan|New Jersey|Virginia|Washington|Arizona|Massachusetts|Tennessee|Indiana|Missouri|Maryland|Wisconsin|Colorado|Minnesota|South Carolina|Alabama|Louisiana|Kentucky|Oregon|Oklahoma|Connecticut|Utah|Iowa|Nevada|Arkansas|Mississippi|Kansas|New Mexico|Nebraska|West Virginia|Idaho|Hawaii|New Hampshire|Maine|Montana|Rhode Island|Delaware|South Dakota|North Dakota|Alaska|Vermont|Wyoming)\b/i);
           
@@ -376,7 +394,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
             let foundState = stateMatch[1].toUpperCase();
             
             // Convert full state names to abbreviations
-            const stateAbbr = {
+            const stateAbbr: Record<string, string> = {
               'OHIO': 'OH', 'CALIFORNIA': 'CA', 'TEXAS': 'TX', 'FLORIDA': 'FL', 'NEW YORK': 'NY',
               'ILLINOIS': 'IL', 'PENNSYLVANIA': 'PA', 'GEORGIA': 'GA', 'NORTH CAROLINA': 'NC',
               'MICHIGAN': 'MI', 'NEW JERSEY': 'NJ', 'VIRGINIA': 'VA', 'WASHINGTON': 'WA',
@@ -392,37 +410,18 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
             };
             
             state = stateAbbr[foundState] || foundState;
-            stateIndex = i;
-            console.log('✓ Fallback state:', state, 'at index', i);
-          }
-        }
-        
-        // Look for ZIP code (5 digits, optionally with +4)
-        if (!zipCode) {
-          const zipMatch = part.match(/\b(\d{5}(-\d{4})?)\b/);
-          if (zipMatch) {
-            zipCode = zipMatch[1];
-            zipIndex = i;
-            console.log('✓ Fallback ZIP:', zipCode, 'at index', i);
+            console.log('✓ Fallback state:', state);
           }
         }
       }
       
-      // Now find city - it should be the part just before state/ZIP
-      if (!city) {
-        if (stateIndex > 1) {
-          // City is likely the part before the state
-          city = parts[stateIndex - 1];
-          console.log('✓ Fallback city (before state):', city);
-        } else if (zipIndex > 1) {
-          // City is likely the part before the ZIP
-          city = parts[zipIndex - 1];
-          console.log('✓ Fallback city (before ZIP):', city);
-        } else if (parts.length > 2) {
-          // Last resort: take the second-to-last meaningful part
-          city = parts[parts.length - 2];
-          console.log('✓ Fallback city (second-to-last):', city);
-        }
+      // Find city - it should be the part just before state/ZIP
+      if (!city && zipIndex > 1) {
+        city = parts[zipIndex - 1];
+        console.log('✓ Fallback city (before ZIP):', city);
+      } else if (!city && parts.length > 2) {
+        city = parts[parts.length - 2];
+        console.log('✓ Fallback city (second-to-last):', city);
       }
     }
     
