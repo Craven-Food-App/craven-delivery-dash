@@ -320,8 +320,13 @@ const StoreSettingsDashboard = () => {
                   accept="image/*"
                   className="hidden"
                   onChange={(e) => {
+                    console.log('Header file input changed', e.target.files);
                     const file = e.target.files?.[0];
-                    if (file) handleImageSelect("header", file);
+                    if (file) {
+                      console.log('Selected header file:', file.name, file.type);
+                      handleImageSelect("header", file);
+                    }
+                    e.target.value = ''; // Reset input to allow same file selection
                   }}
                 />
                 {headerPhoto ? (
@@ -331,7 +336,12 @@ const StoreSettingsDashboard = () => {
                       <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
                         <Button 
                           type="button"
-                          onClick={() => headerInputRef.current?.click()}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('Header button clicked, opening file dialog');
+                            headerInputRef.current?.click();
+                          }}
                           variant="secondary"
                           size="sm"
                         >
@@ -359,7 +369,12 @@ const StoreSettingsDashboard = () => {
                     </p>
                     <Button 
                       type="button"
-                      onClick={() => headerInputRef.current?.click()}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Add header photo button clicked, opening file dialog');
+                        headerInputRef.current?.click();
+                      }}
                     >
                       Add photo
                     </Button>
