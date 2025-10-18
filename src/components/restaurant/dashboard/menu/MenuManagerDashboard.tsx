@@ -39,7 +39,6 @@ import {
   ChevronUp,
   Loader2,
 } from "lucide-react";
-import { useRestaurantData } from "@/hooks/useRestaurantData";
 import { toast } from "sonner";
 import MenuItemEditorDialog from "./MenuItemEditorDialog";
 import AvailabilityDropdown from "./AvailabilityDropdown";
@@ -63,8 +62,11 @@ interface MenuCategory {
   is_active: boolean;
 }
 
-const MenuManagerDashboard = () => {
-  const { restaurant } = useRestaurantData();
+interface MenuManagerDashboardProps {
+  restaurantId: string;
+}
+
+const MenuManagerDashboard = ({ restaurantId }: MenuManagerDashboardProps) => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,10 +78,10 @@ const MenuManagerDashboard = () => {
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   useEffect(() => {
-    if (restaurant?.id) {
+    if (restaurantId) {
       fetchData();
     }
-  }, [restaurant?.id]);
+  }, [restaurantId]);
 
   const fetchData = async () => {
     try {
@@ -94,12 +96,12 @@ const MenuManagerDashboard = () => {
               name
             )
           `)
-          .eq("restaurant_id", restaurant?.id)
+          .eq("restaurant_id", restaurantId)
           .order("created_at", { ascending: false }),
         supabase
           .from("menu_categories")
           .select("*")
-          .eq("restaurant_id", restaurant?.id)
+          .eq("restaurant_id", restaurantId)
           .eq("is_active", true)
           .order("display_order", { ascending: true }),
       ]);
@@ -386,7 +388,7 @@ const MenuManagerDashboard = () => {
           setSelectedItem(null);
         }}
         item={selectedItem}
-        restaurantId={restaurant?.id || ""}
+        restaurantId={restaurantId}
         onSave={fetchData}
       />
 

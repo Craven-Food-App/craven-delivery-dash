@@ -2,7 +2,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MenuManagerDashboard from "./menu/MenuManagerDashboard";
 import PricingDashboard from "./menu/PricingDashboard";
 
-const MenuDashboard = () => {
+interface MenuDashboardProps {
+  restaurantId: string;
+}
+
+const MenuDashboard = ({ restaurantId }: MenuDashboardProps) => {
   return (
     <div className="w-full h-full bg-background">
       <div className="border-b bg-card">
@@ -15,7 +19,7 @@ const MenuDashboard = () => {
             </TabsList>
 
             <TabsContent value="manager" className="mt-6">
-              <MenuManagerDashboard />
+              <MenuManagerDashboard restaurantId={restaurantId} />
             </TabsContent>
 
             <TabsContent value="pricing" className="mt-6">
