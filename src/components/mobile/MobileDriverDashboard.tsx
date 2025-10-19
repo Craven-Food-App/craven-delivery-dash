@@ -651,10 +651,12 @@ export const MobileDriverDashboard: React.FC = () => {
                     { time: '6p', value: 90, showLabel: true },
                     { time: '7p', value: 95, showLabel: false },
                     { time: '8p', value: 85, showLabel: false },
-                    { time: '9p', value: 85, showLabel: true }
+                    { time: '9p', value: 85, showLabel: true },
+                    { time: '10p', value: 70, showLabel: false },
+                    { time: '11p', value: 60, showLabel: false }
                   ].map((data, index) => (
                     <div key={data.time} className="flex flex-col items-center flex-1">
-                      <div className={`w-full rounded-t-sm transition-all duration-300 ${index === 12 ? 'bg-primary' : 'bg-muted'}`} style={{
+                      <div className={`w-full rounded-t-sm transition-all duration-300 ${index === 13 ? 'bg-primary' : 'bg-muted'}`} style={{
                         height: `${data.value / 95 * 100}%`,
                         minHeight: '6px'
                       }} />
@@ -742,10 +744,12 @@ export const MobileDriverDashboard: React.FC = () => {
                     { time: '6p', value: 90, showLabel: true },
                     { time: '7p', value: 95, showLabel: false },
                     { time: '8p', value: 85, showLabel: false },
-                    { time: '9p', value: 85, showLabel: true }
+                    { time: '9p', value: 85, showLabel: true },
+                    { time: '10p', value: 70, showLabel: false },
+                    { time: '11p', value: 60, showLabel: false }
                   ].map((data, index) => (
                     <div key={data.time} className="flex flex-col items-center flex-1">
-                      <div className={`w-full rounded-t-sm transition-all duration-300 ${index === 12 ? 'bg-primary' : 'bg-muted'}`} style={{
+                      <div className={`w-full rounded-t-sm transition-all duration-300 ${index === 13 ? 'bg-primary' : 'bg-muted'}`} style={{
                         height: `${data.value / 95 * 100}%`,
                         minHeight: '6px'
                       }} />
