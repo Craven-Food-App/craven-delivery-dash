@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Settings, Pause, Play, Square, Clock, Car, DollarSign, Calendar, Bell, User, Star, ChevronRight } from 'lucide-react';
+import { MapPin, Settings, Pause, Play, Square, Clock, Car, DollarSign, Calendar, Bell, User, Star, ChevronRight, Menu, X, Home, TrendingUp, HelpCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -71,6 +71,7 @@ export const MobileDriverDashboard: React.FC = () => {
     lat: number;
     lng: number;
   } | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [currentOrderAssignment, setCurrentOrderAssignment] = useState<OrderAssignment | null>(null);
   const [activeDelivery, setActiveDelivery] = useState<any>(null);
@@ -623,6 +624,16 @@ export const MobileDriverDashboard: React.FC = () => {
         <MobileMapbox />
       </div>
 
+      {/* Hamburger Menu Button - Top Left */}
+      <div className="fixed top-4 left-4 z-50 pointer-events-auto">
+        <button
+          onClick={() => setIsMenuOpen(true)}
+          className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center hover:bg-white transition-all"
+        >
+          <Menu className="h-5 w-5 text-gray-700" />
+        </button>
+      </div>
+
       {/* Main Content Overlay - Allow for bottom nav space - Non-interactive overlay */}
       <div style={{
         paddingBottom: '80px'
@@ -914,6 +925,67 @@ export const MobileDriverDashboard: React.FC = () => {
         }}
         onCompleteDelivery={() => setShowTestCompletionModal(false)}
       />}
+
+      {/* Side Menu Overlay - DoorDash Style */}
+      {isMenuOpen && (
+        <div className="fixed inset-0 z-50">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50" 
+            onClick={() => setIsMenuOpen(false)}
+          />
+          
+          {/* Menu Panel */}
+          <div className="absolute left-0 top-0 h-full w-80 bg-white shadow-2xl">
+            {/* Header */}
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Torrance S</h2>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">P</span>
+                    </div>
+                    <span className="text-blue-600 font-semibold text-sm">Platinum</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsMenuOpen(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"
+                >
+                  <X className="h-4 w-4 text-gray-600" />
+                </button>
+              </div>
+            </div>
+            
+            {/* Menu Items */}
+            <div className="p-4 space-y-2">
+              {[
+                { icon: Home, label: 'Home', active: true },
+                { icon: Calendar, label: 'Schedule' },
+                { icon: User, label: 'Account' },
+                { icon: Star, label: 'Ratings' },
+                { icon: DollarSign, label: 'Earnings' },
+                { icon: TrendingUp, label: 'Promos' },
+                { icon: Settings, label: 'Preferences' },
+                { icon: HelpCircle, label: 'Help' }
+              ].map((item, index) => (
+                <button
+                  key={index}
+                  className={`w-full flex items-center gap-4 p-3 rounded-xl text-left transition-all ${
+                    item.active 
+                      ? 'bg-gray-100 text-gray-900' 
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <item.icon className="h-5 w-5" />
+                  <span className="font-medium">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     )}
   </>;

@@ -246,10 +246,10 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
         
         {gpsError}
         
-        {location && <div className="bg-white/90 backdrop-blur-sm rounded-lg p-2 text-xs shadow-lg">
-            <div className="text-gray-600">GPS: {isTracking ? 'Active' : 'Inactive'}</div>
-            {location.accuracy && <div className="text-gray-500">±{Math.round(location.accuracy)}m</div>}
-            {location.speed && location.speed > 0 && <div className="text-gray-500">{Math.round(location.speed * 2.237)} mph</div>}
+        {location && <div className="hidden">
+            <div>GPS: {isTracking ? 'Active' : 'Inactive'}</div>
+            {location.accuracy && <div>±{Math.round(location.accuracy)}m</div>}
+            {location.speed && location.speed > 0 && <div>{Math.round(location.speed * 2.237)} mph</div>}
           </div>}
         
         {/* Speed Limit Sign - positioned under GPS controls */}
