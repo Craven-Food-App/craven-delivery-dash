@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Settings, Pause, Play, Square, Clock, Car, DollarSign, Calendar, Bell, User, Star, ChevronRight, Menu, X, Home, TrendingUp, HelpCircle } from 'lucide-react';
+import { MapPin, Settings, Pause, Play, Square, Clock, Car, DollarSign, Calendar, Bell, User, Star, ChevronRight, Menu, X, Home, TrendingUp, HelpCircle, LogOut } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -16,6 +16,10 @@ import LoadingScreen from './LoadingScreen';
 import MobileDriverWelcomeScreen from './MobileDriverWelcomeScreen';
 import { SpeedLimitSign } from './SpeedLimitSign';
 import { useDriverLocation } from '@/hooks/useDriverLocation';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import ScheduleSection from './ScheduleSection';
+import { EarningsSection } from './EarningsSection';
+import { AccountSection } from './AccountSection';
 type DriverState = 'offline' | 'online_searching' | 'online_paused' | 'on_delivery';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
 type EarningMode = 'perHour' | 'perOffer';
@@ -75,6 +79,7 @@ export const MobileDriverDashboard: React.FC = () => {
   } | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'earnings' | 'account'>('home');
   
   // Get location and speed data
   const {
@@ -84,6 +89,95 @@ export const MobileDriverDashboard: React.FC = () => {
     startTracking,
     stopTracking
   } = useDriverLocation();
+  
+  // Navigation
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  // Handle URL parameter changes
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && ['schedule', 'earnings', 'account'].includes(tab)) {
+      setActiveTab(tab as 'schedule' | 'earnings' | 'account');
+    } else {
+      setActiveTab('home');
+    }
+  }, [searchParams]);
+  
+  // Logout handler
+  const handleLogout = async () => {
+    try {
+      // Clear driver session
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('driver_sessions').update({
+          is_online: false,
+          session_data: {}
+        }).eq('driver_id', user.id);
+        
+        await supabase.from('driver_profiles').update({
+          status: 'offline',
+          is_available: false
+        }).eq('user_id', user.id);
+      }
+      
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+      
+      // Navigate to login
+      navigate('/driver/auth');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Force logout even if there's an error
+      await supabase.auth.signOut();
+      navigate('/driver/auth');
+    }
+  };
+
+  // Menu navigation handlers
+  const handleMenuNavigation = (menuItem: string) => {
+    setIsMenuOpen(false); // Close menu first
+    
+    switch (menuItem) {
+      case 'Home':
+        // Already on dashboard, just close menu
+        break;
+      case 'Schedule':
+        // Navigate to mobile schedule section
+        navigate('/mobile?tab=schedule');
+        break;
+      case 'Account':
+        // Navigate to mobile account section
+        navigate('/mobile?tab=account');
+        break;
+      case 'Ratings':
+        // For now, show a toast or alert about ratings feature
+        alert('Ratings feature coming soon! This will show your driver ratings and feedback.');
+        break;
+      case 'Earnings':
+        // Navigate to mobile earnings section
+        navigate('/mobile?tab=earnings');
+        break;
+      case 'Promos':
+        // Navigate to customer dashboard for promos
+        navigate('/customer-dashboard?tab=promos');
+        break;
+      case 'Preferences':
+        // For now, show a toast or alert about preferences feature
+        alert('Preferences feature coming soon! This will allow you to customize your driver experience.');
+        break;
+      case 'Help':
+        // Navigate to help center
+        navigate('/help');
+        break;
+      case 'Logout':
+        // Handle logout
+        handleLogout();
+        break;
+      default:
+        break;
+    }
+  };
   const [currentOrderAssignment, setCurrentOrderAssignment] = useState<OrderAssignment | null>(null);
   const [activeDelivery, setActiveDelivery] = useState<any>(null);
   const [todayEarnings, setTodayEarnings] = useState(0);
@@ -223,6 +317,22 @@ export const MobileDriverDashboard: React.FC = () => {
     let loadingTimer: NodeJS.Timeout;
     let failsafeTimer: NodeJS.Timeout;
     
+    // Set up auth state change listener to prevent auto-logout
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, session?.user?.id);
+      
+      if (event === 'SIGNED_OUT') {
+        console.log('User signed out, redirecting to login');
+        navigate('/driver/auth');
+        return;
+      }
+      
+      if (event === 'SIGNED_IN' && session?.user) {
+        console.log('User signed in, checking application status');
+        // Don't redirect here, let the existing logic handle it
+      }
+    });
+    
     const initializeDashboard = async () => {
       console.log('MobileDriverDashboard: Starting initialization');
       
@@ -260,6 +370,7 @@ export const MobileDriverDashboard: React.FC = () => {
       isMounted = false;
       if (loadingTimer) clearTimeout(loadingTimer);
       if (failsafeTimer) clearTimeout(failsafeTimer);
+      subscription?.unsubscribe();
     };
   }, []);
 
@@ -289,19 +400,30 @@ export const MobileDriverDashboard: React.FC = () => {
   };
   const checkSessionPersistence = async () => {
     try {
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      // First, refresh the session to ensure it's valid
+      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+      
+      if (sessionError) {
+        console.error('Session refresh failed:', sessionError);
+        // If session refresh fails, user needs to login again
+        navigate('/driver/auth');
+        return;
+      }
+      
+      if (!session?.user) {
+        console.log('No valid session found, redirecting to login');
+        navigate('/driver/auth');
+        return;
+      }
+      
+      const user = session.user;
 
       // Check if driver was previously online
       const {
-        data: session
+        data: driverSession
       } = await supabase.from('driver_sessions').select('*').eq('driver_id', user.id).maybeSingle();
-      if (session?.is_online && session.session_data) {
-        const sessionData = session.session_data as any;
+      if (driverSession?.is_online && driverSession.session_data) {
+        const sessionData = driverSession.session_data as any;
 
         // Check if session is still valid (end time hasn't passed)
         if (sessionData.end_time) {
@@ -661,8 +783,30 @@ export const MobileDriverDashboard: React.FC = () => {
         paddingBottom: '80px'
       }} className="fixed inset-0 z-10 flex flex-col py-0 pointer-events-none">
         
+        {/* Tab-based Content Rendering */}
+        {activeTab === 'schedule' && (
+          <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
+            <ScheduleSection />
+          </div>
+        )}
+        
+        {activeTab === 'earnings' && (
+          <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
+            <EarningsSection />
+          </div>
+        )}
+        
+        {activeTab === 'account' && (
+          <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
+            <AccountSection 
+              activeTab={activeTab}
+              onTabChange={(tab) => setActiveTab(tab as any)}
+            />
+          </div>
+        )}
+        
         {/* OFFLINE STATE */}
-        {driverState === 'offline' && <>
+        {activeTab === 'home' && driverState === 'offline' && <>
             {/* Change Zone Button - Top Left */}
             <div className="fixed top-4 left-4 z-20 pointer-events-auto">
               
@@ -726,7 +870,7 @@ export const MobileDriverDashboard: React.FC = () => {
           </>}
 
         {/* ONLINE SEARCHING STATE */}
-        {driverState === 'online_searching' && <>
+        {activeTab === 'home' && driverState === 'online_searching' && <>
             {/* Change Zone Button - Top Left */}
             <div className="absolute top-4 left-4 z-20 pointer-events-auto py-0 my-[525px] mx-0 px-0">
               
@@ -820,7 +964,7 @@ export const MobileDriverDashboard: React.FC = () => {
           </>}
 
         {/* PAUSED STATE */}
-        {driverState === 'online_paused' && <>
+        {activeTab === 'home' && driverState === 'online_paused' && <>
             {/* Paused Message - Center */}
             <div className="flex flex-col justify-center items-center h-full px-4 pointer-events-auto">
               <div className="bg-background/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-border/20 text-center max-w-sm w-full overflow-hidden">
@@ -857,7 +1001,7 @@ export const MobileDriverDashboard: React.FC = () => {
           </>}
 
         {/* ON DELIVERY STATE */}
-        {driverState === 'on_delivery' && activeDelivery && <div className="pointer-events-auto">
+        {activeTab === 'home' && driverState === 'on_delivery' && activeDelivery && <div className="pointer-events-auto">
           <ActiveDeliveryFlow orderDetails={{
             id: activeDelivery.id || activeDelivery.order_id || 'missing-order-id',
             order_number: activeDelivery.order_number || 'MISSING-ORDER',
@@ -983,17 +1127,19 @@ export const MobileDriverDashboard: React.FC = () => {
             {/* Menu Items */}
             <div className="p-4 space-y-2">
               {[
-                { icon: Home, label: 'Home', active: true },
-                { icon: Calendar, label: 'Schedule' },
-                { icon: User, label: 'Account' },
-                { icon: Star, label: 'Ratings' },
-                { icon: DollarSign, label: 'Earnings' },
-                { icon: TrendingUp, label: 'Promos' },
-                { icon: Settings, label: 'Preferences' },
-                { icon: HelpCircle, label: 'Help' }
+                { icon: Home, label: 'Home', active: true, path: 'Home' },
+                { icon: Calendar, label: 'Schedule', active: false, path: 'Schedule' },
+                { icon: User, label: 'Account', active: false, path: 'Account' },
+                { icon: Star, label: 'Ratings', active: false, path: 'Ratings' },
+                { icon: DollarSign, label: 'Earnings', active: false, path: 'Earnings' },
+                { icon: TrendingUp, label: 'Promos', active: false, path: 'Promos' },
+                { icon: Settings, label: 'Preferences', active: false, path: 'Preferences' },
+                { icon: HelpCircle, label: 'Help', active: false, path: 'Help' },
+                { icon: LogOut, label: 'Logout', active: false, path: 'Logout' }
               ].map((item, index) => (
                 <button
                   key={index}
+                  onClick={() => handleMenuNavigation(item.path)}
                   className={`w-full flex items-center gap-4 p-3 rounded-xl text-left transition-all ${
                     item.active 
                       ? 'bg-gray-100 text-gray-900' 
