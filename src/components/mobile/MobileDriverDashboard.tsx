@@ -16,7 +16,10 @@ import LoadingScreen from './LoadingScreen';
 import MobileDriverWelcomeScreen from './MobileDriverWelcomeScreen';
 import { SpeedLimitSign } from './SpeedLimitSign';
 import { useDriverLocation } from '@/hooks/useDriverLocation';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import ScheduleSection from './ScheduleSection';
+import { EarningsSection } from './EarningsSection';
+import { AccountSection } from './AccountSection';
 type DriverState = 'offline' | 'online_searching' | 'online_paused' | 'on_delivery';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
 type EarningMode = 'perHour' | 'perOffer';
@@ -76,6 +79,7 @@ export const MobileDriverDashboard: React.FC = () => {
   } | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'earnings' | 'account'>('home');
   
   // Get location and speed data
   const {
@@ -88,6 +92,17 @@ export const MobileDriverDashboard: React.FC = () => {
   
   // Navigation
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  // Handle URL parameter changes
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && ['schedule', 'earnings', 'account'].includes(tab)) {
+      setActiveTab(tab as 'schedule' | 'earnings' | 'account');
+    } else {
+      setActiveTab('home');
+    }
+  }, [searchParams]);
   
   // Menu navigation handlers
   const handleMenuNavigation = (menuItem: string) => {
@@ -98,20 +113,20 @@ export const MobileDriverDashboard: React.FC = () => {
         // Already on dashboard, just close menu
         break;
       case 'Schedule':
-        // For now, show a toast or alert about schedule feature
-        alert('Schedule feature coming soon! This will allow you to set your availability.');
+        // Navigate to mobile schedule section
+        navigate('/mobile?tab=schedule');
         break;
       case 'Account':
-        // Navigate to customer dashboard account section
-        navigate('/customer-dashboard?tab=account');
+        // Navigate to mobile account section
+        navigate('/mobile?tab=account');
         break;
       case 'Ratings':
         // For now, show a toast or alert about ratings feature
         alert('Ratings feature coming soon! This will show your driver ratings and feedback.');
         break;
       case 'Earnings':
-        // For now, show a toast or alert about earnings feature
-        alert('Earnings feature coming soon! This will show your earnings history and payouts.');
+        // Navigate to mobile earnings section
+        navigate('/mobile?tab=earnings');
         break;
       case 'Promos':
         // Navigate to customer dashboard for promos
@@ -706,8 +721,30 @@ export const MobileDriverDashboard: React.FC = () => {
         paddingBottom: '80px'
       }} className="fixed inset-0 z-10 flex flex-col py-0 pointer-events-none">
         
+        {/* Tab-based Content Rendering */}
+        {activeTab === 'schedule' && (
+          <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
+            <ScheduleSection />
+          </div>
+        )}
+        
+        {activeTab === 'earnings' && (
+          <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
+            <EarningsSection />
+          </div>
+        )}
+        
+        {activeTab === 'account' && (
+          <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
+            <AccountSection 
+              activeTab={activeTab}
+              onTabChange={(tab) => setActiveTab(tab as any)}
+            />
+          </div>
+        )}
+        
         {/* OFFLINE STATE */}
-        {driverState === 'offline' && <>
+        {activeTab === 'home' && driverState === 'offline' && <>
             {/* Change Zone Button - Top Left */}
             <div className="fixed top-4 left-4 z-20 pointer-events-auto">
               
@@ -771,7 +808,7 @@ export const MobileDriverDashboard: React.FC = () => {
           </>}
 
         {/* ONLINE SEARCHING STATE */}
-        {driverState === 'online_searching' && <>
+        {activeTab === 'home' && driverState === 'online_searching' && <>
             {/* Change Zone Button - Top Left */}
             <div className="absolute top-4 left-4 z-20 pointer-events-auto py-0 my-[525px] mx-0 px-0">
               
@@ -865,7 +902,7 @@ export const MobileDriverDashboard: React.FC = () => {
           </>}
 
         {/* PAUSED STATE */}
-        {driverState === 'online_paused' && <>
+        {activeTab === 'home' && driverState === 'online_paused' && <>
             {/* Paused Message - Center */}
             <div className="flex flex-col justify-center items-center h-full px-4 pointer-events-auto">
               <div className="bg-background/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-border/20 text-center max-w-sm w-full overflow-hidden">
@@ -902,7 +939,7 @@ export const MobileDriverDashboard: React.FC = () => {
           </>}
 
         {/* ON DELIVERY STATE */}
-        {driverState === 'on_delivery' && activeDelivery && <div className="pointer-events-auto">
+        {activeTab === 'home' && driverState === 'on_delivery' && activeDelivery && <div className="pointer-events-auto">
           <ActiveDeliveryFlow orderDetails={{
             id: activeDelivery.id || activeDelivery.order_id || 'missing-order-id',
             order_number: activeDelivery.order_number || 'MISSING-ORDER',
