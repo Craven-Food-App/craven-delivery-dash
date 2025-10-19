@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { User, Heart, Star, MessageCircle, Gift, Users, CreditCard, Zap, Shield, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import cravemoreIcon from '@/assets/cravemore-icon.png';
 
 interface AccountPopupProps {
   isOpen: boolean;
@@ -73,18 +74,18 @@ const AccountPopup: React.FC<AccountPopupProps> = ({ isOpen, onClose, position }
                 onClose();
                 window.location.href = '/crave-more';
               }}
-              className="w-full flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200 hover:bg-green-100 transition-colors"
+              className="w-full flex items-center gap-3 p-3 bg-black hover:bg-gray-900 transition-colors -mx-6"
             >
-              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-sm">C</span>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center">
+                <img src={cravemoreIcon} alt="CraveMore" className="w-8 h-8" />
               </div>
               <div className="flex-1 text-left">
-                <p className="text-sm text-green-700 font-medium">
+                <p className="text-sm text-white font-medium">
                   Save an average of $5 on each order. 
                   <span className="font-semibold"> Start a free CraveMore trial!</span>
                 </p>
               </div>
-              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+              <div className="w-6 h-6 rounded-full flex items-center justify-center">
                 <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                 </svg>
