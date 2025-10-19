@@ -633,7 +633,7 @@ const RestaurantOnboardingDashboard = () => {
                           Send Reminder
                         </Button>
 
-                        {requiredCompleted === requiredSteps.length && !restaurant.go_live_ready && (
+                        {requiredCompleted === requiredSteps && !restaurant.go_live_ready && (
                           <Button
                             size="sm"
                             className="bg-green-500 hover:bg-green-600"
@@ -938,15 +938,21 @@ const RestaurantOnboardingDashboard = () => {
                         </Button>
                       )}
 
-                      {requiredCompleted === requiredSteps.length && (
-                        <Button
-                          className="w-full bg-orange-500 hover:bg-orange-600"
-                          onClick={() => approveRestaurant(selectedRestaurant.restaurant_id)}
-                        >
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          Approve & Launch Restaurant
-                        </Button>
-                      )}
+                      {(() => {
+                        const steps = getOnboardingSteps(selectedRestaurant);
+                        const requiredSteps = steps.filter(s => s.required);
+                        const requiredCompleted = requiredSteps.filter(s => s.completed).length;
+                        
+                        return requiredCompleted === requiredSteps.length && (
+                          <Button
+                            className="w-full bg-orange-500 hover:bg-orange-600"
+                            onClick={() => approveRestaurant(selectedRestaurant.restaurant_id)}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Approve & Launch Restaurant
+                          </Button>
+                        );
+                      })()}
 
                       <Button variant="outline" className="w-full">
                         <Edit className="h-4 w-4 mr-2" />
