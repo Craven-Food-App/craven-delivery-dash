@@ -51,6 +51,7 @@ export const MobileDriverDashboard: React.FC = () => {
   const [showTimeSelector, setShowTimeSelector] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showWelcomeScreen, setShowWelcomeScreen] = useState(false);
+  const [loadingError, setLoadingError] = useState(false);
   const {
     playNotification
   } = useNotificationSettings();
@@ -159,15 +160,48 @@ export const MobileDriverDashboard: React.FC = () => {
 
   // Check session persistence and onboarding on component mount
   useEffect(() => {
-    checkOnboardingAndSession();
+    let isMounted = true;
+    let loadingTimer: NodeJS.Timeout;
+    let failsafeTimer: NodeJS.Timeout;
+    
+    const initializeDashboard = async () => {
+      console.log('MobileDriverDashboard: Starting initialization');
+      
+      // Failsafe: If loading takes more than 10 seconds, force show welcome screen
+      failsafeTimer = setTimeout(() => {
+        if (isMounted && isLoading) {
+          console.warn('MobileDriverDashboard: Loading timeout reached, forcing welcome screen');
+          setIsLoading(false);
+          setShowWelcomeScreen(true);
+          setLoadingError(true);
+        }
+      }, 10000);
+      
+      try {
+        await checkOnboardingAndSession();
+        console.log('MobileDriverDashboard: Onboarding check complete');
+      } catch (error) {
+        console.error('MobileDriverDashboard: Error during initialization:', error);
+        // Continue anyway - don't block the user
+      } finally {
+        // Ensure loading screen shows for at least 2.5 seconds
+        loadingTimer = setTimeout(() => {
+          if (isMounted) {
+            console.log('MobileDriverDashboard: Loading complete, showing welcome screen');
+            setIsLoading(false);
+            setShowWelcomeScreen(true);
+          }
+        }, 2500);
+      }
+    };
 
-    // Simulate loading time for the loading screen, then show welcome screen
-    const loadingTimer = setTimeout(() => {
-      console.log('Loading complete, setting showWelcomeScreen to true');
-      setIsLoading(false);
-      setShowWelcomeScreen(true);
-    }, 2500);
-    return () => clearTimeout(loadingTimer);
+    initializeDashboard();
+    
+    return () => {
+      isMounted = false;
+      if (loadingTimer) clearTimeout(loadingTimer);
+      if (failsafeTimer) clearTimeout(failsafeTimer);
+    };
   }, []);
 
   const checkOnboardingAndSession = async () => {

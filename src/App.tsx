@@ -43,6 +43,7 @@ import CookiePolicy from "./pages/CookiePolicy";
 import CraveMore from "./pages/CraveMore";
 import ChatButton from "./components/chat/ChatButton";
 import { ThemeProvider } from "./components/ThemeProvider";
+import SuspenseLoader from "./components/SuspenseLoader";
 
 // Lazy load guide pages
 const AdminGuide = lazy(() => import("./pages/AdminGuide"));
@@ -146,17 +147,17 @@ const App = () => {
           <Route path="/help" element={<HelpCenter />} />
             <Route path="/safety" element={<Safety />} />
             <Route path="/admin-guide" element={
-              <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+              <Suspense fallback={<SuspenseLoader message="Loading Admin Guide" />}>
                 <AdminGuide />
               </Suspense>
             } />
             <Route path="/restaurant-guide" element={
-              <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+              <Suspense fallback={<SuspenseLoader message="Loading Restaurant Guide" />}>
                 <RestaurantGuide />
               </Suspense>
             } />
             <Route path="/driver-guide" element={
-              <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+              <Suspense fallback={<SuspenseLoader message="Loading Driver Guide" />}>
                 <DriverGuide />
               </Suspense>
             } />
