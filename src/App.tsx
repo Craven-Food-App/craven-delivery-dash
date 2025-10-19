@@ -188,8 +188,8 @@ const App = () => {
           </ChatButton>
         </div>
 
-        {/* Global Mobile Bottom Navigation */}
-        <MobileBottomNav user={user} />
+        {/* Global Mobile Bottom Navigation - Hide on driver routes */}
+        {!window.location.pathname.startsWith('/mobile') && <MobileBottomNav user={user} />}
       </BrowserRouter>
     </TooltipProvider>
     </ThemeProvider>
