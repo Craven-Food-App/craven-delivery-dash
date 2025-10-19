@@ -75,7 +75,7 @@ const AccountPopup: React.FC<AccountPopupProps> = ({ isOpen, onClose, position }
               <div className="flex-1">
                 <p className="text-sm text-green-700 font-medium">
                   Save an average of $5 on each order. 
-                  <span className="font-semibold"> Start a free CravePass trial!</span>
+                  <span className="font-semibold"> Start a free CraveMore trial!</span>
                 </p>
               </div>
               <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
@@ -92,7 +92,7 @@ const AccountPopup: React.FC<AccountPopupProps> = ({ isOpen, onClose, position }
               </div>
               <div className="flex-1">
                 <p className="font-semibold text-gray-900">Crave'N Rewards Mastercard®</p>
-                <p className="text-sm text-gray-500">Get 4% cash back and 1 year of CravePass</p>
+                    <p className="text-sm text-gray-500">Get 4% cash back and 1 year of CraveMore</p>
               </div>
             </div>
 
