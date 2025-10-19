@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Settings, Pause, Play, Square, Clock, Car, DollarSign, Calendar, Bell, User, Star, ChevronRight, Menu, X, Home, TrendingUp, HelpCircle, LogOut } from 'lucide-react';
+import { MapPin, Settings, Pause, Play, Square, Clock, Car, DollarSign, Calendar, Bell, User, Star, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -14,20 +14,6 @@ import { MobileMapbox } from './MobileMapbox';
 import { DriveTimeSelector } from './DriveTimeSelector';
 import LoadingScreen from './LoadingScreen';
 import MobileDriverWelcomeScreen from './MobileDriverWelcomeScreen';
-import { SpeedLimitSign } from './SpeedLimitSign';
-import { useDriverLocation } from '@/hooks/useDriverLocation';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import ScheduleSection from './ScheduleSection';
-import { EarningsSection } from './EarningsSection';
-import { AccountSection } from './AccountSection';
-// Production readiness imports
-import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { useOfflineStorage } from '@/hooks/useOfflineStorage';
-import { usePerformanceMonitoring } from '@/hooks/usePerformanceMonitoring';
-import { useCrashReporting } from '@/hooks/useCrashReporting';
-import { useAnalytics } from '@/hooks/useAnalytics';
-import { LoadingState, LoadingOverlay } from '@/components/LoadingStates';
-import OfflineIndicator from '@/components/OfflineIndicator';
 type DriverState = 'offline' | 'online_searching' | 'online_paused' | 'on_delivery';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
 type EarningMode = 'perHour' | 'perOffer';
@@ -45,16 +31,6 @@ interface OrderAssignment {
   isTestOrder?: boolean; // Add test order flag
 }
 export const MobileDriverDashboard: React.FC = () => {
-  // Production readiness hooks
-  const { isOnline, isSlowConnection } = useNetworkStatus();
-  const { data: offlineData, setData: setOfflineData } = useOfflineStorage({
-    key: 'driver_state',
-    defaultValue: { state: 'offline', timestamp: Date.now() }
-  });
-  const { trackEvent, trackUserAction, trackError } = useAnalytics();
-  const { reportCustomError } = useCrashReporting();
-  const { trackApiCall } = usePerformanceMonitoring('MobileDriverDashboard');
-
   // Function to get current time index for highlighting
   const getCurrentTimeIndex = () => {
     const now = new Date();
@@ -95,107 +71,7 @@ export const MobileDriverDashboard: React.FC = () => {
     lat: number;
     lng: number;
   } | null>(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'earnings' | 'account'>('home');
-  
-  // Get location and speed data
-  const {
-    location,
-    isTracking,
-    error: locationError,
-    startTracking,
-    stopTracking
-  } = useDriverLocation();
-  
-  // Navigation
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  
-  // Handle URL parameter changes
-  useEffect(() => {
-    const tab = searchParams.get('tab');
-    if (tab && ['schedule', 'earnings', 'account'].includes(tab)) {
-      setActiveTab(tab as 'schedule' | 'earnings' | 'account');
-    } else {
-      setActiveTab('home');
-    }
-  }, [searchParams]);
-  
-  // Logout handler
-  const handleLogout = async () => {
-    try {
-      // Clear driver session
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from('driver_sessions').update({
-          is_online: false,
-          session_data: {}
-        }).eq('driver_id', user.id);
-        
-        await supabase.from('driver_profiles').update({
-          status: 'offline',
-          is_available: false
-        }).eq('user_id', user.id);
-      }
-      
-      // Sign out from Supabase
-      await supabase.auth.signOut();
-      
-      // Navigate to login
-      navigate('/driver/auth');
-    } catch (error) {
-      console.error('Error during logout:', error);
-      // Force logout even if there's an error
-      await supabase.auth.signOut();
-      navigate('/driver/auth');
-    }
-  };
-
-  // Menu navigation handlers
-  const handleMenuNavigation = (menuItem: string) => {
-    setIsMenuOpen(false); // Close menu first
-    
-    switch (menuItem) {
-      case 'Home':
-        // Already on dashboard, just close menu
-        break;
-      case 'Schedule':
-        // Navigate to mobile schedule section
-        navigate('/mobile?tab=schedule');
-        break;
-      case 'Account':
-        // Navigate to mobile account section
-        navigate('/mobile?tab=account');
-        break;
-      case 'Ratings':
-        // For now, show a toast or alert about ratings feature
-        alert('Ratings feature coming soon! This will show your driver ratings and feedback.');
-        break;
-      case 'Earnings':
-        // Navigate to mobile earnings section
-        navigate('/mobile?tab=earnings');
-        break;
-      case 'Promos':
-        // Navigate to customer dashboard for promos
-        navigate('/customer-dashboard?tab=promos');
-        break;
-      case 'Preferences':
-        // For now, show a toast or alert about preferences feature
-        alert('Preferences feature coming soon! This will allow you to customize your driver experience.');
-        break;
-      case 'Help':
-        // Navigate to help center
-        navigate('/help');
-        break;
-      case 'Logout':
-        // Handle logout
-        handleLogout();
-        break;
-      default:
-        break;
-    }
-  };
   const [currentOrderAssignment, setCurrentOrderAssignment] = useState<OrderAssignment | null>(null);
   const [activeDelivery, setActiveDelivery] = useState<any>(null);
   const [todayEarnings, setTodayEarnings] = useState(0);
@@ -335,22 +211,6 @@ export const MobileDriverDashboard: React.FC = () => {
     let loadingTimer: NodeJS.Timeout;
     let failsafeTimer: NodeJS.Timeout;
     
-    // Set up auth state change listener to prevent auto-logout
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change:', event, session?.user?.id);
-      
-      if (event === 'SIGNED_OUT') {
-        console.log('User signed out, redirecting to login');
-        navigate('/driver/auth');
-        return;
-      }
-      
-      if (event === 'SIGNED_IN' && session?.user) {
-        console.log('User signed in, checking application status');
-        // Don't redirect here, let the existing logic handle it
-      }
-    });
-    
     const initializeDashboard = async () => {
       console.log('MobileDriverDashboard: Starting initialization');
       
@@ -388,7 +248,6 @@ export const MobileDriverDashboard: React.FC = () => {
       isMounted = false;
       if (loadingTimer) clearTimeout(loadingTimer);
       if (failsafeTimer) clearTimeout(failsafeTimer);
-      subscription?.unsubscribe();
     };
   }, []);
 
@@ -418,30 +277,19 @@ export const MobileDriverDashboard: React.FC = () => {
   };
   const checkSessionPersistence = async () => {
     try {
-      // First, refresh the session to ensure it's valid
-      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
-      
-      if (sessionError) {
-        console.error('Session refresh failed:', sessionError);
-        // If session refresh fails, user needs to login again
-        navigate('/driver/auth');
-        return;
-      }
-      
-      if (!session?.user) {
-        console.log('No valid session found, redirecting to login');
-        navigate('/driver/auth');
-        return;
-      }
-      
-      const user = session.user;
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
+      if (!user) return;
 
       // Check if driver was previously online
       const {
-        data: driverSession
+        data: session
       } = await supabase.from('driver_sessions').select('*').eq('driver_id', user.id).maybeSingle();
-      if (driverSession?.is_online && driverSession.session_data) {
-        const sessionData = driverSession.session_data as any;
+      if (session?.is_online && session.session_data) {
+        const sessionData = session.session_data as any;
 
         // Check if session is still valid (end time hasn't passed)
         if (sessionData.end_time) {
@@ -523,22 +371,13 @@ export const MobileDriverDashboard: React.FC = () => {
     return () => window.removeEventListener('driverStatusChange', handleStatusChange as EventListener);
   }, [driverState]);
   const handleGoOnline = async () => {
-    const startTime = Date.now();
-    
     try {
-      trackUserAction('driver_go_online');
-      
       const {
         data: {
           user
         }
       } = await supabase.auth.getUser();
-      if (!user) {
-        const error = new Error('No authenticated user');
-        trackError('driver_go_online_failed', { reason: 'no_user' });
-        reportCustomError(error, 'handleGoOnline');
-        return;
-      }
+      if (!user) return;
 
       // Use the database function to ensure driver can go online
       const {
@@ -676,12 +515,6 @@ export const MobileDriverDashboard: React.FC = () => {
           console.error('Error updating driver profile:', profileError);
         }
       }
-      
-      // Update schedule availability status to sync with paused state
-      window.dispatchEvent(new CustomEvent('driverStatusChange', { 
-        detail: { status: 'offline' } 
-      }));
-      
       setDriverState('online_paused');
     } catch (error) {
       console.error('Error pausing:', error);
@@ -706,12 +539,6 @@ export const MobileDriverDashboard: React.FC = () => {
           console.error('Error updating driver profile:', profileError);
         }
       }
-      
-      // Update schedule availability status to sync with online state
-      window.dispatchEvent(new CustomEvent('driverStatusChange', { 
-        detail: { status: 'online' } 
-      }));
-      
       setDriverState('online_searching');
     } catch (error) {
       console.error('Error unpausing:', error);
@@ -791,70 +618,28 @@ export const MobileDriverDashboard: React.FC = () => {
     
     {!isLoading && !showWelcomeScreen && (
     <div className="fixed inset-0 h-screen w-screen bg-background overflow-hidden">
-      {/* Offline Indicator */}
-      <OfflineIndicator />
-      
       {/* Full Screen Map Background - Full height */}
       <div className="absolute inset-0 z-0">
         <MobileMapbox />
       </div>
-
-      {/* Hamburger Menu Button - Top Left */}
-      <div className="fixed top-4 left-4 z-50 pointer-events-auto">
-        <button
-          onClick={() => setIsMenuOpen(true)}
-          className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center hover:bg-white transition-all"
-        >
-          <Menu className="h-5 w-5 text-gray-700" />
-        </button>
-      </div>
-
-      {/* Speed Limit & Current Speed - Under Hamburger Menu */}
-      <div className="fixed top-16 left-4 z-40 pointer-events-auto">
-        <SpeedLimitSign 
-          currentSpeed={location?.speed ? location.speed * 2.237 : 0} // Convert m/s to mph
-          location={location ? {
-            latitude: location.latitude,
-            longitude: location.longitude
-          } : undefined} 
-        />
-      </div>
+      
+      {/* Status Bar - Top */}
+      {driverState !== 'offline' && <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-20 px-4">
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-lg ${driverState === 'online_searching' ? 'bg-green-500 text-white' : driverState === 'online_paused' ? 'bg-yellow-500 text-white' : 'bg-blue-500 text-white'}`}>
+            <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+            <span className="font-semibold text-sm">
+              {driverState === 'online_searching' ? 'Online' : driverState === 'online_paused' ? 'Paused' : 'On Delivery'}
+            </span>
+          </div>
+        </div>}
 
       {/* Main Content Overlay - Allow for bottom nav space - Non-interactive overlay */}
       <div style={{
         paddingBottom: '80px'
       }} className="fixed inset-0 z-10 flex flex-col py-0 pointer-events-none">
         
-        {/* Tab-based Content Rendering */}
-        {activeTab === 'schedule' && (
-          <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
-            <div className="min-h-screen">
-              <ScheduleSection />
-            </div>
-          </div>
-        )}
-        
-        {activeTab === 'earnings' && (
-          <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
-            <div className="min-h-screen">
-              <EarningsSection />
-            </div>
-          </div>
-        )}
-        
-        {activeTab === 'account' && (
-          <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
-            <div className="min-h-screen">
-              <AccountSection 
-                activeTab={activeTab}
-                onTabChange={(tab) => setActiveTab(tab as any)}
-              />
-            </div>
-          </div>
-        )}
-        
         {/* OFFLINE STATE */}
-        {activeTab === 'home' && driverState === 'offline' && <>
+        {driverState === 'offline' && <>
             {/* Change Zone Button - Top Left */}
             <div className="fixed top-4 left-4 z-20 pointer-events-auto">
               
@@ -918,7 +703,7 @@ export const MobileDriverDashboard: React.FC = () => {
           </>}
 
         {/* ONLINE SEARCHING STATE */}
-        {activeTab === 'home' && driverState === 'online_searching' && <>
+        {driverState === 'online_searching' && <>
             {/* Change Zone Button - Top Left */}
             <div className="absolute top-4 left-4 z-20 pointer-events-auto py-0 my-[525px] mx-0 px-0">
               
@@ -937,11 +722,8 @@ export const MobileDriverDashboard: React.FC = () => {
               {/* Still Searching Section with Get offers until */}
               <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/20 overflow-hidden">
                 <div className="flex items-center justify-between">
-                  {/* Left: Still searching text with loading state */}
-                  <div className="flex items-center gap-2">
-                    <LoadingState type="default" size="sm" />
-                    <span className="text-base text-foreground font-medium">Still searching...</span>
-                  </div>
+                  {/* Left: Still searching text */}
+                  <span className="text-base text-foreground font-medium">Still searching...</span>
                   
                   {/* Right: "Get offers until" + Time + Rotating circle grouped together */}
                   <div className="flex items-center gap-2">
@@ -1015,7 +797,7 @@ export const MobileDriverDashboard: React.FC = () => {
           </>}
 
         {/* PAUSED STATE */}
-        {activeTab === 'home' && driverState === 'online_paused' && <>
+        {driverState === 'online_paused' && <>
             {/* Paused Message - Center */}
             <div className="flex flex-col justify-center items-center h-full px-4 pointer-events-auto">
               <div className="bg-background/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-border/20 text-center max-w-sm w-full overflow-hidden">
@@ -1052,7 +834,7 @@ export const MobileDriverDashboard: React.FC = () => {
           </>}
 
         {/* ON DELIVERY STATE */}
-        {activeTab === 'home' && driverState === 'on_delivery' && activeDelivery && <div className="pointer-events-auto">
+        {driverState === 'on_delivery' && activeDelivery && <div className="pointer-events-auto">
           <ActiveDeliveryFlow orderDetails={{
             id: activeDelivery.id || activeDelivery.order_id || 'missing-order-id',
             order_number: activeDelivery.order_number || 'MISSING-ORDER',
@@ -1142,69 +924,6 @@ export const MobileDriverDashboard: React.FC = () => {
         }}
         onCompleteDelivery={() => setShowTestCompletionModal(false)}
       />}
-
-      {/* Side Menu Overlay - DoorDash Style */}
-      {isMenuOpen && (
-        <div className="fixed inset-0 z-50">
-          {/* Backdrop */}
-          <div 
-            className="absolute inset-0 bg-black/50" 
-            onClick={() => setIsMenuOpen(false)}
-          />
-          
-          {/* Menu Panel */}
-          <div className="absolute left-0 top-0 h-full w-80 bg-white shadow-2xl">
-            {/* Header */}
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">Torrance S</h2>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">P</span>
-                    </div>
-                    <span className="text-blue-600 font-semibold text-sm">Platinum</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setIsMenuOpen(false)}
-                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"
-                >
-                  <X className="h-4 w-4 text-gray-600" />
-                </button>
-              </div>
-            </div>
-            
-            {/* Menu Items */}
-            <div className="p-4 space-y-2">
-              {[
-                { icon: Home, label: 'Home', active: true, path: 'Home' },
-                { icon: Calendar, label: 'Schedule', active: false, path: 'Schedule' },
-                { icon: User, label: 'Account', active: false, path: 'Account' },
-                { icon: Star, label: 'Ratings', active: false, path: 'Ratings' },
-                { icon: DollarSign, label: 'Earnings', active: false, path: 'Earnings' },
-                { icon: TrendingUp, label: 'Promos', active: false, path: 'Promos' },
-                { icon: Settings, label: 'Preferences', active: false, path: 'Preferences' },
-                { icon: HelpCircle, label: 'Help', active: false, path: 'Help' },
-                { icon: LogOut, label: 'Logout', active: false, path: 'Logout' }
-              ].map((item, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleMenuNavigation(item.path)}
-                  className={`w-full flex items-center gap-4 p-3 rounded-xl text-left transition-all ${
-                    item.active 
-                      ? 'bg-gray-100 text-gray-900' 
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span className="font-medium">{item.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
     )}
   </>;

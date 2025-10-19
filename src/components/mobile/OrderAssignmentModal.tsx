@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronRight, Users, MapPin, Clock, DollarSign, Navigation2, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ChevronRight, Users, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { DeliveryMap } from './DeliveryMap';
+import cravenC from '@/assets/craven-c.png';
+import { OrderMapPreview } from './OrderMapPreview';
 
 interface OrderAssignment {
   assignment_id: string;
@@ -70,6 +72,7 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
           setTipCents(Number(order.tip_cents || 0));
 
           const dAddr: any = order.dropoff_address;
+          const pAddr: any = order.pickup_address;
           const type = dAddr?.type || dAddr?.address_type || dAddr?.location_type || null;
           if (type) setLocationType(String(type));
         }
@@ -81,7 +84,7 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
     run();
   }, [isOpen, assignment]);
 
-  // Mapbox route fetch
+  // Mapbox route fetch (optimized)
   useEffect(() => {
     if (!isOpen || !assignment) return;
     let canceled = false;
@@ -95,6 +98,7 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
         const token = (tokRes.data as any)?.token;
         if (!token) return;
 
+        // Helper: build a searchable address string
         const buildAddress = (addr: any) => {
           if (!addr) return '';
           if (typeof addr === 'string') return addr;
@@ -103,6 +107,7 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
           return parts.join(', ');
         };
 
+        // Helper: geocode to [lng, lat]
         const geocode = async (addr: any): Promise<[number, number] | null> => {
           const q = buildAddress(addr);
           if (!q) return null;
@@ -112,6 +117,7 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
           return Array.isArray(c) && c.length === 2 ? [Number(c[0]), Number(c[1])] : null;
         };
 
+        // Extract coordinates or geocode as fallback
         let pLat = Number(pAddr?.lat ?? pAddr?.latitude);
         let pLng = Number(pAddr?.lng ?? pAddr?.longitude);
         let dLat = Number(dAddr?.lat ?? dAddr?.latitude);
@@ -128,6 +134,7 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
 
         if ([pLat, pLng, dLat, dLng].some(isNaN)) return;
 
+        // Try to prepend current location as first leg if available
         let originLat: number | null = null;
         let originLng: number | null = null;
         try {
@@ -136,7 +143,9 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
           );
           originLat = position.coords.latitude;
           originLng = position.coords.longitude;
-        } catch (_) {}
+        } catch (_) {
+          // ignore
+        }
 
         const coords = originLat && originLng
           ? `${originLng},${originLat};${pLng},${pLat};${dLng},${dLat}`
@@ -189,7 +198,6 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
     };
 
     playNotificationSequence();
-    setTimeLeft(45);
 
     const timer = setInterval(() => {
       setTimeLeft(prev => {
@@ -220,150 +228,155 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
 
   if (!isOpen || !assignment) return null;
 
+  // ==========================
+  // Safe calculations
+  // ==========================
   const estimatedPayout = (((payoutPercent / 100) * subtotalCents + tipCents) / 100).toFixed(2);
   const milesParsed = parseFloat(assignment.distance_mi || '0') || 0;
   const miles = routeMiles ?? milesParsed;
   const mins = routeMins ?? (assignment.estimated_time || 0);
-
-  const formatAddress = (addr: any): string => {
-    if (typeof addr === 'string') return addr;
-    if (addr?.address) return addr.address;
-    const parts = [addr?.street, addr?.city, addr?.state].filter(Boolean);
-    return parts.join(', ') || 'Address unavailable';
-  };
+  const totalStops = Math.floor(Math.random() * 3) + 2;
+  const dropOffs = totalStops - 1;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleDecline} />
-      
-      {/* Modal */}
-      <div className="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl transform transition-all duration-300 max-h-[90vh] overflow-y-auto">
-        {/* Timer Progress Bar */}
-        <div className="sticky top-0 left-0 right-0 h-2 bg-gray-100 rounded-t-3xl overflow-hidden z-10">
+    <div className="fixed inset-0 z-50 flex items-end">
+      <div className="absolute inset-0 bg-black/20" onClick={handleDecline} />
+      <div className="relative w-full bg-card rounded-t-3xl shadow-2xl transform transition-transform duration-300 ease-out animate-in slide-in-from-bottom-full">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-muted rounded-t-3xl overflow-hidden">
           <div 
-            className="h-full bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-1000"
+            className="h-full bg-orange-500 transition-all duration-1000 ease-linear"
             style={{ width: `${(timeLeft / 45) * 100}%` }}
           />
         </div>
-
-        {/* Close Button */}
-        <button
-          onClick={handleDecline}
-          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-        >
-          <X className="h-5 w-5 text-gray-600" />
-        </button>
-
-        <div className="p-6 pb-8 space-y-6">
-          {/* Test Order Badge */}
+        <div className="p-6 pb-8">
           {assignment.isTestOrder && (
-            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-              <div className="flex items-center gap-2 mb-1">
+            <div className="mb-4 p-4 bg-orange-100 border border-orange-300 rounded-xl">
+              <div className="flex items-center gap-2 mb-2">
                 <span className="text-lg">🧪</span>
-                <span className="font-bold text-yellow-900">Test Order</span>
+                <span className="font-bold text-orange-800">Test Order</span>
               </div>
-              <p className="text-sm text-yellow-700">
-                This is a test order for training purposes.
+              <p className="text-sm text-orange-700">
+                This is a test order from Crave'N for testing purposes.
               </p>
             </div>
           )}
 
-          {/* Header */}
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">New Delivery Offer</h2>
-            <p className="text-sm text-gray-500">Accept within <span className="font-semibold text-orange-600">{timeLeft}s</span></p>
+          <div className="text-center mb-6">
+            <div className="bg-muted/50 rounded-full px-4 py-2 inline-block">
+              <span className="text-sm text-muted-foreground mr-2">Get offers until</span>
+              <span className="text-sm font-semibold text-foreground bg-card px-3 py-1 rounded-full border">9:00 PM</span>
+            </div>
           </div>
 
-          {/* Earnings Card */}
-          <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-100">
-            <div className="flex items-baseline justify-center gap-2 mb-2">
-              <DollarSign className="h-8 w-8 text-green-600" />
-              <span className="text-5xl font-bold text-gray-900">${estimatedPayout}</span>
-            </div>
-            <p className="text-center text-sm text-gray-600">Estimated earnings</p>
-            
-            <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-green-200">
-              <div className="text-center">
-                <div className="flex items-center gap-1 justify-center">
-                  <Navigation2 className="h-4 w-4 text-gray-500" />
-                  <span className="text-lg font-bold text-gray-900">{miles}</span>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold text-foreground">${estimatedPayout}</span>
+                  <span className="text-lg text-muted-foreground">estimate</span>
                 </div>
-                <span className="text-xs text-gray-600">miles</span>
-              </div>
-              <div className="w-px h-8 bg-green-200" />
-              <div className="text-center">
-                <div className="flex items-center gap-1 justify-center">
-                  <Clock className="h-4 w-4 text-gray-500" />
-                  <span className="text-lg font-bold text-gray-900">{mins}</span>
+                <div className="text-muted-foreground mt-1">
+                  <span className="font-semibold">{totalStops} stops</span>
+                  <span className="mx-2">•</span>
+                  <span className="font-semibold">{miles} miles</span>
+                  <span className="mx-2">•</span>
+                  <span className="font-semibold">{mins} mins</span>
                 </div>
-                <span className="text-xs text-gray-600">minutes</span>
+              </div>
+              <ChevronRight className="h-6 w-6 text-muted-foreground" />
+            </div>
+
+            <div className="flex items-center gap-4 py-4 border-b border-border/50">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-muted/60 overflow-hidden">
+                <img src={cravenC} alt="Crave'N" className="w-6 h-6 object-contain" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-semibold text-foreground">ASAP</span>
+                  <span className="text-muted-foreground">•</span>
+                  <span className="font-semibold text-foreground">Pickup</span>
+                </div>
+                <p className="text-muted-foreground">
+                  {typeof assignment.pickup_address === 'string' 
+                    ? assignment.pickup_address 
+                    : (() => {
+                        const addr = assignment.pickup_address;
+                        if (addr?.address) return addr.address;
+                        return `${addr?.street || ''} ${addr?.city || ''} ${addr?.state || ''} ${addr?.zip_code || ''}`.trim();
+                      })()
+                  }
+                </p>
               </div>
             </div>
-          </div>
 
-          {/* Live Map */}
-          <div className="rounded-2xl overflow-hidden border border-gray-200">
-            <DeliveryMap 
-              pickupAddress={assignment.pickup_address}
-              dropoffAddress={assignment.dropoff_address}
-              showRoute={true}
-              className="h-64"
-            />
-          </div>
-
-          {/* Pickup Info */}
-          <div className="flex items-start gap-4 p-4 bg-orange-50 rounded-xl border border-orange-100">
-            <div className="w-12 h-12 rounded-full bg-orange-600 flex items-center justify-center flex-shrink-0">
-              <MapPin className="h-6 w-6 text-white" />
+            <div className="flex items-center gap-4 py-2">
+              <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                <Users className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-foreground">{dropOffs} drop-offs</p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-orange-600 mb-1">PICKUP</p>
-              <p className="font-semibold text-gray-900 mb-1">{assignment.restaurant_name}</p>
-              <p className="text-sm text-gray-600 line-clamp-2">
-                {formatAddress(assignment.pickup_address)}
-              </p>
-            </div>
-          </div>
 
-          {/* Route Indicator */}
-          <div className="flex items-center justify-center">
-            <div className="w-1 h-12 bg-gradient-to-b from-orange-300 to-green-300 rounded-full" />
-          </div>
-
-          {/* Dropoff Info */}
-          <div className="flex items-start gap-4 p-4 bg-green-50 rounded-xl border border-green-100">
-            <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0">
-              <MapPin className="h-6 w-6 text-white" />
+            {/* Route Map Preview */}
+            <div className="py-2">
+              <OrderMapPreview
+                pickupAddress={assignment.pickup_address}
+                dropoffAddress={assignment.dropoff_address}
+                routeInfo={{
+                  miles,
+                  minutes: mins
+                }}
+                className="w-full"
+              />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-green-600 mb-1">DROPOFF</p>
-              <p className="font-semibold text-gray-900 mb-1">Customer Location</p>
-              <p className="text-sm text-gray-600 line-clamp-2">
-                {formatAddress(assignment.dropoff_address)}
-              </p>
-              {locationType && (
-                <span className="inline-block mt-2 px-3 py-1 bg-white rounded-lg text-xs text-gray-600 border border-gray-200 font-medium">
-                  {locationType}
-                </span>
-              )}
-            </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-2">
-            <button
-              onClick={handleDecline}
-              className="flex-1 h-14 px-6 rounded-xl font-semibold bg-gray-100 text-gray-900 hover:bg-gray-200 transition-all active:scale-95"
-            >
-              Decline
-            </button>
-            <button
-              onClick={handleAccept}
-              className="flex-1 h-14 px-6 rounded-xl font-semibold bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white shadow-lg shadow-orange-500/30 transition-all active:scale-95"
-            >
-              Accept Order
-            </button>
+            {/* Dropoff Info */}
+            <div className="py-2">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                  <MapPin className="h-5 w-5 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground">Dropoff Location</p>
+                  <p className="text-sm text-muted-foreground">
+                    {typeof assignment.dropoff_address === 'string' 
+                      ? assignment.dropoff_address 
+                      : (() => {
+                          const addr = assignment.dropoff_address;
+                          if (addr?.address) return addr.address;
+                          return `${addr?.street || ''} ${addr?.city || ''} ${addr?.state || ''} ${addr?.zip_code || ''}`.trim();
+                        })()
+                    }
+                  </p>
+                  {locationType && (
+                    <div className="bg-muted/30 rounded-lg px-3 py-1 mt-2 inline-block">
+                      <span className="text-xs text-muted-foreground capitalize">{locationType}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-4 pt-4">
+              <Button
+                onClick={handleDecline}
+                variant="secondary"
+                className="flex-1 h-14 text-lg font-semibold bg-muted hover:bg-muted/80 text-muted-foreground rounded-2xl"
+              >
+                REJECT
+              </Button>
+              <Button
+                onClick={handleAccept}
+                className="flex-1 h-14 text-lg font-semibold bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white rounded-2xl shadow-lg"
+              >
+                ACCEPT
+              </Button>
+            </div>
+
+            <div className="text-center pt-2">
+              <span className="text-sm text-muted-foreground">Auto-decline in {timeLeft}s</span>
+            </div>
           </div>
         </div>
       </div>
