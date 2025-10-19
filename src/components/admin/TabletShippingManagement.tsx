@@ -119,29 +119,41 @@ export const TabletShippingManagement = () => {
             tablet_shipping_carrier,
             tablet_preparing_at,
             tablet_shipped_at,
-            tablet_shipping_label_url,
-            tablet_delivered_at,
-            tablet_serial_number,
-            shipping_cost_cents,
-            package_weight_oz,
-            delivery_status
+            tablet_shipping_label_url
           )
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching restaurants:', error);
+        throw error;
+      }
 
       const formatted = data?.map(r => ({
         ...r,
         progress: Array.isArray(r.restaurant_onboarding_progress) 
-          ? r.restaurant_onboarding_progress[0] 
-          : r.restaurant_onboarding_progress
+          ? {
+              ...r.restaurant_onboarding_progress[0],
+              tablet_delivered_at: null,
+              tablet_serial_number: null,
+              shipping_cost_cents: null,
+              package_weight_oz: null,
+              delivery_status: null
+            }
+          : {
+              ...r.restaurant_onboarding_progress,
+              tablet_delivered_at: null,
+              tablet_serial_number: null,
+              shipping_cost_cents: null,
+              package_weight_oz: null,
+              delivery_status: null
+            }
       })) as RestaurantWithProgress[];
 
       setRestaurants(formatted || []);
     } catch (error: any) {
       toast.error('Failed to load restaurants');
-      console.error(error);
+      console.error('Fetch error:', error);
     } finally {
       setLoading(false);
     }
@@ -233,11 +245,7 @@ export const TabletShippingManagement = () => {
           tablet_shipped: true,
           tablet_shipped_at: new Date().toISOString(),
           tablet_tracking_number: trackingNumber,
-          tablet_shipping_carrier: shippingCarrier,
-          tablet_serial_number: tabletSerialNumber,
-          shipping_cost_cents: Math.round(parseFloat(shippingCost) * 100),
-          package_weight_oz: parseInt(packageWeight),
-          delivery_status: 'in_transit'
+          tablet_shipping_carrier: shippingCarrier
         })
         .eq('restaurant_id', selectedRestaurant.id);
 
