@@ -47,13 +47,26 @@ const MobileFeederLogin: React.FC<MobileFeederLoginProps> = ({ onBack, onLoginSu
 
   const handlePostLoginRouting = async (userId: string) => {
     try {
-      const { data: application } = await supabase
+      console.log('MobileFeederLogin: Checking application status for user', userId);
+      
+      const { data: application, error } = await supabase
         .from('craver_applications')
-        .select('status, first_name, background_check, background_check_approved_at, welcome_screen_shown, onboarding_completed_at')
+        .select('status, first_name, background_check, background_check_approved_at, background_check_initiated_at, welcome_screen_shown, onboarding_completed_at')
         .eq('user_id', userId)
         .single();
       
+      if (error) {
+        console.error('MobileFeederLogin: Error fetching application:', error);
+        toast({
+          title: "Error",
+          description: "Could not load your application status. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       if (!application) {
+        console.log('MobileFeederLogin: No application found');
         toast({
           title: "No Application Found",
           description: "Please apply to become a Feeder first.",
@@ -62,28 +75,50 @@ const MobileFeederLogin: React.FC<MobileFeederLoginProps> = ({ onBack, onLoginSu
         return;
       }
 
-      if (!application.background_check || !application.background_check_approved_at) {
-        toast({
-          title: "Application Under Review",
-          description: "Your application is being processed. We'll notify you soon!",
-        });
+      console.log('MobileFeederLogin: Application status:', application.status);
+      console.log('MobileFeederLogin: Background check approved:', application.background_check_approved_at);
+      console.log('MobileFeederLogin: Onboarding completed:', application.onboarding_completed_at);
+
+      // Check if background check is pending or in progress
+      if (application.background_check_initiated_at && !application.background_check_approved_at) {
+        console.log('MobileFeederLogin: Background check in progress, showing status screen');
+        // Background check is in progress - navigate to mobile background check status
+        navigate('/mobile/background-check-status');
         return;
       }
 
+      // Check if background check hasn't been initiated yet
+      if (!application.background_check && !application.background_check_approved_at) {
+        console.log('MobileFeederLogin: Application pending, showing pending message');
+        toast({
+          title: "Application Pending",
+          description: "Your application is being reviewed. We'll notify you when your background check begins!",
+        });
+        // Stay on login screen or navigate to a pending status page
+        return;
+      }
+
+      // Background check is approved, check onboarding
       if (!application.onboarding_completed_at) {
+        console.log('MobileFeederLogin: Onboarding incomplete, navigating to onboarding');
         navigate('/onboarding');
         return;
       }
 
-      // All checks passed, call onLoginSuccess to proceed to dashboard
+      // All checks passed, proceed to dashboard
+      console.log('MobileFeederLogin: All checks passed, proceeding to dashboard');
       if (onLoginSuccess) {
         onLoginSuccess();
       } else {
         navigate('/mobile');
       }
     } catch (error) {
-      console.error('Error checking application status:', error);
-      navigate('/feeder');
+      console.error('MobileFeederLogin: Error in post-login routing:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

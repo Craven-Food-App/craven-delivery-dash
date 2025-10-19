@@ -14,6 +14,7 @@ import OnboardingWizard from "./components/onboarding/OnboardingWizard";
 import OnboardingGuard from "./components/onboarding/OnboardingGuard";
 import CustomerDashboard from "./pages/CustomerDashboard";
 import { MobileDriverDashboard } from "./components/mobile/MobileDriverDashboard";
+import MobileBackgroundCheckStatus from "./components/mobile/MobileBackgroundCheckStatus";
 import AccessGuard from "./components/AccessGuard";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
@@ -130,6 +131,7 @@ const App = () => {
               <MobileDriverDashboard />
             </AccessGuard>
           } />
+          <Route path="/mobile/background-check-status" element={<MobileBackgroundCheckStatus />} />
           <Route path="/restaurant/auth" element={<RestaurantAuth />} />
           <Route path="/restaurant/register" element={<RestaurantRegister />} />
           <Route path="/merchant-portal" element={<MerchantPortal />} />
