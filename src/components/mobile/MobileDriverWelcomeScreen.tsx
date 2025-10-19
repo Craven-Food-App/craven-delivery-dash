@@ -66,7 +66,7 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
       </div>
 
       {/* FEED NOW Button - Overlay at bottom, touching message box with 0px gap */}
-      <div className="absolute bottom-0 left-0 right-0 px-6" style={{ marginTop: '-16px' }}>
+      <div className="absolute left-0 right-0 px-6" style={{ bottom: '15px', marginTop: '-16px' }}>
         <Button 
           onClick={handleFeedNow}
           className="w-full bg-orange-500 hover:bg-orange-600 text-white text-lg font-semibold py-4 rounded-b-lg shadow-2xl transition-all duration-200 transform hover:scale-105 border-2 border-white/20"
