@@ -275,13 +275,13 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
               setIsAutoCentering(true);
             }
           }} 
-          className={`rounded-full shadow-2xl transition-all duration-200 ${
+          className={`rounded-full shadow-2xl transition-all duration-200 flex items-center justify-center ${
             isAutoCentering 
               ? 'bg-orange-500 text-white hover:bg-orange-600' 
               : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-300'
           }`}
           style={{ 
-            padding: '5px',
+            padding: '8px',
             backgroundColor: isAutoCentering ? '#f97316' : '#ffffff',
             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
           }}
