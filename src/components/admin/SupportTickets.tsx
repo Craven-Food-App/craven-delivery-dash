@@ -69,21 +69,19 @@ export const SupportTickets: React.FC = () => {
 
       if (error) throw error;
 
-      // Fetch customer details separately
+      // Fetch customer details separately (without email since we don't have admin API)
       const formattedTickets = await Promise.all(
         (data || []).map(async (ticket: any) => {
           const { data: profile } = await supabase
             .from('user_profiles')
             .select('full_name')
             .eq('user_id', ticket.customer_id)
-            .single();
-          
-          const { data: authUser } = await supabase.auth.admin.getUserById(ticket.customer_id);
+            .maybeSingle();
           
           return {
             ...ticket,
-            customer_email: authUser?.user?.email || 'Unknown',
-            customer_name: profile?.full_name || 'Unknown Customer'
+            customer_email: ticket.customer_id.substring(0, 8) + '...', // Show partial ID
+            customer_name: profile?.full_name || 'Customer'
           };
         })
       );
