@@ -5,13 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { OrderAssignmentModal } from './OrderAssignmentModal';
-import ScheduleSection from './ScheduleSection';
-import { EarningsSection } from './EarningsSection';
-import { BottomNavigation } from './BottomNavigation';
 import ActiveDeliveryFlow from './ActiveDeliveryFlow';
-import { PushNotificationSetup } from './PushNotificationSetup';
-import { NotificationPreferences } from './NotificationPreferences';
-import { AccountSection } from './AccountSection';
 import TestCompletionModal from './TestCompletionModal';
 import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { useIOSNotifications } from '@/hooks/useIOSNotifications';
@@ -23,7 +17,6 @@ import MobileDriverWelcomeScreen from './MobileDriverWelcomeScreen';
 type DriverState = 'offline' | 'online_searching' | 'online_paused' | 'on_delivery';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
 type EarningMode = 'perHour' | 'perOffer';
-type TabType = 'home' | 'schedule' | 'earnings' | 'notifications' | 'account';
 interface OrderAssignment {
   assignment_id: string;
   order_id: string;
@@ -41,7 +34,6 @@ export const MobileDriverDashboard: React.FC = () => {
   const [driverState, setDriverState] = useState<DriverState>('offline');
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleType>('car');
   const [earningMode, setEarningMode] = useState<EarningMode>('perHour');
-  const [activeTab, setActiveTab] = useState<TabType>('home');
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [onlineTime, setOnlineTime] = useState(0);
   const [currentCity, setCurrentCity] = useState('Toledo');
@@ -522,40 +514,6 @@ export const MobileDriverDashboard: React.FC = () => {
     }
   };
 
-  // Render different tabs
-  if (activeTab === 'schedule') {
-    return <>
-        <div className="h-screen pb-20 overflow-y-auto">
-          <ScheduleSection />
-        </div>
-        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      </>;
-  }
-  if (activeTab === 'earnings') {
-    return <>
-        <div className="h-screen pb-20 overflow-y-auto">
-          <EarningsSection />
-        </div>
-        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      </>;
-  }
-  if (activeTab === 'notifications') {
-    return <>
-        <div className="h-screen pb-20 overflow-y-auto">
-          <div className="space-y-4 p-4">
-            <NotificationPreferences />
-            <PushNotificationSetup />
-          </div>
-        </div>
-        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      </>;
-  }
-  if (activeTab === 'account') {
-    return <>
-        <AccountSection activeTab={activeTab} onTabChange={setActiveTab} />
-        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      </>;
-  }
   return <>
     {/* iOS Notification Banners */}
     {iosNotifications.map((notification) => (
@@ -858,8 +816,6 @@ export const MobileDriverDashboard: React.FC = () => {
       {/* Drive Time Selector */}
       <DriveTimeSelector open={showTimeSelector} onClose={() => setShowTimeSelector(false)} onSelect={handleSelectDriveTime} />
 
-      {/* Bottom Navigation */}
-      <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Test Completion Modal */}
       {showTestCompletionModal && <TestCompletionModal 

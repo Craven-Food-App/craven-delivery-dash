@@ -23,47 +23,52 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-orange-100 flex flex-col">
-      {/* Header Image */}
-      <div className="flex-1 flex items-center justify-center px-6">
-        <div className="text-center max-w-md">
-          <img 
-            src="/src/assets/mobile-driver-welcome.png"
-            alt="CRAVE'N Delivery Rider"
-            className="w-full max-w-sm mx-auto mb-8"
-            onError={(e) => {
-              // Fallback to a placeholder if image doesn't exist
-              e.currentTarget.style.display = 'none';
-              const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
-              if (nextElement) {
-                nextElement.style.display = 'block';
-              }
-            }}
-          />
-          {/* Fallback content if image doesn't load */}
-          <div 
-            className="hidden w-full max-w-sm mx-auto mb-8 bg-orange-200 rounded-lg p-8 text-center"
-          >
-            <div className="text-orange-600 text-6xl mb-4">🛴</div>
-            <h2 className="text-2xl font-bold text-orange-800 mb-2">CRAVE'N</h2>
-            <p className="text-orange-700">Ready to deliver happiness!</p>
+    <div className="fixed inset-0 w-full h-full bg-gray-900">
+      {/* Full Screen Background Image */}
+      <img 
+        src="/src/assets/mobile-driver-welcome.png"
+        alt="CRAVE'N Delivery Rider"
+        className="absolute inset-0 w-full h-full object-cover"
+        onError={(e) => {
+          // Fallback to a gradient background if image doesn't exist
+          e.currentTarget.style.display = 'none';
+          const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+          if (nextElement) {
+            nextElement.style.display = 'block';
+          }
+        }}
+      />
+      
+      {/* Fallback gradient background if image doesn't load */}
+      <div 
+        className="hidden absolute inset-0 w-full h-full bg-gradient-to-br from-orange-400 to-orange-600"
+      >
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center text-white">
+            <div className="text-8xl mb-6">🛴</div>
+            <h2 className="text-4xl font-bold mb-4">CRAVE'N</h2>
+            <p className="text-xl opacity-90">Ready to deliver happiness!</p>
           </div>
-          
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">
+        </div>
+      </div>
+
+      {/* Message Bar - Transparent orange, touching the button */}
+      <div className="absolute bottom-16 left-0 right-0 px-6">
+        <div className="bg-orange-500/80 backdrop-blur-sm px-4 py-3 text-center">
+          <h1 className="text-white text-lg font-semibold mb-1">
             Welcome to CRAVE'N!
           </h1>
-          <p className="text-lg text-gray-600 mb-8">
-            You're all set to start delivering amazing food experiences. 
+          <p className="text-white/90 text-sm">
             Ready to make some money and help hungry customers?
           </p>
         </div>
       </div>
 
-      {/* Bottom Button */}
-      <div className="px-6 pb-8 pt-4 bg-white border-t border-orange-200">
+      {/* FEED NOW Button - Overlay at bottom, touching message box with 0px gap */}
+      <div className="absolute bottom-0 left-0 right-0 px-6">
         <Button 
           onClick={handleFeedNow}
-          className="w-full bg-orange-500 hover:bg-orange-600 text-white text-lg font-semibold py-4 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105"
+          className="w-full bg-orange-500 hover:bg-orange-600 text-white text-lg font-semibold py-4 rounded-b-lg shadow-2xl transition-all duration-200 transform hover:scale-105 border-2 border-white/20"
         >
           FEED NOW
         </Button>
