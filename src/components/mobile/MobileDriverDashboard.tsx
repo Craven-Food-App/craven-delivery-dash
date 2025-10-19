@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Settings, Pause, Play, Square, Clock, Car, DollarSign, Calendar, Bell, User, Star, ChevronRight, Menu, X, Home, TrendingUp, HelpCircle } from 'lucide-react';
+import { MapPin, Settings, Pause, Play, Square, Clock, Car, DollarSign, Calendar, Bell, User, Star, ChevronRight, Menu, X, Home, TrendingUp, HelpCircle, LogOut } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -104,6 +104,36 @@ export const MobileDriverDashboard: React.FC = () => {
     }
   }, [searchParams]);
   
+  // Logout handler
+  const handleLogout = async () => {
+    try {
+      // Clear driver session
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('driver_sessions').update({
+          is_online: false,
+          session_data: {}
+        }).eq('driver_id', user.id);
+        
+        await supabase.from('driver_profiles').update({
+          status: 'offline',
+          is_available: false
+        }).eq('user_id', user.id);
+      }
+      
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+      
+      // Navigate to login
+      navigate('/driver/auth');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Force logout even if there's an error
+      await supabase.auth.signOut();
+      navigate('/driver/auth');
+    }
+  };
+
   // Menu navigation handlers
   const handleMenuNavigation = (menuItem: string) => {
     setIsMenuOpen(false); // Close menu first
@@ -139,6 +169,10 @@ export const MobileDriverDashboard: React.FC = () => {
       case 'Help':
         // Navigate to help center
         navigate('/help');
+        break;
+      case 'Logout':
+        // Handle logout
+        handleLogout();
         break;
       default:
         break;
@@ -283,6 +317,22 @@ export const MobileDriverDashboard: React.FC = () => {
     let loadingTimer: NodeJS.Timeout;
     let failsafeTimer: NodeJS.Timeout;
     
+    // Set up auth state change listener to prevent auto-logout
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, session?.user?.id);
+      
+      if (event === 'SIGNED_OUT') {
+        console.log('User signed out, redirecting to login');
+        navigate('/driver/auth');
+        return;
+      }
+      
+      if (event === 'SIGNED_IN' && session?.user) {
+        console.log('User signed in, checking application status');
+        // Don't redirect here, let the existing logic handle it
+      }
+    });
+    
     const initializeDashboard = async () => {
       console.log('MobileDriverDashboard: Starting initialization');
       
@@ -320,6 +370,7 @@ export const MobileDriverDashboard: React.FC = () => {
       isMounted = false;
       if (loadingTimer) clearTimeout(loadingTimer);
       if (failsafeTimer) clearTimeout(failsafeTimer);
+      subscription?.unsubscribe();
     };
   }, []);
 
@@ -349,19 +400,30 @@ export const MobileDriverDashboard: React.FC = () => {
   };
   const checkSessionPersistence = async () => {
     try {
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      // First, refresh the session to ensure it's valid
+      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+      
+      if (sessionError) {
+        console.error('Session refresh failed:', sessionError);
+        // If session refresh fails, user needs to login again
+        navigate('/driver/auth');
+        return;
+      }
+      
+      if (!session?.user) {
+        console.log('No valid session found, redirecting to login');
+        navigate('/driver/auth');
+        return;
+      }
+      
+      const user = session.user;
 
       // Check if driver was previously online
       const {
-        data: session
+        data: driverSession
       } = await supabase.from('driver_sessions').select('*').eq('driver_id', user.id).maybeSingle();
-      if (session?.is_online && session.session_data) {
-        const sessionData = session.session_data as any;
+      if (driverSession?.is_online && driverSession.session_data) {
+        const sessionData = driverSession.session_data as any;
 
         // Check if session is still valid (end time hasn't passed)
         if (sessionData.end_time) {
@@ -1072,7 +1134,8 @@ export const MobileDriverDashboard: React.FC = () => {
                 { icon: DollarSign, label: 'Earnings', active: false, path: 'Earnings' },
                 { icon: TrendingUp, label: 'Promos', active: false, path: 'Promos' },
                 { icon: Settings, label: 'Preferences', active: false, path: 'Preferences' },
-                { icon: HelpCircle, label: 'Help', active: false, path: 'Help' }
+                { icon: HelpCircle, label: 'Help', active: false, path: 'Help' },
+                { icon: LogOut, label: 'Logout', active: false, path: 'Logout' }
               ].map((item, index) => (
                 <button
                   key={index}
