@@ -116,21 +116,7 @@ const App = () => {
             </OnboardingGuard>
           } />
           <Route path="/customer-dashboard" element={<CustomerDashboard />} />
-          <Route path="/mobile" element={
-            <AccessGuard fallback={
-              <div className="flex flex-col items-center justify-center min-h-screen p-4">
-                <h1 className="text-2xl font-bold mb-4">Feeder Access Required</h1>
-                <p className="text-muted-foreground text-center mb-4">
-                  You need an approved Feeder application to access the mobile portal.
-                </p>
-                <Link to="/feeder" className="text-primary hover:underline">
-                  Apply to become a Feeder →
-                </Link>
-              </div>
-            }>
-              <MobileDriverDashboard />
-            </AccessGuard>
-          } />
+          <Route path="/mobile" element={<MobileDriverDashboard />} />
           <Route path="/mobile/background-check-status" element={<MobileBackgroundCheckStatus />} />
           <Route path="/restaurant/auth" element={<RestaurantAuth />} />
           <Route path="/restaurant/register" element={<RestaurantRegister />} />
