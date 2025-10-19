@@ -8,8 +8,6 @@ import BackgroundCheckDashboard from '@/components/admin/BackgroundCheckDashboar
 import { BackgroundCheckSettings } from '@/components/admin/BackgroundCheckSettings';
 import RestaurantOnboardingDashboard from '@/components/admin/RestaurantOnboardingDashboard';
 import { RestaurantVerificationDashboard } from '@/components/admin/RestaurantVerificationDashboard';
-import { TabletShippingManagement } from '@/components/admin/TabletShippingManagement';
-// import { TabletInventoryManagement } from '@/components/admin/TabletInventoryManagement';
 import { NotificationSettingsManager } from '@/components/admin/NotificationSettingsManager';
 import { PayoutSettingsManager } from '@/components/admin/PayoutSettingsManager';
 import CommissionSettingsManager from '@/components/admin/CommissionSettingsManager';
@@ -43,8 +41,6 @@ const Admin: React.FC = () => {
       items: [
         { id: 'merchant-onboarding', label: 'Onboarding', icon: GraduationCap },
         { id: 'merchant-verification', label: 'Document Verification', icon: FileCheck },
-        { id: 'merchant-tablet', label: 'Tablet Shipping', icon: Package },
-        { id: 'merchant-inventory', label: 'Tablet Inventory', icon: Package },
         { id: 'merchant-settings', label: 'Settings', icon: Shield },
       ]
     },
@@ -92,23 +88,7 @@ const Admin: React.FC = () => {
       case 'merchant-onboarding':
         return <RestaurantOnboardingDashboard />;
       case 'merchant-verification':
-        return <RestaurantVerificationDashboard />;
-      case 'merchant-tablet':
-        return <TabletShippingManagement />;
-      case 'merchant-inventory':
-        return (
-          <div className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Tablet Inventory Management</h2>
-            <p className="text-muted-foreground mb-4">
-              This feature requires database setup. Please run the tablet inventory migration first.
-            </p>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <p className="text-sm text-yellow-800">
-                <strong>Setup Required:</strong> Run the SQL migration in your Supabase dashboard to enable this feature.
-              </p>
-            </div>
-          </div>
-        );
+        return <RestaurantVerificationDashboard />; // Enhanced UI
       case 'merchant-settings':
         return <CommissionSettingsManager />;
       case 'driver-applications':

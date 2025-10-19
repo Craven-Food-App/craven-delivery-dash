@@ -633,16 +633,22 @@ const RestaurantOnboardingDashboard = () => {
                           Send Reminder
                         </Button>
 
-                        {requiredCompleted === requiredSteps && !restaurant.go_live_ready && (
-                          <Button
-                            size="sm"
-                            className="bg-green-500 hover:bg-green-600"
-                            onClick={() => approveRestaurant(restaurant.restaurant_id)}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Approve Launch
-                          </Button>
-                        )}
+                        {(() => {
+                          const steps = getOnboardingSteps(restaurant);
+                          const requiredSteps = steps.filter(s => s.required);
+                          const requiredCompleted = requiredSteps.filter(s => s.completed).length;
+                          
+                          return requiredCompleted === requiredSteps.length && !restaurant.go_live_ready && (
+                            <Button
+                              size="sm"
+                              className="bg-green-500 hover:bg-green-600"
+                              onClick={() => approveRestaurant(restaurant.restaurant_id)}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Approve Launch
+                            </Button>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
