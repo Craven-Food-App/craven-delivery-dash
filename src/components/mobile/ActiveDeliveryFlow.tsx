@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast as showToast } from 'sonner';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useToast } from '@/hooks/use-toast';
+import { DeliveryMap } from './DeliveryMap';
 
 // ===== MODERN UI COMPONENTS =====
 
@@ -276,12 +277,12 @@ const ActiveDeliveryFlow = ({ orderDetails, onCompleteDelivery, onProgressChange
       <DeliveryProgressBar currentStage={currentStage} stages={DELIVERY_STAGES} />
       
       <div className="p-4 space-y-4">
-        {/* Map Placeholder */}
-        <Card className="overflow-hidden h-64 relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-            <MapPin className="h-12 w-12 text-gray-400" />
-          </div>
-        </Card>
+        {/* Live Map to Restaurant */}
+        <DeliveryMap 
+          pickupAddress={orderDetails?.pickup_address}
+          showRoute={false}
+          className="h-64"
+        />
 
         {/* Restaurant Info */}
         <InfoCard
@@ -548,11 +549,13 @@ const ActiveDeliveryFlow = ({ orderDetails, onCompleteDelivery, onProgressChange
       <DeliveryProgressBar currentStage={currentStage} stages={DELIVERY_STAGES} />
       
       <div className="p-4 space-y-4">
-        <Card className="overflow-hidden h-64 relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-            <Home className="h-12 w-12 text-gray-400" />
-          </div>
-        </Card>
+        {/* Live Map to Customer with Full Route */}
+        <DeliveryMap 
+          pickupAddress={orderDetails?.pickup_address}
+          dropoffAddress={orderDetails?.dropoff_address}
+          showRoute={true}
+          className="h-64"
+        />
 
         <InfoCard
           icon={Home}
