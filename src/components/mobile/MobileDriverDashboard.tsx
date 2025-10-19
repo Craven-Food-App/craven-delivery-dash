@@ -634,7 +634,7 @@ export const MobileDriverDashboard: React.FC = () => {
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
                 
-                <div className="flex items-end h-16 gap-1 overflow-hidden">
+                <div className="flex items-end h-20 gap-0.5 overflow-hidden">
                   {[
                     { time: '6a', value: 75, showLabel: true },
                     { time: '7a', value: 75, showLabel: false },
@@ -656,8 +656,8 @@ export const MobileDriverDashboard: React.FC = () => {
                     { time: '11p', value: 60, showLabel: false }
                   ].map((data, index) => (
                     <div key={data.time} className="flex flex-col items-center justify-end flex-1 min-w-0">
-                      <div className="w-full mb-1" style={{ height: `${(data.value / 95) * 100}%`, minHeight: '6px' }}>
-                         <div className={`w-full h-full rounded-t-sm transition-all duration-300 ${index === 13 ? 'bg-orange-500' : 'bg-gray-300'}`} />
+                      <div className="w-full mb-1" style={{ height: `${(data.value / 95) * 100}%`, minHeight: '8px' }}>
+                         <div className={`w-full h-full rounded-t-sm transition-all duration-300 border border-gray-400 ${index === 13 ? 'bg-orange-500' : 'bg-gray-500'}`} />
                       </div>
                       <span className="text-xs text-muted-foreground font-medium whitespace-nowrap" style={{ 
                         visibility: data.showLabel ? 'visible' : 'hidden',
@@ -728,7 +728,7 @@ export const MobileDriverDashboard: React.FC = () => {
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
                 
-                <div className="flex items-end h-16 gap-1 overflow-hidden">
+                <div className="flex items-end h-20 gap-0.5 overflow-hidden">
                   {[
                     { time: '6a', value: 75, showLabel: true },
                     { time: '7a', value: 75, showLabel: false },
@@ -750,8 +750,8 @@ export const MobileDriverDashboard: React.FC = () => {
                     { time: '11p', value: 60, showLabel: false }
                   ].map((data, index) => (
                     <div key={data.time} className="flex flex-col items-center justify-end flex-1 min-w-0">
-                      <div className="w-full mb-1" style={{ height: `${(data.value / 95) * 100}%`, minHeight: '6px' }}>
-                        <div className={`w-full h-full rounded-t-sm transition-all duration-300 ${index === 13 ? 'bg-orange-500' : 'bg-gray-300'}`} />
+                      <div className="w-full mb-1" style={{ height: `${(data.value / 95) * 100}%`, minHeight: '8px' }}>
+                        <div className={`w-full h-full rounded-t-sm transition-all duration-300 border border-gray-400 ${index === 13 ? 'bg-orange-500' : 'bg-gray-500'}`} />
                       </div>
                       <span className="text-xs text-muted-foreground font-medium whitespace-nowrap" style={{ 
                         visibility: data.showLabel ? 'visible' : 'hidden',
