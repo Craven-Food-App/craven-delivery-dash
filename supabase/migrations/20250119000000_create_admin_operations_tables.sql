@@ -12,14 +12,14 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS refund_requests (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   order_id UUID REFERENCES orders(id) ON DELETE CASCADE NOT NULL,
-  customer_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  customer_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   amount_cents INTEGER NOT NULL CHECK (amount_cents > 0),
   reason TEXT NOT NULL,
   status TEXT CHECK (status IN ('pending', 'approved', 'rejected', 'processed')) DEFAULT 'pending',
   type TEXT CHECK (type IN ('full', 'partial')) DEFAULT 'full',
   requested_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   processed_at TIMESTAMP WITH TIME ZONE,
-  processed_by UUID REFERENCES profiles(id),
+  processed_by UUID REFERENCES auth.users(id),
   admin_notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS disputes (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   resolved_at TIMESTAMP WITH TIME ZONE,
-  resolved_by UUID REFERENCES profiles(id)
+  resolved_by UUID REFERENCES auth.users(id)
 );
 
 -- Create indexes for disputes
@@ -84,7 +84,7 @@ CREATE INDEX IF NOT EXISTS idx_dispute_messages_created_at ON dispute_messages(c
 CREATE TABLE IF NOT EXISTS support_tickets (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   ticket_number TEXT UNIQUE NOT NULL,
-  customer_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  customer_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   subject TEXT NOT NULL,
   description TEXT NOT NULL,
   category TEXT CHECK (category IN (
@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS support_tickets (
   status TEXT CHECK (status IN (
     'open', 'in_progress', 'waiting_customer', 'resolved', 'closed'
   )) DEFAULT 'open',
-  assigned_to UUID REFERENCES profiles(id),
+  assigned_to UUID REFERENCES auth.users(id),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   resolved_at TIMESTAMP WITH TIME ZONE
@@ -159,7 +159,7 @@ CREATE INDEX IF NOT EXISTS idx_ticket_messages_created_at ON ticket_messages(cre
 -- =====================================================
 CREATE TABLE IF NOT EXISTS admin_audit_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  admin_id UUID REFERENCES profiles(id) ON DELETE SET NULL NOT NULL,
+  admin_id UUID REFERENCES auth.users(id) ON DELETE SET NULL NOT NULL,
   action TEXT NOT NULL,
   entity_type TEXT NOT NULL,
   entity_id TEXT NOT NULL,
@@ -174,14 +174,14 @@ CREATE INDEX IF NOT EXISTS idx_admin_audit_logs_entity_type ON admin_audit_logs(
 CREATE INDEX IF NOT EXISTS idx_admin_audit_logs_created_at ON admin_audit_logs(created_at DESC);
 
 -- =====================================================
--- 7. ADD COLUMNS TO PROFILES TABLE
+-- 7. ADD COLUMNS TO USER_PROFILES TABLE
 -- =====================================================
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS account_status TEXT DEFAULT 'active';
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS suspension_reason TEXT;
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS suspension_until TIMESTAMP WITH TIME ZONE;
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS account_status TEXT DEFAULT 'active';
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS suspension_reason TEXT;
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS suspension_until TIMESTAMP WITH TIME ZONE;
 
 -- Create index for account_status
-CREATE INDEX IF NOT EXISTS idx_profiles_account_status ON profiles(account_status);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_account_status ON user_profiles(account_status);
 
 -- =====================================================
 -- 8. ROW LEVEL SECURITY (RLS) POLICIES
