@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useDriverLocation } from '@/hooks/useDriverLocation';
 import { Crosshair } from 'lucide-react';
-import { SpeedLimitSign } from './SpeedLimitSign';
 declare global {
   interface Window {
     mapboxgl: any;
@@ -252,12 +251,6 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
             {location.speed && location.speed > 0 && <div>{Math.round(location.speed * 2.237)} mph</div>}
           </div>}
         
-        {/* Speed Limit Sign - positioned under GPS controls */}
-        <SpeedLimitSign currentSpeed={location?.speed ? location.speed * 2.237 : 0} // Convert m/s to mph
-      location={location ? {
-        latitude: location.latitude,
-        longitude: location.longitude
-      } : undefined} />
       </div>
 
       {/* Map Controls: Recenter button - DoorDash style bottom right */}
