@@ -246,10 +246,10 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
         
         {gpsError}
         
-        {location && <div className="bg-white/90 backdrop-blur-sm rounded-lg p-2 text-xs shadow-lg">
-            <div className="text-gray-600">GPS: {isTracking ? 'Active' : 'Inactive'}</div>
-            {location.accuracy && <div className="text-gray-500">±{Math.round(location.accuracy)}m</div>}
-            {location.speed && location.speed > 0 && <div className="text-gray-500">{Math.round(location.speed * 2.237)} mph</div>}
+        {location && <div className="hidden">
+            <div>GPS: {isTracking ? 'Active' : 'Inactive'}</div>
+            {location.accuracy && <div>±{Math.round(location.accuracy)}m</div>}
+            {location.speed && location.speed > 0 && <div>{Math.round(location.speed * 2.237)} mph</div>}
           </div>}
         
         {/* Speed Limit Sign - positioned under GPS controls */}
@@ -261,7 +261,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
       </div>
 
       {/* Map Controls: Recenter button - DoorDash style bottom right */}
-      <div className="fixed bottom-36 right-4 z-40 pointer-events-auto">
+      <div className="fixed bottom-[326px] right-4 z-50 pointer-events-auto">
         <button 
           onClick={() => {
             if (location && map.current) {
@@ -275,13 +275,13 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
               setIsAutoCentering(true);
             }
           }} 
-          className={`rounded-full shadow-2xl transition-all duration-200 ${
+          className={`rounded-full shadow-2xl transition-all duration-200 flex items-center justify-center ${
             isAutoCentering 
               ? 'bg-orange-500 text-white hover:bg-orange-600' 
               : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-300'
           }`}
           style={{ 
-            padding: '5px',
+            padding: '8px',
             backgroundColor: isAutoCentering ? '#f97316' : '#ffffff',
             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
           }}

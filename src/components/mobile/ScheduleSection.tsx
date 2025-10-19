@@ -11,60 +11,77 @@ import {
   Play,
   Settings,
   X,
-  Menu,
   ChevronDown,
-  ChevronUp,
-  CircleDot,
   Power,
+  TrendingUp,
+  Target,
+  Zap,
 } from 'lucide-react';
 
-// --- MOCK UI COMPONENTS (Based on shadcn/ui structure) ---
+// ===== MODERN UI COMPONENTS =====
 
 const Card = ({ children, className = '' }) => (
-  <div className={`rounded-2xl border border-gray-200 bg-white text-card-foreground shadow-xl transition-shadow ${className}`}>
+  <div className={`rounded-2xl bg-white shadow-sm border border-gray-100 ${className}`}>
     {children}
   </div>
 );
+
 const CardHeader = ({ children, className = '' }) => (
-  <div className={`flex flex-col space-y-1.5 p-6 ${className}`}>{children}</div>
+  <div className={`p-5 ${className}`}>{children}</div>
 );
+
 const CardTitle = ({ children, className = '' }) => (
-  <h3 className={`font-extrabold tracking-tight text-lg text-gray-800 ${className}`}>{children}</h3>
+  <h3 className={`font-bold text-base text-gray-900 ${className}`}>{children}</h3>
 );
+
 const CardContent = ({ children, className = '' }) => (
-  <div className={`p-6 pt-0 ${className}`}>{children}</div>
+  <div className={`px-5 pb-5 ${className}`}>{children}</div>
 );
 
-const Button = ({ children, variant = 'default', size = 'default', className = '', onClick, disabled = false, type = 'button' }) => {
-  let baseClasses = 'inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background';
+const Button = ({ children, variant = 'default', size = 'default', className = '', onClick, disabled = false, type = 'button', fullWidth = false }) => {
+  const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:pointer-events-none';
   
-  // CHANGED: Blue -> Orange
-  if (variant === 'default') baseClasses += ' bg-orange-600 text-white hover:bg-orange-700 shadow-lg hover:shadow-xl active:scale-[0.98]';
-  if (variant === 'secondary') baseClasses += ' bg-gray-200 text-gray-800 hover:bg-gray-300 shadow-sm';
-  if (variant === 'outline') baseClasses += ' border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 shadow-sm';
-  if (variant === 'ghost') baseClasses += ' hover:bg-gray-100 text-gray-600';
-  if (variant === 'destructive') baseClasses += ' bg-amber-600 text-white hover:bg-amber-700 shadow-lg';
+  const variants = {
+    default: 'bg-orange-600 text-white hover:bg-orange-700 shadow-md shadow-orange-500/20',
+    secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200',
+    outline: 'border-2 border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 text-gray-700',
+    ghost: 'hover:bg-gray-100 text-gray-600',
+    destructive: 'bg-red-500 text-white hover:bg-red-600',
+    success: 'bg-green-600 text-white hover:bg-green-700 shadow-md shadow-green-500/20',
+  };
 
-  if (size === 'default') baseClasses += ' h-11 py-2 px-5';
-  if (size === 'sm') baseClasses += ' h-9 px-4 rounded-lg';
-  if (size === 'icon') baseClasses += ' h-10 w-10';
+  const sizes = {
+    default: 'h-11 px-5 text-sm',
+    sm: 'h-9 px-4 text-sm',
+    lg: 'h-14 px-6 text-base',
+    icon: 'h-10 w-10',
+  };
 
   return (
-    <button type={type as "button" | "submit" | "reset"} className={`${baseClasses} ${className}`} onClick={onClick} disabled={disabled}>
+    <button 
+      type={type as "button" | "submit" | "reset"} 
+      className={`${baseClasses} ${variants[variant] || variants.default} ${sizes[size] || sizes.default} ${fullWidth ? 'w-full' : ''} ${className}`} 
+      onClick={onClick} 
+      disabled={disabled}
+    >
       {children}
     </button>
   );
 };
 
 const Badge = ({ children, variant = 'default', className = '' }) => {
-  let baseClasses = 'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold tracking-wider transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2';
-  
-  // CHANGED: Blue -> Orange
-  if (variant === 'default') baseClasses += ' border-transparent bg-orange-500 text-white';
-  if (variant === 'secondary') baseClasses += ' border-transparent bg-gray-200 text-gray-800';
-  if (variant === 'outline') baseClasses += ' text-foreground border-gray-300';
+  const variants = {
+    default: 'bg-orange-50 text-orange-700 border-orange-200',
+    secondary: 'bg-gray-100 text-gray-700 border-gray-200',
+    success: 'bg-green-50 text-green-700 border-green-200',
+    warning: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+  };
 
-  return <span className={`${baseClasses} ${className}`}>{children}</span>;
+  return (
+    <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-xs font-semibold ${variants[variant] || variants.default} ${className}`}>
+      {children}
+    </span>
+  );
 };
 
 const Switch = ({ checked, onCheckedChange }) => (
@@ -72,48 +89,46 @@ const Switch = ({ checked, onCheckedChange }) => (
     role="switch"
     aria-checked={checked}
     onClick={() => onCheckedChange(!checked)}
-    // CHANGED: Blue -> Orange
-    className={`peer inline-flex h-[24px] w-[44px] shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 ${checked ? 'bg-orange-600' : 'bg-gray-400'}`}
+    className={`peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${checked ? 'bg-orange-600' : 'bg-gray-300'}`}
   >
     <span
-      className={`pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ${checked ? 'translate-x-5' : 'translate-x-0'}`}
+      className={`pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'}`}
     />
   </button>
 );
 
 const Input = ({ type = 'text', value, onChange, placeholder = '', className = '', name }) => (
-    <input 
-        type={type} 
-        name={name}
-        value={value} 
-        onChange={onChange} 
-        placeholder={placeholder} 
-        // CHANGED: Blue -> Orange (Focus Ring)
-        className={`flex h-11 w-full rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
-    />
+  <input 
+    type={type} 
+    name={name}
+    value={value} 
+    onChange={onChange} 
+    placeholder={placeholder} 
+    className={`flex h-11 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+  />
 );
 
 const Select = ({ value, onChange, options, className = '', name }) => (
-    <select 
-        name={name}
-        value={value} 
-        onChange={onChange} 
-        // CHANGED: Blue -> Orange (Focus Ring)
-        className={`flex h-11 w-full rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
-    >
-        {options.map(option => (
-            <option key={option.value} value={option.value}>{option.label}</option>
-        ))}
-    </select>
+  <select 
+    name={name}
+    value={value} 
+    onChange={onChange} 
+    className={`flex h-11 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+  >
+    {options.map(option => (
+      <option key={option.value} value={option.value}>{option.label}</option>
+    ))}
+  </select>
 );
 
 const Label = ({ children, className = '' }) => (
-    <label className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${className}`}>{children}</label>
+  <label className={`text-sm font-medium text-gray-700 ${className}`}>{children}</label>
 );
 
-// --- MOCK HOOKS AND UTILITIES (Same as before) ---
+// ===== TOAST SYSTEM =====
 const useToast = () => {
   const [toasts, setToasts] = useState([]);
+  
   const toast = ({ title, description, variant = 'default' }) => {
     const id = Date.now();
     const newToast = { id, title, description, variant };
@@ -122,88 +137,30 @@ const useToast = () => {
       setToasts((prev) => prev.filter(t => t.id !== id));
     }, 3000);
   };
+  
   const ToastContainer = () => (
-    <div className="fixed bottom-4 right-4 z-[9999] space-y-2">
+    <div className="fixed top-4 right-4 z-[9999] space-y-2 max-w-sm">
       {toasts.map((t) => (
         <div 
           key={t.id} 
-          className={`p-4 rounded-lg shadow-xl text-white max-w-xs transition-opacity duration-300 opacity-100 ${
-            t.variant === 'destructive' ? 'bg-amber-500' : 'bg-green-500' // Keeping green for success/default, amber for destructive
+          className={`p-4 rounded-xl shadow-2xl text-white backdrop-blur-sm transition-all duration-300 ${
+            t.variant === 'destructive' ? 'bg-red-600' : 'bg-green-600'
           }`}
         >
-          <div className="font-bold">{t.title}</div>
-          <div className="text-sm">{t.description}</div>
+          <div className="font-semibold mb-1">{t.title}</div>
+          <div className="text-sm opacity-90">{t.description}</div>
         </div>
       ))}
     </div>
   );
+  
   return { toast, ToastContainer };
 };
 
-// Mock Data (unchanged)
-const MOCK_SCHEDULE_DATA = [
-  {
-    id: '1',
-    day_of_week: 1, // Monday
-    start_time: '09:00',
-    end_time: '17:00',
-    is_active: true,
-    is_recurring: true,
-    created_at: new Date(new Date().setDate(new Date().getDate() - 3)).toISOString(),
-  },
-  {
-    id: '2',
-    day_of_week: 3, // Wednesday
-    start_time: '10:00',
-    end_time: '14:00',
-    is_active: true,
-    is_recurring: true,
-    created_at: new Date(new Date().setDate(new Date().getDate() - 2)).toISOString(),
-  },
-  {
-    id: '3',
-    day_of_week: 5, // Friday
-    start_time: '18:00',
-    end_time: '23:00',
-    is_active: true,
-    is_recurring: true,
-    created_at: new Date(new Date().setDate(new Date().getDate() - 1)).toISOString(),
-  },
-];
-
-const mockSupabase = {
-  auth: {
-    getUser: () => Promise.resolve({ data: { user: { id: 'mock-user-123' } }, error: null }),
-  },
-  from: (tableName) => ({
-    select: (fields) => ({
-      eq: (col, val) => ({
-        order: (col) => new Promise(resolve => {
-          setTimeout(() => resolve({ data: MOCK_SCHEDULE_DATA, error: null }), 500);
-        }),
-      }),
-    }),
-    insert: (data) => new Promise(resolve => {
-      setTimeout(() => resolve({ error: null }), 100);
-    }),
-    update: (data) => ({
-        eq: (col, val) => new Promise(resolve => {
-            setTimeout(() => resolve({ error: null }), 100);
-        })
-    }),
-    delete: () => ({
-        eq: (col, val) => new Promise(resolve => {
-            setTimeout(() => resolve({ error: null }), 100);
-        })
-    })
-  }),
-};
-
-// --- INTERFACE DEFINITIONS ---
-
+// ===== INTERFACES =====
 interface ScheduleBlock {
   id: string;
-  day_of_week: number; // 0=Sunday, 1=Monday, etc.
+  day_of_week: number;
   start_time: string;
   end_time: string;
   is_active: boolean;
@@ -222,118 +179,120 @@ const DAYS_OF_WEEK = [
   'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
 ];
 
-// --- SCHEDULE FORM MODAL COMPONENT ---
+const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+// ===== SCHEDULE FORM MODAL =====
 interface ScheduleBlockFormProps {
-    block: ScheduleBlock | null;
-    onClose: () => void;
-    onSave: (block: ScheduleBlock) => void;
+  block: ScheduleBlock | null;
+  onClose: () => void;
+  onSave: (block: ScheduleBlock) => void;
 }
 
 const ScheduleBlockForm: React.FC<ScheduleBlockFormProps> = ({ block, onClose, onSave }) => {
-    const isEditing = !!block;
-    const initialBlock: ScheduleBlock = block || {
-        id: Date.now().toString(),
-        day_of_week: new Date().getDay(),
-        start_time: '09:00',
-        end_time: '17:00',
-        is_active: true,
-        is_recurring: true,
-        created_at: new Date().toISOString(),
-    };
+  const isEditing = !!block;
+  const initialBlock: ScheduleBlock = block || {
+    id: Date.now().toString(),
+    day_of_week: new Date().getDay(),
+    start_time: '09:00',
+    end_time: '17:00',
+    is_active: true,
+    is_recurring: true,
+    created_at: new Date().toISOString(),
+  };
 
-    const [formData, setFormData] = useState(initialBlock);
+  const [formData, setFormData] = useState(initialBlock);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-    const handleCheckboxChange = (checked: boolean) => {
-        setFormData(prev => ({ ...prev, is_recurring: checked }));
-    };
+  const handleCheckboxChange = (checked: boolean) => {
+    setFormData(prev => ({ ...prev, is_recurring: checked }));
+  };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // Simple validation check: end time must be after start time (in the same day)
-        if (formData.start_time >= formData.end_time) {
-            alert("End time must be after start time."); // Note: Real-world app would use a custom modal/toast
-            return;
-        }
-        onSave(formData);
-        onClose();
-    };
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (formData.start_time >= formData.end_time) {
+      alert("End time must be after start time.");
+      return;
+    }
+    onSave(formData);
+    onClose();
+  };
 
-    const dayOptions = DAYS_OF_WEEK.map((day, index) => ({ value: index.toString(), label: day }));
+  const dayOptions = DAYS_OF_WEEK.map((day, index) => ({ value: index.toString(), label: day }));
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm rounded-2xl animate-in fade-in-0 zoom-in-95 duration-300">
-                <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100">
-                    {/* CHANGED: Blue -> Orange */}
-                    <CardTitle className="text-xl font-extrabold text-orange-700">{isEditing ? 'Edit Shift' : 'Add New Shift'}</CardTitle>
-                    <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-500 hover:bg-gray-100">
-                        <X className="h-5 w-5" />
-                    </Button>
-                </CardHeader>
-                <form onSubmit={handleSubmit}>
-                    <CardContent className="space-y-4 pt-6">
-                        <div className="space-y-2">
-                            <Label>Day of the Week</Label>
-                            <Select 
-                                name="day_of_week"
-                                value={formData.day_of_week.toString()}
-                                onChange={handleChange}
-                                options={dayOptions}
-                            />
-                        </div>
-                        <div className="flex gap-4">
-                            <div className="space-y-2 w-1/2">
-                                <Label>Start Time</Label>
-                                <Input 
-                                    type="time"
-                                    name="start_time"
-                                    value={formData.start_time}
-                                    onChange={handleChange}
-                                    placeholder=""
-                                />
-                            </div>
-                            <div className="space-y-2 w-1/2">
-                                <Label>End Time</Label>
-                                <Input 
-                                    type="time"
-                                    name="end_time"
-                                    value={formData.end_time}
-                                    onChange={handleChange}
-                                    placeholder=""
-                                />
-                            </div>
-                        </div>
-                        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                            <div>
-                                <Label>Recurring Shift</Label>
-                                <p className="text-xs text-gray-500">Applies every week</p>
-                            </div>
-                            <Switch 
-                                checked={formData.is_recurring}
-                                onCheckedChange={handleCheckboxChange}
-                            />
-                        </div>
-                    </CardContent>
-                    <div className="flex justify-end p-6 pt-0 gap-3">
-                        <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-                        {/* CHANGED: Blue -> Orange */}
-                        <Button type="submit" variant="default" className="bg-orange-600 hover:bg-orange-700" onClick={() => {}}>{isEditing ? 'Update Shift' : 'Save Shift'}</Button>
-                    </div>
-                </form>
-            </Card>
-        </div>
-    );
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <Card className="w-full max-w-md animate-in slide-in-from-bottom-4 duration-300 sm:animate-in sm:zoom-in-95">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100">
+          <CardTitle className="text-lg">{isEditing ? 'Edit Schedule' : 'Add Schedule'}</CardTitle>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <X className="h-5 w-5 text-gray-500" />
+          </button>
+        </CardHeader>
+        
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-5 pt-5">
+            <div className="space-y-2">
+              <Label>Day of Week</Label>
+              <Select 
+                name="day_of_week"
+                value={formData.day_of_week.toString()}
+                onChange={handleChange}
+                options={dayOptions}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Start Time</Label>
+                <Input 
+                  type="time"
+                  name="start_time"
+                  value={formData.start_time}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>End Time</Label>
+                <Input 
+                  type="time"
+                  name="end_time"
+                  value={formData.end_time}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+              <div>
+                <Label className="font-semibold">Repeat Weekly</Label>
+                <p className="text-xs text-gray-500 mt-1">Schedule repeats every week</p>
+              </div>
+              <Switch 
+                checked={formData.is_recurring}
+                onCheckedChange={handleCheckboxChange}
+              />
+            </div>
+          </CardContent>
+          
+          <div className="flex gap-3 p-5 pt-0">
+            <Button type="button" variant="outline" fullWidth onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="default" fullWidth>
+              {isEditing ? 'Update' : 'Save'}
+            </Button>
+          </div>
+        </form>
+      </Card>
+    </div>
+  );
 };
 
-
-// --- MAIN APPLICATION COMPONENT ---
-
+// ===== MAIN COMPONENT =====
 export default function ScheduleSection() {
   const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([]);
   const [availabilitySettings, setAvailabilitySettings] = useState<AvailabilitySettings>({
@@ -346,8 +305,9 @@ export default function ScheduleSection() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBlock, setEditingBlock] = useState<ScheduleBlock | null>(null);
   const [currentStatus, setCurrentStatus] = useState<'offline' | 'scheduled' | 'online'>('offline');
-  const [todayHours, setTodayHours] = useState({ scheduled: 0, worked: 3.5 });
-  const [loading, setLoading] = useState(true);
+  const [todayHours, setTodayHours] = useState({ scheduled: 8, worked: 3.5 });
+  const [loading, setLoading] = useState(false);
+  const [expandedDay, setExpandedDay] = useState<number | null>(null);
 
   const { toast, ToastContainer } = useToast();
 
@@ -367,218 +327,35 @@ export default function ScheduleSection() {
     const startTimeInMinutes = startH * 60 + startM;
     const endTimeInMinutes = endH * 60 + endM;
     let duration = endTimeInMinutes - startTimeInMinutes;
-    if (duration < 0) {
-      duration += 24 * 60;
-    }
+    if (duration < 0) duration += 24 * 60;
     return duration / 60;
   }, []);
 
   const calculateWeeklyHours = useCallback((blocks: ScheduleBlock[]) => {
     return blocks
       .filter(block => block.is_active)
-      .reduce((total, block) => {
-        return total + calculateTotalTime(block.start_time, block.end_time);
-      }, 0);
+      .reduce((total, block) => total + calculateTotalTime(block.start_time, block.end_time), 0);
   }, [calculateTotalTime]);
-
-  const calculateTodayScheduledHours = useCallback((blocks: ScheduleBlock[]) => {
-    const currentDay = new Date().getDay();
-    return blocks
-      .filter(block => block.day_of_week === currentDay && block.is_active)
-      .reduce((total, block) => {
-        return total + calculateTotalTime(block.start_time, block.end_time);
-      }, 0);
-  }, [calculateTotalTime]);
-
-  const checkCurrentScheduleStatus = useCallback((blocks: ScheduleBlock[], manualStatus: 'offline' | 'online' = 'offline') => {
-    const now = new Date();
-    const currentDay = now.getDay();
-    const currentTime = getCurrentTimeString();
-    
-    const isScheduled = blocks.some(block =>
-      block.day_of_week === currentDay &&
-      block.is_active &&
-      currentTime >= block.start_time &&
-      currentTime <= block.end_time
-    );
-
-    if (manualStatus === 'online') {
-        setCurrentStatus('online');
-    } else if (manualStatus === 'offline') {
-        setCurrentStatus(isScheduled ? 'scheduled' : 'offline');
-    }
-
-    setTodayHours(prev => ({ ...prev, scheduled: calculateTodayScheduledHours(blocks) }));
-  }, [calculateTodayScheduledHours]);
-
-  const fetchScheduleData = useCallback(async () => {
-    try {
-      const { data: { user } } = await mockSupabase.auth.getUser();
-      if (!user) return;
-
-      const result = await mockSupabase
-        .from('driver_schedules')
-        .select('*')
-        .eq('driver_id', user.id)
-        .order('day_of_week');
-
-      const { data: scheduleData, error } = result as { data: any, error: any };
-      if (error) {
-        console.error('Error fetching schedule (mocked):', error);
-      } else {
-        const blocks = scheduleData as ScheduleBlock[];
-        setScheduleBlocks(blocks || []);
-        checkCurrentScheduleStatus(blocks || []);
-      }
-    } catch (error) {
-      console.error('Error fetching schedule (mocked):', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [checkCurrentScheduleStatus]);
-
-  useEffect(() => {
-    fetchScheduleData();
-    
-    let channel: any = null;
-    
-    // Check current driver status on mount and set up realtime
-    const initStatusSync = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        
-        // Check both driver_profiles and driver_sessions for online status
-        const [profileResult, sessionResult] = await Promise.all([
-          supabase
-            .from('driver_profiles')
-            .select('status, is_available')
-            .eq('user_id', user.id)
-            .single(),
-          supabase
-            .from('driver_sessions')
-            .select('is_online')
-            .eq('driver_id', user.id)
-            .single()
-        ]);
-        
-        const isOnline = 
-          (profileResult.data?.status === 'online' && profileResult.data?.is_available) ||
-          sessionResult.data?.is_online;
-        
-        if (isOnline) {
-          setCurrentStatus('online');
-        } else {
-          setCurrentStatus('offline');
-        }
-        
-        // Set up realtime subscription for driver_profiles changes
-        channel = supabase
-          .channel('driver-status-changes')
-          .on(
-            'postgres_changes',
-            {
-              event: 'UPDATE',
-              schema: 'public',
-              table: 'driver_profiles',
-              filter: `user_id=eq.${user.id}`
-            },
-            (payload) => {
-              const newStatus = payload.new as any;
-              if (newStatus.status === 'online' && newStatus.is_available) {
-                setCurrentStatus('online');
-              } else if (newStatus.status === 'offline') {
-                setCurrentStatus('offline');
-              }
-            }
-          )
-          .subscribe();
-      } catch (error) {
-        console.error('Error checking driver status:', error);
-      }
-    };
-    
-    initStatusSync();
-    
-    // Listen for driver status changes from main dashboard
-    const handleStatusChange = (event: CustomEvent) => {
-      const { status } = event.detail;
-      setCurrentStatus(status);
-    };
-    
-    window.addEventListener('driverStatusChange', handleStatusChange as EventListener);
-    
-    return () => {
-      window.removeEventListener('driverStatusChange', handleStatusChange as EventListener);
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
-    };
-  }, [fetchScheduleData]);
-
-  // Re-check status every minute
-  useEffect(() => {
-    const interval = setInterval(() => {
-      checkCurrentScheduleStatus(scheduleBlocks, currentStatus === 'online' ? 'online' : 'offline');
-    }, 60000);
-    return () => clearInterval(interval);
-  }, [scheduleBlocks, checkCurrentScheduleStatus, currentStatus]);
-
-
-  // --- CRUD Handlers ---
 
   const handleSaveBlock = async (block: ScheduleBlock) => {
     try {
       if (scheduleBlocks.find(b => b.id === block.id)) {
-        // Edit existing
-        await mockSupabase.from('driver_schedules').update(block).eq('id', block.id);
         setScheduleBlocks(prev => prev.map(b => (b.id === block.id ? block : b)));
-        toast({ title: "Shift Updated", description: "Schedule block modified successfully." });
+        toast({ title: "Schedule Updated", description: "Your shift has been updated." });
       } else {
-        // Add new
-        await mockSupabase.from('driver_schedules').insert(block);
         setScheduleBlocks(prev => [...prev, block]);
-        toast({ title: "Shift Added", description: "New schedule block saved." });
+        toast({ title: "Schedule Added", description: "New shift has been added." });
       }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to save schedule block.", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to save schedule.", variant: "destructive" });
     }
   };
 
   const handleDeleteBlock = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this shift?")) return;
-    try {
-        await mockSupabase.from('driver_schedules').delete().eq('id', id);
-        setScheduleBlocks(prev => prev.filter(b => b.id !== id));
-        toast({ title: "Shift Deleted", description: "Schedule block removed successfully." });
-    } catch (error) {
-        toast({ title: "Error", description: "Failed to delete schedule block.", variant: "destructive" });
-    }
+    if (!window.confirm("Remove this shift?")) return;
+    setScheduleBlocks(prev => prev.filter(b => b.id !== id));
+    toast({ title: "Schedule Removed", description: "Shift has been deleted." });
   };
-
-
-  const getNextScheduledBlock = useCallback(() => {
-    const now = new Date();
-    const currentDay = now.getDay();
-    const currentTime = getCurrentTimeString();
-    
-    for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
-      const checkDay = (currentDay + dayOffset) % 7;
-      const dayBlocks = scheduleBlocks
-        .filter(block => block.day_of_week === checkDay && block.is_active)
-        .sort((a, b) => a.start_time.localeCompare(b.start_time));
-      
-      for (const block of dayBlocks) {
-        if (dayOffset === 0 && block.start_time <= currentTime) continue;
-        return { 
-          ...block, 
-          dayOffset,
-          dayName: DAYS_OF_WEEK[block.day_of_week] 
-        };
-      }
-    }
-    return null;
-  }, [scheduleBlocks]);
 
   const handleQuickSchedule = (hours: number) => {
     const now = new Date();
@@ -596,23 +373,17 @@ export default function ScheduleSection() {
       created_at: new Date().toISOString()
     };
     
-    // Use the existing save function and manually set status to 'online'
-    handleSaveBlock(newBlock); 
+    handleSaveBlock(newBlock);
     setCurrentStatus('online');
     toast({
-        title: "Go Time!",
-        description: `You are now online for the next ${hours} hours.`,
+      title: "You're Online!",
+      description: `Active for the next ${hours} hours.`,
     });
   };
 
   const handleManualToggle = async () => {
     const newStatus = currentStatus === 'online' ? 'offline' : 'online';
     setCurrentStatus(newStatus);
-    
-    // Dispatch event to sync with CRAVE NOW button in main dashboard
-    window.dispatchEvent(new CustomEvent('driverStatusChange', { 
-      detail: { status: newStatus } 
-    }));
     
     // Update driver profile status in database
     try {
@@ -637,119 +408,111 @@ export default function ScheduleSection() {
     }
     
     if (newStatus === 'online') {
-        toast({ title: "You Are Online", description: "The platform now sees you as available.", variant: "default" });
+      toast({ title: "You're Online", description: "Ready to receive delivery requests" });
     } else {
-        toast({ title: "You Are Offline", description: "You are no longer receiving requests.", variant: "destructive" });
+      toast({ title: "You're Offline", description: "No longer receiving requests", variant: "destructive" });
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <ToastContainer />
-        <div className="animate-pulse space-y-5 max-w-md w-full">
-          <div className="h-24 bg-gray-200 rounded-2xl"></div>
-          <div className="h-48 bg-gray-200 rounded-2xl"></div>
-          <div className="h-48 bg-gray-200 rounded-2xl"></div>
-          <div className="h-48 bg-gray-200 rounded-2xl"></div>
-        </div>
-      </div>
-    );
-  }
+  // Listen for driver status changes from main dashboard
+  useEffect(() => {
+    const handleStatusChange = (event: CustomEvent) => {
+      const { status } = event.detail;
+      setCurrentStatus(status);
+    };
+    
+    window.addEventListener('driverStatusChange', handleStatusChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('driverStatusChange', handleStatusChange as EventListener);
+    };
+  }, []);
 
-  const nextBlock = getNextScheduledBlock();
   const weeklyHours = calculateWeeklyHours(scheduleBlocks);
   const progressPercentage = todayHours.scheduled > 0 ? (todayHours.worked / todayHours.scheduled) * 100 : 0;
-  
-  // CHANGED: Blue/Indigo (scheduled) -> Orange/Amber (scheduled)
-  const statusColor = currentStatus === 'online' ? 'from-green-500 to-teal-500 shadow-green-400/50' : 
-                      currentStatus === 'scheduled' ? 'from-orange-600 to-amber-700 shadow-orange-500/50' :
-                      'from-gray-700 to-orange-600 shadow-orange-500/50';
 
   return (
-    <div className="min-h-screen bg-gray-100 font-[Inter] pb-16">
+    <div className="min-h-screen bg-gray-50 pb-24">
       <ToastContainer />
-      <div className="max-w-md mx-auto p-4 space-y-5">
+      
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         
         {/* Header */}
-        <header className="py-2 flex justify-between items-center">
-            <h1 className="text-3xl font-extrabold text-gray-900">Availability Hub</h1>
-            <Button variant="ghost" size="icon" className="text-gray-600" onClick={() => {}}>
-                <Menu className="h-6 w-6" />
-            </Button>
-        </header>
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Manage your availability</p>
+          </div>
+          <Button 
+            variant={currentStatus === 'online' ? 'destructive' : 'success'}
+            size="default"
+            onClick={handleManualToggle}
+            className="shadow-lg"
+          >
+            <Power className="h-4 w-4 mr-2" />
+            {currentStatus === 'online' ? 'Go Offline' : 'Go Online'}
+          </Button>
+        </div>
 
-        {/* Current Status Card */}
-        <Card className={`
-            bg-gradient-to-br p-6 transition-all duration-300 transform hover:scale-[1.01]
-            ${statusColor}
-            text-white shadow-2xl
-        `}>
-          <div className="space-y-3">
+        {/* Status Card */}
+        <Card className={`border-2 ${
+          currentStatus === 'online' ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50' :
+          currentStatus === 'scheduled' ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50' :
+          'border-gray-200 bg-white'
+        }`}>
+          <CardContent className="py-5">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {currentStatus === 'online' && <Power className="h-6 w-6 text-teal-300" />}
-                {/* CHANGED: Blue -> Orange */}
-                {currentStatus === 'scheduled' && <CheckCircle className="h-6 w-6 text-orange-300" />}
-                {currentStatus === 'offline' && <Clock className="h-6 w-6 opacity-75" />}
-
-                <span className="text-2xl font-bold">
-                  {currentStatus === 'online' ? 'ONLINE' : currentStatus === 'scheduled' ? 'SCHEDULED' : 'OFFLINE'}
-                </span>
+              <div className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                  currentStatus === 'online' ? 'bg-green-500' :
+                  currentStatus === 'scheduled' ? 'bg-blue-500' :
+                  'bg-gray-300'
+                }`}>
+                  {currentStatus === 'online' ? (
+                    <Zap className="h-6 w-6 text-white" />
+                  ) : currentStatus === 'scheduled' ? (
+                    <Clock className="h-6 w-6 text-white" />
+                  ) : (
+                    <Power className="h-6 w-6 text-white" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-gray-900 capitalize">{currentStatus}</p>
+                  <p className="text-sm text-gray-600">
+                    {currentStatus === 'online' ? 'Accepting orders now' :
+                     currentStatus === 'scheduled' ? 'Ready for scheduled time' :
+                     'Not accepting orders'}
+                  </p>
+                </div>
               </div>
-              <Badge variant="secondary" className={`text-xs uppercase font-extrabold px-3 py-1 rounded-lg ${currentStatus === 'online' ? 'bg-white/30 text-white' : currentStatus === 'scheduled' ? 'bg-white/30 text-white' : 'bg-white/30 text-white'}`}>
-                {currentStatus === 'online' ? 'Accepting Trips' : 'Standby'}
+              <Badge variant={currentStatus === 'online' ? 'success' : 'secondary'}>
+                {currentStatus === 'online' ? 'Active' : 'Inactive'}
               </Badge>
             </div>
-            
-            {nextBlock ? (
-                <div className="text-white text-sm opacity-90 flex items-center gap-1">
-                    <CircleDot className='h-4 w-4' />
-                    Next Shift: <span className="font-semibold">{nextBlock.dayName}</span> at {formatTime(nextBlock.start_time)}
-                    {nextBlock.dayOffset === 0 && ' (Today)'}
-                </div>
-            ) : (
-                <div className="text-sm text-gray-300">
-                    No active recurring schedule.
-                </div>
-            )}
-          </div>
+          </CardContent>
         </Card>
 
-        {/* Quick Schedule Actions */}
+        {/* Quick Start */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between text-lg font-extrabold">
-              <div className='flex items-center gap-2'>
-                {/* CHANGED: Blue -> Orange */}
-                <Play className="h-5 w-5 text-orange-600" />
-                Quick Shift
-              </div>
-              <Button 
-                variant={currentStatus === 'online' ? 'destructive' : 'default'}
-                size="sm"
-                className="shadow-lg h-9"
-                onClick={handleManualToggle}
-              >
-                <Power className="h-4 w-4 mr-1" />
-                {currentStatus === 'online' ? 'Go Offline' : 'Go Online'}
-              </Button>
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-orange-600" />
+                Quick Start
+              </CardTitle>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-3 gap-4">
+          <CardContent>
+            <div className="grid grid-cols-3 gap-3">
               {[2, 4, 8].map(hours => (
-                <Button 
+                <button
                   key={hours}
-                  variant="outline" 
-                  // CHANGED: Blue -> Orange (Hover colors)
-                  className="h-20 flex flex-col gap-1 border-2 border-dashed border-gray-200 hover:bg-orange-50 hover:border-orange-500 transition-all transform hover:scale-[1.05] active:scale-[0.95]"
                   onClick={() => handleQuickSchedule(hours)}
+                  className="p-4 rounded-xl border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50 transition-all text-center group"
                 >
-                  {/* CHANGED: Blue -> Orange */}
-                  <span className="font-extrabold text-2xl text-orange-600">{hours}h</span>
-                  <span className="text-xs text-gray-500 font-medium">Start Now</span>
-                </Button>
+                  <div className="text-3xl font-bold text-orange-600 mb-1">{hours}h</div>
+                  <div className="text-xs text-gray-600 group-hover:text-orange-700 font-medium">Start Now</div>
+                </button>
               ))}
             </div>
           </CardContent>
@@ -758,139 +521,144 @@ export default function ScheduleSection() {
         {/* Today's Progress */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between text-lg font-extrabold">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-green-600" />
-                Today's Goal Progress
-              </div>
-              <Badge variant="secondary" className="bg-green-100 text-green-800 rounded-lg">
-                {todayHours.worked.toFixed(1)}h / {todayHours.scheduled.toFixed(1)}h
-              </Badge>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-green-600" />
+              Today's Goal
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                <div 
-                  className="bg-green-500 h-2.5 rounded-full transition-all duration-500 shadow-md"
-                  style={{ width: `${Math.min(100, progressPercentage)}%` }}
-                ></div>
-              </div>
-              <div className="flex justify-between text-xs text-gray-500 font-medium">
-                <span>{todayHours.scheduled > 0 ? 'Goal: ' + todayHours.scheduled.toFixed(1) + ' hours' : 'No schedule today'}</span>
-                <span>
-                  {todayHours.scheduled > todayHours.worked 
-                    ? (todayHours.scheduled - todayHours.worked).toFixed(1) + 'h remaining' 
-                    : <span className="text-green-600 font-bold">Goal met!</span>}
-                </span>
-              </div>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Progress</span>
+              <span className="text-sm font-semibold text-gray-900">
+                {todayHours.worked.toFixed(1)}h / {todayHours.scheduled.toFixed(1)}h
+              </span>
+            </div>
+            <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-500 rounded-full"
+                style={{ width: `${Math.min(100, progressPercentage)}%` }}
+              />
+            </div>
+            <div className="text-xs text-gray-500">
+              {todayHours.scheduled > todayHours.worked 
+                ? `${(todayHours.scheduled - todayHours.worked).toFixed(1)}h remaining` 
+                : 'Goal completed!'}
             </div>
           </CardContent>
         </Card>
 
-        {/* Weekly Schedule & Editing */}
+        {/* Weekly Schedule */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between text-lg font-extrabold">
-              <div className="flex items-center gap-2">
-                {/* CHANGED: Purple -> Red */}
-                <Clock className="h-5 w-5 text-red-600" />
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-orange-600" />
                 Weekly Schedule
-              </div>
-              <div className='flex gap-2'>
+              </CardTitle>
+              <div className="flex gap-2">
                 <Button 
-                    variant="default" 
-                    size="sm" 
-                    onClick={() => { setEditingBlock(null); setIsModalOpen(true); }} 
-                    // CHANGED: Purple -> Red
-                    className="bg-red-600 hover:bg-red-700 shadow-md"
+                  variant="default" 
+                  size="sm"
+                  onClick={() => { setEditingBlock(null); setIsModalOpen(true); }}
                 >
-                    <Plus className="h-4 w-4 mr-1" /> Add Shift
+                  <Plus className="h-4 w-4 mr-1" /> Add
                 </Button>
                 <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setIsEditing(!isEditing)}
-                    // CHANGED: Purple -> Red
-                    className="text-red-600 border-red-300 hover:bg-red-50"
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setIsEditing(!isEditing)}
                 >
-                    {isEditing ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
+                  {isEditing ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
                 </Button>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3 mb-4 border-b pb-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Total Scheduled Hours</span>
-                {/* CHANGED: Purple -> Red */}
-                <span className="font-extrabold text-red-700">{weeklyHours.toFixed(1)} hours</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Recurring Blocks</span>
-                <span className="font-medium text-gray-800">{scheduleBlocks.filter(b => b.is_recurring).length} blocks</span>
               </div>
             </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between mb-5 pb-4 border-b border-gray-100">
+              <span className="text-sm text-gray-600">Total Hours</span>
+              <span className="text-xl font-bold text-orange-600">{weeklyHours.toFixed(1)}h</span>
+            </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               {DAYS_OF_WEEK.map((day, index) => {
-                const dayBlocks = scheduleBlocks.filter(
-                  block => block.day_of_week === index
-                ).sort((a, b) => a.start_time.localeCompare(b.start_time));
+                const dayBlocks = scheduleBlocks
+                  .filter(block => block.day_of_week === index)
+                  .sort((a, b) => a.start_time.localeCompare(b.start_time));
+                const isToday = new Date().getDay() === index;
                 
                 return (
-                  <div key={day} className={`flex flex-col p-3 rounded-xl border-l-4 shadow-sm transition-all 
-                    ${
-                        // CHANGED: Blue -> Orange (Current Day Highlight)
-                        new Date().getDay() === index ? 'border-l-orange-500 bg-orange-50' : 'border-l-gray-200 bg-white hover:bg-gray-50'
+                  <div 
+                    key={day}
+                    className={`rounded-xl border-2 transition-all ${
+                      isToday ? 'border-orange-200 bg-orange-50' : 'border-gray-100 bg-white'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                        <div className={`font-extrabold text-sm ${new Date().getDay() === index ? 'text-orange-700' : 'text-gray-800'}`}>{day}</div>
+                    <div className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold ${
+                          isToday ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {DAYS_SHORT[index]}
+                        </div>
+                        <div>
+                          <p className={`font-semibold ${isToday ? 'text-orange-900' : 'text-gray-900'}`}>
+                            {day}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {dayBlocks.length > 0 
+                              ? `${dayBlocks.length} shift${dayBlocks.length > 1 ? 's' : ''}`
+                              : 'No shifts'}
+                          </p>
+                        </div>
+                      </div>
+                      {dayBlocks.length > 0 && (
+                        <button
+                          onClick={() => setExpandedDay(expandedDay === index ? null : index)}
+                          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                          <ChevronDown className={`h-5 w-5 text-gray-400 transition-transform ${expandedDay === index ? 'rotate-180' : ''}`} />
+                        </button>
+                      )}
                     </div>
                     
-                    <div className="mt-2 space-y-1">
-                        {dayBlocks.length > 0 ? (
-                            dayBlocks.map((block) => (
-                                <div key={block.id} className="flex justify-between items-center text-xs">
-                                    <div className={`
-                                        px-2 py-1 rounded-lg flex gap-2 items-center font-medium
-                                        ${
-                                            // CHANGED: Blue -> Orange (Recurring) and Purple -> Red (One-Time)
-                                            block.is_recurring ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'
-                                        }
-                                    `}>
-                                        <Clock className='h-3 w-3'/>
-                                        <span>{formatTime(block.start_time)} - {formatTime(block.end_time)}</span>
-                                        {!block.is_recurring && <Badge className="bg-white text-gray-600 font-bold border-gray-300">ONE-TIME</Badge>}
-                                    </div>
-                                    {isEditing && (
-                                        <div className='flex gap-1'>
-                                            <Button 
-                                                variant="ghost" 
-                                                size="sm" 
-                                                // CHANGED: Purple -> Red
-                                                className="h-7 w-7 text-red-500 hover:bg-red-100 rounded-lg"
-                                                onClick={() => { setEditingBlock(block); setIsModalOpen(true); }}
-                                            >
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                            <Button 
-                                                variant="ghost" 
-                                                size="sm" 
-                                                className="h-7 w-7 text-orange-500 hover:bg-orange-100 rounded-lg"
-                                                onClick={() => handleDeleteBlock(block.id)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    )}
-                                </div>
-                            ))
-                        ) : (
-                            <span className="text-xs text-gray-400 font-light">No shifts scheduled</span>
-                        )}
-                    </div>
+                    {expandedDay === index && dayBlocks.length > 0 && (
+                      <div className="px-4 pb-4 space-y-2 border-t border-gray-100 pt-3">
+                        {dayBlocks.map((block) => (
+                          <div 
+                            key={block.id}
+                            className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-100"
+                          >
+                            <div className="flex items-center gap-3">
+                              <Clock className="h-4 w-4 text-gray-400" />
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {formatTime(block.start_time)} - {formatTime(block.end_time)}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {block.is_recurring ? 'Recurring' : 'One-time'}
+                                </p>
+                              </div>
+                            </div>
+                            {isEditing && (
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => { setEditingBlock(block); setIsModalOpen(true); }}
+                                  className="p-2 hover:bg-orange-50 text-orange-600 rounded-lg transition-colors"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteBlock(block.id)}
+                                  className="p-2 hover:bg-orange-50 text-orange-600 rounded-lg transition-colors"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -898,19 +666,19 @@ export default function ScheduleSection() {
           </CardContent>
         </Card>
 
-        {/* Availability Settings */}
+        {/* Settings */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg font-extrabold">
-              <Settings className="h-5 w-5 text-yellow-600" />
-              Availability Settings
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5 text-gray-600" />
+              Preferences
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-start justify-between border-b pb-4 border-gray-100">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
               <div>
-                <p className="font-medium text-base">Auto Go Online</p>
-                <p className="text-xs text-gray-500 mt-0.5">Automatically activate during scheduled times</p>
+                <p className="font-medium text-sm text-gray-900">Auto Go Online</p>
+                <p className="text-xs text-gray-500 mt-0.5">Start automatically at scheduled times</p>
               </div>
               <Switch 
                 checked={availabilitySettings.auto_online}
@@ -920,10 +688,10 @@ export default function ScheduleSection() {
               />
             </div>
 
-            <div className="flex items-start justify-between border-b pb-4 border-gray-100">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
               <div>
-                <p className="font-medium text-base">Break Reminders</p>
-                <p className="text-xs text-gray-500 mt-0.5">Get notified to take breaks after long shifts</p>
+                <p className="font-medium text-sm text-gray-900">Break Reminders</p>
+                <p className="text-xs text-gray-500 mt-0.5">Get notified to take breaks</p>
               </div>
               <Switch 
                 checked={availabilitySettings.break_reminders}
@@ -932,93 +700,18 @@ export default function ScheduleSection() {
                 }
               />
             </div>
-
-            <div className="pt-2">
-              {/* CHANGED: Blue -> Orange */}
-              <p className="font-medium text-base mb-3">Maximum Daily Hours: <span className="font-extrabold text-orange-600">{availabilitySettings.max_hours_per_day}h</span></p>
-              <div className="flex items-center gap-3">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  // CHANGED: Blue -> Orange
-                  className='text-xl border-orange-300 text-orange-600 hover:bg-orange-50'
-                  onClick={() => setAvailabilitySettings(prev => ({ 
-                    ...prev, 
-                    max_hours_per_day: Math.max(4, prev.max_hours_per_day - 1)
-                  }))}
-                >
-                  -
-                </Button>
-                <div className="w-full h-2 bg-gray-200 rounded-full relative overflow-hidden">
-                    <div 
-                        // CHANGED: Blue -> Orange
-                        className="h-2 bg-orange-500 rounded-full transition-all duration-300" 
-                        style={{ width: `${((availabilitySettings.max_hours_per_day - 4) / 10) * 100}%` }}
-                    ></div>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  // CHANGED: Blue -> Orange
-                  className='text-xl border-orange-300 text-orange-600 hover:bg-orange-50'
-                  onClick={() => setAvailabilitySettings(prev => ({ 
-                    ...prev, 
-                    max_hours_per_day: Math.min(14, prev.max_hours_per_day + 1)
-                  }))}
-                >
-                  +
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Preferred Zones */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg font-extrabold">
-              {/* CHANGED: Teal -> Orange */}
-              <AlertCircle className="h-5 w-5 text-orange-600" />
-              Preferred Work Zones
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3">
-              {availabilitySettings.preferred_zones.map((zone, index) => (
-                <Badge 
-                    key={index} 
-                    variant="secondary" 
-                    // CHANGED: Teal -> Orange
-                    className="text-sm bg-orange-100 text-orange-800 rounded-lg py-1.5 px-3 shadow-sm"
-                >
-                  {zone}
-                </Badge>
-              ))}
-              <Button 
-                variant="outline" 
-                size="sm" 
-                // CHANGED: Teal -> Orange
-                className="h-8 px-3 border-dashed text-gray-500 hover:border-orange-500 hover:text-orange-600 rounded-lg"
-                onClick={() => {}}
-              >
-                <Plus className="h-3 w-3 mr-1" /> Add Zone
-              </Button>
-            </div>
-            <p className="text-xs text-gray-500 mt-4">
-              We prioritize offers in these areas when you are active.
-            </p>
           </CardContent>
         </Card>
 
       </div>
 
       {isModalOpen && (
-          <ScheduleBlockForm 
-              block={editingBlock}
-              onClose={() => { setIsModalOpen(false); setEditingBlock(null); }}
-              onSave={handleSaveBlock}
-          />
+        <ScheduleBlockForm 
+          block={editingBlock}
+          onClose={() => { setIsModalOpen(false); setEditingBlock(null); }}
+          onSave={handleSaveBlock}
+        />
       )}
     </div>
   );
-};
+}
