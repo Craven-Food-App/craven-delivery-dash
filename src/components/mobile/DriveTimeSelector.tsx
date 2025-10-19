@@ -169,9 +169,6 @@ export const DriveTimeSelector: React.FC<DriveTimeSelectorProps> = ({ open, onCl
           </DrawerHeader>
           
           <div className="relative h-64 overflow-hidden">
-            {/* Selection indicator */}
-            <div className="absolute left-0 right-0 top-1/2 transform -translate-y-1/2 h-14 border-t-2 border-b-2 border-orange-500 bg-orange-50/50 pointer-events-none z-10 transition-all duration-200" />
-            
             {/* Scrollable time options */}
             <div
               ref={scrollRef}
