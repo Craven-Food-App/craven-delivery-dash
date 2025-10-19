@@ -622,16 +622,6 @@ export const MobileDriverDashboard: React.FC = () => {
       <div className="absolute inset-0 z-0">
         <MobileMapbox />
       </div>
-      
-      {/* Status Bar - Top */}
-      {driverState !== 'offline' && <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-20 px-4">
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-lg ${driverState === 'online_searching' ? 'bg-green-500 text-white' : driverState === 'online_paused' ? 'bg-yellow-500 text-white' : 'bg-blue-500 text-white'}`}>
-            <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-            <span className="font-semibold text-sm">
-              {driverState === 'online_searching' ? 'Online' : driverState === 'online_paused' ? 'Paused' : 'On Delivery'}
-            </span>
-          </div>
-        </div>}
 
       {/* Main Content Overlay - Allow for bottom nav space - Non-interactive overlay */}
       <div style={{
