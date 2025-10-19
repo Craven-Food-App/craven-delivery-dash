@@ -26,9 +26,9 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
   return (
     <div className="fixed inset-0 w-full h-full bg-white">
       {/* Wrong App Message */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-white/90 backdrop-blur-sm border-b border-gray-200">
-        <div className="px-4 py-2 text-center">
-          <span className="text-sm text-gray-700">
+      <div className="absolute top-2 left-0 right-0 z-10">
+        <div className="px-4 text-center">
+          <span className="text-xs text-gray-600">
             Wrong app if you're Crave'N food{' '}
             <a 
               href="/" 
