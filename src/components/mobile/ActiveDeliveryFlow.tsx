@@ -506,18 +506,14 @@ const ActiveDeliveryFlow = ({ orderDetails, onCompleteDelivery, onProgressChange
                 id={`${type}-photo-input`}
               />
               
-              <label htmlFor={`${type}-photo-input`}>
-                <div className="cursor-pointer">
-                  <Button 
-                    variant="primary" 
-                    size="lg" 
-                    fullWidth
-                    disabled={isUploadingPhoto}
-                    onClick={() => {}}
-                  >
-                    <Camera className="h-5 w-5 mr-2" />
-                    {isUploadingPhoto ? 'Uploading...' : 'Take Photo'}
-                  </Button>
+              <label htmlFor={`${type}-photo-input`} className="cursor-pointer block">
+                <div className={`flex items-center justify-center font-semibold rounded-xl transition-all duration-200 active:scale-95 h-14 px-8 text-lg w-full ${
+                  isUploadingPhoto 
+                    ? 'bg-red-400 text-white cursor-not-allowed' 
+                    : 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-500/30'
+                }`}>
+                  <Camera className="h-5 w-5 mr-2" />
+                  {isUploadingPhoto ? 'Uploading...' : 'Take Photo'}
                 </div>
               </label>
             </div>
