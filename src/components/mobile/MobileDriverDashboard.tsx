@@ -706,12 +706,13 @@ export const MobileDriverDashboard: React.FC = () => {
                         minute: '2-digit'
                       }) : '11:00 PM'}
                     </span>
-                    {/* Rotating circle */}
+                    {/* Rotating C logo */}
                     <div className="w-6 h-6">
-                      <svg className="animate-spin w-full h-full" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" />
-                        <path className="opacity-75 text-primary" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
+                      <img 
+                        src="/src/assets/crave-c-logo.png" 
+                        alt="Crave'n C logo" 
+                        className="animate-spin w-full h-full object-contain"
+                      />
                     </div>
                   </div>
                 </div>
