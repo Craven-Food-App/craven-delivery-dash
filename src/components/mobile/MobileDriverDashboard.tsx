@@ -636,24 +636,24 @@ export const MobileDriverDashboard: React.FC = () => {
                 
                 <div className="flex items-end h-20 gap-0.5 overflow-hidden">
                   {[
-                    { time: '6a', value: 75, showLabel: true },
-                    { time: '7a', value: 75, showLabel: false },
-                    { time: '8a', value: 80, showLabel: false },
-                    { time: '9a', value: 65, showLabel: true },
-                    { time: '10a', value: 50, showLabel: false },
+                    { time: '6a', value: 90, showLabel: true },   // Early morning peak
+                    { time: '7a', value: 95, showLabel: false },  // Early morning peak
+                    { time: '8a', value: 85, showLabel: false },  // Early morning peak
+                    { time: '9a', value: 80, showLabel: true },   // Early morning peak
+                    { time: '10a', value: 60, showLabel: false },
                     { time: '11a', value: 55, showLabel: false },
-                    { time: '12p', value: 75, showLabel: true },
-                    { time: '1p', value: 65, showLabel: false },
-                    { time: '2p', value: 70, showLabel: false },
-                    { time: '3p', value: 60, showLabel: true },
-                    { time: '4p', value: 65, showLabel: false },
-                    { time: '5p', value: 80, showLabel: false },
-                    { time: '6p', value: 90, showLabel: true },
-                    { time: '7p', value: 95, showLabel: false },
-                    { time: '8p', value: 85, showLabel: false },
-                    { time: '9p', value: 85, showLabel: true },
-                    { time: '10p', value: 70, showLabel: false },
-                    { time: '11p', value: 60, showLabel: false }
+                    { time: '12p', value: 90, showLabel: true },  // Lunch peak
+                    { time: '1p', value: 95, showLabel: false },   // Lunch peak
+                    { time: '2p', value: 85, showLabel: false },   // Lunch peak
+                    { time: '3p', value: 70, showLabel: true },
+                    { time: '4p', value: 30, showLabel: false },  // Low time
+                    { time: '5p', value: 25, showLabel: false },   // Low time
+                    { time: '6p', value: 35, showLabel: true },   // Low time
+                    { time: '7p', value: 50, showLabel: false },
+                    { time: '8p', value: 60, showLabel: false },
+                    { time: '9p', value: 70, showLabel: true },
+                    { time: '10p', value: 75, showLabel: false },
+                    { time: '11p', value: 85, showLabel: false }  // Night peak
                   ].map((data, index) => (
                     <div key={data.time} className="flex flex-col items-center justify-end flex-1 min-w-0">
                       <div className="w-full mb-1" style={{ height: `${(data.value / 95) * 100}%`, minHeight: '8px' }}>
@@ -730,24 +730,24 @@ export const MobileDriverDashboard: React.FC = () => {
                 
                 <div className="flex items-end h-20 gap-0.5 overflow-hidden">
                   {[
-                    { time: '6a', value: 75, showLabel: true },
-                    { time: '7a', value: 75, showLabel: false },
-                    { time: '8a', value: 80, showLabel: false },
-                    { time: '9a', value: 65, showLabel: true },
-                    { time: '10a', value: 50, showLabel: false },
+                    { time: '6a', value: 90, showLabel: true },   // Early morning peak
+                    { time: '7a', value: 95, showLabel: false },  // Early morning peak
+                    { time: '8a', value: 85, showLabel: false },  // Early morning peak
+                    { time: '9a', value: 80, showLabel: true },   // Early morning peak
+                    { time: '10a', value: 60, showLabel: false },
                     { time: '11a', value: 55, showLabel: false },
-                    { time: '12p', value: 75, showLabel: true },
-                    { time: '1p', value: 65, showLabel: false },
-                    { time: '2p', value: 70, showLabel: false },
-                    { time: '3p', value: 60, showLabel: true },
-                    { time: '4p', value: 65, showLabel: false },
-                    { time: '5p', value: 80, showLabel: false },
-                    { time: '6p', value: 90, showLabel: true },
-                    { time: '7p', value: 95, showLabel: false },
-                    { time: '8p', value: 85, showLabel: false },
-                    { time: '9p', value: 85, showLabel: true },
-                    { time: '10p', value: 70, showLabel: false },
-                    { time: '11p', value: 60, showLabel: false }
+                    { time: '12p', value: 90, showLabel: true },  // Lunch peak
+                    { time: '1p', value: 95, showLabel: false },   // Lunch peak
+                    { time: '2p', value: 85, showLabel: false },   // Lunch peak
+                    { time: '3p', value: 70, showLabel: true },
+                    { time: '4p', value: 30, showLabel: false },  // Low time
+                    { time: '5p', value: 25, showLabel: false },   // Low time
+                    { time: '6p', value: 35, showLabel: true },   // Low time
+                    { time: '7p', value: 50, showLabel: false },
+                    { time: '8p', value: 60, showLabel: false },
+                    { time: '9p', value: 70, showLabel: true },
+                    { time: '10p', value: 75, showLabel: false },
+                    { time: '11p', value: 85, showLabel: false }  // Night peak
                   ].map((data, index) => (
                     <div key={data.time} className="flex flex-col items-center justify-end flex-1 min-w-0">
                       <div className="w-full mb-1" style={{ height: `${(data.value / 95) * 100}%`, minHeight: '8px' }}>
