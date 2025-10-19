@@ -53,33 +53,27 @@
       @supports (padding: max(0px)) {
         body {
           padding-top: env(safe-area-inset-top);
-          background-color: white;
-        }
-      }
-      
-      /* Android Status Bar */
-      @media screen and (max-width: 768px) {
-        body {
-          background-color: white;
         }
       }
       
       /* Prevent blank screen before React loads */
-      #root {
-        min-height: 100vh;
-        background-color: white;
+      body {
+        margin: 0;
+        padding: 0;
       }
       
-      /* Initial loading state for mobile */
+      #root {
+        min-height: 100vh;
+      }
+      
+      /* Initial loading state for mobile driver app only */
       @media screen and (max-width: 768px) {
-        body {
+        body.mobile-driver-loading {
           background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
-          margin: 0;
-          padding: 0;
           overflow: hidden;
         }
         
-        #root {
+        body.mobile-driver-loading #root {
           background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
           min-height: 100vh;
           display: flex;
@@ -88,7 +82,7 @@
         }
         
         /* Show loading spinner before React loads */
-        #root::before {
+        body.mobile-driver-loading #root::before {
           content: '';
           position: absolute;
           top: 50%;
@@ -100,6 +94,7 @@
           border-top: 3px solid white;
           border-radius: 50%;
           animation: spin 1s linear infinite;
+          z-index: 9999;
         }
         
         @keyframes spin {
@@ -108,6 +103,21 @@
         }
       }
     </style>
+    
+    <!-- Detect mobile driver route and add loading class -->
+    <script>
+      // Add loading class only for mobile driver route
+      if (window.location.pathname.includes('/mobile') && window.innerWidth <= 768) {
+        document.body.classList.add('mobile-driver-loading');
+        
+        // Remove loading class once React loads
+        window.addEventListener('DOMContentLoaded', function() {
+          setTimeout(function() {
+            document.body.classList.remove('mobile-driver-loading');
+          }, 100);
+        });
+      }
+    </script>
   </head>
 
   <body>
