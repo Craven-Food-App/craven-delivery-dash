@@ -261,7 +261,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
       </div>
 
       {/* Map Controls: Recenter button - DoorDash style bottom right */}
-      <div className="absolute bottom-[276px] right-4 z-30 pointer-events-auto">
+      <div className="absolute bottom-[326px] right-4 z-30 pointer-events-auto">
         <button 
           onClick={() => {
             if (location && map.current) {
