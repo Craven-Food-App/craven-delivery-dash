@@ -260,26 +260,30 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
       } : undefined} />
       </div>
 
-      {/* Map Controls: zoom and recenter - positioned next to change zone button */}
-      <div className="absolute top-4 left-32 z-20 flex flex-row gap-2 pointer-events-auto px-0 mx-[3px] py-px my-[21px]">
-        
-        
-        <button onClick={() => {
-        if (location && map.current) {
-          const {
-            longitude,
-            latitude
-          } = location;
-          map.current.flyTo({
-            center: [longitude, latitude],
-            zoom: 15,
-            duration: 800,
-            bearing: 0
-          });
-          setIsAutoCentering(true); // Re-enable auto-centering
-        }
-      }} className={`p-3 rounded-full shadow-lg border transition ${isAutoCentering ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground hover:bg-accent'}`} aria-label="Center on my location">
-          <Crosshair className="h-4 w-4 my-[5px] py-0" />
+      {/* Map Controls: Recenter button - DoorDash style bottom right */}
+      <div className="fixed bottom-32 right-4 z-30 pointer-events-auto">
+        <button 
+          onClick={() => {
+            if (location && map.current) {
+              const { longitude, latitude } = location;
+              map.current.flyTo({
+                center: [longitude, latitude],
+                zoom: 15,
+                duration: 800,
+                bearing: 0
+              });
+              setIsAutoCentering(true);
+            }
+          }} 
+          className={`rounded-full shadow-2xl transition-all duration-200 ${
+            isAutoCentering 
+              ? 'bg-orange-500 text-white hover:bg-orange-600' 
+              : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-300'
+          }`}
+          style={{ padding: '5px' }}
+          aria-label="Center on my location"
+        >
+          <Crosshair className="h-5 w-5" />
         </button>
       </div>
 
