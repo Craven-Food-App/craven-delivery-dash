@@ -178,37 +178,22 @@ export const MobileDriverDashboard: React.FC = () => {
   // Check session persistence and onboarding on component mount
   useEffect(() => {
     let isMounted = true;
-    let loadingTimer: NodeJS.Timeout;
-    let failsafeTimer: NodeJS.Timeout;
     
     const initializeDashboard = async () => {
       console.log('MobileDriverDashboard: Starting initialization');
-      
-      // Failsafe: If loading takes more than 10 seconds, force show welcome screen
-      failsafeTimer = setTimeout(() => {
-        if (isMounted && isLoading) {
-          console.warn('MobileDriverDashboard: Loading timeout reached, forcing welcome screen');
-          setIsLoading(false);
-          setShowWelcomeScreen(true);
-          setLoadingError(true);
-        }
-      }, 10000);
       
       try {
         await checkOnboardingAndSession();
         console.log('MobileDriverDashboard: Onboarding check complete');
       } catch (error) {
         console.error('MobileDriverDashboard: Error during initialization:', error);
-        // Continue anyway - don't block the user
       } finally {
-        // Ensure loading screen shows for at least 2.5 seconds
-        loadingTimer = setTimeout(() => {
-          if (isMounted) {
-            console.log('MobileDriverDashboard: Loading complete, showing welcome screen');
-            setIsLoading(false);
-            setShowWelcomeScreen(true);
-          }
-        }, 2500);
+        // Show welcome screen immediately - no artificial delays
+        if (isMounted) {
+          console.log('MobileDriverDashboard: Loading complete, showing welcome screen');
+          setIsLoading(false);
+          setShowWelcomeScreen(true);
+        }
       }
     };
 
@@ -216,8 +201,6 @@ export const MobileDriverDashboard: React.FC = () => {
     
     return () => {
       isMounted = false;
-      if (loadingTimer) clearTimeout(loadingTimer);
-      if (failsafeTimer) clearTimeout(failsafeTimer);
     };
   }, []);
 
