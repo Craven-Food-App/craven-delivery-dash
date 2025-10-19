@@ -682,29 +682,32 @@ export const MobileDriverDashboard: React.FC = () => {
             </div>
 
             {/* Get Offers Until Section - Top */}
-            <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20">
-              <div className="bg-card/95 backdrop-blur-sm rounded-full px-4 py-2 shadow-sm border border-border/20">
-                <span className="text-xs text-muted-foreground mr-2">Get offers until</span>
-                <span className="text-xs font-semibold text-foreground bg-muted/50 px-2 py-1 rounded-full">
-                  {endTime ? endTime.toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                }) : '11:00 PM'}
-                </span>
-              </div>
-            </div>
-
             {/* Bottom Content - Still Searching + Popular Times */}
             <div className="absolute bottom-7 left-4 right-4 z-20 space-y-3 pointer-events-auto">
-              {/* Still Searching Section */}
+              {/* Still Searching Section with Get offers until */}
               <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/20 overflow-hidden">
                 <div className="flex items-center justify-between">
+                  {/* Left: Still searching text */}
                   <span className="text-base text-foreground font-medium">Still searching...</span>
-                  <div className="w-6 h-6">
-                    <svg className="animate-spin w-full h-full" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" />
-                      <path className="opacity-75 text-primary" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
+                  
+                  {/* Right: "Get offers until" + Time + Rotating circle grouped together */}
+                  <div className="flex items-center gap-2">
+                    {/* "Get offers until" text */}
+                    <span className="text-xs text-muted-foreground">Get offers until</span>
+                    {/* Time badge */}
+                    <span className="text-xs font-semibold text-foreground bg-muted/50 px-2 py-1 rounded-full">
+                      {endTime ? endTime.toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) : '11:00 PM'}
+                    </span>
+                    {/* Rotating circle */}
+                    <div className="w-6 h-6">
+                      <svg className="animate-spin w-full h-full" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" />
+                        <path className="opacity-75 text-primary" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
               </div>
