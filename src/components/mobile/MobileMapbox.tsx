@@ -280,7 +280,11 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
               ? 'bg-orange-500 text-white hover:bg-orange-600' 
               : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-300'
           }`}
-          style={{ padding: '5px' }}
+          style={{ 
+            padding: '5px',
+            backgroundColor: isAutoCentering ? '#f97316' : '#ffffff',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+          }}
           aria-label="Center on my location"
         >
           <Crosshair className="h-5 w-5" />
