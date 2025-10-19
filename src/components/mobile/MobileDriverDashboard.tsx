@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Settings, Pause, Play, Square, Clock, Car, DollarSign, Calendar, Bell, User, Star, ChevronRight } from 'lucide-react';
+import craveLogo from '@/assets/crave-c-logo.png';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -709,7 +710,7 @@ export const MobileDriverDashboard: React.FC = () => {
                     {/* Rotating C logo */}
                     <div className="w-6 h-6">
                       <img 
-                        src="/src/assets/crave-c-logo.png" 
+                        src={craveLogo} 
                         alt="Crave'n C logo" 
                         className="animate-spin w-full h-full object-contain"
                       />
