@@ -13,6 +13,7 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
   const navigate = useNavigate();
   
   console.log('MobileDriverWelcomeScreen rendered');
+  console.log('Image source:', mobileDriverWelcomeImage);
 
   const handleFeedNow = () => {
     if (onStartFeeding) {
@@ -46,7 +47,9 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
         src={mobileDriverWelcomeImage}
         alt="CRAVE'N Delivery Rider"
         className="absolute inset-0 w-full h-full object-cover"
+        onLoad={() => console.log('Mobile driver welcome image loaded successfully')}
         onError={(e) => {
+          console.error('Mobile driver welcome image failed to load:', e);
           // Fallback to a gradient background if image doesn't exist
           e.currentTarget.style.display = 'none';
           const nextElement = e.currentTarget.nextElementSibling as HTMLElement;

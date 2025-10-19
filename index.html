@@ -63,6 +63,50 @@
           background-color: white;
         }
       }
+      
+      /* Prevent blank screen before React loads */
+      #root {
+        min-height: 100vh;
+        background-color: white;
+      }
+      
+      /* Initial loading state for mobile */
+      @media screen and (max-width: 768px) {
+        body {
+          background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+          margin: 0;
+          padding: 0;
+          overflow: hidden;
+        }
+        
+        #root {
+          background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        /* Show loading spinner before React loads */
+        #root::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 40px;
+          height: 40px;
+          border: 3px solid rgba(255, 255, 255, 0.3);
+          border-top: 3px solid white;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+          0% { transform: translate(-50%, -50%) rotate(0deg); }
+          100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+      }
     </style>
   </head>
 
