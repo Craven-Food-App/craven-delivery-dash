@@ -23,16 +23,16 @@ export const BackgroundCheckSettings: React.FC = () => {
   const fetchSettings = async () => {
     try {
       const { data, error } = await supabase
-        .from('admin_settings')
+        .from('admin_settings' as any)
         .select('setting_value')
         .eq('setting_key', 'background_check_delay_days')
         .single();
 
       if (error) throw error;
 
-      if (data?.setting_value) {
-        setDelayDays(data.setting_value.default?.toString() || '3');
-        setEnabled(data.setting_value.enabled !== false);
+      if ((data as any)?.setting_value) {
+        setDelayDays((data as any).setting_value.default?.toString() || '3');
+        setEnabled((data as any).setting_value.enabled !== false);
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -49,7 +49,7 @@ export const BackgroundCheckSettings: React.FC = () => {
       const finalDelay = delayDays === 'custom' ? parseInt(customDelay) : parseInt(delayDays);
 
       const { error } = await supabase
-        .from('admin_settings')
+        .from('admin_settings' as any)
         .update({
           setting_value: {
             min: 1,

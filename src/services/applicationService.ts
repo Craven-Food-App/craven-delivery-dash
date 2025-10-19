@@ -105,13 +105,13 @@ export class ApplicationService {
   static async getBackgroundCheckDelay(): Promise<number> {
     try {
       const { data } = await supabase
-        .from('admin_settings')
+        .from('admin_settings' as any)
         .select('setting_value')
         .eq('setting_key', 'background_check_delay_days')
         .single();
 
-      if (data?.setting_value?.default) {
-        return parseInt(data.setting_value.default);
+      if ((data as any)?.setting_value?.default) {
+        return parseInt((data as any).setting_value.default);
       }
       return 3; // Default to 3 days
     } catch {

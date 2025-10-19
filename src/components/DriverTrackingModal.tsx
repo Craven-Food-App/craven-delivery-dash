@@ -55,17 +55,22 @@ const DriverTrackingModal: React.FC<DriverTrackingModalProps> = ({
       const channel = supabase
         .channel(`driver_location_${driverId}`)
         .on(
-          'postgres_changes',
+          'postgres_changes' as any,
           {
             event: 'UPDATE',
             schema: 'public',
-            table: 'driver_locations',
-            filter: `user_id=eq.${driverId}`
-          },
-          (payload) => {
+            table: 'craver_locations' as any,
+            filter: `craver_id=eq.${driverId}`
+          } as any,
+          (payload: any) => {
             console.log('Driver location updated:', payload);
             if (payload.new) {
-              updateDriverLocation(payload.new as any);
+              const locationData = {
+                lat: payload.new.latitude,
+                lng: payload.new.longitude,
+                updated_at: payload.new.updated_at
+              };
+              updateDriverLocation(locationData);
             }
           }
         )
@@ -90,15 +95,15 @@ const DriverTrackingModal: React.FC<DriverTrackingModalProps> = ({
       setLoading(true);
       
       const { data, error } = await supabase
-        .from('users')
+        .from('driver_profiles' as any)
         .select(`
           id,
-          name,
-          phone,
+          user_id,
+          phone_number,
           vehicle_type,
           rating
         `)
-        .eq('id', driverId)
+        .eq('user_id', driverId)
         .single();
 
       if (error) {
@@ -111,7 +116,13 @@ const DriverTrackingModal: React.FC<DriverTrackingModalProps> = ({
         return;
       }
 
-      setDriver(data);
+      setDriver({
+        id: (data as any)?.user_id || driverId || '',
+        name: 'Driver',
+        phone: (data as any)?.phone_number,
+        vehicle_type: (data as any)?.vehicle_type,
+        rating: (data as any)?.rating
+      } as any);
       await fetchDriverLocation();
     } catch (error) {
       console.error('Error fetching driver info:', error);
@@ -130,9 +141,11 @@ const DriverTrackingModal: React.FC<DriverTrackingModalProps> = ({
       setRefreshing(true);
       
       const { data, error } = await supabase
-        .from('driver_locations')
-        .select('lat, lng, updated_at')
-        .eq('user_id', driverId)
+        .from('craver_locations' as any)
+        .select('latitude, longitude, updated_at')
+        .eq('craver_id', driverId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
         .single();
 
       if (error) {
@@ -141,12 +154,17 @@ const DriverTrackingModal: React.FC<DriverTrackingModalProps> = ({
       }
 
       if (data && driver) {
+        const locationData = {
+          lat: (data as any).latitude,
+          lng: (data as any).longitude,
+          updated_at: (data as any).updated_at
+        };
         const updatedDriver = {
           ...driver,
-          current_location: data
+          current_location: locationData
         };
         setDriver(updatedDriver);
-        updateDriverLocation(data);
+        updateDriverLocation(locationData);
       }
     } catch (error) {
       console.error('Error fetching driver location:', error);
@@ -162,8 +180,11 @@ const DriverTrackingModal: React.FC<DriverTrackingModalProps> = ({
       // Dynamically import Mapbox GL JS
       const mapboxgl = await import('mapbox-gl');
       
-      // Set your Mapbox access token
-      mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || 'pk.eyJ1IjoiY3JhdmVuLWRlbGl2ZXJ5IiwiYSI6ImNsdGJ0eGJ0eDAwM2gyanBqN3J0eGJ0eDAifQ.example';
+      // Get Mapbox token from edge function
+      const { data: tokenData } = await supabase.functions.invoke('get-mapbox-token');
+      const token = tokenData?.token || 'pk.eyJ1IjoiY3JhdmUtbiIsImEiOiJjbWVxb21qbTQyNTRnMm1vaHg5bDZwcmw2In0.aOsYrL2B0cjfcCGW1jHAdw';
+      
+      (mapboxgl as any).accessToken = token;
 
       const mapInstance = new mapboxgl.Map({
         container: mapContainer.current,
