@@ -16,9 +16,15 @@ import { PromoCodeManager } from '@/components/admin/PromoCodeManager';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, BarChart3, Users, Store, Car, ShoppingBag, MessageCircle, Bell, DollarSign, Tags, GraduationCap, FileCheck, Shield, ChevronRight, Package, Settings } from 'lucide-react';
+import { ArrowLeft, BarChart3, Users, Store, Car, ShoppingBag, MessageCircle, Bell, DollarSign, Tags, GraduationCap, FileCheck, Shield, ChevronRight, Package, Settings, AlertCircle, TrendingUp, LifeBuoy, FileText } from 'lucide-react';
 import cravenLogo from "@/assets/craven-logo.png";
 import { cn } from '@/lib/utils';
+import RefundManagement from '@/components/admin/RefundManagement';
+import DisputeResolution from '@/components/admin/DisputeResolution';
+import CustomerManagement from '@/components/admin/CustomerManagement';
+import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
+import SupportTickets from '@/components/admin/SupportTickets';
+import AuditLogs from '@/components/admin/AuditLogs';
 
 const Admin: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -57,8 +63,20 @@ const Admin: React.FC = () => {
       title: 'Customers (Cravers)',
       icon: ShoppingBag,
       items: [
+        { id: 'customer-management', label: 'Customer Accounts', icon: Users },
         { id: 'customer-promo', label: 'Promo Codes', icon: Tags },
         { id: 'customer-support', label: 'Support Chat', icon: MessageCircle },
+      ]
+    },
+    {
+      id: 'operations',
+      title: 'Operations',
+      icon: Settings,
+      items: [
+        { id: 'refunds', label: 'Refunds', icon: DollarSign },
+        { id: 'disputes', label: 'Disputes', icon: AlertCircle },
+        { id: 'support-tickets', label: 'Support Tickets', icon: LifeBuoy },
+        { id: 'audit-logs', label: 'Audit Logs', icon: FileText },
       ]
     }
   ];
@@ -67,6 +85,8 @@ const Admin: React.FC = () => {
     switch (activeTab) {
       case 'dashboard':
         return <LiveDashboard />;
+      case 'analytics':
+        return <AnalyticsDashboard />;
       case 'merchant-onboarding':
         return <RestaurantOnboardingDashboard />;
       case 'merchant-verification':
@@ -85,10 +105,20 @@ const Admin: React.FC = () => {
         return <OnboardingDashboard />;
       case 'driver-payouts':
         return <PayoutSettingsManager />;
+      case 'customer-management':
+        return <CustomerManagement />;
       case 'customer-promo':
         return <PromoCodeManager />;
       case 'customer-support':
         return <ChatPortal />;
+      case 'refunds':
+        return <RefundManagement />;
+      case 'disputes':
+        return <DisputeResolution />;
+      case 'support-tickets':
+        return <SupportTickets />;
+      case 'audit-logs':
+        return <AuditLogs />;
       case 'notifications':
         return <NotificationSettingsManager />;
       default:
@@ -127,6 +157,16 @@ const Admin: React.FC = () => {
               >
                 <BarChart3 className="h-4 w-4 mr-2" />
                 Dashboard
+              </Button>
+
+              {/* Analytics */}
+              <Button
+                variant={activeTab === 'analytics' ? 'secondary' : 'ghost'}
+                className="w-full justify-start"
+                onClick={() => setActiveTab('analytics')}
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Analytics
               </Button>
 
               {/* Settings */}
