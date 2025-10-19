@@ -64,22 +64,29 @@ export const SupportTickets: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('support_tickets')
-        .select(`
-          *,
-          profiles!support_tickets_customer_id_fkey (
-            email,
-            full_name
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const formattedTickets = (data || []).map((ticket: any) => ({
-        ...ticket,
-        customer_email: ticket.profiles?.email,
-        customer_name: ticket.profiles?.full_name
-      }));
+      // Fetch customer details separately
+      const formattedTickets = await Promise.all(
+        (data || []).map(async (ticket: any) => {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('full_name')
+            .eq('user_id', ticket.customer_id)
+            .single();
+          
+          const { data: authUser } = await supabase.auth.admin.getUserById(ticket.customer_id);
+          
+          return {
+            ...ticket,
+            customer_email: authUser?.user?.email || 'Unknown',
+            customer_name: profile?.full_name || 'Unknown Customer'
+          };
+        })
+      );
 
       setTickets(formattedTickets);
     } catch (error) {
