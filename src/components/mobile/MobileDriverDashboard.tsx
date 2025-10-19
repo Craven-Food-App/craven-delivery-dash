@@ -31,6 +31,36 @@ interface OrderAssignment {
   isTestOrder?: boolean; // Add test order flag
 }
 export const MobileDriverDashboard: React.FC = () => {
+  // Function to get current time index for highlighting
+  const getCurrentTimeIndex = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    
+    // Map 24-hour time to our time slots (6a = 6, 7a = 7, etc.)
+    const timeMap: { [key: number]: number } = {
+      6: 0,   // 6a
+      7: 1,   // 7a  
+      8: 2,   // 8a
+      9: 3,   // 9a
+      10: 4,  // 10a
+      11: 5,  // 11a
+      12: 6,  // 12p
+      13: 7,  // 1p
+      14: 8,  // 2p
+      15: 9,  // 3p
+      16: 10, // 4p
+      17: 11, // 5p
+      18: 12, // 6p
+      19: 13, // 7p
+      20: 14, // 8p
+      21: 15, // 9p
+      22: 16, // 10p
+      23: 17  // 11p
+    };
+    
+    return timeMap[currentHour] ?? -1; // -1 if no match
+  };
+
   const [driverState, setDriverState] = useState<DriverState>('offline');
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleType>('car');
   const [earningMode, setEarningMode] = useState<EarningMode>('perHour');
@@ -657,7 +687,7 @@ export const MobileDriverDashboard: React.FC = () => {
                   ].map((data, index) => (
                     <div key={data.time} className="flex flex-col items-center justify-end flex-1 min-w-0">
                       <div className="w-full mb-1" style={{ height: `${(data.value / 95) * 64}px`, minHeight: '2px' }}>
-                         <div className={`w-full h-full rounded-t-sm transition-all duration-300 border border-gray-400 ${index === 13 ? 'bg-orange-500' : 'bg-gray-500'}`} />
+                         <div className={`w-full h-full rounded-t-sm transition-all duration-300 border border-gray-400 ${index === getCurrentTimeIndex() ? 'bg-red-500' : 'bg-orange-500'}`} />
                       </div>
                       <span className="text-xs text-muted-foreground font-medium whitespace-nowrap" style={{ 
                         visibility: data.showLabel ? 'visible' : 'hidden',
