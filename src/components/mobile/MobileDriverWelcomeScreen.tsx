@@ -24,7 +24,7 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 w-full h-full bg-primary">
+    <div className="fixed inset-0 w-full h-full bg-white">
       {/* Full Screen Background Image */}
       <img 
         src={mobileDriverWelcomeImage}
