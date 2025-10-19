@@ -649,6 +649,12 @@ export const MobileDriverDashboard: React.FC = () => {
           console.error('Error updating driver profile:', profileError);
         }
       }
+      
+      // Update schedule availability status to sync with paused state
+      window.dispatchEvent(new CustomEvent('driverStatusChange', { 
+        detail: { status: 'offline' } 
+      }));
+      
       setDriverState('online_paused');
     } catch (error) {
       console.error('Error pausing:', error);
@@ -673,6 +679,12 @@ export const MobileDriverDashboard: React.FC = () => {
           console.error('Error updating driver profile:', profileError);
         }
       }
+      
+      // Update schedule availability status to sync with online state
+      window.dispatchEvent(new CustomEvent('driverStatusChange', { 
+        detail: { status: 'online' } 
+      }));
+      
       setDriverState('online_searching');
     } catch (error) {
       console.error('Error unpausing:', error);
@@ -786,22 +798,28 @@ export const MobileDriverDashboard: React.FC = () => {
         {/* Tab-based Content Rendering */}
         {activeTab === 'schedule' && (
           <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
-            <ScheduleSection />
+            <div className="min-h-screen">
+              <ScheduleSection />
+            </div>
           </div>
         )}
         
         {activeTab === 'earnings' && (
           <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
-            <EarningsSection />
+            <div className="min-h-screen">
+              <EarningsSection />
+            </div>
           </div>
         )}
         
         {activeTab === 'account' && (
           <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
-            <AccountSection 
-              activeTab={activeTab}
-              onTabChange={(tab) => setActiveTab(tab as any)}
-            />
+            <div className="min-h-screen">
+              <AccountSection 
+                activeTab={activeTab}
+                onTabChange={(tab) => setActiveTab(tab as any)}
+              />
+            </div>
           </div>
         )}
         
