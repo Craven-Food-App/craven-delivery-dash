@@ -8,6 +8,7 @@ import type { RestaurantOnboardingData } from './types';
 import { StatsOverview } from './components/StatsOverview';
 import { ListView } from './views/ListView';
 import { DocumentVerificationPanel } from './verification/DocumentVerificationPanel';
+import { AnalyticsDashboard } from './analytics/AnalyticsDashboard';
 import { calculateStats } from './utils/helpers';
 
 export function EnhancedRestaurantOnboarding() {
@@ -218,7 +219,7 @@ export function EnhancedRestaurantOnboarding() {
 
       {/* Main Content */}
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="all">
             All ({stats.total})
           </TabsTrigger>
@@ -233,6 +234,9 @@ export function EnhancedRestaurantOnboarding() {
           </TabsTrigger>
           <TabsTrigger value="live">
             Live ({stats.live})
+          </TabsTrigger>
+          <TabsTrigger value="analytics">
+            📊 Analytics
           </TabsTrigger>
         </TabsList>
 
@@ -302,6 +306,10 @@ export function EnhancedRestaurantOnboarding() {
             onChat={handleChat}
             onVerifyDocuments={handleVerifyDocuments}
           />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="mt-6">
+          <AnalyticsDashboard restaurants={restaurants} />
         </TabsContent>
       </Tabs>
 
