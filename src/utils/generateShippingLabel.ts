@@ -149,7 +149,7 @@ export async function generateShippingLabel(restaurant: Restaurant): Promise<{
     // Upload to Supabase Storage
     const fileName = `shipping-label-${restaurant.id}-${Date.now()}.pdf`;
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('restaurant-documents')
+      .from('shipping-labels')
       .upload(fileName, pdfBlob, {
         contentType: 'application/pdf',
         upsert: false,
@@ -161,7 +161,7 @@ export async function generateShippingLabel(restaurant: Restaurant): Promise<{
 
     // Get public URL
     const { data: urlData } = supabase.storage
-      .from('restaurant-documents')
+      .from('shipping-labels')
       .getPublicUrl(uploadData.path);
 
     return {
