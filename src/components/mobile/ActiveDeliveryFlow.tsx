@@ -23,7 +23,7 @@ const Button = ({ children, onClick, className = '', variant = 'default', size =
   const baseClasses = "flex items-center justify-center font-semibold rounded-xl transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed";
   
   const variants = {
-    primary: 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-500/30',
+    primary: 'bg-orange-600 text-white hover:bg-orange-700 shadow-lg shadow-orange-500/30',
     secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200',
     outline: 'bg-white text-gray-900 border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50',
     success: 'bg-green-600 text-white hover:bg-green-700 shadow-lg shadow-green-500/30',
@@ -84,7 +84,7 @@ const DeliveryProgressBar = ({ currentStage, stages }) => {
       </div>
       <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
         <div 
-          className="h-full bg-red-600 transition-all duration-500 ease-out rounded-full"
+          className="h-full bg-orange-600 transition-all duration-500 ease-out rounded-full"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -95,7 +95,7 @@ const DeliveryProgressBar = ({ currentStage, stages }) => {
 // Status Badge Component
 const StatusBadge = ({ status, icon: Icon }) => {
   const variants = {
-    active: 'bg-red-50 text-red-700 border-red-200',
+    active: 'bg-orange-50 text-orange-700 border-orange-200',
     completed: 'bg-green-50 text-green-700 border-green-200',
     pending: 'bg-gray-50 text-gray-600 border-gray-200'
   };
@@ -113,8 +113,8 @@ const InfoCard = ({ icon: Icon, title, subtitle, action, className = '' }) => (
   <div className={`bg-white rounded-xl border border-gray-200 p-4 ${className}`}>
     <div className="flex items-center gap-4">
       {Icon && (
-        <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
-          <Icon className="h-6 w-6 text-red-600" />
+        <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
+          <Icon className="h-6 w-6 text-orange-600" />
         </div>
       )}
       <div className="flex-1 min-w-0">
@@ -386,8 +386,8 @@ const ActiveDeliveryFlow = ({ orderDetails, onCompleteDelivery, onProgressChange
         <Card>
           <CardContent>
             <div className="text-center py-6">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center">
-                <Package className="h-10 w-10 text-red-600" />
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-orange-50 flex items-center justify-center">
+                <Package className="h-10 w-10 text-orange-600" />
               </div>
               <h2 className="text-xl font-bold text-gray-900 mb-2">
                 Picking up order

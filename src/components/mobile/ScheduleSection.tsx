@@ -42,7 +42,7 @@ const Button = ({ children, variant = 'default', size = 'default', className = '
   const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:pointer-events-none';
   
   const variants = {
-    default: 'bg-red-600 text-white hover:bg-red-700 shadow-md shadow-red-500/20',
+    default: 'bg-orange-600 text-white hover:bg-orange-700 shadow-md shadow-orange-500/20',
     secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200',
     outline: 'border-2 border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 text-gray-700',
     ghost: 'hover:bg-gray-100 text-gray-600',
@@ -71,7 +71,7 @@ const Button = ({ children, variant = 'default', size = 'default', className = '
 
 const Badge = ({ children, variant = 'default', className = '' }) => {
   const variants = {
-    default: 'bg-red-50 text-red-700 border-red-200',
+    default: 'bg-orange-50 text-orange-700 border-orange-200',
     secondary: 'bg-gray-100 text-gray-700 border-gray-200',
     success: 'bg-green-50 text-green-700 border-green-200',
     warning: 'bg-yellow-50 text-yellow-700 border-yellow-200',
@@ -89,7 +89,7 @@ const Switch = ({ checked, onCheckedChange }) => (
     role="switch"
     aria-checked={checked}
     onClick={() => onCheckedChange(!checked)}
-    className={`peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${checked ? 'bg-red-600' : 'bg-gray-300'}`}
+    className={`peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${checked ? 'bg-orange-600' : 'bg-gray-300'}`}
   >
     <span
       className={`pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'}`}
@@ -104,7 +104,7 @@ const Input = ({ type = 'text', value, onChange, placeholder = '', className = '
     value={value} 
     onChange={onChange} 
     placeholder={placeholder} 
-    className={`flex h-11 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+    className={`flex h-11 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
   />
 );
 
@@ -113,7 +113,7 @@ const Select = ({ value, onChange, options, className = '', name }) => (
     name={name}
     value={value} 
     onChange={onChange} 
-    className={`flex h-11 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+    className={`flex h-11 w-full rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
   >
     {options.map(option => (
       <option key={option.value} value={option.value}>{option.label}</option>
@@ -497,7 +497,7 @@ export default function ScheduleSection() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5 text-red-600" />
+                <Zap className="h-5 w-5 text-orange-600" />
                 Quick Start
               </CardTitle>
             </div>
@@ -508,10 +508,10 @@ export default function ScheduleSection() {
                 <button
                   key={hours}
                   onClick={() => handleQuickSchedule(hours)}
-                  className="p-4 rounded-xl border-2 border-gray-200 hover:border-red-500 hover:bg-red-50 transition-all text-center group"
+                  className="p-4 rounded-xl border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50 transition-all text-center group"
                 >
-                  <div className="text-3xl font-bold text-red-600 mb-1">{hours}h</div>
-                  <div className="text-xs text-gray-600 group-hover:text-red-700 font-medium">Start Now</div>
+                  <div className="text-3xl font-bold text-orange-600 mb-1">{hours}h</div>
+                  <div className="text-xs text-gray-600 group-hover:text-orange-700 font-medium">Start Now</div>
                 </button>
               ))}
             </div>
@@ -552,7 +552,7 @@ export default function ScheduleSection() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-red-600" />
+                <Calendar className="h-5 w-5 text-orange-600" />
                 Weekly Schedule
               </CardTitle>
               <div className="flex gap-2">
@@ -576,7 +576,7 @@ export default function ScheduleSection() {
           <CardContent>
             <div className="flex items-center justify-between mb-5 pb-4 border-b border-gray-100">
               <span className="text-sm text-gray-600">Total Hours</span>
-              <span className="text-xl font-bold text-red-600">{weeklyHours.toFixed(1)}h</span>
+              <span className="text-xl font-bold text-orange-600">{weeklyHours.toFixed(1)}h</span>
             </div>
 
             <div className="space-y-2">
@@ -590,18 +590,18 @@ export default function ScheduleSection() {
                   <div 
                     key={day}
                     className={`rounded-xl border-2 transition-all ${
-                      isToday ? 'border-red-200 bg-red-50' : 'border-gray-100 bg-white'
+                      isToday ? 'border-orange-200 bg-orange-50' : 'border-gray-100 bg-white'
                     }`}
                   >
                     <div className="p-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold ${
-                          isToday ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-600'
+                          isToday ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-600'
                         }`}>
                           {DAYS_SHORT[index]}
                         </div>
                         <div>
-                          <p className={`font-semibold ${isToday ? 'text-red-900' : 'text-gray-900'}`}>
+                          <p className={`font-semibold ${isToday ? 'text-orange-900' : 'text-gray-900'}`}>
                             {day}
                           </p>
                           <p className="text-xs text-gray-500">
@@ -643,13 +643,13 @@ export default function ScheduleSection() {
                               <div className="flex gap-1">
                                 <button
                                   onClick={() => { setEditingBlock(block); setIsModalOpen(true); }}
-                                  className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
+                                  className="p-2 hover:bg-orange-50 text-orange-600 rounded-lg transition-colors"
                                 >
                                   <Edit className="h-4 w-4" />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteBlock(block.id)}
-                                  className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
+                                  className="p-2 hover:bg-orange-50 text-orange-600 rounded-lg transition-colors"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </button>
