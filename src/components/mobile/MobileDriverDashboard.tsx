@@ -19,6 +19,7 @@ import { IOSNotificationBanner } from './IOSNotificationBanner';
 import { MobileMapbox } from './MobileMapbox';
 import { DriveTimeSelector } from './DriveTimeSelector';
 import LoadingScreen from './LoadingScreen';
+import MobileDriverWelcomeScreen from './MobileDriverWelcomeScreen';
 type DriverState = 'offline' | 'online_searching' | 'online_paused' | 'on_delivery';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
 type EarningMode = 'perHour' | 'perOffer';
@@ -57,10 +58,16 @@ export const MobileDriverDashboard: React.FC = () => {
   const [showTestCompletionModal, setShowTestCompletionModal] = useState(false);
   const [showTimeSelector, setShowTimeSelector] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showWelcomeScreen, setShowWelcomeScreen] = useState(false);
   const {
     playNotification
   } = useNotificationSettings();
   const { showNotification, notifications: iosNotifications, dismissNotification } = useIOSNotifications();
+
+  const handleStartFeeding = () => {
+    setShowWelcomeScreen(false);
+    // The main dashboard will be shown automatically
+  };
 
   // Setup real-time listener for order assignments (broadcast + DB changes)
   const setupRealtimeListener = (userId: string) => {
@@ -161,9 +168,10 @@ export const MobileDriverDashboard: React.FC = () => {
   useEffect(() => {
     checkOnboardingAndSession();
 
-    // Simulate loading time for the loading screen
+    // Simulate loading time for the loading screen, then show welcome screen
     const loadingTimer = setTimeout(() => {
       setIsLoading(false);
+      setShowWelcomeScreen(true);
     }, 2500);
     return () => clearTimeout(loadingTimer);
   }, []);
@@ -560,6 +568,11 @@ export const MobileDriverDashboard: React.FC = () => {
     
     <LoadingScreen isLoading={isLoading} />
     
+    {showWelcomeScreen && (
+      <MobileDriverWelcomeScreen onStartFeeding={handleStartFeeding} />
+    )}
+    
+    {!isLoading && !showWelcomeScreen && (
     <div className="h-screen bg-background relative">
       {/* Full Screen Map Background - Full height */}
       <div className="absolute inset-0 z-0">
@@ -856,5 +869,6 @@ export const MobileDriverDashboard: React.FC = () => {
         onCompleteDelivery={() => setShowTestCompletionModal(false)}
       />}
     </div>
+    )}
   </>;
 };
