@@ -57,9 +57,11 @@ const CraveMore: React.FC = () => {
           <div className="p-4">
             <nav className="space-y-1">
               <button onClick={() => navigate('/restaurants')} className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors text-gray-600 hover:bg-gray-100 hover:text-gray-900">
-                
+                <span className="font-medium">Restaurants</span>
               </button>
-              
+              <button onClick={() => navigate('/crave-more')} className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors bg-blue-100 text-blue-900">
+                <span className="font-medium">CraveMore</span>
+              </button>
             </nav>
           </div>
         </div>
@@ -78,7 +80,35 @@ const CraveMore: React.FC = () => {
             </div>
 
             <div className="relative max-w-6xl mx-auto">
-              
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  {/* Logo */}
+                  <div className="flex items-center mb-8">
+                    
+                    <div className="flex items-center">
+                      <span className="font-bold text-orange-500 text-6xl px-0 mx-0">    Crave</span>
+                      <span className="font-bold ml-1 text-slate-50 text-6xl mx-0 px-0 py-0 my-0">More</span>
+                    </div>
+                  </div>
+
+                  {/* Headlines */}
+                  <h1 className="text-4xl md:text-5xl font-bold mb-4 text-orange-500 mx-[110px]">
+                    Get $0 delivery fees on eligible orders
+                  </h1>
+                  <p className="text-xl mb-8 text-slate-50">
+                    Save on restaurants, groceries, retail and more.
+                  </p>
+                </div>
+
+                {/* Food Images */}
+                <div className="hidden lg:block relative">
+                  <div className="relative">
+                    <div className="w-64 h-64 rounded-lg shadow-lg transform rotate-3 bg-amber-400"></div>
+                    <div className="absolute top-4 left-4 w-56 h-56 bg-gray-100 rounded-lg shadow-lg transform -rotate-2"></div>
+                    
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
