@@ -656,7 +656,7 @@ export const MobileDriverDashboard: React.FC = () => {
                     { time: '11p', value: 85, showLabel: false }  // Night peak
                   ].map((data, index) => (
                     <div key={data.time} className="flex flex-col items-center justify-end flex-1 min-w-0">
-                      <div className="w-full mb-1" style={{ height: `${(data.value / 95) * 100}%`, minHeight: '2px' }}>
+                      <div className="w-full mb-1" style={{ height: `${(data.value / 95) * 64}px`, minHeight: '2px' }}>
                          <div className={`w-full h-full rounded-t-sm transition-all duration-300 border border-gray-400 ${index === 13 ? 'bg-orange-500' : 'bg-gray-500'}`} />
                       </div>
                       <span className="text-xs text-muted-foreground font-medium whitespace-nowrap" style={{ 
@@ -750,7 +750,7 @@ export const MobileDriverDashboard: React.FC = () => {
                     { time: '11p', value: 85, showLabel: false }  // Night peak
                   ].map((data, index) => (
                     <div key={data.time} className="flex flex-col items-center justify-end flex-1 min-w-0">
-                      <div className="w-full mb-1" style={{ height: `${(data.value / 95) * 100}%`, minHeight: '2px' }}>
+                      <div className="w-full mb-1" style={{ height: `${(data.value / 95) * 64}px`, minHeight: '2px' }}>
                         <div className={`w-full h-full rounded-t-sm transition-all duration-300 border border-gray-400 ${index === 13 ? 'bg-orange-500' : 'bg-gray-500'}`} />
                       </div>
                       <span className="text-xs text-muted-foreground font-medium whitespace-nowrap" style={{ 
