@@ -42,6 +42,9 @@ interface RestaurantCardProps {
   onReject?: (restaurant: RestaurantOnboardingData) => void;
   onChat?: (restaurant: RestaurantOnboardingData) => void;
   onVerifyDocuments?: (restaurant: RestaurantOnboardingData) => void;
+  onSelectRestaurant?: (restaurant: RestaurantOnboardingData, selected: boolean) => void;
+  isSelected?: boolean;
+  bulkSelectionMode?: boolean;
 }
 
 export function RestaurantCard({
@@ -51,6 +54,9 @@ export function RestaurantCard({
   onReject,
   onChat,
   onVerifyDocuments,
+  onSelectRestaurant,
+  isSelected = false,
+  bulkSelectionMode = false,
 }: RestaurantCardProps) {
   const stage = getOnboardingStage(restaurant);
   const readiness = getReadinessScore(restaurant);
@@ -91,6 +97,14 @@ export function RestaurantCard({
             {/* Details */}
             <div className="flex-1 min-w-0">
               <div className="flex items-start gap-2 mb-1">
+                {bulkSelectionMode && (
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={(e) => onSelectRestaurant?.(restaurant, e.target.checked)}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1"
+                  />
+                )}
                 <h3 className="font-semibold text-lg truncate flex-1">{restaurant.restaurant.name}</h3>
                 {priority === 'high' && (
                   <Badge variant="destructive" className="text-xs">

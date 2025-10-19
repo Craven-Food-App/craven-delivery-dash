@@ -12,11 +12,14 @@ import {
   ArrowUp,
   ArrowDown,
   LayoutGrid,
-  LayoutList
+  LayoutList,
+  CheckSquare,
+  Square
 } from 'lucide-react';
 import type { RestaurantOnboardingData, OnboardingStage } from '../types';
 import { RestaurantCard } from '../components/RestaurantCard';
 import { QuickFilters } from '../components/QuickFilters';
+import { BulkActionBar } from '../components/BulkActionBar';
 import { sortRestaurants, filterRestaurants } from '../utils/helpers';
 
 interface ListViewProps {
@@ -26,6 +29,11 @@ interface ListViewProps {
   onReject?: (restaurant: RestaurantOnboardingData) => void;
   onChat?: (restaurant: RestaurantOnboardingData) => void;
   onVerifyDocuments?: (restaurant: RestaurantOnboardingData) => void;
+  onBulkApprove?: (restaurantIds: string[], notes?: string) => Promise<void>;
+  onBulkReject?: (restaurantIds: string[], notes: string) => Promise<void>;
+  onBulkEmail?: (restaurantIds: string[], message: string) => Promise<void>;
+  onBulkAssign?: (restaurantIds: string[], adminId: string) => Promise<void>;
+  onBulkStatusUpdate?: (restaurantIds: string[], status: string) => Promise<void>;
 }
 
 export function ListView({
@@ -35,6 +43,11 @@ export function ListView({
   onReject,
   onChat,
   onVerifyDocuments,
+  onBulkApprove,
+  onBulkReject,
+  onBulkEmail,
+  onBulkAssign,
+  onBulkStatusUpdate,
 }: ListViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStages, setSelectedStages] = useState<OnboardingStage[]>([]);
@@ -43,6 +56,8 @@ export function ListView({
   const [sortBy, setSortBy] = useState<'date' | 'priority' | 'stage' | 'name' | 'readiness'>('priority');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [selectedRestaurants, setSelectedRestaurants] = useState<RestaurantOnboardingData[]>([]);
+  const [bulkSelectionMode, setBulkSelectionMode] = useState(false);
 
   // Apply filters
   const filteredRestaurants = filterRestaurants(restaurants, {
@@ -54,6 +69,31 @@ export function ListView({
 
   // Apply sorting
   const sortedRestaurants = sortRestaurants(filteredRestaurants, sortBy, sortOrder);
+
+  // Bulk selection handlers
+  const handleSelectRestaurant = (restaurant: RestaurantOnboardingData, selected: boolean) => {
+    if (selected) {
+      setSelectedRestaurants(prev => [...prev, restaurant]);
+    } else {
+      setSelectedRestaurants(prev => prev.filter(r => r.id !== restaurant.id));
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedRestaurants.length === sortedRestaurants.length) {
+      setSelectedRestaurants([]);
+    } else {
+      setSelectedRestaurants([...sortedRestaurants]);
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedRestaurants([]);
+    setBulkSelectionMode(false);
+  };
+
+  const isAllSelected = selectedRestaurants.length === sortedRestaurants.length && sortedRestaurants.length > 0;
+  const isPartiallySelected = selectedRestaurants.length > 0 && selectedRestaurants.length < sortedRestaurants.length;
 
   const toggleSortOrder = () => {
     setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
@@ -110,6 +150,21 @@ export function ListView({
             )}
           </Button>
 
+          {/* Bulk Selection Toggle */}
+          <Button
+            variant={bulkSelectionMode ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setBulkSelectionMode(!bulkSelectionMode)}
+            className="flex items-center gap-2"
+          >
+            {bulkSelectionMode ? (
+              <CheckSquare className="h-4 w-4" />
+            ) : (
+              <Square className="h-4 w-4" />
+            )}
+            Bulk Actions
+          </Button>
+
           {/* View Mode Toggle */}
           <div className="flex border rounded-md">
             <Button
@@ -131,6 +186,24 @@ export function ListView({
           </div>
         </div>
       </div>
+
+      {/* Select All Checkbox */}
+      {bulkSelectionMode && sortedRestaurants.length > 0 && (
+        <div className="flex items-center gap-2 p-3 bg-gray-50 border rounded-lg mb-4">
+          <input
+            type="checkbox"
+            checked={isAllSelected}
+            ref={(input) => {
+              if (input) input.indeterminate = isPartiallySelected;
+            }}
+            onChange={handleSelectAll}
+            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+          <span className="text-sm font-medium">
+            Select All ({sortedRestaurants.length} restaurants)
+          </span>
+        </div>
+      )}
 
       {/* Restaurant List/Grid */}
       {sortedRestaurants.length === 0 ? (
@@ -162,19 +235,34 @@ export function ListView({
           }
         >
           {sortedRestaurants.map(restaurant => (
-            <RestaurantCard
-              key={restaurant.id}
-              restaurant={restaurant}
-              onView={onView}
-              onApprove={onApprove}
-              onReject={onReject}
-              onChat={onChat}
-              onVerifyDocuments={onVerifyDocuments}
-            />
+              <RestaurantCard
+                key={restaurant.id}
+                restaurant={restaurant}
+                onView={onView}
+                onApprove={onApprove}
+                onReject={onReject}
+                onChat={onChat}
+                onVerifyDocuments={onVerifyDocuments}
+                onSelectRestaurant={handleSelectRestaurant}
+                isSelected={selectedRestaurants.some(r => r.id === restaurant.id)}
+                bulkSelectionMode={bulkSelectionMode}
+              />
           ))}
         </div>
       )}
+
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedRestaurants={selectedRestaurants}
+        onClearSelection={handleClearSelection}
+        onBulkApprove={onBulkApprove || (async () => {})}
+        onBulkReject={onBulkReject || (async () => {})}
+        onBulkEmail={onBulkEmail || (async () => {})}
+        onBulkAssign={onBulkAssign || (async () => {})}
+        onBulkStatusUpdate={onBulkStatusUpdate || (async () => {})}
+      />
     </div>
   );
 }
+
 

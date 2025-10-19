@@ -88,6 +88,114 @@ export function EnhancedRestaurantOnboarding() {
     setIsVerificationPanelOpen(true);
   };
 
+  // Bulk action handlers
+  const handleBulkApprove = async (restaurantIds: string[], notes?: string) => {
+    try {
+      // Update restaurants in Supabase
+      const { error } = await supabase
+        .from('restaurant_onboarding')
+        .update({ 
+          business_info_verified: true,
+          business_verified_at: new Date().toISOString(),
+          admin_notes: notes || 'Bulk approved by admin'
+        })
+        .in('restaurant_id', restaurantIds);
+
+      if (error) throw error;
+
+      // Refresh data
+      fetchRestaurants(false);
+    } catch (error) {
+      console.error('Error bulk approving restaurants:', error);
+      throw error;
+    }
+  };
+
+  const handleBulkReject = async (restaurantIds: string[], notes: string) => {
+    try {
+      // Update restaurants in Supabase
+      const { error } = await supabase
+        .from('restaurant_onboarding')
+        .update({ 
+          business_info_verified: false,
+          admin_notes: notes
+        })
+        .in('restaurant_id', restaurantIds);
+
+      if (error) throw error;
+
+      // Refresh data
+      fetchRestaurants(false);
+    } catch (error) {
+      console.error('Error bulk rejecting restaurants:', error);
+      throw error;
+    }
+  };
+
+  const handleBulkEmail = async (restaurantIds: string[], message: string) => {
+    try {
+      // Get restaurant emails
+      const { data: restaurants } = await supabase
+        .from('restaurants')
+        .select('email, name')
+        .in('id', restaurantIds);
+
+      if (!restaurants) return;
+
+      // Send emails (in real app, this would call an email service)
+      console.log('Sending bulk email to:', restaurants.map(r => r.email));
+      console.log('Message:', message);
+      
+      // For now, just simulate success
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (error) {
+      console.error('Error sending bulk email:', error);
+      throw error;
+    }
+  };
+
+  const handleBulkAssign = async (restaurantIds: string[], adminId: string) => {
+    try {
+      // Update restaurants with assigned admin
+      const { error } = await supabase
+        .from('restaurant_onboarding')
+        .update({ 
+          assigned_admin_id: adminId,
+          updated_at: new Date().toISOString()
+        })
+        .in('restaurant_id', restaurantIds);
+
+      if (error) throw error;
+
+      // Refresh data
+      fetchRestaurants(false);
+    } catch (error) {
+      console.error('Error bulk assigning restaurants:', error);
+      throw error;
+    }
+  };
+
+  const handleBulkStatusUpdate = async (restaurantIds: string[], status: string) => {
+    try {
+      // Update restaurants status
+      const { error } = await supabase
+        .from('restaurant_onboarding')
+        .update({ 
+          onboarding_status: status,
+          updated_at: new Date().toISOString()
+        })
+        .in('restaurant_id', restaurantIds);
+
+      if (error) throw error;
+
+      // Refresh data
+      fetchRestaurants(false);
+    } catch (error) {
+      console.error('Error bulk updating status:', error);
+      throw error;
+    }
+  };
+
   const handleApprove = async (restaurantId: string, notes: string) => {
     try {
       // Get current user for audit trail
@@ -248,6 +356,11 @@ export function EnhancedRestaurantOnboarding() {
             onReject={(r) => handleReject(r.restaurant_id, 'Rejected')}
             onChat={handleChat}
             onVerifyDocuments={handleVerifyDocuments}
+            onBulkApprove={handleBulkApprove}
+            onBulkReject={handleBulkReject}
+            onBulkEmail={handleBulkEmail}
+            onBulkAssign={handleBulkAssign}
+            onBulkStatusUpdate={handleBulkStatusUpdate}
           />
         </TabsContent>
 
@@ -264,6 +377,11 @@ export function EnhancedRestaurantOnboarding() {
             onReject={(r) => handleReject(r.restaurant_id, 'Rejected')}
             onChat={handleChat}
             onVerifyDocuments={handleVerifyDocuments}
+            onBulkApprove={handleBulkApprove}
+            onBulkReject={handleBulkReject}
+            onBulkEmail={handleBulkEmail}
+            onBulkAssign={handleBulkAssign}
+            onBulkStatusUpdate={handleBulkStatusUpdate}
           />
         </TabsContent>
 
@@ -278,6 +396,11 @@ export function EnhancedRestaurantOnboarding() {
             onReject={(r) => handleReject(r.restaurant_id, 'Rejected')}
             onChat={handleChat}
             onVerifyDocuments={handleVerifyDocuments}
+            onBulkApprove={handleBulkApprove}
+            onBulkReject={handleBulkReject}
+            onBulkEmail={handleBulkEmail}
+            onBulkAssign={handleBulkAssign}
+            onBulkStatusUpdate={handleBulkStatusUpdate}
           />
         </TabsContent>
 
@@ -294,6 +417,11 @@ export function EnhancedRestaurantOnboarding() {
             onReject={(r) => handleReject(r.restaurant_id, 'Rejected')}
             onChat={handleChat}
             onVerifyDocuments={handleVerifyDocuments}
+            onBulkApprove={handleBulkApprove}
+            onBulkReject={handleBulkReject}
+            onBulkEmail={handleBulkEmail}
+            onBulkAssign={handleBulkAssign}
+            onBulkStatusUpdate={handleBulkStatusUpdate}
           />
         </TabsContent>
 
@@ -305,6 +433,11 @@ export function EnhancedRestaurantOnboarding() {
             onReject={(r) => handleReject(r.restaurant_id, 'Rejected')}
             onChat={handleChat}
             onVerifyDocuments={handleVerifyDocuments}
+            onBulkApprove={handleBulkApprove}
+            onBulkReject={handleBulkReject}
+            onBulkEmail={handleBulkEmail}
+            onBulkAssign={handleBulkAssign}
+            onBulkStatusUpdate={handleBulkStatusUpdate}
           />
         </TabsContent>
 
