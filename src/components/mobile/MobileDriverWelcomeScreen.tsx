@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import mobileDriverWelcomeImage from '@/assets/mobile-driver-welcome.png';
 
 interface MobileDriverWelcomeScreenProps {
   onStartFeeding?: () => void;
@@ -26,7 +27,7 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
     <div className="fixed inset-0 w-full h-full bg-gray-900">
       {/* Full Screen Background Image */}
       <img 
-        src="/src/assets/mobile-driver-welcome.png"
+        src={mobileDriverWelcomeImage}
         alt="CRAVE'N Delivery Rider"
         className="absolute inset-0 w-full h-full object-cover"
         onError={(e) => {
