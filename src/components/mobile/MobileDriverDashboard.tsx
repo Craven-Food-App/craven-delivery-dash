@@ -20,6 +20,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import ScheduleSection from './ScheduleSection';
 import { EarningsSection } from './EarningsSection';
 import { AccountSection } from './AccountSection';
+// Production readiness imports
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { useOfflineStorage } from '@/hooks/useOfflineStorage';
+import { usePerformanceMonitoring } from '@/hooks/usePerformanceMonitoring';
+import { useCrashReporting } from '@/hooks/useCrashReporting';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { LoadingState, LoadingOverlay } from '@/components/LoadingStates';
+import OfflineIndicator from '@/components/OfflineIndicator';
 type DriverState = 'offline' | 'online_searching' | 'online_paused' | 'on_delivery';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
 type EarningMode = 'perHour' | 'perOffer';
@@ -37,6 +45,16 @@ interface OrderAssignment {
   isTestOrder?: boolean; // Add test order flag
 }
 export const MobileDriverDashboard: React.FC = () => {
+  // Production readiness hooks
+  const { isOnline, isSlowConnection } = useNetworkStatus();
+  const { data: offlineData, setData: setOfflineData } = useOfflineStorage({
+    key: 'driver_state',
+    defaultValue: { state: 'offline', timestamp: Date.now() }
+  });
+  const { trackEvent, trackUserAction, trackError } = useAnalytics();
+  const { reportCustomError } = useCrashReporting();
+  const { trackApiCall } = usePerformanceMonitoring('MobileDriverDashboard');
+
   // Function to get current time index for highlighting
   const getCurrentTimeIndex = () => {
     const now = new Date();
@@ -505,13 +523,22 @@ export const MobileDriverDashboard: React.FC = () => {
     return () => window.removeEventListener('driverStatusChange', handleStatusChange as EventListener);
   }, [driverState]);
   const handleGoOnline = async () => {
+    const startTime = Date.now();
+    
     try {
+      trackUserAction('driver_go_online');
+      
       const {
         data: {
           user
         }
       } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        const error = new Error('No authenticated user');
+        trackError('driver_go_online_failed', { reason: 'no_user' });
+        reportCustomError(error, 'handleGoOnline');
+        return;
+      }
 
       // Use the database function to ensure driver can go online
       const {
@@ -649,6 +676,12 @@ export const MobileDriverDashboard: React.FC = () => {
           console.error('Error updating driver profile:', profileError);
         }
       }
+      
+      // Update schedule availability status to sync with paused state
+      window.dispatchEvent(new CustomEvent('driverStatusChange', { 
+        detail: { status: 'offline' } 
+      }));
+      
       setDriverState('online_paused');
     } catch (error) {
       console.error('Error pausing:', error);
@@ -673,6 +706,12 @@ export const MobileDriverDashboard: React.FC = () => {
           console.error('Error updating driver profile:', profileError);
         }
       }
+      
+      // Update schedule availability status to sync with online state
+      window.dispatchEvent(new CustomEvent('driverStatusChange', { 
+        detail: { status: 'online' } 
+      }));
+      
       setDriverState('online_searching');
     } catch (error) {
       console.error('Error unpausing:', error);
@@ -752,6 +791,9 @@ export const MobileDriverDashboard: React.FC = () => {
     
     {!isLoading && !showWelcomeScreen && (
     <div className="fixed inset-0 h-screen w-screen bg-background overflow-hidden">
+      {/* Offline Indicator */}
+      <OfflineIndicator />
+      
       {/* Full Screen Map Background - Full height */}
       <div className="absolute inset-0 z-0">
         <MobileMapbox />
@@ -786,22 +828,28 @@ export const MobileDriverDashboard: React.FC = () => {
         {/* Tab-based Content Rendering */}
         {activeTab === 'schedule' && (
           <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
-            <ScheduleSection />
+            <div className="min-h-screen">
+              <ScheduleSection />
+            </div>
           </div>
         )}
         
         {activeTab === 'earnings' && (
           <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
-            <EarningsSection />
+            <div className="min-h-screen">
+              <EarningsSection />
+            </div>
           </div>
         )}
         
         {activeTab === 'account' && (
           <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
-            <AccountSection 
-              activeTab={activeTab}
-              onTabChange={(tab) => setActiveTab(tab as any)}
-            />
+            <div className="min-h-screen">
+              <AccountSection 
+                activeTab={activeTab}
+                onTabChange={(tab) => setActiveTab(tab as any)}
+              />
+            </div>
           </div>
         )}
         
@@ -889,8 +937,11 @@ export const MobileDriverDashboard: React.FC = () => {
               {/* Still Searching Section with Get offers until */}
               <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/20 overflow-hidden">
                 <div className="flex items-center justify-between">
-                  {/* Left: Still searching text */}
-                  <span className="text-base text-foreground font-medium">Still searching...</span>
+                  {/* Left: Still searching text with loading state */}
+                  <div className="flex items-center gap-2">
+                    <LoadingState type="default" size="sm" />
+                    <span className="text-base text-foreground font-medium">Still searching...</span>
+                  </div>
                   
                   {/* Right: "Get offers until" + Time + Rotating circle grouped together */}
                   <div className="flex items-center gap-2">
