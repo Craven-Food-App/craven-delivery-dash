@@ -45,8 +45,6 @@ import CraveMore from "./pages/CraveMore";
 import ChatButton from "./components/chat/ChatButton";
 import { ThemeProvider } from "./components/ThemeProvider";
 import SuspenseLoader from "./components/SuspenseLoader";
-import { ErrorBoundary } from "./components/ErrorBoundary";
-import { environment, validateEnvironmentConfig } from "./config/environment";
 
 // Lazy load guide pages
 const AdminGuide = lazy(() => import("./pages/AdminGuide"));
@@ -59,11 +57,6 @@ const App = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Validate environment configuration
-    if (!validateEnvironmentConfig()) {
-      console.error('Environment configuration validation failed');
-    }
-
     // Check initial auth state
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -83,36 +76,33 @@ const App = () => {
   // If running on native platform, show only mobile dashboard
   if (isNative) {
     return (
-      <ErrorBoundary>
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <AccessGuard fallback={
-              <div className="flex flex-col items-center justify-center min-h-screen p-4">
-                <h1 className="text-2xl font-bold mb-4">Feeder Access Required</h1>
-                <p className="text-muted-foreground text-center mb-4">
-                  You need an approved Feeder application to access the mobile portal.
-                </p>
-              </div>
-            }>
-              <MobileDriverDashboard />
-            </AccessGuard>
-          </TooltipProvider>
-        </QueryClientProvider>
-      </ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <AccessGuard fallback={
+            <div className="flex flex-col items-center justify-center min-h-screen p-4">
+              <h1 className="text-2xl font-bold mb-4">Feeder Access Required</h1>
+              <p className="text-muted-foreground text-center mb-4">
+                You need an approved Feeder application to access the mobile portal.
+              </p>
+            </div>
+          }>
+            <MobileDriverDashboard />
+          </AccessGuard>
+        </TooltipProvider>
+      </QueryClientProvider>
     );
   }
 
   // Web version with full routing
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="system">
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="system">
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
           <Route path="/restaurants" element={<Restaurants />} />
@@ -193,7 +183,6 @@ const App = () => {
     </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
-  </ErrorBoundary>
   );
 };
 
