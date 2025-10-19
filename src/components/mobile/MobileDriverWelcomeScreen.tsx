@@ -10,6 +10,8 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
   onStartFeeding 
 }) => {
   const navigate = useNavigate();
+  
+  console.log('MobileDriverWelcomeScreen rendered');
 
   const handleFeedNow = () => {
     if (onStartFeeding) {

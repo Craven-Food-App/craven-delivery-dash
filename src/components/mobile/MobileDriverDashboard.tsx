@@ -66,7 +66,8 @@ export const MobileDriverDashboard: React.FC = () => {
 
   const handleStartFeeding = () => {
     setShowWelcomeScreen(false);
-    // The main dashboard will be shown automatically
+    // Initialize session persistence after welcome screen is dismissed
+    checkSessionPersistence();
   };
 
   // Setup real-time listener for order assignments (broadcast + DB changes)
@@ -170,6 +171,7 @@ export const MobileDriverDashboard: React.FC = () => {
 
     // Simulate loading time for the loading screen, then show welcome screen
     const loadingTimer = setTimeout(() => {
+      console.log('Loading complete, setting showWelcomeScreen to true');
       setIsLoading(false);
       setShowWelcomeScreen(true);
     }, 2500);
@@ -194,8 +196,8 @@ export const MobileDriverDashboard: React.FC = () => {
         return;
       }
 
-      // Then check session persistence
-      checkSessionPersistence();
+      // If onboarding is complete, the welcome screen will show after loading
+      // Then check session persistence after welcome screen is dismissed
     } catch (error) {
       console.error('Error checking onboarding:', error);
     }
@@ -571,6 +573,9 @@ export const MobileDriverDashboard: React.FC = () => {
     {showWelcomeScreen && (
       <MobileDriverWelcomeScreen onStartFeeding={handleStartFeeding} />
     )}
+    
+    {/* Debug info */}
+    {console.log('Render state - isLoading:', isLoading, 'showWelcomeScreen:', showWelcomeScreen)}
     
     {!isLoading && !showWelcomeScreen && (
     <div className="h-screen bg-background relative">
