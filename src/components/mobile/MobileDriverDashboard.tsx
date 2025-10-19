@@ -634,34 +634,37 @@ export const MobileDriverDashboard: React.FC = () => {
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
                 
-                <div className="flex items-end justify-between h-16 gap-2 overflow-hidden">
-                  {[{
-                  time: '6a',
-                  value: 25
-                }, {
-                  time: '9a',
-                  value: 45
-                }, {
-                  time: '12p',
-                  value: 85
-                }, {
-                  time: '3p',
-                  value: 60
-                }, {
-                  time: '6p',
-                  value: 95
-                }, {
-                  time: '9p',
-                  value: 75
-                }].map((data, index) => <div key={data.time} className="flex flex-col items-center flex-1">
-                      <div className={`w-full rounded-t-sm transition-all duration-300 ${index === 4 ? 'bg-primary' : 'bg-muted'}`} style={{
-                    height: `${data.value / 95 * 100}%`,
-                    minHeight: '6px'
-                  }} />
-                      <span className="text-xs text-muted-foreground mt-1 font-medium">
-                        {data.time}
-                      </span>
-                    </div>)}
+                <div className="flex items-end justify-between h-16 gap-1 overflow-hidden">
+                  {[
+                    { time: '6a', value: 75, showLabel: true },
+                    { time: '7a', value: 75, showLabel: false },
+                    { time: '8a', value: 80, showLabel: false },
+                    { time: '9a', value: 65, showLabel: true },
+                    { time: '10a', value: 50, showLabel: false },
+                    { time: '11a', value: 55, showLabel: false },
+                    { time: '12p', value: 75, showLabel: true },
+                    { time: '1p', value: 65, showLabel: false },
+                    { time: '2p', value: 70, showLabel: false },
+                    { time: '3p', value: 60, showLabel: true },
+                    { time: '4p', value: 65, showLabel: false },
+                    { time: '5p', value: 80, showLabel: false },
+                    { time: '6p', value: 90, showLabel: true },
+                    { time: '7p', value: 95, showLabel: false },
+                    { time: '8p', value: 85, showLabel: false },
+                    { time: '9p', value: 85, showLabel: true }
+                  ].map((data, index) => (
+                    <div key={data.time} className="flex flex-col items-center flex-1">
+                      <div className={`w-full rounded-t-sm transition-all duration-300 ${index === 12 ? 'bg-primary' : 'bg-muted'}`} style={{
+                        height: `${data.value / 95 * 100}%`,
+                        minHeight: '6px'
+                      }} />
+                      {data.showLabel && (
+                        <span className="text-xs text-muted-foreground mt-1 font-medium">
+                          {data.time}
+                        </span>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -722,34 +725,37 @@ export const MobileDriverDashboard: React.FC = () => {
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
                 
-                <div className="flex items-end justify-between h-16 gap-2 overflow-hidden">
-                  {[{
-                  time: '6a',
-                  value: 25
-                }, {
-                  time: '9a',
-                  value: 45
-                }, {
-                  time: '12p',
-                  value: 85
-                }, {
-                  time: '3p',
-                  value: 60
-                }, {
-                  time: '6p',
-                  value: 95
-                }, {
-                  time: '9p',
-                  value: 75
-                }].map((data, index) => <div key={data.time} className="flex flex-col items-center flex-1">
-                      <div className={`w-full rounded-t-sm transition-all duration-300 ${index === 4 ? 'bg-primary' : 'bg-muted'}`} style={{
-                    height: `${data.value / 95 * 100}%`,
-                    minHeight: '6px'
-                  }} />
-                      <span className="text-xs text-muted-foreground mt-1 font-medium">
-                        {data.time}
-                      </span>
-                    </div>)}
+                <div className="flex items-end justify-between h-16 gap-1 overflow-hidden">
+                  {[
+                    { time: '6a', value: 75, showLabel: true },
+                    { time: '7a', value: 75, showLabel: false },
+                    { time: '8a', value: 80, showLabel: false },
+                    { time: '9a', value: 65, showLabel: true },
+                    { time: '10a', value: 50, showLabel: false },
+                    { time: '11a', value: 55, showLabel: false },
+                    { time: '12p', value: 75, showLabel: true },
+                    { time: '1p', value: 65, showLabel: false },
+                    { time: '2p', value: 70, showLabel: false },
+                    { time: '3p', value: 60, showLabel: true },
+                    { time: '4p', value: 65, showLabel: false },
+                    { time: '5p', value: 80, showLabel: false },
+                    { time: '6p', value: 90, showLabel: true },
+                    { time: '7p', value: 95, showLabel: false },
+                    { time: '8p', value: 85, showLabel: false },
+                    { time: '9p', value: 85, showLabel: true }
+                  ].map((data, index) => (
+                    <div key={data.time} className="flex flex-col items-center flex-1">
+                      <div className={`w-full rounded-t-sm transition-all duration-300 ${index === 12 ? 'bg-primary' : 'bg-muted'}`} style={{
+                        height: `${data.value / 95 * 100}%`,
+                        minHeight: '6px'
+                      }} />
+                      {data.showLabel && (
+                        <span className="text-xs text-muted-foreground mt-1 font-medium">
+                          {data.time}
+                        </span>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
