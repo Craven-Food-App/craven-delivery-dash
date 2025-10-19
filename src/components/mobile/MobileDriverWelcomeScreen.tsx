@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import mobileDriverWelcomeImage from '@/assets/mobile-driver-welcome.png';
+import MobileFeederLogin from './MobileFeederLogin';
 
 interface MobileDriverWelcomeScreenProps {
   onStartFeeding?: () => void;
@@ -11,15 +12,22 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
   onStartFeeding 
 }) => {
   const navigate = useNavigate();
+  const [showLogin, setShowLogin] = useState(false);
   
   console.log('MobileDriverWelcomeScreen rendered');
   console.log('Image source:', mobileDriverWelcomeImage);
 
   const handleFeedNow = () => {
+    console.log('FEED NOW clicked, showing login screen');
+    setShowLogin(true);
+  };
+
+  const handleLoginSuccess = () => {
+    console.log('Login successful, proceeding to dashboard');
+    setShowLogin(false);
     if (onStartFeeding) {
       onStartFeeding();
     } else {
-      // Navigate to the main mobile dashboard
       navigate('/mobile');
     }
   };
@@ -93,6 +101,14 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
           FEED NOW
         </Button>
       </div>
+
+      {/* Mobile Feeder Login - Slides over the welcome screen */}
+      {showLogin && (
+        <MobileFeederLogin 
+          onBack={() => setShowLogin(false)}
+          onLoginSuccess={handleLoginSuccess}
+        />
+      )}
     </div>
   );
 };

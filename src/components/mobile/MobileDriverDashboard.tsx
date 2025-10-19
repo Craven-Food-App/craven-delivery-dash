@@ -57,10 +57,27 @@ export const MobileDriverDashboard: React.FC = () => {
   } = useNotificationSettings();
   const { showNotification, notifications: iosNotifications, dismissNotification } = useIOSNotifications();
 
-  const handleStartFeeding = () => {
-    setShowWelcomeScreen(false);
-    // Initialize session persistence after welcome screen is dismissed
-    checkSessionPersistence();
+  const handleStartFeeding = async () => {
+    console.log('handleStartFeeding: Checking authentication status');
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session && session.user) {
+        console.log('handleStartFeeding: User is authenticated, proceeding to dashboard');
+        setShowWelcomeScreen(false);
+        // Initialize session persistence after welcome screen is dismissed
+        await checkSessionPersistence();
+      } else {
+        console.log('handleStartFeeding: No active session, user needs to login');
+        // The welcome screen will handle showing the login
+        // This shouldn't normally be reached since login is handled in welcome screen
+        setShowWelcomeScreen(false);
+      }
+    } catch (error) {
+      console.error('handleStartFeeding: Error checking session:', error);
+      setShowWelcomeScreen(false);
+    }
   };
 
   // Setup real-time listener for order assignments (broadcast + DB changes)
