@@ -40,6 +40,7 @@ import Testing from "./pages/Testing";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import CookiePolicy from "./pages/CookiePolicy";
+import CraveMore from "./pages/CraveMore";
 import ChatButton from "./components/chat/ChatButton";
 import { ThemeProvider } from "./components/ThemeProvider";
 
@@ -103,6 +104,7 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Index />} />
           <Route path="/restaurants" element={<Restaurants />} />
+          <Route path="/crave-more" element={<CraveMore />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/driver/auth" element={<DriverAuth />} />
           <Route path="/feeder" element={<FeederHub />} />

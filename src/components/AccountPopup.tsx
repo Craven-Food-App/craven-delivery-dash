@@ -67,12 +67,18 @@ const AccountPopup: React.FC<AccountPopupProps> = ({ isOpen, onClose, position }
         {/* Menu Items */}
         <div className="flex-1 overflow-y-auto px-6 pb-6">
           <div className="space-y-0 min-h-0">
-            {/* DashPass Promotion */}
-            <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+            {/* CraveMore Promotion */}
+            <button 
+              onClick={() => {
+                onClose();
+                window.location.href = '/crave-more';
+              }}
+              className="w-full flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200 hover:bg-green-100 transition-colors"
+            >
               <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                 <span className="text-white font-bold text-sm">C</span>
               </div>
-              <div className="flex-1">
+              <div className="flex-1 text-left">
                 <p className="text-sm text-green-700 font-medium">
                   Save an average of $5 on each order. 
                   <span className="font-semibold"> Start a free CraveMore trial!</span>
@@ -83,7 +89,7 @@ const AccountPopup: React.FC<AccountPopupProps> = ({ isOpen, onClose, position }
                   <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                 </svg>
               </div>
-            </div>
+            </button>
 
             {/* CraveN Rewards Card */}
             <div className="flex items-center gap-3 py-3 border-b border-gray-100">
