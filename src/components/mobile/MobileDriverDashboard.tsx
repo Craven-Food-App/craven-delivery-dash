@@ -634,7 +634,7 @@ export const MobileDriverDashboard: React.FC = () => {
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
                 
-                <div className="flex items-end justify-between h-16 gap-1 overflow-hidden">
+                <div className="flex items-end h-16 gap-1 overflow-hidden">
                   {[
                     { time: '6a', value: 75, showLabel: true },
                     { time: '7a', value: 75, showLabel: false },
@@ -655,16 +655,16 @@ export const MobileDriverDashboard: React.FC = () => {
                     { time: '10p', value: 70, showLabel: false },
                     { time: '11p', value: 60, showLabel: false }
                   ].map((data, index) => (
-                    <div key={data.time} className="flex flex-col items-center flex-1">
-                      <div className={`w-full rounded-t-sm transition-all duration-300 ${index === 13 ? 'bg-primary' : 'bg-muted'}`} style={{
-                        height: `${data.value / 95 * 100}%`,
-                        minHeight: '6px'
-                      }} />
-                      {data.showLabel && (
-                        <span className="text-xs text-muted-foreground mt-1 font-medium">
-                          {data.time}
-                        </span>
-                      )}
+                    <div key={data.time} className="flex flex-col items-center justify-end flex-1 min-w-0">
+                      <div className="w-full mb-1" style={{ height: `${(data.value / 95) * 100}%`, minHeight: '6px' }}>
+                        <div className={`w-full h-full rounded-t-sm transition-all duration-300 ${index === 13 ? 'bg-primary' : 'bg-muted'}`} />
+                      </div>
+                      <span className="text-xs text-muted-foreground font-medium whitespace-nowrap" style={{ 
+                        visibility: data.showLabel ? 'visible' : 'hidden',
+                        height: '16px'
+                      }}>
+                        {data.time}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -727,7 +727,7 @@ export const MobileDriverDashboard: React.FC = () => {
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
                 
-                <div className="flex items-end justify-between h-16 gap-1 overflow-hidden">
+                <div className="flex items-end h-16 gap-1 overflow-hidden">
                   {[
                     { time: '6a', value: 75, showLabel: true },
                     { time: '7a', value: 75, showLabel: false },
@@ -748,16 +748,16 @@ export const MobileDriverDashboard: React.FC = () => {
                     { time: '10p', value: 70, showLabel: false },
                     { time: '11p', value: 60, showLabel: false }
                   ].map((data, index) => (
-                    <div key={data.time} className="flex flex-col items-center flex-1">
-                      <div className={`w-full rounded-t-sm transition-all duration-300 ${index === 13 ? 'bg-primary' : 'bg-muted'}`} style={{
-                        height: `${data.value / 95 * 100}%`,
-                        minHeight: '6px'
-                      }} />
-                      {data.showLabel && (
-                        <span className="text-xs text-muted-foreground mt-1 font-medium">
-                          {data.time}
-                        </span>
-                      )}
+                    <div key={data.time} className="flex flex-col items-center justify-end flex-1 min-w-0">
+                      <div className="w-full mb-1" style={{ height: `${(data.value / 95) * 100}%`, minHeight: '6px' }}>
+                        <div className={`w-full h-full rounded-t-sm transition-all duration-300 ${index === 13 ? 'bg-primary' : 'bg-muted'}`} />
+                      </div>
+                      <span className="text-xs text-muted-foreground font-medium whitespace-nowrap" style={{ 
+                        visibility: data.showLabel ? 'visible' : 'hidden',
+                        height: '16px'
+                      }}>
+                        {data.time}
+                      </span>
                     </div>
                   ))}
                 </div>
