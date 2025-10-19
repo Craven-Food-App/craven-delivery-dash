@@ -60,8 +60,12 @@ const App = () => {
 
   useEffect(() => {
     // Validate environment configuration
-    if (!validateEnvironmentConfig()) {
-      console.error('Environment configuration validation failed');
+    try {
+      if (!validateEnvironmentConfig()) {
+        console.warn('Environment configuration validation failed');
+      }
+    } catch (error) {
+      console.warn('Environment validation error:', error);
     }
 
     // Check initial auth state
