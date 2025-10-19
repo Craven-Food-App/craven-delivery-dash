@@ -65,7 +65,7 @@ export function EnhancedRestaurantOnboarding() {
       const transformed = (data || []).map(item => ({
         ...item,
         restaurant: Array.isArray(item.restaurant) ? item.restaurant[0] : item.restaurant
-      })) as RestaurantOnboardingData[];
+      })).filter(item => item.restaurant) as RestaurantOnboardingData[];
 
       setRestaurants(transformed);
     } catch (error) {
@@ -83,7 +83,6 @@ export function EnhancedRestaurantOnboarding() {
   };
 
   const handleVerifyDocuments = (restaurant: RestaurantOnboardingData) => {
-    console.log('Opening verification panel for:', restaurant.restaurant.name);
     setSelectedRestaurant(restaurant);
     setIsVerificationPanelOpen(true);
   };

@@ -75,7 +75,7 @@ export function StatsOverview({ stats }: StatsOverviewProps) {
         <Card 
           key={index}
           className={`hover:shadow-md transition-all duration-200 ${
-            stat.highlight ? 'ring-2 ring-green-500 animate-pulse-slow' : ''
+            stat.highlight ? 'ring-2 ring-green-500 animate-pulse' : ''
           } ${stat.urgent ? 'ring-2 ring-yellow-500' : ''}`}
         >
           <CardHeader className="pb-2">
@@ -103,4 +103,5 @@ export function StatsOverview({ stats }: StatsOverviewProps) {
     </div>
   );
 }
+
 
