@@ -98,26 +98,32 @@ export const MobileDriverDashboard: React.FC = () => {
         // Already on dashboard, just close menu
         break;
       case 'Schedule':
-        // Navigate to schedule page or open schedule modal
-        navigate('/driver-schedule');
+        // For now, show a toast or alert about schedule feature
+        alert('Schedule feature coming soon! This will allow you to set your availability.');
         break;
       case 'Account':
-        navigate('/driver-account');
+        // Navigate to customer dashboard account section
+        navigate('/customer-dashboard?tab=account');
         break;
       case 'Ratings':
-        navigate('/driver-ratings');
+        // For now, show a toast or alert about ratings feature
+        alert('Ratings feature coming soon! This will show your driver ratings and feedback.');
         break;
       case 'Earnings':
-        navigate('/driver-earnings');
+        // For now, show a toast or alert about earnings feature
+        alert('Earnings feature coming soon! This will show your earnings history and payouts.');
         break;
       case 'Promos':
-        navigate('/driver-promos');
+        // Navigate to customer dashboard for promos
+        navigate('/customer-dashboard?tab=promos');
         break;
       case 'Preferences':
-        navigate('/driver-preferences');
+        // For now, show a toast or alert about preferences feature
+        alert('Preferences feature coming soon! This will allow you to customize your driver experience.');
         break;
       case 'Help':
-        navigate('/driver-help');
+        // Navigate to help center
+        navigate('/help');
         break;
       default:
         break;
