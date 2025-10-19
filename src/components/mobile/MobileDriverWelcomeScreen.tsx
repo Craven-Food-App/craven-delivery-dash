@@ -29,7 +29,7 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
       <img 
         src={mobileDriverWelcomeImage}
         alt="CRAVE'N Delivery Rider"
-        className="absolute inset-0 w-full h-full object-cover scale-90"
+        className="absolute inset-0 w-full h-full object-cover scale-110"
         onError={(e) => {
           // Fallback to a gradient background if image doesn't exist
           e.currentTarget.style.display = 'none';
@@ -42,7 +42,7 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
       
       {/* Fallback gradient background if image doesn't load */}
       <div 
-        className="hidden absolute inset-0 w-full h-full bg-gradient-to-br from-orange-400 to-orange-600 scale-90"
+        className="hidden absolute inset-0 w-full h-full bg-gradient-to-br from-orange-400 to-orange-600 scale-110"
       >
         <div className="flex items-center justify-center h-full">
           <div className="text-center text-white">
