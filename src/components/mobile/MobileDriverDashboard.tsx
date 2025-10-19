@@ -14,6 +14,8 @@ import { MobileMapbox } from './MobileMapbox';
 import { DriveTimeSelector } from './DriveTimeSelector';
 import LoadingScreen from './LoadingScreen';
 import MobileDriverWelcomeScreen from './MobileDriverWelcomeScreen';
+import { SpeedLimitSign } from './SpeedLimitSign';
+import { useDriverLocation } from '@/hooks/useDriverLocation';
 type DriverState = 'offline' | 'online_searching' | 'online_paused' | 'on_delivery';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
 type EarningMode = 'perHour' | 'perOffer';
@@ -73,6 +75,15 @@ export const MobileDriverDashboard: React.FC = () => {
   } | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
+  
+  // Get location and speed data
+  const {
+    location,
+    isTracking,
+    error: locationError,
+    startTracking,
+    stopTracking
+  } = useDriverLocation();
   const [currentOrderAssignment, setCurrentOrderAssignment] = useState<OrderAssignment | null>(null);
   const [activeDelivery, setActiveDelivery] = useState<any>(null);
   const [todayEarnings, setTodayEarnings] = useState(0);
@@ -632,6 +643,17 @@ export const MobileDriverDashboard: React.FC = () => {
         >
           <Menu className="h-5 w-5 text-gray-700" />
         </button>
+      </div>
+
+      {/* Speed Limit & Current Speed - Under Hamburger Menu */}
+      <div className="fixed top-16 left-4 z-40 pointer-events-auto">
+        <SpeedLimitSign 
+          currentSpeed={location?.speed ? location.speed * 2.237 : 0} // Convert m/s to mph
+          location={location ? {
+            latitude: location.latitude,
+            longitude: location.longitude
+          } : undefined} 
+        />
       </div>
 
       {/* Main Content Overlay - Allow for bottom nav space - Non-interactive overlay */}
