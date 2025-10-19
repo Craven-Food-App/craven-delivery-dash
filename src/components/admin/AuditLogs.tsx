@@ -41,31 +41,24 @@ export const AuditLogs: React.FC = () => {
 
       const { data, error } = await supabase
         .from('admin_audit_logs')
-        .select('*')
+        .select(`
+          *,
+          profiles!admin_audit_logs_admin_id_fkey (
+            email,
+            full_name
+          )
+        `)
         .gte('created_at', startDate.toISOString())
         .order('created_at', { ascending: false })
         .limit(500);
 
       if (error) throw error;
 
-      // Fetch admin names separately
-      const formattedLogs = await Promise.all(
-        (data || []).map(async (log: any) => {
-          const { data: admin } = await supabase
-            .from('user_profiles')
-            .select('full_name')
-            .eq('user_id', log.admin_id)
-            .single();
-          
-          const { data: authUser } = await supabase.auth.admin.getUserById(log.admin_id);
-          
-          return {
-            ...log,
-            admin_email: authUser?.user?.email,
-            admin_name: admin?.full_name || 'Admin'
-          };
-        })
-      );
+      const formattedLogs = (data || []).map((log: any) => ({
+        ...log,
+        admin_email: log.profiles?.email,
+        admin_name: log.profiles?.full_name
+      }));
 
       setLogs(formattedLogs);
     } catch (error) {

@@ -33,12 +33,7 @@ const validateEnvironment = (): void => {
 
 // Validate environment in production
 if (import.meta.env.PROD) {
-  try {
-    validateEnvironment();
-  } catch (error) {
-    console.warn('Environment validation failed:', error);
-    // Don't throw in production to avoid breaking the build
-  }
+  validateEnvironment();
 }
 
 // Environment configuration

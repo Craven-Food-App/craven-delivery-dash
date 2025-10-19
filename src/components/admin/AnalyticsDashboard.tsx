@@ -103,8 +103,9 @@ export const AnalyticsDashboard: React.FC = () => {
 
       // Fetch customer stats
       const { data: customers } = await supabase
-        .from('user_profiles')
-        .select('id, user_id, created_at');
+        .from('profiles')
+        .select('id, created_at')
+        .eq('user_type', 'customer');
 
       const newCustomers = (customers || []).filter(
         c => new Date(c.created_at) >= startDate

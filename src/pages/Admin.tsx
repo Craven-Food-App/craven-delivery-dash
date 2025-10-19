@@ -9,7 +9,6 @@ import { BackgroundCheckSettings } from '@/components/admin/BackgroundCheckSetti
 import RestaurantOnboardingDashboard from '@/components/admin/RestaurantOnboardingDashboard';
 import { RestaurantVerificationDashboard } from '@/components/admin/RestaurantVerificationDashboard';
 import { TabletShippingManagement } from '@/components/admin/TabletShippingManagement';
-import { TabletInventoryManagement } from '@/components/admin/TabletInventoryManagement';
 import { NotificationSettingsManager } from '@/components/admin/NotificationSettingsManager';
 import { PayoutSettingsManager } from '@/components/admin/PayoutSettingsManager';
 import CommissionSettingsManager from '@/components/admin/CommissionSettingsManager';
@@ -44,7 +43,6 @@ const Admin: React.FC = () => {
         { id: 'merchant-onboarding', label: 'Onboarding', icon: GraduationCap },
         { id: 'merchant-verification', label: 'Document Verification', icon: FileCheck },
         { id: 'merchant-tablet', label: 'Tablet Shipping', icon: Package },
-        { id: 'merchant-inventory', label: 'Tablet Inventory', icon: Package },
         { id: 'merchant-settings', label: 'Settings', icon: Shield },
       ]
     },
@@ -95,8 +93,6 @@ const Admin: React.FC = () => {
         return <RestaurantVerificationDashboard />;
       case 'merchant-tablet':
         return <TabletShippingManagement />;
-      case 'merchant-inventory':
-        return <TabletInventoryManagement />;
       case 'merchant-settings':
         return <CommissionSettingsManager />;
       case 'driver-applications':

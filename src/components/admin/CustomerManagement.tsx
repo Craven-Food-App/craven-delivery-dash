@@ -60,79 +60,12 @@ export const CustomerManagement: React.FC = () => {
 
   const fetchCustomers = async () => {
     try {
-      // Fetch all users who have placed orders (these are customers)
-      const { data: customerIds, error: orderError } = await supabase
-        .from('orders')
-        .select('customer_id')
-        .order('created_at', { ascending: false });
-
-      if (orderError) {
-        console.error('Error fetching order customer IDs:', orderError);
-        // Fallback: fetch all users if orders table has issues
-        const { data: allUsers, error: allUsersError } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(100);
-        
-        if (allUsersError) throw allUsersError;
-        
-        const customersWithStats = (allUsers || []).map(user => ({
-          id: user.id,
-          email: user.email || '',
-          full_name: user.full_name || 'Unknown',
-          phone: user.phone,
-          status: user.account_status || 'active',
-          created_at: user.created_at,
-          last_order_at: undefined,
-          total_orders: 0,
-          total_spent_cents: 0,
-          suspension_reason: user.suspension_reason,
-          suspension_until: user.suspension_until
-        }));
-        
-        setCustomers(customersWithStats);
-        setLoading(false);
-        return;
-      }
-
-      // Get unique customer IDs
-      const uniqueCustomerIds = [...new Set((customerIds || []).map(o => o.customer_id).filter(Boolean))];
-
-      if (uniqueCustomerIds.length === 0) {
-        // No customers with orders yet, show all users
-        const { data: allUsers, error: allUsersError } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(100);
-        
-        if (allUsersError) throw allUsersError;
-        
-        const customersWithStats = (allUsers || []).map(user => ({
-          id: user.id,
-          email: user.email || '',
-          full_name: user.full_name || 'Unknown',
-          phone: user.phone,
-          status: user.account_status || 'active',
-          created_at: user.created_at,
-          last_order_at: undefined,
-          total_orders: 0,
-          total_spent_cents: 0,
-          suspension_reason: user.suspension_reason,
-          suspension_until: user.suspension_until
-        }));
-        
-        setCustomers(customersWithStats);
-        setLoading(false);
-        return;
-      }
-
-      // Fetch user profiles for these customers
+      // Fetch users with their order stats
       const { data: users, error: usersError } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('*')
-        .in('user_id', uniqueCustomerIds);
+        .eq('user_type', 'customer')
+        .order('created_at', { ascending: false });
 
       if (usersError) throw usersError;
 
@@ -142,14 +75,14 @@ export const CustomerManagement: React.FC = () => {
           const { data: orders } = await supabase
             .from('orders')
             .select('id, total_cents, created_at')
-            .eq('customer_id', user.user_id);
+            .eq('customer_id', user.id);
 
           const totalOrders = orders?.length || 0;
           const totalSpent = orders?.reduce((sum, order) => sum + order.total_cents, 0) || 0;
           const lastOrder = orders?.[0]?.created_at;
 
           return {
-            id: user.user_id,
+            id: user.id,
             email: user.email || '',
             full_name: user.full_name || 'Unknown',
             phone: user.phone,
@@ -227,13 +160,13 @@ export const CustomerManagement: React.FC = () => {
         : null;
 
       const { error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .update({
           account_status: temporary ? 'suspended' : 'banned',
           suspension_reason: suspensionReason,
           suspension_until: suspensionUntil
         })
-        .eq('user_id', customerId);
+        .eq('id', customerId);
 
       if (error) throw error;
 
@@ -278,13 +211,13 @@ export const CustomerManagement: React.FC = () => {
       if (!user) throw new Error('Not authenticated');
 
       const { error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .update({
           account_status: 'active',
           suspension_reason: null,
           suspension_until: null
         })
-        .eq('user_id', customerId);
+        .eq('id', customerId);
 
       if (error) throw error;
 
