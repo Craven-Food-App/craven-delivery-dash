@@ -16,6 +16,7 @@ import LoadingScreen from './LoadingScreen';
 import MobileDriverWelcomeScreen from './MobileDriverWelcomeScreen';
 import { SpeedLimitSign } from './SpeedLimitSign';
 import { useDriverLocation } from '@/hooks/useDriverLocation';
+import { useNavigate } from 'react-router-dom';
 type DriverState = 'offline' | 'online_searching' | 'online_paused' | 'on_delivery';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
 type EarningMode = 'perHour' | 'perOffer';
@@ -84,6 +85,44 @@ export const MobileDriverDashboard: React.FC = () => {
     startTracking,
     stopTracking
   } = useDriverLocation();
+  
+  // Navigation
+  const navigate = useNavigate();
+  
+  // Menu navigation handlers
+  const handleMenuNavigation = (menuItem: string) => {
+    setIsMenuOpen(false); // Close menu first
+    
+    switch (menuItem) {
+      case 'Home':
+        // Already on dashboard, just close menu
+        break;
+      case 'Schedule':
+        // Navigate to schedule page or open schedule modal
+        navigate('/driver-schedule');
+        break;
+      case 'Account':
+        navigate('/driver-account');
+        break;
+      case 'Ratings':
+        navigate('/driver-ratings');
+        break;
+      case 'Earnings':
+        navigate('/driver-earnings');
+        break;
+      case 'Promos':
+        navigate('/driver-promos');
+        break;
+      case 'Preferences':
+        navigate('/driver-preferences');
+        break;
+      case 'Help':
+        navigate('/driver-help');
+        break;
+      default:
+        break;
+    }
+  };
   const [currentOrderAssignment, setCurrentOrderAssignment] = useState<OrderAssignment | null>(null);
   const [activeDelivery, setActiveDelivery] = useState<any>(null);
   const [todayEarnings, setTodayEarnings] = useState(0);
@@ -983,17 +1022,18 @@ export const MobileDriverDashboard: React.FC = () => {
             {/* Menu Items */}
             <div className="p-4 space-y-2">
               {[
-                { icon: Home, label: 'Home', active: true },
-                { icon: Calendar, label: 'Schedule' },
-                { icon: User, label: 'Account' },
-                { icon: Star, label: 'Ratings' },
-                { icon: DollarSign, label: 'Earnings' },
-                { icon: TrendingUp, label: 'Promos' },
-                { icon: Settings, label: 'Preferences' },
-                { icon: HelpCircle, label: 'Help' }
+                { icon: Home, label: 'Home', active: true, path: 'Home' },
+                { icon: Calendar, label: 'Schedule', active: false, path: 'Schedule' },
+                { icon: User, label: 'Account', active: false, path: 'Account' },
+                { icon: Star, label: 'Ratings', active: false, path: 'Ratings' },
+                { icon: DollarSign, label: 'Earnings', active: false, path: 'Earnings' },
+                { icon: TrendingUp, label: 'Promos', active: false, path: 'Promos' },
+                { icon: Settings, label: 'Preferences', active: false, path: 'Preferences' },
+                { icon: HelpCircle, label: 'Help', active: false, path: 'Help' }
               ].map((item, index) => (
                 <button
                   key={index}
+                  onClick={() => handleMenuNavigation(item.path)}
                   className={`w-full flex items-center gap-4 p-3 rounded-xl text-left transition-all ${
                     item.active 
                       ? 'bg-gray-100 text-gray-900' 
