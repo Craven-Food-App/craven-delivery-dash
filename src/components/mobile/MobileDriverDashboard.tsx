@@ -142,13 +142,17 @@ export const MobileDriverDashboard: React.FC = () => {
       // Sign out from Supabase
       await supabase.auth.signOut();
       
-      // Navigate to login
-      navigate('/driver/auth');
+      // Show welcome screen instead of navigating away
+      setShowWelcomeScreen(true);
+      setActiveTab('home');
+      setIsMenuOpen(false);
     } catch (error) {
       console.error('Error during logout:', error);
       // Force logout even if there's an error
       await supabase.auth.signOut();
-      navigate('/driver/auth');
+      setShowWelcomeScreen(true);
+      setActiveTab('home');
+      setIsMenuOpen(false);
     }
   };
 
