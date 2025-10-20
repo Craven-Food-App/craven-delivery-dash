@@ -63,13 +63,6 @@
     
     <!-- Status Bar Styling -->
     <style>
-      /* iOS Status Bar */
-      @supports (padding: max(0px)) {
-        body {
-          padding-top: env(safe-area-inset-top);
-        }
-      }
-      
       /* Prevent blank screen before React loads */
       body {
         margin: 0;
@@ -164,22 +157,28 @@
       }
     </style>
 
-    <script>
-      (function () {
-        var isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator && window.navigator.standalone === true);
-        var isMobileRoute = window.location.pathname.startsWith('/mobile');
-        if (isStandalone && isMobileRoute) {
-          document.body.classList.add('pwa-standalone', 'mobile-page');
-        }
-        // Add pwa-standalone class for all PWA pages (not just mobile)
-        if (isStandalone) {
-          document.body.classList.add('pwa-standalone');
-        }
-      })();
-    </script>
   </head>
 
   <body>
+    <script>
+      // Detect PWA mode and add classes immediately (runs after body exists)
+      (function () {
+        var isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator && window.navigator.standalone === true);
+        var isMobileRoute = window.location.pathname.startsWith('/mobile');
+        
+        console.log('PWA Detection:', { isStandalone, isMobileRoute });
+        
+        if (isStandalone) {
+          document.body.classList.add('pwa-standalone');
+          console.log('Added pwa-standalone class');
+        }
+        
+        if (isStandalone && isMobileRoute) {
+          document.body.classList.add('mobile-page');
+          console.log('Added mobile-page class');
+        }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
