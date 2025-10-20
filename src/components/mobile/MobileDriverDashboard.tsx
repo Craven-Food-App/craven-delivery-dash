@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Settings, Pause, Play, Square, Clock, Car, DollarSign, Calendar, Bell, User, Star, ChevronRight, Menu, X, Home, TrendingUp, HelpCircle, LogOut } from 'lucide-react';
+import { MapPin, Settings, Pause, Play, Square, Clock, Car, DollarSign, Calendar, Bell, User, Star, ChevronRight, Menu, X, Home, TrendingUp, HelpCircle, LogOut, MessageCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -23,6 +23,7 @@ import { AccountSection } from './AccountSection';
 import { DriverRatingsPage } from './DriverRatingsPage';
 import { DriverPromosPage } from './DriverPromosPage';
 import { DriverPreferencesPage } from './DriverPreferencesPage';
+import { DriverSupportChatPage } from './DriverSupportChatPage';
 import { getRatingColor, getRatingTier, formatRating, getTrendIcon, getTrendColor } from '@/utils/ratingHelpers';
 // Production readiness imports
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
@@ -101,7 +102,7 @@ export const MobileDriverDashboard: React.FC = () => {
   } | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'earnings' | 'account' | 'ratings' | 'promos' | 'preferences'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'earnings' | 'account' | 'ratings' | 'promos' | 'preferences' | 'help'>('home');
   const [driverRating, setDriverRating] = useState<number>(5.0);
   const [driverDeliveries, setDriverDeliveries] = useState<number>(0);
   const [ratingTrend, setRatingTrend] = useState<number>(0);
@@ -122,8 +123,8 @@ export const MobileDriverDashboard: React.FC = () => {
   // Handle URL parameter changes
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['schedule', 'earnings', 'account', 'ratings', 'promos', 'preferences'].includes(tab)) {
-      setActiveTab(tab as 'schedule' | 'earnings' | 'account' | 'ratings' | 'promos' | 'preferences');
+    if (tab && ['schedule', 'earnings', 'account', 'ratings', 'promos', 'preferences', 'help'].includes(tab)) {
+      setActiveTab(tab as 'schedule' | 'earnings' | 'account' | 'ratings' | 'promos' | 'preferences' | 'help');
     } else {
       setActiveTab('home');
     }
@@ -224,8 +225,8 @@ export const MobileDriverDashboard: React.FC = () => {
         navigate('/mobile?tab=preferences');
         break;
       case 'Help':
-        // Navigate to help center
-        navigate('/help');
+        setActiveTab('help');
+        navigate('/mobile?tab=help');
         break;
       case 'Logout':
         // Handle logout
@@ -916,6 +917,12 @@ export const MobileDriverDashboard: React.FC = () => {
           </div>
         )}
         
+        {activeTab === 'help' && (
+          <div className="fixed inset-0 z-20 bg-background">
+            <DriverSupportChatPage />
+          </div>
+        )}
+        
         {/* OFFLINE STATE */}
         {activeTab === 'home' && driverState === 'offline' && <>
             {/* Change Zone Button - Top Left */}
@@ -1284,7 +1291,7 @@ export const MobileDriverDashboard: React.FC = () => {
                 { icon: DollarSign, label: 'Earnings', active: false, path: 'Earnings' },
                 { icon: TrendingUp, label: 'Promos', active: false, path: 'Promos' },
                 { icon: Settings, label: 'Preferences', active: false, path: 'Preferences' },
-                { icon: HelpCircle, label: 'Help', active: false, path: 'Help' },
+                { icon: MessageCircle, label: 'Help', active: false, path: 'Help' },
                 { icon: LogOut, label: 'Logout', active: false, path: 'Logout' }
               ].map((item, index) => (
                 <button
