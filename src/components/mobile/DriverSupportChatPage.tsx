@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +33,7 @@ export function DriverSupportChatPage() {
   const [showQuickActions, setShowQuickActions] = useState(true);
   const [quickResponses, setQuickResponses] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [initError, setInitError] = useState<string | null>(null);
 
   useEffect(() => {
     initializeChat();
@@ -86,8 +87,10 @@ export function DriverSupportChatPage() {
         .order('created_at', { ascending: true });
 
       setMessages(msgs || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error initializing chat:', error);
+      setInitError(error.message || 'Failed to initialize chat');
+      toast.error('Chat system not ready. Please run database migrations.');
     } finally {
       setLoading(false);
     }
@@ -163,6 +166,34 @@ export function DriverSupportChatPage() {
     return (
       <div className="flex items-center justify-center h-screen bg-gradient-to-br from-gray-50 to-orange-50">
         <div className="animate-pulse text-4xl">💬</div>
+      </div>
+    );
+  }
+
+  if (initError) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-gray-50 to-orange-50 p-6">
+        <Card className="max-w-md">
+          <CardContent className="pt-6 text-center space-y-4">
+            <div className="text-6xl">⚠️</div>
+            <h3 className="text-lg font-bold text-gray-900">Database Setup Required</h3>
+            <p className="text-sm text-gray-600">
+              The support chat system needs to be set up in your Supabase database.
+            </p>
+            <div className="p-4 bg-blue-50 rounded-lg text-left text-xs">
+              <p className="font-semibold mb-2">📋 To fix this:</p>
+              <ol className="list-decimal list-inside space-y-1 text-gray-700">
+                <li>Go to your Supabase Dashboard</li>
+                <li>Open SQL Editor</li>
+                <li>Run the file: <code className="bg-white px-1">APPLY_ALL_NEW_FEATURES.sql</code></li>
+                <li>Refresh this page</li>
+              </ol>
+            </div>
+            <Button onClick={() => navigate('/mobile')} variant="outline">
+              ← Back to Dashboard
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
