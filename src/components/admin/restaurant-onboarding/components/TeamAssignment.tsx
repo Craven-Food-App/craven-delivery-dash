@@ -19,6 +19,7 @@ import {
   DialogDescription
 } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import { Label } from '@/components/ui/label';
 import { Users, UserPlus, TrendingUp, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
