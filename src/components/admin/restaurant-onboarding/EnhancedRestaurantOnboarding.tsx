@@ -14,6 +14,7 @@ import { ExportButton } from './components/ExportButton';
 import { ActivityLog } from './components/ActivityLog';
 import { EmailTemplates } from './components/EmailTemplates';
 import { TeamAssignment } from './components/TeamAssignment';
+import { SLATracking } from './components/SLATracking';
 import { calculateStats } from './utils/helpers';
 import { logActivity, ActivityActionTypes } from './utils/activityLogger';
 
@@ -440,7 +441,7 @@ export function EnhancedRestaurantOnboarding() {
 
       {/* Main Content */}
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-10">
+        <TabsList className="grid w-full grid-cols-11">
           <TabsTrigger value="all">
             All ({stats.total})
           </TabsTrigger>
@@ -467,6 +468,9 @@ export function EnhancedRestaurantOnboarding() {
           </TabsTrigger>
           <TabsTrigger value="team">
             👥 Team
+          </TabsTrigger>
+          <TabsTrigger value="sla">
+            ⏱️ SLA Tracking
           </TabsTrigger>
           <TabsTrigger value="activity">
             🕐 Activity Log
@@ -587,6 +591,10 @@ export function EnhancedRestaurantOnboarding() {
             restaurants={restaurants}
             onAssignComplete={() => fetchRestaurants(false)}
           />
+        </TabsContent>
+
+        <TabsContent value="sla" className="mt-6">
+          <SLATracking restaurants={restaurants} />
         </TabsContent>
 
         <TabsContent value="activity" className="mt-6">
