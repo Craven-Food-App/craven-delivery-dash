@@ -18,6 +18,7 @@ import { EnhancedCommissionDashboard } from '@/components/admin/commission/Enhan
 import { PromoCodeManager } from '@/components/admin/PromoCodeManager';
 import { DriverRatingManagement } from '@/components/admin/DriverRatingManagement';
 import { DriverPromoManagement } from '@/components/admin/DriverPromoManagement';
+import { DriverSupportDashboard } from '@/components/admin/DriverSupportDashboard';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -62,6 +63,7 @@ const Admin: React.FC = () => {
         { id: 'driver-onboarding', label: 'Onboarding', icon: GraduationCap },
         { id: 'driver-ratings', label: 'Ratings & Performance', icon: TrendingUp },
         { id: 'driver-promos', label: 'Promos & Challenges', icon: Tags },
+        { id: 'driver-support', label: 'Support Chat', icon: MessageCircle },
         { id: 'driver-payouts', label: 'Payouts', icon: DollarSign },
       ]
     },
@@ -114,6 +116,8 @@ const Admin: React.FC = () => {
         return <DriverRatingManagement />;
       case 'driver-promos':
         return <DriverPromoManagement />;
+      case 'driver-support':
+        return <DriverSupportDashboard />;
       case 'driver-payouts':
         return <PayoutSettingsManager />;
       case 'customer-management':
