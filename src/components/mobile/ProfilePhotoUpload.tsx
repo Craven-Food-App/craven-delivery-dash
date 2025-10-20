@@ -57,39 +57,49 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
     if (!ctx) return;
 
     const img = imageRef.current;
-    const size = 400; // Output size
+    const size = 400; // Output size - perfect circle
     canvas.width = size;
     canvas.height = size;
 
     // Clear canvas
     ctx.clearRect(0, 0, size, size);
+    
+    // Save context state
+    ctx.save();
 
-    // Create circular clipping path
+    // Create circular clipping path FIRST
     ctx.beginPath();
     ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
     ctx.closePath();
     ctx.clip();
 
-    // Calculate dimensions for cropping
-    const scale = zoom;
-    const scaledWidth = img.naturalWidth * scale;
-    const scaledHeight = img.naturalHeight * scale;
+    // Calculate the minimum dimension to ensure we cover the circle
+    const imgWidth = img.naturalWidth;
+    const imgHeight = img.naturalHeight;
+    const minDim = Math.min(imgWidth, imgHeight);
+    
+    // Calculate scale to fill the circle
+    const baseScale = size / minDim;
+    const finalScale = baseScale * zoom;
+    
+    const scaledWidth = imgWidth * finalScale;
+    const scaledHeight = imgHeight * finalScale;
 
     // Center the image
     const centerX = size / 2;
     const centerY = size / 2;
 
-    // Apply rotation and draw
-    ctx.save();
+    // Apply transformations
     ctx.translate(centerX, centerY);
     ctx.rotate((rotation * Math.PI) / 180);
     ctx.drawImage(
       img,
-      -scaledWidth / 2 + cropPosition.x,
-      -scaledHeight / 2 + cropPosition.y,
+      -scaledWidth / 2,
+      -scaledHeight / 2,
       scaledWidth,
       scaledHeight
     );
+    
     ctx.restore();
 
     // Convert to blob
@@ -99,7 +109,7 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
         setCroppedImage(url);
       }
     }, 'image/jpeg', 0.95);
-  }, [cropPosition, zoom, rotation]);
+  }, [zoom, rotation]);
 
   const handleSave = async () => {
     if (!canvasRef.current) return;
@@ -219,22 +229,31 @@ export const ProfilePhotoUpload: React.FC<ProfilePhotoUploadProps> = ({
             </button>
           </div>
 
-          {/* Image Preview Area */}
-          <div className="flex-1 flex items-center justify-center p-4 overflow-hidden">
-            <div className="relative">
-              {/* Circular crop preview overlay */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-80 h-80 rounded-full border-4 border-white shadow-2xl" />
-              </div>
-              
-              {/* Image */}
+          {/* Image Preview Area with Circle Crop Overlay */}
+          <div className="flex-1 flex items-center justify-center p-4 overflow-hidden relative">
+            {/* Darkened overlay with circle cutout */}
+            <div className="absolute inset-0 pointer-events-none">
+              <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+                <defs>
+                  <mask id="circle-mask">
+                    <rect width="100" height="100" fill="white" />
+                    <circle cx="50" cy="50" r="30" fill="black" />
+                  </mask>
+                </defs>
+                <rect width="100" height="100" fill="black" opacity="0.6" mask="url(#circle-mask)" />
+                <circle cx="50" cy="50" r="30" fill="none" stroke="white" strokeWidth="0.5" />
+              </svg>
+            </div>
+            
+            {/* Image Container */}
+            <div className="relative w-full max-w-sm aspect-square flex items-center justify-center">
               <img
                 ref={imageRef}
                 src={selectedImage}
                 alt="Crop preview"
-                className="max-w-full max-h-[60vh] object-contain"
+                className="max-w-full max-h-full object-contain"
                 style={{
-                  transform: `scale(${zoom}) rotate(${rotation}deg) translate(${cropPosition.x}px, ${cropPosition.y}px)`,
+                  transform: `scale(${zoom}) rotate(${rotation}deg)`,
                   transition: 'transform 0.1s ease-out'
                 }}
                 onLoad={handleCrop}
