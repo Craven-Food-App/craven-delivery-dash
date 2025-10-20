@@ -438,142 +438,93 @@ export default function ScheduleSection() {
       
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
         
-        {/* Header */}
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Schedule Management</h1>
-            <p className="text-sm text-slate-600 mt-0.5">Plan your availability and track hours</p>
-          </div>
+        {/* Header - DoorDash Style */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-slate-900 mb-6">Schedule</h1>
+          
+          {/* Dash Now Button - Prominent like DoorDash */}
           <Button 
-            variant={currentStatus === 'online' ? 'destructive' : 'success'}
-            size="default"
+            variant={currentStatus === 'online' ? 'destructive' : 'default'}
+            size="lg"
             onClick={handleManualToggle}
-            className="shadow-lg"
+            fullWidth
+            className="shadow-lg mb-4"
           >
-            <Power className="h-4 w-4 mr-2" />
-            {currentStatus === 'online' ? 'Go Offline' : 'Go Online'}
+            {currentStatus === 'online' ? (
+              <>
+                <Power className="h-5 w-5 mr-2" />
+                Stop Dashing
+              </>
+            ) : (
+              <>
+                <Zap className="h-5 w-5 mr-2" />
+                Dash Now
+              </>
+            )}
           </Button>
         </div>
 
-        {/* Status Card */}
-        <Card className={`border-2 ${
-          currentStatus === 'online' ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-50' :
-          currentStatus === 'scheduled' ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50' :
-          'border-gray-200 bg-white'
-        }`}>
-          <CardContent className="py-5">
-            <div className="flex items-center justify-between">
+        {/* Current Status - Simple like DoorDash */}
+        {currentStatus === 'online' && (
+          <Card className="border-l-4 border-green-500 bg-green-50/50">
+            <CardContent className="py-4">
               <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                  currentStatus === 'online' ? 'bg-green-500' :
-                  currentStatus === 'scheduled' ? 'bg-blue-500' :
-                  'bg-gray-300'
-                }`}>
-                  {currentStatus === 'online' ? (
-                    <Zap className="h-6 w-6 text-white" />
-                  ) : currentStatus === 'scheduled' ? (
-                    <Clock className="h-6 w-6 text-white" />
-                  ) : (
-                    <Power className="h-6 w-6 text-white" />
-                  )}
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-gray-900 capitalize">{currentStatus}</p>
-                  <p className="text-sm text-gray-600">
-                    {currentStatus === 'online' ? 'Accepting orders now' :
-                     currentStatus === 'scheduled' ? 'Ready for scheduled time' :
-                     'Not accepting orders'}
-                  </p>
-                </div>
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                <p className="text-sm font-medium text-green-900">You're online and accepting orders</p>
               </div>
-              <Badge variant={currentStatus === 'online' ? 'success' : 'secondary'}>
-                {currentStatus === 'online' ? 'Active' : 'Inactive'}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Quick Start */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5 text-orange-600" />
-                Quick Start
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-3">
-              {[2, 4, 8].map(hours => (
-                <button
-                  key={hours}
-                  onClick={() => handleQuickSchedule(hours)}
-                  className="p-4 rounded-xl border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50 transition-all text-center group"
-                >
-                  <div className="text-3xl font-bold text-orange-600 mb-1">{hours}h</div>
-                  <div className="text-xs text-gray-600 group-hover:text-orange-700 font-medium">Start Now</div>
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Quick Schedule - DoorDash Style */}
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold text-slate-900 mb-3">Quick Schedule</h2>
+          <div className="grid grid-cols-3 gap-3">
+            {[2, 4, 8].map(hours => (
+              <button
+                key={hours}
+                onClick={() => handleQuickSchedule(hours)}
+                className="p-4 rounded-lg border-2 border-slate-200 hover:border-orange-500 hover:bg-orange-50 transition-all text-center bg-white"
+              >
+                <div className="text-2xl font-bold text-slate-900 mb-0.5">{hours}h</div>
+                <div className="text-xs text-slate-600 font-medium">Start now</div>
+              </button>
+            ))}
+          </div>
+        </div>
 
-        {/* Today's Progress */}
+        {/* Today's Progress - Minimal */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-green-600" />
-              Today's Goal
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Progress</span>
-              <span className="text-sm font-semibold text-gray-900">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-slate-700">Today</span>
+              <span className="text-sm font-semibold text-slate-900">
                 {todayHours.worked.toFixed(1)}h / {todayHours.scheduled.toFixed(1)}h
               </span>
             </div>
-            <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-500 rounded-full"
+                className="h-full bg-green-500 transition-all duration-500"
                 style={{ width: `${Math.min(100, progressPercentage)}%` }}
               />
-            </div>
-            <div className="text-xs text-gray-500">
-              {todayHours.scheduled > todayHours.worked 
-                ? `${(todayHours.scheduled - todayHours.worked).toFixed(1)}h remaining` 
-                : 'Goal completed!'}
             </div>
           </CardContent>
         </Card>
 
-        {/* Weekly Schedule */}
+        {/* Weekly Schedule - DoorDash Style */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-900">Your Schedule</h2>
+            <Button 
+              variant="default"
+              size="sm"
+              onClick={() => { setEditingBlock(null); setIsModalOpen(true); }}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add
+            </Button>
+          </div>
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-orange-600" />
-                Weekly Schedule
-              </CardTitle>
-              <div className="flex gap-2">
-                <Button 
-                  variant="default" 
-                  size="sm"
-                  onClick={() => { setEditingBlock(null); setIsModalOpen(true); }}
-                >
-                  <Plus className="h-4 w-4 mr-1" /> Add
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setIsEditing(!isEditing)}
-                >
-                  {isEditing ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between mb-5 pb-4 border-b border-gray-100">
               <span className="text-sm text-gray-600">Total Hours</span>
