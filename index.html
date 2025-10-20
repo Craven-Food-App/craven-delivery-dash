@@ -150,6 +150,29 @@
         });
       })();
     </script>
+
+    <!-- Safe-area and PWA-only viewport fixes for /mobile -->
+    <style>
+      /* Only affect installed PWA on mobile route via body class (added below) */
+      body.pwa-standalone.mobile-page {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        overscroll-behavior: none;
+      }
+      body.pwa-standalone.mobile-page, body.pwa-standalone.mobile-page #root {
+        height: 100dvh;
+      }
+    </style>
+
+    <script>
+      (function () {
+        var isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator && window.navigator.standalone === true);
+        var isMobileRoute = window.location.pathname.startsWith('/mobile');
+        if (isStandalone && isMobileRoute) {
+          document.body.classList.add('pwa-standalone', 'mobile-page');
+        }
+      })();
+    </script>
   </head>
 
   <body>
