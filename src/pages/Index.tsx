@@ -30,25 +30,57 @@ const Index = () => {
       const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
                     (window.navigator as any).standalone === true;
       
-      if (!isPWA) return; // Don't redirect if browsing normally
+      console.log('PWA Detection:', { isPWA, userAgent: navigator.userAgent });
+      
+      if (!isPWA) {
+        console.log('Not running as PWA - skipping redirect');
+        return; // Don't redirect if browsing normally
+      }
+      
+      console.log('Running as PWA - checking driver status...');
+      
+      // Check localStorage for cached driver status (faster)
+      const cachedDriverStatus = localStorage.getItem('user_is_driver');
+      if (cachedDriverStatus === 'true') {
+        console.log('Cached driver status found - redirecting immediately');
+        navigate('/mobile', { replace: true });
+        return;
+      }
       
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
         
-        if (user) {
-          // Check if user is an approved driver with completed onboarding
-          const { data: application } = await supabase
-            .from('craver_applications')
-            .select('status, onboarding_completed_at')
-            .eq('user_id', user.id)
-            .single();
+        console.log('Auth check:', { user: !!user, error: userError });
+        
+        if (!user) {
+          console.log('No user logged in');
+          return;
+        }
+        
+        // Check if user is an approved driver with completed onboarding
+        const { data: application, error: appError } = await supabase
+          .from('craver_applications')
+          .select('status, onboarding_completed_at')
+          .eq('user_id', user.id)
+          .single();
+        
+        console.log('Application check:', { 
+          hasApplication: !!application, 
+          onboardingComplete: !!application?.onboarding_completed_at,
+          error: appError 
+        });
+        
+        if (application?.onboarding_completed_at) {
+          // User is an approved driver with completed onboarding
+          // Cache the driver status for faster future loads
+          localStorage.setItem('user_is_driver', 'true');
           
-          if (application?.onboarding_completed_at) {
-            // User is an approved driver with completed onboarding
-            // Redirect to mobile dashboard
-            console.log('PWA: Redirecting driver to mobile dashboard');
-            navigate('/mobile');
-          }
+          console.log('✅ PWA: Redirecting driver to mobile dashboard');
+          navigate('/mobile', { replace: true });
+        } else {
+          console.log('User is not a driver or onboarding incomplete');
+          // Clear cached status if it exists
+          localStorage.removeItem('user_is_driver');
         }
       } catch (error) {
         console.error('Error checking driver status:', error);
@@ -56,6 +88,7 @@ const Index = () => {
       }
     };
     
+    // Run immediately
     checkAndRedirectDriver();
   }, [navigate]);
 
