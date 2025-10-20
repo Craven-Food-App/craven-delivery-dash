@@ -16,6 +16,7 @@ import { PayoutSettingsManager } from '@/components/admin/PayoutSettingsManager'
 import CommissionSettingsManager from '@/components/admin/CommissionSettingsManager';
 import { EnhancedCommissionDashboard } from '@/components/admin/commission/EnhancedCommissionDashboard';
 import { PromoCodeManager } from '@/components/admin/PromoCodeManager';
+import { DriverRatingManagement } from '@/components/admin/DriverRatingManagement';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -58,6 +59,7 @@ const Admin: React.FC = () => {
         { id: 'driver-background', label: 'Background Checks', icon: FileCheck },
         { id: 'driver-background-settings', label: 'BG Check Settings', icon: Settings },
         { id: 'driver-onboarding', label: 'Onboarding', icon: GraduationCap },
+        { id: 'driver-ratings', label: 'Ratings & Performance', icon: TrendingUp },
         { id: 'driver-payouts', label: 'Payouts', icon: DollarSign },
       ]
     },
@@ -106,6 +108,8 @@ const Admin: React.FC = () => {
         return <BackgroundCheckSettings />;
       case 'driver-onboarding':
         return <OnboardingDashboard />;
+      case 'driver-ratings':
+        return <DriverRatingManagement />;
       case 'driver-payouts':
         return <PayoutSettingsManager />;
       case 'customer-management':

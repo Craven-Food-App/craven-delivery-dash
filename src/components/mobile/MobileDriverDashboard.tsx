@@ -20,6 +20,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import ScheduleSection from './ScheduleSection';
 import { EarningsSection } from './EarningsSection';
 import { AccountSection } from './AccountSection';
+import { DriverRatingsPage } from './DriverRatingsPage';
+import { getRatingColor, getRatingTier, formatRating, getTrendIcon, getTrendColor } from '@/utils/ratingHelpers';
 // Production readiness imports
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
@@ -97,7 +99,10 @@ export const MobileDriverDashboard: React.FC = () => {
   } | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'earnings' | 'account'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'earnings' | 'account' | 'ratings'>('home');
+  const [driverRating, setDriverRating] = useState<number>(5.0);
+  const [driverDeliveries, setDriverDeliveries] = useState<number>(0);
+  const [ratingTrend, setRatingTrend] = useState<number>(0);
   
   // Get location and speed data
   const {
@@ -115,12 +120,39 @@ export const MobileDriverDashboard: React.FC = () => {
   // Handle URL parameter changes
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['schedule', 'earnings', 'account'].includes(tab)) {
-      setActiveTab(tab as 'schedule' | 'earnings' | 'account');
+    if (tab && ['schedule', 'earnings', 'account', 'ratings'].includes(tab)) {
+      setActiveTab(tab as 'schedule' | 'earnings' | 'account' | 'ratings');
     } else {
       setActiveTab('home');
     }
   }, [searchParams]);
+
+  // Fetch driver rating data
+  useEffect(() => {
+    const fetchDriverRating = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Use driver_profiles table for now (has rating field)
+        const { data: profile } = await supabase
+          .from('driver_profiles')
+          .select('rating, total_deliveries')
+          .eq('user_id', user.id)
+          .single();
+
+        if (profile) {
+          setDriverRating(Number(profile.rating) || 5.0);
+          setDriverDeliveries(profile.total_deliveries || 0);
+          setRatingTrend(0); // Will calculate from metrics table once migration runs
+        }
+      } catch (error) {
+        console.error('Error fetching driver rating:', error);
+      }
+    };
+
+    fetchDriverRating();
+  }, []);
   
   // Logout handler
   const handleLogout = async () => {
@@ -173,8 +205,8 @@ export const MobileDriverDashboard: React.FC = () => {
         navigate('/mobile?tab=account');
         break;
       case 'Ratings':
-        // For now, show a toast or alert about ratings feature
-        alert('Ratings feature coming soon! This will show your driver ratings and feedback.');
+        setActiveTab('ratings');
+        navigate('/mobile?tab=ratings');
         break;
       case 'Earnings':
         // Navigate to mobile earnings section
@@ -857,6 +889,14 @@ export const MobileDriverDashboard: React.FC = () => {
           </div>
         )}
         
+        {activeTab === 'ratings' && (
+          <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
+            <div className="min-h-screen">
+              <DriverRatingsPage />
+            </div>
+          </div>
+        )}
+        
         {/* OFFLINE STATE */}
         {activeTab === 'home' && driverState === 'offline' && <>
             {/* Change Zone Button - Top Left */}
@@ -1159,23 +1199,59 @@ export const MobileDriverDashboard: React.FC = () => {
           {/* Menu Panel */}
           <div className="absolute left-0 top-0 h-full w-80 bg-white shadow-2xl">
             {/* Header */}
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">Torrance S</h2>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">P</span>
-                    </div>
-                    <span className="text-blue-600 font-semibold text-sm">Platinum</span>
-                  </div>
-                </div>
+            <div className="p-6 border-b border-gray-100 bg-gradient-to-br from-gray-50 to-white">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xl font-bold text-gray-900">Torrance S</h2>
                 <button
                   onClick={() => setIsMenuOpen(false)}
                   className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"
                 >
                   <X className="h-4 w-4 text-gray-600" />
                 </button>
+              </div>
+              
+              {/* Rating Badge */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Star 
+                    className="h-5 w-5 fill-current" 
+                    style={{ color: getRatingColor(driverRating) }}
+                  />
+                  <span className="text-2xl font-bold" style={{ color: getRatingColor(driverRating) }}>
+                    {formatRating(driverRating)}
+                  </span>
+                  <Badge 
+                    className="text-white"
+                    style={{ backgroundColor: getRatingTier(driverRating, driverDeliveries).color }}
+                  >
+                    {getRatingTier(driverRating, driverDeliveries).icon} {getRatingTier(driverRating, driverDeliveries).name}
+                  </Badge>
+                  {ratingTrend !== 0 && (
+                    <span 
+                      className="text-sm font-semibold"
+                      style={{ color: getTrendColor(ratingTrend) }}
+                    >
+                      {getTrendIcon(ratingTrend)} {ratingTrend > 0 ? '+' : ''}{ratingTrend.toFixed(2)}
+                    </span>
+                  )}
+                </div>
+                
+                {/* Progress bar to next tier */}
+                <div className="space-y-1">
+                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full transition-all duration-300"
+                      style={{ 
+                        width: `${((driverRating / 5) * 100)}%`,
+                        backgroundColor: getRatingColor(driverRating)
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-gray-600">
+                    <span>{driverDeliveries} deliveries</span>
+                    <span>{((driverRating / 5) * 100).toFixed(0)}% perfect</span>
+                  </div>
+                </div>
               </div>
             </div>
             
