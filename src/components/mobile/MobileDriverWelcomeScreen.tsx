@@ -35,7 +35,7 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
   return (
     <div className="fixed inset-0 w-full h-full bg-white">
       {/* Wrong App Message */}
-      <div className="absolute left-0 right-0 z-10" style={{ top: 'calc(env(safe-area-inset-top, 44px) + 8px)' }}>
+      <div className="absolute left-0 right-0 z-10" style={{ top: 'calc(env(safe-area-inset-top, 150px) + 8px)' }}>
         <div className="px-4 text-center">
           <span className="text-xs text-gray-600">
             Wrong app if you're Crave'N food{' '}
