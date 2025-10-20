@@ -273,11 +273,12 @@ export const AccountSection: React.FC<{
   if (currentSection === 'safety') {
     return <SafeDrivingSection onBack={() => setCurrentSection('main')} />;
   }
-  return <div className="min-h-screen bg-background pb-20 overflow-y-auto">
+  return <div className="min-h-screen bg-slate-50 pb-20 overflow-y-auto">
       <div className="max-w-md mx-auto">
-        {/* Header */}
-        <div className="bg-background border-b border-border/50 px-4 py-3">
-          <h1 className="text-2xl font-bold text-foreground">Account</h1>
+        {/* Header - Clean Style */}
+        <div className="bg-white px-4 pt-6 pb-4">
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Account</h1>
+          <p className="text-sm text-slate-600">Manage your profile and settings</p>
         </div>
 
         {/* Profile Header with Stats */}

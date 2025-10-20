@@ -354,7 +354,7 @@ const App: React.FC<AppProps> = ({
 
   // --- Conditional Renders ---
 
-  // Renders the specialized Customer Dropoff screen (Spark/Dash style)
+  // Renders the specialized Customer Dropoff screen
   if (['heading_to_customer', 'at_customer'].includes(currentStep)) {
     return (
       <CustomerNavigationStep

@@ -423,12 +423,14 @@ export const EarningsSection = () => {
             Your Driver ID: <span className="font-mono font-bold text-orange-600 break-all">{userId || 'N/A'}</span>
         </div>
 
-        {/* Earnings Header with Orange Gradient Background */}
-        <div className="bg-gradient-to-br from-orange-600 to-orange-700 text-white shadow-md p-5 sm:p-6">
-          <div className="flex items-center justify-between pt-4 pb-2">
-            <h1 className="text-2xl sm:text-3xl font-bold">Your Earnings</h1>
-            <HelpCircle className="h-6 w-6 text-orange-200 hover:text-white transition-colors cursor-pointer" />
-          </div>
+        {/* Earnings Header - Clean Style */}
+        <div className="px-4 pt-6 pb-4 bg-white">
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Earnings</h1>
+          <p className="text-sm text-slate-600">Track your income and performance</p>
+        </div>
+
+        {/* Weekly Earnings Summary */}
+        <div className="bg-gradient-to-br from-orange-600 to-orange-700 text-white shadow-md px-4 py-6 mb-4">
         
           {/* Daily Earnings Bar Chart - Fluid Layout */}
           <div className="px-0 pb-6">

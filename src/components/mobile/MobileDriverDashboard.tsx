@@ -1383,7 +1383,7 @@ export const MobileDriverDashboard: React.FC = () => {
         onCompleteDelivery={() => setShowTestCompletionModal(false)}
       />}
 
-      {/* Side Menu Overlay - DoorDash Style */}
+      {/* Side Menu Overlay */}
       {isMenuOpen && (
         <div className="fixed inset-0 z-50">
           {/* Backdrop */}

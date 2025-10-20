@@ -438,11 +438,11 @@ export default function ScheduleSection() {
       
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
         
-        {/* Header - DoorDash Style */}
+        {/* Header - Clean Style */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-slate-900 mb-6">Schedule</h1>
           
-          {/* Dash Now Button - Prominent like DoorDash */}
+          {/* Go Online Button - Prominent */}
           <Button 
             variant={currentStatus === 'online' ? 'destructive' : 'default'}
             size="lg"
@@ -453,18 +453,18 @@ export default function ScheduleSection() {
             {currentStatus === 'online' ? (
               <>
                 <Power className="h-5 w-5 mr-2" />
-                Stop Dashing
+                Stop Driving
               </>
             ) : (
               <>
                 <Zap className="h-5 w-5 mr-2" />
-                Dash Now
+                Go Online
               </>
             )}
           </Button>
         </div>
 
-        {/* Current Status - Simple like DoorDash */}
+        {/* Current Status - Simple */}
         {currentStatus === 'online' && (
           <Card className="border-l-4 border-green-500 bg-green-50/50">
             <CardContent className="py-4">
@@ -476,7 +476,7 @@ export default function ScheduleSection() {
           </Card>
         )}
 
-        {/* Quick Schedule - DoorDash Style */}
+        {/* Quick Schedule */}
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-3">Quick Schedule</h2>
           <div className="grid grid-cols-3 gap-3">
@@ -511,7 +511,7 @@ export default function ScheduleSection() {
           </CardContent>
         </Card>
 
-        {/* Weekly Schedule - DoorDash Style */}
+        {/* Weekly Schedule */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-slate-900">Your Schedule</h2>
