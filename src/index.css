@@ -126,7 +126,7 @@ All colors MUST be HSL.
 
 /* PWA Safe Area Utilities - Only apply when running as installed PWA */
 .pwa-standalone .safe-area-top {
-  padding-top: env(safe-area-inset-top, 0px) !important;
+  padding-top: env(safe-area-inset-top, 44px) !important;
 }
 
 .pwa-standalone .safe-area-bottom {
@@ -160,7 +160,7 @@ All colors MUST be HSL.
 
 /* For fixed/absolute headers: push them below the status bar */
 .pwa-standalone .safe-fixed {
-  top: calc(env(safe-area-inset-top, 0px) + var(--safe-fixed-offset, 0px)) !important;
+  top: calc(env(safe-area-inset-top, 44px) + var(--safe-fixed-offset, 0px)) !important;
 }
 
 .pwa-standalone .safe-fixed-bottom {
@@ -169,12 +169,12 @@ All colors MUST be HSL.
 
 /* Mapbox controls safe-area handling in PWA */
 .pwa-standalone .mapboxgl-ctrl-top-right {
-  top: calc(env(safe-area-inset-top, 0px) + 10px) !important;
+  top: calc(env(safe-area-inset-top, 44px) + 10px) !important;
   right: 10px !important;
 }
 
 .pwa-standalone .mapboxgl-ctrl-top-left {
-  top: calc(env(safe-area-inset-top, 0px) + 10px) !important;
+  top: calc(env(safe-area-inset-top, 44px) + 10px) !important;
   left: 10px !important;
 }
 
