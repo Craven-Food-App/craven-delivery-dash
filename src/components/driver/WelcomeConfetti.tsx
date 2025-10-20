@@ -110,7 +110,7 @@ export const WelcomeConfetti: React.FC<WelcomeConfettiProps> = ({ firstName, onC
               You're Cleared to Drive!
             </p>
             <p className="text-sm sm:text-base md:text-lg text-gray-600 px-2">
-              Welcome to the Craven Feeder family – you're now part of something amazing!
+              Welcome to the Feeder family – you're now part of something amazing!
             </p>
           </div>
 
@@ -154,7 +154,7 @@ export const WelcomeConfetti: React.FC<WelcomeConfettiProps> = ({ firstName, onC
               <li className="flex items-start gap-2 sm:gap-3">
                 <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-xs sm:text-sm text-gray-800">Start Earning Today!</p>
+                  <p className="font-medium text-xs sm:text-sm text-gray-800">Start Feeding Today!</p>
                   <p className="text-xs text-gray-600">Go online and accept your first delivery</p>
                 </div>
               </li>
