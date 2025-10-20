@@ -22,6 +22,7 @@ import { EarningsSection } from './EarningsSection';
 import { AccountSection } from './AccountSection';
 import { DriverRatingsPage } from './DriverRatingsPage';
 import { DriverPromosPage } from './DriverPromosPage';
+import { DriverPreferencesPage } from './DriverPreferencesPage';
 import { getRatingColor, getRatingTier, formatRating, getTrendIcon, getTrendColor } from '@/utils/ratingHelpers';
 // Production readiness imports
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
@@ -100,7 +101,7 @@ export const MobileDriverDashboard: React.FC = () => {
   } | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'earnings' | 'account' | 'ratings' | 'promos'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'earnings' | 'account' | 'ratings' | 'promos' | 'preferences'>('home');
   const [driverRating, setDriverRating] = useState<number>(5.0);
   const [driverDeliveries, setDriverDeliveries] = useState<number>(0);
   const [ratingTrend, setRatingTrend] = useState<number>(0);
@@ -121,8 +122,8 @@ export const MobileDriverDashboard: React.FC = () => {
   // Handle URL parameter changes
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['schedule', 'earnings', 'account', 'ratings', 'promos'].includes(tab)) {
-      setActiveTab(tab as 'schedule' | 'earnings' | 'account' | 'ratings' | 'promos');
+    if (tab && ['schedule', 'earnings', 'account', 'ratings', 'promos', 'preferences'].includes(tab)) {
+      setActiveTab(tab as 'schedule' | 'earnings' | 'account' | 'ratings' | 'promos' | 'preferences');
     } else {
       setActiveTab('home');
     }
@@ -219,8 +220,8 @@ export const MobileDriverDashboard: React.FC = () => {
         navigate('/mobile?tab=promos');
         break;
       case 'Preferences':
-        // For now, show a toast or alert about preferences feature
-        alert('Preferences feature coming soon! This will allow you to customize your driver experience.');
+        setActiveTab('preferences');
+        navigate('/mobile?tab=preferences');
         break;
       case 'Help':
         // Navigate to help center
@@ -903,6 +904,14 @@ export const MobileDriverDashboard: React.FC = () => {
           <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
             <div className="min-h-screen">
               <DriverPromosPage />
+            </div>
+          </div>
+        )}
+        
+        {activeTab === 'preferences' && (
+          <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
+            <div className="min-h-screen">
+              <DriverPreferencesPage />
             </div>
           </div>
         )}
