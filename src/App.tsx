@@ -47,6 +47,8 @@ import { ThemeProvider } from "./components/ThemeProvider";
 import SuspenseLoader from "./components/SuspenseLoader";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { environment, validateEnvironmentConfig } from "./config/environment";
+import { DownloadApp } from "./pages/DownloadApp";
+import { InstallAppBanner } from "./components/InstallAppBanner";
 
 // Lazy load guide pages
 const AdminGuide = lazy(() => import("./pages/AdminGuide"));
@@ -123,6 +125,9 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter>
+            {/* iOS PWA Install Banner */}
+            <InstallAppBanner />
+            
             <Routes>
               <Route path="/" element={<Index />} />
           <Route path="/restaurants" element={<Restaurants />} />
@@ -179,6 +184,9 @@ const App = () => {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/cookie-policy" element={<CookiePolicy />} />
+          
+          {/* PWA Install page */}
+          <Route path="/download" element={<DownloadApp />} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

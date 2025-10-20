@@ -126,22 +126,60 @@ export const DriverSupportDashboard = () => {
   const fetchChats = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      console.log('Fetching driver support chats...');
+      
+      // Fetch chats first
+      const { data: chatsData, error: chatsError } = await supabase
         .from('driver_support_chats')
-        .select(`
-          *,
-          driver_profiles:driver_id (
-            full_name,
-            phone
-          )
-        `)
+        .select('*')
         .order('last_message_at', { ascending: false });
 
-      if (error) throw error;
-      setChats(data || []);
+      if (chatsError) {
+        console.error('Error fetching chats:', chatsError);
+        throw chatsError;
+      }
+
+      // If there are chats, fetch the driver profiles separately
+      if (chatsData && chatsData.length > 0) {
+        const driverIds = [...new Set(chatsData.map(chat => chat.driver_id))];
+        
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('user_profiles')
+          .select('user_id, full_name, phone')
+          .in('user_id', driverIds);
+
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+          // Continue without profiles rather than failing completely
+        }
+
+        // Create a map of driver profiles
+        const profilesMap = new Map(
+          (profilesData || []).map(profile => [profile.user_id, profile])
+        );
+
+        // Combine chats with driver profiles
+        const transformedData = chatsData.map(chat => ({
+          ...chat,
+          driver_profiles: profilesMap.get(chat.driver_id) ? {
+            full_name: profilesMap.get(chat.driver_id)?.full_name || 'Unknown Driver',
+            phone: profilesMap.get(chat.driver_id)?.phone || ''
+          } : {
+            full_name: 'Unknown Driver',
+            phone: ''
+          }
+        }));
+
+        console.log('Transformed chats:', transformedData.length, 'chats found');
+        setChats(transformedData);
+      } else {
+        console.log('No chats found');
+        setChats([]);
+      }
     } catch (error: any) {
       console.error('Error fetching chats:', error);
-      toast.error('Failed to load chats');
+      toast.error(`Failed to load chats: ${error.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
