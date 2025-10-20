@@ -12,6 +12,7 @@ import { AnalyticsDashboard } from './analytics/AnalyticsDashboard';
 import { KanbanView } from './views/KanbanView';
 import { ExportButton } from './components/ExportButton';
 import { ActivityLog } from './components/ActivityLog';
+import { EmailTemplates } from './components/EmailTemplates';
 import { calculateStats } from './utils/helpers';
 import { logActivity, ActivityActionTypes } from './utils/activityLogger';
 
@@ -150,10 +151,47 @@ export function EnhancedRestaurantOnboarding() {
       console.log('Sending bulk email to:', restaurants.map(r => r.email));
       console.log('Message:', message);
       
+      // Log activity for each restaurant
+      for (const restaurant of restaurants) {
+        await logActivity({
+          restaurantId: restaurant.id,
+          actionType: ActivityActionTypes.EMAIL_SENT,
+          actionDescription: `Bulk email sent: ${message.substring(0, 50)}...`,
+          metadata: { messagePreview: message.substring(0, 100) }
+        });
+      }
+      
       // For now, just simulate success
       await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error) {
       console.error('Error sending bulk email:', error);
+      throw error;
+    }
+  };
+
+  // Single email handler
+  const handleSendEmail = async (restaurantId: string, subject: string, body: string) => {
+    try {
+      // In a real app, this would call an email service API
+      // For now, we'll just log it and simulate sending
+      console.log('Sending email to restaurant:', restaurantId);
+      console.log('Subject:', subject);
+      console.log('Body:', body);
+
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Log the activity
+      await logActivity({
+        restaurantId,
+        actionType: ActivityActionTypes.EMAIL_SENT,
+        actionDescription: `Email sent: ${subject}`,
+        metadata: { subject, bodyPreview: body.substring(0, 100) }
+      });
+
+      toast.success('Email sent successfully!');
+    } catch (error) {
+      console.error('Error sending email:', error);
       throw error;
     }
   };
@@ -401,7 +439,7 @@ export function EnhancedRestaurantOnboarding() {
 
       {/* Main Content */}
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="all">
             All ({stats.total})
           </TabsTrigger>
@@ -422,6 +460,9 @@ export function EnhancedRestaurantOnboarding() {
           </TabsTrigger>
           <TabsTrigger value="analytics">
             📊 Analytics
+          </TabsTrigger>
+          <TabsTrigger value="emails">
+            📧 Email Templates
           </TabsTrigger>
           <TabsTrigger value="activity">
             🕐 Activity Log
@@ -531,6 +572,10 @@ export function EnhancedRestaurantOnboarding() {
 
         <TabsContent value="analytics" className="mt-6">
           <AnalyticsDashboard restaurants={restaurants} />
+        </TabsContent>
+
+        <TabsContent value="emails" className="mt-6">
+          <EmailTemplates onSendEmail={handleSendEmail} />
         </TabsContent>
 
         <TabsContent value="activity" className="mt-6">
