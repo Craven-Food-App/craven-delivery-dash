@@ -7,6 +7,7 @@ import RestaurantGrid from "@/components/RestaurantGrid";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Utensils, Truck } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const [searchParams] = useSearchParams();
@@ -21,6 +22,42 @@ const Index = () => {
     if (search) setSearchQuery(search);
     if (address) setDeliveryAddress(address);
   }, [searchParams]);
+
+  // Auto-redirect drivers to /mobile when opening PWA
+  useEffect(() => {
+    const checkAndRedirectDriver = async () => {
+      // Only redirect if running as PWA (installed app)
+      const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
+                    (window.navigator as any).standalone === true;
+      
+      if (!isPWA) return; // Don't redirect if browsing normally
+      
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          // Check if user is an approved driver with completed onboarding
+          const { data: application } = await supabase
+            .from('craver_applications')
+            .select('status, onboarding_completed_at')
+            .eq('user_id', user.id)
+            .single();
+          
+          if (application?.onboarding_completed_at) {
+            // User is an approved driver with completed onboarding
+            // Redirect to mobile dashboard
+            console.log('PWA: Redirecting driver to mobile dashboard');
+            navigate('/mobile');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking driver status:', error);
+        // Silently fail - user stays on homepage
+      }
+    };
+    
+    checkAndRedirectDriver();
+  }, [navigate]);
 
   // JSON-LD Structured Data
   const structuredData = {
