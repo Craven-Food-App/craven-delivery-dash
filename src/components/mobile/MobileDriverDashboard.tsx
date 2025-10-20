@@ -96,10 +96,117 @@ export const MobileDriverDashboard: React.FC = () => {
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [onlineTime, setOnlineTime] = useState(0);
   const [currentCity, setCurrentCity] = useState('Toledo');
+  
+  // Persistent session management
+  const [sessionData, setSessionData] = useState<any>(null);
+  const [isSessionRestored, setIsSessionRestored] = useState(false);
   const [userLocation, setUserLocation] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
+  
+  // Session restoration on app startup
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        
+        // Check if driver has an active session
+        const { data: session, error } = await supabase
+          .from('driver_sessions')
+          .select('*')
+          .eq('driver_id', user.id)
+          .eq('is_online', true)
+          .single();
+          
+        if (session && !error) {
+          console.log('Restoring active driver session:', session);
+          setSessionData(session.session_data);
+          
+          // Restore driver state based on session
+          if (session.session_data?.online_since) {
+            setDriverState('online_searching');
+            setOnlineTime(Date.now() - new Date(session.session_data.online_since).getTime());
+            
+            // Restore end time if set
+            if (session.session_data?.end_time) {
+              setEndTime(new Date(session.session_data.end_time));
+            }
+            
+            // Setup realtime listener for restored session
+            setupRealtimeListener(user.id);
+            
+            // Start session heartbeat
+            startSessionHeartbeat(user.id);
+          }
+        }
+        
+        setIsSessionRestored(true);
+      } catch (error) {
+        console.error('Error restoring session:', error);
+        setIsSessionRestored(true);
+      }
+    };
+    
+    restoreSession();
+  }, []);
+  
+  // Session heartbeat to keep driver online when app is backgrounded
+  const startSessionHeartbeat = (userId: string) => {
+    const heartbeat = setInterval(async () => {
+      try {
+        await supabase.from('driver_sessions').update({
+          last_activity: new Date().toISOString(),
+          session_data: {
+            ...sessionData,
+            last_heartbeat: new Date().toISOString()
+          }
+        }).eq('driver_id', userId);
+      } catch (error) {
+        console.error('Session heartbeat error:', error);
+      }
+    }, 30000); // Every 30 seconds
+    
+    return heartbeat;
+  };
+  
+  // Setup push notifications for background order assignments
+  useEffect(() => {
+    const setupPushNotifications = async () => {
+      if ('serviceWorker' in navigator && 'PushManager' in window) {
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          const subscription = await registration.pushManager.getSubscription();
+          
+          if (!subscription) {
+            // Request permission and subscribe
+            const newSubscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: process.env.VITE_VAPID_PUBLIC_KEY
+            });
+            
+            // Save subscription to database
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              await supabase.from('driver_push_subscriptions').upsert({
+                driver_id: user.id,
+                subscription: newSubscription,
+                created_at: new Date().toISOString()
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Push notification setup error:', error);
+        }
+      }
+    };
+    
+    if (driverState === 'online_searching' || driverState === 'on_delivery') {
+      setupPushNotifications();
+    }
+  }, [driverState]);
+  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'earnings' | 'account' | 'ratings' | 'promos' | 'preferences' | 'help'>('home');
@@ -593,11 +700,18 @@ export const MobileDriverDashboard: React.FC = () => {
 
       // Create session data with online timestamp
       const sessionData: Record<string, any> = {
-        online_since: new Date().toISOString()
+        online_since: new Date().toISOString(),
+        driver_state: 'online_searching',
+        vehicle_type: selectedVehicle,
+        earning_mode: earningMode,
+        current_city: currentCity
       };
       if (endTime) {
         sessionData.end_time = endTime.toISOString();
       }
+      
+      // Save session data to state for persistence
+      setSessionData(sessionData);
 
       // Update or create driver session for persistence
       const {
@@ -662,6 +776,9 @@ export const MobileDriverDashboard: React.FC = () => {
         setShowTimeSelector(true);
       }
       setupRealtimeListener(user.id);
+      
+      // Start session heartbeat to keep driver online
+      startSessionHeartbeat(user.id);
     } catch (error) {
       console.error('Error going online:', error);
     }
@@ -840,7 +957,17 @@ export const MobileDriverDashboard: React.FC = () => {
     {/* Debug info */}
     {console.log('Render state - isLoading:', isLoading, 'showWelcomeScreen:', showWelcomeScreen)}
     
-    {!isLoading && !showWelcomeScreen && (
+    {/* Session restoration loading */}
+    {!isSessionRestored && (
+      <div className="fixed inset-0 bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Restoring your session...</p>
+        </div>
+      </div>
+    )}
+
+    {!isLoading && !showWelcomeScreen && isSessionRestored && (
     <div className="fixed inset-0 h-[100dvh] w-screen bg-background overflow-hidden safe-area-top">
       {/* Offline Indicator */}
       <OfflineIndicator />
