@@ -11,7 +11,9 @@ import { DocumentVerificationPanel } from './verification/DocumentVerificationPa
 import { AnalyticsDashboard } from './analytics/AnalyticsDashboard';
 import { KanbanView } from './views/KanbanView';
 import { ExportButton } from './components/ExportButton';
+import { ActivityLog } from './components/ActivityLog';
 import { calculateStats } from './utils/helpers';
+import { logActivity, ActivityActionTypes } from './utils/activityLogger';
 
 export function EnhancedRestaurantOnboarding() {
   const [restaurants, setRestaurants] = useState<RestaurantOnboardingData[]>([]);
@@ -246,6 +248,15 @@ export function EnhancedRestaurantOnboarding() {
       if (error) throw error;
 
       toast.success('Restaurant stage updated successfully');
+      
+      // Log activity
+      await logActivity({
+        restaurantId,
+        actionType: ActivityActionTypes.STATUS_CHANGED,
+        actionDescription: `Stage changed to: ${newStage.replace(/_/g, ' ')}`,
+        metadata: { newStage, previousStage: 'unknown' }
+      });
+      
       fetchRestaurants(false);
     } catch (error) {
       console.error('Error updating stage:', error);
@@ -390,7 +401,7 @@ export function EnhancedRestaurantOnboarding() {
 
       {/* Main Content */}
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="all">
             All ({stats.total})
           </TabsTrigger>
@@ -411,6 +422,9 @@ export function EnhancedRestaurantOnboarding() {
           </TabsTrigger>
           <TabsTrigger value="analytics">
             📊 Analytics
+          </TabsTrigger>
+          <TabsTrigger value="activity">
+            🕐 Activity Log
           </TabsTrigger>
         </TabsList>
 
@@ -517,6 +531,10 @@ export function EnhancedRestaurantOnboarding() {
 
         <TabsContent value="analytics" className="mt-6">
           <AnalyticsDashboard restaurants={restaurants} />
+        </TabsContent>
+
+        <TabsContent value="activity" className="mt-6">
+          <ActivityLog />
         </TabsContent>
       </Tabs>
 
