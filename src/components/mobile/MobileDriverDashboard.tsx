@@ -518,8 +518,12 @@ export const MobileDriverDashboard: React.FC = () => {
       console.log('Auth state change:', event, session?.user?.id);
       
       if (event === 'SIGNED_OUT') {
-        console.log('User signed out, redirecting to login');
-        navigate('/driver/auth');
+        console.log('User signed out, showing welcome screen');
+        // Stay on /mobile route and show welcome screen
+        setIsLoading(false);
+        setShowWelcomeScreen(true);
+        // Reset driver state
+        setDriverState('offline');
         return;
       }
       

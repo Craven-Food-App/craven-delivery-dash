@@ -174,6 +174,8 @@ export const AccountSection: React.FC<{
         title: "Signed out successfully",
         description: "You have been logged out of your account"
       });
+      // Redirect to mobile welcome screen (not driver-auth)
+      window.location.href = '/mobile';
     } catch (error) {
       toast({
         title: "Error signing out",
