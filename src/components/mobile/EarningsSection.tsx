@@ -418,11 +418,6 @@ export const EarningsSection = () => {
   return (
     <div className="min-h-screen bg-slate-50 pb-20 font-sans">
       <div className="max-w-4xl mx-auto">
-        {/* User ID Display - MANDATORY FOR MULTI-USER APPS */}
-        <div className="p-2 text-center bg-slate-100 text-xs text-slate-600 border-b border-slate-200">
-            Your Driver ID: <span className="font-mono font-bold text-orange-600 break-all">{userId || 'N/A'}</span>
-        </div>
-
         {/* Earnings Header - Clean Style */}
         <div className="px-4 pt-6 pb-4 bg-white">
           <h1 className="text-3xl font-bold text-slate-900 mb-2 text-right">Earnings</h1>
