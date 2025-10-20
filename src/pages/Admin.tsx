@@ -14,6 +14,7 @@ import { EnhancedTabletShippingDashboard } from '@/components/admin/tablet-shipp
 import { NotificationSettingsManager } from '@/components/admin/NotificationSettingsManager';
 import { PayoutSettingsManager } from '@/components/admin/PayoutSettingsManager';
 import CommissionSettingsManager from '@/components/admin/CommissionSettingsManager';
+import { EnhancedCommissionDashboard } from '@/components/admin/commission/EnhancedCommissionDashboard';
 import { PromoCodeManager } from '@/components/admin/PromoCodeManager';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -96,7 +97,7 @@ const Admin: React.FC = () => {
       case 'merchant-tablet':
         return <EnhancedTabletShippingDashboard />;
       case 'merchant-settings':
-        return <CommissionSettingsManager />;
+        return <EnhancedCommissionDashboard />;
       case 'driver-applications':
         return <ApplicationReview />;
       case 'driver-background':
