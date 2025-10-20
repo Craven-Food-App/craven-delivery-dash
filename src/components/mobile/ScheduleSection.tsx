@@ -197,9 +197,11 @@ export default function ScheduleSection() {
       <div className="max-w-2xl mx-auto">
         
         {/* Header */}
-        <div className="bg-white px-4 pt-6 pb-4 sticky top-0 z-10 shadow-sm" style={{ paddingTop: 'calc(1.5rem + 15px)' }}>
-          <h1 className="text-3xl font-bold text-slate-900 text-right mb-2">Schedule</h1>
-          <p className="text-sm text-slate-600 text-right">Manage when you're available</p>
+        <div className="sticky top-0 z-10 bg-white border-b shadow-sm safe-area-top">
+          <div className="p-4">
+            <h1 className="text-3xl font-bold text-slate-900 text-right">Schedule</h1>
+            <p className="text-sm text-slate-600 text-right">Manage when you're available</p>
+          </div>
         </div>
 
         {/* Online Status Toggle */}

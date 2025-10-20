@@ -160,9 +160,11 @@ export const AccountSection: React.FC<{
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
       {/* Header */}
-      <div className="bg-white px-4 pt-6 pb-4 sticky top-0 z-10 shadow-sm" style={{ paddingTop: 'calc(1.5rem + 15px)' }}>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2 text-right">Account</h1>
-        <p className="text-sm text-slate-600 text-right">Manage your profile and settings</p>
+      <div className="sticky top-0 z-10 bg-white border-b shadow-sm safe-area-top">
+        <div className="p-4">
+          <h1 className="text-3xl font-bold text-slate-900 text-right">Account</h1>
+          <p className="text-sm text-slate-600 text-right">Manage your profile and settings</p>
+        </div>
       </div>
 
       {/* Profile Card */}
