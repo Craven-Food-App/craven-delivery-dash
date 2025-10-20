@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import type { RestaurantOnboardingData } from './types';
 import { StatsOverview } from './components/StatsOverview';
 import { ListView } from './views/ListView';
-import { DocumentVerificationPanel } from './verification/DocumentVerificationPanel';
+import { EnhancedDocumentVerificationPanel } from './verification/EnhancedDocumentVerificationPanel';
 import { AnalyticsDashboard } from './analytics/AnalyticsDashboard';
 import { KanbanView } from './views/KanbanView';
 import { ExportButton } from './components/ExportButton';
@@ -306,7 +306,7 @@ export function EnhancedRestaurantOnboarding() {
     }
   };
 
-  const handleApprove = async (restaurantId: string, notes: string) => {
+  const handleApprove = async (restaurantId: string, notes: string, checklistData?: any) => {
     try {
       // Get current user for audit trail
       const { data: { user } } = await supabase.auth.getUser();
@@ -603,8 +603,8 @@ export function EnhancedRestaurantOnboarding() {
         </TabsContent>
       </Tabs>
 
-      {/* Document Verification Panel */}
-      <DocumentVerificationPanel
+      {/* Enhanced Document Verification Panel */}
+      <EnhancedDocumentVerificationPanel
         restaurant={selectedRestaurant}
         isOpen={isVerificationPanelOpen}
         onClose={() => {
