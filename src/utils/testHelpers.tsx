@@ -174,15 +174,17 @@ export const checkAccessibility = async (container: HTMLElement) => {
 };
 
 // Mock API responses
-export const mockApiResponse = <T>(data: T, delay = 0) => 
-  new Promise<T>((resolve) => {
+export function mockApiResponse<T>(data: T, delay = 0) {
+  return new Promise<T>((resolve) => {
     setTimeout(() => resolve(data), delay);
   });
+}
 
-export const mockApiError = (message: string, delay = 0) => 
-  new Promise<never>((_, reject) => {
+export function mockApiError(message: string, delay = 0): Promise<never> {
+  return new Promise((_, reject) => {
     setTimeout(() => reject(new Error(message)), delay);
   });
+}
 
 // Test data cleanup
 export const cleanupTestData = async () => {
