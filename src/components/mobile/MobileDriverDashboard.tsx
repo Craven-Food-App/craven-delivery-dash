@@ -1160,9 +1160,8 @@ export const MobileDriverDashboard: React.FC = () => {
               {/* Still Searching Section with Get offers until */}
               <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/20 overflow-hidden">
                 <div className="flex items-center justify-between">
-                  {/* Left: Still searching text with loading state */}
+                  {/* Left: Still searching text */}
                   <div className="flex items-center gap-2">
-                    <LoadingState type="default" size="sm" />
                     <span className="text-base text-foreground font-medium">Still searching...</span>
                   </div>
                   
