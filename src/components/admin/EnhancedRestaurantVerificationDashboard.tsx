@@ -17,9 +17,12 @@ import {
   RefreshCw,
   TrendingUp,
   AlertTriangle,
-  Building2
+  Building2,
+  CheckSquare,
+  Square
 } from 'lucide-react';
 import { EnhancedDocumentVerificationPanel } from './restaurant-onboarding/verification/EnhancedDocumentVerificationPanel';
+import { QueueMode } from './restaurant-onboarding/verification/QueueMode';
 import type { RestaurantOnboardingData } from './restaurant-onboarding/types';
 import { logActivity, ActivityActionTypes } from './restaurant-onboarding/utils/activityLogger';
 
@@ -30,6 +33,15 @@ export const EnhancedRestaurantVerificationDashboard = () => {
   const [selectedRestaurant, setSelectedRestaurant] = useState<RestaurantOnboardingData | null>(null);
   const [isVerificationPanelOpen, setIsVerificationPanelOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [queueMode, setQueueMode] = useState(false);
+  const [sessionStats, setSessionStats] = useState({
+    reviewed: 0,
+    approved: 0,
+    rejected: 0,
+    skipped: 0,
+  });
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedRestaurants, setSelectedRestaurants] = useState<RestaurantOnboardingData[]>([]);
 
   useEffect(() => {
     fetchRestaurants();
@@ -100,6 +112,88 @@ export const EnhancedRestaurantVerificationDashboard = () => {
     setIsVerificationPanelOpen(true);
   };
 
+  const handleStartQueueMode = () => {
+    const pending = filterRestaurants('pending');
+    if (pending.length === 0) {
+      toast.error('No pending restaurants to review');
+      return;
+    }
+    setQueueMode(true);
+    setSelectedRestaurant(pending[0]);
+    setIsVerificationPanelOpen(true);
+    setSessionStats({ reviewed: 0, approved: 0, rejected: 0, skipped: 0 });
+    toast.success(`Queue mode started! ${pending.length} restaurants to review`);
+  };
+
+  const handleQueueNext = () => {
+    const pending = filterRestaurants('pending');
+    const currentIndex = selectedRestaurant 
+      ? pending.findIndex(r => r.id === selectedRestaurant.id)
+      : -1;
+    
+    if (currentIndex < pending.length - 1) {
+      setSelectedRestaurant(pending[currentIndex + 1]);
+    } else {
+      toast.success('Queue complete! All pending restaurants reviewed.');
+      setQueueMode(false);
+      setIsVerificationPanelOpen(false);
+    }
+  };
+
+  const handleQueuePrevious = () => {
+    const pending = filterRestaurants('pending');
+    const currentIndex = selectedRestaurant 
+      ? pending.findIndex(r => r.id === selectedRestaurant.id)
+      : -1;
+    
+    if (currentIndex > 0) {
+      setSelectedRestaurant(pending[currentIndex - 1]);
+    }
+  };
+
+  const handleQueueSkip = () => {
+    setSessionStats(prev => ({ ...prev, skipped: prev.skipped + 1 }));
+    handleQueueNext();
+  };
+
+  // Bulk selection handlers
+  const handleToggleBulkMode = () => {
+    setBulkMode(!bulkMode);
+    setSelectedRestaurants([]);
+  };
+
+  const handleSelectRestaurant = (restaurant: RestaurantOnboardingData, selected: boolean) => {
+    if (selected) {
+      setSelectedRestaurants(prev => [...prev, restaurant]);
+    } else {
+      setSelectedRestaurants(prev => prev.filter(r => r.id !== restaurant.id));
+    }
+  };
+
+  const handleBulkApprove = async () => {
+    if (selectedRestaurants.length === 0) return;
+
+    const allHaveRequiredDocs = selectedRestaurants.every(r => 
+      r.restaurant.business_license_url && r.restaurant.owner_id_url
+    );
+
+    if (!allHaveRequiredDocs) {
+      toast.error('All restaurants must have required documents (License & ID) to bulk approve');
+      return;
+    }
+
+    try {
+      for (const restaurant of selectedRestaurants) {
+        await handleApprove(restaurant.restaurant_id, 'Bulk approved by admin');
+      }
+      toast.success(`Successfully approved ${selectedRestaurants.length} restaurants!`);
+      setSelectedRestaurants([]);
+      setBulkMode(false);
+    } catch (error) {
+      toast.error('Failed to bulk approve restaurants');
+    }
+  };
+
   const handleApprove = async (restaurantId: string, notes: string, checklistData?: any) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -142,6 +236,18 @@ export const EnhancedRestaurantVerificationDashboard = () => {
       });
 
       toast.success('Restaurant verified successfully!');
+      
+      // Update session stats if in queue mode
+      if (queueMode) {
+        setSessionStats(prev => ({ 
+          ...prev, 
+          reviewed: prev.reviewed + 1,
+          approved: prev.approved + 1 
+        }));
+        // Auto-advance to next in queue
+        setTimeout(() => handleQueueNext(), 500);
+      }
+      
       fetchRestaurants(true);
     } catch (error) {
       console.error('Error approving restaurant:', error);
@@ -189,6 +295,18 @@ export const EnhancedRestaurantVerificationDashboard = () => {
       });
 
       toast.success('Restaurant verification rejected');
+      
+      // Update session stats if in queue mode
+      if (queueMode) {
+        setSessionStats(prev => ({ 
+          ...prev, 
+          reviewed: prev.reviewed + 1,
+          rejected: prev.rejected + 1 
+        }));
+        // Auto-advance to next in queue
+        setTimeout(() => handleQueueNext(), 500);
+      }
+      
       fetchRestaurants(true);
     } catch (error) {
       console.error('Error rejecting restaurant:', error);
@@ -259,10 +377,18 @@ export const EnhancedRestaurantVerificationDashboard = () => {
             Dedicated document review and verification center
           </p>
         </div>
-        <Button variant="outline" onClick={handleRefresh} disabled={refreshing}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-          {refreshing ? 'Refreshing...' : 'Refresh'}
-        </Button>
+        <div className="flex items-center gap-2">
+          {stats.pending > 0 && !queueMode && (
+            <Button onClick={handleStartQueueMode} className="bg-blue-600 hover:bg-blue-700">
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Start Queue Mode ({stats.pending})
+            </Button>
+          )}
+          <Button variant="outline" onClick={handleRefresh} disabled={refreshing}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+        </div>
       </div>
 
       {/* Stats Overview */}
@@ -316,7 +442,7 @@ export const EnhancedRestaurantVerificationDashboard = () => {
         </Card>
       </div>
 
-      {/* Search Bar */}
+      {/* Search Bar & Bulk Mode Toggle */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -327,7 +453,53 @@ export const EnhancedRestaurantVerificationDashboard = () => {
             className="pl-9"
           />
         </div>
+        <Button
+          variant={bulkMode ? 'default' : 'outline'}
+          onClick={handleToggleBulkMode}
+          className="whitespace-nowrap"
+        >
+          {bulkMode ? (
+            <CheckSquare className="h-4 w-4 mr-2" />
+          ) : (
+            <Square className="h-4 w-4 mr-2" />
+          )}
+          Bulk Select
+        </Button>
       </div>
+
+      {/* Bulk Action Bar */}
+      {bulkMode && selectedRestaurants.length > 0 && (
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
+          <Card className="border-2 border-primary shadow-2xl">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-4">
+                <Badge variant="secondary" className="text-sm">
+                  {selectedRestaurants.length} selected
+                </Badge>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleBulkApprove}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Approve All ({selectedRestaurants.length})
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedRestaurants([]);
+                    setBulkMode(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="all" className="w-full">
@@ -372,6 +544,9 @@ export const EnhancedRestaurantVerificationDashboard = () => {
                     key={restaurant.id}
                     restaurant={restaurant}
                     onVerify={handleVerifyRestaurant}
+                    bulkMode={bulkMode}
+                    isSelected={selectedRestaurants.some(r => r.id === restaurant.id)}
+                    onSelect={handleSelectRestaurant}
                   />
                 ))}
               </div>
@@ -380,6 +555,21 @@ export const EnhancedRestaurantVerificationDashboard = () => {
         ))}
       </Tabs>
 
+      {/* Queue Mode Controls (shown when in queue mode) */}
+      {queueMode && isVerificationPanelOpen && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-2xl px-4">
+          <QueueMode
+            restaurants={filterRestaurants('pending')}
+            currentRestaurant={selectedRestaurant}
+            onSelectRestaurant={setSelectedRestaurant}
+            onNext={handleQueueNext}
+            onPrevious={handleQueuePrevious}
+            onSkip={handleQueueSkip}
+            sessionStats={sessionStats}
+          />
+        </div>
+      )}
+
       {/* Enhanced Verification Panel */}
       <EnhancedDocumentVerificationPanel
         restaurant={selectedRestaurant}
@@ -387,6 +577,10 @@ export const EnhancedRestaurantVerificationDashboard = () => {
         onClose={() => {
           setIsVerificationPanelOpen(false);
           setSelectedRestaurant(null);
+          if (queueMode) {
+            setQueueMode(false);
+            toast.info('Queue mode ended');
+          }
         }}
         onApprove={handleApprove}
         onReject={handleReject}
@@ -398,9 +592,18 @@ export const EnhancedRestaurantVerificationDashboard = () => {
 interface RestaurantVerificationCardProps {
   restaurant: RestaurantOnboardingData;
   onVerify: (restaurant: RestaurantOnboardingData) => void;
+  bulkMode?: boolean;
+  isSelected?: boolean;
+  onSelect?: (restaurant: RestaurantOnboardingData, selected: boolean) => void;
 }
 
-function RestaurantVerificationCard({ restaurant, onVerify }: RestaurantVerificationCardProps) {
+function RestaurantVerificationCard({ 
+  restaurant, 
+  onVerify,
+  bulkMode = false,
+  isSelected = false,
+  onSelect
+}: RestaurantVerificationCardProps) {
   const hasBusinessLicense = !!restaurant.restaurant.business_license_url;
   const hasOwnerID = !!restaurant.restaurant.owner_id_url;
   const hasInsurance = !!restaurant.restaurant.insurance_certificate_url;
@@ -447,14 +650,25 @@ function RestaurantVerificationCard({ restaurant, onVerify }: RestaurantVerifica
   };
 
   return (
-    <Card className="hover:shadow-lg transition-shadow">
+    <Card className={`hover:shadow-lg transition-shadow ${isSelected ? 'ring-2 ring-blue-500' : ''}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-lg mb-1">{restaurant.restaurant.name}</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {restaurant.restaurant.city}, {restaurant.restaurant.state}
-            </p>
+          <div className="flex-1 flex items-start gap-2">
+            {bulkMode && (
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={(e) => onSelect?.(restaurant, e.target.checked)}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1"
+                onClick={(e) => e.stopPropagation()}
+              />
+            )}
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-lg mb-1">{restaurant.restaurant.name}</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {restaurant.restaurant.city}, {restaurant.restaurant.state}
+              </p>
+            </div>
           </div>
           {getStatusBadge()}
         </div>
