@@ -1,7 +1,7 @@
 {
-  "name": "Crave'N Driver",
-  "short_name": "Crave'N",
-  "description": "Deliver with Crave'N - Earn on your schedule with great payouts and flexible hours.",
+  "name": "Feeder - Crave'N",
+  "short_name": "Feeder",
+  "description": "Become a Feeder - Deliver food, earn on your schedule with great payouts and flexible hours.",
   "start_url": "/mobile",
   "display": "standalone",
   "background_color": "#FF6B35",
@@ -25,23 +25,23 @@
   "categories": ["food", "lifestyle", "shopping"],
   "shortcuts": [
     {
-      "name": "Go Online",
+      "name": "Go Online as Feeder",
       "short_name": "Go Online",
-      "description": "Start accepting deliveries",
+      "description": "Start accepting deliveries as a Feeder",
       "url": "/mobile",
       "icons": [{ "src": "/craven-logo.png", "sizes": "192x192" }]
     },
     {
-      "name": "My Earnings",
+      "name": "Feeder Earnings",
       "short_name": "Earnings",
-      "description": "View your earnings and payouts",
+      "description": "View your Feeder earnings and payouts",
       "url": "/mobile",
       "icons": [{ "src": "/craven-logo.png", "sizes": "192x192" }]
     },
     {
-      "name": "Help & Support",
+      "name": "Feeder Support",
       "short_name": "Support",
-      "description": "Get help from our support team",
+      "description": "Get help from Feeder support team",
       "url": "/mobile",
       "icons": [{ "src": "/craven-logo.png", "sizes": "192x192" }]
     }
