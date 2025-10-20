@@ -105,51 +105,68 @@ export const MobileDriverDashboard: React.FC = () => {
     lng: number;
   } | null>(null);
   
-  // Session restoration on app startup
+  // Fast session restoration on app startup
   useEffect(() => {
     const restoreSession = async () => {
       try {
+        // First, check auth quickly
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          setIsSessionRestored(true);
+          return;
+        }
         
-        // Check if driver has an active session
-        const { data: session, error } = await supabase
+        // Check for active session with timeout
+        const sessionPromise = supabase
           .from('driver_sessions')
-          .select('*')
+          .select('session_data, is_online')
           .eq('driver_id', user.id)
           .eq('is_online', true)
           .single();
           
-        if (session && !error) {
-          console.log('Restoring active driver session:', session);
-          setSessionData(session.session_data);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session check timeout')), 2000)
+        );
+        
+        const { data: session, error } = await Promise.race([sessionPromise, timeoutPromise]) as any;
           
-          // Restore driver state based on session
-          if (session.session_data?.online_since) {
-            setDriverState('online_searching');
-            setOnlineTime(Date.now() - new Date(session.session_data.online_since).getTime());
-            
-            // Restore end time if set
-            if (session.session_data?.end_time) {
-              setEndTime(new Date(session.session_data.end_time));
-            }
-            
-            // Setup realtime listener for restored session
-            setupRealtimeListener(user.id);
-            
-            // Start session heartbeat
-            startSessionHeartbeat(user.id);
+        if (session && !error && session.session_data?.online_since) {
+          console.log('Fast session restore:', session.session_data);
+          setSessionData(session.session_data);
+          setDriverState('online_searching');
+          
+          // Calculate online time
+          const onlineSince = new Date(session.session_data.online_since).getTime();
+          setOnlineTime(Math.max(0, Date.now() - onlineSince));
+          
+          // Restore end time if set
+          if (session.session_data?.end_time) {
+            setEndTime(new Date(session.session_data.end_time));
           }
+          
+          // Start background tasks after UI is ready
+          setTimeout(() => {
+            setupRealtimeListener(user.id);
+            startSessionHeartbeat(user.id);
+          }, 100);
         }
         
         setIsSessionRestored(true);
       } catch (error) {
-        console.error('Error restoring session:', error);
+        console.error('Session restore error:', error);
         setIsSessionRestored(true);
       }
     };
     
     restoreSession();
+    
+    // Fallback: force restore after 3 seconds if still loading
+    const fallbackTimer = setTimeout(() => {
+      console.log('Session restore fallback - forcing restore');
+      setIsSessionRestored(true);
+    }, 3000);
+    
+    return () => clearTimeout(fallbackTimer);
   }, []);
   
   // Session heartbeat to keep driver online when app is backgrounded

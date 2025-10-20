@@ -22,8 +22,10 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
   useEffect(() => {
     const checkExistingSession = async () => {
       try {
+        // Use getSession() for faster check than getUser()
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
+          console.log('Session exists, redirecting to dashboard');
           if (onStartFeeding) {
             onStartFeeding();
           } else {
@@ -34,7 +36,13 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
         console.error('Session check failed:', e);
       }
     };
-    checkExistingSession();
+    
+    // Add timeout to prevent hanging
+    const timeoutId = setTimeout(() => {
+      console.log('Session check timeout - proceeding with welcome screen');
+    }, 1000);
+    
+    checkExistingSession().finally(() => clearTimeout(timeoutId));
   }, []);
 
   const handleFeedNow = () => {
