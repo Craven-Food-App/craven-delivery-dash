@@ -830,17 +830,17 @@ export const MobileDriverDashboard: React.FC = () => {
     {console.log('Render state - isLoading:', isLoading, 'showWelcomeScreen:', showWelcomeScreen)}
     
     {!isLoading && !showWelcomeScreen && (
-    <div className="fixed inset-0 h-screen w-screen bg-background overflow-hidden">
+    <div className="fixed inset-0 h-[100dvh] w-screen bg-background overflow-hidden">
       {/* Offline Indicator */}
       <OfflineIndicator />
       
       {/* Full Screen Map Background - Full height */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 map-touch">
         <MobileMapbox />
       </div>
 
       {/* Hamburger Menu Button - Top Left */}
-      <div className="fixed top-4 left-4 z-50 pointer-events-auto">
+      <div className="fixed left-4 z-50 pointer-events-auto" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}>
         <button
           onClick={() => setIsMenuOpen(true)}
           className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center hover:bg-white transition-all"
@@ -850,7 +850,7 @@ export const MobileDriverDashboard: React.FC = () => {
       </div>
 
       {/* Speed Limit & Current Speed - Under Hamburger Menu */}
-      <div className="fixed top-16 left-4 z-40 pointer-events-auto">
+      <div className="fixed left-4 z-40 pointer-events-auto" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 48px)' }}>
         <SpeedLimitSign 
           currentSpeed={location?.speed ? location.speed * 2.237 : 0} // Convert m/s to mph
           location={location ? {

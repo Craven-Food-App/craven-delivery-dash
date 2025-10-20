@@ -118,6 +118,12 @@ All colors MUST be HSL.
   }
 }
 
+/* Ensure map captures pan/zoom gestures instead of page scroll */
+.map-touch,
+#driver-map {
+  touch-action: pan-x pan-y;
+}
+
 @layer base {
   * {
     @apply border-border;
