@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { ProfilePhotoUpload } from './ProfilePhotoUpload';
 
 interface ProfileSectionProps {
   onBack: () => void;
@@ -175,33 +176,13 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ onBack }) => {
               <CardTitle className="text-lg">Profile Photo</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-4">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={profile.profile_photo} />
-                  <AvatarFallback className="bg-primary/10 text-primary text-xl font-semibold">
-                    <User className="h-8 w-8" />
-                  </AvatarFallback>
-                </Avatar>
-                <label htmlFor="photo-upload" className="flex-1">
-                  <Button 
-                    variant="outline" 
-                    disabled={loading}
-                    className="w-full"
-                    type="button"
-                    onClick={() => document.getElementById('photo-upload')?.click()}
-                  >
-                    <Camera className="h-4 w-4 mr-2" />
-                    Change Photo
-                  </Button>
-                  <input
-                    id="photo-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    className="hidden"
-                  />
-                </label>
-              </div>
+              <ProfilePhotoUpload
+                currentPhotoUrl={profile.profile_photo}
+                onPhotoUpdate={(url) => {
+                  setProfile({ ...profile, profile_photo: url });
+                  fetchProfile(); // Refresh profile data
+                }}
+              />
             </CardContent>
           </Card>
 
