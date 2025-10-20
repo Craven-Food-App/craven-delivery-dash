@@ -194,7 +194,8 @@ export const MobileDriverDashboard: React.FC = () => {
     
     switch (menuItem) {
       case 'Home':
-        // Already on dashboard, just close menu
+        setActiveTab('home');
+        navigate('/mobile');
         break;
       case 'Schedule':
         // Navigate to mobile schedule section
