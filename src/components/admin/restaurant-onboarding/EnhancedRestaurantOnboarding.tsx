@@ -13,6 +13,7 @@ import { KanbanView } from './views/KanbanView';
 import { ExportButton } from './components/ExportButton';
 import { ActivityLog } from './components/ActivityLog';
 import { EmailTemplates } from './components/EmailTemplates';
+import { TeamAssignment } from './components/TeamAssignment';
 import { calculateStats } from './utils/helpers';
 import { logActivity, ActivityActionTypes } from './utils/activityLogger';
 
@@ -439,7 +440,7 @@ export function EnhancedRestaurantOnboarding() {
 
       {/* Main Content */}
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-9">
+        <TabsList className="grid w-full grid-cols-10">
           <TabsTrigger value="all">
             All ({stats.total})
           </TabsTrigger>
@@ -463,6 +464,9 @@ export function EnhancedRestaurantOnboarding() {
           </TabsTrigger>
           <TabsTrigger value="emails">
             📧 Email Templates
+          </TabsTrigger>
+          <TabsTrigger value="team">
+            👥 Team
           </TabsTrigger>
           <TabsTrigger value="activity">
             🕐 Activity Log
@@ -576,6 +580,13 @@ export function EnhancedRestaurantOnboarding() {
 
         <TabsContent value="emails" className="mt-6">
           <EmailTemplates onSendEmail={handleSendEmail} />
+        </TabsContent>
+
+        <TabsContent value="team" className="mt-6">
+          <TeamAssignment 
+            restaurants={restaurants}
+            onAssignComplete={() => fetchRestaurants(false)}
+          />
         </TabsContent>
 
         <TabsContent value="activity" className="mt-6">
