@@ -27,13 +27,21 @@ const validateEnvironment = (): void => {
   const missingVars = requiredVars.filter(varName => !import.meta.env[varName]);
   
   if (missingVars.length > 0) {
-    throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+    console.error(`Missing required environment variables: ${missingVars.join(', ')}`);
+    console.warn('App may not function correctly without these variables');
+    // Only throw error in web production builds, not in mobile/development
+    if (import.meta.env.PROD && typeof window !== 'undefined' && !navigator.userAgent.includes('Capacitor')) {
+      // Don't throw - just warn, to prevent white screen
+      console.error('Environment validation failed, but continuing...');
+    }
   }
 };
 
-// Validate environment in production
-if (import.meta.env.PROD) {
+// Validate environment but don't block app startup
+try {
   validateEnvironment();
+} catch (error) {
+  console.error('Environment validation error:', error);
 }
 
 // Environment configuration

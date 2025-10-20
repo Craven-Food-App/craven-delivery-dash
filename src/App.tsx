@@ -88,16 +88,26 @@ const App = () => {
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <AccessGuard fallback={
-              <div className="flex flex-col items-center justify-center min-h-screen p-4">
-                <h1 className="text-2xl font-bold mb-4">Feeder Access Required</h1>
-                <p className="text-muted-foreground text-center mb-4">
-                  You need an approved Feeder application to access the mobile portal.
-                </p>
-              </div>
-            }>
-              <MobileDriverDashboard />
-            </AccessGuard>
+            <BrowserRouter>
+              <AccessGuard fallback={
+                <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-br from-blue-50 to-purple-50">
+                  <div className="text-center max-w-md">
+                    <div className="mb-6">
+                      <Package className="h-20 w-20 mx-auto text-blue-600 mb-4" />
+                    </div>
+                    <h1 className="text-2xl font-bold mb-4">Feeder Access Required</h1>
+                    <p className="text-muted-foreground text-center mb-6">
+                      You need an approved Feeder application to access the mobile portal.
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Please log in or apply to become a Feeder driver.
+                    </p>
+                  </div>
+                </div>
+              }>
+                <MobileDriverDashboard />
+              </AccessGuard>
+            </BrowserRouter>
           </TooltipProvider>
         </QueryClientProvider>
       </ErrorBoundary>
