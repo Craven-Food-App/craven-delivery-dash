@@ -294,8 +294,8 @@ export const AccountSection: React.FC<{
       <div className="max-w-md mx-auto">
         {/* Header - Clean Style */}
         <div className="bg-white px-4 pt-6 pb-4">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Account</h1>
-          <p className="text-sm text-slate-600">Manage your profile and settings</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2 text-right">Account</h1>
+          <p className="text-sm text-slate-600 text-right">Manage your profile and settings</p>
         </div>
 
         {/* Profile Header with Stats */}

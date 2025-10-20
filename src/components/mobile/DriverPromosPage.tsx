@@ -176,10 +176,10 @@ export function DriverPromosPage() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white border-b shadow-sm safe-area-top">
         <div className="p-4">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-            Promos & Challenges
+          <h1 className="text-3xl font-bold text-slate-900 text-right mb-2">
+            Promos
           </h1>
-          <p className="text-sm text-gray-600">Boost your earnings with special offers</p>
+          <p className="text-sm text-slate-600 text-right">Boost your earnings with special offers</p>
         </div>
       </div>
 

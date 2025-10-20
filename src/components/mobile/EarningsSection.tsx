@@ -425,8 +425,8 @@ export const EarningsSection = () => {
 
         {/* Earnings Header - Clean Style */}
         <div className="px-4 pt-6 pb-4 bg-white">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Earnings</h1>
-          <p className="text-sm text-slate-600">Track your income and performance</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2 text-right">Earnings</h1>
+          <p className="text-sm text-slate-600 text-right">Track your income and performance</p>
         </div>
 
         {/* Weekly Earnings Summary */}

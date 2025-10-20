@@ -111,8 +111,8 @@ export function DriverRatingsPage() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white border-b shadow-sm safe-area-top">
         <div className="p-4">
-          <h1 className="text-2xl font-bold text-gray-900">Your Ratings</h1>
-          <p className="text-sm text-gray-600">Performance breakdown and feedback</p>
+          <h1 className="text-3xl font-bold text-slate-900 text-right">Ratings</h1>
+          <p className="text-sm text-slate-600 text-right">Performance breakdown and feedback</p>
         </div>
       </div>
 

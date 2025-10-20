@@ -440,7 +440,7 @@ export default function ScheduleSection() {
         
         {/* Header - Clean Style */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-slate-900 mb-6">Schedule</h1>
+          <h1 className="text-3xl font-bold text-slate-900 mb-6 text-right">Schedule</h1>
           
           {/* Go Online Button - Prominent */}
           <Button 

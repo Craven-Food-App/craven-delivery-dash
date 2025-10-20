@@ -210,11 +210,11 @@ export function DriverSupportChatPage() {
             >
               <ArrowLeft className="h-5 w-5 text-gray-700" />
             </button>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900">💬 Support Chat</h1>
-              <div className="flex items-center gap-2 text-xs">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-slate-900 text-right mb-1">Help</h1>
+              <div className="flex items-center gap-2 text-xs justify-end">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-gray-600">Agent Available • Avg 2 min</span>
+                <span className="text-slate-600">Agent Available</span>
               </div>
             </div>
           </div>
