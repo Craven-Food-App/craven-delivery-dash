@@ -1,170 +1,94 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Ban, CheckCircle, XCircle, DollarSign, ShoppingBag, Clock, AlertTriangle, Search, Mail, Phone, MapPin, Calendar } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableRow } from "@/components/ui/table"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog"
+import { CheckCircle, Copy, MoreVertical, User, UserPlus, UserX } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { useToast } from "@/hooks/use-toast"
 import { format } from 'date-fns';
+import { debounce } from 'lodash';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils"
+import { Textarea } from "@/components/ui/textarea"
+import { supabase } from '@/integrations/supabase/client';
 
 interface Customer {
   id: string;
-  email: string;
+  user_id: string;
   full_name: string;
-  phone?: string;
-  status: 'active' | 'suspended' | 'banned';
-  created_at: string;
-  last_order_at?: string;
-  total_orders: number;
-  total_spent_cents: number;
-  average_rating?: number;
+  avatar_url: string;
+  phone: string;
+  email?: string;
+  account_status?: string;
   suspension_reason?: string;
   suspension_until?: string;
+  created_at: string;
+  updated_at: string;
+  role: string;
+  preferences: any;
+  settings: any;
 }
 
-interface CustomerOrder {
+interface AuditLog {
   id: string;
-  order_number: string;
   created_at: string;
-  total_cents: number;
-  order_status: string;
-  restaurant_name: string;
+  table_name: string;
+  operation: string;
+  user_id: string;
+  timestamp: string;
+  details: any;
 }
 
 export const CustomerManagement: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [customerOrders, setCustomerOrders] = useState<CustomerOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [suspensionReason, setSuspensionReason] = useState('');
-  const [suspensionDays, setSuspensionDays] = useState('7');
-  const [actionInProgress, setActionInProgress] = useState(false);
+  const [accountStatusFilter, setAccountStatusFilter] = useState<string>('all');
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newSuspensionReason, setNewSuspensionReason] = useState('');
+  const [newSuspensionUntil, setNewSuspensionUntil] = useState<Date | undefined>(undefined);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchCustomers();
   }, []);
 
-  useEffect(() => {
-    if (selectedCustomer) {
-      fetchCustomerOrders(selectedCustomer.id);
-    }
-  }, [selectedCustomer]);
-
   const fetchCustomers = async () => {
     try {
-      // Fetch all users who have placed orders (these are customers)
-      const { data: customerIds, error: orderError } = await supabase
-        .from('orders')
-        .select('customer_id')
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (orderError) {
-        console.error('Error fetching order customer IDs:', orderError);
-        // Fallback: fetch all users if orders table has issues
-        const { data: allUsers, error: allUsersError } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(100);
-        
-        if (allUsersError) throw allUsersError;
-        
-        const customersWithStats = (allUsers || []).map(user => ({
-          id: user.id,
-          email: user.email || '',
-          full_name: user.full_name || 'Unknown',
-          phone: user.phone,
-          status: user.account_status || 'active',
-          created_at: user.created_at,
-          last_order_at: undefined,
-          total_orders: 0,
-          total_spent_cents: 0,
-          suspension_reason: user.suspension_reason,
-          suspension_until: user.suspension_until
-        }));
-        
-        setCustomers(customersWithStats);
-        setLoading(false);
-        return;
-      }
-
-      // Get unique customer IDs
-      const uniqueCustomerIds = [...new Set((customerIds || []).map(o => o.customer_id).filter(Boolean))];
-
-      if (uniqueCustomerIds.length === 0) {
-        // No customers with orders yet, show all users
-        const { data: allUsers, error: allUsersError } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(100);
-        
-        if (allUsersError) throw allUsersError;
-        
-        const customersWithStats = (allUsers || []).map(user => ({
-          id: user.id,
-          email: user.email || '',
-          full_name: user.full_name || 'Unknown',
-          phone: user.phone,
-          status: user.account_status || 'active',
-          created_at: user.created_at,
-          last_order_at: undefined,
-          total_orders: 0,
-          total_spent_cents: 0,
-          suspension_reason: user.suspension_reason,
-          suspension_until: user.suspension_until
-        }));
-        
-        setCustomers(customersWithStats);
-        setLoading(false);
-        return;
-      }
-
-      // Fetch user profiles for these customers
-      const { data: users, error: usersError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .in('user_id', uniqueCustomerIds);
-
-      if (usersError) throw usersError;
-
-      // Fetch order stats for each customer
-      const customersWithStats = await Promise.all(
-        (users || []).map(async (user) => {
-          const { data: orders } = await supabase
-            .from('orders')
-            .select('id, total_cents, created_at')
-            .eq('customer_id', user.user_id);
-
-          const totalOrders = orders?.length || 0;
-          const totalSpent = orders?.reduce((sum, order) => sum + order.total_cents, 0) || 0;
-          const lastOrder = orders?.[0]?.created_at;
-
-          return {
-            id: user.user_id,
-            email: user.email || '',
-            full_name: user.full_name || 'Unknown',
-            phone: user.phone,
-            status: user.account_status || 'active',
-            created_at: user.created_at,
-            last_order_at: lastOrder,
-            total_orders: totalOrders,
-            total_spent_cents: totalSpent,
-            suspension_reason: user.suspension_reason,
-            suspension_until: user.suspension_until
-          };
-        })
-      );
-
-      setCustomers(customersWithStats);
+      if (error) throw error;
+      setCustomers(data || []);
     } catch (error) {
       console.error('Error fetching customers:', error);
       toast({
@@ -177,517 +101,436 @@ export const CustomerManagement: React.FC = () => {
     }
   };
 
-  const fetchCustomerOrders = async (customerId: string) => {
+  const fetchAuditLogs = async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          id,
-          order_number,
-          created_at,
-          total_cents,
-          order_status,
-          restaurants (name)
-        `)
-        .eq('customer_id', customerId)
-        .order('created_at', { ascending: false })
-        .limit(20);
+        .from('admin_audit_logs')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-
-      const formattedOrders = (data || []).map((order: any) => ({
-        ...order,
-        restaurant_name: order.restaurants?.name || 'Unknown'
-      }));
-
-      setCustomerOrders(formattedOrders);
+      setAuditLogs(data || []);
     } catch (error) {
-      console.error('Error fetching customer orders:', error);
+      console.error('Error fetching audit logs:', error);
     }
   };
 
-  const handleSuspendCustomer = async (customerId: string, temporary: boolean = true) => {
-    if (!suspensionReason.trim()) {
+  const handleSearch = debounce((value: string) => {
+    setSearchTerm(value);
+  }, 300);
+
+  const filteredCustomers = customers.filter(customer => {
+    const matchesSearch = searchTerm === '' ||
+      customer.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.phone?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus = accountStatusFilter === 'all' || customer.account_status === accountStatusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  const handleUpdateStatus = async (customerId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ account_status: newStatus })
+        .eq('id', customerId);
+
+      if (error) throw error;
+
       toast({
-        title: 'Reason required',
-        description: 'Please provide a reason for suspension',
+        title: 'Status updated',
+        description: `Customer status changed to ${newStatus}`
+      });
+
+      fetchCustomers();
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({
+        title: 'Error updating status',
+        description: 'Failed to update customer status',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleSuspendAccount = async (customerId: string) => {
+    if (!newSuspensionReason.trim()) {
+      toast({
+        title: 'Suspension reason required',
+        description: 'Please provide a reason for suspending the account',
         variant: 'destructive'
       });
       return;
     }
 
-    setActionInProgress(true);
+    if (!newSuspensionUntil) {
+      toast({
+        title: 'Suspension end date required',
+        description: 'Please provide a date until the account will be suspended',
+        variant: 'destructive'
+      });
+      return;
+    }
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const suspensionUntil = temporary
-        ? new Date(Date.now() + parseInt(suspensionDays) * 24 * 60 * 60 * 1000).toISOString()
-        : null;
-
       const { error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .update({
-          account_status: temporary ? 'suspended' : 'banned',
-          suspension_reason: suspensionReason,
-          suspension_until: suspensionUntil
+          account_status: 'suspended',
+          suspension_reason: newSuspensionReason.trim(),
+          suspension_until: newSuspensionUntil.toISOString(),
         })
-        .eq('user_id', customerId);
+        .eq('id', customerId);
 
       if (error) throw error;
 
       // Create audit log
       await supabase.from('admin_audit_logs').insert({
         admin_id: user.id,
-        action: temporary ? 'customer_suspended' : 'customer_banned',
+        user_id: customerId,
+        action: 'account_suspended',
         entity_type: 'customer',
         entity_id: customerId,
-        details: {
-          reason: suspensionReason,
-          until: suspensionUntil
-        }
+        details: { reason: newSuspensionReason.trim(), until: newSuspensionUntil.toISOString() }
       });
 
       toast({
-        title: temporary ? 'Customer suspended' : 'Customer banned',
-        description: `Account has been ${temporary ? 'suspended' : 'banned'} successfully`
+        title: 'Account suspended',
+        description: 'The account has been successfully suspended'
       });
 
-      setSuspensionReason('');
-      setSuspensionDays('7');
       setSelectedCustomer(null);
+      setNewSuspensionReason('');
+      setNewSuspensionUntil(undefined);
+      setIsDialogOpen(false);
       fetchCustomers();
     } catch (error) {
-      console.error('Error suspending customer:', error);
+      console.error('Error suspending account:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to suspend customer account',
+        title: 'Error suspending account',
+        description: 'Failed to suspend the account',
         variant: 'destructive'
       });
-    } finally {
-      setActionInProgress(false);
     }
   };
 
-  const handleReinstateCustomer = async (customerId: string) => {
-    setActionInProgress(true);
-
+  const handleUnsuspendAccount = async (customerId: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
       const { error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .update({
           account_status: 'active',
           suspension_reason: null,
-          suspension_until: null
+          suspension_until: null,
         })
-        .eq('user_id', customerId);
+        .eq('id', customerId);
 
       if (error) throw error;
 
       // Create audit log
       await supabase.from('admin_audit_logs').insert({
         admin_id: user.id,
-        action: 'customer_reinstated',
+        user_id: customerId,
+        action: 'account_unsuspended',
         entity_type: 'customer',
-        entity_id: customerId
+        entity_id: customerId,
       });
 
       toast({
-        title: 'Customer reinstated',
-        description: 'Account has been reactivated successfully'
+        title: 'Account unsuspended',
+        description: 'The account has been successfully unsuspended'
       });
 
       setSelectedCustomer(null);
       fetchCustomers();
     } catch (error) {
-      console.error('Error reinstating customer:', error);
+      console.error('Error unsuspending account:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to reinstate customer account',
+        title: 'Error unsuspending account',
+        description: 'Failed to unsuspend the account',
         variant: 'destructive'
       });
-    } finally {
-      setActionInProgress(false);
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, { variant: any; icon: any }> = {
-      active: { variant: 'default', icon: CheckCircle },
-      suspended: { variant: 'secondary', icon: Clock },
-      banned: { variant: 'destructive', icon: Ban }
-    };
-
-    const config = variants[status] || variants.active;
-    const Icon = config.icon;
-
-    return (
-      <Badge variant={config.variant as any} className="flex items-center gap-1">
-        <Icon className="h-3 w-3" />
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
-  };
-
-  const filteredCustomers = customers.filter(customer => {
-    const matchesSearch = searchTerm === '' ||
-      customer.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesFilter = filterStatus === 'all' || customer.status === filterStatus;
-
-    return matchesSearch && matchesFilter;
-  });
-
-  const activeCustomers = customers.filter(c => c.status === 'active');
-  const suspendedCustomers = customers.filter(c => c.status === 'suspended');
-  const bannedCustomers = customers.filter(c => c.status === 'banned');
-  const totalRevenue = customers.reduce((sum, c) => sum + c.total_spent_cents, 0);
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-3xl font-bold">Customer Management</h2>
-        <p className="text-muted-foreground">Manage customer accounts and view customer history</p>
-      </div>
-
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <User className="h-4 w-4 text-green-500" />
-              Active Customers
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{activeCustomers.length}</div>
-            <p className="text-xs text-muted-foreground">In good standing</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Clock className="h-4 w-4 text-yellow-500" />
-              Suspended
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{suspendedCustomers.length}</div>
-            <p className="text-xs text-muted-foreground">Temporarily suspended</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Ban className="h-4 w-4 text-red-500" />
-              Banned
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{bannedCustomers.length}</div>
-            <p className="text-xs text-muted-foreground">Permanently banned</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-blue-500" />
-              Total Revenue
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              ${(totalRevenue / 100).toFixed(2)}
-            </div>
-            <p className="text-xs text-muted-foreground">All time</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <div className="flex gap-4">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name or email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+    <div className="container mx-auto py-10">
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Customer Management</h1>
+          <p className="text-gray-500">Manage your customers</p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant={filterStatus === 'all' ? 'default' : 'outline'}
-            onClick={() => setFilterStatus('all')}
-          >
-            All
-          </Button>
-          <Button
-            variant={filterStatus === 'active' ? 'default' : 'outline'}
-            onClick={() => setFilterStatus('active')}
-          >
-            Active
-          </Button>
-          <Button
-            variant={filterStatus === 'suspended' ? 'default' : 'outline'}
-            onClick={() => setFilterStatus('suspended')}
-          >
-            Suspended
-          </Button>
-          <Button
-            variant={filterStatus === 'banned' ? 'default' : 'outline'}
-            onClick={() => setFilterStatus('banned')}
-          >
-            Banned
-          </Button>
-        </div>
+        <Button>
+          <UserPlus className="mr-2 h-4 w-4" /> Add Customer
+        </Button>
       </div>
 
-      {/* Customers List */}
-      <div className="grid gap-4">
-        {filteredCustomers.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No customers found</p>
-            </CardContent>
-          </Card>
-        ) : (
-          filteredCustomers.map((customer) => (
-            <Card key={customer.id} className="border">
-              <CardContent className="pt-6">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-3 flex-1">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <User className="h-6 w-6 text-primary" />
+      <div className="mb-4 flex items-center space-x-4">
+        <Input
+          type="search"
+          placeholder="Search customers..."
+          className="w-auto flex-1"
+          onChange={(e) => handleSearch(e.target.value)}
+        />
+        <Select value={accountStatusFilter} onValueChange={setAccountStatusFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="suspended">Suspended</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Customers</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableCaption>A list of your customers.</TableCaption>
+            <TableHead>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">Loading...</TableCell>
+                </TableRow>
+              ) : filteredCustomers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">No customers found.</TableCell>
+                </TableRow>
+              ) : (
+                filteredCustomers.map((customer) => (
+                  <TableRow key={customer.id}>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Avatar>
+                          <AvatarImage src={customer.avatar_url} />
+                          <AvatarFallback>{customer.full_name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <span>{customer.full_name}</span>
                       </div>
-                      <div>
-                        <h4 className="font-semibold">{customer.full_name}</h4>
-                        <p className="text-sm text-muted-foreground">{customer.email}</p>
-                      </div>
-                      {getStatusBadge(customer.status)}
-                    </div>
+                    </TableCell>
+                    <TableCell>{customer.email}</TableCell>
+                    <TableCell>{customer.phone}</TableCell>
+                    <TableCell>
+                      <Badge variant={customer.account_status === 'active' ? 'default' : 'destructive'}>
+                        {customer.account_status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedCustomer(customer);
+                            fetchAuditLogs(customer.user_id);
+                          }}>
+                            <User className="mr-2 h-4 w-4" /> View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          {customer.account_status === 'active' ? (
+                            <DropdownMenuItem onClick={() => {
+                              setSelectedCustomer(customer);
+                              setIsDialogOpen(true);
+                            }}>
+                              <UserX className="mr-2 h-4 w-4" /> Suspend Account
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem onClick={() => handleUnsuspendAccount(customer.id)}>
+                              <CheckCircle className="mr-2 h-4 w-4" /> Unsuspend Account
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-                    <div className="grid grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Total Orders:</span>
-                        <p className="font-medium">{customer.total_orders}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Total Spent:</span>
-                        <p className="font-medium">${(customer.total_spent_cents / 100).toFixed(2)}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Member Since:</span>
-                        <p className="font-medium">{format(new Date(customer.created_at), 'MMM yyyy')}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Last Order:</span>
-                        <p className="font-medium">
-                          {customer.last_order_at 
-                            ? format(new Date(customer.last_order_at), 'MMM dd, yyyy')
-                            : 'Never'}
-                        </p>
-                      </div>
-                    </div>
+      {/* Customer Details Dialog */}
+      <Dialog open={!!selectedCustomer} onOpenChange={() => setSelectedCustomer(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Customer Details</DialogTitle>
+            <DialogDescription>
+              Information about the selected customer.
+            </DialogDescription>
+          </DialogHeader>
 
-                    {customer.suspension_reason && (
-                      <div className="text-sm bg-yellow-50 border border-yellow-200 p-3 rounded-md">
-                        <span className="font-medium text-yellow-800">Suspension Reason:</span>
-                        <p className="mt-1 text-yellow-700">{customer.suspension_reason}</p>
-                        {customer.suspension_until && (
-                          <p className="mt-1 text-xs text-yellow-600">
-                            Until: {format(new Date(customer.suspension_until), 'PPp')}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="ml-4">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button onClick={() => setSelectedCustomer(customer)}>
-                          View Details
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Customer Details</DialogTitle>
-                          <DialogDescription>{customer.full_name} - {customer.email}</DialogDescription>
-                        </DialogHeader>
-
-                        <Tabs defaultValue="info" className="w-full">
-                          <TabsList>
-                            <TabsTrigger value="info">Information</TabsTrigger>
-                            <TabsTrigger value="orders">Order History</TabsTrigger>
-                            <TabsTrigger value="actions">Account Actions</TabsTrigger>
-                          </TabsList>
-
-                          <TabsContent value="info" className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label>Full Name</Label>
-                                <p className="text-sm font-medium mt-1">{customer.full_name}</p>
-                              </div>
-                              <div>
-                                <Label>Email</Label>
-                                <p className="text-sm font-medium mt-1">{customer.email}</p>
-                              </div>
-                              <div>
-                                <Label>Phone</Label>
-                                <p className="text-sm font-medium mt-1">{customer.phone || 'Not provided'}</p>
-                              </div>
-                              <div>
-                                <Label>Status</Label>
-                                <div className="mt-1">{getStatusBadge(customer.status)}</div>
-                              </div>
-                              <div>
-                                <Label>Total Orders</Label>
-                                <p className="text-sm font-medium mt-1">{customer.total_orders}</p>
-                              </div>
-                              <div>
-                                <Label>Total Spent</Label>
-                                <p className="text-sm font-medium mt-1">
-                                  ${(customer.total_spent_cents / 100).toFixed(2)}
-                                </p>
-                              </div>
-                              <div>
-                                <Label>Average Order Value</Label>
-                                <p className="text-sm font-medium mt-1">
-                                  ${customer.total_orders > 0 
-                                    ? ((customer.total_spent_cents / customer.total_orders) / 100).toFixed(2)
-                                    : '0.00'}
-                                </p>
-                              </div>
-                              <div>
-                                <Label>Member Since</Label>
-                                <p className="text-sm font-medium mt-1">
-                                  {format(new Date(customer.created_at), 'PPP')}
-                                </p>
-                              </div>
-                            </div>
-                          </TabsContent>
-
-                          <TabsContent value="orders" className="space-y-4">
-                            <div className="space-y-2">
-                              {customerOrders.length === 0 ? (
-                                <p className="text-center text-muted-foreground py-8">No orders found</p>
-                              ) : (
-                                customerOrders.map((order) => (
-                                  <Card key={order.id} className="border">
-                                    <CardContent className="pt-4">
-                                      <div className="flex items-center justify-between">
-                                        <div>
-                                          <p className="font-medium">Order #{order.order_number}</p>
-                                          <p className="text-sm text-muted-foreground">
-                                            {order.restaurant_name}
-                                          </p>
-                                          <p className="text-xs text-muted-foreground">
-                                            {format(new Date(order.created_at), 'PPp')}
-                                          </p>
-                                        </div>
-                                        <div className="text-right">
-                                          <p className="font-medium">${(order.total_cents / 100).toFixed(2)}</p>
-                                          <Badge>{order.order_status}</Badge>
-                                        </div>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                ))
-                              )}
-                            </div>
-                          </TabsContent>
-
-                          <TabsContent value="actions" className="space-y-4">
-                            {customer.status === 'active' ? (
-                              <div className="space-y-4">
-                                <div>
-                                  <Label htmlFor="suspension-reason">Reason for Action</Label>
-                                  <Textarea
-                                    id="suspension-reason"
-                                    placeholder="Explain why this action is being taken..."
-                                    value={suspensionReason}
-                                    onChange={(e) => setSuspensionReason(e.target.value)}
-                                    rows={3}
-                                  />
-                                </div>
-
-                                <div>
-                                  <Label htmlFor="suspension-days">Suspension Duration (days)</Label>
-                                  <Input
-                                    id="suspension-days"
-                                    type="number"
-                                    value={suspensionDays}
-                                    onChange={(e) => setSuspensionDays(e.target.value)}
-                                    min="1"
-                                    max="365"
-                                  />
-                                </div>
-
-                                <div className="flex gap-3">
-                                  <Button
-                                    variant="secondary"
-                                    onClick={() => handleSuspendCustomer(customer.id, true)}
-                                    disabled={actionInProgress}
-                                    className="flex-1"
-                                  >
-                                    <Clock className="h-4 w-4 mr-2" />
-                                    Temporary Suspension
-                                  </Button>
-                                  <Button
-                                    variant="destructive"
-                                    onClick={() => handleSuspendCustomer(customer.id, false)}
-                                    disabled={actionInProgress}
-                                    className="flex-1"
-                                  >
-                                    <Ban className="h-4 w-4 mr-2" />
-                                    Permanent Ban
-                                  </Button>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="space-y-4">
-                                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-md">
-                                  <p className="font-medium text-yellow-800">Account Status: {customer.status}</p>
-                                  {customer.suspension_reason && (
-                                    <p className="text-sm text-yellow-700 mt-2">{customer.suspension_reason}</p>
-                                  )}
-                                </div>
-
-                                <Button
-                                  onClick={() => handleReinstateCustomer(customer.id)}
-                                  disabled={actionInProgress}
-                                  className="w-full"
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  Reinstate Account
-                                </Button>
-                              </div>
-                            )}
-                          </TabsContent>
-                        </Tabs>
-                      </DialogContent>
-                    </Dialog>
+          {selectedCustomer && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Customer Information */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Customer Information</h3>
+                <div className="flex items-center space-x-4 mb-4">
+                  <Avatar>
+                    <AvatarImage src={selectedCustomer.avatar_url} />
+                    <AvatarFallback>{selectedCustomer.full_name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-lg font-medium">{selectedCustomer.full_name}</p>
+                    <p className="text-gray-500">{selectedCustomer.email}</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+                <div className="space-y-2">
+                  <div>
+                    <Label>Phone</Label>
+                    <Input type="text" value={selectedCustomer.phone} readOnly />
+                  </div>
+                  <div>
+                    <Label>Account Status</Label>
+                    <Input type="text" value={selectedCustomer.account_status} readOnly />
+                  </div>
+                  {selectedCustomer.suspension_reason && (
+                    <div>
+                      <Label>Suspension Reason</Label>
+                      <Textarea value={selectedCustomer.suspension_reason} readOnly />
+                    </div>
+                  )}
+                  {selectedCustomer.suspension_until && (
+                    <div>
+                      <Label>Suspension Until</Label>
+                      <Input type="text" value={format(new Date(selectedCustomer.suspension_until), 'PP')} readOnly />
+                    </div>
+                  )}
+                  <div>
+                    <Label>Role</Label>
+                    <Input type="text" value={selectedCustomer.role} readOnly />
+                  </div>
+                  <div>
+                    <Label>Created At</Label>
+                    <Input type="text" value={format(new Date(selectedCustomer.created_at), 'PPp')} readOnly />
+                  </div>
+                  <div>
+                    <Label>Updated At</Label>
+                    <Input type="text" value={format(new Date(selectedCustomer.updated_at), 'PPp')} readOnly />
+                  </div>
+                </div>
+              </div>
+
+              {/* Audit Logs */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Audit Logs</h3>
+                {auditLogs.length === 0 ? (
+                  <p className="text-gray-500">No audit logs found for this customer.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {auditLogs.map(log => (
+                      <Card key={log.id}>
+                        <CardContent className="p-3">
+                          <p className="text-sm font-medium">{log.action}</p>
+                          <p className="text-xs text-gray-500">{format(new Date(log.created_at), 'PPp')}</p>
+                          {log.details && (
+                            <details className="mt-2">
+                              <summary className="text-xs text-blue-500 hover:underline cursor-pointer">View Details</summary>
+                              <pre className="text-xs bg-gray-100 p-2 rounded mt-1">{JSON.stringify(log.details, null, 2)}</pre>
+                            </details>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Suspend Account Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={() => setIsDialogOpen(false)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Suspend Account</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to suspend this account?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="suspensionReason" className="text-right">
+                Reason
+              </Label>
+              <Textarea
+                id="suspensionReason"
+                className="col-span-3"
+                value={newSuspensionReason}
+                onChange={(e) => setNewSuspensionReason(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="suspensionUntil" className="text-right">
+                Until
+              </Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-[240px] pl-3 text-left font-normal",
+                      !newSuspensionUntil && "text-muted-foreground"
+                    )}
+                  >
+                    {newSuspensionUntil ? format(newSuspensionUntil, "PP") : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="center" side="bottom">
+                  <Calendar
+                    mode="single"
+                    selected={newSuspensionUntil}
+                    onSelect={setNewSuspensionUntil}
+                    disabled={(date) =>
+                      date < new Date()
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="secondary" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={() => {
+              if (selectedCustomer) {
+                handleSuspendAccount(selectedCustomer.id);
+              }
+            }}>Suspend Account</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

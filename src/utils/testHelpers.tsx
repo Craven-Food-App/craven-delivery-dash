@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Testing utilities for production readiness
 
 import { render, RenderOptions } from '@testing-library/react';

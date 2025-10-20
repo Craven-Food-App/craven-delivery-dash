@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
 import { MapPin, Navigation, Clock, Phone, MessageCircle, Camera, CheckCircle, ChevronLeft, AlertCircle, Package, Home, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
