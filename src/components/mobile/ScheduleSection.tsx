@@ -43,12 +43,12 @@ const Button = ({ children, variant = 'default', size = 'default', className = '
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2';
   
   const variants = {
-    default: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 shadow-sm',
+    default: 'bg-orange-600 text-white hover:bg-orange-700 focus:ring-orange-500 shadow-sm',
     secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200 focus:ring-slate-400',
     outline: 'border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 focus:ring-slate-400',
     ghost: 'hover:bg-slate-100 text-slate-600',
     destructive: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
-    success: 'bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500',
+    success: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500',
   };
 
   const sizes = {
@@ -72,9 +72,9 @@ const Button = ({ children, variant = 'default', size = 'default', className = '
 
 const Badge = ({ children, variant = 'default', className = '' }) => {
   const variants = {
-    default: 'bg-blue-50 text-blue-700 border-blue-200',
+    default: 'bg-orange-50 text-orange-700 border-orange-200',
     secondary: 'bg-slate-100 text-slate-700 border-slate-200',
-    success: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    success: 'bg-green-50 text-green-700 border-green-200',
     warning: 'bg-amber-50 text-amber-700 border-amber-200',
   };
 
@@ -90,7 +90,7 @@ const Switch = ({ checked, onCheckedChange }) => (
     role="switch"
     aria-checked={checked}
     onClick={() => onCheckedChange(!checked)}
-    className={`peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${checked ? 'bg-blue-600' : 'bg-slate-300'}`}
+    className={`peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${checked ? 'bg-orange-600' : 'bg-slate-300'}`}
   >
     <span
       className={`pointer-events-none block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'}`}

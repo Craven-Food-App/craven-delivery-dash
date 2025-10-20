@@ -40,7 +40,7 @@ const CardContent = ({ className = '', children }) => (
 );
 
 const Button = ({ className = '', variant = 'default', children, disabled = false, ...props }) => {
-  const baseStyle = 'inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseStyle = 'inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
   
   const getVariantStyle = (v) => {
     switch (v) {
@@ -49,7 +49,7 @@ const Button = ({ className = '', variant = 'default', children, disabled = fals
       case 'secondary':
         return 'bg-slate-100 text-slate-900 hover:bg-slate-200';
       default:
-        return 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm';
+        return 'bg-orange-600 text-white hover:bg-orange-700 shadow-sm';
     }
   };
 
@@ -76,10 +76,10 @@ const Badge = ({ className = '', variant = 'default', children }) => {
       variantStyle = 'bg-slate-100 text-slate-700 border-slate-200';
       break;
     case 'success':
-      variantStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      variantStyle = 'bg-green-50 text-green-700 border-green-200';
       break;
     default:
-      variantStyle = 'bg-blue-50 text-blue-700 border-blue-200';
+      variantStyle = 'bg-orange-50 text-orange-700 border-orange-200';
       break;
   }
 
@@ -423,8 +423,8 @@ export const EarningsSection = () => {
             Your Driver ID: <span className="font-mono font-bold text-orange-600 break-all">{userId || 'N/A'}</span>
         </div>
 
-        {/* Earnings Header with Professional Gradient Background */}
-        <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-md p-5 sm:p-6">
+        {/* Earnings Header with Orange Gradient Background */}
+        <div className="bg-gradient-to-br from-orange-600 to-orange-700 text-white shadow-md p-5 sm:p-6">
           <div className="flex items-center justify-between pt-4 pb-2">
             <h1 className="text-2xl sm:text-3xl font-bold">Your Earnings</h1>
             <HelpCircle className="h-6 w-6 text-orange-200 hover:text-white transition-colors cursor-pointer" />
@@ -452,7 +452,7 @@ export const EarningsSection = () => {
                     {/* Bar */}
                     <div className="h-20 w-full flex items-end justify-center">
                       <div 
-                        className={`w-full max-w-[2.5rem] ${isToday ? 'bg-yellow-400 shadow-md' : 'bg-green-400'} rounded-t transition-all duration-500`}
+                        className={`w-full max-w-[2.5rem] ${isToday ? 'bg-white shadow-lg' : 'bg-white/90'} rounded-t transition-all duration-500`}
                         style={{ height: day.amount > 0 ? `${Math.max(5, height)}%` : '4px' }}
                       />
                     </div>
