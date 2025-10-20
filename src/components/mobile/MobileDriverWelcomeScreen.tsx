@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import mobileDriverWelcomeImage from '@/assets/mobile-driver-welcome.png';
 import MobileFeederLogin from './MobileFeederLogin';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MobileDriverWelcomeScreenProps {
   onStartFeeding?: () => void;
@@ -16,6 +17,25 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
   
   console.log('MobileDriverWelcomeScreen rendered');
   console.log('Image source:', mobileDriverWelcomeImage);
+
+  // If a session exists, skip welcome and go straight to dashboard
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          if (onStartFeeding) {
+            onStartFeeding();
+          } else {
+            navigate('/mobile');
+          }
+        }
+      } catch (e) {
+        console.error('Session check failed:', e);
+      }
+    };
+    checkExistingSession();
+  }, []);
 
   const handleFeedNow = () => {
     console.log('FEED NOW clicked, showing login screen');
