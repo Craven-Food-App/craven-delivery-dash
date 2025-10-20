@@ -524,7 +524,7 @@ export default function ScheduleSection() {
               Add
             </Button>
           </div>
-        <Card>
+          <Card>
           <CardContent>
             <div className="flex items-center justify-between mb-5 pb-4 border-b border-gray-100">
               <span className="text-sm text-gray-600">Total Hours</span>
@@ -617,6 +617,7 @@ export default function ScheduleSection() {
             </div>
           </CardContent>
         </Card>
+        </div>
 
         {/* Settings */}
         <Card>
