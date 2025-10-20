@@ -76,26 +76,65 @@ const LiveDashboard = () => {
 
       if (ordersError) throw ordersError;
 
-      // Debug: Check if there are any online sessions at all
-      const { data: allSessions, error: sessionsError } = await supabase
-        .from('driver_sessions')
-        .select('driver_id, is_online, last_activity')
-        .eq('is_online', true);
-      console.log('🔍 All online sessions:', { allSessions, sessionsError });
+      // Fetch online drivers with better error handling
+      let driversData = [];
       
-      // Fetch all drivers first
-      const { data: allDrivers, error: allDriversError } = await supabase
-        .from('driver_profiles')
-        .select('*')
-        .order('rating', { ascending: false });
+      try {
+        // First try the JOIN approach
+        const { data: joinedDrivers, error: joinError } = await supabase
+          .from('driver_profiles')
+          .select(`
+            *,
+            driver_sessions!inner(
+              is_online,
+              last_activity,
+              session_data
+            )
+          `)
+          .eq('driver_sessions.is_online', true)
+          .order('rating', { ascending: false });
+          
+        if (joinError) {
+          console.warn('Join query failed, trying alternative approach:', joinError);
+          
+          // Fallback: fetch sessions and drivers separately
+          const { data: sessions, error: sessionsError } = await supabase
+            .from('driver_sessions')
+            .select('driver_id, is_online, last_activity')
+            .eq('is_online', true);
+            
+          if (sessionsError) {
+            console.error('Sessions query failed:', sessionsError);
+            throw sessionsError;
+          }
+          
+          const { data: allDrivers, error: driversError } = await supabase
+            .from('driver_profiles')
+            .select('*')
+            .order('rating', { ascending: false });
+            
+          if (driversError) {
+            console.error('Drivers query failed:', driversError);
+            throw driversError;
+          }
+          
+          // Match drivers with online sessions
+          const onlineDriverIds = sessions?.map(session => session.driver_id) || [];
+          driversData = allDrivers?.filter(driver => onlineDriverIds.includes(driver.user_id)) || [];
+          
+          console.log('✅ Fallback: Found', driversData.length, 'online drivers');
+        } else {
+          driversData = joinedDrivers || [];
+          console.log('✅ Join query: Found', driversData.length, 'online drivers');
+        }
+      } catch (error) {
+        console.error('❌ Error fetching online drivers:', error);
+        driversData = [];
+      }
       
-      console.log('📊 All drivers:', { allDrivers, allDriversError });
-      
-      // Filter drivers who have online sessions
-      const onlineDriverIds = allSessions?.map(session => session.driver_id) || [];
-      const driversData = allDrivers?.filter(driver => onlineDriverIds.includes(driver.user_id)) || [];
-      
-      console.log('✅ Online drivers after filtering:', driversData);
+      // Debug: Show what we found
+      console.log('🔍 Final drivers data:', driversData);
+      console.log('📊 Number of online drivers:', driversData.length);
 
       // Fetch total users count
       const { count: usersCount, error: usersError } = await supabase
