@@ -233,7 +233,7 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center modal-overlay">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleDecline} />
       

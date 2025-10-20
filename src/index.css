@@ -178,6 +178,18 @@ All colors MUST be HSL.
   left: 10px !important;
 }
 
+/* Ensure modals and overlays are NOT affected by safe-area spacing */
+.pwa-standalone [role="dialog"],
+.pwa-standalone .modal,
+.pwa-standalone .fixed.inset-0,
+.pwa-standalone .modal-overlay {
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  padding: 0 !important;
+}
+
 @layer base {
   * {
     @apply border-border;
