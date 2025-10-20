@@ -76,10 +76,18 @@ const LiveDashboard = () => {
 
       if (ordersError) throw ordersError;
 
-      // Fetch drivers
+      // Fetch drivers with session status
       const { data: driversData, error: driversError } = await supabase
         .from('driver_profiles')
-        .select('*')
+        .select(`
+          *,
+          driver_sessions!inner(
+            is_online,
+            last_activity,
+            session_data
+          )
+        `)
+        .eq('driver_sessions.is_online', true)
         .order('rating', { ascending: false });
 
       if (driversError) throw driversError;
@@ -115,7 +123,7 @@ const LiveDashboard = () => {
         pendingOrders: ordersData?.filter(order => 
           order.order_status === 'pending' || order.order_status === 'confirmed'
         ).length || 0,
-        activeDrivers: driversData?.filter(driver => driver.is_available).length || 0,
+        activeDrivers: driversData?.length || 0, // All drivers returned are online due to the filter
         totalRevenue: todayOrders.reduce((sum, order) => 
           sum + (order.payment_status === 'paid' ? order.total_cents : 0), 0
         ),
@@ -384,8 +392,8 @@ const LiveDashboard = () => {
                       <CardContent className="p-4 space-y-3">
                         <div className="flex items-center justify-between">
                           <span className="font-medium">Driver #{driver.id.slice(-8)}</span>
-                          <Badge className={driver.is_available ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
-                            {driver.is_available ? "online" : "offline"}
+                          <Badge className="bg-green-100 text-green-800">
+                            online
                           </Badge>
                         </div>
 
@@ -404,12 +412,10 @@ const LiveDashboard = () => {
                           </div>
                         </div>
 
-                        {driver.is_available && (
-                          <div className="flex items-center gap-1 text-green-600 text-sm">
-                            <CheckCircle className="h-4 w-4" />
-                            Available for orders
-                          </div>
-                        )}
+                        <div className="flex items-center gap-1 text-green-600 text-sm">
+                          <CheckCircle className="h-4 w-4" />
+                          Available for orders
+                        </div>
                       </CardContent>
                     </Card>
                   ))
