@@ -10,6 +10,7 @@ import { ListView } from './views/ListView';
 import { DocumentVerificationPanel } from './verification/DocumentVerificationPanel';
 import { AnalyticsDashboard } from './analytics/AnalyticsDashboard';
 import { KanbanView } from './views/KanbanView';
+import { ExportButton } from './components/ExportButton';
 import { calculateStats } from './utils/helpers';
 
 export function EnhancedRestaurantOnboarding() {
@@ -369,14 +370,19 @@ export function EnhancedRestaurantOnboarding() {
             Manage and verify merchant applications with powerful tools
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={handleRefresh}
-          disabled={refreshing}
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-          {refreshing ? 'Refreshing...' : 'Refresh'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <ExportButton
+            restaurants={restaurants}
+          />
+          <Button
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={refreshing}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+        </div>
       </div>
 
       {/* Stats Overview */}

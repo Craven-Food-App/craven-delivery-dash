@@ -20,6 +20,7 @@ import type { RestaurantOnboardingData, OnboardingStage } from '../types';
 import { RestaurantCard } from '../components/RestaurantCard';
 import { QuickFilters } from '../components/QuickFilters';
 import { BulkActionBar } from '../components/BulkActionBar';
+import { ExportButton } from '../components/ExportButton';
 import { sortRestaurants, filterRestaurants } from '../utils/helpers';
 
 interface ListViewProps {
@@ -149,6 +150,12 @@ export function ListView({
               <ArrowDown className="h-4 w-4" />
             )}
           </Button>
+
+          {/* Export Button */}
+          <ExportButton
+            restaurants={restaurants}
+            filteredRestaurants={sortedRestaurants}
+          />
 
           {/* Bulk Selection Toggle */}
           <Button
