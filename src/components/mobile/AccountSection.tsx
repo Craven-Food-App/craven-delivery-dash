@@ -14,6 +14,7 @@ import { PaymentMethodsSection } from './PaymentMethodsSection';
 import { AppSettingsSection } from './AppSettingsSection';
 import { VehicleManagementSection } from './VehicleManagementSection';
 import { SafeDrivingSection } from './SafeDrivingSection';
+import { DriverPreferencesPage } from './DriverPreferencesPage';
 import { InstantCashoutModal } from './InstantCashoutModal';
 type VehicleType = 'car' | 'bike' | 'scooter' | 'walk' | 'motorcycle';
 interface CraverProfile {
@@ -41,7 +42,7 @@ export const AccountSection: React.FC<{
   const [loading, setLoading] = useState(true);
   const [isReferralEligible, setIsReferralEligible] = useState(false);
   const [driverStartDate, setDriverStartDate] = useState<Date | null>(null);
-  const [currentSection, setCurrentSection] = useState<'main' | 'profile' | 'payments' | 'settings' | 'vehicle' | 'safety'>('main');
+  const [currentSection, setCurrentSection] = useState<'main' | 'profile' | 'payments' | 'settings' | 'vehicle' | 'safety' | 'preferences'>('main');
   const [notifications, setNotifications] = useState(true);
   const [locationSharing, setLocationSharing] = useState(true);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleType>('car');
@@ -241,6 +242,10 @@ export const AccountSection: React.FC<{
   const handleSafeDrivingClick = () => {
     setCurrentSection('safety');
   };
+
+  const handlePreferencesClick = () => {
+    setCurrentSection('preferences');
+  };
   if (loading) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -272,6 +277,18 @@ export const AccountSection: React.FC<{
 
   if (currentSection === 'safety') {
     return <SafeDrivingSection onBack={() => setCurrentSection('main')} />;
+  }
+
+  if (currentSection === 'preferences') {
+    return <div className="min-h-screen bg-slate-50">
+      <div className="sticky top-0 z-10 bg-white border-b border-slate-200 px-4 py-4 safe-area-top">
+        <button onClick={() => setCurrentSection('main')} className="flex items-center text-slate-700 hover:text-slate-900">
+          <ChevronRight className="h-5 w-5 rotate-180 mr-2" />
+          <span className="font-medium">Back to Account</span>
+        </button>
+      </div>
+      <DriverPreferencesPage />
+    </div>;
   }
   return <div className="min-h-screen bg-slate-50 pb-20 overflow-y-auto">
       <div className="max-w-md mx-auto">
@@ -433,6 +450,23 @@ export const AccountSection: React.FC<{
                   </div>
                   <div>
                     <h3 className="font-medium text-foreground">Safe driving features</h3>
+                  </div>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </div>
+          </button>
+
+          {/* Preferences */}
+          <button onClick={handlePreferencesClick} className="w-full">
+            <div className="px-4 py-4 bg-background border-b border-border/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                    <Settings className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-foreground">Preferences</h3>
                   </div>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground" />

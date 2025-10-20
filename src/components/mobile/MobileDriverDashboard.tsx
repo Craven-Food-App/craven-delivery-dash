@@ -22,7 +22,6 @@ import { EarningsSection } from './EarningsSection';
 import { AccountSection } from './AccountSection';
 import { DriverRatingsPage } from './DriverRatingsPage';
 import { DriverPromosPage } from './DriverPromosPage';
-import { DriverPreferencesPage } from './DriverPreferencesPage';
 import { DriverSupportChatPage } from './DriverSupportChatPage';
 import { getRatingColor, getRatingTier, formatRating, getTrendIcon, getTrendColor } from '@/utils/ratingHelpers';
 // Production readiness imports
@@ -240,7 +239,7 @@ export const MobileDriverDashboard: React.FC = () => {
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'earnings' | 'account' | 'ratings' | 'promos' | 'preferences' | 'help'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'earnings' | 'account' | 'ratings' | 'promos' | 'help'>('home');
   const [driverRating, setDriverRating] = useState<number>(5.0);
   const [driverDeliveries, setDriverDeliveries] = useState<number>(0);
   const [ratingTrend, setRatingTrend] = useState<number>(0);
@@ -357,10 +356,6 @@ export const MobileDriverDashboard: React.FC = () => {
       case 'Promos':
         setActiveTab('promos');
         navigate('/mobile?tab=promos');
-        break;
-      case 'Preferences':
-        setActiveTab('preferences');
-        navigate('/mobile?tab=preferences');
         break;
       case 'Help':
         setActiveTab('help');
@@ -1080,13 +1075,6 @@ export const MobileDriverDashboard: React.FC = () => {
           </div>
         )}
         
-        {activeTab === 'preferences' && (
-          <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
-            <div className="min-h-screen">
-              <DriverPreferencesPage />
-            </div>
-          </div>
-        )}
         
         {activeTab === 'help' && (
           <div className="fixed inset-0 z-20 bg-background">
@@ -1460,7 +1448,6 @@ export const MobileDriverDashboard: React.FC = () => {
                 { icon: Star, label: 'Ratings', active: false, path: 'Ratings' },
                 { icon: DollarSign, label: 'Earnings', active: false, path: 'Earnings' },
                 { icon: TrendingUp, label: 'Promos', active: false, path: 'Promos' },
-                { icon: Settings, label: 'Preferences', active: false, path: 'Preferences' },
                 { icon: MessageCircle, label: 'Help', active: false, path: 'Help' },
                 { icon: LogOut, label: 'Logout', active: false, path: 'Logout' }
               ].map((item, index) => (
