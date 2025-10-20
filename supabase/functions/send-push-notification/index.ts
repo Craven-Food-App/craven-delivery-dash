@@ -207,10 +207,11 @@ async function sendNativePushNotification(subscription: any, payload: any) {
   }
 }
 
-// Helper function to send web push notification
+// Helper function to send web push notification using VAPID
 async function sendWebPushNotification(subscription: any, payload: any) {
   const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY");
   const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY");
+  const vapidSubject = Deno.env.get("VAPID_SUBJECT") || "mailto:support@craven.app";
 
   if (!vapidPublicKey || !vapidPrivateKey) {
     console.warn("VAPID keys not configured, skipping Web Push");
@@ -218,16 +219,34 @@ async function sendWebPushNotification(subscription: any, payload: any) {
   }
 
   try {
-    // Import web-push library functionality (simplified implementation)
-    const encoder = new TextEncoder();
-    const payloadBuffer = encoder.encode(JSON.stringify(payload));
+    // Import the web push helper
+    const { sendWebPush } = await import("./web-push-helper.ts");
 
-    // For production, you'd use the full web-push protocol with VAPID
-    // This is a simplified version for demonstration
-    console.log("Would send Web Push notification to:", subscription.endpoint);
-    console.log("Payload:", payload);
+    const pushSubscription = {
+      endpoint: subscription.endpoint,
+      keys: {
+        p256dh: subscription.p256dh_key,
+        auth: subscription.auth_key
+      }
+    };
+
+    const vapidDetails = {
+      publicKey: vapidPublicKey,
+      privateKey: vapidPrivateKey,
+      subject: vapidSubject
+    };
+
+    console.log("Sending Web Push to:", subscription.endpoint.substring(0, 50) + "...");
     
-    return { success: true };
+    const result = await sendWebPush(pushSubscription, payload, vapidDetails);
+    
+    if (result.success) {
+      console.log("Web Push sent successfully");
+    } else {
+      console.error("Web Push failed:", result.error);
+    }
+    
+    return result;
   } catch (error) {
     console.error("Web Push error:", error);
     return { success: false, error: (error as Error).message || 'Unknown error' };
@@ -307,7 +326,11 @@ serve(async (req) => {
           ]
         };
 
-        pushPromises.push(sendNativePushNotification(pushSubscription, pushPayload));
+        // Use Web Push for PWA notifications (iOS 16.4+, Android, Desktop)
+        pushPromises.push(sendWebPushNotification(subscription, pushPayload));
+        
+        // Also try Firebase Cloud Messaging for native apps (optional fallback)
+        // pushPromises.push(sendNativePushNotification(pushSubscription, pushPayload));
       }
     }
 

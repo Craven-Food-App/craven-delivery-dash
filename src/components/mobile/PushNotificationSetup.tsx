@@ -287,8 +287,9 @@ export const PushNotificationSetup: React.FC = () => {
       if ('serviceWorker' in navigator && 'PushManager' in window) {
         const registration = await navigator.serviceWorker.ready;
         
-        // Get VAPID public key from environment or use default
-        const vapidPublicKey = 'BN4GvZtEZiZuqkn9xCeFJ8QqUmzUyZg7jM8Y0vX6b8vI2oJiL9Xr3kNmT1qU9Y8pW0cV5bA2dE3fR4gH6nI7xJ2'; // This should be replaced with actual VAPID key
+        // Get VAPID public key from environment
+        const { environment } = await import('@/config/environment');
+        const vapidPublicKey = environment.VAPID_PUBLIC_KEY;
 
         const subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,

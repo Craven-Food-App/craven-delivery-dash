@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Bell, MapPin, Volume2, Smartphone, Moon, Sun, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigation } from '@/hooks/useNavigation';
+import { IOSPushNotifications } from './IOSPushNotifications';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AppSettingsSectionProps {
   onBack: () => void;
@@ -22,7 +24,16 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ onBack }
     language: 'english',
     distanceUnit: 'miles'
   });
+  const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setUserId(user.id);
+    };
+    fetchUser();
+  }, []);
 
   const handleSettingChange = (key: keyof typeof settings, value: boolean | string) => {
     setSettings(prev => ({ ...prev, [key]: value }));
@@ -94,6 +105,9 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ onBack }
               </div>
             </CardContent>
           </Card>
+
+          {/* iOS Push Notifications */}
+          {userId && <IOSPushNotifications userId={userId} />}
 
           {/* Navigation */}
           <Card>

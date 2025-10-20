@@ -6,6 +6,7 @@ export interface EnvironmentConfig {
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
   MAPBOX_ACCESS_TOKEN: string;
+  VAPID_PUBLIC_KEY: string;
   SENTRY_DSN?: string;
   ANALYTICS_ID?: string;
   CRASH_REPORTING_ENABLED: boolean;
@@ -44,6 +45,7 @@ export const environment: EnvironmentConfig = {
   SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || '',
   SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY || '',
   MAPBOX_ACCESS_TOKEN: import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || '',
+  VAPID_PUBLIC_KEY: import.meta.env.VITE_VAPID_PUBLIC_KEY || 'BPgLUmyCVcWgjxTTQiwY0FSiD7pm-X5u6z7OCU1sXpypwvrrXXja_ADXlEVVGkoisV2XdFpoNMMS_yKFp2FpIC8',
   SENTRY_DSN: import.meta.env.VITE_SENTRY_DSN,
   ANALYTICS_ID: import.meta.env.VITE_ANALYTICS_ID,
   CRASH_REPORTING_ENABLED: import.meta.env.VITE_CRASH_REPORTING_ENABLED === 'true',
