@@ -68,8 +68,8 @@ export function TeamAssignment({
 
       if (error) {
         console.error('Error fetching admins:', error);
-        // Use mock data if query fails
-        setAdmins(generateMockAdmins());
+        toast.error('Failed to load team members. Please check if the profiles table exists.');
+        setAdmins([]);
         return;
       }
 
@@ -92,39 +92,11 @@ export function TeamAssignment({
       setAdmins(adminsWithWorkload);
     } catch (error) {
       console.error('Error in fetchAdmins:', error);
-      setAdmins(generateMockAdmins());
+      toast.error('Failed to load team members');
+      setAdmins([]);
     } finally {
       setLoading(false);
     }
-  };
-
-  const generateMockAdmins = (): AdminUser[] => {
-    return [
-      {
-        id: 'admin1',
-        email: 'admin1@craven.com',
-        full_name: 'Sarah Johnson',
-        assigned_count: 12,
-        pending_count: 5,
-        completed_count: 7,
-      },
-      {
-        id: 'admin2',
-        email: 'admin2@craven.com',
-        full_name: 'Mike Chen',
-        assigned_count: 8,
-        pending_count: 3,
-        completed_count: 5,
-      },
-      {
-        id: 'admin3',
-        email: 'admin3@craven.com',
-        full_name: 'Emily Rodriguez',
-        assigned_count: 15,
-        pending_count: 8,
-        completed_count: 7,
-      },
-    ];
   };
 
   const handleAssign = async () => {

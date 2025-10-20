@@ -122,8 +122,8 @@ export function ActivityLog({ restaurantId }: ActivityLogProps) {
 
       if (error) {
         console.error('Error fetching activities:', error);
-        // Create mock data if table doesn't exist yet
-        setActivities(generateMockActivities());
+        toast.error('Failed to load activity log. The activity log table may not exist yet.');
+        setActivities([]);
         return;
       }
 
@@ -143,68 +143,11 @@ export function ActivityLog({ restaurantId }: ActivityLogProps) {
       setActivities(transformedData);
     } catch (error) {
       console.error('Error in fetchActivities:', error);
-      // Use mock data if there's an error
-      setActivities(generateMockActivities());
+      toast.error('Failed to load activity log');
+      setActivities([]);
     } finally {
       setLoading(false);
     }
-  };
-
-  const generateMockActivities = (): ActivityLogEntry[] => {
-    const mockActions = [
-      {
-        id: '1',
-        restaurant_id: '1',
-        restaurant_name: 'Demo Restaurant 1',
-        action_type: 'approved',
-        action_description: 'Business documents approved',
-        admin_id: 'admin1',
-        admin_email: 'admin@craven.com',
-        created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-      },
-      {
-        id: '2',
-        restaurant_id: '2',
-        restaurant_name: 'Demo Restaurant 2',
-        action_type: 'email_sent',
-        action_description: 'Sent welcome email to restaurant owner',
-        admin_id: 'admin1',
-        admin_email: 'admin@craven.com',
-        created_at: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-      },
-      {
-        id: '3',
-        restaurant_id: '1',
-        restaurant_name: 'Demo Restaurant 1',
-        action_type: 'document_verified',
-        action_description: 'Verified business license and insurance',
-        admin_id: 'admin2',
-        admin_email: 'admin2@craven.com',
-        created_at: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
-      },
-      {
-        id: '4',
-        restaurant_id: '3',
-        restaurant_name: 'Demo Restaurant 3',
-        action_type: 'rejected',
-        action_description: 'Rejected due to incomplete documents',
-        admin_id: 'admin1',
-        admin_email: 'admin@craven.com',
-        created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-      },
-      {
-        id: '5',
-        restaurant_id: '2',
-        restaurant_name: 'Demo Restaurant 2',
-        action_type: 'note_added',
-        action_description: 'Added note: Need to follow up on menu pricing',
-        admin_id: 'admin2',
-        admin_email: 'admin2@craven.com',
-        created_at: new Date(Date.now() - 1000 * 60 * 150).toISOString(),
-      },
-    ];
-
-    return mockActions;
   };
 
   const filterActivities = () => {

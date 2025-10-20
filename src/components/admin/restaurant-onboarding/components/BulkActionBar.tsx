@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Dialog,
   DialogContent,
@@ -153,12 +154,29 @@ export function BulkActionBar({
 
   const canReject = selectedRestaurants.every(r => !r.business_info_verified);
 
-  // Mock admin list - in real app this would come from API
-  const admins = [
-    { id: 'admin1', name: 'Admin A' },
-    { id: 'admin2', name: 'Admin B' },
-    { id: 'admin3', name: 'Admin C' },
-  ];
+  // Get current user for admin list (in production, fetch from profiles table)
+  const [admins, setAdmins] = useState<{id: string, name: string}[]>([]);
+
+  useEffect(() => {
+    const fetchAdmins = async () => {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('id, email, full_name')
+          .eq('role', 'admin');
+        
+        if (data) {
+          setAdmins(data.map(admin => ({
+            id: admin.id,
+            name: admin.full_name || admin.email
+          })));
+        }
+      } catch (error) {
+        console.error('Error fetching admins:', error);
+      }
+    };
+    fetchAdmins();
+  }, []);
 
   return (
     <>
