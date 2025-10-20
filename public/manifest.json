@@ -10,13 +10,13 @@
   "scope": "/",
   "icons": [
     {
-      "src": "/craven-logo.png",
+      "src": "/feeder_app_icon.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/craven-logo.png",
+      "src": "/feeder_app_icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
@@ -29,26 +29,26 @@
       "short_name": "Go Online",
       "description": "Start accepting deliveries as a Feeder",
       "url": "/mobile",
-      "icons": [{ "src": "/craven-logo.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/feeder_app_icon.png", "sizes": "192x192" }]
     },
     {
       "name": "Feeder Earnings",
       "short_name": "Earnings",
       "description": "View your Feeder earnings and payouts",
       "url": "/mobile",
-      "icons": [{ "src": "/craven-logo.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/feeder_app_icon.png", "sizes": "192x192" }]
     },
     {
       "name": "Feeder Support",
       "short_name": "Support",
       "description": "Get help from Feeder support team",
       "url": "/mobile",
-      "icons": [{ "src": "/craven-logo.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/feeder_app_icon.png", "sizes": "192x192" }]
     }
   ],
   "screenshots": [
     {
-      "src": "/craven-logo.png",
+      "src": "/feeder_app_icon.png",
       "sizes": "540x720",
       "type": "image/png"
     }

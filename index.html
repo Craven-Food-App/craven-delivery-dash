@@ -132,6 +132,24 @@
         });
       }
     </script>
+
+    <!-- Swap iOS app icon/title for Feeder only on /mobile -->
+    <script>
+      (function() {
+        var isMobileRoute = window.location.pathname.includes('/mobile');
+        if (!isMobileRoute) return;
+
+        // Update apple-mobile-web-app-title for Feeder on mobile route
+        var titleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+        if (titleMeta) titleMeta.setAttribute('content', "Feeder");
+
+        // Replace apple-touch-icon links to use Feeder icon only on /mobile
+        var links = document.querySelectorAll('link[rel="apple-touch-icon"]');
+        links.forEach(function(link) {
+          link.setAttribute('href', '/feeder_app_icon.png');
+        });
+      })();
+    </script>
   </head>
 
   <body>
