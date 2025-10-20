@@ -840,7 +840,7 @@ export const MobileDriverDashboard: React.FC = () => {
       </div>
 
       {/* Hamburger Menu Button - Top Left */}
-      <div className="fixed left-4 z-50 pointer-events-auto safe-fixed" style={{ '--safe-fixed-offset': '8px' } as React.CSSProperties}>
+      <div className="fixed left-4 z-50 pointer-events-auto" style={{ top: 'max(env(safe-area-inset-top, 0px), 8px)' }}>
         <button
           onClick={() => setIsMenuOpen(true)}
           className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center hover:bg-white transition-all"
@@ -850,7 +850,7 @@ export const MobileDriverDashboard: React.FC = () => {
       </div>
 
       {/* Speed Limit & Current Speed - Under Hamburger Menu */}
-      <div className="fixed left-4 z-40 pointer-events-auto safe-fixed" style={{ '--safe-fixed-offset': '48px' } as React.CSSProperties}>
+      <div className="fixed left-4 z-40 pointer-events-auto" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 60px)' }}>
         <SpeedLimitSign 
           currentSpeed={location?.speed ? location.speed * 2.237 : 0} // Convert m/s to mph
           location={location ? {
@@ -924,7 +924,7 @@ export const MobileDriverDashboard: React.FC = () => {
         {/* OFFLINE STATE */}
         {activeTab === 'home' && driverState === 'offline' && <>
             {/* Change Zone Button - Top Left */}
-            <div className="fixed top-4 left-4 z-20 pointer-events-auto safe-fixed" style={{ '--safe-fixed-offset': '16px' } as React.CSSProperties}>
+            <div className="fixed left-4 z-20 pointer-events-auto" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}>
               
             </div>
 
@@ -988,12 +988,12 @@ export const MobileDriverDashboard: React.FC = () => {
         {/* ONLINE SEARCHING STATE */}
         {activeTab === 'home' && driverState === 'online_searching' && <>
             {/* Change Zone Button - Top Left */}
-            <div className="absolute top-4 left-4 z-20 pointer-events-auto py-0 my-[525px] mx-0 px-0 safe-fixed" style={{ '--safe-fixed-offset': '16px' } as React.CSSProperties}>
+            <div className="absolute left-4 z-20 pointer-events-auto py-0 my-[525px] mx-0 px-0" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}>
               
             </div>
 
             {/* Pause Button - Top Right */}
-            <div className="absolute top-4 right-7 z-20 pointer-events-auto px-0 mx-[28px] safe-fixed" style={{ '--safe-fixed-offset': '16px' } as React.CSSProperties}>
+            <div className="absolute right-7 z-20 pointer-events-auto px-0 mx-[28px]" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}>
               <Button onClick={handlePause} variant="ghost" size="sm" className="bg-card/80 backdrop-blur-sm border border-border/20 rounded-full p-2 shadow-sm hover:bg-card/90 mx-[41px]">
                 <Pause className="h-4 w-4" />
               </Button>
