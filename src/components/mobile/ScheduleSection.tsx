@@ -22,39 +22,39 @@ import {
 // ===== MODERN UI COMPONENTS =====
 
 const Card = ({ children, className = '' }) => (
-  <div className={`rounded-2xl bg-white shadow-sm border border-gray-100 ${className}`}>
+  <div className={`rounded-lg bg-white shadow border border-slate-200 ${className}`}>
     {children}
   </div>
 );
 
 const CardHeader = ({ children, className = '' }) => (
-  <div className={`p-5 ${className}`}>{children}</div>
+  <div className={`px-6 py-4 border-b border-slate-100 ${className}`}>{children}</div>
 );
 
 const CardTitle = ({ children, className = '' }) => (
-  <h3 className={`font-bold text-base text-gray-900 ${className}`}>{children}</h3>
+  <h3 className={`font-semibold text-base text-slate-900 ${className}`}>{children}</h3>
 );
 
 const CardContent = ({ children, className = '' }) => (
-  <div className={`px-5 pb-5 ${className}`}>{children}</div>
+  <div className={`px-6 py-5 ${className}`}>{children}</div>
 );
 
 const Button = ({ children, variant = 'default', size = 'default', className = '', onClick, disabled = false, type = 'button', fullWidth = false }) => {
-  const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:pointer-events-none';
+  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2';
   
   const variants = {
-    default: 'bg-orange-600 text-white hover:bg-orange-700 shadow-md shadow-orange-500/20',
-    secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200',
-    outline: 'border-2 border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 text-gray-700',
-    ghost: 'hover:bg-gray-100 text-gray-600',
-    destructive: 'bg-red-500 text-white hover:bg-red-600',
-    success: 'bg-green-600 text-white hover:bg-green-700 shadow-md shadow-green-500/20',
+    default: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 shadow-sm',
+    secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200 focus:ring-slate-400',
+    outline: 'border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 focus:ring-slate-400',
+    ghost: 'hover:bg-slate-100 text-slate-600',
+    destructive: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
+    success: 'bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500',
   };
 
   const sizes = {
-    default: 'h-11 px-5 text-sm',
-    sm: 'h-9 px-4 text-sm',
-    lg: 'h-14 px-6 text-base',
+    default: 'h-10 px-4 text-sm',
+    sm: 'h-8 px-3 text-xs',
+    lg: 'h-12 px-6 text-base',
     icon: 'h-10 w-10',
   };
 
@@ -72,14 +72,14 @@ const Button = ({ children, variant = 'default', size = 'default', className = '
 
 const Badge = ({ children, variant = 'default', className = '' }) => {
   const variants = {
-    default: 'bg-orange-50 text-orange-700 border-orange-200',
-    secondary: 'bg-gray-100 text-gray-700 border-gray-200',
-    success: 'bg-green-50 text-green-700 border-green-200',
-    warning: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+    default: 'bg-blue-50 text-blue-700 border-blue-200',
+    secondary: 'bg-slate-100 text-slate-700 border-slate-200',
+    success: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    warning: 'bg-amber-50 text-amber-700 border-amber-200',
   };
 
   return (
-    <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-xs font-semibold ${variants[variant] || variants.default} ${className}`}>
+    <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${variants[variant] || variants.default} ${className}`}>
       {children}
     </span>
   );
@@ -90,10 +90,10 @@ const Switch = ({ checked, onCheckedChange }) => (
     role="switch"
     aria-checked={checked}
     onClick={() => onCheckedChange(!checked)}
-    className={`peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${checked ? 'bg-orange-600' : 'bg-gray-300'}`}
+    className={`peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${checked ? 'bg-blue-600' : 'bg-slate-300'}`}
   >
     <span
-      className={`pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'}`}
+      className={`pointer-events-none block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'}`}
     />
   </button>
 );
@@ -433,16 +433,16 @@ export default function ScheduleSection() {
   const progressPercentage = todayHours.scheduled > 0 ? (todayHours.worked / todayHours.scheduled) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-slate-50 pb-24">
       <ToastContainer />
       
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
         
         {/* Header */}
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Manage your availability</p>
+            <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Schedule Management</h1>
+            <p className="text-sm text-slate-600 mt-0.5">Plan your availability and track hours</p>
           </div>
           <Button 
             variant={currentStatus === 'online' ? 'destructive' : 'success'}

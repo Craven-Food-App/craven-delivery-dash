@@ -16,76 +16,74 @@ import {
 // --- Mock UI Components (Shadcn/ui equivalents using Tailwind) ---
 
 const Card = ({ className = '', children, ...props }) => (
-  <div className={`rounded-xl border bg-card text-card-foreground shadow-lg ${className}`} {...props}>
-    {children}
-  </div>
+  <div className={`rounded-lg border border-slate-200 bg-white shadow ${className}`} {...props}>
+    {children}
+  </div>
 );
 
 const CardHeader = ({ className = '', children }) => (
-  <div className={`flex flex-col space-y-1.5 p-6 ${className}`}>
-    {children}
-  </div>
+  <div className={`flex flex-col space-y-1 px-6 py-4 border-b border-slate-100 ${className}`}>
+    {children}
+  </div>
 );
 
 const CardTitle = ({ className = '', children }) => (
-  <h3 className={`text-xl font-semibold leading-none tracking-tight ${className}`}>
-    {children}
-  </h3>
+  <h3 className={`text-base font-semibold leading-none tracking-tight text-slate-900 ${className}`}>
+    {children}
+  </h3>
 );
 
 const CardContent = ({ className = '', children }) => (
-  <div className={`p-6 pt-0 ${className}`}>
-    {children}
-  </div>
+  <div className={`px-6 py-5 ${className}`}>
+    {children}
+  </div>
 );
 
 const Button = ({ className = '', variant = 'default', children, disabled = false, ...props }) => {
-  const baseStyle = 'inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background';
-  
-  const getVariantStyle = (v) => {
-    switch (v) {
-      case 'outline':
-        return 'border border-input bg-background hover:bg-accent hover:text-accent-foreground';
-      case 'secondary':
-        return 'bg-secondary text-secondary-foreground hover:bg-secondary/80';
-      default:
-        // Orange Primary Theme for Default Button
-        return 'bg-orange-600 text-white hover:bg-orange-700 shadow-md';
-    }
-  };
+  const baseStyle = 'inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+  
+  const getVariantStyle = (v) => {
+    switch (v) {
+      case 'outline':
+        return 'border border-slate-300 bg-white hover:bg-slate-50 text-slate-700';
+      case 'secondary':
+        return 'bg-slate-100 text-slate-900 hover:bg-slate-200';
+      default:
+        return 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm';
+    }
+  };
 
-  const variantStyle = getVariantStyle(variant);
+  const variantStyle = getVariantStyle(variant);
 
-  return (
-    <button
-      className={`${baseStyle} ${variantStyle} ${className}`}
-      disabled={disabled}
-      style={{ padding: '0.5rem 1rem' }}
-      {...props}
-    >
-      {children}
-    </button>
-  );
+  return (
+    <button
+      className={`${baseStyle} ${variantStyle} ${className}`}
+      disabled={disabled}
+      style={{ padding: '0.625rem 1rem' }}
+      {...props}
+    >
+      {children}
+    </button>
+  );
 };
 
 const Badge = ({ className = '', variant = 'default', children }) => {
-  const baseStyle = 'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2';
-  let variantStyle = '';
+  const baseStyle = 'inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium';
+  let variantStyle = '';
 
-  switch (variant) {
-    case 'secondary':
-      variantStyle = 'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80';
-      break;
-    case 'success':
-      variantStyle = 'border-transparent bg-green-500 text-white hover:bg-green-600';
-      break;
-    default:
-      // Orange Primary Theme for Default Badge
-      variantStyle = 'border-transparent bg-orange-500 text-white hover:bg-orange-600';
-      break;
-  }
+  switch (variant) {
+    case 'secondary':
+      variantStyle = 'bg-slate-100 text-slate-700 border-slate-200';
+      break;
+    case 'success':
+      variantStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      break;
+    default:
+      variantStyle = 'bg-blue-50 text-blue-700 border-blue-200';
+      break;
+  }
 
-  return <span className={`${baseStyle} ${variantStyle} ${className}`}>{children}</span>;
+  return <span className={`${baseStyle} ${variantStyle} ${className}`}>{children}</span>;
 };
 
 const Separator = ({ className = '' }) => (
@@ -378,10 +376,10 @@ export const EarningsSection = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center pb-16 font-sans">
-        <div className="text-center">
-          <div className="animate-pulse space-y-4">
-            <div className="h-20 w-64 bg-gray-200 rounded-xl mx-auto"></div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center pb-16 font-sans">
+        <div className="text-center">
+          <div className="animate-pulse space-y-4">
+            <div className="h-20 w-64 bg-slate-200 rounded-lg mx-auto"></div>
             <div className="h-4 w-32 bg-gray-200 rounded mx-auto"></div>
             <p className="text-sm text-gray-500 mt-2">Connecting to real-time earnings data...</p>
           </div>
@@ -392,10 +390,10 @@ export const EarningsSection = () => {
 
   if (!earningsData) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center pb-16 font-sans">
-        <div className="text-center p-6">
-          <DollarSign className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-          <h2 className="text-xl font-semibold mb-2">No Earnings Data Available</h2>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center pb-16 font-sans">
+        <div className="text-center p-6">
+          <DollarSign className="h-12 w-12 mx-auto text-slate-400 mb-4" />
+          <h2 className="text-xl font-semibold mb-2 text-slate-900">No Earnings Data Available</h2>
           <p className="text-gray-500">Could not load earnings. This is likely a new account initialization or a connection error.</p>
           <Button className="mt-4" onClick={() => setLoading(true)}>Try Reconnect</Button>
           </div>
@@ -418,15 +416,15 @@ export const EarningsSection = () => {
   const weekGoalProgress = (currentWeek.total / currentWeek.goal) * 100;
   
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 font-sans">
+    <div className="min-h-screen bg-slate-50 pb-20 font-sans">
       <div className="max-w-4xl mx-auto">
         {/* User ID Display - MANDATORY FOR MULTI-USER APPS */}
-        <div className="p-2 text-center bg-gray-100 text-xs text-gray-600 border-b">
+        <div className="p-2 text-center bg-slate-100 text-xs text-slate-600 border-b border-slate-200">
             Your Driver ID: <span className="font-mono font-bold text-orange-600 break-all">{userId || 'N/A'}</span>
         </div>
 
-        {/* Earnings Header with Gradient Background (ORANGE) - Fully Responsive Header */}
-        <div className="bg-gradient-to-b from-orange-600 to-orange-700 text-white shadow-lg p-4 sm:p-6">
+        {/* Earnings Header with Professional Gradient Background */}
+        <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-md p-5 sm:p-6">
           <div className="flex items-center justify-between pt-4 pb-2">
             <h1 className="text-2xl sm:text-3xl font-bold">Your Earnings</h1>
             <HelpCircle className="h-6 w-6 text-orange-200 hover:text-white transition-colors cursor-pointer" />
