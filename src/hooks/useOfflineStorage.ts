@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNetworkStatus } from './useNetworkStatus';
+import { safeLocalStorage } from '@/utils/safeStorage';
 
 interface OfflineStorageOptions {
   key: string;
@@ -18,7 +19,7 @@ export const useOfflineStorage = <T>(options: OfflineStorageOptions) => {
   // Load data from localStorage on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(`offline_${key}`);
+      const stored = safeLocalStorage.getItem(`offline_${key}`);
       if (stored) {
         const parsed = JSON.parse(stored);
         
@@ -26,7 +27,7 @@ export const useOfflineStorage = <T>(options: OfflineStorageOptions) => {
         if (maxAge && parsed.timestamp) {
           const age = Date.now() - parsed.timestamp;
           if (age > maxAge) {
-            localStorage.removeItem(`offline_${key}`);
+            safeLocalStorage.removeItem(`offline_${key}`);
             setData(defaultValue || null);
             return;
           }
@@ -37,6 +38,7 @@ export const useOfflineStorage = <T>(options: OfflineStorageOptions) => {
     } catch (err) {
       console.error('Error loading offline data:', err);
       setError('Failed to load offline data');
+      setData(defaultValue || null);
     }
   }, [key, defaultValue, maxAge]);
 
@@ -48,24 +50,28 @@ export const useOfflineStorage = <T>(options: OfflineStorageOptions) => {
         timestamp: Date.now(),
         version: 1
       };
-      localStorage.setItem(`offline_${key}`, JSON.stringify(dataToStore));
+      safeLocalStorage.setItem(`offline_${key}`, JSON.stringify(dataToStore));
       setData(newData);
       setError(null);
     } catch (err) {
       console.error('Error saving offline data:', err);
       setError('Failed to save offline data');
+      // Still update state even if storage fails
+      setData(newData);
     }
   }, [key]);
 
   // Clear offline data
   const clearData = useCallback(() => {
     try {
-      localStorage.removeItem(`offline_${key}`);
+      safeLocalStorage.removeItem(`offline_${key}`);
       setData(defaultValue || null);
       setError(null);
     } catch (err) {
       console.error('Error clearing offline data:', err);
       setError('Failed to clear offline data');
+      // Still update state even if storage fails
+      setData(defaultValue || null);
     }
   }, [key, defaultValue]);
 

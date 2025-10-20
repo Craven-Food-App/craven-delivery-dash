@@ -1,4 +1,5 @@
 import { useEffect, useCallback } from 'react';
+import { safeSessionStorage } from '@/utils/safeStorage';
 
 interface AnalyticsEvent {
   event: string;
@@ -83,12 +84,12 @@ export const useAnalytics = () => {
   };
 };
 
-// Helper function to get or create session ID
+// Helper function to get or create session ID (iOS-safe)
 const getSessionId = (): string => {
-  let sessionId = sessionStorage.getItem('analytics_session_id');
+  let sessionId = safeSessionStorage.getItem('analytics_session_id');
   if (!sessionId) {
     sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    sessionStorage.setItem('analytics_session_id', sessionId);
+    safeSessionStorage.setItem('analytics_session_id', sessionId);
   }
   return sessionId;
 };

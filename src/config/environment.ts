@@ -16,33 +16,26 @@ export interface EnvironmentConfig {
   BUILD_NUMBER: string;
 }
 
-// Validate required environment variables
+// Validate environment variables (non-blocking)
 const validateEnvironment = (): void => {
-  const requiredVars = [
+  const optionalVars = [
     'VITE_SUPABASE_URL',
     'VITE_SUPABASE_ANON_KEY',
     'VITE_MAPBOX_ACCESS_TOKEN'
   ];
 
-  const missingVars = requiredVars.filter(varName => !import.meta.env[varName]);
+  const missingVars = optionalVars.filter(varName => !import.meta.env[varName]);
   
   if (missingVars.length > 0) {
-    console.error(`Missing required environment variables: ${missingVars.join(', ')}`);
-    console.warn('App may not function correctly without these variables');
-    // Only throw error in web production builds, not in mobile/development
-    if (import.meta.env.PROD && typeof window !== 'undefined' && !navigator.userAgent.includes('Capacitor')) {
-      // Don't throw - just warn, to prevent white screen
-      console.error('Environment validation failed, but continuing...');
-    }
+    console.warn(`⚠️ Optional environment variables not set: ${missingVars.join(', ')}`);
+    console.warn('ℹ️ App will continue with limited functionality. Some features may not work.');
+  } else {
+    console.log('✅ All environment variables configured');
   }
 };
 
-// Validate environment but don't block app startup
-try {
-  validateEnvironment();
-} catch (error) {
-  console.error('Environment validation error:', error);
-}
+// Run validation (never throws errors)
+validateEnvironment();
 
 // Environment configuration
 export const environment: EnvironmentConfig = {
