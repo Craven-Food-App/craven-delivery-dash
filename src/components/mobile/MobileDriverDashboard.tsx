@@ -823,7 +823,7 @@ export const MobileDriverDashboard: React.FC = () => {
       {/* Main Content Overlay - Allow for bottom nav space - Non-interactive overlay */}
       <div style={{
         paddingBottom: '80px'
-      }} className="fixed inset-0 z-10 flex flex-col py-0 pointer-events-none">
+      }} className="fixed inset-0 z-10 flex flex-col py-0">
         
         {/* Tab-based Content Rendering */}
         {activeTab === 'schedule' && (
