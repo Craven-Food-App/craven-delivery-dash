@@ -614,6 +614,17 @@ export const MobileDriverDashboard: React.FC = () => {
         console.error('Error updating driver session:', sessionError);
       }
 
+      // Update driver profile to online
+      const { error: profileError } = await supabase.from('driver_profiles').update({
+        status: 'online',
+        is_available: true,
+        last_location_update: new Date().toISOString()
+      }).eq('user_id', user.id);
+      
+      if (profileError) {
+        console.error('Error updating driver profile:', profileError);
+      }
+
       // Get location and update craver_locations table
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(async position => {
