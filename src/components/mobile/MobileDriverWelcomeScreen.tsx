@@ -54,7 +54,8 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
       <img 
         src={mobileDriverWelcomeImage}
         alt="CRAVE'N Delivery Rider"
-        className="absolute inset-0 w-full h-full object-cover"
+        className="absolute w-full h-full object-cover"
+        style={{ top: '130px', left: '0', right: '0', bottom: '0' }}
         onLoad={() => console.log('Mobile driver welcome image loaded successfully')}
         onError={(e) => {
           console.error('Mobile driver welcome image failed to load:', e);
@@ -69,7 +70,8 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
       
       {/* Fallback gradient background if image doesn't load */}
       <div 
-        className="hidden absolute inset-0 w-full h-full bg-gradient-to-br from-orange-400 to-orange-600"
+        className="hidden absolute w-full h-full bg-gradient-to-br from-orange-400 to-orange-600"
+        style={{ top: '130px', left: '0', right: '0', bottom: '0' }}
       >
         <div className="flex items-center justify-center h-full">
           <div className="text-center text-white">
