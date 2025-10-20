@@ -419,7 +419,7 @@ export const EarningsSection = () => {
     <div className="min-h-screen bg-slate-50 pb-20 font-sans">
       <div className="max-w-4xl mx-auto">
         {/* Earnings Header - Clean Style */}
-        <div className="px-4 pt-6 pb-4 bg-white">
+        <div className="px-4 pt-6 pb-4 bg-white" style={{ paddingTop: 'calc(1.5rem + 15px)' }}>
           <h1 className="text-3xl font-bold text-slate-900 mb-2 text-right">Earnings</h1>
           <p className="text-sm text-slate-600 text-right">Track your income and performance</p>
         </div>
