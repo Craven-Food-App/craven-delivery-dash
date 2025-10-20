@@ -233,12 +233,13 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center modal-overlay">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleDecline} />
-      
-      {/* Modal */}
-      <div className="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl transform transition-all duration-300 max-h-[90vh] overflow-y-auto">
+    <div className="fixed modal-overlay" style={{ top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
+      <div className="absolute inset-0 flex items-end sm:items-center sm:justify-center">
+        {/* Backdrop */}
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleDecline} />
+        
+        {/* Modal */}
+        <div className="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl transform transition-all duration-300 max-h-[90vh] overflow-y-auto">
         {/* Timer Progress Bar */}
         <div className="sticky top-0 left-0 right-0 h-2 bg-gray-100 rounded-t-3xl overflow-hidden z-10">
           <div 
@@ -366,6 +367,7 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
             </button>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
