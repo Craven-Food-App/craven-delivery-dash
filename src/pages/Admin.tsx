@@ -8,7 +8,7 @@ import BackgroundCheckDashboard from '@/components/admin/BackgroundCheckDashboar
 import { BackgroundCheckSettings } from '@/components/admin/BackgroundCheckSettings';
 import RestaurantOnboardingDashboard from '@/components/admin/RestaurantOnboardingDashboard';
 import { EnhancedRestaurantOnboarding } from '@/components/admin/restaurant-onboarding/EnhancedRestaurantOnboarding';
-import { RestaurantVerificationDashboard } from '@/components/admin/RestaurantVerificationDashboard';
+import { EnhancedRestaurantVerificationDashboard } from '@/components/admin/EnhancedRestaurantVerificationDashboard';
 import { TabletShippingManagement } from '@/components/admin/TabletShippingManagement';
 import { NotificationSettingsManager } from '@/components/admin/NotificationSettingsManager';
 import { PayoutSettingsManager } from '@/components/admin/PayoutSettingsManager';
@@ -91,7 +91,7 @@ const Admin: React.FC = () => {
       case 'merchant-onboarding':
         return <EnhancedRestaurantOnboarding />;
       case 'merchant-verification':
-        return <RestaurantVerificationDashboard />;
+        return <EnhancedRestaurantVerificationDashboard />;
       case 'merchant-tablet':
         return <TabletShippingManagement />;
       case 'merchant-settings':
