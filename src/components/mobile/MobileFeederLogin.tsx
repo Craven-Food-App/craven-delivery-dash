@@ -189,7 +189,7 @@ const MobileFeederLogin: React.FC<MobileFeederLoginProps> = ({ onBack, onLoginSu
       </div>
 
       {/* Login Form */}
-      <div className="px-6 py-8 max-w-md mx-auto">
+      <div className="px-6 py-8 max-w-md mx-auto" style={{ marginTop: '130px' }}>
         {/* Welcome Section */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
