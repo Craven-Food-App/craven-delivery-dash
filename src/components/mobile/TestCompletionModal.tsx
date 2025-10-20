@@ -6,7 +6,7 @@ import { CheckCircle, ArrowRight, X } from 'lucide-react';
 // Replicating a stylized header for context
 const AppHeader = ({ title, onBack, showHelp = true }) => {
   return (
-    <header className="bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg p-4 flex justify-between items-center h-16 sticky top-0 z-20">
+    <header className="bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg p-4 flex justify-between items-center h-16 sticky top-0 z-20 safe-area-top">
       <button 
         onClick={onBack} 
         className="p-2 -ml-2 rounded-full hover:bg-white/10 transition"

@@ -141,7 +141,7 @@ export const VehicleManagementSection: React.FC<VehicleManagementSectionProps> =
     <div className="min-h-screen bg-background pb-20 overflow-y-auto">
       <div className="max-w-md mx-auto">
         {/* Header */}
-        <div className="bg-background border-b border-border/50 px-4 py-3 sticky top-0 z-10">
+        <div className="bg-background border-b border-border/50 px-4 py-3 sticky top-0 z-10 safe-area-top">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"

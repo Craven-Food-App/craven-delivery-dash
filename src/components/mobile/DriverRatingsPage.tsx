@@ -109,7 +109,7 @@ export function DriverRatingsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+      <div className="sticky top-0 z-10 bg-white border-b shadow-sm safe-area-top">
         <div className="p-4">
           <h1 className="text-2xl font-bold text-gray-900">Your Ratings</h1>
           <p className="text-sm text-gray-600">Performance breakdown and feedback</p>

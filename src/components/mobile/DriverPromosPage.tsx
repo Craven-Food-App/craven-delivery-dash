@@ -174,7 +174,7 @@ export function DriverPromosPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+      <div className="sticky top-0 z-10 bg-white border-b shadow-sm safe-area-top">
         <div className="p-4">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
             Promos & Challenges

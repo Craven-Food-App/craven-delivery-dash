@@ -171,6 +171,10 @@
         if (isStandalone && isMobileRoute) {
           document.body.classList.add('pwa-standalone', 'mobile-page');
         }
+        // Add pwa-standalone class for all PWA pages (not just mobile)
+        if (isStandalone) {
+          document.body.classList.add('pwa-standalone');
+        }
       })();
     </script>
   </head>

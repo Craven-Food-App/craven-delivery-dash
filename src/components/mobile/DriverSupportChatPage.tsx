@@ -201,7 +201,7 @@ export function DriverSupportChatPage() {
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 to-orange-50">
       {/* Header - Glassmorphism */}
-      <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-lg border-b border-gray-200/50 shadow-sm">
+      <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-lg border-b border-gray-200/50 shadow-sm safe-area-top">
         <div className="p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button

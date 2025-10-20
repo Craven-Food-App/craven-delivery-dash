@@ -51,7 +51,7 @@ const Button = ({ children, onClick, className = '', variant = 'default', size =
 
 // Modern Header Component
 const AppHeader = ({ title, subtitle, onBack, rightAction }) => (
-  <div className="bg-white border-b border-gray-100 sticky top-0 z-50">
+  <div className="bg-white border-b border-gray-100 sticky top-0 z-50 safe-area-top">
     <div className="px-4 py-4 flex items-center justify-between">
       <button 
         onClick={onBack} 

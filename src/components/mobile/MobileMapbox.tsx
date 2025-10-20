@@ -149,7 +149,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
       map.current.doubleClickZoom.enable();
       map.current.touchZoomRotate.enable();
 
-      // Add navigation controls
+      // Add navigation controls (PWA safe-area handled by CSS)
       map.current.addControl(new window.mapboxgl.NavigationControl({
         visualizePitch: true
       }), 'top-right');
