@@ -76,21 +76,26 @@ const LiveDashboard = () => {
 
       if (ordersError) throw ordersError;
 
-      // Fetch drivers with session status
-      const { data: driversData, error: driversError } = await supabase
+      // Debug: Check if there are any online sessions at all
+      const { data: allSessions, error: sessionsError } = await supabase
+        .from('driver_sessions')
+        .select('driver_id, is_online, last_activity')
+        .eq('is_online', true);
+      console.log('🔍 All online sessions:', { allSessions, sessionsError });
+      
+      // Fetch all drivers first
+      const { data: allDrivers, error: allDriversError } = await supabase
         .from('driver_profiles')
-        .select(`
-          *,
-          driver_sessions!inner(
-            is_online,
-            last_activity,
-            session_data
-          )
-        `)
-        .eq('driver_sessions.is_online', true)
+        .select('*')
         .order('rating', { ascending: false });
-
-      if (driversError) throw driversError;
+      
+      console.log('📊 All drivers:', { allDrivers, allDriversError });
+      
+      // Filter drivers who have online sessions
+      const onlineDriverIds = allSessions?.map(session => session.driver_id) || [];
+      const driversData = allDrivers?.filter(driver => onlineDriverIds.includes(driver.user_id)) || [];
+      
+      console.log('✅ Online drivers after filtering:', driversData);
 
       // Fetch total users count
       const { count: usersCount, error: usersError } = await supabase
