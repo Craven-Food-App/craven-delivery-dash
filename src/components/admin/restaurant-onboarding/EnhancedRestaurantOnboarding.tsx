@@ -9,6 +9,7 @@ import { StatsOverview } from './components/StatsOverview';
 import { ListView } from './views/ListView';
 import { DocumentVerificationPanel } from './verification/DocumentVerificationPanel';
 import { AnalyticsDashboard } from './analytics/AnalyticsDashboard';
+import { KanbanView } from './views/KanbanView';
 import { calculateStats } from './utils/helpers';
 
 export function EnhancedRestaurantOnboarding() {
@@ -196,6 +197,62 @@ export function EnhancedRestaurantOnboarding() {
     }
   };
 
+  // Kanban stage update handler
+  const handleUpdateStage = async (restaurantId: string, newStage: string) => {
+    try {
+      // Map stage to database fields
+      const updates: any = {
+        updated_at: new Date().toISOString()
+      };
+
+      switch (newStage) {
+        case 'documents_pending':
+          // Reset to initial state
+          updates.business_info_verified = false;
+          updates.menu_preparation_status = 'not_started';
+          updates.go_live_ready = false;
+          break;
+        case 'verification_pending':
+          // Has documents but not verified
+          updates.business_info_verified = false;
+          break;
+        case 'setup_in_progress':
+          // Verified but setup incomplete
+          updates.business_info_verified = true;
+          updates.business_verified_at = new Date().toISOString();
+          updates.menu_preparation_status = 'in_progress';
+          break;
+        case 'ready_to_launch':
+          // Setup complete, ready to go live
+          updates.business_info_verified = true;
+          updates.menu_preparation_status = 'ready';
+          updates.menu_ready_at = new Date().toISOString();
+          updates.go_live_ready = false;
+          break;
+        case 'live':
+          // Go live
+          updates.business_info_verified = true;
+          updates.menu_preparation_status = 'ready';
+          updates.go_live_ready = true;
+          break;
+      }
+
+      const { error } = await supabase
+        .from('restaurant_onboarding')
+        .update(updates)
+        .eq('restaurant_id', restaurantId);
+
+      if (error) throw error;
+
+      toast.success('Restaurant stage updated successfully');
+      fetchRestaurants(false);
+    } catch (error) {
+      console.error('Error updating stage:', error);
+      toast.error('Failed to update restaurant stage');
+      throw error;
+    }
+  };
+
   const handleApprove = async (restaurantId: string, notes: string) => {
     try {
       // Get current user for audit trail
@@ -327,9 +384,12 @@ export function EnhancedRestaurantOnboarding() {
 
       {/* Main Content */}
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="all">
             All ({stats.total})
+          </TabsTrigger>
+          <TabsTrigger value="kanban">
+            📋 Kanban
           </TabsTrigger>
           <TabsTrigger value="pending">
             Pending Review ({stats.pendingReview})
@@ -361,6 +421,14 @@ export function EnhancedRestaurantOnboarding() {
             onBulkEmail={handleBulkEmail}
             onBulkAssign={handleBulkAssign}
             onBulkStatusUpdate={handleBulkStatusUpdate}
+          />
+        </TabsContent>
+
+        <TabsContent value="kanban" className="mt-6">
+          <KanbanView
+            restaurants={restaurants}
+            onVerifyDocuments={handleVerifyDocuments}
+            onUpdateStage={handleUpdateStage}
           />
         </TabsContent>
 
