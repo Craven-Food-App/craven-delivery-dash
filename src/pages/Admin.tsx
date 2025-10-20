@@ -19,10 +19,15 @@ import { PromoCodeManager } from '@/components/admin/PromoCodeManager';
 import { DriverRatingManagement } from '@/components/admin/DriverRatingManagement';
 import { DriverPromoManagement } from '@/components/admin/DriverPromoManagement';
 import { DriverSupportDashboard } from '@/components/admin/DriverSupportDashboard';
+import { TestCustomer } from '@/components/testing/TestCustomer';
+import { TestDriver } from '@/components/testing/TestDriver';
+import { TestRestaurant } from '@/components/testing/TestRestaurant';
+import { TestDataManager } from '@/components/testing/TestDataManager';
+import { LiveDriverTesting } from '@/components/testing/LiveDriverTesting';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, BarChart3, Users, Store, Car, ShoppingBag, MessageCircle, Bell, DollarSign, Tags, GraduationCap, FileCheck, Shield, ChevronRight, Package, Settings, AlertCircle, TrendingUp, LifeBuoy, FileText } from 'lucide-react';
+import { ArrowLeft, BarChart3, Users, Store, Car, ShoppingBag, MessageCircle, Bell, DollarSign, Tags, GraduationCap, FileCheck, Shield, ChevronRight, Package, Settings, AlertCircle, TrendingUp, LifeBuoy, FileText, TestTube, Zap, Database } from 'lucide-react';
 import cravenLogo from "@/assets/craven-logo.png";
 import { cn } from '@/lib/utils';
 import RefundManagement from '@/components/admin/RefundManagement';
@@ -87,6 +92,18 @@ const Admin: React.FC = () => {
         { id: 'support-tickets', label: 'Support Tickets', icon: LifeBuoy },
         { id: 'audit-logs', label: 'Audit Logs', icon: FileText },
       ]
+    },
+    {
+      id: 'testing',
+      title: 'Testing Portal',
+      icon: TestTube,
+      items: [
+        { id: 'test-customer', label: 'Customer Testing', icon: Users },
+        { id: 'test-driver', label: 'Driver Testing', icon: Car },
+        { id: 'test-restaurant', label: 'Restaurant Testing', icon: Store },
+        { id: 'test-live', label: 'Live Driver Testing', icon: Zap },
+        { id: 'test-data', label: 'Test Data Manager', icon: Database },
+      ]
     }
   ];
 
@@ -136,6 +153,16 @@ const Admin: React.FC = () => {
         return <AuditLogs />;
       case 'notifications':
         return <NotificationSettingsManager />;
+      case 'test-customer':
+        return <TestCustomer />;
+      case 'test-driver':
+        return <TestDriver />;
+      case 'test-restaurant':
+        return <TestRestaurant />;
+      case 'test-live':
+        return <LiveDriverTesting />;
+      case 'test-data':
+        return <TestDataManager />;
       default:
         return <LiveDashboard />;
     }
