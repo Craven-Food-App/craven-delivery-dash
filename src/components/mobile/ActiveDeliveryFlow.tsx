@@ -640,15 +640,29 @@ const ActiveDeliveryFlow = ({ orderDetails, onCompleteDelivery, onProgressChange
           </CardContent>
         </Card>
 
-        <Button 
-          variant="primary" 
-          size="lg" 
-          fullWidth
-          onClick={onCompleteDelivery}
-          className="max-w-sm"
-        >
-          Continue Driving
-        </Button>
+        <div className="w-full max-w-sm space-y-3">
+          <Button 
+            variant="primary" 
+            size="lg" 
+            fullWidth
+            onClick={onCompleteDelivery}
+          >
+            Continue Accepting Orders
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="lg" 
+            fullWidth
+            onClick={() => {
+              onCompleteDelivery();
+              // Notify parent to pause after delivery
+              window.dispatchEvent(new CustomEvent('pauseAfterDelivery'));
+            }}
+          >
+            ⏸️ Pause After This Delivery
+          </Button>
+        </div>
       </div>
     </div>
   );

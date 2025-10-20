@@ -49,7 +49,7 @@ export const useNavigation = (): UseNavigationReturn => {
   });
 
   const [navigationSettings, setNavigationSettings] = useState<NavigationSettings>({
-    provider: 'google',
+    provider: 'mapbox',
     voiceGuidance: true,
     avoidTolls: false,
     avoidHighways: false
@@ -79,21 +79,32 @@ export const useNavigation = (): UseNavigationReturn => {
         setNavigationSettings(prev => ({ ...prev, ...parsed }));
       }
 
-      // 2) Attempt to load from Supabase profile (if table exists)
+      // 2) Load from driver_preferences table
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('settings')
-        .eq('user_id', user.id)
+      const { data: prefs } = await supabase
+        .from('driver_preferences')
+        .select('preferred_nav_app, avoid_tolls, avoid_highways')
+        .eq('driver_id', user.id)
         .maybeSingle();
 
-      if (profile?.settings && typeof profile.settings === 'object') {
-        const settings = profile.settings as any;
-        if (settings.navigation) {
-          setNavigationSettings(prev => ({ ...prev, ...settings.navigation }));
-        }
+      if (prefs) {
+        const navSettings: Partial<NavigationSettings> = {};
+        
+        // Map preferred_nav_app to provider format
+        if (prefs.preferred_nav_app === 'mapbox') navSettings.provider = 'mapbox';
+        else if (prefs.preferred_nav_app === 'google_maps') navSettings.provider = 'google';
+        else if (prefs.preferred_nav_app === 'apple_maps') navSettings.provider = 'apple';
+        else if (prefs.preferred_nav_app === 'waze') navSettings.provider = 'waze';
+        
+        if (prefs.avoid_tolls !== undefined) navSettings.avoidTolls = prefs.avoid_tolls;
+        if (prefs.avoid_highways !== undefined) navSettings.avoidHighways = prefs.avoid_highways;
+        
+        setNavigationSettings(prev => ({ ...prev, ...navSettings }));
+        
+        // Save to localStorage for offline access
+        localStorage.setItem('craven_nav_settings', JSON.stringify(navSettings));
       }
     } catch (error) {
       console.error('Error loading navigation settings:', error);
@@ -336,6 +347,13 @@ export const useNavigation = (): UseNavigationReturn => {
   };
 
   const openExternalNavigation = (destination: NavigationDestination) => {
+    // If using in-app navigation (mapbox), start in-app navigation instead
+    if (navigationSettings.provider === 'mapbox') {
+      startNavigation(destination);
+      toast.success('In-App Navigation Started');
+      return;
+    }
+
     const encodedAddress = encodeURIComponent(destination.address);
     let url = '';
 

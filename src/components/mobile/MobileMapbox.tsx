@@ -118,11 +118,21 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
       // Set the access token
       window.mapboxgl.accessToken = 'pk.eyJ1IjoiY3JhdmUtbiIsImEiOiJjbWVxb21qbTQyNTRnMm1vaHg5bDZwcmw2In0.aOsYrL2B0cjfcCGW1jHAdw';
 
+      // Get map style from driver preferences
+      const preferredStyle = localStorage.getItem('driver_map_style') || 'standard';
+      const mapStyleUrls = {
+        'standard': 'mapbox://styles/mapbox/streets-v12',
+        'satellite': 'mapbox://styles/mapbox/satellite-streets-v12',
+        'dark': 'mapbox://styles/mapbox/dark-v11'
+      };
+      const mapStyle = mapStyleUrls[preferredStyle] || mapStyleUrls['standard'];
+      console.log('Using map style:', preferredStyle, '→', mapStyle);
+
       // Create the map instance - Default to Toledo, Ohio
       map.current = new window.mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
-        // Use stable default style
+        style: mapStyle,
+        // Use preferred map style
         center: [-83.5379, 41.6528],
         // Toledo, Ohio coordinates
         zoom: 11,

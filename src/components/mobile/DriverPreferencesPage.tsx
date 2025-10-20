@@ -49,7 +49,7 @@ export function DriverPreferencesPage() {
     do_not_disturb: false,
     
     // Navigation
-    preferred_nav_app: 'google_maps',
+    preferred_nav_app: 'mapbox',
     avoid_highways: false,
     avoid_tolls: true,
     prefer_bike_lanes: false,
@@ -98,6 +98,10 @@ export function DriverPreferencesPage() {
 
       if (data) {
         setPrefs(data);
+        // Save map_style to localStorage for immediate access
+        if (data.map_style) {
+          localStorage.setItem('driver_map_style', data.map_style);
+        }
       }
     } catch (error) {
       console.error('Error fetching preferences:', error);
@@ -133,6 +137,13 @@ export function DriverPreferencesPage() {
   const updatePref = (key: string, value: any) => {
     setPrefs({ ...prefs, [key]: value });
     setHasChanges(true);
+    
+    // Save map_style to localStorage immediately for instant UI updates
+    if (key === 'map_style') {
+      localStorage.setItem('driver_map_style', value);
+      // Dispatch event to notify map to reload
+      window.dispatchEvent(new CustomEvent('mapStyleChange', { detail: { style: value } }));
+    }
   };
 
   if (loading) {
@@ -341,11 +352,12 @@ export function DriverPreferencesPage() {
           <CardContent className="space-y-4 pt-6">
             <div className="space-y-2">
               <Label>Preferred Navigation App</Label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {[
-                  { value: 'google_maps', label: 'Google' },
-                  { value: 'waze', label: 'Waze' },
-                  { value: 'apple_maps', label: 'Apple' },
+                  { value: 'mapbox', label: '📱 In-App' },
+                  { value: 'google_maps', label: '🗺️ Google' },
+                  { value: 'waze', label: '🚗 Waze' },
+                  { value: 'apple_maps', label: '🍎 Apple' },
                 ].map((app) => (
                   <button
                     key={app.value}
@@ -360,6 +372,9 @@ export function DriverPreferencesPage() {
                   </button>
                 ))}
               </div>
+              <p className="text-xs text-muted-foreground">
+                💡 In-App provides turn-by-turn directions without leaving the app
+              </p>
             </div>
 
             <div className="space-y-2">

@@ -224,6 +224,20 @@ export const MobileDriverDashboard: React.FC = () => {
     }
   }, [driverState]);
   
+  // Listen for pause after delivery event
+  useEffect(() => {
+    const handlePauseAfterDelivery = () => {
+      console.log('Pause after delivery requested');
+      handlePause();
+    };
+    
+    window.addEventListener('pauseAfterDelivery', handlePauseAfterDelivery);
+    
+    return () => {
+      window.removeEventListener('pauseAfterDelivery', handlePauseAfterDelivery);
+    };
+  }, []);
+  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'earnings' | 'account' | 'ratings' | 'promos' | 'preferences' | 'help'>('home');
