@@ -150,32 +150,32 @@ export const DriverOnboardingWizard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Progress Header */}
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex items-center justify-between mb-4">
+      <div className="container mx-auto px-4 py-4 max-w-4xl">
+        {/* Progress Header - Mobile First */}
+        <Card className="mb-4">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between mb-3">
               <div>
-                <CardTitle className="text-2xl">Driver Onboarding</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-xl sm:text-2xl">Driver Onboarding</CardTitle>
+                <CardDescription className="text-sm">
                   Step {currentStepIndex + 1} of {ONBOARDING_STEPS.length}
                 </CardDescription>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-primary">{Math.round(progressPercentage)}%</div>
-                <div className="text-sm text-muted-foreground">Complete</div>
+                <div className="text-xl sm:text-2xl font-bold text-primary">{Math.round(progressPercentage)}%</div>
+                <div className="text-xs text-muted-foreground">Complete</div>
               </div>
             </div>
-            <Progress value={progressPercentage} className="h-3" />
+            <Progress value={progressPercentage} className="h-2" />
           </CardHeader>
         </Card>
 
-        {/* Steps Navigation */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-6">
+        {/* Steps Navigation - Mobile First */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-4">
           {ONBOARDING_STEPS.map((step, index) => (
             <div
               key={step.id}
-              className={`flex items-center gap-2 p-3 rounded-lg border ${
+              className={`flex items-center gap-2 p-2 sm:p-3 rounded-lg border ${
                 index === currentStepIndex
                   ? 'bg-primary/10 border-primary'
                   : index < currentStepIndex
@@ -184,9 +184,9 @@ export const DriverOnboardingWizard = () => {
               }`}
             >
               {index < currentStepIndex ? (
-                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
               ) : (
-                <Circle className={`h-5 w-5 flex-shrink-0 ${
+                <Circle className={`h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 ${
                   index === currentStepIndex ? 'text-primary' : 'text-muted-foreground'
                 }`} />
               )}

@@ -86,92 +86,92 @@ export const WelcomeConfetti: React.FC<WelcomeConfettiProps> = ({ firstName, onC
         `}
       </style>
 
-      {/* Main Content Card */}
-      <Card className="max-w-2xl w-full mx-4 p-8 md:p-12 shadow-2xl relative z-10 bg-white/95 backdrop-blur-sm">
-        <div className="text-center space-y-6">
-          {/* Success Icon */}
+      {/* Main Content Card - Mobile First */}
+      <Card className="max-w-2xl w-full mx-4 p-6 sm:p-8 md:p-12 shadow-2xl relative z-10 bg-white/95 backdrop-blur-sm">
+        <div className="text-center space-y-4 sm:space-y-6">
+          {/* Success Icon - Mobile First */}
           <div className="flex justify-center">
             <div className="relative">
-              <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg animate-bounce-slow">
-                <CheckCircle className="w-16 h-16 text-white" strokeWidth={2.5} />
+              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg animate-bounce-slow">
+                <CheckCircle className="w-12 h-12 sm:w-16 sm:h-16 text-white" strokeWidth={2.5} />
               </div>
-              <div className="absolute -top-2 -right-2">
-                <Star className="w-8 h-8 text-yellow-400 fill-yellow-400 animate-pulse" />
+              <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2">
+                <Star className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-400 fill-yellow-400 animate-pulse" />
               </div>
             </div>
           </div>
 
-          {/* Welcome Message */}
-          <div className="space-y-3">
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-orange-600 to-orange-400 bg-clip-text text-transparent">
+          {/* Welcome Message - Mobile First */}
+          <div className="space-y-2 sm:space-y-3">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-orange-600 to-orange-400 bg-clip-text text-transparent">
               Congratulations, {firstName}! 🎉
             </h1>
-            <p className="text-2xl font-semibold text-gray-800">
+            <p className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-800">
               You're Cleared to Drive!
             </p>
-            <p className="text-lg text-gray-600">
+            <p className="text-sm sm:text-base md:text-lg text-gray-600 px-2">
               Welcome to the Craven Feeder family – you're now part of something amazing!
             </p>
           </div>
 
-          {/* Stats Preview */}
-          <div className="grid grid-cols-3 gap-4 py-6">
-            <div className="text-center p-4 bg-orange-50 rounded-lg">
-              <div className="text-2xl font-bold text-orange-600">$15-25</div>
+          {/* Stats Preview - Mobile First */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 py-4 sm:py-6">
+            <div className="text-center p-3 sm:p-4 bg-orange-50 rounded-lg">
+              <div className="text-lg sm:text-xl md:text-2xl font-bold text-orange-600">$15-25</div>
               <div className="text-xs text-gray-600">Per Hour</div>
             </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">Flexible</div>
+            <div className="text-center p-3 sm:p-4 bg-green-50 rounded-lg">
+              <div className="text-lg sm:text-xl md:text-2xl font-bold text-green-600">Flexible</div>
               <div className="text-xs text-gray-600">Schedule</div>
             </div>
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">Weekly</div>
+            <div className="text-center p-3 sm:p-4 bg-blue-50 rounded-lg">
+              <div className="text-lg sm:text-xl md:text-2xl font-bold text-blue-600">Weekly</div>
               <div className="text-xs text-gray-600">Payouts</div>
             </div>
           </div>
 
-          {/* Quick Checklist */}
-          <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border-2 border-orange-200 rounded-xl p-6 text-left">
-            <div className="flex items-center gap-2 mb-4">
-              <Rocket className="w-5 h-5 text-orange-600" />
-              <h3 className="font-semibold text-gray-800">What's Next?</h3>
+          {/* Quick Checklist - Mobile First */}
+          <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border-2 border-orange-200 rounded-xl p-4 sm:p-6 text-left">
+            <div className="flex items-center gap-2 mb-3 sm:mb-4">
+              <Rocket className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
+              <h3 className="font-semibold text-sm sm:text-base text-gray-800">What's Next?</h3>
             </div>
-            <ul className="space-y-3">
-              <li className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+            <ul className="space-y-2 sm:space-y-3">
+              <li className="flex items-start gap-2 sm:gap-3">
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-sm text-gray-800">Complete Quick Orientation</p>
+                  <p className="font-medium text-xs sm:text-sm text-gray-800">Complete Quick Orientation</p>
                   <p className="text-xs text-gray-600">Watch a short video and pass a safety quiz (5 min)</p>
                 </div>
               </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+              <li className="flex items-start gap-2 sm:gap-3">
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-sm text-gray-800">Set Up Your Payment</p>
+                  <p className="font-medium text-xs sm:text-sm text-gray-800">Set Up Your Payment</p>
                   <p className="text-xs text-gray-600">Add your bank account for weekly payouts</p>
                 </div>
               </li>
-              <li className="flex items-start gap-3">
-                <TrendingUp className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+              <li className="flex items-start gap-2 sm:gap-3">
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-sm text-gray-800">Start Earning Today!</p>
+                  <p className="font-medium text-xs sm:text-sm text-gray-800">Start Earning Today!</p>
                   <p className="text-xs text-gray-600">Go online and accept your first delivery</p>
                 </div>
               </li>
             </ul>
           </div>
 
-          {/* CTA Button */}
+          {/* CTA Button - Mobile First */}
           <Button 
             onClick={handleContinue}
             size="lg"
-            className="w-full text-lg py-6 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 shadow-lg"
+            className="w-full text-sm sm:text-base md:text-lg py-4 sm:py-6 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 shadow-lg"
           >
             Let's Get Started!
-            <ArrowRight className="ml-2 w-5 h-5" />
+            <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
           </Button>
 
-          <p className="text-sm text-gray-500">
+          <p className="text-xs sm:text-sm text-gray-500">
             This will only take a few minutes to complete
           </p>
         </div>
