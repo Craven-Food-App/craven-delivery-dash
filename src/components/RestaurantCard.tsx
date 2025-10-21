@@ -33,7 +33,7 @@ const RestaurantCard = ({
     <div className="group cursor-pointer" onClick={handleClick}>
       <div className="bg-card rounded-lg shadow-card hover:shadow-hover transition-all duration-300 transform hover:scale-105 overflow-hidden">
         {/* Image */}
-        <div className="relative h-48 overflow-hidden">
+        <div className="relative h-32 lg:h-48 overflow-hidden">
           <img 
             src={image} 
             alt={name}
@@ -56,29 +56,29 @@ const RestaurantCard = ({
         </div>
 
         {/* Content */}
-        <div className="p-3">
+        <div className="p-2 lg:p-3">
           <div className="flex justify-between items-start mb-1">
-            <h3 className="font-semibold text-base text-foreground group-hover:text-primary transition-colors">
+            <h3 className="font-semibold text-sm lg:text-base text-foreground group-hover:text-primary transition-colors line-clamp-1">
               {name}
             </h3>
-            <div className="flex items-center space-x-1 text-sm">
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            <div className="flex items-center space-x-0.5 text-xs lg:text-sm flex-shrink-0 ml-1">
+              <Star className="h-3 w-3 lg:h-4 lg:w-4 fill-yellow-400 text-yellow-400" />
               <span className="font-medium">{rating}</span>
             </div>
           </div>
 
-          <p className="text-muted-foreground text-xs mb-2">{cuisine}</p>
+          <p className="text-muted-foreground text-xs mb-2 line-clamp-1">{cuisine}</p>
 
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-1">
+            <div className="flex items-center space-x-2 lg:space-x-3">
+              <div className="flex items-center space-x-0.5 lg:space-x-1">
                 <Clock className="h-3 w-3" />
-                <span>{deliveryTime}</span>
+                <span className="text-[10px] lg:text-xs">{deliveryTime}</span>
               </div>
               
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-0.5 lg:space-x-1">
                 <Truck className="h-3 w-3" />
-                <span>{deliveryFee}</span>
+                <span className="text-[10px] lg:text-xs">{deliveryFee}</span>
               </div>
             </div>
           </div>
