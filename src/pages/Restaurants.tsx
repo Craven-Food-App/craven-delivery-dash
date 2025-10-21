@@ -368,11 +368,11 @@ const Restaurants = () => {
       <div className="lg:hidden sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between mb-3">
-            <img src={cravenLogo} alt="CRAVE'N" className="h-8" />
             <div className="flex items-center space-x-2">
+              <img src={cravenLogo} alt="CRAVE'N" className="h-8" />
               <button 
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 -mr-2"
+                className="relative p-2"
               >
                 <Bell className="w-5 h-5 text-gray-600" />
                 {notifications.filter(n => !n.read).length > 0 && (
@@ -380,6 +380,12 @@ const Restaurants = () => {
                 )}
               </button>
             </div>
+            <button 
+              onClick={() => setShowMobileNav(!showMobileNav)}
+              className="p-2 -mr-2 active:bg-gray-100 rounded-full transition-colors"
+            >
+              {showMobileNav ? <X className="w-6 h-6 text-gray-900" /> : <Menu className="w-6 h-6 text-gray-900" />}
+            </button>
           </div>
           
           {/* Location & Delivery Mode */}
