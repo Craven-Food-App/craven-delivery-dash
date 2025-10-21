@@ -12,7 +12,6 @@ import { PaymentMethodsSection } from './PaymentMethodsSection';
 import { AppSettingsSection } from './AppSettingsSection';
 import { VehicleManagementSection } from './VehicleManagementSection';
 import { SafeDrivingSection } from './SafeDrivingSection';
-import { DriverPreferencesPage } from './DriverPreferencesPage';
 import { InstantCashoutModal } from './InstantCashoutModal';
 import { ProfilePhotoUpload } from './ProfilePhotoUpload';
 
@@ -41,7 +40,7 @@ export const AccountSection: React.FC<{
     onTimeRate: 100
   });
   const [loading, setLoading] = useState(true);
-  const [currentSection, setCurrentSection] = useState<'main' | 'profile' | 'payments' | 'settings' | 'vehicle' | 'safety' | 'preferences'>('main');
+  const [currentSection, setCurrentSection] = useState<'main' | 'profile' | 'payments' | 'settings' | 'vehicle' | 'safety'>('main');
   const [showCashoutModal, setShowCashoutModal] = useState(false);
   const [availableCashout, setAvailableCashout] = useState(0);
 
@@ -140,17 +139,6 @@ export const AccountSection: React.FC<{
   if (currentSection === 'safety') {
     return <SafeDrivingSection onBack={() => setCurrentSection('main')} />;
   }
-  if (currentSection === 'preferences') {
-    return <div className="min-h-screen bg-slate-50">
-      <div className="sticky top-0 z-10 bg-white border-b border-slate-200 px-4 py-4 safe-area-top">
-        <button onClick={() => setCurrentSection('main')} className="flex items-center text-slate-700 hover:text-slate-900">
-          <ChevronRight className="h-5 w-5 rotate-180 mr-2" />
-          <span className="font-medium">Back to Account</span>
-        </button>
-      </div>
-      <DriverPreferencesPage />
-    </div>;
-  }
 
   if (loading) {
     return (
@@ -244,7 +232,10 @@ export const AccountSection: React.FC<{
               <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center">
                 <Car className="h-5 w-5 text-purple-600" />
               </div>
-              <span className="font-medium text-slate-900">Vehicle & Documents</span>
+              <div className="text-left">
+                <span className="font-medium text-slate-900 block">Vehicle & Documents</span>
+                <span className="text-xs text-slate-600 capitalize">{profile?.vehicle_type || 'Not set'}</span>
+              </div>
             </div>
             <ChevronRight className="h-5 w-5 text-slate-400" />
           </button>
@@ -273,16 +264,6 @@ export const AccountSection: React.FC<{
             <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Settings</h3>
           </div>
           
-          <button onClick={() => setCurrentSection('preferences')} className="w-full px-4 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors border-b border-slate-100">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center">
-                <Settings className="h-5 w-5 text-orange-600" />
-              </div>
-              <span className="font-medium text-slate-900">Preferences</span>
-            </div>
-            <ChevronRight className="h-5 w-5 text-slate-400" />
-          </button>
-
           <button onClick={() => setCurrentSection('settings')} className="w-full px-4 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors border-b border-slate-100">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center">
