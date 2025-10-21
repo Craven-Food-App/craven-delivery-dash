@@ -59,22 +59,49 @@ const LiveDashboard = () => {
 
   const fetchData = async () => {
     try {
-      // Fetch recent orders
-      const { data: ordersData, error: ordersError } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          restaurants (
-            name,
-            address,
-            city,
-            state
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .limit(20);
+      // Fetch recent orders with fallback
+      let ordersData = [];
+      
+      try {
+        const { data, error: ordersError } = await supabase
+          .from('orders')
+          .select(`
+            *,
+            restaurants (
+              name,
+              address,
+              city,
+              state
+            )
+          `)
+          .order('created_at', { ascending: false })
+          .limit(20);
 
-      if (ordersError) throw ordersError;
+        if (ordersError) {
+          console.warn('Orders JOIN query failed, trying without restaurants join:', ordersError);
+          
+          // Fallback: fetch orders without restaurant join
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('orders')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(20);
+            
+          if (fallbackError) {
+            console.error('Orders fallback query failed:', fallbackError);
+            throw fallbackError;
+          }
+          
+          ordersData = fallbackData || [];
+          console.log('Loaded', ordersData.length, 'orders without restaurant details');
+        } else {
+          ordersData = data || [];
+          console.log('Loaded', ordersData.length, 'orders with restaurant details');
+        }
+      } catch (err) {
+        console.error('Critical error fetching orders:', err);
+        ordersData = [];
+      }
 
       // Fetch online drivers - simplified approach
       const { data: driversData, error: driversError } = await supabase
