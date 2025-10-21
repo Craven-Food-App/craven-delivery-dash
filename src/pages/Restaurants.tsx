@@ -831,7 +831,7 @@ const Restaurants = () => {
             <div className="max-w-7xl mx-auto px-4">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">Deals for you</h2>
-                <div className="flex items-center space-x-2">
+                <div className="hidden lg:flex items-center space-x-2">
                   <span className="text-sm text-gray-600">See All</span>
                   <div className="flex space-x-1">
                     <button 
@@ -848,11 +848,14 @@ const Restaurants = () => {
                     </button>
                   </div>
                 </div>
+                <button className="lg:hidden text-sm text-primary font-semibold">
+                  See All
+                </button>
               </div>
 
               {/* Weekly Deals Cards */}
               {loadingDeals ? (
-                <div className="flex space-x-6 overflow-x-auto pb-4">
+                <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4">
                   {[...Array(6)].map((_, index) => (
                     <div key={index} className="flex-shrink-0 w-64 bg-gray-200 rounded-xl animate-pulse">
                       <div className="h-48 bg-gray-300"></div>
@@ -866,7 +869,7 @@ const Restaurants = () => {
                   ))}
                 </div>
               ) : weeklyDeals.length > 0 ? (
-                <div className="flex space-x-6 overflow-x-auto pb-4" ref={weeklyDealsScrollRef}>
+                <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4" ref={weeklyDealsScrollRef}>
                   {weeklyDeals.map((restaurant) => {
                     const formatPromotionTitle = () => {
                       if (restaurant.promotion_title) return restaurant.promotion_title;
