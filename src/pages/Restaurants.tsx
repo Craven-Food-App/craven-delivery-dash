@@ -721,8 +721,8 @@ const Restaurants = () => {
           <div className="bg-white py-8">
             <div className="max-w-7xl mx-auto px-4">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">National favorites</h2>
-                <div className="flex items-center space-x-2">
+                <h2 className="text-xl lg:text-2xl font-bold text-gray-900">National favorites</h2>
+                <div className="hidden lg:flex items-center space-x-2">
                   <span className="text-sm text-gray-600">See All</span>
                   <div className="flex space-x-1">
                     <button 
@@ -739,10 +739,13 @@ const Restaurants = () => {
                     </button>
                   </div>
                 </div>
+                <button className="lg:hidden text-sm text-primary font-semibold">
+                  See All
+                </button>
               </div>
 
               {/* Featured Restaurant Cards */}
-              <div className="flex space-x-6 overflow-x-auto pb-4" ref={featuredScrollRef}>
+              <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4" ref={featuredScrollRef}>
                 {[
                   {
                     name: "Chick-fil-A",
