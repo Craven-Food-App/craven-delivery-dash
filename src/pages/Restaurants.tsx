@@ -331,18 +331,8 @@ const Restaurants = () => {
       window.location.href = '/customer-dashboard?tab=orders';
       return;
     } else if (categoryId === 'account') {
-      // Show account popup next to the side menu
-      const sideMenuElement = document.querySelector('.side-menu-container');
-      if (sideMenuElement) {
-        const rect = sideMenuElement.getBoundingClientRect();
-        setAccountPopupPosition({
-          top: rect.top + 100, // Position below the account button
-          left: rect.right + 20 // Position to the right of the side menu
-        });
-      } else {
-        setAccountPopupPosition({ top: 100, left: 300 });
-      }
-      setShowAccountPopup(true);
+      // Navigate to customer dashboard account tab
+      window.location.href = '/customer-dashboard?tab=account';
       return;
     }
     
