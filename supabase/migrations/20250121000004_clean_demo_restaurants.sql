@@ -141,36 +141,26 @@ BEGIN
       completed_at = NOW()
     WHERE restaurant_id = restaurant_id;
     
-    -- Add 12 menu items
-    FOR i IN 1..12 LOOP
-      INSERT INTO public.menu_items (
-        id, restaurant_id, name, description, price_cents, category, is_available
-      ) VALUES (
-        gen_random_uuid(),
-        restaurant_id,
-        CASE 
-          WHEN i = 1 THEN 'Buffalo Wings'
-          WHEN i = 2 THEN 'Loaded Fries'
-          WHEN i = 3 THEN 'House Salad'
-          WHEN i = 4 THEN 'Classic Burger'
-          WHEN i = 5 THEN 'Grilled Chicken'
-          WHEN i = 6 THEN 'Ribeye Steak'
-          WHEN i = 7 THEN 'Pasta Alfredo'
-          WHEN i = 8 THEN 'Salmon Fillet'
-          WHEN i = 9 THEN 'Veggie Wrap'
-          WHEN i = 10 THEN 'Chocolate Cake'
-          WHEN i = 11 THEN 'Ice Cream'
-          ELSE 'Cheesecake'
-        END,
-        'Freshly prepared house specialty',
-        floor(899 + random() * 1900)::INT,
-        CASE WHEN i <= 3 THEN 'Appetizers' WHEN i <= 9 THEN 'Entrees' ELSE 'Desserts' END,
-        true
-      );
-    END LOOP;
+    -- Add 12 menu items with specific names
+    INSERT INTO public.menu_items (id, restaurant_id, name, description, price_cents, category, is_available)
+    VALUES
+      (gen_random_uuid(), restaurant_id, 'Buffalo Wings', 'Crispy wings with your choice of sauce', floor(899 + random() * 600)::INT, 'Appetizers', true),
+      (gen_random_uuid(), restaurant_id, 'Loaded Fries', 'Fries topped with cheese and bacon', floor(799 + random() * 500)::INT, 'Appetizers', true),
+      (gen_random_uuid(), restaurant_id, 'House Salad', 'Fresh mixed greens with house dressing', floor(699 + random() * 400)::INT, 'Appetizers', true),
+      (gen_random_uuid(), restaurant_id, 'Classic Burger', 'Juicy beef patty with all the fixings', floor(1099 + random() * 700)::INT, 'Entrees', true),
+      (gen_random_uuid(), restaurant_id, 'Grilled Chicken', 'Seasoned chicken breast with sides', floor(1299 + random() * 800)::INT, 'Entrees', true),
+      (gen_random_uuid(), restaurant_id, 'Ribeye Steak', 'Premium cut cooked to perfection', floor(2499 + random() * 1500)::INT, 'Entrees', true),
+      (gen_random_uuid(), restaurant_id, 'Pasta Alfredo', 'Creamy fettuccine with parmesan', floor(1199 + random() * 700)::INT, 'Entrees', true),
+      (gen_random_uuid(), restaurant_id, 'Salmon Fillet', 'Fresh Atlantic salmon with lemon', floor(1799 + random() * 1000)::INT, 'Entrees', true),
+      (gen_random_uuid(), restaurant_id, 'Veggie Wrap', 'Fresh vegetables in a soft tortilla', floor(999 + random() * 500)::INT, 'Entrees', true),
+      (gen_random_uuid(), restaurant_id, 'Chocolate Cake', 'Rich chocolate layer cake', floor(699 + random() * 400)::INT, 'Desserts', true),
+      (gen_random_uuid(), restaurant_id, 'Ice Cream Sundae', 'Vanilla ice cream with toppings', floor(599 + random() * 400)::INT, 'Desserts', true),
+      (gen_random_uuid(), restaurant_id, 'New York Cheesecake', 'Creamy cheesecake with berry sauce', floor(799 + random() * 400)::INT, 'Desserts', true);
     
     counter := counter + 1;
   END LOOP;
+  
+  RAISE NOTICE '✅ Created 234 restaurants with 2,808 menu items!';
 END $$;
 
 -- Done!
@@ -183,4 +173,3 @@ BEGIN
   RAISE NOTICE '⭐ All verified and ready';
   RAISE NOTICE '========================================';
 END $$;
-
