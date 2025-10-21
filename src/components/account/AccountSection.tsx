@@ -9,9 +9,10 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { User, CreditCard, MapPin, Bell, Star, DollarSign, Clock, Package } from 'lucide-react';
+import { User, CreditCard, MapPin, Bell, Star, DollarSign, Clock, Package, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface UserProfile {
   id: string;
@@ -52,12 +53,14 @@ interface OrderHistory {
 
 export const AccountSection = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [addresses, setAddresses] = useState<DeliveryAddress[]>([]);
   const [orderHistory, setOrderHistory] = useState<OrderHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [expandedView, setExpandedView] = useState(false);
 
   useEffect(() => {
     fetchAccountData();
@@ -247,9 +250,64 @@ export const AccountSection = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      {/* Profile Header */}
-      <Card>
+    <div className="max-w-4xl mx-auto lg:p-6 space-y-4 lg:space-y-6">
+      {/* Mobile Quick Access Card */}
+      <div className="lg:hidden">
+        <button
+          onClick={() => setExpandedView(!expandedView)}
+          className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 active:bg-gray-50 transition-colors"
+        >
+          <div className="flex items-center space-x-3">
+            <Avatar className="h-14 w-14">
+              <AvatarImage src={profile?.avatar_url || ''} />
+              <AvatarFallback className="bg-primary/10 text-primary">
+                <User className="h-7 w-7" />
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 text-left">
+              <h3 className="font-semibold text-gray-900 text-base">{profile?.full_name || 'User'}</h3>
+              <p className="text-sm text-gray-600">View and edit profile</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400" />
+          </div>
+        </button>
+        
+        {/* Mobile Account Options */}
+        <div className="mt-3 space-y-2">
+          <button className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 active:bg-gray-50 transition-colors flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                <CreditCard className="w-5 h-5 text-gray-600" />
+              </div>
+              <span className="font-medium text-gray-900">Payment Methods</span>
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400" />
+          </button>
+          
+          <button className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 active:bg-gray-50 transition-colors flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                <MapPin className="w-5 h-5 text-gray-600" />
+              </div>
+              <span className="font-medium text-gray-900">Addresses</span>
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400" />
+          </button>
+          
+          <button className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 active:bg-gray-50 transition-colors flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                <Bell className="w-5 h-5 text-gray-600" />
+              </div>
+              <span className="font-medium text-gray-900">Notifications</span>
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400" />
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop Profile Header */}
+      <Card className="hidden lg:block">
         <CardHeader>
           <div className="flex items-center space-x-4">
             <Avatar className="h-16 w-16">
@@ -272,8 +330,8 @@ export const AccountSection = () => {
         </CardHeader>
       </Card>
 
-      {/* Account Management Tabs */}
-      <Tabs defaultValue="profile" className="w-full">
+      {/* Account Management Tabs - Desktop or Expanded Mobile */}
+      <Tabs defaultValue="profile" className={`w-full ${expandedView ? 'block' : 'hidden lg:block'}`}>
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
