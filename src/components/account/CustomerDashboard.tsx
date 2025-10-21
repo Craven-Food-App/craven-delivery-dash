@@ -317,7 +317,7 @@ const CustomerDashboard = () => {
     const restaurant = restaurants[order.restaurant_id];
     
     return (
-      <div className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden mb-4">
+      <div className="bg-white border-b border-gray-200 mb-3">
         <div className="bg-primary text-white px-4 py-2 flex items-center justify-between">
           <span className="text-sm font-semibold">Order in progress</span>
           <span className="text-xs">15-25 min</span>
@@ -376,7 +376,7 @@ const CustomerDashboard = () => {
     
     return (
       <div 
-        className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-3 active:bg-gray-50 transition-colors"
+        className="bg-white border-b border-gray-200 mb-3 active:bg-gray-50 transition-colors"
         onClick={() => handleViewOrderDetails(order.id)}
       >
         <div className="flex p-4">
@@ -435,7 +435,7 @@ const CustomerDashboard = () => {
     const pastOrders = orders.filter(o => o.order_status === 'delivered').slice(0, 3);
 
     return (
-      <div className="pb-20 bg-gray-50">
+      <div className="pb-20 bg-white">
         {activeOrders.length > 0 && (
           <div className="px-4 pt-4">
             <h2 className="text-lg font-bold text-gray-900 mb-3">Active Orders</h2>
@@ -443,8 +443,8 @@ const CustomerDashboard = () => {
           </div>
         )}
         
-        <div className="px-4 py-4">
-          <div className="bg-gradient-to-br from-primary via-primary to-primary-glow rounded-2xl p-6 shadow-xl text-white">
+        <div className="px-4 py-4 bg-gray-50">
+          <div className="bg-gradient-to-br from-primary via-primary to-primary-glow rounded-2xl p-6 text-white">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <img src={cravemoreIcon} alt="CraveMore" className="w-10 h-10" />
@@ -480,8 +480,8 @@ const CustomerDashboard = () => {
         </div>
         
         {pastOrders.length > 0 && (
-          <div className="px-4">
-            <div className="flex items-center justify-between mb-3">
+          <div className="px-4 bg-white">
+            <div className="flex items-center justify-between mb-3 pt-4">
               <h2 className="text-lg font-bold text-gray-900">Past Orders</h2>
               <button 
                 onClick={() => navigate('?tab=orders')}
@@ -496,14 +496,14 @@ const CustomerDashboard = () => {
         )}
         
         {favorites.length > 0 && (
-          <div className="px-4 mt-6">
+          <div className="px-4 bg-white pt-6">
             <h2 className="text-lg font-bold text-gray-900 mb-3">Your Favorites</h2>
-            <div className="flex space-x-3 overflow-x-auto scrollbar-hide pb-2">
+            <div className="flex space-x-3 overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4">
               {favorites.map((restaurant) => (
                 <div 
                   key={restaurant.id}
                   onClick={() => navigate(`/restaurant/${restaurant.id}/menu`)}
-                  className="flex-shrink-0 w-40 bg-white rounded-xl border border-gray-200 overflow-hidden active:opacity-75 transition-opacity"
+                  className="flex-shrink-0 w-40 bg-gray-50 rounded-xl overflow-hidden active:opacity-75 transition-opacity shadow-sm"
                 >
                   <div className="h-24 bg-gray-100">
                     {restaurant.image_url && (
@@ -527,10 +527,10 @@ const CustomerDashboard = () => {
           </div>
         )}
         
-        <div className="px-4 mt-6">
+        <div className="px-4 py-6 bg-gray-50">
           <button
             onClick={() => navigate('/restaurants')}
-            className="w-full py-4 bg-white border border-gray-200 text-gray-900 rounded-xl font-semibold flex items-center justify-center space-x-2 active:bg-gray-50 transition-colors"
+            className="w-full py-4 bg-white text-gray-900 rounded-xl font-semibold flex items-center justify-center space-x-2 active:bg-gray-50 transition-colors shadow-sm"
           >
             <span>Explore Restaurants</span>
             <ArrowRight className="w-5 h-5" />
@@ -548,7 +548,7 @@ const CustomerDashboard = () => {
       : orders.filter(o => o.order_status === 'delivered');
       
     return (
-      <div className="pb-20 bg-gray-50">
+      <div className="pb-20 bg-white">
         <div className="sticky top-14 bg-white border-b border-gray-200 z-30">
           <div className="px-4 py-3">
             <div className="flex space-x-2">
@@ -576,9 +576,9 @@ const CustomerDashboard = () => {
           </div>
         </div>
         
-        <div className="px-4 pt-4">
+        <div className="pt-4">
           {filteredOrders.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="text-center py-12 px-4">
               <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No orders yet</h3>
               <p className="text-gray-600 mb-6">Start exploring restaurants</p>
@@ -615,13 +615,13 @@ const CustomerDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <MobileHeader />
       
       {activeTab === 'home' && <MobileHomeTab />}
       {activeTab === 'orders' && <MobileOrdersTab />}
       {activeTab === 'account' && (
-        <div className="px-4 pt-4 pb-20 bg-gray-50">
+        <div className="pt-4 pb-20 bg-white">
           <AccountSection />
         </div>
       )}

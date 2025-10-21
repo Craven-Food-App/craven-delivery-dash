@@ -250,12 +250,12 @@ export const AccountSection = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto lg:p-6 space-y-4 lg:space-y-6">
+    <div className="max-w-4xl mx-auto lg:p-6">
       {/* Mobile Quick Access Card */}
       <div className="lg:hidden">
         <button
           onClick={() => setExpandedView(!expandedView)}
-          className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 active:bg-gray-50 transition-colors"
+          className="w-full bg-white border-b border-gray-200 px-4 py-4 active:bg-gray-50 transition-colors"
         >
           <div className="flex items-center space-x-3">
             <Avatar className="h-14 w-14">
@@ -273,8 +273,8 @@ export const AccountSection = () => {
         </button>
         
         {/* Mobile Account Options */}
-        <div className="mt-3 space-y-2">
-          <button className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 active:bg-gray-50 transition-colors flex items-center justify-between">
+        <div className="bg-white">
+          <button className="w-full bg-white border-b border-gray-200 px-4 py-4 active:bg-gray-50 transition-colors flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
                 <CreditCard className="w-5 h-5 text-gray-600" />
@@ -284,7 +284,7 @@ export const AccountSection = () => {
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </button>
           
-          <button className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 active:bg-gray-50 transition-colors flex items-center justify-between">
+          <button className="w-full bg-white border-b border-gray-200 px-4 py-4 active:bg-gray-50 transition-colors flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
                 <MapPin className="w-5 h-5 text-gray-600" />
@@ -294,12 +294,25 @@ export const AccountSection = () => {
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </button>
           
-          <button className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 active:bg-gray-50 transition-colors flex items-center justify-between">
+          <button className="w-full bg-white border-b border-gray-200 px-4 py-4 active:bg-gray-50 transition-colors flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
                 <Bell className="w-5 h-5 text-gray-600" />
               </div>
               <span className="font-medium text-gray-900">Notifications</span>
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400" />
+          </button>
+          
+          <button 
+            onClick={handleSignOut}
+            className="w-full bg-white border-b border-gray-200 px-4 py-4 active:bg-gray-50 transition-colors flex items-center justify-between"
+          >
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center">
+                <User className="w-5 h-5 text-red-600" />
+              </div>
+              <span className="font-medium text-red-600">Sign Out</span>
             </div>
             <ChevronRight className="w-5 h-5 text-gray-400" />
           </button>
