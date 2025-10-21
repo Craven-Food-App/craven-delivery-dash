@@ -166,16 +166,20 @@ DROP FUNCTION generate_demo_restaurants();
 -- ============================================================================
 COMMENT ON COLUMN restaurants.is_demo IS 'Demo restaurants for testing - can be bulk deleted where is_demo = true';
 
+-- Success message
+DO $$
+BEGIN
+  RAISE NOTICE '====================================';
+  RAISE NOTICE '✅ 234 Demo Restaurants Created!';
+  RAISE NOTICE '📍 Across 28 cities in 8 states';
+  RAISE NOTICE '🍔 Each with 8-12 menu items';
+  RAISE NOTICE '⭐ Random ratings 3.8-5.0';
+  RAISE NOTICE '💬 Random review counts';
+  RAISE NOTICE '====================================';
+  RAISE NOTICE 'To remove: DELETE FROM restaurants WHERE is_demo = true;';
+  RAISE NOTICE '====================================';
+END $$;
+
 -- To remove all demo restaurants later, run:
 -- DELETE FROM menu_items WHERE is_demo = true;
 -- DELETE FROM restaurants WHERE is_demo = true;
-
-RAISE NOTICE '====================================';
-RAISE NOTICE '✅ 234 Demo Restaurants Created!';
-RAISE NOTICE '📍 Across 28 cities in 8 states';
-RAISE NOTICE '🍔 Each with 8-12 menu items';
-RAISE NOTICE '⭐ Random ratings 3.8-5.0';
-RAISE NOTICE '💬 Random review counts';
-RAISE NOTICE '====================================';
-RAISE NOTICE 'To remove: DELETE FROM restaurants WHERE is_demo = true;';
-RAISE NOTICE '====================================';
