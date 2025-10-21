@@ -149,11 +149,20 @@ BEGIN
         gen_random_uuid(),
         restaurant_id,
         CASE 
-          WHEN i <= 3 THEN ARRAY['Wings', 'Fries', 'Salad', 'Soup'][i]
-          WHEN i <= 9 THEN ARRAY['Burger', 'Chicken', 'Steak', 'Pasta', 'Fish', 'Sandwich'][(i-3)]
-          ELSE ARRAY['Cake', 'Ice Cream', 'Pie'][(i-9)]
-        END || ' Special',
-        'House specialty',
+          WHEN i = 1 THEN 'Buffalo Wings'
+          WHEN i = 2 THEN 'Loaded Fries'
+          WHEN i = 3 THEN 'House Salad'
+          WHEN i = 4 THEN 'Classic Burger'
+          WHEN i = 5 THEN 'Grilled Chicken'
+          WHEN i = 6 THEN 'Ribeye Steak'
+          WHEN i = 7 THEN 'Pasta Alfredo'
+          WHEN i = 8 THEN 'Salmon Fillet'
+          WHEN i = 9 THEN 'Veggie Wrap'
+          WHEN i = 10 THEN 'Chocolate Cake'
+          WHEN i = 11 THEN 'Ice Cream'
+          ELSE 'Cheesecake'
+        END,
+        'Freshly prepared house specialty',
         floor(899 + random() * 1900)::INT,
         CASE WHEN i <= 3 THEN 'Appetizers' WHEN i <= 9 THEN 'Entrees' ELSE 'Desserts' END,
         true
