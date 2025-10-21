@@ -13,7 +13,44 @@ DO $$
 DECLARE
   demo_user_id uuid := '00000000-0000-0000-0000-000000000001'::uuid;
 BEGIN
-  -- Insert into user_profiles (use 'admin' role since restaurant_owner isn't in check constraint)
+  -- Insert into auth.users first (required for foreign key)
+  INSERT INTO auth.users (
+    instance_id,
+    id,
+    aud,
+    role,
+    email,
+    encrypted_password,
+    email_confirmed_at,
+    created_at,
+    updated_at,
+    raw_app_meta_data,
+    raw_user_meta_data,
+    is_super_admin,
+    confirmation_token,
+    email_change,
+    email_change_token_new,
+    recovery_token
+  ) VALUES (
+    '00000000-0000-0000-0000-000000000000',
+    demo_user_id,
+    'authenticated',
+    'authenticated',
+    'demo-restaurants@crave-n.shop',
+    crypt('DemoPass123!', gen_salt('bf')),
+    NOW(),
+    NOW(),
+    NOW(),
+    '{"provider":"email","providers":["email"]}',
+    '{}',
+    FALSE,
+    '',
+    '',
+    '',
+    ''
+  ) ON CONFLICT (id) DO NOTHING;
+  
+  -- Insert into user_profiles
   INSERT INTO public.user_profiles (user_id, full_name, role, created_at)
   VALUES (demo_user_id, 'Demo Restaurant Owner', 'admin', NOW())
   ON CONFLICT (user_id) DO NOTHING;
