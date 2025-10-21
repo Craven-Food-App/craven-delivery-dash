@@ -52,13 +52,13 @@ export const InstallAppBanner = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-safe animate-slide-up">
-      <Card className="relative bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-2xl border-0">
+      <Card className="relative bg-gradient-to-r from-primary to-primary-glow text-white shadow-2xl border-0">
         <button
           onClick={handleDismiss}
-          className="absolute top-2 right-2 p-1 rounded-full hover:bg-white/20 transition-colors"
-          aria-label="Dismiss"
+          className="absolute top-3 right-3 p-1.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors backdrop-blur-sm"
+          aria-label="Close"
         >
-          <X className="h-4 w-4" />
+          <X className="h-5 w-5 text-white stroke-[2.5]" />
         </button>
 
         <div className="p-4 flex items-center gap-4">
@@ -75,7 +75,7 @@ export const InstallAppBanner = () => {
             onClick={handleInstall}
             variant="secondary"
             size="sm"
-            className="bg-white text-orange-600 hover:bg-gray-100 font-semibold"
+            className="bg-white text-primary hover:bg-gray-100 font-semibold"
           >
             <Apple className="h-5 w-5 mr-2" />
             Install
