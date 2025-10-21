@@ -164,7 +164,7 @@ const RestaurantMenuPage = () => {
         { id: 'all', label: 'All', icon: Home, active: activeCategory === 'all' },
         { id: 'grocery', label: 'Grocery', icon: Banana, active: activeCategory === 'grocery' },
         { id: 'convenience', label: 'Convenience', icon: Coffee, active: activeCategory === 'convenience' },
-        { id: 'dashmart', label: 'CraveMart', icon: Store, active: activeCategory === 'dashmart' },
+        { id: 'dashmart', label: "Craven'Z", icon: Store, active: activeCategory === 'dashmart' },
         { id: 'beauty', label: 'Beauty', icon: Heart, active: activeCategory === 'beauty' },
         { id: 'pets', label: 'Pets', icon: PawPrint, active: activeCategory === 'pets' },
         { id: 'health', label: 'Health', icon: Pill, active: activeCategory === 'health' },

@@ -5,7 +5,8 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   Home, Package, User, Heart, Clock, Star, ChevronRight, 
   ShoppingCart, MapPin, Plus, Gift, TrendingUp,
-  Receipt, RefreshCw, MessageCircle, Phone, ArrowRight, Check, X
+  Receipt, RefreshCw, MessageCircle, Phone, ArrowRight, Check, X,
+  Menu, Coffee, Store, Shield, Search, ChevronDown
 } from "lucide-react";
 import { AccountSection } from "@/components/account/AccountSection";
 import OrderTrackingBox from "@/components/OrderTrackingBox";
@@ -56,6 +57,8 @@ const CustomerDashboard = () => {
   const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
   const [detailsOrderId, setDetailsOrderId] = useState<string | null>(null);
   const [orderTypeFilter, setOrderTypeFilter] = useState<'personal' | 'business'>('personal');
+  const [showMobileNav, setShowMobileNav] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('home');
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -243,10 +246,10 @@ const CustomerDashboard = () => {
             {activeTab === 'home' && <p className="text-sm text-gray-600">{getUserFirstName()}</p>}
           </div>
           <button 
-            onClick={() => navigate('/cravemore')}
-            className="p-2 bg-primary/10 rounded-full border border-primary/20"
+            onClick={() => setShowMobileNav(!showMobileNav)}
+            className="p-2 -mr-2 active:bg-gray-100 rounded-full transition-colors"
           >
-            <img src={cravemoreIcon} alt="CraveMore" className="w-5 h-5" />
+            {showMobileNav ? <X className="w-6 h-6 text-gray-900" /> : <Menu className="w-6 h-6 text-gray-900" />}
           </button>
         </div>
         
@@ -272,6 +275,41 @@ const CustomerDashboard = () => {
     if (hour < 12) return 'morning';
     if (hour < 17) return 'afternoon';
     return 'evening';
+  };
+
+  // Navigation categories for hamburger menu
+  const navCategories = [
+    { id: 'home', label: 'Home', icon: Home },
+    { id: 'restaurants', label: 'Restaurants', icon: Store },
+    { id: 'grocery', label: 'Grocery', icon: Store },
+    { id: 'convenience', label: 'Convenience', icon: Coffee },
+    { id: 'cravenz', label: "Craven'Z", icon: Store },
+    { id: 'beauty', label: 'Beauty', icon: Heart },
+    { id: 'pets', label: 'Pets', icon: Heart },
+    { id: 'health', label: 'Health', icon: Shield },
+    { id: 'cravemore', label: 'CraveMore', icon: Gift },
+    { id: 'orders', label: 'Orders', icon: Package },
+    { id: 'account', label: 'Account', icon: User }
+  ];
+
+  const handleMenuClick = (categoryId: string) => {
+    setShowMobileNav(false);
+    
+    if (categoryId === 'home') {
+      navigate('?tab=home');
+    } else if (categoryId === 'restaurants') {
+      navigate('/restaurants');
+    } else if (categoryId === 'cravenz') {
+      navigate('/restaurants');
+    } else if (categoryId === 'cravemore') {
+      navigate('/cravemore');
+    } else if (categoryId === 'orders') {
+      navigate('?tab=orders');
+    } else if (categoryId === 'account') {
+      navigate('?tab=account');
+    } else if (['grocery', 'convenience', 'beauty', 'pets', 'health'].includes(categoryId)) {
+      navigate('/restaurants');
+    }
   };
 
   // Active Order Card
@@ -589,6 +627,41 @@ const CustomerDashboard = () => {
       )}
       
       <MobileBottomNav />
+      
+      {/* Mobile Navigation Overlay */}
+      {showMobileNav && (
+        <div className="lg:hidden fixed inset-0 z-50 bg-black bg-opacity-50" onClick={() => setShowMobileNav(false)}>
+          <div 
+            className="fixed right-0 top-0 h-full w-72 bg-white shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Browse</h3>
+                <button 
+                  onClick={() => setShowMobileNav(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+              <nav className="space-y-1">
+                {navCategories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => handleMenuClick(category.id)}
+                    className="w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-left transition-colors text-gray-700 hover:bg-gray-100 active:bg-gray-200"
+                  >
+                    <category.icon className="w-5 h-5 text-gray-600" />
+                    <span className="font-medium">{category.label}</span>
+                    <ChevronRight className="w-4 h-4 ml-auto text-gray-400" />
+                  </button>
+                ))}
+              </nav>
+            </div>
+          </div>
+        </div>
+      )}
       
       {trackingOrderId && (
         <OrderTrackingBox 
