@@ -133,7 +133,7 @@ BEGIN
     
     INSERT INTO public.restaurants (
       id, owner_id, name, description, address, city, state, zip_code,
-      phone, email, cuisine_type, is_active, is_verified, rating, total_reviews,
+      phone, email, cuisine_type, is_active, rating, total_reviews,
       is_demo, created_at, updated_at
     ) VALUES (
       restaurant_id,
@@ -147,7 +147,6 @@ BEGIN
       '555-01' || LPAD(counter::TEXT, 2, '0'),
       'demo' || counter || '@demo.com',
       cuisine,
-      true,
       true,
       rating,
       review_count,
