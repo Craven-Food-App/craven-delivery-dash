@@ -35,7 +35,10 @@ export const AccountSection: React.FC<{
     rating: 5.0,
     totalDeliveries: 0,
     weekEarnings: 0,
-    todayEarnings: 0
+    todayEarnings: 0,
+    acceptanceRate: 100,
+    completionRate: 100,
+    onTimeRate: 100
   });
   const [loading, setLoading] = useState(true);
   const [currentSection, setCurrentSection] = useState<'main' | 'profile' | 'payments' | 'settings' | 'vehicle' | 'safety' | 'preferences'>('main');
@@ -58,10 +61,10 @@ export const AccountSection: React.FC<{
         .eq('user_id', user.id)
         .single();
 
-      // Get driver stats
+      // Get driver stats and rating details
       const { data: driverProfile } = await supabase
         .from('driver_profiles')
-        .select('total_deliveries, rating')
+        .select('total_deliveries, rating, acceptance_rate, completion_rate, on_time_rate')
         .eq('user_id', user.id)
         .single();
 
@@ -95,7 +98,10 @@ export const AccountSection: React.FC<{
         rating: driverProfile?.rating || 5.0,
         totalDeliveries: driverProfile?.total_deliveries || 0,
         todayEarnings: (todayOrders?.reduce((sum, o) => sum + (o.payout_cents || 0), 0) || 0) / 100,
-        weekEarnings: (weekOrders?.reduce((sum, o) => sum + (o.payout_cents || 0), 0) || 0) / 100
+        weekEarnings: (weekOrders?.reduce((sum, o) => sum + (o.payout_cents || 0), 0) || 0) / 100,
+        acceptanceRate: driverProfile?.acceptance_rate || 100,
+        completionRate: driverProfile?.completion_rate || 100,
+        onTimeRate: driverProfile?.on_time_rate || 100
       });
 
       // Calculate available cashout
