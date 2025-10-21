@@ -25,6 +25,10 @@ WHERE user_id IN (
 
 DELETE FROM auth.users WHERE email LIKE 'restaurant%@crave-n.shop';
 
+-- DISABLE the trigger that auto-creates onboarding progress (we'll create them manually)
+ALTER TABLE public.restaurants DISABLE TRIGGER IF EXISTS trg_initialize_restaurant_onboarding;
+ALTER TABLE public.restaurants DISABLE TRIGGER IF EXISTS initialize_restaurant_onboarding_trigger;
+
 -- Function to create 234 real demo restaurants
 CREATE OR REPLACE FUNCTION create_verified_demo_restaurants()
 RETURNS void AS $$
@@ -161,19 +165,32 @@ BEGIN
       NOW()
     );
     
-    -- Mark onboarding as complete (bypass verification)
-    UPDATE public.restaurant_onboarding_progress
-    SET 
-      current_step = 'completed',
-      business_info_completed = true,
-      menu_completed = true,
-      banking_completed = true,
-      verification_completed = true,
-      tablet_shipped = true,
-      go_live_ready = true,
-      completed_at = NOW(),
-      updated_at = NOW()
-    WHERE restaurant_id = restaurant_id;
+    -- Manually create onboarding progress (trigger is disabled)
+    INSERT INTO public.restaurant_onboarding_progress (
+      restaurant_id,
+      current_step,
+      business_info_completed,
+      menu_completed,
+      banking_completed,
+      verification_completed,
+      tablet_shipped,
+      go_live_ready,
+      completed_at,
+      created_at,
+      updated_at
+    ) VALUES (
+      restaurant_id,
+      'completed',
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      NOW(),
+      NOW(),
+      NOW()
+    );
     
     -- Add 10 menu items per restaurant
     FOR i IN 1..10 LOOP
@@ -213,6 +230,10 @@ SELECT create_verified_demo_restaurants();
 
 -- Drop the function
 DROP FUNCTION create_verified_demo_restaurants();
+
+-- RE-ENABLE the trigger for future restaurant inserts
+ALTER TABLE public.restaurants ENABLE TRIGGER IF EXISTS trg_initialize_restaurant_onboarding;
+ALTER TABLE public.restaurants ENABLE TRIGGER IF EXISTS initialize_restaurant_onboarding_trigger;
 
 -- Success notification
 DO $$
