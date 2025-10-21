@@ -5,6 +5,26 @@
 -- All verification bypassed - ready to use immediately
 -- ============================================================================
 
+-- Clean up any existing demo restaurants (emails starting with 'restaurant' and ending with '@crave-n.shop')
+DELETE FROM public.menu_items 
+WHERE restaurant_id IN (
+  SELECT id FROM public.restaurants WHERE email LIKE 'restaurant%@crave-n.shop'
+);
+
+DELETE FROM public.restaurant_onboarding_progress
+WHERE restaurant_id IN (
+  SELECT id FROM public.restaurants WHERE email LIKE 'restaurant%@crave-n.shop'
+);
+
+DELETE FROM public.restaurants WHERE email LIKE 'restaurant%@crave-n.shop';
+
+DELETE FROM public.user_profiles 
+WHERE user_id IN (
+  SELECT id FROM auth.users WHERE email LIKE 'restaurant%@crave-n.shop'
+);
+
+DELETE FROM auth.users WHERE email LIKE 'restaurant%@crave-n.shop';
+
 -- Function to create 234 real demo restaurants
 CREATE OR REPLACE FUNCTION create_verified_demo_restaurants()
 RETURNS void AS $$
