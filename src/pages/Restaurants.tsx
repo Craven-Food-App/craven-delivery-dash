@@ -364,8 +364,75 @@ const Restaurants = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Enhanced Header */}
-      <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      {/* Mobile Header - DoorDash Style */}
+      <div className="lg:hidden sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between mb-3">
+            <img src={cravenLogo} alt="CRAVE'N" className="h-8" />
+            <div className="flex items-center space-x-2">
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 -mr-2"
+              >
+                <Bell className="w-5 h-5 text-gray-600" />
+                {notifications.filter(n => !n.read).length > 0 && (
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                )}
+              </button>
+            </div>
+          </div>
+          
+          {/* Location & Delivery Mode */}
+          <div className="flex items-center space-x-2 mb-3">
+            <button 
+              onClick={() => setShowAddressSelector(!showAddressSelector)}
+              className="flex-1 flex items-center space-x-2 bg-gray-100 rounded-lg px-3 py-2 min-w-0"
+            >
+              <MapPin className="w-4 h-4 text-gray-600 flex-shrink-0" />
+              <span className="text-sm font-medium text-gray-900 truncate flex-1">{location}</span>
+              <ChevronDown className="w-4 h-4 text-gray-600 flex-shrink-0" />
+            </button>
+            
+            <div className="flex bg-gray-100 rounded-lg p-0.5 flex-shrink-0">
+              <button 
+                onClick={() => setDeliveryMode('delivery')}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  deliveryMode === 'delivery' 
+                    ? 'bg-black text-white' 
+                    : 'text-gray-600'
+                }`}
+              >
+                Delivery
+              </button>
+              <button 
+                onClick={() => setDeliveryMode('pickup')}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  deliveryMode === 'pickup' 
+                    ? 'bg-black text-white' 
+                    : 'text-gray-600'
+                }`}
+              >
+                Pickup
+              </button>
+            </div>
+          </div>
+          
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search restaurants or dishes"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Header - Hidden on Mobile */}
+      <div className="hidden lg:block sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             {/* Left: Logo */}
@@ -576,8 +643,30 @@ const Restaurants = () => {
         </div>
       </div>
 
+      {/* Mobile Filter Pills */}
+      <div className="lg:hidden sticky top-[140px] z-40 bg-white border-b border-gray-200 overflow-x-auto scrollbar-hide">
+        <div className="flex space-x-2 px-4 py-3">
+          {filterOptions.map((filter) => (
+            <button
+              key={filter.id}
+              onClick={() => {
+                setActiveFilter(filter.id);
+                applyFilters();
+              }}
+              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+                activeFilter === filter.id
+                  ? 'bg-black text-white'
+                  : 'bg-gray-100 text-gray-700'
+              }`}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="flex">
-        {/* Right Side Navigation */}
+        {/* Right Side Navigation - Desktop Only */}
         <div className="hidden lg:block w-64 bg-gray-50 border-r border-gray-200 min-h-screen side-menu-container">
           <div className="p-4">
             <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Browse</h3>
@@ -598,8 +687,8 @@ const Restaurants = () => {
 
         {/* Main Content */}
         <div className="flex-1">
-          {/* Filter Bar */}
-          <div className="border-b border-gray-200 bg-white">
+          {/* Filter Bar - Desktop Only */}
+          <div className="hidden lg:block border-b border-gray-200 bg-white">
             <div className="max-w-7xl mx-auto px-4 py-4">
               <div className="flex items-center space-x-4 overflow-x-auto">
                 {filterOptions.map((filter) => (
@@ -910,6 +999,16 @@ const Restaurants = () => {
         onClose={() => setShowAccountPopup(false)}
         position={accountPopupPosition}
       />
+
+      <style>{`
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </div>
   );
 };

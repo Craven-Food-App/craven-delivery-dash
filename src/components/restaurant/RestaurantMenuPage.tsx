@@ -86,6 +86,23 @@ interface CartItem extends MenuItem {
   special_instructions?: string;
 }
 
+// --- Mobile Header Component (DoorDash Style) ---
+const MobileHeader = ({ restaurant, onBack, onShare }: { restaurant: Restaurant | null; onBack: () => void; onShare: () => void }) => (
+  <div className="lg:hidden sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+    <div className="flex items-center justify-between px-4 py-3">
+      <button onClick={onBack} className="p-2 -ml-2 active:bg-gray-100 rounded-full transition-colors">
+        <ChevronLeft className="w-6 h-6 text-gray-900" />
+      </button>
+      <div className="flex-1 text-center">
+        <h1 className="font-semibold text-gray-900 text-sm truncate">{restaurant?.name || 'Restaurant'}</h1>
+      </div>
+      <button onClick={onShare} className="p-2 -mr-2 active:bg-gray-100 rounded-full transition-colors">
+        <Share2 className="w-5 h-5 text-gray-600" />
+      </button>
+    </div>
+  </div>
+);
+
 // --- Main Component ---
 const RestaurantMenuPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -898,8 +915,23 @@ const RestaurantMenuPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Enhanced Header */}
-      <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      {/* Mobile Header - DoorDash Style */}
+      <MobileHeader 
+        restaurant={restaurant}
+        onBack={() => navigate('/restaurants')}
+        onShare={() => {
+          if (navigator.share) {
+            navigator.share({
+              title: restaurant?.name,
+              text: `Check out ${restaurant?.name} on Crave'N`,
+              url: window.location.href
+            });
+          }
+        }}
+      />
+
+      {/* Desktop Header - Hidden on Mobile */}
+      <div className="hidden lg:block sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             {/* Left: Logo */}
@@ -1193,8 +1225,249 @@ const RestaurantMenuPage = () => {
               textRendering: 'optimizeLegibility'
           }}>
             <div className="max-w-7xl mx-auto">
-                       {/* --- Header Image Banner --- */}
-                       <div className="relative h-64 overflow-hidden rounded-b-xl shadow-lg" style={{
+                       {/* --- Mobile Hero Section (DoorDash Style) --- */}
+                       <div className="lg:hidden">
+                         {/* Hero Image */}
+                         <div className="relative h-48">
+                           <img
+                             src={restaurant.header_image_url || restaurant.image_url || 'https://placehold.co/600x300/A31D24/ffffff?text=Restaurant'}
+                             alt={restaurant.name}
+                             className="w-full h-full object-cover"
+                           />
+                         </div>
+                         
+                         {/* Restaurant Info Card - Overlapping (DoorDash signature style) */}
+                         <div className="mx-4 -mt-8 bg-white rounded-2xl shadow-xl p-4 relative z-10 border border-gray-100">
+                           <div className="flex items-start space-x-3 mb-3">
+                             <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-white shadow-md flex-shrink-0 bg-gray-100">
+                               <img 
+                                 src={restaurant.logo_url || restaurant.image_url || 'https://placehold.co/64x64/CCCCCC/666666?text=Logo'} 
+                                 alt={restaurant.name}
+                                 className="w-full h-full object-cover"
+                                 onError={(e) => { e.currentTarget.src = "https://placehold.co/64x64/CCCCCC/666666?text=Logo"; }}
+                               />
+                             </div>
+                             <div className="flex-1 min-w-0">
+                               <h2 className="text-lg font-bold text-gray-900 mb-1 leading-tight">{restaurant.name}</h2>
+                               <div className="flex items-center space-x-1 text-sm text-gray-600 mb-1">
+                                 <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                                 <span className="font-semibold">{restaurant.rating || 4.5}</span>
+                                 <span>({restaurant.total_reviews || 0}+)</span>
+                                 <span className="text-gray-400">•</span>
+                                 <span className="truncate">{restaurant.cuisine_type}</span>
+                               </div>
+                               <div className="flex items-center text-xs text-gray-500 space-x-2">
+                                 <div className="flex items-center space-x-1">
+                                   <Clock className="w-3 h-3 flex-shrink-0" />
+                                   <span>{restaurant.min_delivery_time}-{restaurant.max_delivery_time} min</span>
+                                 </div>
+                                 <span className="text-gray-400">•</span>
+                                 <div className="flex items-center space-x-1">
+                                   <Truck className="w-3 h-3 flex-shrink-0" />
+                                   <span>{formatPrice(restaurant.delivery_fee_cents || 0)}</span>
+                                 </div>
+                               </div>
+                             </div>
+                           </div>
+
+                           {/* Delivery/Pickup Toggle - Mobile */}
+                           <div className="flex gap-2 mt-4">
+                             <button
+                               onClick={() => setDeliveryMethod('delivery')}
+                               className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+                                 deliveryMethod === 'delivery'
+                                   ? 'bg-black text-white'
+                                   : 'bg-gray-100 text-gray-600'
+                               }`}
+                             >
+                               <Truck className="w-4 h-4 inline mr-1" />
+                               Delivery
+                             </button>
+                             <button
+                               onClick={() => setDeliveryMethod('pickup')}
+                               className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all ${
+                                 deliveryMethod === 'pickup'
+                                   ? 'bg-black text-white'
+                                   : 'bg-gray-100 text-gray-600'
+                               }`}
+                             >
+                               <Store className="w-4 h-4 inline mr-1" />
+                               Pickup
+                             </button>
+                           </div>
+                         </div>
+
+                         {/* Sticky Category Tabs - Mobile */}
+                         <div className="sticky top-12 z-40 bg-white border-b border-gray-200 overflow-x-auto scrollbar-hide -mx-4 px-4">
+                           <div className="flex space-x-2 py-3">
+                             {featuredItems.length > 0 && (
+                               <button
+                                 onClick={() => scrollToSection('featured')}
+                                 className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+                                   activeSection === 'featured'
+                                     ? 'bg-black text-white'
+                                     : 'bg-gray-100 text-gray-700'
+                                 }`}
+                               >
+                                 ⭐ Featured
+                               </button>
+                             )}
+                             {mostOrderedItems.length > 0 && (
+                               <button
+                                 onClick={() => scrollToSection('most-ordered')}
+                                 className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+                                   activeSection === 'most-ordered'
+                                     ? 'bg-black text-white'
+                                     : 'bg-gray-100 text-gray-700'
+                                 }`}
+                               >
+                                 🔥 Most Ordered
+                               </button>
+                             )}
+                             {categories.map(category => (
+                               <button
+                                 key={category.id}
+                                 onClick={() => scrollToSection(category.id)}
+                                 className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+                                   activeSection === category.id
+                                     ? 'bg-black text-white'
+                                     : 'bg-gray-100 text-gray-700'
+                                 }`}
+                               >
+                                 {category.name}
+                               </button>
+                             ))}
+                           </div>
+                         </div>
+
+                         {/* Mobile Menu Items - Compact List */}
+                         <div className="px-4 py-6 space-y-6">
+                           {/* Featured Items - Mobile */}
+                           {featuredItems.length > 0 && (
+                             <section id="featured-mobile" className="scroll-mt-24">
+                               <h2 className="text-xl font-bold text-gray-900 mb-4">Featured Items</h2>
+                               <div className="space-y-3">
+                                 {featuredItems.map(item => (
+                                   <div
+                                     key={item.id}
+                                     onClick={() => openItemModal(item)}
+                                     className="flex gap-3 bg-white rounded-xl border border-gray-200 p-3 active:bg-gray-50 transition-colors"
+                                   >
+                                     <div className="flex-1 min-w-0">
+                                       <h3 className="font-semibold text-gray-900 mb-1">{item.name}</h3>
+                                       <p className="text-sm text-gray-500 line-clamp-2 mb-2">{item.description}</p>
+                                       <div className="flex items-center justify-between">
+                                         <span className="text-base font-bold text-gray-900">{formatPrice(item.price_cents)}</span>
+                                         <div className="flex items-center space-x-1">
+                                           {item.is_vegetarian && <Leaf className="w-4 h-4 text-green-600" />}
+                                           {item.chef_recommended && <ChefHat className="w-4 h-4 text-orange-500" />}
+                                         </div>
+                                       </div>
+                                     </div>
+                                     {item.image_url && (
+                                       <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 relative">
+                                         <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = "https://placehold.co/100x100/CCCCCC/666666?text=Item"; }} />
+                                         <button
+                                           onClick={(e) => { e.stopPropagation(); addToCart(item); }}
+                                           className="absolute bottom-1 right-1 w-7 h-7 bg-white rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform"
+                                         >
+                                           <Plus className="w-4 h-4 text-red-600" />
+                                         </button>
+                                       </div>
+                                     )}
+                                   </div>
+                                 ))}
+                               </div>
+                             </section>
+                           )}
+
+                           {/* Most Ordered - Mobile */}
+                           {mostOrderedItems.length > 0 && (
+                             <section id="most-ordered-mobile" className="scroll-mt-24">
+                               <h2 className="text-xl font-bold text-gray-900 mb-4">Most Ordered</h2>
+                               <div className="space-y-3">
+                                 {mostOrderedItems.map(item => (
+                                   <div
+                                     key={item.id}
+                                     onClick={() => openItemModal(item)}
+                                     className="flex gap-3 bg-white rounded-xl border border-gray-200 p-3 active:bg-gray-50 transition-colors"
+                                   >
+                                     <div className="flex-1 min-w-0">
+                                       <h3 className="font-semibold text-gray-900 mb-1">{item.name}</h3>
+                                       <p className="text-sm text-gray-500 line-clamp-2 mb-2">{item.description}</p>
+                                       <div className="flex items-center justify-between">
+                                         <span className="text-base font-bold text-gray-900">{formatPrice(item.price_cents)}</span>
+                                         <div className="flex items-center space-x-1">
+                                           {item.is_vegetarian && <Leaf className="w-4 h-4 text-green-600" />}
+                                           {item.chef_recommended && <ChefHat className="w-4 h-4 text-orange-500" />}
+                                         </div>
+                                       </div>
+                                     </div>
+                                     {item.image_url && (
+                                       <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 relative">
+                                         <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = "https://placehold.co/100x100/CCCCCC/666666?text=Item"; }} />
+                                         <button
+                                           onClick={(e) => { e.stopPropagation(); addToCart(item); }}
+                                           className="absolute bottom-1 right-1 w-7 h-7 bg-white rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform"
+                                         >
+                                           <Plus className="w-4 h-4 text-red-600" />
+                                         </button>
+                                       </div>
+                                     )}
+                                   </div>
+                                 ))}
+                               </div>
+                             </section>
+                           )}
+
+                           {/* Category Sections - Mobile */}
+                           {categories.map(category => {
+                             const items = getItemsByCategory(category.id);
+                             if (items.length === 0) return null;
+                             
+                             return (
+                               <section key={category.id} id={`${category.id}-mobile`} className="scroll-mt-24">
+                                 <h2 className="text-xl font-bold text-gray-900 mb-4">{category.name}</h2>
+                                 <div className="space-y-3">
+                                   {items.map(item => (
+                                     <div
+                                       key={item.id}
+                                       onClick={() => openItemModal(item)}
+                                       className="flex gap-3 bg-white rounded-xl border border-gray-200 p-3 active:bg-gray-50 transition-colors"
+                                     >
+                                       <div className="flex-1 min-w-0">
+                                         <h3 className="font-semibold text-gray-900 mb-1">{item.name}</h3>
+                                         <p className="text-sm text-gray-500 line-clamp-2 mb-2">{item.description}</p>
+                                         <div className="flex items-center justify-between">
+                                           <span className="text-base font-bold text-gray-900">{formatPrice(item.price_cents)}</span>
+                                           <div className="flex items-center space-x-1">
+                                             {item.is_vegetarian && <Leaf className="w-4 h-4 text-green-600" />}
+                                             {item.chef_recommended && <ChefHat className="w-4 h-4 text-orange-500" />}
+                                           </div>
+                                         </div>
+                                       </div>
+                                       {item.image_url && (
+                                         <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 relative">
+                                           <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = "https://placehold.co/100x100/CCCCCC/666666?text=Item"; }} />
+                                           <button
+                                             onClick={(e) => { e.stopPropagation(); addToCart(item); }}
+                                             className="absolute bottom-1 right-1 w-7 h-7 bg-white rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform"
+                                           >
+                                             <Plus className="w-4 h-4 text-red-600" />
+                                           </button>
+                                         </div>
+                                       )}
+                                     </div>
+                                   ))}
+                                 </div>
+                               </section>
+                             );
+                           })}
+                         </div>
+                       </div>
+
+                       {/* --- Desktop Header Image Banner --- */}
+                       <div className="hidden lg:block relative h-64 overflow-hidden rounded-b-xl shadow-lg" style={{
                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
                        }}>
                     <img
@@ -1226,8 +1499,8 @@ const RestaurantMenuPage = () => {
             </div>
         </div>
         
-            {/* --- Main Content Layout --- */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {/* --- Main Content Layout - Desktop Only --- */}
+            <main className="hidden lg:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                        {/* --- Restaurant Name & Search Bar --- */}
                        <div className="mb-6 flex items-center justify-between">
                            <div className="flex items-center space-x-4">
@@ -1532,10 +1805,30 @@ const RestaurantMenuPage = () => {
           </div>
             </main>
 
-                   {/* Floating Cart Button */}
+                   {/* Floating Cart Button - Mobile (DoorDash Style) */}
+                   {cart.length > 0 && (
+                       <div className="lg:hidden fixed bottom-6 left-4 right-4 z-50 pb-safe">
+                           <button
+                               onClick={() => navigate('/checkout')}
+                               className="w-full bg-red-600 text-white rounded-full py-4 px-6 shadow-2xl flex items-center justify-between active:scale-[0.98] transition-all duration-200"
+                           >
+                               <div className="flex items-center space-x-3">
+                                   <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                                       <span className="text-sm font-bold">{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
+                                   </div>
+                                   <span className="font-bold text-lg">View Cart</span>
+                               </div>
+                               <span className="font-bold text-lg">
+                                   ${(cart.reduce((sum, item) => sum + item.quantity * item.price_cents, 0) / 100).toFixed(2)}
+                               </span>
+                           </button>
+                       </div>
+                   )}
+
+                   {/* Floating Cart Button - Desktop */}
                    {cart.length > 0 && showCartButton && (
                        <div 
-                         className="fixed bottom-4 right-4 z-50 transition-all duration-500 ease-in-out"
+                         className="hidden lg:block fixed bottom-4 right-4 z-50 transition-all duration-500 ease-in-out"
                          style={{
                            opacity: showCartButton ? 1 : 0,
                            transform: showCartButton ? 'translateY(0)' : 'translateY(20px)'
@@ -1555,6 +1848,16 @@ const RestaurantMenuPage = () => {
                 html { scroll-behavior: smooth; }
                 .snap-x > * {
                     scroll-snap-align: start;
+                }
+                .scrollbar-hide {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+                .scrollbar-hide::-webkit-scrollbar {
+                    display: none;
+                }
+                .pb-safe {
+                    padding-bottom: env(safe-area-inset-bottom);
                 }
             `}</style>
             
