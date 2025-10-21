@@ -23,10 +23,8 @@ WHERE user_id IN (
 
 DELETE FROM auth.users WHERE email LIKE 'restaurant%@crave-n.shop';
 
--- Step 2: Disable auto-onboarding trigger temporarily
-ALTER TABLE public.restaurants DISABLE TRIGGER ALL;
-
--- Step 3: Create 234 FRESH restaurants with UNIQUE IDs
+-- Step 2: Create 234 FRESH restaurants with UNIQUE IDs
+-- Note: The onboarding trigger will auto-create progress records, we'll update them after
 DO $$
 DECLARE
   owner_id uuid;
@@ -130,13 +128,18 @@ BEGIN
       reviews
     );
     
-    -- Create onboarding progress (fully completed)
-    INSERT INTO public.restaurant_onboarding_progress (
-      restaurant_id, current_step, business_info_completed, menu_completed,
-      banking_completed, verification_completed, tablet_shipped, go_live_ready, completed_at
-    ) VALUES (
-      restaurant_id, 'completed', true, true, true, true, true, true, NOW()
-    );
+    -- Update onboarding progress (trigger already created it, just update it)
+    UPDATE public.restaurant_onboarding_progress
+    SET 
+      current_step = 'completed',
+      business_info_completed = true,
+      menu_completed = true,
+      banking_completed = true,
+      verification_completed = true,
+      tablet_shipped = true,
+      go_live_ready = true,
+      completed_at = NOW()
+    WHERE restaurant_id = restaurant_id;
     
     -- Add 12 menu items
     FOR i IN 1..12 LOOP
@@ -160,9 +163,6 @@ BEGIN
     counter := counter + 1;
   END LOOP;
 END $$;
-
--- Step 4: Re-enable triggers
-ALTER TABLE public.restaurants ENABLE TRIGGER ALL;
 
 -- Done!
 DO $$
