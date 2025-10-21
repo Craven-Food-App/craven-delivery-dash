@@ -8,6 +8,12 @@
 ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS is_demo BOOLEAN DEFAULT false;
 ALTER TABLE public.menu_items ADD COLUMN IF NOT EXISTS is_demo BOOLEAN DEFAULT false;
 
+-- Clean up any existing demo data first
+DELETE FROM public.menu_items WHERE is_demo = true;
+DELETE FROM public.restaurants WHERE is_demo = true;
+DELETE FROM public.user_profiles WHERE user_id = '00000000-0000-0000-0000-000000000001'::uuid;
+DELETE FROM auth.users WHERE id = '00000000-0000-0000-0000-000000000001'::uuid;
+
 -- Create demo owner user
 DO $$
 DECLARE
