@@ -540,7 +540,7 @@ const RestaurantMenuPage = () => {
 
                        <button
                            onClick={() => openItemModal(item)}
-                           className="absolute bottom-2 right-2 bg-red-700 text-white w-7 h-7 rounded-md flex items-center justify-center hover:bg-red-800 transition duration-200 shadow-md"
+                           className="absolute bottom-2 right-2 bg-primary text-white w-7 h-7 rounded-md flex items-center justify-center hover:bg-primary/90 transition duration-200 shadow-md"
                        >
                            <Plus className='w-3 h-3' />
                        </button>
@@ -610,13 +610,13 @@ const RestaurantMenuPage = () => {
                     <div className="flex border border-gray-300 rounded-lg p-0.5 bg-gray-100 text-sm font-semibold transition duration-300">
                         <button
                             onClick={() => setDeliveryMethod('delivery')}
-                            className={`px-5 py-2 rounded-md transition duration-200 ${deliveryMethod === 'delivery' ? 'bg-red-700 shadow-lg text-white font-bold' : 'text-gray-600 font-medium hover:bg-white'}`}
+                            className={`px-5 py-2 rounded-md transition duration-200 ${deliveryMethod === 'delivery' ? 'bg-primary shadow-lg text-white font-bold' : 'text-gray-600 font-medium hover:bg-white'}`}
                         >
                             Delivery
                         </button>
                         <button
                             onClick={() => setDeliveryMethod('pickup')}
-                            className={`px-5 py-2 rounded-md transition duration-200 ${deliveryMethod === 'pickup' ? 'bg-red-700 shadow-lg text-white font-bold' : 'text-gray-600 font-medium hover:bg-white'}`}
+                            className={`px-5 py-2 rounded-md transition duration-200 ${deliveryMethod === 'pickup' ? 'bg-primary shadow-lg text-white font-bold' : 'text-gray-600 font-medium hover:bg-white'}`}
                         >
                             Pickup
                         </button>
@@ -716,12 +716,12 @@ const RestaurantMenuPage = () => {
           </div>
 
                         {/* Option #1 (Selected) */}
-                        <div className="bg-gray-50 rounded-lg p-4 mb-3 border-2 border-red-500">
+                        <div className="bg-gray-50 rounded-lg p-4 mb-3 border-2 border-primary">
                             <div className="flex justify-between items-start">
                                 <div className="flex-1">
                                     <div className="flex items-center mb-2">
                                         <span className="text-sm font-bold text-gray-900">#1 • Ordered recently by 10+ others</span>
-                                        <div className="ml-auto w-4 h-4 border-2 border-red-500 rounded-full bg-red-500 flex items-center justify-center">
+                                        <div className="ml-auto w-4 h-4 border-2 border-primary rounded-full bg-primary/100 flex items-center justify-center">
                                             <div className="w-2 h-2 bg-white rounded-full"></div>
           </div>
       </div>
@@ -753,7 +753,7 @@ const RestaurantMenuPage = () => {
                     {/* Tabs */}
                     <div className="px-3 border-t border-gray-200">
                         <div className="flex space-x-4">
-                            <button className="py-2 text-sm font-semibold text-red-700 border-b-2 border-red-700">
+                            <button className="py-2 text-sm font-semibold text-primary border-b-2 border-primary">
                                 Order
               </button>
                             <button className="py-2 text-sm font-semibold text-gray-500">
@@ -799,7 +799,7 @@ const RestaurantMenuPage = () => {
               </div>
                         <button
                             onClick={addToCartFromModal}
-                            className="bg-red-700 text-white px-8 py-3 rounded-lg font-semibold hover:bg-red-800 transition duration-200"
+                            className="bg-primary text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 transition duration-200"
                         >
                             Add to cart - ${formatPrice(selectedItem.price_cents * modalQuantity)}
                         </button>
@@ -819,12 +819,12 @@ const RestaurantMenuPage = () => {
                         key={promo.id}
                         className="flex-shrink-0 w-[240px] sm:w-[300px] bg-white p-4 rounded-xl shadow-md border border-gray-200 snap-start relative"
                     >
-                        <h3 className="text-base font-bold text-red-700 mb-1">{promo.name}</h3>
+                        <h3 className="text-base font-bold text-primary mb-1">{promo.name}</h3>
                         <p className="text-sm text-gray-500">
                             {promo.description || 
                              (promo.minimum_order_cents ? `Add ${formatPrice(promo.minimum_order_cents)} to apply` : 'Apply at checkout')}
                         </p>
-                        <ArrowUp className="w-4 h-4 text-red-700 absolute right-4 top-1/2 transform -translate-y-1/2 rotate-90" strokeWidth={3} />
+                        <ArrowUp className="w-4 h-4 text-primary absolute right-4 top-1/2 transform -translate-y-1/2 rotate-90" strokeWidth={3} />
                     </div>
                 ))}
                 {promos.length === 0 && (
@@ -845,7 +845,7 @@ const RestaurantMenuPage = () => {
                 {/* Store Info */}
                 <div className="text-sm space-y-2">
                     <h3 className="font-bold text-gray-700">Store Info</h3>
-                    <p className={`flex items-center space-x-1 font-semibold ${restaurant?.is_open ? 'text-green-600' : 'text-red-700'}`}>
+                    <p className={`flex items-center space-x-1 font-semibold ${restaurant?.is_open ? 'text-green-600' : 'text-primary'}`}>
                         <Clock className="w-4 h-4" />
                         <span>{restaurant?.is_open ? 'Open Now' : `Closed • Opens at ${restaurant?.opens_at || '9:00 AM'}`}</span>
                     </p>
@@ -875,7 +875,7 @@ const RestaurantMenuPage = () => {
                                     onClick={(e) => { e.preventDefault(); scrollToSection(link.id); }}
                                     className={`block p-2 rounded-lg font-medium transition duration-150 
                                         ${activeSection === link.id
-                                            ? 'bg-red-50 text-red-700 font-semibold border-l-4 border-red-700 -ml-2 pl-4'
+                                            ? 'bg-primary/10 text-primary font-semibold border-l-4 border-primary -ml-2 pl-4'
                                             : 'text-gray-700 hover:bg-gray-50'
                                         }`}
                                 >
@@ -893,7 +893,7 @@ const RestaurantMenuPage = () => {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-700 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
                     <p className="mt-4 text-gray-600">Loading restaurant...</p>
       </div>
               </div>
@@ -905,7 +905,7 @@ const RestaurantMenuPage = () => {
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
                     <p className="text-xl text-gray-600">Restaurant not found</p>
-                    <button onClick={() => navigate('/restaurants')} className="mt-4 text-red-700 font-semibold">
+                    <button onClick={() => navigate('/restaurants')} className="mt-4 text-primary font-semibold">
                         Back to Restaurants
                     </button>
             </div>
@@ -1032,7 +1032,7 @@ const RestaurantMenuPage = () => {
                 >
                   <Bell className="w-6 h-6 text-gray-600 hover:text-gray-900 transition-colors" />
                   {notifications.filter(n => !n.read).length > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary/100 text-white text-xs rounded-full flex items-center justify-center">
                       {notifications.filter(n => !n.read).length}
                     </span>
                   )}
@@ -1106,7 +1106,7 @@ const RestaurantMenuPage = () => {
                                 onClick={() => {
                                   setCart(prev => prev.filter((_, i) => i !== index));
                                 }}
-                                className="text-red-500 hover:text-red-700"
+                                className="text-red-500 hover:text-primary"
                               >
                                 <X className="w-4 h-4" />
                               </button>
@@ -1371,7 +1371,7 @@ const RestaurantMenuPage = () => {
                                            onClick={(e) => { e.stopPropagation(); addToCart(item); }}
                                            className="absolute bottom-1 right-1 w-7 h-7 bg-white rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform"
                                          >
-                                           <Plus className="w-4 h-4 text-red-600" />
+                                           <Plus className="w-4 h-4 text-primary" />
                                          </button>
                                        </div>
                                      )}
@@ -1410,7 +1410,7 @@ const RestaurantMenuPage = () => {
                                            onClick={(e) => { e.stopPropagation(); addToCart(item); }}
                                            className="absolute bottom-1 right-1 w-7 h-7 bg-white rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform"
                                          >
-                                           <Plus className="w-4 h-4 text-red-600" />
+                                           <Plus className="w-4 h-4 text-primary" />
                                          </button>
                                        </div>
                                      )}
@@ -1453,7 +1453,7 @@ const RestaurantMenuPage = () => {
                                              onClick={(e) => { e.stopPropagation(); addToCart(item); }}
                                              className="absolute bottom-1 right-1 w-7 h-7 bg-white rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform"
                                            >
-                                             <Plus className="w-4 h-4 text-red-600" />
+                                             <Plus className="w-4 h-4 text-primary" />
                                            </button>
                                          </div>
                                        )}
@@ -1491,7 +1491,7 @@ const RestaurantMenuPage = () => {
                            {/* Status Bar Overlay */}
                            <div className="absolute bottom-0 left-0 right-0 h-10 bg-white flex items-center px-4 shadow-lg">
                                <p className="text-sm font-medium text-gray-700 flex-1">
-                                   <span className={restaurant.is_open ? 'text-green-700' : 'text-red-700'}>
+                                   <span className={restaurant.is_open ? 'text-green-700' : 'text-primary'}>
                                        {restaurant.is_open ? 'Open Now' : 'Closed'}
                                    </span> • {restaurant.min_delivery_time}-{restaurant.max_delivery_time} min
                                </p>
@@ -1528,7 +1528,7 @@ const RestaurantMenuPage = () => {
                                    placeholder={`Search ${restaurant.name}`}
                                    value={searchQuery}
                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                   className="w-full py-2 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 transition"
+                                   className="w-full py-2 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-primary transition"
                                />
       </div>
               </div>
@@ -1552,13 +1552,13 @@ const RestaurantMenuPage = () => {
                                            <div className="flex border border-gray-300 rounded-lg p-0.5 bg-gray-100 text-sm font-semibold transition duration-300">
                                                <button
                                                    onClick={() => setDeliveryMethod('delivery')}
-                                                   className={`px-5 py-2 rounded-md transition duration-200 ${deliveryMethod === 'delivery' ? 'bg-red-700 shadow-lg text-white font-bold' : 'text-gray-600 font-medium hover:bg-white'}`}
+                                                   className={`px-5 py-2 rounded-md transition duration-200 ${deliveryMethod === 'delivery' ? 'bg-primary shadow-lg text-white font-bold' : 'text-gray-600 font-medium hover:bg-white'}`}
                                                >
                                                    Delivery
                                                </button>
                                                <button
                                                    onClick={() => setDeliveryMethod('pickup')}
-                                                   className={`px-5 py-2 rounded-md transition duration-200 ${(deliveryMethod as string) === 'pickup' ? 'bg-red-700 shadow-lg text-white font-bold' : 'text-gray-600 font-medium hover:bg-white'}`}
+                                                   className={`px-5 py-2 rounded-md transition duration-200 ${(deliveryMethod as string) === 'pickup' ? 'bg-primary shadow-lg text-white font-bold' : 'text-gray-600 font-medium hover:bg-white'}`}
                                                >
                                                    Pickup
                                                </button>
@@ -1608,7 +1608,7 @@ const RestaurantMenuPage = () => {
                                     <p className="text-sm text-gray-600">3k+ ratings • 80+ public reviews</p>
               </div>
                                 <div className="flex items-center space-x-2">
-                                    <button className="text-sm font-semibold text-red-700 hover:text-red-900">
+                                    <button className="text-sm font-semibold text-primary hover:text-primary">
                                         Add Review
                                     </button>
                                     <div className="flex space-x-1">
@@ -1810,7 +1810,7 @@ const RestaurantMenuPage = () => {
                        <div className="lg:hidden fixed bottom-6 left-4 right-4 z-50 pb-safe">
                            <button
                                onClick={() => navigate('/checkout')}
-                               className="w-full bg-red-600 text-white rounded-full py-4 px-6 shadow-2xl flex items-center justify-between active:scale-[0.98] transition-all duration-200"
+                               className="w-full bg-primary text-white rounded-full py-4 px-6 shadow-2xl flex items-center justify-between active:scale-[0.98] transition-all duration-200"
                            >
                                <div className="flex items-center space-x-3">
                                    <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
@@ -1836,7 +1836,7 @@ const RestaurantMenuPage = () => {
                        >
                            <button
                                onClick={() => navigate('/checkout')}
-                               className="bg-red-700 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2 hover:bg-red-800 transition-all duration-200"
+                               className="bg-primary text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2 hover:bg-primary/90 transition-all duration-200"
                            >
                                <ShoppingCart className="w-5 h-5" />
                                <span className="font-semibold text-base">Cart ({cart.length})</span>

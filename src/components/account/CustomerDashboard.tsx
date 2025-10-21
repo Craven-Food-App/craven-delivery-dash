@@ -219,7 +219,7 @@ const CustomerDashboard = () => {
               key={tab.id}
               onClick={() => navigate(`?tab=${tab.id}`)}
               className={`flex flex-col items-center justify-center flex-1 py-2 transition-colors ${
-                isActive ? 'text-red-600' : 'text-gray-500'
+                isActive ? 'text-primary' : 'text-gray-500'
               }`}
             >
               <Icon className={`w-6 h-6 mb-1 ${isActive ? 'stroke-[2.5]' : ''}`} />
@@ -244,7 +244,7 @@ const CustomerDashboard = () => {
           </div>
           <button 
             onClick={() => navigate('/cravemore')}
-            className="p-2 bg-gradient-to-br from-red-50 to-orange-50 rounded-full border border-red-200"
+            className="p-2 bg-primary/10 rounded-full border border-primary/20"
           >
             <img src={cravemoreIcon} alt="CraveMore" className="w-5 h-5" />
           </button>
@@ -280,7 +280,7 @@ const CustomerDashboard = () => {
     
     return (
       <div className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden mb-4">
-        <div className="bg-red-600 text-white px-4 py-2 flex items-center justify-between">
+        <div className="bg-primary text-white px-4 py-2 flex items-center justify-between">
           <span className="text-sm font-semibold">Order in progress</span>
           <span className="text-xs">15-25 min</span>
         </div>
@@ -291,7 +291,7 @@ const CustomerDashboard = () => {
               {restaurant?.image_url ? (
                 <img src={restaurant.image_url} alt={restaurant.name} className="w-full h-full object-cover" />
               ) : (
-                <Package className="w-6 h-6 text-red-600" />
+                <Package className="w-6 h-6 text-primary" />
               )}
             </div>
             <div className="flex-1 min-w-0">
@@ -406,7 +406,7 @@ const CustomerDashboard = () => {
         )}
         
         <div className="px-4 py-4">
-          <div className="bg-gradient-to-br from-red-600 via-red-700 to-orange-600 rounded-2xl p-6 shadow-xl text-white">
+          <div className="bg-gradient-to-br from-primary via-primary to-primary-glow rounded-2xl p-6 shadow-xl text-white">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <img src={cravemoreIcon} alt="CraveMore" className="w-10 h-10" />
@@ -434,7 +434,7 @@ const CustomerDashboard = () => {
             
             <button 
               onClick={() => navigate('/cravemore')}
-              className="w-full bg-white text-red-600 py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform"
+              className="w-full bg-white text-primary py-3 rounded-xl font-bold shadow-lg active:scale-95 transition-transform"
             >
               Start Free Trial
             </button>
@@ -447,7 +447,7 @@ const CustomerDashboard = () => {
               <h2 className="text-lg font-bold text-gray-900">Past Orders</h2>
               <button 
                 onClick={() => navigate('?tab=orders')}
-                className="text-sm text-red-600 font-semibold"
+                className="text-sm text-primary font-semibold"
               >
                 See all
               </button>

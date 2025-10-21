@@ -376,7 +376,7 @@ const Restaurants = () => {
               >
                 <Bell className="w-5 h-5 text-gray-600" />
                 {notifications.filter(n => !n.read).length > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
                 )}
               </button>
             </div>
@@ -425,7 +425,7 @@ const Restaurants = () => {
               placeholder="Search restaurants or dishes"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
         </div>
@@ -533,7 +533,7 @@ const Restaurants = () => {
                 >
                   <Bell className="w-6 h-6 text-gray-600 hover:text-gray-900 transition-colors" />
                   {notifications.filter(n => !n.read).length > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-white text-xs rounded-full flex items-center justify-center">
                       {notifications.filter(n => !n.read).length}
                     </span>
                   )}
@@ -605,7 +605,7 @@ const Restaurants = () => {
                               </div>
                               <button 
                                 onClick={() => removeFromCart(item.id)}
-                                className="text-red-500 hover:text-red-700"
+                                className="text-primary hover:text-primary"
                               >
                                 <X className="w-4 h-4" />
                               </button>
