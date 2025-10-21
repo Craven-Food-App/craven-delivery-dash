@@ -10,7 +10,15 @@ ALTER TABLE public.menu_items ADD COLUMN IF NOT EXISTS is_demo BOOLEAN DEFAULT f
 
 -- Clean up any existing demo data first
 DELETE FROM public.menu_items WHERE is_demo = true;
+
+-- Delete related onboarding progress records for demo restaurants
+DELETE FROM public.restaurant_onboarding_progress 
+WHERE restaurant_id IN (SELECT id FROM public.restaurants WHERE is_demo = true);
+
+-- Delete demo restaurants
 DELETE FROM public.restaurants WHERE is_demo = true;
+
+-- Delete demo user
 DELETE FROM public.user_profiles WHERE user_id = '00000000-0000-0000-0000-000000000001'::uuid;
 DELETE FROM auth.users WHERE id = '00000000-0000-0000-0000-000000000001'::uuid;
 
