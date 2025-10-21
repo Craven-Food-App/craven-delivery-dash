@@ -13,9 +13,9 @@ DO $$
 DECLARE
   demo_user_id uuid := '00000000-0000-0000-0000-000000000001'::uuid;
 BEGIN
-  -- Insert into user_profiles (only columns that exist)
+  -- Insert into user_profiles (use 'admin' role since restaurant_owner isn't in check constraint)
   INSERT INTO public.user_profiles (user_id, full_name, role, created_at)
-  VALUES (demo_user_id, 'Demo Restaurant Owner', 'restaurant_owner', NOW())
+  VALUES (demo_user_id, 'Demo Restaurant Owner', 'admin', NOW())
   ON CONFLICT (user_id) DO NOTHING;
 END $$;
 
