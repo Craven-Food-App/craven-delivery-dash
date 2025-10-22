@@ -1088,18 +1088,18 @@ const RestaurantMenuPage = () => {
                 
                 {/* Cart Dropdown */}
                 {showCart && (
-                  <div data-dropdown className="absolute top-full right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                  <div data-dropdown className="absolute top-full right-0 mt-2 w-96 bg-orange-50 border border-orange-200 rounded-lg shadow-lg z-50 overflow-x-hidden">
                     <div className="p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="font-semibold text-gray-900">Your Cart</h3>
                         <button className="text-sm text-orange-600">Clear all</button>
                       </div>
                       {cart.length > 0 ? (
-                        <div className="space-y-3 max-h-64 overflow-y-auto">
+                        <div className="space-y-3 max-h-80 overflow-y-auto overflow-x-hidden pr-1">
                           {cart.map((item, index) => (
-                            <div key={index} className="flex items-center justify-between p-2 border rounded-lg">
-                              <div className="flex-1">
-                                <h4 className="font-medium text-sm text-gray-900">{item.name}</h4>
+                            <div key={index} className="flex items-center justify-between p-2 border rounded-lg gap-3">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-sm text-gray-900 truncate">{item.name}</h4>
                                 <p className="text-xs text-gray-600">${(item.price_cents / 100).toFixed(2)}</p>
                               </div>
                               <button 
@@ -1116,9 +1116,17 @@ const RestaurantMenuPage = () => {
                             <div className="flex items-center justify-between mb-3">
                               <span className="font-semibold">Total: ${(cart.reduce((total, item) => total + (item.price_cents * item.quantity), 0) / 100).toFixed(2)}</span>
                             </div>
-                            <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                            <button
+                              onClick={() => {
+                                // Save cart and restaurant data to localStorage
+                                localStorage.setItem('checkout_cart', JSON.stringify(cart));
+                                localStorage.setItem('checkout_restaurant', JSON.stringify(restaurant));
+                                navigate('/checkout');
+                              }}
+                              className="w-full h-9 px-3 py-2 text-sm rounded-md bg-orange-500 hover:bg-orange-600 text-white"
+                            >
                               Checkout
-                            </Button>
+                            </button>
                           </div>
                         </div>
                       ) : (

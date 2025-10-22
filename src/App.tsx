@@ -27,6 +27,8 @@ import SolutionsCenter from "./pages/SolutionsCenter";
 import MostLovedProgram from "./pages/MostLovedProgram";
 import RestaurantDetail from "./pages/RestaurantDetail";
 import RestaurantMenuPage from "./components/restaurant/RestaurantMenuPage";
+import Checkout from "./pages/Checkout";
+import TrackOrder from "./pages/TrackOrder";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCanceled from "./pages/PaymentCanceled";
 import NotFound from "./pages/NotFound";
@@ -154,6 +156,8 @@ const App = () => {
           <Route path="/restaurant/most-loved" element={<MostLovedProgram />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/track-order/:orderId" element={<TrackOrder />} />
           <Route path="/payment-canceled" element={<PaymentCanceled />} />
 
           {/* Footer pages */}

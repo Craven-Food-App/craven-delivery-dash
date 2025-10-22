@@ -6,251 +6,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Helper function to get OAuth2 access token for Firebase V1 API
-async function getAccessToken() {
-  try {
-    const serviceAccountKey = Deno.env.get('FIREBASE_SERVICE_ACCOUNT_KEY');
-    if (!serviceAccountKey) {
-      throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY not found in environment');
-    }
-
-    const serviceAccount = JSON.parse(serviceAccountKey);
-    
-    // Create JWT for OAuth2
-    const now = Math.floor(Date.now() / 1000);
-    const jwtHeader = {
-      "alg": "RS256",
-      "typ": "JWT"
-    };
-    
-    const jwtPayload = {
-      "iss": serviceAccount.client_email,
-      "scope": "https://www.googleapis.com/auth/firebase.messaging",
-      "aud": "https://oauth2.googleapis.com/token",
-      "exp": now + 3600,
-      "iat": now
-    };
-
-    // Import crypto for JWT signing
-    const encoder = new TextEncoder();
-    const keyData = serviceAccount.private_key
-      .replace(/-----BEGIN PRIVATE KEY-----/, '')
-      .replace(/-----END PRIVATE KEY-----/, '')
-      .replace(/\s/g, '');
-    
-    const binaryKey = Uint8Array.from(atob(keyData), c => c.charCodeAt(0));
-    
-    const cryptoKey = await crypto.subtle.importKey(
-      "pkcs8",
-      binaryKey,
-      {
-        name: "RSASSA-PKCS1-v1_5",
-        hash: "SHA-256",
-      },
-      false,
-      ["sign"]
-    );
-
-    const headerBase64 = btoa(JSON.stringify(jwtHeader)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-    const payloadBase64 = btoa(JSON.stringify(jwtPayload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-    const dataToSign = `${headerBase64}.${payloadBase64}`;
-    
-    const signature = await crypto.subtle.sign(
-      "RSASSA-PKCS1-v1_5",
-      cryptoKey,
-      encoder.encode(dataToSign)
-    );
-    
-    const signatureBase64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
-      .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-    
-    const jwt = `${dataToSign}.${signatureBase64}`;
-
-    // Exchange JWT for access token
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
-    });
-
-    if (!tokenResponse.ok) {
-      throw new Error(`Failed to get access token: ${await tokenResponse.text()}`);
-    }
-
-    const tokenData = await tokenResponse.json();
-    return tokenData.access_token;
-  } catch (error) {
-    console.error('Error getting access token:', error);
-    throw error;
-  }
-}
-
-// Helper function to send native push notification using Firebase V1 API
-async function sendNativePushNotification(subscription: any, payload: any) {
-  const serviceAccountKey = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_KEY");
-  
-  if (!serviceAccountKey) {
-    console.warn("Firebase service account key not configured, skipping native push");
-    return { success: false, error: "Firebase service account key not configured" };
-  }
-
-  try {
-    // Get access token
-    const accessToken = await getAccessToken();
-    const serviceAccount = JSON.parse(serviceAccountKey);
-    const projectId = serviceAccount.project_id;
-    
-    // Extract FCM token from endpoint
-    let fcmToken = subscription.endpoint;
-    
-    if (subscription.endpoint.includes('fcm.googleapis.com')) {
-      fcmToken = subscription.endpoint.split('/').pop();
-    } else if (subscription.endpoint.startsWith('fcm:')) {
-      fcmToken = subscription.endpoint.replace('fcm:', '');
-    }
-    
-    if (!fcmToken || fcmToken === subscription.endpoint) {
-      // Fallback to web push if not native
-      return sendWebPushNotification(subscription, payload);
-    }
-
-    // Firebase V1 API endpoint
-    const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
-    
-    // Construct Firebase V1 payload
-    const fcmPayload = {
-      message: {
-        token: fcmToken,
-        notification: {
-          title: payload.title,
-          body: payload.message,
-          image: '/craven-logo.png'
-        },
-        data: {
-          ...payload.data,
-          title: payload.title,
-          message: payload.message,
-          sound: 'enabled'
-        },
-        android: {
-          notification: {
-            title: payload.title,
-            body: payload.message,
-            icon: '/craven-logo.png',
-            sound: 'default',
-            priority: 'high',
-            channel_id: 'craven_notifications',
-            visibility: 'public'
-          },
-          priority: 'high'
-        },
-        apns: {
-          payload: {
-            aps: {
-              alert: {
-                title: payload.title,
-                body: payload.message
-              },
-              sound: "craven-notification.caf", // Custom sound file bundled with iOS app
-              badge: 1,
-              'content-available': 1,
-              'mutable-content': 1 // Allow modification of notification content
-            },
-            // Custom data for iOS
-            customSound: "craven-notification.caf",
-            forceSound: true
-          },
-          headers: {
-            'apns-priority': '10',
-            'apns-push-type': 'alert',
-            'apns-sound': 'craven-notification.caf'
-          }
-        },
-        webpush: {
-          notification: {
-            title: payload.title,
-            body: payload.message,
-            icon: '/craven-logo.png',
-            badge: '/craven-logo.png',
-            tag: 'craven-notification',
-            requireInteraction: true
-          }
-        }
-      }
-    };
-
-    console.log('Firebase V1 Payload:', JSON.stringify(fcmPayload, null, 2));
-
-    const response = await fetch(fcmUrl, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(fcmPayload),
-    });
-
-    const result = await response.json();
-    
-    if (!response.ok) {
-      console.error("Firebase V1 API error:", result);
-      return { success: false, error: result.error?.message || "Firebase V1 send failed" };
-    }
-
-    console.log("Firebase V1 notification sent successfully:", result);
-    return { success: true, result };
-  } catch (error) {
-    console.error("Native push error:", error);
-    return { success: false, error: (error as Error).message || 'Unknown error' };
-  }
-}
-
-// Helper function to send web push notification using VAPID
-async function sendWebPushNotification(subscription: any, payload: any) {
-  const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY");
-  const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY");
-  const vapidSubject = Deno.env.get("VAPID_SUBJECT") || "mailto:support@craven.app";
-
-  if (!vapidPublicKey || !vapidPrivateKey) {
-    console.warn("VAPID keys not configured, skipping Web Push");
-    return { success: false, error: "VAPID keys not configured" };
-  }
-
-  try {
-    // Import the web push helper
-    const { sendWebPush } = await import("./web-push-helper.ts");
-
-    const pushSubscription = {
-      endpoint: subscription.endpoint,
-      keys: {
-        p256dh: subscription.p256dh_key,
-        auth: subscription.auth_key
-      }
-    };
-
-    const vapidDetails = {
-      publicKey: vapidPublicKey,
-      privateKey: vapidPrivateKey,
-      subject: vapidSubject
-    };
-
-    console.log("Sending Web Push to:", subscription.endpoint.substring(0, 50) + "...");
-    
-    const result = await sendWebPush(pushSubscription, payload, vapidDetails);
-    
-    if (result.success) {
-      console.log("Web Push sent successfully");
-    } else {
-      console.error("Web Push failed:", result.error);
-    }
-    
-    return result;
-  } catch (error) {
-    console.error("Web Push error:", error);
-    return { success: false, error: (error as Error).message || 'Unknown error' };
-  }
+interface PushNotificationRequest {
+  userId: string;
+  type: string;
+  notification: {
+    title: string;
+    body: string;
+    icon?: string;
+    data?: Record<string, any>;
+    actions?: Array<{
+      action: string;
+      title: string;
+    }>;
+  };
 }
 
 serve(async (req) => {
@@ -259,115 +27,100 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, title, message, data = {} } = await req.json();
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const firebaseServerKey = Deno.env.get("FIREBASE_SERVER_KEY");
 
-    if (!userId || !title || !message) {
+    if (!firebaseServerKey) {
+      throw new Error("Firebase Server Key not configured");
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { userId, type, notification }: PushNotificationRequest = await req.json();
+
+    if (!userId || !notification) {
       throw new Error("Missing required parameters");
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
-
-    console.log("Sending push notification to user:", userId);
-
-    // Get default notification sound from admin settings
-    const { data: notificationSettings } = await supabase
-      .from("notification_settings")
-      .select("sound_file")
-      .eq("is_default", true)
-      .eq("is_active", true)
+    // Get user's FCM token
+    const { data: profile, error: profileError } = await supabase
+      .from("user_profiles")
+      .select("fcm_token")
+      .eq("user_id", userId)
       .single();
 
-    const customSoundFile = notificationSettings?.sound_file || "craven-notification.caf";
-
-    // Get user's active push subscriptions
-    const { data: subscriptions, error: subError } = await supabase
-      .from("push_subscriptions")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("is_active", true);
-
-    if (subError) {
-      console.error("Error fetching subscriptions:", subError);
+    if (profileError || !profile?.fcm_token) {
+      console.warn(`No FCM token found for user ${userId}`);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: "No FCM token found for user" 
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200, // Not an error - user just doesn't have notifications enabled
+        }
+      );
     }
 
-    const pushPromises = [];
-    
-    // Send Web Push notifications to all subscriptions
-    if (subscriptions && subscriptions.length > 0) {
-      for (const subscription of subscriptions) {
-        const pushSubscription = {
-          endpoint: subscription.endpoint,
-          keys: {
-            p256dh: subscription.p256dh_key,
-            auth: subscription.auth_key
-          }
-        };
+    // Send push notification via Firebase Cloud Messaging
+    const fcmPayload = {
+      to: profile.fcm_token,
+      notification: {
+        title: notification.title,
+        body: notification.body,
+        icon: notification.icon || "/logo.png",
+        badge: "/logo.png",
+        click_action: notification.data?.url || "/",
+        tag: type,
+      },
+      data: notification.data || {},
+      priority: "high",
+      content_available: true,
+    };
 
-        const pushPayload = {
-          title,
-          message,
-          data: {
-            ...data,
-            customSound: "craven-notification.caf",
-            forceSound: true
-          },
-          icon: '/craven-logo.png',
-          badge: '/craven-logo.png',
-          vibrate: [200, 100, 200],
-          requireInteraction: true,
-          sound: "craven-notification.caf", // For iOS web notifications
-          actions: [
-            { action: 'open', title: 'Open App' },
-            { action: 'dismiss', title: 'Dismiss' }
-          ]
-        };
-
-        // Use Web Push for PWA notifications (iOS 16.4+, Android, Desktop)
-        pushPromises.push(sendWebPushNotification(subscription, pushPayload));
-        
-        // Also try Firebase Cloud Messaging for native apps (optional fallback)
-        // pushPromises.push(sendNativePushNotification(pushSubscription, pushPayload));
-      }
-    }
-
-    // Wait for all push notifications
-    const pushResults = await Promise.allSettled(pushPromises);
-    const successCount = pushResults.filter(r => r.status === 'fulfilled' && r.value.success).length;
-
-    console.log(`Sent ${successCount}/${pushPromises.length} push notifications`);
-
-    // Send real-time notification via Supabase channels (fallback)
-    await supabase
-      .channel(`user_notifications_${userId}`)
-      .send({
-        type: "broadcast",
-        event: "push_notification",
-        payload: {
-          title,
-          message,
-          data,
-          timestamp: new Date().toISOString(),
+    const fcmResponse = await fetch(
+      "https://fcm.googleapis.com/fcm/send",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `key=${firebaseServerKey}`,
         },
+        body: JSON.stringify(fcmPayload),
+      }
+    );
+
+    const fcmResult = await fcmResponse.json();
+
+    if (!fcmResponse.ok) {
+      console.error("FCM Error:", fcmResult);
+      throw new Error(`FCM Error: ${JSON.stringify(fcmResult)}`);
+    }
+
+    // Log notification in database for tracking
+    const { error: logError } = await supabase
+      .from("notification_logs")
+      .insert({
+        user_id: userId,
+        notification_type: type,
+        title: notification.title,
+        body: notification.body,
+        data: notification.data,
+        status: "sent",
+        fcm_message_id: fcmResult.results?.[0]?.message_id,
       });
 
-    // Store notification in database
-    await supabase.from("order_notifications").insert({
-      order_id: data.orderId || null,
-      user_id: userId,
-      notification_type: data.type || "general",
-      title,
-      message,
-    });
+    if (logError) {
+      console.error("Error logging notification:", logError);
+      // Don't fail the request if logging fails
+    }
 
     return new Response(
       JSON.stringify({ 
-        success: true,
-        pushNotificationsSent: successCount,
-        totalSubscriptions: pushPromises.length
+        success: true, 
+        messageId: fcmResult.results?.[0]?.message_id 
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -375,12 +128,12 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error("Enhanced push notification error:", error);
+    console.error("Push notification error:", error);
     return new Response(
-      JSON.stringify({ error: (error as Error).message || 'Unknown error' }),
+      JSON.stringify({ error: error.message }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
+        status: 400,
       }
     );
   }

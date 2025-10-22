@@ -4,6 +4,7 @@ import { ArrowLeft, ChevronRight, Check, X, Search, MapPin, Bell, ShoppingCart, 
 import cravenLogo from "@/assets/craven-logo.png";
 import AccountPopup from '@/components/AccountPopup';
 import Footer from '@/components/Footer';
+import { CustomerOrderForm } from '@/components/restaurant/CustomerOrderForm';
 
 const CraveMore: React.FC = () => {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ const CraveMore: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [showMobileNav, setShowMobileNav] = useState(false);
+  const [showOrderForm, setShowOrderForm] = useState(false);
   const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -313,7 +315,7 @@ const CraveMore: React.FC = () => {
                 
                 {/* Cart Dropdown */}
                 {showCart && (
-                  <div data-dropdown className="absolute top-full right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                  <div data-dropdown className="absolute top-full right-0 mt-2 w-96 bg-orange-50 border border-gray-200 rounded-lg shadow-lg z-50">
                     <div className="p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="font-semibold text-gray-900">Your Cart</h3>
@@ -339,7 +341,10 @@ const CraveMore: React.FC = () => {
                             <div className="flex items-center justify-between mb-3">
                               <span className="font-semibold">Total: ${getCartTotal().toFixed(2)}</span>
                             </div>
-                            <button className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded-lg font-medium">
+                            <button 
+                              onClick={() => setShowOrderForm(true)}
+                              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-1.5 px-3 rounded-md text-sm font-medium"
+                            >
                               Checkout
                             </button>
                           </div>
@@ -616,6 +621,19 @@ const CraveMore: React.FC = () => {
         isOpen={showAccountPopup}
         onClose={() => setShowAccountPopup(false)}
         position={accountPopupPosition}
+      />
+      
+      {/* Order Form Modal */}
+      <CustomerOrderForm
+        isOpen={showOrderForm}
+        onClose={() => setShowOrderForm(false)}
+        onSubmit={(customerInfo) => {
+          // Handle order submission
+          console.log('Order submitted:', customerInfo);
+          setShowOrderForm(false);
+          setShowCart(false);
+        }}
+        deliveryMethod="delivery"
       />
     </div>
   );
