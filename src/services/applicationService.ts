@@ -127,12 +127,10 @@ export class ApplicationService {
     data: ApplicationData,
     documentPaths: Record<string, string>
   ) {
-    // Get background check delay setting
-    const delayDays = await this.getBackgroundCheckDelay();
     const now = new Date();
-    const estimatedCompletion = new Date(now.getTime() + delayDays * 24 * 60 * 60 * 1000);
 
-    const { error } = await supabase
+    // Submit as waitlist - NO background check initiated yet
+    const { data: application, error } = await supabase
       .from('craver_applications')
       .insert({
         user_id: userId,
@@ -155,8 +153,7 @@ export class ApplicationService {
         license_state: data.licenseState,
         license_expiry: data.licenseExpiry,
         
-        // Tax Information - Full SSN (encrypted in DB)
-        ssn_encrypted: data.ssn.replace(/\D/g, ''), // Store digits only
+        // Only store last 4 of SSN for waitlist (full SSN when activated)
         ssn_last_four: data.ssn.replace(/\D/g, '').slice(-4),
         
         // Payout Information
@@ -179,16 +176,22 @@ export class ApplicationService {
         vehicle_registration: documentPaths.vehicleRegistration,
         profile_photo: documentPaths.profilePhoto,
         i9_document: documentPaths.i9Document,
-        status: 'under_review',
         
-        // Background Check - Automatically initiated
-        background_check_initiated_at: now.toISOString(),
-        background_check_estimated_completion: estimatedCompletion.toISOString(),
-        background_check: false
-      });
+        // WAITLIST STATUS - Key change
+        status: 'waitlist',
+        waitlist_joined_at: now.toISOString(),
+        
+        // NO background check initiated yet
+        background_check: false,
+        background_check_initiated_at: null
+      })
+      .select()
+      .single();
 
     if (error) {
       throw new Error(`Failed to submit application: ${error.message}`);
     }
+
+    return application;
   }
 }

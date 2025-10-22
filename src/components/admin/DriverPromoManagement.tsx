@@ -50,12 +50,13 @@ export function DriverPromoManagement() {
 
   const fetchPromos = async () => {
     try {
-      const { data } = await supabase
-        .from('driver_promotions')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // TODO: Create driver_promotions table
+      // const { data } = await supabase
+      //   .from('driver_promotions')
+      //   .select('*')
+      //   .order('created_at', { ascending: false });
 
-      setPromos(data || []);
+      setPromos([]);
     } catch (error) {
       console.error('Error fetching promos:', error);
     } finally {
@@ -70,15 +71,19 @@ export function DriverPromoManagement() {
     }
 
     try {
-      const { error } = await supabase
-        .from('driver_promotions')
-        .insert({
-          ...newPromo,
-          starts_at: new Date(newPromo.starts_at).toISOString(),
-          ends_at: new Date(newPromo.ends_at).toISOString(),
-        });
+      // TODO: Create driver_promotions table
+      toast.error('Driver promotions feature not yet implemented');
+      return;
+      
+      // const { error } = await supabase
+      //   .from('driver_promotions')
+      //   .insert({
+      //     ...newPromo,
+      //     starts_at: new Date(newPromo.starts_at).toISOString(),
+      //     ends_at: new Date(newPromo.ends_at).toISOString(),
+      //   });
 
-      if (error) throw error;
+      // if (error) throw error;
 
       toast.success('Promo created successfully!');
       setShowCreateDialog(false);
@@ -103,12 +108,16 @@ export function DriverPromoManagement() {
 
   const handleToggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
-        .from('driver_promotions')
-        .update({ is_active: !currentStatus })
-        .eq('id', id);
+      // TODO: Create driver_promotions table
+      toast.error('Driver promotions feature not yet implemented');
+      return;
+      
+      // const { error } = await supabase
+      //   .from('driver_promotions')
+      //   .update({ is_active: !currentStatus })
+      //   .eq('id', id);
 
-      if (error) throw error;
+      // if (error) throw error;
 
       toast.success(`Promo ${!currentStatus ? 'activated' : 'paused'}`);
       fetchPromos();

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { X, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { VehicleStep } from "./application/VehicleStep";
 import { BankingStep } from "./application/BankingStep";
 import { DocumentsStep } from "./application/DocumentsStep";
 import { ReviewStep } from "./application/ReviewStep";
+import { WaitlistSuccessModal } from "./WaitlistSuccessModal";
 
 interface DriverApplicationWizardProps {
   onClose: () => void;
@@ -42,6 +44,12 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
   } = useApplicationState();
 
   const { toast } = useToast();
+  const [showWaitlistModal, setShowWaitlistModal] = useState(false);
+  const [waitlistData, setWaitlistData] = useState<{
+    position: number;
+    city: string;
+    state: string;
+  } | null>(null);
 
   if (isLoading) {
     return (
@@ -87,31 +95,31 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
       });
       await Promise.all(uploadPromises);
 
-      // Step 3: Submit application
-      await ApplicationService.submitApplication(userId!, data, documentPaths);
+      // Step 3: Submit application (goes to waitlist now)
+      const application = await ApplicationService.submitApplication(userId!, data, documentPaths);
 
-      // Step 4: Send welcome email (non-blocking)
-      if (isNewUser) {
-        const { supabase } = await import('@/integrations/supabase/client');
-        supabase.functions.invoke('send-driver-welcome-email', {
-          body: {
-            driverName: `${data.firstName} ${data.lastName}`,
-            driverEmail: data.email
-          }
-        }).catch(err => console.error('Failed to send driver welcome email:', err));
-      }
+      // Step 4: Send waitlist confirmation email (non-blocking)
+      const { supabase } = await import('@/integrations/supabase/client');
+      supabase.functions.invoke('send-driver-waitlist-email', {
+        body: {
+          driverName: `${data.firstName} ${data.lastName}`,
+          driverEmail: data.email,
+          city: data.city,
+          state: data.state,
+          waitlistPosition: application.waitlist_position || 1
+        }
+      }).catch(err => console.error('Failed to send waitlist email:', err));
 
-      // Clear draft and show success
-      clearDraft();
-      
-      toast({
-        title: "Application Submitted! 🎉",
-        description: isNewUser
-          ? "Background check initiated! Check your email to verify your account. Results expected in 1-5 business days (possibly more)."
-          : "Background check initiated! You'll receive an email when your results are ready. Expected in 1-5 business days (possibly more).",
+      // Step 5: Show waitlist modal (instead of toast)
+      setWaitlistData({
+        position: application.waitlist_position || 1,
+        city: data.city,
+        state: data.state
       });
+      setShowWaitlistModal(true);
 
-      onClose();
+      // Clear draft
+      clearDraft();
     } catch (error: any) {
       throw error;
     }
@@ -149,8 +157,9 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
   };
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <Card className="w-full max-w-2xl my-8 relative">
+    <>
+      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <Card className="w-full max-w-2xl my-8 relative">
         {/* Close button */}
         <Button
           variant="ghost"
@@ -209,5 +218,20 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
         </div>
       </Card>
     </div>
+    
+    {/* Waitlist Success Modal (appears on top of wizard) */}
+    {showWaitlistModal && waitlistData && (
+      <WaitlistSuccessModal
+        firstName={data.firstName}
+        city={waitlistData.city}
+        state={waitlistData.state}
+        waitlistPosition={waitlistData.position}
+        onClose={() => {
+          setShowWaitlistModal(false);
+          onClose(); // Close wizard too
+        }}
+      />
+    )}
+  </>
   );
 };

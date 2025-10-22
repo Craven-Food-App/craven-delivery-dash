@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_logs: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string | null
+          details: Json | null
+          entity_id: string
+          entity_type: string
+          id: string
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id: string
+          entity_type: string
+          id?: string
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           created_at: string | null
@@ -224,6 +254,42 @@ export type Database = {
           },
         ]
       }
+      chat_quick_responses: {
+        Row: {
+          auto_message: string
+          button_icon: string | null
+          button_text: string
+          category: string
+          created_at: string | null
+          follow_up_options: Json | null
+          id: string
+          is_active: boolean | null
+          priority: number | null
+        }
+        Insert: {
+          auto_message: string
+          button_icon?: string | null
+          button_text: string
+          category: string
+          created_at?: string | null
+          follow_up_options?: Json | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+        }
+        Update: {
+          auto_message?: string
+          button_icon?: string | null
+          button_text?: string
+          category?: string
+          created_at?: string | null
+          follow_up_options?: Json | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+        }
+        Relationships: []
+      }
       commission_settings: {
         Row: {
           created_at: string
@@ -320,6 +386,10 @@ export type Database = {
           vehicle_type: string
           vehicle_year: number
           w9_document: string | null
+          waitlist_joined_at: string | null
+          waitlist_notes: string | null
+          waitlist_position: number | null
+          waitlist_priority_score: number | null
           welcome_screen_shown: boolean | null
           zip_code: string
         }
@@ -379,6 +449,10 @@ export type Database = {
           vehicle_type: string
           vehicle_year: number
           w9_document?: string | null
+          waitlist_joined_at?: string | null
+          waitlist_notes?: string | null
+          waitlist_position?: number | null
+          waitlist_priority_score?: number | null
           welcome_screen_shown?: boolean | null
           zip_code: string
         }
@@ -438,6 +512,10 @@ export type Database = {
           vehicle_type?: string
           vehicle_year?: number
           w9_document?: string | null
+          waitlist_joined_at?: string | null
+          waitlist_notes?: string | null
+          waitlist_position?: number | null
+          waitlist_priority_score?: number | null
           welcome_screen_shown?: boolean | null
           zip_code?: string
         }
@@ -671,6 +749,100 @@ export type Database = {
           zip_code?: string
         }
         Relationships: []
+      }
+      dispute_messages: {
+        Row: {
+          created_at: string | null
+          dispute_id: string
+          id: string
+          message: string
+          sender_id: string
+          sender_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          dispute_id: string
+          id?: string
+          message: string
+          sender_id: string
+          sender_type: string
+        }
+        Update: {
+          created_at?: string | null
+          dispute_id?: string
+          id?: string
+          message?: string
+          sender_id?: string
+          sender_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispute_messages_dispute_id_fkey"
+            columns: ["dispute_id"]
+            isOneToOne: false
+            referencedRelation: "disputes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      disputes: {
+        Row: {
+          created_at: string | null
+          description: string
+          dispute_type: string
+          evidence: Json | null
+          id: string
+          order_id: string | null
+          priority: string | null
+          reported_by: string
+          reporter_id: string
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          dispute_type: string
+          evidence?: Json | null
+          id?: string
+          order_id?: string | null
+          priority?: string | null
+          reported_by: string
+          reporter_id: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          dispute_type?: string
+          evidence?: Json | null
+          id?: string
+          order_id?: string | null
+          priority?: string | null
+          reported_by?: string
+          reporter_id?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disputes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       driver_earnings: {
         Row: {
@@ -1068,6 +1240,119 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      driver_support_chats: {
+        Row: {
+          agent_id: string | null
+          agent_response_count: number | null
+          category: string | null
+          created_at: string | null
+          driver_id: string
+          driver_response_count: number | null
+          first_response_time_seconds: number | null
+          id: string
+          last_message_at: string | null
+          priority: string | null
+          resolution_time_seconds: number | null
+          resolved_at: string | null
+          satisfaction_feedback: string | null
+          satisfaction_rating: number | null
+          status: string | null
+          subject: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          agent_response_count?: number | null
+          category?: string | null
+          created_at?: string | null
+          driver_id: string
+          driver_response_count?: number | null
+          first_response_time_seconds?: number | null
+          id?: string
+          last_message_at?: string | null
+          priority?: string | null
+          resolution_time_seconds?: number | null
+          resolved_at?: string | null
+          satisfaction_feedback?: string | null
+          satisfaction_rating?: number | null
+          status?: string | null
+          subject?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          agent_response_count?: number | null
+          category?: string | null
+          created_at?: string | null
+          driver_id?: string
+          driver_response_count?: number | null
+          first_response_time_seconds?: number | null
+          id?: string
+          last_message_at?: string | null
+          priority?: string | null
+          resolution_time_seconds?: number | null
+          resolved_at?: string | null
+          satisfaction_feedback?: string | null
+          satisfaction_rating?: number | null
+          status?: string | null
+          subject?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      driver_support_messages: {
+        Row: {
+          attachment_type: string | null
+          attachment_url: string | null
+          chat_id: string
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message_text: string | null
+          message_type: string | null
+          metadata: Json | null
+          read_at: string | null
+          sender_id: string
+          sender_type: string
+        }
+        Insert: {
+          attachment_type?: string | null
+          attachment_url?: string | null
+          chat_id: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message_text?: string | null
+          message_type?: string | null
+          metadata?: Json | null
+          read_at?: string | null
+          sender_id: string
+          sender_type: string
+        }
+        Update: {
+          attachment_type?: string | null
+          attachment_url?: string | null
+          chat_id?: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message_text?: string | null
+          message_type?: string | null
+          metadata?: Json | null
+          read_at?: string | null
+          sender_id?: string
+          sender_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_support_messages_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "driver_support_chats"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       menu_categories: {
         Row: {
@@ -1840,6 +2125,62 @@ export type Database = {
         }
         Relationships: []
       }
+      refund_requests: {
+        Row: {
+          admin_notes: string | null
+          amount_cents: number
+          created_at: string | null
+          customer_id: string
+          id: string
+          order_id: string
+          processed_at: string | null
+          processed_by: string | null
+          reason: string
+          requested_at: string | null
+          status: string | null
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount_cents: number
+          created_at?: string | null
+          customer_id: string
+          id?: string
+          order_id: string
+          processed_at?: string | null
+          processed_by?: string | null
+          reason: string
+          requested_at?: string | null
+          status?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          amount_cents?: number
+          created_at?: string | null
+          customer_id?: string
+          id?: string
+          order_id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          reason?: string
+          requested_at?: string | null
+          status?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refund_requests_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       restaurant_employee_roles: {
         Row: {
           created_at: string | null
@@ -2099,6 +2440,7 @@ export type Database = {
           business_info_verified: boolean | null
           business_verified_at: string | null
           created_at: string | null
+          delivery_status: string | null
           go_live_ready: boolean | null
           go_live_scheduled_at: string | null
           id: string
@@ -2106,10 +2448,13 @@ export type Database = {
             | Database["public"]["Enums"]["menu_preparation_status"]
             | null
           menu_ready_at: string | null
+          package_weight_oz: number | null
           restaurant_id: string
+          shipping_cost_cents: number | null
           tablet_delivered_at: string | null
           tablet_preparing_at: string | null
           tablet_preparing_shipment: boolean | null
+          tablet_serial_number: string | null
           tablet_shipped: boolean | null
           tablet_shipped_at: string | null
           tablet_shipping_carrier: string | null
@@ -2122,6 +2467,7 @@ export type Database = {
           business_info_verified?: boolean | null
           business_verified_at?: string | null
           created_at?: string | null
+          delivery_status?: string | null
           go_live_ready?: boolean | null
           go_live_scheduled_at?: string | null
           id?: string
@@ -2129,10 +2475,13 @@ export type Database = {
             | Database["public"]["Enums"]["menu_preparation_status"]
             | null
           menu_ready_at?: string | null
+          package_weight_oz?: number | null
           restaurant_id: string
+          shipping_cost_cents?: number | null
           tablet_delivered_at?: string | null
           tablet_preparing_at?: string | null
           tablet_preparing_shipment?: boolean | null
+          tablet_serial_number?: string | null
           tablet_shipped?: boolean | null
           tablet_shipped_at?: string | null
           tablet_shipping_carrier?: string | null
@@ -2145,6 +2494,7 @@ export type Database = {
           business_info_verified?: boolean | null
           business_verified_at?: string | null
           created_at?: string | null
+          delivery_status?: string | null
           go_live_ready?: boolean | null
           go_live_scheduled_at?: string | null
           id?: string
@@ -2152,10 +2502,13 @@ export type Database = {
             | Database["public"]["Enums"]["menu_preparation_status"]
             | null
           menu_ready_at?: string | null
+          package_weight_oz?: number | null
           restaurant_id?: string
+          shipping_cost_cents?: number | null
           tablet_delivered_at?: string | null
           tablet_preparing_at?: string | null
           tablet_preparing_shipment?: boolean | null
+          tablet_serial_number?: string | null
           tablet_shipped?: boolean | null
           tablet_shipped_at?: string | null
           tablet_shipping_carrier?: string | null
@@ -2749,6 +3102,134 @@ export type Database = {
         }
         Relationships: []
       }
+      support_agents: {
+        Row: {
+          avatar_url: string | null
+          avg_response_time_seconds: number | null
+          avg_satisfaction_rating: number | null
+          created_at: string | null
+          current_active_chats: number | null
+          display_name: string
+          id: string
+          is_online: boolean | null
+          max_concurrent_chats: number | null
+          total_chats_handled: number | null
+          total_chats_resolved: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          avg_response_time_seconds?: number | null
+          avg_satisfaction_rating?: number | null
+          created_at?: string | null
+          current_active_chats?: number | null
+          display_name: string
+          id?: string
+          is_online?: boolean | null
+          max_concurrent_chats?: number | null
+          total_chats_handled?: number | null
+          total_chats_resolved?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          avg_response_time_seconds?: number | null
+          avg_satisfaction_rating?: number | null
+          created_at?: string | null
+          current_active_chats?: number | null
+          display_name?: string
+          id?: string
+          is_online?: boolean | null
+          max_concurrent_chats?: number | null
+          total_chats_handled?: number | null
+          total_chats_resolved?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      support_tickets: {
+        Row: {
+          assigned_to: string | null
+          category: string
+          created_at: string | null
+          customer_id: string
+          description: string
+          id: string
+          priority: string | null
+          resolved_at: string | null
+          status: string | null
+          subject: string
+          ticket_number: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          category: string
+          created_at?: string | null
+          customer_id: string
+          description: string
+          id?: string
+          priority?: string | null
+          resolved_at?: string | null
+          status?: string | null
+          subject: string
+          ticket_number: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string
+          created_at?: string | null
+          customer_id?: string
+          description?: string
+          id?: string
+          priority?: string | null
+          resolved_at?: string | null
+          status?: string | null
+          subject?: string
+          ticket_number?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ticket_messages: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          sender_id: string
+          sender_type: string
+          ticket_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          sender_id: string
+          sender_type: string
+          ticket_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          sender_id?: string
+          sender_type?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_notification_preferences: {
         Row: {
           created_at: string
@@ -2786,6 +3267,7 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          account_status: string | null
           avatar_url: string | null
           created_at: string | null
           full_name: string | null
@@ -2794,10 +3276,13 @@ export type Database = {
           preferences: Json | null
           role: string | null
           settings: Json | null
+          suspension_reason: string | null
+          suspension_until: string | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
+          account_status?: string | null
           avatar_url?: string | null
           created_at?: string | null
           full_name?: string | null
@@ -2806,10 +3291,13 @@ export type Database = {
           preferences?: Json | null
           role?: string | null
           settings?: Json | null
+          suspension_reason?: string | null
+          suspension_until?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
+          account_status?: string | null
           avatar_url?: string | null
           created_at?: string | null
           full_name?: string | null
@@ -2818,6 +3306,8 @@ export type Database = {
           preferences?: Json | null
           role?: string | null
           settings?: Json | null
+          suspension_reason?: string | null
+          suspension_until?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -2904,6 +3394,10 @@ export type Database = {
       }
       has_role: {
         Args: { _role: string; _user_id: string }
+        Returns: boolean
+      }
+      is_admin_user: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
       make_user_active_driver: {
