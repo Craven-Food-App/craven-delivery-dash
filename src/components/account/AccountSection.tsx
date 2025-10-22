@@ -69,9 +69,24 @@ export const AccountSection = () => {
   const fetchAccountData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-      // Try to fetch user profile with error handling
+      // Create a basic profile object for display
+      const tempProfile: UserProfile = {
+        id: user.id,
+        full_name: user.email?.split('@')[0] || 'User',
+        phone: null,
+        avatar_url: null,
+        role: 'customer',
+        preferences: {},
+        settings: {}
+      };
+      setProfile(tempProfile);
+
+      // Try to fetch user profile with error handling (optional)
       const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
@@ -80,82 +95,77 @@ export const AccountSection = () => {
 
       if (profileError && profileError.code !== 'PGRST116') {
         console.error('Error fetching profile:', profileError);
-      }
-
-      if (profileData) {
+      } else if (profileData) {
         setProfile(profileData);
-      } else {
-        // Create a temporary profile object for display
-        const tempProfile: UserProfile = {
-          id: user.id,
-          full_name: user.email || '',
-          phone: null,
-          avatar_url: null,
-          role: 'customer',
-          preferences: {},
-          settings: {}
-        };
-        setProfile(tempProfile);
       }
 
       // Fetch payment methods with error handling
-      const { data: paymentData, error: paymentError } = await supabase
-        .from('payment_methods')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('is_default', { ascending: false });
+      try {
+        const { data: paymentData, error: paymentError } = await supabase
+          .from('payment_methods')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('is_default', { ascending: false });
 
-      if (paymentError) {
-        console.error('Error fetching payment methods:', paymentError);
-      } else if (paymentData) {
-        setPaymentMethods(paymentData.map((pm: any) => ({
-          ...pm,
-          exp_month: 12,
-          exp_year: 2025
-        })));
+        if (paymentError) {
+          console.error('Error fetching payment methods:', paymentError);
+        } else if (paymentData) {
+          setPaymentMethods(paymentData.map((pm: any) => ({
+            ...pm,
+            exp_month: 12,
+            exp_year: 2025
+          })));
+        }
+      } catch (error) {
+        console.error('Error fetching payment methods:', error);
       }
 
       // Fetch delivery addresses with error handling
-      const { data: addressData, error: addressError } = await supabase
-        .from('delivery_addresses')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('is_default', { ascending: false });
+      try {
+        const { data: addressData, error: addressError } = await supabase
+          .from('delivery_addresses')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('is_default', { ascending: false });
 
-      if (addressError) {
-        console.error('Error fetching addresses:', addressError);
-      } else if (addressData) {
-        setAddresses(addressData);
+        if (addressError) {
+          console.error('Error fetching addresses:', addressError);
+        } else if (addressData) {
+          setAddresses(addressData);
+        }
+      } catch (error) {
+        console.error('Error fetching addresses:', error);
       }
 
       // Fetch order history with error handling
-      const { data: orderData, error: orderError } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('customer_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
+      try {
+        const { data: orderData, error: orderError } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('customer_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(10);
 
-      if (orderError) {
-        console.error('Error fetching orders:', orderError);
-      } else if (orderData) {
-        const formattedOrders = orderData.map((order: any) => ({
-          id: order.id,
-          restaurant_name: 'Restaurant',
-          total_cents: order.total_cents || 0,
-          order_status: order.order_status || 'pending',
-          created_at: order.created_at
-        }));
-        setOrderHistory(formattedOrders);
+        if (orderError) {
+          console.error('Error fetching orders:', orderError);
+        } else if (orderData) {
+          const formattedOrders = orderData.map((order: any) => ({
+            id: order.id,
+            restaurant_name: 'Restaurant',
+            total_cents: order.total_cents || 0,
+            order_status: order.order_status || 'pending',
+            created_at: order.created_at
+          }));
+          setOrderHistory(formattedOrders);
+        }
+      } catch (error) {
+        console.error('Error fetching orders:', error);
       }
 
     } catch (error) {
       console.error('Error fetching account data:', error);
-      toast({
-        title: "Notice",
-        description: "Some account data may not be available. Please try refreshing the page.",
-        variant: "destructive"
-      });
+      // Don't show error toast for basic profile loading
+      // The component will still render with basic profile info
     } finally {
       setLoading(false);
     }
