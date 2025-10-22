@@ -129,11 +129,11 @@ export const DriverSupportDashboard = () => {
       
       console.log('Fetching driver support chats...');
       
-      // Fetch chats first
+      // Fetch chats first - cast to any to handle type mismatch
       const { data: chatsData, error: chatsError } = await supabase
         .from('driver_support_chats')
         .select('*')
-        .order('last_message_at', { ascending: false });
+        .order('last_message_at', { ascending: false }) as any;
 
       if (chatsError) {
         console.error('Error fetching chats:', chatsError);
@@ -191,17 +191,17 @@ export const DriverSupportDashboard = () => {
         .from('driver_support_messages')
         .select('*')
         .eq('chat_id', chatId)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true }) as any;
 
       if (error) throw error;
-      setMessages(data || []);
+      setMessages((data as any) || []);
 
       // Mark messages as read
       await supabase
         .from('driver_support_messages')
         .update({ is_read: true })
         .eq('chat_id', chatId)
-        .eq('sender_type', 'driver');
+        .eq('sender_type', 'driver') as any;
     } catch (error: any) {
       console.error('Error fetching messages:', error);
       toast.error('Failed to load messages');
@@ -214,9 +214,9 @@ export const DriverSupportDashboard = () => {
         .from('chat_quick_responses')
         .select('*')
         .eq('is_active', true)
-        .order('priority');
+        .order('priority') as any;
 
-      setQuickResponses(data || []);
+      setQuickResponses((data as any) || []);
     } catch (error) {
       console.error('Error fetching quick responses:', error);
     }
@@ -235,13 +235,13 @@ export const DriverSupportDashboard = () => {
         .from('driver_support_chats')
         .select('*')
         .eq('agent_id', user.id)
-        .gte('created_at', startOfDay.toISOString());
+        .gte('created_at', startOfDay.toISOString()) as any;
 
       const { data: activeChats } = await supabase
         .from('driver_support_chats')
         .select('*')
         .eq('agent_id', user.id)
-        .in('status', ['open', 'in_progress']);
+        .in('status', ['open', 'in_progress']) as any;
 
       const chatsHandled = todayChats?.length || 0;
       const avgResponseTime = todayChats?.reduce((acc, chat) => acc + (chat.first_response_time_seconds || 0), 0) / (chatsHandled || 1);
