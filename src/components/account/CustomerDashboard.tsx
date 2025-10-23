@@ -544,26 +544,45 @@ const CustomerDashboard = () => {
   const MobileOrdersTab = () => {
     // Get active orders (in-progress) for pagination
     const activeOrders = orders.filter(o => !['delivered', 'cancelled'].includes(o.order_status));
-    const [currentPage, setCurrentPage] = useState(1);
+    const pastOrders = orders.filter(o => o.order_status === 'delivered');
+    
+    // Pagination for active orders
+    const [activeCurrentPage, setActiveCurrentPage] = useState(1);
     const ordersPerPage = 2;
     const maxPages = 10;
     
     // Pagination logic for active orders
     const totalActiveOrders = activeOrders.length;
-    const totalPages = Math.min(Math.ceil(totalActiveOrders / ordersPerPage), maxPages);
-    const startIndex = (currentPage - 1) * ordersPerPage;
-    const endIndex = startIndex + ordersPerPage;
-    const currentActiveOrders = activeOrders.slice(startIndex, endIndex);
+    const activeTotalPages = Math.min(Math.ceil(totalActiveOrders / ordersPerPage), maxPages);
+    const activeStartIndex = (activeCurrentPage - 1) * ordersPerPage;
+    const activeEndIndex = activeStartIndex + ordersPerPage;
+    const currentActiveOrders = activeOrders.slice(activeStartIndex, activeEndIndex);
 
-    const goToPage = (page: number) => {
-      setCurrentPage(page);
+    const goToActivePage = (page: number) => {
+      setActiveCurrentPage(page);
     };
 
-    const goToAllOrders = () => {
-      navigate('/customer-dashboard?tab=orders&view=all');
+    const goToAllActiveOrders = () => {
+      navigate('/customer-dashboard?tab=orders&view=all&filter=active');
     };
+
+    // Pagination for past orders
+    const [pastCurrentPage, setPastCurrentPage] = useState(1);
     
-    const pastOrders = orders.filter(o => o.order_status === 'delivered');
+    // Pagination logic for past orders
+    const totalPastOrders = pastOrders.length;
+    const pastTotalPages = Math.min(Math.ceil(totalPastOrders / ordersPerPage), maxPages);
+    const pastStartIndex = (pastCurrentPage - 1) * ordersPerPage;
+    const pastEndIndex = pastStartIndex + ordersPerPage;
+    const currentPastOrders = pastOrders.slice(pastStartIndex, pastEndIndex);
+
+    const goToPastPage = (page: number) => {
+      setPastCurrentPage(page);
+    };
+
+    const goToAllPastOrders = () => {
+      navigate('/customer-dashboard?tab=orders&view=all&filter=past');
+    };
       
     return (
       <div className="pb-20 bg-white">
@@ -585,12 +604,12 @@ const CustomerDashboard = () => {
                 <div className="flex flex-col items-center space-y-4 pt-6 border-t mx-4">
                   {/* Page Numbers */}
                   <div className="flex items-center space-x-2">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    {Array.from({ length: activeTotalPages }, (_, i) => i + 1).map((page) => (
                       <button
                         key={page}
-                        onClick={() => goToPage(page)}
+                        onClick={() => goToActivePage(page)}
                         className={`w-8 h-8 rounded-full text-sm font-medium transition-colors ${
-                          currentPage === page 
+                          activeCurrentPage === page 
                             ? 'bg-red-500 text-white' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
@@ -603,7 +622,7 @@ const CustomerDashboard = () => {
                   {/* More Button */}
                   {totalActiveOrders > maxPages * ordersPerPage && (
                     <button
-                      onClick={goToAllOrders}
+                      onClick={goToAllActiveOrders}
                       className="px-4 py-2 bg-red-500 text-white rounded-full font-medium hover:bg-red-600 transition-colors"
                     >
                       View All Orders ({totalActiveOrders})
@@ -612,7 +631,7 @@ const CustomerDashboard = () => {
 
                   {/* Page Info */}
                   <p className="text-sm text-gray-500">
-                    Showing {startIndex + 1}-{Math.min(endIndex, totalActiveOrders)} of {totalActiveOrders} orders
+                    Showing {activeStartIndex + 1}-{Math.min(activeEndIndex, totalActiveOrders)} of {totalActiveOrders} orders
                   </p>
                 </div>
               )}
@@ -626,9 +645,69 @@ const CustomerDashboard = () => {
                 <h3 className="text-lg font-semibold text-gray-900">Past Orders</h3>
               </div>
               <div className="space-y-4">
-                {pastOrders.map(order => (
+                {currentPastOrders.map(order => (
                   <PastOrderCard key={order.id} order={order} />
                 ))}
+              </div>
+
+              {/* Pagination Controls for Past Orders */}
+              {totalPastOrders > ordersPerPage && (
+                <div className="flex flex-col items-center space-y-4 pt-6 border-t mx-4">
+                  {/* Page Numbers */}
+                  <div className="flex items-center space-x-2">
+                    {Array.from({ length: pastTotalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => goToPastPage(page)}
+                        className={`w-8 h-8 rounded-full text-sm font-medium transition-colors ${
+                          pastCurrentPage === page 
+                            ? 'bg-red-500 text-white' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* More Button */}
+                  {totalPastOrders > maxPages * ordersPerPage && (
+                    <button
+                      onClick={goToAllPastOrders}
+                      className="px-4 py-2 bg-red-500 text-white rounded-full font-medium hover:bg-red-600 transition-colors"
+                    >
+                      View All Orders ({totalPastOrders})
+                    </button>
+                  )}
+
+                  {/* Page Info */}
+                  <p className="text-sm text-gray-500">
+                    Showing {pastStartIndex + 1}-{Math.min(pastEndIndex, totalPastOrders)} of {totalPastOrders} orders
+                  </p>
+                </div>
+              )}
+
+              {/* CraveMore Banner */}
+              <div className="mx-4 mt-8 mb-6">
+                <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-6 text-white">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold mb-2">CraveMore</h3>
+                      <p className="text-red-100 mb-4">Get more of what you love with our premium membership</p>
+                      <button
+                        onClick={() => navigate('/crave-more')}
+                        className="bg-white text-red-600 px-4 py-2 rounded-full font-semibold hover:bg-gray-100 transition-colors"
+                      >
+                        Learn More
+                      </button>
+                    </div>
+                    <div className="ml-4">
+                      <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+                        <Package className="w-8 h-8 text-white" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </>
           )}
