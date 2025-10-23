@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { User, CreditCard, MapPin, Bell, Star, DollarSign, Clock, Package, ChevronRight } from 'lucide-react';
+import { User, CreditCard, MapPin, Bell, Star, DollarSign, Clock, Package, ChevronRight, MessageCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -194,7 +194,10 @@ export const AccountSection = () => {
         // Update existing profile
         result = await supabase
           .from('user_profiles')
-          .update(updates)
+          .update({
+            ...updates,
+            updated_at: new Date().toISOString()
+          })
           .eq('user_id', user.id)
           .select()
           .single();
@@ -204,9 +207,6 @@ export const AccountSection = () => {
           .from('user_profiles')
           .insert({
             user_id: user.id,
-            role: 'customer',
-            preferences: {},
-            settings: {},
             ...updates
           })
           .select()
@@ -260,329 +260,237 @@ export const AccountSection = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto lg:p-6">
-      {/* Mobile Quick Access Card */}
-      <div className="lg:hidden">
-        <button
-          onClick={() => setExpandedView(!expandedView)}
-          className="w-full bg-white border-b border-gray-200 px-4 py-4 active:bg-gray-50 transition-colors"
-        >
-          <div className="flex items-center space-x-3">
-            <Avatar className="h-14 w-14">
-              <AvatarImage src={profile?.avatar_url || ''} />
-              <AvatarFallback className="bg-primary/10 text-primary">
-                <User className="h-7 w-7" />
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 text-left">
-              <h3 className="font-semibold text-gray-900 text-base">{profile?.full_name || 'User'}</h3>
-              <p className="text-sm text-gray-600">View and edit profile</p>
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
-          </div>
-        </button>
-        
-        {/* Mobile Account Options */}
-        <div className="bg-white">
-          <button className="w-full bg-white border-b border-gray-200 px-4 py-4 active:bg-gray-50 transition-colors flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                <CreditCard className="w-5 h-5 text-gray-600" />
-              </div>
-              <span className="font-medium text-gray-900">Payment Methods</span>
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
-          </button>
-          
-          <button className="w-full bg-white border-b border-gray-200 px-4 py-4 active:bg-gray-50 transition-colors flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                <MapPin className="w-5 h-5 text-gray-600" />
-              </div>
-              <span className="font-medium text-gray-900">Addresses</span>
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
-          </button>
-          
-          <button className="w-full bg-white border-b border-gray-200 px-4 py-4 active:bg-gray-50 transition-colors flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                <Bell className="w-5 h-5 text-gray-600" />
-              </div>
-              <span className="font-medium text-gray-900">Notifications</span>
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
-          </button>
-          
-          <button 
-            onClick={handleSignOut}
-            className="w-full bg-white border-b border-gray-200 px-4 py-4 active:bg-gray-50 transition-colors flex items-center justify-between"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-red-600" />
-              </div>
-              <span className="font-medium text-red-600">Sign Out</span>
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
-          </button>
-        </div>
-      </div>
-
-      {/* Desktop Profile Header */}
-      <Card className="hidden lg:block">
-        <CardHeader>
+    <div className="max-w-4xl mx-auto">
+      {/* DoorDash-style Mobile Account Page */}
+      <div className="lg:hidden bg-white min-h-screen">
+        {/* Header */}
+        <div className="px-4 py-6 bg-white">
           <div className="flex items-center space-x-4">
             <Avatar className="h-16 w-16">
               <AvatarImage src={profile?.avatar_url || ''} />
-              <AvatarFallback>
-                <User className="h-8 w-8" />
+              <AvatarFallback className="bg-orange-100 text-orange-600 text-xl font-semibold">
+                {profile?.full_name?.charAt(0)?.toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <CardTitle>{profile?.full_name || 'User'}</CardTitle>
-              <CardDescription>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="mt-1">
-                    {profile?.role || 'customer'}
-                  </Badge>
-                </div>
-              </CardDescription>
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold text-gray-900">{profile?.full_name || 'User'}</h1>
+              <p className="text-gray-600">Member since 2024</p>
             </div>
           </div>
-        </CardHeader>
-      </Card>
+        </div>
 
-      {/* Account Management Tabs - Desktop or Expanded Mobile */}
-      <Tabs defaultValue="profile" className={`w-full ${expandedView ? 'block' : 'hidden lg:block'}`}>
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="payments">Payments</TabsTrigger>
-          <TabsTrigger value="addresses">Addresses</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="profile" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Information</CardTitle>
-              <CardDescription>
-                Manage your personal information and preferences
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="fullName">Full Name</Label>
-                  <Input
-                    id="fullName"
-                    value={profile?.full_name || ''}
-                    onChange={(e) => setProfile(prev => prev ? { ...prev, full_name: e.target.value } : null)}
-                    onBlur={() => updateProfile({ full_name: profile?.full_name })}
-                  />
+        {/* Account Menu */}
+        <div className="px-4 space-y-1">
+          {/* Profile Section */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+            <button className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                  <User className="w-5 h-5 text-orange-600" />
                 </div>
-                <div>
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    value={profile?.phone || ''}
-                    onChange={(e) => setProfile(prev => prev ? { ...prev, phone: e.target.value } : null)}
-                    onBlur={() => updateProfile({ phone: profile?.phone })}
-                  />
+                <div className="text-left">
+                  <p className="font-semibold text-gray-900">Account Details</p>
+                  <p className="text-sm text-gray-600">Edit your personal information</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
 
-        <TabsContent value="payments" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Payment Methods
-              </CardTitle>
-              <CardDescription>
-                Manage your saved payment methods
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {paymentMethods.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No payment methods saved
+          {/* Payment Methods */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+            <button className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <CreditCard className="w-5 h-5 text-blue-600" />
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {paymentMethods.map((payment) => (
-                    <div key={payment.id} className="flex items-center justify-between p-3 border rounded">
-                      <div className="flex items-center gap-3">
-                        <CreditCard className="h-5 w-5" />
-                        <div>
-                          <p className="font-medium">•••• •••• •••• {payment.last4}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {payment.brand} • Expires {payment.exp_month}/{payment.exp_year}
-                          </p>
-                        </div>
-                      </div>
-                      {payment.is_default && (
-                        <Badge variant="secondary">Default</Badge>
-                      )}
-                    </div>
-                  ))}
+                <div className="text-left">
+                  <p className="font-semibold text-gray-900">Payment Methods</p>
+                  <p className="text-sm text-gray-600">{paymentMethods.length > 0 ? `${paymentMethods.length} saved` : 'Add payment method'}</p>
                 </div>
-              )}
-              <Button className="w-full mt-4" variant="outline">
-                Add Payment Method
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="addresses" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Delivery Addresses
-              </CardTitle>
-              <CardDescription>
-                Manage your saved delivery locations
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {addresses.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No delivery addresses saved
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {addresses.map((address) => (
-                    <div key={address.id} className="flex items-start justify-between p-3 border rounded">
-                      <div className="flex items-start gap-3">
-                        <MapPin className="h-5 w-5 mt-0.5" />
-                        <div>
-                          <p className="font-medium">{address.label}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {address.street_address}, {address.city}, {address.state} {address.zip_code}
-                          </p>
-                        </div>
-                      </div>
-                      {address.is_default && (
-                        <Badge variant="secondary">Default</Badge>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-              <Button className="w-full mt-4" variant="outline">
-                Add New Address
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="history" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Order History
-              </CardTitle>
-              <CardDescription>
-                View your recent orders and receipts
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {orderHistory.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No orders found
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {orderHistory.map((order) => (
-                    <div key={order.id} className="flex items-center justify-between p-3 border rounded">
-                      <div className="flex items-center gap-3">
-                        <Package className="h-5 w-5" />
-                        <div>
-                          <p className="font-medium">{order.restaurant_name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(order.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium">${(order.total_cents / 100).toFixed(2)}</p>
-                        <Badge 
-                          variant={order.order_status === 'delivered' ? 'default' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {order.order_status}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="settings" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="h-5 w-5" />
-                Notification Settings
-              </CardTitle>
-              <CardDescription>
-                Control when and how you receive notifications
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Order Updates</p>
-                  <p className="text-sm text-muted-foreground">Get notified about order status changes</p>
-                </div>
-                <Switch defaultChecked />
               </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Promotions</p>
-                  <p className="text-sm text-muted-foreground">Receive offers and promotional content</p>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
+
+          {/* Delivery Addresses */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+            <button className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                  <MapPin className="w-5 h-5 text-green-600" />
                 </div>
-                <Switch />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">SMS Notifications</p>
-                  <p className="text-sm text-muted-foreground">Get text messages for important updates</p>
+                <div className="text-left">
+                  <p className="font-semibold text-gray-900">Delivery Addresses</p>
+                  <p className="text-sm text-gray-600">{addresses.length > 0 ? `${addresses.length} saved` : 'Add delivery address'}</p>
                 </div>
-                <Switch defaultChecked />
               </div>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
+
+          {/* Order History */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+            <button className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                  <Package className="w-5 h-5 text-purple-600" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-gray-900">Order History</p>
+                  <p className="text-sm text-gray-600">{orderHistory.length > 0 ? `${orderHistory.length} orders` : 'No orders yet'}</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
+
+          {/* Notifications */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+            <button className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                  <Bell className="w-5 h-5 text-yellow-600" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-gray-900">Notifications</p>
+                  <p className="text-sm text-gray-600">Manage your preferences</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
+
+          {/* Help & Support */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+            <button className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                  <MessageCircle className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-gray-900">Help & Support</p>
+                  <p className="text-sm text-gray-600">Get help with your orders</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
+
+          {/* Sign Out */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+            <button 
+              onClick={handleSignOut}
+              className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <User className="w-5 h-5 text-red-600" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-red-600">Sign Out</p>
+                  <p className="text-sm text-gray-600">Sign out of your account</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom Spacing */}
+        <div className="h-20"></div>
+      </div>
+
+      {/* Desktop Version - DoorDash Style */}
+      <div className="hidden lg:block max-w-4xl mx-auto p-6">
+        {/* Header */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-center space-x-6">
+            <Avatar className="h-20 w-20">
+              <AvatarImage src={profile?.avatar_url || ''} />
+              <AvatarFallback className="bg-orange-100 text-orange-600 text-2xl font-semibold">
+                {profile?.full_name?.charAt(0)?.toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-gray-900">{profile?.full_name || 'User'}</h1>
+              <p className="text-gray-600 text-lg">Member since 2024</p>
+              <p className="text-gray-500">{profile?.phone || 'No phone number'}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Account Sections Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Account Details */}
+          <Card className="hover:shadow-md transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                  <User className="w-5 h-5 text-orange-600" />
+                </div>
+                <span>Account Details</span>
+              </CardTitle>
+              <CardDescription>Edit your personal information</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full">Edit Profile</Button>
             </CardContent>
           </Card>
 
-          <Card>
+          {/* Payment Methods */}
+          <Card className="hover:shadow-md transition-shadow">
             <CardHeader>
-              <CardTitle>Account Actions</CardTitle>
+              <CardTitle className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <CreditCard className="w-5 h-5 text-blue-600" />
+                </div>
+                <span>Payment Methods</span>
+              </CardTitle>
+              <CardDescription>{paymentMethods.length > 0 ? `${paymentMethods.length} saved` : 'Add payment method'}</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
-                onClick={handleSignOut} 
-                variant="destructive" 
-                className="w-full"
-                disabled={updating}
-              >
-                Sign Out
-              </Button>
+              <Button variant="outline" className="w-full">Manage Payment</Button>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+
+          {/* Delivery Addresses */}
+          <Card className="hover:shadow-md transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                  <MapPin className="w-5 h-5 text-green-600" />
+                </div>
+                <span>Delivery Addresses</span>
+              </CardTitle>
+              <CardDescription>{addresses.length > 0 ? `${addresses.length} saved` : 'Add delivery address'}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full">Manage Addresses</Button>
+            </CardContent>
+          </Card>
+
+          {/* Order History */}
+          <Card className="hover:shadow-md transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                  <Package className="w-5 h-5 text-purple-600" />
+                </div>
+                <span>Order History</span>
+              </CardTitle>
+              <CardDescription>{orderHistory.length > 0 ? `${orderHistory.length} orders` : 'No orders yet'}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full">View Orders</Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* End of Account Section */}
     </div>
   );
 };
+
+export default AccountSection;
