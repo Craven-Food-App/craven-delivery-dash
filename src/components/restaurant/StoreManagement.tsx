@@ -142,26 +142,68 @@ export default function StoreManagement() {
 
   const handleAddStore = async () => {
     try {
+      console.log('Starting to add store...');
+      
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.error('No user found');
+        toast({
+          title: "Error",
+          description: "You must be logged in to add store locations",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('User found:', user.id);
 
       // Get restaurant ID
-      const { data: restaurant } = await supabase
+      const { data: restaurant, error: restaurantError } = await supabase
         .from('restaurants')
         .select('id')
         .eq('owner_id', user.id)
         .single();
 
-      if (!restaurant) return;
+      if (restaurantError) {
+        console.error('Error fetching restaurant:', restaurantError);
+        toast({
+          title: "Error",
+          description: "Failed to fetch restaurant information",
+          variant: "destructive"
+        });
+        return;
+      }
 
-      const { error } = await supabase
+      if (!restaurant) {
+        console.error('No restaurant found for user');
+        toast({
+          title: "Error",
+          description: "Restaurant not found. Please contact support.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('Restaurant found:', restaurant.id);
+      console.log('Store data to insert:', {
+        restaurant_id: restaurant.id,
+        ...newStore
+      });
+
+      const { data, error } = await supabase
         .from('store_locations')
         .insert({
           restaurant_id: restaurant.id,
           ...newStore
-        });
+        })
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      console.log('Successfully inserted store:', data);
 
       toast({
         title: "Success",
@@ -197,7 +239,7 @@ export default function StoreManagement() {
       console.error('Error adding store:', error);
       toast({
         title: "Error",
-        description: "Failed to add store location",
+        description: `Failed to add store location: ${error.message || 'Unknown error'}`,
         variant: "destructive"
       });
     }
