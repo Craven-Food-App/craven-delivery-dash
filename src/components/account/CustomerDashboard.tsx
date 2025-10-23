@@ -706,7 +706,7 @@ const CustomerDashboard = () => {
                           <img 
                             src="/src/assets/cravemore-icon.png" 
                             alt="CraveMore" 
-                            className="w-16 h-16 drop-shadow-lg"
+                            className="w-16 h-16 drop-shadow-lg object-contain"
                           />
                           <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
                             <span className="text-red-600 text-xs font-bold">+</span>
