@@ -116,6 +116,17 @@ export const CustomerDashboard = () => {
   const startIndex = (currentPage - 1) * ordersPerPage;
   const endIndex = startIndex + ordersPerPage;
   const currentOrders = activeOrders.slice(startIndex, endIndex);
+  
+  // Debug logging
+  console.log('Pagination Debug:', {
+    totalOrders,
+    currentPage,
+    ordersPerPage,
+    startIndex,
+    endIndex,
+    currentOrdersLength: currentOrders.length,
+    totalPages
+  });
 
   const goToPage = (page: number) => {
     setCurrentPage(page);
@@ -291,7 +302,7 @@ export const CustomerDashboard = () => {
                     </div>
 
                     {/* Pagination Controls */}
-                    {totalOrders > ordersPerPage && (
+                    {totalOrders > 0 && (
                       <div className="flex flex-col items-center space-y-4 pt-6 border-t">
                         {/* Page Numbers */}
                         <div className="flex items-center space-x-2">
