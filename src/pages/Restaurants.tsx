@@ -782,7 +782,7 @@ const Restaurants = () => {
                     badge: "Free item on $15+"
                   }
                 ].map((restaurant, index) => (
-                  <div key={index} className="flex-shrink-0 w-64 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                  <div key={index} className="flex-shrink-0 w-56 sm:w-64 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                     <div className="h-48 overflow-hidden rounded-t-xl">
                       <img
                         src={restaurant.image}

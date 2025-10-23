@@ -31,9 +31,9 @@ const RestaurantCard = ({
 
   return (
     <div className="group cursor-pointer" onClick={handleClick}>
-      <div className="bg-card rounded-lg shadow-card hover:shadow-hover transition-all duration-300 transform hover:scale-105 overflow-hidden">
+      <div className="bg-card rounded-lg shadow-card hover:shadow-hover transition-all duration-300 transform hover:scale-105 overflow-hidden w-full">
         {/* Image */}
-        <div className="relative h-32 lg:h-48 overflow-hidden">
+        <div className="relative h-40 sm:h-48 overflow-hidden">
           <img 
             src={image} 
             alt={name}
@@ -56,29 +56,29 @@ const RestaurantCard = ({
         </div>
 
         {/* Content */}
-        <div className="p-2 lg:p-3">
-          <div className="flex justify-between items-start mb-1">
-            <h3 className="font-semibold text-sm lg:text-base text-foreground group-hover:text-primary transition-colors line-clamp-1">
+        <div className="p-3 sm:p-4">
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="font-semibold text-sm sm:text-base text-foreground group-hover:text-primary transition-colors line-clamp-1 flex-1 min-w-0">
               {name}
             </h3>
-            <div className="flex items-center space-x-0.5 text-xs lg:text-sm flex-shrink-0 ml-1">
-              <Star className="h-3 w-3 lg:h-4 lg:w-4 fill-yellow-400 text-yellow-400" />
+            <div className="flex items-center space-x-1 text-xs sm:text-sm flex-shrink-0 ml-2">
+              <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
               <span className="font-medium">{rating}</span>
             </div>
           </div>
 
-          <p className="text-muted-foreground text-xs mb-2 line-clamp-1">{cuisine}</p>
+          <p className="text-muted-foreground text-xs sm:text-sm mb-3 line-clamp-1">{cuisine}</p>
 
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center space-x-2 lg:space-x-3">
-              <div className="flex items-center space-x-0.5 lg:space-x-1">
-                <Clock className="h-3 w-3" />
-                <span className="text-[10px] lg:text-xs">{deliveryTime}</span>
+          <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground">
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              <div className="flex items-center space-x-1">
+                <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="text-xs">{deliveryTime}</span>
               </div>
               
-              <div className="flex items-center space-x-0.5 lg:space-x-1">
-                <Truck className="h-3 w-3" />
-                <span className="text-[10px] lg:text-xs">{deliveryFee}</span>
+              <div className="flex items-center space-x-1">
+                <Truck className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="text-xs">{deliveryFee}</span>
               </div>
             </div>
           </div>
