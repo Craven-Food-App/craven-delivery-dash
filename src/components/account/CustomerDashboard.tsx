@@ -601,14 +601,14 @@ const CustomerDashboard = () => {
 
               {/* Pagination Controls for Active Orders */}
               {totalActiveOrders > ordersPerPage && (
-                <div className="flex flex-col items-center space-y-4 pt-6 border-t mx-4">
+                <div className="flex flex-col items-center space-y-3 pt-4 border-t mx-4">
                   {/* Page Numbers */}
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1">
                     {Array.from({ length: activeTotalPages }, (_, i) => i + 1).map((page) => (
                       <button
                         key={page}
                         onClick={() => goToActivePage(page)}
-                        className={`w-8 h-8 rounded-full text-sm font-medium transition-colors ${
+                        className={`w-7 h-7 rounded-full text-xs font-medium transition-colors ${
                           activeCurrentPage === page 
                             ? 'bg-red-500 text-white' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -623,15 +623,15 @@ const CustomerDashboard = () => {
                   {totalActiveOrders > maxPages * ordersPerPage && (
                     <button
                       onClick={goToAllActiveOrders}
-                      className="px-4 py-2 bg-red-500 text-white rounded-full font-medium hover:bg-red-600 transition-colors"
+                      className="px-3 py-1.5 bg-red-500 text-white rounded-full text-sm font-medium hover:bg-red-600 transition-colors"
                     >
-                      View All Orders ({totalActiveOrders})
+                      View All ({totalActiveOrders})
                     </button>
                   )}
 
                   {/* Page Info */}
-                  <p className="text-sm text-gray-500">
-                    Showing {activeStartIndex + 1}-{Math.min(activeEndIndex, totalActiveOrders)} of {totalActiveOrders} orders
+                  <p className="text-xs text-gray-500">
+                    {activeStartIndex + 1}-{Math.min(activeEndIndex, totalActiveOrders)} of {totalActiveOrders}
                   </p>
                 </div>
               )}
@@ -652,14 +652,14 @@ const CustomerDashboard = () => {
 
               {/* Pagination Controls for Past Orders */}
               {totalPastOrders > ordersPerPage && (
-                <div className="flex flex-col items-center space-y-4 pt-6 border-t mx-4">
+                <div className="flex flex-col items-center space-y-3 pt-4 border-t mx-4">
                   {/* Page Numbers */}
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1">
                     {Array.from({ length: pastTotalPages }, (_, i) => i + 1).map((page) => (
                       <button
                         key={page}
                         onClick={() => goToPastPage(page)}
-                        className={`w-8 h-8 rounded-full text-sm font-medium transition-colors ${
+                        className={`w-7 h-7 rounded-full text-xs font-medium transition-colors ${
                           pastCurrentPage === page 
                             ? 'bg-red-500 text-white' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -674,15 +674,15 @@ const CustomerDashboard = () => {
                   {totalPastOrders > maxPages * ordersPerPage && (
                     <button
                       onClick={goToAllPastOrders}
-                      className="px-4 py-2 bg-red-500 text-white rounded-full font-medium hover:bg-red-600 transition-colors"
+                      className="px-3 py-1.5 bg-red-500 text-white rounded-full text-sm font-medium hover:bg-red-600 transition-colors"
                     >
-                      View All Orders ({totalPastOrders})
+                      View All ({totalPastOrders})
                     </button>
                   )}
 
                   {/* Page Info */}
-                  <p className="text-sm text-gray-500">
-                    Showing {pastStartIndex + 1}-{Math.min(pastEndIndex, totalPastOrders)} of {totalPastOrders} orders
+                  <p className="text-xs text-gray-500">
+                    {pastStartIndex + 1}-{Math.min(pastEndIndex, totalPastOrders)} of {totalPastOrders}
                   </p>
                 </div>
               )}
