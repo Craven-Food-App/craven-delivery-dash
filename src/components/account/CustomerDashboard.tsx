@@ -542,8 +542,6 @@ const CustomerDashboard = () => {
 
   // Mobile Orders Tab
   const MobileOrdersTab = () => {
-    const [orderFilter, setOrderFilter] = useState<'past' | 'in-progress'>('past');
-    
     // Get active orders (in-progress) for pagination
     const activeOrders = orders.filter(o => !['delivered', 'cancelled'].includes(o.order_status));
     const [currentPage, setCurrentPage] = useState(1);
@@ -565,41 +563,78 @@ const CustomerDashboard = () => {
       navigate('/customer-dashboard?tab=orders&view=all');
     };
     
-    const filteredOrders = orderFilter === 'in-progress' 
-      ? activeOrders
-      : orders.filter(o => o.order_status === 'delivered');
+    const pastOrders = orders.filter(o => o.order_status === 'delivered');
       
     return (
       <div className="pb-20 bg-white">
-        <div className="sticky top-14 bg-white border-b border-gray-200 z-30">
-          <div className="px-4 py-3">
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setOrderFilter('past')}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  orderFilter === 'past'
-                    ? 'bg-black text-white'
-                    : 'bg-gray-100 text-gray-700'
-                }`}
-              >
-                Past Orders
-              </button>
-              <button
-                onClick={() => setOrderFilter('in-progress')}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  orderFilter === 'in-progress'
-                    ? 'bg-black text-white'
-                    : 'bg-gray-100 text-gray-700'
-                }`}
-              >
-                In Progress
-              </button>
-            </div>
-          </div>
-        </div>
-        
         <div className="pt-4">
-          {filteredOrders.length === 0 ? (
+          {/* Active Orders Section */}
+          {activeOrders.length > 0 && (
+            <>
+              <div className="px-4 mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Active Orders</h3>
+              </div>
+              <div className="space-y-4">
+                {currentActiveOrders.map(order => (
+                  <ActiveOrderCard key={order.id} order={order} />
+                ))}
+              </div>
+
+              {/* Pagination Controls for Active Orders */}
+              {totalActiveOrders > ordersPerPage && (
+                <div className="flex flex-col items-center space-y-4 pt-6 border-t mx-4">
+                  {/* Page Numbers */}
+                  <div className="flex items-center space-x-2">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => goToPage(page)}
+                        className={`w-8 h-8 rounded-full text-sm font-medium transition-colors ${
+                          currentPage === page 
+                            ? 'bg-red-500 text-white' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* More Button */}
+                  {totalActiveOrders > maxPages * ordersPerPage && (
+                    <button
+                      onClick={goToAllOrders}
+                      className="px-4 py-2 bg-red-500 text-white rounded-full font-medium hover:bg-red-600 transition-colors"
+                    >
+                      View All Orders ({totalActiveOrders})
+                    </button>
+                  )}
+
+                  {/* Page Info */}
+                  <p className="text-sm text-gray-500">
+                    Showing {startIndex + 1}-{Math.min(endIndex, totalActiveOrders)} of {totalActiveOrders} orders
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Past Orders Section */}
+          {pastOrders.length > 0 && (
+            <>
+              <div className="px-4 mb-4 mt-8">
+                <h3 className="text-lg font-semibold text-gray-900">Past Orders</h3>
+              </div>
+              <div className="space-y-4">
+                {pastOrders.map(order => (
+                  <PastOrderCard key={order.id} order={order} />
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* No Orders State */}
+          {activeOrders.length === 0 && pastOrders.length === 0 && (
             <div className="text-center py-12 px-4">
               <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No orders yet</h3>
@@ -611,61 +646,6 @@ const CustomerDashboard = () => {
                 Browse Restaurants
               </button>
             </div>
-          ) : (
-            <>
-              {/* Show active orders with pagination */}
-              {orderFilter === 'in-progress' ? (
-                <>
-                  <div className="space-y-4">
-                    {currentActiveOrders.map(order => (
-                      <ActiveOrderCard key={order.id} order={order} />
-                    ))}
-                  </div>
-
-                  {/* Pagination Controls for Active Orders */}
-                  {totalActiveOrders > ordersPerPage && (
-                    <div className="flex flex-col items-center space-y-4 pt-6 border-t mx-4">
-                      {/* Page Numbers */}
-                      <div className="flex items-center space-x-2">
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                          <button
-                            key={page}
-                            onClick={() => goToPage(page)}
-                            className={`w-8 h-8 rounded-full text-sm font-medium transition-colors ${
-                              currentPage === page 
-                                ? 'bg-red-500 text-white' 
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                          >
-                            {page}
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* More Button */}
-                      {totalActiveOrders > maxPages * ordersPerPage && (
-                        <button
-                          onClick={goToAllOrders}
-                          className="px-4 py-2 bg-red-500 text-white rounded-full font-medium hover:bg-red-600 transition-colors"
-                        >
-                          View All Orders ({totalActiveOrders})
-                        </button>
-                      )}
-
-                      {/* Page Info */}
-                      <p className="text-sm text-gray-500">
-                        Showing {startIndex + 1}-{Math.min(endIndex, totalActiveOrders)} of {totalActiveOrders} orders
-                      </p>
-                    </div>
-                  )}
-                </>
-              ) : (
-                /* Show past orders without pagination (original behavior) */
-                filteredOrders.map(order => (
-                  <PastOrderCard key={order.id} order={order} />
-                ))
-              )}
-            </>
           )}
         </div>
       </div>
