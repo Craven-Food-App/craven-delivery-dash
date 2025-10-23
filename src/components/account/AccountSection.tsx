@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { User, CreditCard, MapPin, Bell, Star, DollarSign, Clock, Package, ChevronRight, MessageCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { User, CreditCard, MapPin, Bell, Star, DollarSign, Clock, Package, ChevronRight, MessageCircle, Edit, Save, X, Camera } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -61,6 +62,12 @@ export const AccountSection = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [expandedView, setExpandedView] = useState(false);
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [editingProfile, setEditingProfile] = useState({
+    full_name: '',
+    phone: '',
+    email: ''
+  });
 
   useEffect(() => {
     fetchAccountData();
@@ -251,6 +258,51 @@ export const AccountSection = () => {
     }
   };
 
+  const openProfileEdit = () => {
+    setEditingProfile({
+      full_name: profile?.full_name || '',
+      phone: profile?.phone || '',
+      email: profile?.email || ''
+    });
+    setShowProfileEdit(true);
+  };
+
+  const saveProfileEdit = async () => {
+    setUpdating(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('user_profiles')
+        .upsert({
+          user_id: user.id,
+          full_name: editingProfile.full_name,
+          phone: editingProfile.phone,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      setProfile(prev => prev ? { ...prev, full_name: editingProfile.full_name, phone: editingProfile.phone } : null);
+      setShowProfileEdit(false);
+      
+      toast({
+        title: "Success",
+        description: "Profile updated successfully"
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive"
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -268,7 +320,7 @@ export const AccountSection = () => {
           <div className="flex items-center space-x-4">
             <Avatar className="h-16 w-16">
               <AvatarImage src={profile?.avatar_url || ''} />
-              <AvatarFallback className="bg-orange-100 text-orange-600 text-xl font-semibold">
+              <AvatarFallback className="bg-gradient-to-br from-red-500 to-red-600 text-white text-xl font-semibold">
                 {profile?.full_name?.charAt(0)?.toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
@@ -284,12 +336,12 @@ export const AccountSection = () => {
           {/* Profile Section */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
             <button 
-              onClick={() => toast({ title: "Account Details", description: "Profile editing feature coming soon!" })}
+              onClick={openProfileEdit}
               className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                  <User className="w-5 h-5 text-orange-600" />
+                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
+                  <User className="w-5 h-5 text-white" />
                 </div>
                 <div className="text-left">
                   <p className="font-semibold text-gray-900">Account Details</p>
@@ -426,7 +478,7 @@ export const AccountSection = () => {
           <div className="flex items-center space-x-6">
             <Avatar className="h-20 w-20">
               <AvatarImage src={profile?.avatar_url || ''} />
-              <AvatarFallback className="bg-orange-100 text-orange-600 text-2xl font-semibold">
+              <AvatarFallback className="bg-gradient-to-br from-red-500 to-red-600 text-white text-2xl font-semibold">
                 {profile?.full_name?.charAt(0)?.toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
@@ -444,8 +496,8 @@ export const AccountSection = () => {
           <Card className="hover:shadow-md transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                  <User className="w-5 h-5 text-orange-600" />
+                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
+                  <User className="w-5 h-5 text-white" />
                 </div>
                 <span>Account Details</span>
               </CardTitle>
@@ -455,7 +507,7 @@ export const AccountSection = () => {
               <Button 
                 variant="outline" 
                 className="w-full"
-                onClick={() => toast({ title: "Account Details", description: "Profile editing feature coming soon!" })}
+                onClick={openProfileEdit}
               >
                 Edit Profile
               </Button>
@@ -529,6 +581,66 @@ export const AccountSection = () => {
           </Card>
         </div>
       </div>
+
+      {/* Profile Edit Dialog */}
+      <Dialog open={showProfileEdit} onOpenChange={setShowProfileEdit}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">Edit Profile</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="full_name" className="text-sm font-medium text-gray-700">Full Name</Label>
+              <Input
+                id="full_name"
+                value={editingProfile.full_name}
+                onChange={(e) => setEditingProfile(prev => ({ ...prev, full_name: e.target.value }))}
+                className="mt-1"
+                placeholder="Enter your full name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="phone" className="text-sm font-medium text-gray-700">Phone Number</Label>
+              <Input
+                id="phone"
+                value={editingProfile.phone}
+                onChange={(e) => setEditingProfile(prev => ({ ...prev, phone: e.target.value }))}
+                className="mt-1"
+                placeholder="Enter your phone number"
+              />
+            </div>
+            <div>
+              <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email Address</Label>
+              <Input
+                id="email"
+                value={editingProfile.email}
+                onChange={(e) => setEditingProfile(prev => ({ ...prev, email: e.target.value }))}
+                className="mt-1"
+                placeholder="Enter your email address"
+                disabled
+              />
+              <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+            </div>
+            <div className="flex space-x-3 pt-4">
+              <Button
+                onClick={() => setShowProfileEdit(false)}
+                variant="outline"
+                className="flex-1"
+                disabled={updating}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={saveProfileEdit}
+                className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
+                disabled={updating}
+              >
+                {updating ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* End of Account Section */}
     </div>
