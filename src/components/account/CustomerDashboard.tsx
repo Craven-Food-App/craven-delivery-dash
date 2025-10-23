@@ -689,24 +689,53 @@ const CustomerDashboard = () => {
 
               {/* CraveMore Banner */}
               <div className="mx-4 mt-8 mb-6">
-                <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-6 text-white">
-                  <div className="flex items-center justify-between">
+                <div className="relative bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-2xl p-6 text-white overflow-hidden shadow-2xl">
+                  {/* Background Pattern */}
+                  <div className="absolute inset-0 opacity-10">
+                    <div className="absolute top-4 left-4 w-20 h-20 bg-white rounded-full"></div>
+                    <div className="absolute bottom-4 right-4 w-16 h-16 bg-white rounded-full"></div>
+                    <div className="absolute top-1/2 left-1/3 w-8 h-8 bg-white rounded-full"></div>
+                  </div>
+                  
+                  {/* Content */}
+                  <div className="relative z-10 flex items-center justify-between">
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold mb-2">CraveMore</h3>
-                      <p className="text-red-100 mb-4">Get more of what you love with our premium membership</p>
-                      <button
-                        onClick={() => navigate('/crave-more')}
-                        className="bg-white text-red-600 px-4 py-2 rounded-full font-semibold hover:bg-gray-100 transition-colors"
-                      >
-                        Learn More
-                      </button>
+                      {/* CraveMore Logo */}
+                      <div className="flex items-center mb-3">
+                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mr-3">
+                          <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center">
+                            <span className="text-red-600 font-bold text-lg">C</span>
+                          </div>
+                        </div>
+                        <h3 className="text-2xl font-bold">CraveMore</h3>
+                      </div>
+                      
+                      <p className="text-red-100 mb-4 text-lg">Get unlimited free delivery and exclusive perks</p>
+                      
+                      <div className="flex items-center space-x-4">
+                        <button
+                          onClick={() => navigate('/crave-more')}
+                          className="bg-white text-red-600 px-6 py-3 rounded-full font-bold hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg"
+                        >
+                          Join Now
+                        </button>
+                        <div className="text-sm text-red-200">
+                          <span className="line-through">$9.99/month</span>
+                          <span className="ml-2 font-bold">FREE for 30 days</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="ml-4">
-                      <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-                        <Package className="w-8 h-8 text-white" />
+                    
+                    {/* Premium Icon */}
+                    <div className="ml-6">
+                      <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-xl">
+                        <Package className="w-10 h-10 text-white" />
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Shine Effect */}
+                  <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 animate-pulse"></div>
                 </div>
               </div>
             </>
