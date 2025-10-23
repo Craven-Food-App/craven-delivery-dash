@@ -495,15 +495,12 @@ export const AccountSection = () => {
         .from('delivery_addresses')
         .insert({
           user_id: user.id,
-          name: newAddress.name,
+          label: newAddress.name,
           street_address: newAddress.street_address,
           city: newAddress.city,
           state: newAddress.state,
           zip_code: newAddress.zip_code,
-          phone: newAddress.phone,
-          delivery_instructions: newAddress.instructions,
-          is_default: newAddress.is_default || addresses.length === 0,
-          created_at: new Date().toISOString()
+          is_default: newAddress.is_default || addresses.length === 0
         });
 
       if (error) throw error;

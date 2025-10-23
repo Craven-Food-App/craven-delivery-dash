@@ -9,7 +9,6 @@ import {
   Menu, Coffee, Store, Shield, Search, ChevronDown
 } from "lucide-react";
 import { AccountSection } from "@/components/account/AccountSection";
-import OrderTrackingBox from "@/components/OrderTrackingBox";
 import OrderDetailsModal from "@/components/OrderDetailsModal";
 import { LoyaltyDashboard } from "@/components/loyalty/LoyaltyDashboard";
 import cravemoreIcon from "@/assets/cravemore-icon.png";
@@ -54,7 +53,6 @@ const CustomerDashboard = () => {
   const [restaurants, setRestaurants] = useState<Record<string, Restaurant>>({});
   const [favorites, setFavorites] = useState<FavoriteRestaurant[]>([]);
   const [loading, setLoading] = useState(true);
-  const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
   const [detailsOrderId, setDetailsOrderId] = useState<string | null>(null);
   const [orderTypeFilter, setOrderTypeFilter] = useState<'personal' | 'business'>('personal');
   const [showMobileNav, setShowMobileNav] = useState(false);
@@ -177,7 +175,7 @@ const CustomerDashboard = () => {
   };
 
   const handleTrackOrder = (orderId: string) => {
-    setTrackingOrderId(orderId);
+    navigate(`/track-order/${orderId}`);
   };
 
   const removeFavorite = async (restaurantId: string) => {
@@ -856,12 +854,6 @@ const CustomerDashboard = () => {
         </div>
       )}
       
-      {trackingOrderId && (
-        <OrderTrackingBox 
-          orderId={trackingOrderId}
-          onClose={() => setTrackingOrderId(null)}
-        />
-      )}
       
       <OrderDetailsModal 
         isOpen={detailsOrderId !== null}
