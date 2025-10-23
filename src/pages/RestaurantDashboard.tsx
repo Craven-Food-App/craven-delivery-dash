@@ -18,6 +18,8 @@ import { RestaurantCustomerOrderManagement } from "@/components/restaurant/Resta
 import { PhoneOrderPOS } from "@/components/restaurant/PhoneOrderPOS";
 import { EmployeeManagement } from "@/components/restaurant/EmployeeManagement";
 import StoreManagement from "@/components/restaurant/StoreManagement";
+import SimpleStoreManagement from "@/components/restaurant/SimpleStoreManagement";
+import BasicStoreManagement from "@/components/restaurant/BasicStoreManagement";
 import StoreLocationSelector from "@/components/restaurant/StoreLocationSelector";
 import StoreSetupWizard from "@/components/restaurant/StoreSetupWizard";
 import RestaurantBottomNav from "@/components/mobile/RestaurantBottomNav";
@@ -275,17 +277,7 @@ const RestaurantDashboard = () => {
           </TabsContent>
 
           <TabsContent value="stores" className="space-y-4">
-            {showStoreSetup ? (
-              <StoreSetupWizard 
-                onComplete={() => {
-                  setShowStoreSetup(false);
-                  fetchRestaurant();
-                }}
-                onCancel={() => setShowStoreSetup(false)}
-              />
-            ) : (
-              <StoreManagement />
-            )}
+            <BasicStoreManagement />
           </TabsContent>
 
           <TabsContent value="employees" className="space-y-4">
