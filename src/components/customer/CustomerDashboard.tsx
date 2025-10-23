@@ -27,6 +27,9 @@ export const CustomerDashboard = () => {
   const [activeOrders, setActiveOrders] = useState<ActiveOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ordersPerPage = 2;
+  const maxPages = 10;
 
   useEffect(() => {
     getCurrentUser();
@@ -105,6 +108,21 @@ export const CustomerDashboard = () => {
     return status.split('_').map(word => 
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ');
+  };
+
+  // Pagination logic
+  const totalOrders = activeOrders.length;
+  const totalPages = Math.min(Math.ceil(totalOrders / ordersPerPage), maxPages);
+  const startIndex = (currentPage - 1) * ordersPerPage;
+  const endIndex = startIndex + ordersPerPage;
+  const currentOrders = activeOrders.slice(startIndex, endIndex);
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const goToAllOrders = () => {
+    navigate('/customer-dashboard?tab=orders&view=all');
   };
 
   return (
@@ -231,45 +249,83 @@ export const CustomerDashboard = () => {
                     <Button>Browse Restaurants</Button>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {activeOrders.map((order) => (
-                      <Card key={order.id}>
-                        <CardContent className="pt-6">
-                          <div className="flex items-center justify-between mb-4">
-                            <div>
-                              <h3 className="font-medium">{order.restaurant_name}</h3>
-                              <p className="text-sm text-muted-foreground">
-                                Order #{order.id.slice(-8)}
-                              </p>
+                  <>
+                    <div className="space-y-4">
+                      {currentOrders.map((order) => (
+                        <Card key={order.id}>
+                          <CardContent className="pt-6">
+                            <div className="flex items-center justify-between mb-4">
+                              <div>
+                                <h3 className="font-medium">{order.restaurant_name}</h3>
+                                <p className="text-sm text-muted-foreground">
+                                  Order #{order.id.slice(-8)}
+                                </p>
+                              </div>
+                              <Badge variant={getStatusColor(order.order_status)}>
+                                {formatStatus(order.order_status)}
+                              </Badge>
                             </div>
-                            <Badge variant={getStatusColor(order.order_status)}>
-                              {formatStatus(order.order_status)}
-                            </Badge>
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Clock className="h-4 w-4" />
-                                {order.estimated_delivery_time 
-                                  ? new Date(order.estimated_delivery_time).toLocaleTimeString()
-                                  : 'Calculating...'
-                                }
-                              </span>
-                              <span>${(order.total_cents / 100).toFixed(2)}</span>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-4 w-4" />
+                                  {order.estimated_delivery_time 
+                                    ? new Date(order.estimated_delivery_time).toLocaleTimeString()
+                                    : 'Calculating...'
+                                  }
+                                </span>
+                                <span>${(order.total_cents / 100).toFixed(2)}</span>
+                              </div>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => navigate(`/track-order/${order.id}`)}
+                              >
+                                Track Order
+                              </Button>
                             </div>
-                            <Button 
-                              variant="outline" 
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+
+                    {/* Pagination Controls */}
+                    {totalOrders > ordersPerPage && (
+                      <div className="flex flex-col items-center space-y-4 pt-6 border-t">
+                        {/* Page Numbers */}
+                        <div className="flex items-center space-x-2">
+                          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                            <Button
+                              key={page}
+                              variant={currentPage === page ? "default" : "outline"}
                               size="sm"
-                              onClick={() => navigate(`/track-order/${order.id}`)}
+                              onClick={() => goToPage(page)}
+                              className="w-8 h-8 p-0"
                             >
-                              Track Order
+                              {page}
                             </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                          ))}
+                        </div>
+
+                        {/* More Button */}
+                        {totalOrders > maxPages * ordersPerPage && (
+                          <Button
+                            variant="outline"
+                            onClick={goToAllOrders}
+                            className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0"
+                          >
+                            View All Orders ({totalOrders})
+                          </Button>
+                        )}
+
+                        {/* Page Info */}
+                        <p className="text-sm text-muted-foreground">
+                          Showing {startIndex + 1}-{Math.min(endIndex, totalOrders)} of {totalOrders} orders
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
