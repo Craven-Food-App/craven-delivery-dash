@@ -78,6 +78,18 @@ export const AccountSection = () => {
     billing_address: '',
     is_default: false
   });
+  const [showDeliveryAddresses, setShowDeliveryAddresses] = useState(false);
+  const [showAddAddress, setShowAddAddress] = useState(false);
+  const [newAddress, setNewAddress] = useState({
+    name: '',
+    street_address: '',
+    city: '',
+    state: '',
+    zip_code: '',
+    phone: '',
+    instructions: '',
+    is_default: false
+  });
 
   useEffect(() => {
     fetchAccountData();
@@ -446,6 +458,144 @@ export const AccountSection = () => {
     }
   };
 
+  const openDeliveryAddresses = () => {
+    setShowDeliveryAddresses(true);
+  };
+
+  const openAddAddress = () => {
+    setNewAddress({
+      name: '',
+      street_address: '',
+      city: '',
+      state: '',
+      zip_code: '',
+      phone: '',
+      instructions: '',
+      is_default: false
+    });
+    setShowAddAddress(true);
+  };
+
+  const addDeliveryAddress = async () => {
+    if (!newAddress.name || !newAddress.street_address || !newAddress.city || !newAddress.state || !newAddress.zip_code) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required address fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('delivery_addresses')
+        .insert({
+          user_id: user.id,
+          name: newAddress.name,
+          street_address: newAddress.street_address,
+          city: newAddress.city,
+          state: newAddress.state,
+          zip_code: newAddress.zip_code,
+          phone: newAddress.phone,
+          delivery_instructions: newAddress.instructions,
+          is_default: newAddress.is_default || addresses.length === 0,
+          created_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      // Refresh addresses
+      await fetchAccountData();
+      setShowAddAddress(false);
+      
+      toast({
+        title: "Success",
+        description: "Delivery address added successfully"
+      });
+    } catch (error) {
+      console.error('Error adding delivery address:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add delivery address",
+        variant: "destructive"
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const removeDeliveryAddress = async (addressId: string) => {
+    setUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('delivery_addresses')
+        .delete()
+        .eq('id', addressId);
+
+      if (error) throw error;
+
+      // Refresh addresses
+      await fetchAccountData();
+      
+      toast({
+        title: "Success",
+        description: "Delivery address removed successfully"
+      });
+    } catch (error) {
+      console.error('Error removing delivery address:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove delivery address",
+        variant: "destructive"
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const setDefaultDeliveryAddress = async (addressId: string) => {
+    setUpdating(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // First, set all addresses to not default
+      await supabase
+        .from('delivery_addresses')
+        .update({ is_default: false })
+        .eq('user_id', user.id);
+
+      // Then set the selected one as default
+      const { error } = await supabase
+        .from('delivery_addresses')
+        .update({ is_default: true })
+        .eq('id', addressId);
+
+      if (error) throw error;
+
+      // Refresh addresses
+      await fetchAccountData();
+      
+      toast({
+        title: "Success",
+        description: "Default delivery address updated"
+      });
+    } catch (error) {
+      console.error('Error setting default delivery address:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update default delivery address",
+        variant: "destructive"
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -517,12 +667,12 @@ export const AccountSection = () => {
           {/* Delivery Addresses */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
             <button 
-              onClick={() => toast({ title: "Delivery Addresses", description: "Address management feature coming soon!" })}
+              onClick={openDeliveryAddresses}
               className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                  <MapPin className="w-5 h-5 text-green-600" />
+                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
+                  <MapPin className="w-5 h-5 text-white" />
                 </div>
                 <div className="text-left">
                   <p className="font-semibold text-gray-900">Delivery Addresses</p>
@@ -683,8 +833,8 @@ export const AccountSection = () => {
           <Card className="hover:shadow-md transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                  <MapPin className="w-5 h-5 text-green-600" />
+                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
+                  <MapPin className="w-5 h-5 text-white" />
                 </div>
                 <span>Delivery Addresses</span>
               </CardTitle>
@@ -694,7 +844,7 @@ export const AccountSection = () => {
               <Button 
                 variant="outline" 
                 className="w-full"
-                onClick={() => toast({ title: "Delivery Addresses", description: "Address management feature coming soon!" })}
+                onClick={openDeliveryAddresses}
               >
                 Manage Addresses
               </Button>
@@ -964,6 +1114,217 @@ export const AccountSection = () => {
                 disabled={updating}
               >
                 {updating ? 'Adding...' : 'Add Card'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delivery Addresses Management Dialog */}
+      <Dialog open={showDeliveryAddresses} onOpenChange={setShowDeliveryAddresses}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">Delivery Addresses</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Add New Address Button */}
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900">Saved Delivery Addresses</h3>
+              <Button
+                onClick={openAddAddress}
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
+              >
+                Add New Address
+              </Button>
+            </div>
+
+            {/* Addresses List */}
+            {addresses.length === 0 ? (
+              <div className="text-center py-8">
+                <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">No delivery addresses saved</p>
+                <p className="text-sm text-gray-400">Add a delivery address to get started</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {addresses.map((address) => (
+                  <div key={address.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center">
+                          <MapPin className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <p className="font-semibold text-gray-900">{address.name}</p>
+                            {address.is_default && (
+                              <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white text-xs">
+                                Default
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {address.street_address}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {address.city}, {address.state} {address.zip_code}
+                          </p>
+                          {address.phone && (
+                            <p className="text-sm text-gray-600">
+                              Phone: {address.phone}
+                            </p>
+                          )}
+                          {address.delivery_instructions && (
+                            <p className="text-sm text-gray-500 mt-2 italic">
+                              Instructions: {address.delivery_instructions}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {!address.is_default && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setDefaultDeliveryAddress(address.id)}
+                            disabled={updating}
+                          >
+                            Set Default
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeDeliveryAddress(address.id)}
+                          disabled={updating}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Delivery Address Dialog */}
+      <Dialog open={showAddAddress} onOpenChange={setShowAddAddress}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">Add Delivery Address</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="address_name" className="text-sm font-medium text-gray-700">Address Name</Label>
+              <Input
+                id="address_name"
+                value={newAddress.name}
+                onChange={(e) => setNewAddress(prev => ({ ...prev, name: e.target.value }))}
+                className="mt-1"
+                placeholder="e.g., Home, Work, Apartment"
+              />
+            </div>
+            <div>
+              <Label htmlFor="street_address" className="text-sm font-medium text-gray-700">Street Address</Label>
+              <Input
+                id="street_address"
+                value={newAddress.street_address}
+                onChange={(e) => setNewAddress(prev => ({ ...prev, street_address: e.target.value }))}
+                className="mt-1"
+                placeholder="123 Main Street"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="city" className="text-sm font-medium text-gray-700">City</Label>
+                <Input
+                  id="city"
+                  value={newAddress.city}
+                  onChange={(e) => setNewAddress(prev => ({ ...prev, city: e.target.value }))}
+                  className="mt-1"
+                  placeholder="City"
+                />
+              </div>
+              <div>
+                <Label htmlFor="state" className="text-sm font-medium text-gray-700">State</Label>
+                <Input
+                  id="state"
+                  value={newAddress.state}
+                  onChange={(e) => setNewAddress(prev => ({ ...prev, state: e.target.value }))}
+                  className="mt-1"
+                  placeholder="State"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="zip_code" className="text-sm font-medium text-gray-700">ZIP Code</Label>
+              <Input
+                id="zip_code"
+                value={newAddress.zip_code}
+                onChange={(e) => {
+                  let value = e.target.value.replace(/\D/g, '').slice(0, 5);
+                  setNewAddress(prev => ({ ...prev, zip_code: value }));
+                }}
+                className="mt-1"
+                placeholder="12345"
+                maxLength={5}
+              />
+            </div>
+            <div>
+              <Label htmlFor="address_phone" className="text-sm font-medium text-gray-700">Phone Number (Optional)</Label>
+              <Input
+                id="address_phone"
+                value={newAddress.phone}
+                onChange={(e) => {
+                  let value = e.target.value.replace(/\D/g, '');
+                  if (value.length <= 10) {
+                    setNewAddress(prev => ({ ...prev, phone: value }));
+                  }
+                }}
+                className="mt-1"
+                placeholder="(555) 123-4567"
+                maxLength={10}
+              />
+            </div>
+            <div>
+              <Label htmlFor="delivery_instructions" className="text-sm font-medium text-gray-700">Delivery Instructions (Optional)</Label>
+              <Input
+                id="delivery_instructions"
+                value={newAddress.instructions}
+                onChange={(e) => setNewAddress(prev => ({ ...prev, instructions: e.target.value }))}
+                className="mt-1"
+                placeholder="e.g., Ring doorbell, Leave at door"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="address_is_default"
+                checked={newAddress.is_default}
+                onChange={(e) => setNewAddress(prev => ({ ...prev, is_default: e.target.checked }))}
+                className="rounded border-gray-300"
+              />
+              <Label htmlFor="address_is_default" className="text-sm text-gray-700">Set as default delivery address</Label>
+            </div>
+            <div className="flex space-x-3 pt-4">
+              <Button
+                onClick={() => setShowAddAddress(false)}
+                variant="outline"
+                className="flex-1"
+                disabled={updating}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={addDeliveryAddress}
+                className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
+                disabled={updating}
+              >
+                {updating ? 'Adding...' : 'Add Address'}
               </Button>
             </div>
           </div>
