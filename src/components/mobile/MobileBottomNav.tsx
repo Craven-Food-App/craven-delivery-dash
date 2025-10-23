@@ -20,7 +20,7 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
     id: 'home',
     label: 'Home',
     icon: Home,
-    path: '/'
+    path: '/restaurants'
   }, {
     id: 'restaurants',
     label: 'Search',
@@ -52,7 +52,7 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           const Icon = tab.icon;
           // Check if current path matches, considering query parameters for customer-dashboard
           const isActive = tab.id === 'home' 
-            ? location.pathname === '/' 
+            ? location.pathname === '/restaurants' || location.pathname === '/'
             : tab.id === 'restaurants' 
               ? location.pathname === '/restaurants'
               : tab.id === 'orders'
