@@ -283,7 +283,10 @@ export const AccountSection = () => {
         <div className="px-4 space-y-1">
           {/* Profile Section */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-            <button className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+            <button 
+              onClick={() => toast({ title: "Account Details", description: "Profile editing feature coming soon!" })}
+              className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
                   <User className="w-5 h-5 text-orange-600" />
@@ -299,7 +302,10 @@ export const AccountSection = () => {
 
           {/* Payment Methods */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-            <button className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+            <button 
+              onClick={() => toast({ title: "Payment Methods", description: "Payment management feature coming soon!" })}
+              className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                   <CreditCard className="w-5 h-5 text-blue-600" />
@@ -315,7 +321,10 @@ export const AccountSection = () => {
 
           {/* Delivery Addresses */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-            <button className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+            <button 
+              onClick={() => toast({ title: "Delivery Addresses", description: "Address management feature coming soon!" })}
+              className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
                   <MapPin className="w-5 h-5 text-green-600" />
@@ -331,7 +340,10 @@ export const AccountSection = () => {
 
           {/* Order History */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-            <button className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+            <button 
+              onClick={() => navigate('/customer-dashboard?tab=orders')}
+              className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
                   <Package className="w-5 h-5 text-purple-600" />
@@ -347,7 +359,10 @@ export const AccountSection = () => {
 
           {/* Notifications */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-            <button className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+            <button 
+              onClick={() => toast({ title: "Notifications", description: "Notification preferences feature coming soon!" })}
+              className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
                   <Bell className="w-5 h-5 text-yellow-600" />
@@ -363,7 +378,10 @@ export const AccountSection = () => {
 
           {/* Help & Support */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-            <button className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+            <button 
+              onClick={() => toast({ title: "Help & Support", description: "Customer support feature coming soon!" })}
+              className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            >
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
                   <MessageCircle className="w-5 h-5 text-indigo-600" />
@@ -434,7 +452,13 @@ export const AccountSection = () => {
               <CardDescription>Edit your personal information</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full">Edit Profile</Button>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => toast({ title: "Account Details", description: "Profile editing feature coming soon!" })}
+              >
+                Edit Profile
+              </Button>
             </CardContent>
           </Card>
 
@@ -450,7 +474,13 @@ export const AccountSection = () => {
               <CardDescription>{paymentMethods.length > 0 ? `${paymentMethods.length} saved` : 'Add payment method'}</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full">Manage Payment</Button>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => toast({ title: "Payment Methods", description: "Payment management feature coming soon!" })}
+              >
+                Manage Payment
+              </Button>
             </CardContent>
           </Card>
 
@@ -466,7 +496,13 @@ export const AccountSection = () => {
               <CardDescription>{addresses.length > 0 ? `${addresses.length} saved` : 'Add delivery address'}</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full">Manage Addresses</Button>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => toast({ title: "Delivery Addresses", description: "Address management feature coming soon!" })}
+              >
+                Manage Addresses
+              </Button>
             </CardContent>
           </Card>
 
@@ -482,7 +518,13 @@ export const AccountSection = () => {
               <CardDescription>{orderHistory.length > 0 ? `${orderHistory.length} orders` : 'No orders yet'}</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full">View Orders</Button>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => navigate('/customer-dashboard?tab=orders')}
+              >
+                View Orders
+              </Button>
             </CardContent>
           </Card>
         </div>
