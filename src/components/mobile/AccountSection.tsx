@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { 
   User, Car, Shield, CreditCard, Settings, LogOut, 
@@ -51,21 +50,32 @@ export const AccountSection: React.FC<{
   const fetchProfile = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-      // Get profile
-      const { data: application } = await supabase
-        .from('craver_applications')
+      // Get profile from user_profiles table
+      const { data: userProfile, error: profileError } = await supabase
+        .from('user_profiles')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Error fetching user profile:', profileError);
+      }
 
       // Get driver stats and rating details
-      const { data: driverProfile } = await supabase
+      const { data: driverProfile, error: driverError } = await supabase
         .from('driver_profiles')
         .select('total_deliveries, rating, acceptance_rate, completion_rate, on_time_rate')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
+
+      if (driverError && driverError.code !== 'PGRST116') {
+        console.error('Error fetching driver profile:', driverError);
+      }
 
       // Get earnings
       const todayStart = new Date();

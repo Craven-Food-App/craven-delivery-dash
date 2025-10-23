@@ -1,5 +1,5 @@
 import React from 'react';
-import { Store, Menu, Phone, ShoppingBag, Settings } from 'lucide-react';
+import { Store, Menu, Phone, ShoppingBag, Building2, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -13,6 +13,7 @@ const tabs = [
   { id: 'menu', label: 'Menu', icon: Menu },
   { id: 'pos', label: 'POS', icon: Phone },
   { id: 'orders', label: 'Orders', icon: ShoppingBag },
+  { id: 'stores', label: 'Stores', icon: Building2 },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 

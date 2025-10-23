@@ -17,6 +17,9 @@ import { NewOrderAlert } from "@/components/restaurant/NewOrderAlert";
 import { RestaurantCustomerOrderManagement } from "@/components/restaurant/RestaurantCustomerOrderManagement";
 import { PhoneOrderPOS } from "@/components/restaurant/PhoneOrderPOS";
 import { EmployeeManagement } from "@/components/restaurant/EmployeeManagement";
+import StoreManagement from "@/components/restaurant/StoreManagement";
+import StoreLocationSelector from "@/components/restaurant/StoreLocationSelector";
+import StoreSetupWizard from "@/components/restaurant/StoreSetupWizard";
 import RestaurantBottomNav from "@/components/mobile/RestaurantBottomNav";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -46,6 +49,8 @@ const RestaurantDashboard = () => {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
+  const [showStoreSetup, setShowStoreSetup] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -145,13 +150,22 @@ const RestaurantDashboard = () => {
           </div>
         </div>
 
+        {/* Store Location Selector */}
+        <div className="mb-6">
+          <StoreLocationSelector 
+            selectedStoreId={selectedStoreId}
+            onStoreChange={setSelectedStoreId}
+          />
+        </div>
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           {!isMobile && (
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="menu">Menu</TabsTrigger>
               <TabsTrigger value="pos">Phone Orders</TabsTrigger>
               <TabsTrigger value="orders">Orders</TabsTrigger>
+              <TabsTrigger value="stores">Stores</TabsTrigger>
               <TabsTrigger value="employees">Employees</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
@@ -258,6 +272,20 @@ const RestaurantDashboard = () => {
 
           <TabsContent value="orders" className="space-y-4">
             <RestaurantCustomerOrderManagement restaurantId={restaurant.id} />
+          </TabsContent>
+
+          <TabsContent value="stores" className="space-y-4">
+            {showStoreSetup ? (
+              <StoreSetupWizard 
+                onComplete={() => {
+                  setShowStoreSetup(false);
+                  fetchRestaurant();
+                }}
+                onCancel={() => setShowStoreSetup(false)}
+              />
+            ) : (
+              <StoreManagement />
+            )}
           </TabsContent>
 
           <TabsContent value="employees" className="space-y-4">
