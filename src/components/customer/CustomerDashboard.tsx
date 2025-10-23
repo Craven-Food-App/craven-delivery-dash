@@ -10,6 +10,7 @@ import AddressManager from '@/components/address/AddressManager';
 import { Package, MapPin, Clock, Star, ShoppingBag, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import ChatButton from '@/components/chat/ChatButton';
 
 interface ActiveOrder {
@@ -22,6 +23,7 @@ interface ActiveOrder {
 
 export const CustomerDashboard = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [activeOrders, setActiveOrders] = useState<ActiveOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
@@ -256,7 +258,11 @@ export const CustomerDashboard = () => {
                               </span>
                               <span>${(order.total_cents / 100).toFixed(2)}</span>
                             </div>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => navigate(`/track-order/${order.id}`)}
+                            >
                               Track Order
                             </Button>
                           </div>
