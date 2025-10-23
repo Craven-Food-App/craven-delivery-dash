@@ -68,6 +68,16 @@ export const AccountSection = () => {
     phone: '',
     email: ''
   });
+  const [showPaymentMethods, setShowPaymentMethods] = useState(false);
+  const [showAddPayment, setShowAddPayment] = useState(false);
+  const [newPaymentMethod, setNewPaymentMethod] = useState({
+    card_number: '',
+    expiry_date: '',
+    cvv: '',
+    cardholder_name: '',
+    billing_address: '',
+    is_default: false
+  });
 
   useEffect(() => {
     fetchAccountData();
@@ -303,6 +313,139 @@ export const AccountSection = () => {
     }
   };
 
+  const openPaymentMethods = () => {
+    setShowPaymentMethods(true);
+  };
+
+  const openAddPayment = () => {
+    setNewPaymentMethod({
+      card_number: '',
+      expiry_date: '',
+      cvv: '',
+      cardholder_name: '',
+      billing_address: '',
+      is_default: false
+    });
+    setShowAddPayment(true);
+  };
+
+  const addPaymentMethod = async () => {
+    if (!newPaymentMethod.card_number || !newPaymentMethod.expiry_date || !newPaymentMethod.cvv || !newPaymentMethod.cardholder_name) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('payment_methods')
+        .insert({
+          user_id: user.id,
+          card_number: newPaymentMethod.card_number.replace(/\s/g, ''),
+          expiry_date: newPaymentMethod.expiry_date,
+          cardholder_name: newPaymentMethod.cardholder_name,
+          billing_address: newPaymentMethod.billing_address,
+          is_default: newPaymentMethod.is_default || paymentMethods.length === 0,
+          created_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      // Refresh payment methods
+      await fetchAccountData();
+      setShowAddPayment(false);
+      
+      toast({
+        title: "Success",
+        description: "Payment method added successfully"
+      });
+    } catch (error) {
+      console.error('Error adding payment method:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add payment method",
+        variant: "destructive"
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const removePaymentMethod = async (paymentId: string) => {
+    setUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('payment_methods')
+        .delete()
+        .eq('id', paymentId);
+
+      if (error) throw error;
+
+      // Refresh payment methods
+      await fetchAccountData();
+      
+      toast({
+        title: "Success",
+        description: "Payment method removed successfully"
+      });
+    } catch (error) {
+      console.error('Error removing payment method:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove payment method",
+        variant: "destructive"
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const setDefaultPaymentMethod = async (paymentId: string) => {
+    setUpdating(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // First, set all payment methods to not default
+      await supabase
+        .from('payment_methods')
+        .update({ is_default: false })
+        .eq('user_id', user.id);
+
+      // Then set the selected one as default
+      const { error } = await supabase
+        .from('payment_methods')
+        .update({ is_default: true })
+        .eq('id', paymentId);
+
+      if (error) throw error;
+
+      // Refresh payment methods
+      await fetchAccountData();
+      
+      toast({
+        title: "Success",
+        description: "Default payment method updated"
+      });
+    } catch (error) {
+      console.error('Error setting default payment method:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update default payment method",
+        variant: "destructive"
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -355,12 +498,12 @@ export const AccountSection = () => {
           {/* Payment Methods */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
             <button 
-              onClick={() => toast({ title: "Payment Methods", description: "Payment management feature coming soon!" })}
+              onClick={openPaymentMethods}
               className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <CreditCard className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
+                  <CreditCard className="w-5 h-5 text-white" />
                 </div>
                 <div className="text-left">
                   <p className="font-semibold text-gray-900">Payment Methods</p>
@@ -518,8 +661,8 @@ export const AccountSection = () => {
           <Card className="hover:shadow-md transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <CreditCard className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
+                  <CreditCard className="w-5 h-5 text-white" />
                 </div>
                 <span>Payment Methods</span>
               </CardTitle>
@@ -529,7 +672,7 @@ export const AccountSection = () => {
               <Button 
                 variant="outline" 
                 className="w-full"
-                onClick={() => toast({ title: "Payment Methods", description: "Payment management feature coming soon!" })}
+                onClick={openPaymentMethods}
               >
                 Manage Payment
               </Button>
@@ -636,6 +779,191 @@ export const AccountSection = () => {
                 disabled={updating}
               >
                 {updating ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Methods Management Dialog */}
+      <Dialog open={showPaymentMethods} onOpenChange={setShowPaymentMethods}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">Payment Methods</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Add New Payment Method Button */}
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900">Saved Payment Methods</h3>
+              <Button
+                onClick={openAddPayment}
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
+              >
+                Add New Card
+              </Button>
+            </div>
+
+            {/* Payment Methods List */}
+            {paymentMethods.length === 0 ? (
+              <div className="text-center py-8">
+                <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">No payment methods saved</p>
+                <p className="text-sm text-gray-400">Add a payment method to get started</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {paymentMethods.map((payment) => (
+                  <div key={payment.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center">
+                          <CreditCard className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            •••• •••• •••• {payment.card_number.slice(-4)}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {payment.cardholder_name} • Expires {payment.expiry_date}
+                          </p>
+                          {payment.is_default && (
+                            <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white text-xs mt-1">
+                              Default
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {!payment.is_default && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setDefaultPaymentMethod(payment.id)}
+                            disabled={updating}
+                          >
+                            Set Default
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removePaymentMethod(payment.id)}
+                          disabled={updating}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Payment Method Dialog */}
+      <Dialog open={showAddPayment} onOpenChange={setShowAddPayment}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">Add Payment Method</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="card_number" className="text-sm font-medium text-gray-700">Card Number</Label>
+              <Input
+                id="card_number"
+                value={newPaymentMethod.card_number}
+                onChange={(e) => {
+                  let value = e.target.value.replace(/\s/g, '').replace(/(.{4})/g, '$1 ').trim();
+                  if (value.length <= 19) {
+                    setNewPaymentMethod(prev => ({ ...prev, card_number: value }));
+                  }
+                }}
+                className="mt-1"
+                placeholder="1234 5678 9012 3456"
+                maxLength={19}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="expiry_date" className="text-sm font-medium text-gray-700">Expiry Date</Label>
+                <Input
+                  id="expiry_date"
+                  value={newPaymentMethod.expiry_date}
+                  onChange={(e) => {
+                    let value = e.target.value.replace(/\D/g, '');
+                    if (value.length >= 2) {
+                      value = value.slice(0, 2) + '/' + value.slice(2, 4);
+                    }
+                    setNewPaymentMethod(prev => ({ ...prev, expiry_date: value }));
+                  }}
+                  className="mt-1"
+                  placeholder="MM/YY"
+                  maxLength={5}
+                />
+              </div>
+              <div>
+                <Label htmlFor="cvv" className="text-sm font-medium text-gray-700">CVV</Label>
+                <Input
+                  id="cvv"
+                  value={newPaymentMethod.cvv}
+                  onChange={(e) => {
+                    let value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                    setNewPaymentMethod(prev => ({ ...prev, cvv: value }));
+                  }}
+                  className="mt-1"
+                  placeholder="123"
+                  maxLength={4}
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="cardholder_name" className="text-sm font-medium text-gray-700">Cardholder Name</Label>
+              <Input
+                id="cardholder_name"
+                value={newPaymentMethod.cardholder_name}
+                onChange={(e) => setNewPaymentMethod(prev => ({ ...prev, cardholder_name: e.target.value }))}
+                className="mt-1"
+                placeholder="Enter cardholder name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="billing_address" className="text-sm font-medium text-gray-700">Billing Address (Optional)</Label>
+              <Input
+                id="billing_address"
+                value={newPaymentMethod.billing_address}
+                onChange={(e) => setNewPaymentMethod(prev => ({ ...prev, billing_address: e.target.value }))}
+                className="mt-1"
+                placeholder="Enter billing address"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="is_default"
+                checked={newPaymentMethod.is_default}
+                onChange={(e) => setNewPaymentMethod(prev => ({ ...prev, is_default: e.target.checked }))}
+                className="rounded border-gray-300"
+              />
+              <Label htmlFor="is_default" className="text-sm text-gray-700">Set as default payment method</Label>
+            </div>
+            <div className="flex space-x-3 pt-4">
+              <Button
+                onClick={() => setShowAddPayment(false)}
+                variant="outline"
+                className="flex-1"
+                disabled={updating}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={addPaymentMethod}
+                className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
+                disabled={updating}
+              >
+                {updating ? 'Adding...' : 'Add Card'}
               </Button>
             </div>
           </div>
