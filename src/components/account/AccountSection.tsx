@@ -489,9 +489,27 @@ export const AccountSection = () => {
     setUpdating(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to add delivery addresses",
+          variant: "destructive"
+        });
+        return;
+      }
 
-      const { error } = await supabase
+      console.log('Adding delivery address for user:', user.id);
+      console.log('Address data:', {
+        user_id: user.id,
+        label: newAddress.name,
+        street_address: newAddress.street_address,
+        city: newAddress.city,
+        state: newAddress.state,
+        zip_code: newAddress.zip_code,
+        is_default: newAddress.is_default || addresses.length === 0
+      });
+
+      const { data, error } = await supabase
         .from('delivery_addresses')
         .insert({
           user_id: user.id,
@@ -501,9 +519,15 @@ export const AccountSection = () => {
           state: newAddress.state,
           zip_code: newAddress.zip_code,
           is_default: newAddress.is_default || addresses.length === 0
-        });
+        })
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      console.log('Successfully inserted:', data);
 
       // Refresh addresses
       await fetchAccountData();
