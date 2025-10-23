@@ -543,20 +543,19 @@ const CustomerDashboard = () => {
   // Mobile Orders Tab
   const MobileOrdersTab = () => {
     const [orderFilter, setOrderFilter] = useState<'past' | 'in-progress'>('past');
+    
+    // Get active orders (in-progress) for pagination
+    const activeOrders = orders.filter(o => !['delivered', 'cancelled'].includes(o.order_status));
     const [currentPage, setCurrentPage] = useState(1);
     const ordersPerPage = 2;
     const maxPages = 10;
     
-    const filteredOrders = orderFilter === 'in-progress' 
-      ? orders.filter(o => !['delivered', 'cancelled'].includes(o.order_status))
-      : orders.filter(o => o.order_status === 'delivered');
-    
-    // Pagination logic
-    const totalOrders = filteredOrders.length;
-    const totalPages = Math.min(Math.ceil(totalOrders / ordersPerPage), maxPages);
+    // Pagination logic for active orders
+    const totalActiveOrders = activeOrders.length;
+    const totalPages = Math.min(Math.ceil(totalActiveOrders / ordersPerPage), maxPages);
     const startIndex = (currentPage - 1) * ordersPerPage;
     const endIndex = startIndex + ordersPerPage;
-    const currentOrders = filteredOrders.slice(startIndex, endIndex);
+    const currentActiveOrders = activeOrders.slice(startIndex, endIndex);
 
     const goToPage = (page: number) => {
       setCurrentPage(page);
@@ -565,6 +564,10 @@ const CustomerDashboard = () => {
     const goToAllOrders = () => {
       navigate('/customer-dashboard?tab=orders&view=all');
     };
+    
+    const filteredOrders = orderFilter === 'in-progress' 
+      ? activeOrders
+      : orders.filter(o => o.order_status === 'delivered');
       
     return (
       <div className="pb-20 bg-white">
@@ -596,7 +599,7 @@ const CustomerDashboard = () => {
         </div>
         
         <div className="pt-4">
-          {totalOrders === 0 ? (
+          {filteredOrders.length === 0 ? (
             <div className="text-center py-12 px-4">
               <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">No orders yet</h3>
@@ -610,51 +613,57 @@ const CustomerDashboard = () => {
             </div>
           ) : (
             <>
-              <div className="space-y-4">
-                {currentOrders.map(order => (
-                  orderFilter === 'in-progress' ? (
-                    <ActiveOrderCard key={order.id} order={order} />
-                  ) : (
-                    <PastOrderCard key={order.id} order={order} />
-                  )
-                ))}
-              </div>
-
-              {/* Pagination Controls */}
-              {totalOrders > ordersPerPage && (
-                <div className="flex flex-col items-center space-y-4 pt-6 border-t mx-4">
-                  {/* Page Numbers */}
-                  <div className="flex items-center space-x-2">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => goToPage(page)}
-                        className={`w-8 h-8 rounded-full text-sm font-medium transition-colors ${
-                          currentPage === page 
-                            ? 'bg-red-500 text-white' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        {page}
-                      </button>
+              {/* Show active orders with pagination */}
+              {orderFilter === 'in-progress' ? (
+                <>
+                  <div className="space-y-4">
+                    {currentActiveOrders.map(order => (
+                      <ActiveOrderCard key={order.id} order={order} />
                     ))}
                   </div>
 
-                  {/* More Button */}
-                  {totalOrders > maxPages * ordersPerPage && (
-                    <button
-                      onClick={goToAllOrders}
-                      className="px-4 py-2 bg-red-500 text-white rounded-full font-medium hover:bg-red-600 transition-colors"
-                    >
-                      View All Orders ({totalOrders})
-                    </button>
-                  )}
+                  {/* Pagination Controls for Active Orders */}
+                  {totalActiveOrders > ordersPerPage && (
+                    <div className="flex flex-col items-center space-y-4 pt-6 border-t mx-4">
+                      {/* Page Numbers */}
+                      <div className="flex items-center space-x-2">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <button
+                            key={page}
+                            onClick={() => goToPage(page)}
+                            className={`w-8 h-8 rounded-full text-sm font-medium transition-colors ${
+                              currentPage === page 
+                                ? 'bg-red-500 text-white' 
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                      </div>
 
-                  {/* Page Info */}
-                  <p className="text-sm text-gray-500">
-                    Showing {startIndex + 1}-{Math.min(endIndex, totalOrders)} of {totalOrders} orders
-                  </p>
-                </div>
+                      {/* More Button */}
+                      {totalActiveOrders > maxPages * ordersPerPage && (
+                        <button
+                          onClick={goToAllOrders}
+                          className="px-4 py-2 bg-red-500 text-white rounded-full font-medium hover:bg-red-600 transition-colors"
+                        >
+                          View All Orders ({totalActiveOrders})
+                        </button>
+                      )}
+
+                      {/* Page Info */}
+                      <p className="text-sm text-gray-500">
+                        Showing {startIndex + 1}-{Math.min(endIndex, totalActiveOrders)} of {totalActiveOrders} orders
+                      </p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                /* Show past orders without pagination (original behavior) */
+                filteredOrders.map(order => (
+                  <PastOrderCard key={order.id} order={order} />
+                ))
               )}
             </>
           )}
