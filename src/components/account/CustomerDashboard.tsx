@@ -700,15 +700,15 @@ const CustomerDashboard = () => {
                   {/* Content */}
                   <div className="relative z-10 flex items-center justify-between">
                     <div className="flex-1">
-                      {/* CraveMore Logo */}
-                      <div className="flex items-center mb-3">
-                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mr-3">
-                          <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center">
-                            <span className="text-red-600 font-bold text-lg">C</span>
-                          </div>
-                        </div>
-                        <h3 className="text-2xl font-bold">CraveMore</h3>
-                      </div>
+            {/* CraveMore Logo */}
+            <div className="flex items-center mb-3">
+              <img 
+                src="/cravemore-icon.png" 
+                alt="CraveMore" 
+                className="w-10 h-10 mr-3"
+              />
+              <h3 className="text-2xl font-bold">CraveMore</h3>
+            </div>
                       
                       <p className="text-red-100 mb-4 text-lg">Get unlimited free delivery and exclusive perks</p>
                       
@@ -726,12 +726,16 @@ const CustomerDashboard = () => {
                       </div>
                     </div>
                     
-                    {/* Premium Icon */}
-                    <div className="ml-6">
-                      <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-xl">
-                        <Package className="w-10 h-10 text-white" />
-                      </div>
-                    </div>
+          {/* Premium Icon */}
+          <div className="ml-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-xl">
+              <img 
+                src="/cravemore-icon.png" 
+                alt="CraveMore" 
+                className="w-10 h-10"
+              />
+            </div>
+          </div>
                   </div>
                   
                   {/* Shine Effect */}
