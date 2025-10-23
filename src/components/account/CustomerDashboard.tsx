@@ -603,12 +603,12 @@ const CustomerDashboard = () => {
               {totalActiveOrders > ordersPerPage && (
                 <div className="flex flex-col items-center space-y-3 pt-4 border-t mx-4">
                   {/* Page Numbers */}
-                  <div className="flex items-center space-x-1">
+                  <div className="flex items-center space-x-0.5">
                     {Array.from({ length: activeTotalPages }, (_, i) => i + 1).map((page) => (
                       <button
                         key={page}
                         onClick={() => goToActivePage(page)}
-                        className={`w-7 h-7 rounded-full text-xs font-medium transition-colors ${
+                        className={`w-6 h-6 rounded-full text-xs font-medium transition-colors ${
                           activeCurrentPage === page 
                             ? 'bg-red-500 text-white' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -654,12 +654,12 @@ const CustomerDashboard = () => {
               {totalPastOrders > ordersPerPage && (
                 <div className="flex flex-col items-center space-y-3 pt-4 border-t mx-4">
                   {/* Page Numbers */}
-                  <div className="flex items-center space-x-1">
+                  <div className="flex items-center space-x-0.5">
                     {Array.from({ length: pastTotalPages }, (_, i) => i + 1).map((page) => (
                       <button
                         key={page}
                         onClick={() => goToPastPage(page)}
-                        className={`w-7 h-7 rounded-full text-xs font-medium transition-colors ${
+                        className={`w-6 h-6 rounded-full text-xs font-medium transition-colors ${
                           pastCurrentPage === page 
                             ? 'bg-red-500 text-white' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
