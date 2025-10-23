@@ -687,59 +687,91 @@ const CustomerDashboard = () => {
                 </div>
               )}
 
-              {/* CraveMore Banner */}
+              {/* Modern CraveMore Banner */}
               <div className="mx-4 mt-8 mb-6">
-                <div className="relative bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-2xl p-6 text-white overflow-hidden shadow-2xl">
-                  {/* Background Pattern */}
-                  <div className="absolute inset-0 opacity-10">
-                    <div className="absolute top-4 left-4 w-20 h-20 bg-white rounded-full"></div>
-                    <div className="absolute bottom-4 right-4 w-16 h-16 bg-white rounded-full"></div>
-                    <div className="absolute top-1/2 left-1/3 w-8 h-8 bg-white rounded-full"></div>
+                <div className="relative bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-3xl p-8 text-white overflow-hidden shadow-2xl border border-red-400/20">
+                  {/* Modern Background Pattern */}
+                  <div className="absolute inset-0 opacity-5">
+                    <div className="absolute top-8 left-8 w-32 h-32 bg-white rounded-full blur-3xl"></div>
+                    <div className="absolute bottom-8 right-8 w-24 h-24 bg-white rounded-full blur-2xl"></div>
+                    <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-white rounded-full blur-xl"></div>
                   </div>
                   
                   {/* Content */}
-                  <div className="relative z-10 flex items-center justify-between">
-                    <div className="flex-1">
-            {/* CraveMore Logo */}
-            <div className="flex items-center mb-3">
-              <img 
-                src="/cravemore-icon.png" 
-                alt="CraveMore" 
-                className="w-10 h-10 mr-3"
-              />
-              <h3 className="text-2xl font-bold">CraveMore</h3>
-            </div>
-                      
-                      <p className="text-red-100 mb-4 text-lg">Get unlimited free delivery and exclusive perks</p>
-                      
+                  <div className="relative z-10">
+                    {/* Header with Icon */}
+                    <div className="flex items-center justify-between mb-6">
                       <div className="flex items-center space-x-4">
-                        <button
-                          onClick={() => navigate('/crave-more')}
-                          className="bg-white text-red-600 px-6 py-3 rounded-full font-bold hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg"
-                        >
-                          Join Now
-                        </button>
-                        <div className="text-sm text-red-200">
-                          <span className="line-through">$9.99/month</span>
-                          <span className="ml-2 font-bold">FREE for 30 days</span>
+                        <div className="relative">
+                          <img 
+                            src="/src/assets/cravemore-icon.png" 
+                            alt="CraveMore" 
+                            className="w-16 h-16 drop-shadow-lg"
+                          />
+                          <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
+                            <span className="text-red-600 text-xs font-bold">+</span>
+                          </div>
                         </div>
+                        <div>
+                          <h3 className="text-3xl font-bold mb-1">CraveMore</h3>
+                          <p className="text-red-100 text-lg">Premium Membership</p>
+                        </div>
+                      </div>
+                      
+                      {/* Status Badge */}
+                      <div className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2">
+                        <span className="text-sm font-semibold">30-Day Free Trial</span>
                       </div>
                     </div>
                     
-          {/* Premium Icon */}
-          <div className="ml-6">
-            <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-xl">
-              <img 
-                src="/cravemore-icon.png" 
-                alt="CraveMore" 
-                className="w-10 h-10"
-              />
-            </div>
-          </div>
+                    {/* Benefits */}
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                          <span className="text-white text-sm">🚚</span>
+                        </div>
+                        <span className="text-red-100">Free Delivery</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                          <span className="text-white text-sm">💰</span>
+                        </div>
+                        <span className="text-red-100">50% Off Fees</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                          <span className="text-white text-sm">⭐</span>
+                        </div>
+                        <span className="text-red-100">Priority Support</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                          <span className="text-white text-sm">🎁</span>
+                        </div>
+                        <span className="text-red-100">Exclusive Deals</span>
+                      </div>
+                    </div>
+                    
+                    {/* CTA */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-2xl font-bold mb-1">$0.00</div>
+                        <div className="text-red-200 text-sm">Then $9.99/month</div>
+                      </div>
+                      <button
+                        onClick={() => navigate('/crave-more')}
+                        className="bg-white text-red-600 px-8 py-4 rounded-2xl font-bold hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg text-lg"
+                      >
+                        Start Free Trial
+                      </button>
+                    </div>
                   </div>
                   
-                  {/* Shine Effect */}
-                  <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 animate-pulse"></div>
+                  {/* Modern Shine Effect */}
+                  <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/5 to-transparent transform -skew-x-12 animate-pulse"></div>
+                  
+                  {/* Glow Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-red-400/20 via-transparent to-red-400/20 rounded-3xl"></div>
                 </div>
               </div>
             </>
