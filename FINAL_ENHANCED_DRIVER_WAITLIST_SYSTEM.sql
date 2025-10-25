@@ -120,7 +120,8 @@ BEGIN
   JOIN public.regions r ON aq.region_id = r.id
   WHERE aq.region_id = (
     SELECT region_id FROM public.craver_applications WHERE id = driver_uuid
-  );
+  )
+  GROUP BY r.name;
 END;
 $$ LANGUAGE plpgsql;
 
