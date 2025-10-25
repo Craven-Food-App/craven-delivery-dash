@@ -56,6 +56,56 @@ export function DocumentImageViewer({ documents, restaurant }: DocumentImageView
     window.open(doc.url, '_blank');
   };
 
+  const getFileType = (url: string | null): 'image' | 'pdf' | 'unknown' => {
+    if (!url) return 'unknown';
+    const lowerUrl = url.toLowerCase();
+    if (lowerUrl.endsWith('.pdf')) return 'pdf';
+    if (lowerUrl.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/)) return 'image';
+    return 'unknown';
+  };
+
+  const renderDocumentPreview = (doc: Document, className?: string, style?: any) => {
+    const fileType = getFileType(doc.url);
+
+    if (fileType === 'pdf') {
+      return (
+        <iframe
+          src={doc.url || ''}
+          className={`w-full h-full ${className || ''}`}
+          style={style}
+          title={doc.label}
+        />
+      );
+    }
+
+    if (fileType === 'image') {
+      return (
+        <img
+          src={doc.url || ''}
+          alt={doc.label}
+          className={`w-full h-full object-contain ${className || ''}`}
+          style={style}
+        />
+      );
+    }
+
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 p-6">
+        <EyeOff className="h-12 w-12 text-muted-foreground opacity-50 mb-3" />
+        <p className="text-sm font-medium text-muted-foreground mb-2">
+          Document preview not available
+        </p>
+        <p className="text-xs text-muted-foreground mb-4 text-center">
+          Use the download button to view the file
+        </p>
+        <Button variant="outline" size="sm" onClick={() => handleDownload(doc)}>
+          <Download className="h-4 w-4 mr-2" />
+          Download
+        </Button>
+      </div>
+    );
+  };
+
   if (uploadedDocs.length === 0) {
     return (
       <div className="text-center py-12">
@@ -149,13 +199,8 @@ export function DocumentImageViewer({ documents, restaurant }: DocumentImageView
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="aspect-[3/4] relative bg-gray-100">
-                    <img
-                      src={doc.url || ''}
-                      alt={doc.label}
-                      className="w-full h-full object-contain cursor-pointer hover:opacity-90 transition-opacity"
-                      onClick={() => setFullscreenDoc(doc)}
-                    />
+                  <div className="aspect-[3/4] relative bg-gray-100 cursor-pointer" onClick={() => setFullscreenDoc(doc)}>
+                    {renderDocumentPreview(doc)}
                   </div>
                 </CardContent>
               </Card>
@@ -194,14 +239,13 @@ export function DocumentImageViewer({ documents, restaurant }: DocumentImageView
             <Card>
               <CardContent className="p-4">
                 <div className="aspect-[4/3] relative bg-gray-100 rounded-lg overflow-hidden">
-                  <img
-                    src={(selectedDoc || uploadedDocs[0]).url || ''}
-                    alt={(selectedDoc || uploadedDocs[0]).label}
-                    className="w-full h-full object-contain transition-transform"
-                    style={{
-                      transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
-                    }}
-                  />
+                  {renderDocumentPreview(
+                    selectedDoc || uploadedDocs[0],
+                    getFileType((selectedDoc || uploadedDocs[0]).url) === 'image' ? 'transition-transform' : '',
+                    getFileType((selectedDoc || uploadedDocs[0]).url) === 'image' 
+                      ? { transform: `scale(${zoom / 100}) rotate(${rotation}deg)` }
+                      : undefined
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -230,13 +274,34 @@ export function DocumentImageViewer({ documents, restaurant }: DocumentImageView
                 </div>
               </div>
 
-              {/* Image */}
+              {/* Document */}
               <div className="w-full h-full bg-black flex items-center justify-center">
-                <img
-                  src={fullscreenDoc.url || ''}
-                  alt={fullscreenDoc.label}
-                  className="max-w-full max-h-full object-contain"
-                />
+                {getFileType(fullscreenDoc.url) === 'pdf' ? (
+                  <iframe
+                    src={fullscreenDoc.url || ''}
+                    className="w-full h-full"
+                    title={fullscreenDoc.label}
+                  />
+                ) : getFileType(fullscreenDoc.url) === 'image' ? (
+                  <img
+                    src={fullscreenDoc.url || ''}
+                    alt={fullscreenDoc.label}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                ) : (
+                  <div className="text-white text-center">
+                    <EyeOff className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg mb-4">Document preview not available</p>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleDownload(fullscreenDoc)}
+                      className="bg-white text-black hover:bg-gray-200"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download File
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}
