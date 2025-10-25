@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -30,6 +30,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import type { RestaurantOnboardingData } from '../types';
 import { formatDate, hasAllDocuments, getMissingDocuments } from '../utils/helpers';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DocumentVerificationPanelProps {
   restaurant: RestaurantOnboardingData | null;
@@ -139,6 +140,45 @@ export function DocumentVerificationPanel({
       description: 'Health department permit',
     },
   ];
+
+  const [resolvedUrls, setResolvedUrls] = useState<Record<string, string | null>>({});
+
+  useEffect(() => {
+    const resolveAll = async () => {
+      const entries = await Promise.all(
+        documents.map(async (d) => {
+          if (!d.url) return [d.key, null] as const;
+          try {
+            const u = new URL(d.url);
+            const match = u.pathname.match(/\/storage\/v1\/object\/(?:public|sign|private)?\/([^/]+)\/(.+)/);
+            if (match) {
+              const bucket = match[1];
+              const path = match[2];
+              const { data } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
+              return [d.key, data?.signedUrl || d.url] as const;
+            }
+            return [d.key, d.url] as const;
+          } catch {
+            // Try to treat as "<bucket>/<path>"
+            const parts = (d.url || '').split('/');
+            const bucket = parts[0];
+            const path = parts.slice(1).join('/');
+            if (bucket && path) {
+              const { data } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
+              return [d.key, data?.signedUrl || d.url] as const;
+            }
+            return [d.key, d.url] as const;
+          }
+        })
+      );
+      setResolvedUrls(Object.fromEntries(entries));
+    };
+    if (isOpen) resolveAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, restaurant?.restaurant_id]);
+
+  const getResolvedUrl = (docKey: string, fallback?: string | null) =>
+    resolvedUrls[docKey] ?? fallback ?? null;
 
   const completionPercentage = (documents.filter(d => d.url).length / documents.length) * 100;
 
@@ -270,7 +310,11 @@ export function DocumentVerificationPanel({
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => window.open(doc.url!, '_blank')}
+                                onClick={() => {
+                                  const url = getResolvedUrl(doc.key, doc.url);
+                                  if (url) window.open(url, '_blank');
+                                  else toast.error('File URL unavailable');
+                                }}
                               >
                                 <Eye className="h-4 w-4 mr-1" />
                                 View
@@ -279,8 +323,10 @@ export function DocumentVerificationPanel({
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => {
+                                  const url = getResolvedUrl(doc.key, doc.url);
+                                  if (!url) return toast.error('File URL unavailable');
                                   const link = document.createElement('a');
-                                  link.href = doc.url!;
+                                  link.href = url;
                                   link.download = `${doc.label}.pdf`;
                                   link.click();
                                 }}
