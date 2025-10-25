@@ -1187,7 +1187,7 @@ export const MobileDriverDashboard: React.FC = () => {
 
             {/* Get Offers Until Section - Top */}
             {/* Bottom Content - Still Searching + Popular Times */}
-            <div className="absolute bottom-7 left-4 right-4 z-20 space-y-3 pointer-events-auto">
+            <div className="absolute bottom-[67px] left-4 right-4 z-20 space-y-3 pointer-events-auto">
               {/* Still Searching Section with Get offers until */}
               <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/20 overflow-hidden">
                 <div className="flex items-center justify-between">
