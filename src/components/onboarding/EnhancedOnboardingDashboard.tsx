@@ -32,7 +32,6 @@ interface QueuePosition {
   queue_position: number;
   total_in_region: number;
   region_name: string;
-  priority_score: number;
 }
 
 interface DriverProgress {
