@@ -456,9 +456,13 @@ export const DriverWaitlistDashboard: React.FC = () => {
                       </td>
                       <td className="p-3">
                         <div className="text-center">
-                          <div className="font-bold text-orange-600">
-                            #{driver.waitlist_position || 'N/A'}
-                          </div>
+                          {driver.status === 'waitlist' ? (
+                            <div className="font-bold text-orange-600">
+                              #{driver.waitlist_position ?? 'N/A'}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
                         </div>
                       </td>
                       <td className="p-3">
