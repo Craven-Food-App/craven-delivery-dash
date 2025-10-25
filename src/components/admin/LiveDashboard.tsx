@@ -103,23 +103,53 @@ const LiveDashboard = () => {
         ordersData = [];
       }
 
-      // Fetch online drivers - simplified approach
-      const { data: driversData, error: driversError } = await supabase
-        .from('driver_profiles')
-        .select(`
-          *,
-          driver_sessions!inner(
-            is_online,
-            last_activity,
-            session_data
-          )
-        `)
-        .eq('driver_sessions.is_online', true)
-        .order('rating', { ascending: false });
+      // Fetch online drivers - with fallback for missing FK
+      let driversData = [];
+      try {
+        // Try the automatic JOIN first
+        const { data, error } = await supabase
+          .from('driver_profiles')
+          .select(`
+            *,
+            driver_sessions!inner(
+              is_online,
+              last_activity,
+              session_data
+            )
+          `)
+          .eq('driver_sessions.is_online', true)
+          .order('rating', { ascending: false });
 
-      if (driversError) {
-        console.error('Error fetching online drivers:', driversError);
-        throw driversError;
+        if (error) {
+          console.warn('Driver JOIN query failed, using manual join:', error);
+          
+          // Fallback: Manual join
+          const { data: profiles } = await supabase
+            .from('driver_profiles')
+            .select('*')
+            .order('rating', { ascending: false });
+          
+          const { data: sessions } = await supabase
+            .from('driver_sessions')
+            .select('driver_id, is_online, last_activity, session_data')
+            .eq('is_online', true);
+          
+          // Manually join
+          driversData = (profiles || [])
+            .filter(p => sessions?.some(s => s.driver_id === p.id))
+            .map(p => ({
+              ...p,
+              driver_sessions: sessions?.find(s => s.driver_id === p.id)
+            }));
+          
+          console.log('Loaded', driversData.length, 'online drivers via manual join');
+        } else {
+          driversData = data || [];
+          console.log('Loaded', driversData.length, 'online drivers via automatic join');
+        }
+      } catch (err) {
+        console.error('Critical error fetching drivers:', err);
+        driversData = [];
       }
 
       // Fetch total users count
@@ -163,11 +193,14 @@ const LiveDashboard = () => {
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      toast({
-        title: "Error loading dashboard",
-        description: "Please try refreshing the page.",
-        variant: "destructive",
-      });
+      // Only show toast for critical errors (not driver fetch failures)
+      if (!orders || orders.length === 0) {
+        toast({
+          title: "Error loading dashboard",
+          description: "Please try refreshing the page.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }

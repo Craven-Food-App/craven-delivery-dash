@@ -1686,7 +1686,15 @@ export type Database = {
           session_data?: Json | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_driver_sessions_driver_id"
+            columns: ["driver_id"]
+            isOneToOne: true
+            referencedRelation: "driver_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       driver_support_chats: {
         Row: {
