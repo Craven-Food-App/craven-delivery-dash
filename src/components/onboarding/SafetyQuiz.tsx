@@ -173,12 +173,12 @@ export const SafetyQuiz: React.FC = () => {
     
     setShowResults(true);
 
-    if (percentage >= 98) {
+    if (percentage >= 95) {
       completeTask();
     } else {
       toast({
         title: "Try Again",
-        description: `You scored ${percentage.toFixed(0)}%. You need 98% to pass (at least 25/25 correct).`,
+        description: `You scored ${percentage.toFixed(0)}%. You need 95% to pass (at least 24/25 correct).`,
         variant: "destructive",
       });
     }
@@ -239,7 +239,7 @@ export const SafetyQuiz: React.FC = () => {
     answer === QUIZ_QUESTIONS[index].correct
   ).length;
   const percentage = (correctAnswers / QUIZ_QUESTIONS.length) * 100;
-  const passed = percentage >= 98;
+  const passed = percentage >= 95;
 
   if (showResults) {
     return (
@@ -275,7 +275,7 @@ export const SafetyQuiz: React.FC = () => {
               ) : (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                   <p className="text-red-800 mb-2">
-                    You need at least 98% (25/25) to pass. Please review the questions and try again.
+                    You need at least 95% (24/25) to pass. Please review the questions and try again.
                   </p>
                 </div>
               )}
@@ -314,7 +314,7 @@ export const SafetyQuiz: React.FC = () => {
             </CardTitle>
             <Progress value={progress} className="mt-2" />
             <p className="text-sm text-gray-600 mt-2">
-              You need 98% (25/25 correct) to pass
+              You need 95% (24/25 correct) to pass
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
