@@ -4816,6 +4816,7 @@ export type Database = {
       get_driver_queue_position: {
         Args: { driver_uuid: string }
         Returns: {
+          priority_score: number
           queue_position: number
           region_name: string
           total_in_region: number
