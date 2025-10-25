@@ -100,7 +100,7 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
 
       // Step 4: Show waitlist success modal
       setWaitlistData({
-        position: application.waitlistPosition || 1,
+        position: 1, // TODO: Implement proper waitlist position calculation
         city: data.city,
         state: data.state,
       });
