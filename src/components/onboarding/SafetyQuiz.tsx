@@ -200,11 +200,14 @@ export const SafetyQuiz: React.FC = () => {
 
       if (!application) return;
 
+      // Check for both new and old task keys
       const { data: task } = await supabase
         .from('onboarding_tasks')
         .select('id')
         .eq('driver_id', application.id)
-        .eq('task_key', 'pass_safety_quiz')
+        .in('task_key', ['pass_safety_quiz', 'safety_quiz'])
+        .order('created_at', { ascending: false })
+        .limit(1)
         .single();
 
       if (task) {

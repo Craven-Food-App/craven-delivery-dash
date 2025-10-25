@@ -90,50 +90,80 @@ export function AdminDriverOnboardingDashboard() {
     else setRefreshing(true);
 
     try {
-      // Fetch driver onboarding progress
-      const { data: progressData, error: progressError } = await supabase
-        .from('driver_onboarding_progress')
+      // Fetch all craver applications with status approved or waitlist
+      const { data: applicationsData, error: applicationsError } = await supabase
+        .from('craver_applications')
         .select(`
-          *,
-          application:craver_applications!driver_onboarding_progress_application_id_fkey(
-            id,
-            first_name,
-            last_name,
-            email,
-            phone,
-            city,
-            state,
-            status,
-            points,
-            priority_score,
-            region_id,
-            created_at,
-            onboarding_completed_at
-          )
+          id,
+          user_id,
+          first_name,
+          last_name,
+          email,
+          phone,
+          city,
+          state,
+          status,
+          points,
+          priority_score,
+          region_id,
+          created_at,
+          onboarding_started_at,
+          onboarding_completed_at
         `)
+        .in('status', ['approved', 'waitlist'])
         .order('created_at', { ascending: false });
 
-      if (progressError) throw progressError;
+      if (applicationsError) throw applicationsError;
 
       // Fetch all onboarding tasks
       const { data: tasksData, error: tasksError } = await supabase
         .from('onboarding_tasks')
         .select('*')
-        .order('task_key');
+        .order('created_at');
 
       if (tasksError) throw tasksError;
 
-      // Combine data
-      const driversWithTasks = (progressData || []).map(progress => {
+      // Combine data - create driver onboarding structure
+      const driversWithTasks = (applicationsData || []).map(app => {
         const driverTasks = (tasksData || []).filter(
-          task => task.driver_id === progress.application_id
+          task => task.driver_id === app.id
         );
 
+        // Calculate completion status from tasks
+        const allTasksCompleted = driverTasks.length > 0 && driverTasks.every(t => t.completed);
+        const onboardingCompleted = allTasksCompleted ? (app.onboarding_completed_at || new Date().toISOString()) : null;
+
         return {
-          ...progress,
+          id: app.id,
+          user_id: app.user_id,
+          application_id: app.id,
+          current_step: 'in_progress',
+          profile_creation_completed: true,
+          orientation_video_watched: driverTasks.some(t => t.task_key === 'orientation_video' && t.completed),
+          safety_quiz_passed: driverTasks.some(t => (t.task_key === 'pass_safety_quiz' || t.task_key === 'safety_quiz') && t.completed),
+          payment_method_added: driverTasks.some(t => t.task_key === 'setup_cashapp_payouts' && t.completed),
+          w9_completed: false,
+          onboarding_completed_at: onboardingCompleted,
+          created_at: app.created_at,
+          updated_at: app.created_at,
+          application: {
+            id: app.id,
+            first_name: app.first_name,
+            last_name: app.last_name,
+            email: app.email,
+            phone: app.phone,
+            city: app.city,
+            state: app.state,
+            status: app.status,
+            points: app.points,
+            priority_score: app.priority_score,
+            region_id: app.region_id,
+            created_at: app.created_at,
+            onboarding_completed_at: app.onboarding_completed_at
+          },
           tasks: driverTasks
         };
-      }).filter(item => item.application);
+      });
 
       setDrivers(driversWithTasks as DriverOnboardingData[]);
     } catch (error) {

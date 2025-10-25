@@ -108,20 +108,31 @@ export const VehiclePhotosUpload: React.FC = () => {
       if (updateError) throw updateError;
 
       // Complete the task
-      const { data: task } = await supabase
+      const { data: task, error: taskError } = await supabase
         .from('onboarding_tasks')
         .select('id')
         .eq('driver_id', application.id)
         .eq('task_key', 'upload_vehicle_photos')
         .single();
 
+      if (taskError) {
+        console.error('Error finding task:', taskError);
+      }
+
       if (task) {
-        await supabase.functions.invoke('complete-onboarding-task', {
+        const { data: completeData, error: completeError } = await supabase.functions.invoke('complete-onboarding-task', {
           body: {
             task_id: task.id,
             driver_id: application.id,
           },
         });
+
+        if (completeError) {
+          console.error('Error completing task:', completeError);
+          throw completeError;
+        }
+
+        console.log('Task completed successfully:', completeData);
       }
 
       toast({
