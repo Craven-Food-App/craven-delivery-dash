@@ -65,6 +65,7 @@ export const DriverWaitlistDashboard: React.FC = () => {
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDrivers, setSelectedDrivers] = useState<string[]>([]);
+  const [viewingDriver, setViewingDriver] = useState<Driver | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -216,6 +217,10 @@ export const DriverWaitlistDashboard: React.FC = () => {
 
   const clearSelection = () => {
     setSelectedDrivers([]);
+  };
+
+  const viewDriverDetails = (driver: Driver) => {
+    setViewingDriver(driver);
   };
 
   if (loading) {
@@ -446,7 +451,12 @@ export const DriverWaitlistDashboard: React.FC = () => {
                       </td>
                       <td className="p-3">
                         <div className="flex gap-2">
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => viewDriverDetails(driver)}
+                            title="View driver details"
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
                           {driver.status === 'waitlist' && (
@@ -468,6 +478,120 @@ export const DriverWaitlistDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Driver Details Modal */}
+      {viewingDriver && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <CardHeader className="border-b">
+              <div className="flex items-center justify-between">
+                <CardTitle>Driver Details</CardTitle>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setViewingDriver(null)}
+                >
+                  ✕
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              {/* Personal Information */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Personal Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm text-gray-600">Name</label>
+                    <p className="font-medium">{viewingDriver.first_name} {viewingDriver.last_name}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">Email</label>
+                    <p className="font-medium">{viewingDriver.email}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">Location</label>
+                    <p className="font-medium">{viewingDriver.city}, {viewingDriver.state} {viewingDriver.zip_code}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">Region</label>
+                    <p className="font-medium">{viewingDriver.regions.name}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Vehicle Information */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Vehicle Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm text-gray-600">Vehicle Type</label>
+                    <p className="font-medium capitalize">{viewingDriver.vehicle_type}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Waitlist Status */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Waitlist Status</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm text-gray-600">Status</label>
+                    <div className="mt-1">
+                      <Badge 
+                        variant={viewingDriver.status === 'approved' ? 'default' : 'secondary'}
+                        className={viewingDriver.status === 'approved' ? 'bg-green-500' : ''}
+                      >
+                        {viewingDriver.status === 'approved' ? 'Active' : 'Waitlist'}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">Position</label>
+                    <p className="font-bold text-orange-600">#{viewingDriver.waitlist_position || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">Priority Points</label>
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 text-yellow-500" />
+                      <span className="font-medium">{viewingDriver.points}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">Priority Score</label>
+                    <p className="font-medium">{viewingDriver.priority_score}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">Applied Date</label>
+                    <p className="font-medium">{new Date(viewingDriver.created_at).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-4 border-t">
+                {viewingDriver.status === 'waitlist' && (
+                  <Button 
+                    onClick={() => {
+                      activateDrivers([viewingDriver.id]);
+                      setViewingDriver(null);
+                    }}
+                    className="bg-green-500 hover:bg-green-600"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Activate Driver
+                  </Button>
+                )}
+                <Button 
+                  variant="outline"
+                  onClick={() => setViewingDriver(null)}
+                >
+                  Close
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
