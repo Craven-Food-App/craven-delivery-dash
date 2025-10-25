@@ -60,7 +60,7 @@ const DriverAuth = () => {
 
       // If onboarding not complete, go to onboarding
       if (!application.onboarding_completed_at) {
-        navigate('/onboarding');
+        navigate('/enhanced-onboarding');
         return;
       }
 

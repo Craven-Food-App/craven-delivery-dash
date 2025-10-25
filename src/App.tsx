@@ -10,8 +10,6 @@ import MobileBottomNav from "@/components/mobile/MobileBottomNav";
 import Index from "./pages/Index";
 import DriverAuth from "./pages/DriverAuth";
 import FeederHub from "./pages/FeederHub";
-import OnboardingWizard from "./components/onboarding/OnboardingWizard";
-import OnboardingGuard from "./components/onboarding/OnboardingGuard";
 import CustomerDashboard from "./pages/CustomerDashboard";
 import { MobileDriverDashboard } from "./components/mobile/MobileDriverDashboard";
 import MobileBackgroundCheckStatus from "./components/mobile/MobileBackgroundCheckStatus";
@@ -139,11 +137,6 @@ const App = () => {
           <Route path="/auth" element={<Auth />} />
           <Route path="/driver/auth" element={<DriverAuth />} />
           <Route path="/feeder" element={<FeederHub />} />
-          <Route path="/onboarding" element={
-            <OnboardingGuard>
-              <OnboardingWizard />
-            </OnboardingGuard>
-          } />
           <Route path="/enhanced-onboarding" element={<EnhancedDriverOnboarding />} />
           <Route path="/admin/waitlist" element={<AdminDriverWaitlist />} />
           <Route path="/customer-dashboard" element={<CustomerDashboard />} />

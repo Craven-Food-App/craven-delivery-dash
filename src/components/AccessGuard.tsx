@@ -40,7 +40,7 @@ const AccessGuard: React.FC<AccessGuardProps> = ({ children, fallback }) => {
 
       // If approved but onboarding not complete, redirect to onboarding
       if (approved && !completed) {
-        navigate('/onboarding');
+        navigate('/enhanced-onboarding');
       }
     };
 
