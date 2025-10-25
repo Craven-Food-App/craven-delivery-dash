@@ -81,10 +81,14 @@ CREATE OR REPLACE FUNCTION update_driver_priority_on_task_complete()
 RETURNS TRIGGER AS $$
 BEGIN
   IF NEW.completed = TRUE AND OLD.completed = FALSE THEN
+    -- First update points
     UPDATE public.craver_applications 
-    SET 
-      points = points + NEW.points_reward,
-      priority_score = points + NEW.points_reward
+    SET points = points + NEW.points_reward
+    WHERE id = NEW.driver_id;
+    
+    -- Then set priority_score to the new points value
+    UPDATE public.craver_applications 
+    SET priority_score = points
     WHERE id = NEW.driver_id;
     
     UPDATE public.activation_queue 
@@ -150,16 +154,20 @@ RETURNS TRIGGER AS $$
 BEGIN
   -- Award points to referrer
   UPDATE public.craver_applications 
-  SET 
-    points = points + 50,
-    priority_score = points + 50
+  SET points = points + 50
+  WHERE id = NEW.referrer_id;
+  
+  UPDATE public.craver_applications 
+  SET priority_score = points
   WHERE id = NEW.referrer_id;
   
   -- Award points to referred driver
   UPDATE public.craver_applications 
-  SET 
-    points = points + 25,
-    priority_score = points + 25
+  SET points = points + 25
+  WHERE id = NEW.referred_id;
+  
+  UPDATE public.craver_applications 
+  SET priority_score = points
   WHERE id = NEW.referred_id;
   
   -- Update activation queue for both
