@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import AdminAccessGuard from '@/components/AdminAccessGuard';
 import ApplicationReview from '@/components/admin/ApplicationReview';
 import { AdminDriverOnboardingDashboard } from '@/components/admin/driver-onboarding/AdminDriverOnboardingDashboard';
+import { DriverWaitlistDashboard } from '@/components/admin/DriverWaitlistDashboard';
 import LiveDashboard from '@/components/admin/LiveDashboard';
 import ChatPortal from '@/components/admin/ChatPortal';
 import BackgroundCheckDashboard from '@/components/admin/BackgroundCheckDashboard';
@@ -25,7 +26,7 @@ import { LiveDriverTesting } from '@/components/testing/LiveDriverTesting';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, BarChart3, Users, Store, Car, ShoppingBag, MessageCircle, Bell, DollarSign, Tags, GraduationCap, FileCheck, Shield, ChevronRight, Package, Settings, AlertCircle, TrendingUp, LifeBuoy, FileText, TestTube, Zap, Database } from 'lucide-react';
+import { ArrowLeft, BarChart3, Users, Store, Car, ShoppingBag, MessageCircle, Bell, DollarSign, Tags, GraduationCap, FileCheck, Shield, ChevronRight, Package, Settings, AlertCircle, TrendingUp, LifeBuoy, FileText, TestTube, Zap, Database, Clock } from 'lucide-react';
 import cravenLogo from "@/assets/craven-logo.png";
 import { cn } from '@/lib/utils';
 import RefundManagement from '@/components/admin/RefundManagement';
@@ -61,6 +62,7 @@ const Admin: React.FC = () => {
       icon: Car,
       items: [
         { id: 'driver-applications', label: 'Applications', icon: Users },
+        { id: 'driver-waitlist', label: 'Waitlist Management', icon: Clock },
         { id: 'driver-background', label: 'Background Checks', icon: FileCheck },
         { id: 'driver-background-settings', label: 'BG Check Settings', icon: Settings },
         { id: 'driver-onboarding', label: 'Onboarding', icon: GraduationCap },
@@ -121,6 +123,8 @@ const Admin: React.FC = () => {
         return <EnhancedCommissionDashboard />;
       case 'driver-applications':
         return <ApplicationReview />;
+      case 'driver-waitlist':
+        return <DriverWaitlistDashboard />;
       case 'driver-background':
         return <BackgroundCheckDashboard />;
       case 'driver-background-settings':
