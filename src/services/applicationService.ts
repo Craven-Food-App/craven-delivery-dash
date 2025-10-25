@@ -125,11 +125,26 @@ export class ApplicationService {
   static async submitApplication(
     userId: string,
     data: ApplicationData,
-    documentPaths: Record<string, string>
+    documentPaths: Record<string, string>,
+    referralCode?: string
   ) {
     const now = new Date();
 
-    // Submit as waitlist - NO background check initiated yet
+    // Check for referral code
+    let referredBy = null;
+    if (referralCode) {
+      const { data: referrer } = await supabase
+        .from('craver_applications')
+        .select('id')
+        .eq('referral_code', referralCode)
+        .single();
+      
+      if (referrer) {
+        referredBy = referrer.id;
+      }
+    }
+
+    // Submit application - MINIMAL VERSION with only existing table fields
     const { data: application, error } = await supabase
       .from('craver_applications')
       .insert({
@@ -143,47 +158,19 @@ export class ApplicationService {
         city: data.city,
         state: data.state,
         zip_code: data.zipCode,
-        vehicle_type: data.vehicleType as any,
-        vehicle_make: data.vehicleType === 'walking' ? 'N/A' : data.vehicleMake,
-        vehicle_model: data.vehicleType === 'walking' ? 'N/A' : data.vehicleModel,
-        vehicle_year: data.vehicleType === 'walking' ? 0 : parseInt(data.vehicleYear),
-        vehicle_color: data.vehicleType === 'walking' ? 'N/A' : data.vehicleColor,
-        license_plate: data.vehicleType === 'walking' ? 'N/A' : data.licensePlate,
-        license_number: data.licenseNumber,
-        license_state: data.licenseState,
-        license_expiry: data.licenseExpiry,
-        
-        // Only store last 4 of SSN for waitlist (full SSN when activated)
-        ssn_last_four: data.ssn.replace(/\D/g, '').slice(-4),
-        
-        // Payout Information
-        payout_method: data.payoutMethod as any,
-        
-        // Direct Deposit Information (if applicable)
-        bank_account_type: data.payoutMethod === 'direct_deposit' ? data.bankAccountType : null,
-        routing_number: data.payoutMethod === 'direct_deposit' ? data.routingNumber : null,
-        account_number_encrypted: data.payoutMethod === 'direct_deposit' ? data.accountNumber : null,
-        account_number_last_four: data.payoutMethod === 'direct_deposit' ? data.accountNumber.slice(-4) : null,
-        
-        // Cash App Information (if applicable)
-        cash_tag: data.payoutMethod === 'cashapp' ? data.cashTag : null,
+        vehicle_type: data.vehicleType,
+        vehicle_make: data.vehicleType === 'walking' ? 'N/A' : (data.vehicleMake || 'N/A'),
+        vehicle_model: data.vehicleType === 'walking' ? 'N/A' : (data.vehicleModel || 'N/A'),
+        vehicle_year: data.vehicleType === 'walking' ? 0 : (parseInt(data.vehicleYear) || 0),
+        vehicle_color: data.vehicleType === 'walking' ? 'N/A' : (data.vehicleColor || 'N/A'),
+        license_plate: data.vehicleType === 'walking' ? 'N/A' : (data.licensePlate || 'N/A'),
         drivers_license: documentPaths.driversLicenseFront || 'pending',
-        drivers_license_front: documentPaths.driversLicenseFront,
-        drivers_license_back: documentPaths.driversLicenseBack,
-        insurance_document: documentPaths.insuranceDocument,
-        insurance_policy: documentPaths.insuranceDocument || 'N/A',
-        insurance_provider: 'N/A',
-        vehicle_registration: documentPaths.vehicleRegistration,
-        profile_photo: documentPaths.profilePhoto,
-        i9_document: documentPaths.i9Document,
-        
-        // WAITLIST STATUS - Key change
-        status: 'waitlist',
-        waitlist_joined_at: now.toISOString(),
-        
-        // NO background check initiated yet
+        insurance_provider: 'pending',
+        insurance_policy: 'pending',
         background_check: false,
-        background_check_initiated_at: null
+        vehicle_inspection: false,
+        profile_photo: documentPaths.profilePhoto,
+        status: 'pending'
       })
       .select()
       .single();
@@ -193,5 +180,149 @@ export class ApplicationService {
     }
 
     return application;
+  }
+
+  /**
+   * Get driver's onboarding progress and queue position
+   */
+  static async getDriverProgress(userId: string) {
+    const { data: application } = await supabase
+      .from('craver_applications')
+      .select(`
+        *,
+        regions!inner(name, status, active_quota)
+      `)
+      .eq('user_id', userId)
+      .single();
+
+    if (!application) {
+      throw new Error('Driver application not found');
+    }
+
+    // Get onboarding tasks
+    const { data: tasks } = await supabase
+      .from('onboarding_tasks')
+      .select('*')
+      .eq('driver_id', application.id)
+      .order('created_at');
+
+    // Get queue position
+    const { data: queuePosition } = await supabase
+      .rpc('get_driver_queue_position', { driver_uuid: application.id });
+
+    return {
+      application,
+      tasks: tasks || [],
+      queuePosition: queuePosition?.[0] || null
+    };
+  }
+
+  /**
+   * Complete an onboarding task and award points
+   */
+  static async completeTask(userId: string, taskKey: string) {
+    const { data: application } = await supabase
+      .from('craver_applications')
+      .select('id, points, priority_score')
+      .eq('user_id', userId)
+      .single();
+
+    if (!application) {
+      throw new Error('Driver application not found');
+    }
+
+    // Get task details
+    const { data: task } = await supabase
+      .from('onboarding_tasks')
+      .select('*')
+      .eq('driver_id', application.id)
+      .eq('task_key', taskKey)
+      .single();
+
+    if (!task) {
+      throw new Error('Task not found');
+    }
+
+    if (task.completed) {
+      throw new Error('Task already completed');
+    }
+
+    // Mark task as completed
+    const { error: taskError } = await supabase
+      .from('onboarding_tasks')
+      .update({
+        completed: true,
+        completed_at: new Date().toISOString()
+      })
+      .eq('id', task.id);
+
+    if (taskError) {
+      throw new Error(`Failed to complete task: ${taskError.message}`);
+    }
+
+    // Award points and update priority score
+    const newPoints = application.points + task.points_reward;
+    const newPriorityScore = application.priority_score + task.points_reward;
+
+    const { error: updateError } = await supabase
+      .from('craver_applications')
+      .update({
+        points: newPoints,
+        priority_score: newPriorityScore
+      })
+      .eq('id', application.id);
+
+    if (updateError) {
+      throw new Error(`Failed to update points: ${updateError.message}`);
+    }
+
+    return {
+      pointsAwarded: task.points_reward,
+      totalPoints: newPoints,
+      priorityScore: newPriorityScore
+    };
+  }
+
+  /**
+   * Get referral code for a driver
+   */
+  static async getReferralCode(userId: string) {
+    const { data: application } = await supabase
+      .from('craver_applications')
+      .select('referral_code')
+      .eq('user_id', userId)
+      .single();
+
+    if (!application) {
+      throw new Error('Driver application not found');
+    }
+
+    // Generate referral code if not exists
+    if (!application.referral_code) {
+      const referralCode = `CRV${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      
+      const { error } = await supabase
+        .from('craver_applications')
+        .update({ referral_code: referralCode })
+        .eq('user_id', userId);
+
+      if (error) {
+        throw new Error(`Failed to generate referral code: ${error.message}`);
+      }
+
+      return referralCode;
+    }
+
+    return application.referral_code;
+  }
+
+  /**
+   * Get region capacity status
+   */
+  static async getRegionCapacity(regionId: number) {
+    const { data } = await supabase
+      .rpc('get_region_capacity_status', { region_id_param: regionId });
+
+    return data?.[0] || null;
   }
 }

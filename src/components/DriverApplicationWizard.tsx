@@ -23,7 +23,7 @@ const STEPS = [
   { number: 1, title: "Account Setup", component: AccountSetupStep },
   { number: 2, title: "Address", component: AddressStep },
   { number: 3, title: "Vehicle & License", component: VehicleStep },
-  { number: 4, title: "Background Check", component: BankingStep },
+  { number: 4, title: "Payment & Tax Info", component: BankingStep },
   { number: 5, title: "Documents", component: DocumentsStep },
   { number: 6, title: "Review", component: null }, // Special case
 ];
@@ -98,37 +98,32 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
       // Step 3: Submit application (goes to waitlist now)
       const application = await ApplicationService.submitApplication(userId!, data, documentPaths);
 
-      // Step 4: Send waitlist confirmation email (non-blocking)
-      const { supabase } = await import('@/integrations/supabase/client');
-      supabase.functions.invoke('send-driver-waitlist-email', {
-        body: {
-          driverName: `${data.firstName} ${data.lastName}`,
-          driverEmail: data.email,
-          city: data.city,
-          state: data.state,
-          waitlistPosition: application.waitlist_position || 1
-        }
-      }).catch(err => console.error('Failed to send waitlist email:', err));
-
-      // Step 5: Show waitlist modal (instead of toast)
+      // Step 4: Show waitlist success modal
       setWaitlistData({
-        position: application.waitlist_position || 1,
+        position: 1, // TODO: Implement proper waitlist position calculation
         city: data.city,
-        state: data.state
+        state: data.state,
       });
       setShowWaitlistModal(true);
 
-      // Clear draft
+      // Clear draft on success
       clearDraft();
-    } catch (error: any) {
-      throw error;
+
+      toast({
+        title: "Application Submitted!",
+        description: "Your application has been submitted to the waitlist.",
+      });
+    } catch (error) {
+      console.error("Failed to submit application:", error);
+      toast({
+        title: "Submission Failed",
+        description: "Failed to submit application. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
   const renderStep = () => {
-    const stepConfig = STEPS[currentStep - 1];
-    const StepComponent = stepConfig.component;
-
     const commonProps = {
       data,
       files,
@@ -137,6 +132,7 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
       onNext: nextStep,
       onBack: prevStep,
       isValid: currentValidation.isValid,
+      errors: currentValidation.errors,
     };
 
     if (currentStep === 6) {
@@ -152,86 +148,96 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
       );
     }
 
+    const StepComponent = STEPS.find(step => step.number === currentStep)?.component;
     if (!StepComponent) return null;
     return <StepComponent {...commonProps} />;
   };
 
   return (
     <>
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-        <Card className="w-full max-w-2xl my-8 relative">
-        {/* Close button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute right-4 top-4 z-10"
-          onClick={onClose}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-
-        {/* Progress header */}
-        <div className="p-6 border-b">
-          <div className="mb-4">
-            <h1 className="text-2xl font-bold text-primary">Feeder Application</h1>
-            <p className="text-sm text-muted-foreground">Step {currentStep} of {STEPS.length}</p>
+      <div className="fixed inset-0 bg-background z-50 overflow-y-auto">
+        {/* Header */}
+        <div className="bg-primary text-primary-foreground py-4">
+          <div className="w-full max-w-4xl mx-auto px-4 flex items-center justify-between">
+            <h1 className="text-xl font-bold">Crave'N Driver Application</h1>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-primary-foreground hover:bg-primary-foreground/20"
+              onClick={onClose}
+            >
+              <X className="h-4 w-4 mr-2" />
+              Close
+            </Button>
           </div>
-          
-          <Progress value={progress} className="h-2" />
-          
-          {/* Step indicators */}
-          <div className="flex justify-between mt-4">
-            {STEPS.map((step) => (
-              <div
-                key={step.number}
-                className="flex flex-col items-center gap-1 flex-1"
-              >
+        </div>
+        
+        <div className="w-full max-w-4xl mx-auto p-4 pb-8">
+          <Card className="w-full relative">
+
+          {/* Progress header */}
+          <div className="p-6 border-b">
+            <div className="mb-4">
+              <h1 className="text-2xl font-bold text-primary">Feeder Application</h1>
+              <p className="text-sm text-muted-foreground">Step {currentStep} of {STEPS.length}</p>
+            </div>
+            
+            <Progress value={progress} className="h-2" />
+            
+            {/* Step indicators */}
+            <div className="flex justify-between mt-4">
+              {STEPS.map((step) => (
                 <div
-                  className={`
-                    w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
-                    transition-all duration-200
-                    ${step.number < currentStep
-                      ? 'bg-green-500 text-white'
-                      : step.number === currentStep
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground'
-                    }
-                  `}
+                  key={step.number}
+                  className="flex flex-col items-center gap-1 flex-1"
                 >
-                  {step.number < currentStep ? (
-                    <CheckCircle className="h-4 w-4" />
-                  ) : (
-                    step.number
-                  )}
+                  <div
+                    className={`
+                      w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
+                      transition-all duration-200
+                      ${step.number < currentStep
+                        ? 'bg-green-500 text-white'
+                        : step.number === currentStep
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground'
+                      }
+                    `}
+                  >
+                    {step.number < currentStep ? (
+                      <CheckCircle className="h-4 w-4" />
+                    ) : (
+                      step.number
+                    )}
+                  </div>
+                  <span className="text-xs text-center hidden sm:block">
+                    {step.title}
+                  </span>
                 </div>
-                <span className="text-xs text-center hidden sm:block">
-                  {step.title}
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Step content */}
-        <div className="p-6">
-          {renderStep()}
+          {/* Step content */}
+          <div className="p-6">
+            {renderStep()}
+          </div>
+        </Card>
         </div>
-      </Card>
-    </div>
+      </div>
     
-    {/* Waitlist Success Modal (appears on top of wizard) */}
-    {showWaitlistModal && waitlistData && (
-      <WaitlistSuccessModal
-        firstName={data.firstName}
-        city={waitlistData.city}
-        state={waitlistData.state}
-        waitlistPosition={waitlistData.position}
-        onClose={() => {
-          setShowWaitlistModal(false);
-          onClose(); // Close wizard too
-        }}
-      />
-    )}
-  </>
+      {/* Waitlist Success Modal (appears on top of wizard) */}
+      {showWaitlistModal && waitlistData && (
+        <WaitlistSuccessModal
+          firstName={data.firstName}
+          city={waitlistData.city}
+          state={waitlistData.state}
+          waitlistPosition={waitlistData.position}
+          onClose={() => {
+            setShowWaitlistModal(false);
+            onClose(); // Close wizard too
+          }}
+        />
+      )}
+    </>
   );
 };

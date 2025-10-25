@@ -581,9 +581,9 @@ export const MobileDriverDashboard: React.FC = () => {
         .eq('user_id', user.id)
         .single();
 
-      // If onboarding not complete, redirect
+      // If onboarding not complete, redirect to enhanced onboarding
       if (!application?.onboarding_completed_at) {
-        window.location.href = '/onboarding';
+        window.location.href = '/enhanced-onboarding';
         return;
       }
 

@@ -51,6 +51,8 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { environment, validateEnvironmentConfig } from "./config/environment";
 import { DownloadApp } from "./pages/DownloadApp";
 import { InstallAppBanner } from "./components/InstallAppBanner";
+import { EnhancedDriverOnboarding } from "./pages/EnhancedDriverOnboarding";
+import { AdminDriverWaitlist } from "./pages/AdminDriverWaitlist";
 
 // Lazy load guide pages
 const AdminGuide = lazy(() => import("./pages/AdminGuide"));
@@ -142,6 +144,8 @@ const App = () => {
               <OnboardingWizard />
             </OnboardingGuard>
           } />
+          <Route path="/enhanced-onboarding" element={<EnhancedDriverOnboarding />} />
+          <Route path="/admin/waitlist" element={<AdminDriverWaitlist />} />
           <Route path="/customer-dashboard" element={<CustomerDashboard />} />
           <Route path="/mobile" element={<MobileDriverDashboard />} />
           <Route path="/mobile/background-check-status" element={<MobileBackgroundCheckStatus />} />

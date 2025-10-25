@@ -45,11 +45,25 @@ export const validateStep = (step: number, data: ApplicationData, files: Applica
       if (!data.licenseExpiry) errors.push('License expiry date is required');
       else {
         const expiry = new Date(data.licenseExpiry);
-        if (expiry < new Date()) errors.push('Driver\'s license has expired');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset time to start of day for fair comparison
+        if (expiry < today) errors.push('Driver\'s license has expired');
       }
       break;
 
-    case 4: // Background Check
+    case 4: // Payment & Tax Info
+      if (!data.payoutMethod) errors.push('Payout method is required');
+      
+      if (data.payoutMethod === 'direct_deposit') {
+        if (!data.bankAccountType) errors.push('Account type is required');
+        if (!data.routingNumber?.trim()) errors.push('Routing number is required');
+        if (!data.accountNumber?.trim()) errors.push('Account number is required');
+      }
+      
+      if (data.payoutMethod === 'cashapp') {
+        if (!data.cashTag?.trim()) errors.push('Cash App tag is required');
+      }
+      
       if (!data.ssn?.trim()) errors.push('Social Security Number is required');
       else if (!/^\d{9}$/.test(data.ssn.replace(/-/g, ''))) errors.push('SSN must be exactly 9 digits');
       
