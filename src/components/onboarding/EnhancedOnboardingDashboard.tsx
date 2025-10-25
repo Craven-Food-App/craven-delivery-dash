@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -42,7 +43,9 @@ interface DriverProgress {
 export const EnhancedOnboardingDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState<DriverProgress | null>(null);
+  const [isActivated, setIsActivated] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [completingTask, setCompletingTask] = useState<number | null>(null);
 
   useEffect(() => {
@@ -93,6 +96,25 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
           variant: "destructive",
         });
         setProgress(null);
+        return;
+      }
+
+      // Check if driver is activated (approved + onboarding complete)
+      if (application.status === 'approved' && application.onboarding_completed_at) {
+        console.log('Driver is activated - redirecting to mobile dashboard');
+        setIsActivated(true);
+        setLoading(false);
+        
+        toast({
+          title: "Welcome Back! 🎉",
+          description: "You're activated! Redirecting to your driver dashboard...",
+        });
+        
+        // Redirect to mobile dashboard after 2 seconds
+        setTimeout(() => {
+          navigate('/mobile', { replace: true });
+        }, 2000);
+        
         return;
       }
 
@@ -204,6 +226,30 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading your progress...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (isActivated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-8 text-center">
+            <div className="bg-green-500 rounded-full p-6 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+              <CheckCircle className="h-12 w-12 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-green-900 mb-2">
+              You're Activated! 🎉
+            </h2>
+            <p className="text-gray-600 mb-4">
+              Congratulations! Your region is open and you're ready to deliver.
+            </p>
+            <p className="text-sm text-gray-500 mb-4">
+              Redirecting to your driver dashboard...
+            </p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto"></div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -349,7 +395,33 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
         </div>
 
         {/* Congratulations Message */}
-        {isOnboardingComplete && (
+        {isOnboardingComplete && application.status === 'approved' && (
+          <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="bg-green-500 rounded-full p-3">
+                  <CheckCircle className="h-8 w-8 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-green-900 mb-2">
+                    🎉 You're Activated!
+                  </h3>
+                  <p className="text-green-800 mb-3">
+                    Your region is open! You can now start accepting deliveries.
+                  </p>
+                  <Button 
+                    onClick={() => navigate('/mobile')}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    Go to Driver Dashboard →
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
+        {isOnboardingComplete && application.status !== 'approved' && (
           <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
