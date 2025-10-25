@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Confetti from 'react-confetti';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CheckCircle, Rocket, ArrowRight, Star, TrendingUp } from 'lucide-react';
@@ -11,22 +12,29 @@ interface WelcomeConfettiProps {
 }
 
 export const WelcomeConfetti: React.FC<WelcomeConfettiProps> = ({ firstName, onComplete }) => {
-  const [confettiPieces, setConfettiPieces] = useState<Array<{ id: number; left: number; delay: number; duration: number; color: string }>>([]);
   const navigate = useNavigate();
+  const [windowDimensions, setWindowDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
+  const [showConfetti, setShowConfetti] = useState(true);
 
   useEffect(() => {
-    // Generate confetti pieces
-    const pieces = Array.from({ length: 150 }, (_, i) => ({
-      id: i,
-      left: Math.random() * 100,
-      delay: Math.random() * 0.5,
-      duration: 2 + Math.random() * 2,
-      color: ['#FF6B35', '#F7931E', '#FFB700', '#4CAF50', '#2196F3', '#9C27B0'][Math.floor(Math.random() * 6)]
-    }));
-    setConfettiPieces(pieces);
+    // Track window dimensions for responsive confetti
+    const handleResize = () => {
+      setWindowDimensions({ width: window.innerWidth, height: window.innerHeight });
+    };
+    window.addEventListener('resize', handleResize);
+
+    // Stop confetti after 6 seconds
+    const confettiTimer = setTimeout(() => {
+      setShowConfetti(false);
+    }, 6000);
 
     // Mark welcome screen as shown
     markWelcomeScreenShown();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(confettiTimer);
+    };
   }, []);
 
   const markWelcomeScreenShown = async () => {
@@ -50,41 +58,18 @@ export const WelcomeConfetti: React.FC<WelcomeConfettiProps> = ({ firstName, onC
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-orange-50 to-orange-100 z-50 flex items-center justify-center overflow-hidden">
-      {/* Confetti Animation */}
-      <div className="absolute inset-0 pointer-events-none">
-        {confettiPieces.map(piece => (
-          <div
-            key={piece.id}
-            className="absolute w-3 h-3 rounded-sm animate-confetti-fall"
-            style={{
-              left: `${piece.left}%`,
-              top: '-10px',
-              backgroundColor: piece.color,
-              animationDelay: `${piece.delay}s`,
-              animationDuration: `${piece.duration}s`,
-              transform: `rotate(${Math.random() * 360}deg)`
-            }}
-          />
-        ))}
-      </div>
-
-      <style>
-        {`
-          @keyframes confetti-fall {
-            0% {
-              transform: translateY(-10px) rotate(0deg);
-              opacity: 1;
-            }
-            100% {
-              transform: translateY(100vh) rotate(720deg);
-              opacity: 0.3;
-            }
-          }
-          .animate-confetti-fall {
-            animation: confetti-fall linear infinite;
-          }
-        `}
-      </style>
+      {/* React Confetti */}
+      {showConfetti && (
+        <Confetti
+          width={windowDimensions.width}
+          height={windowDimensions.height}
+          recycle={false}
+          numberOfPieces={500}
+          gravity={0.2}
+          initialVelocityY={20}
+          colors={['#FF6B35', '#F7931E', '#FFB700', '#FFA500', '#FF8C00', '#4CAF50', '#2196F3']}
+        />
+      )}
 
       {/* Main Content Card - Mobile First */}
       <Card className="max-w-2xl w-full mx-4 p-6 sm:p-8 md:p-12 shadow-2xl relative z-10 bg-white/95 backdrop-blur-sm">
