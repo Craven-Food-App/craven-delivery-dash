@@ -33,15 +33,14 @@ export function DriverPromoManagement() {
   const [newPromo, setNewPromo] = useState({
     title: '',
     description: '',
-    short_description: '',
-    icon: '🎯',
-    challenge_type: 'delivery_count',
-    requirement_value: 10,
-    reward_type: 'cash_bonus',
-    reward_amount_cents: 2500,
-    max_participants: null as number | null,
-    starts_at: new Date().toISOString().slice(0, 16),
-    ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+    promo_type: 'delivery_count',
+    requirements: {
+      count: 10,
+      timeframe: 'week'
+    },
+    reward_amount: 2500,
+    start_date: new Date().toISOString().slice(0, 16),
+    end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
   });
 
   useEffect(() => {
@@ -50,15 +49,16 @@ export function DriverPromoManagement() {
 
   const fetchPromos = async () => {
     try {
-      // TODO: Create driver_promotions table
-      // const { data } = await supabase
-      //   .from('driver_promotions')
-      //   .select('*')
-      //   .order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('driver_promotions')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      setPromos([]);
+      if (error) throw error;
+      setPromos(data || []);
     } catch (error) {
       console.error('Error fetching promos:', error);
+      toast.error('Failed to load promotions');
     } finally {
       setLoading(false);
     }
@@ -71,34 +71,33 @@ export function DriverPromoManagement() {
     }
 
     try {
-      // TODO: Create driver_promotions table
-      toast.error('Driver promotions feature not yet implemented');
-      return;
-      
-      // const { error } = await supabase
-      //   .from('driver_promotions')
-      //   .insert({
-      //     ...newPromo,
-      //     starts_at: new Date(newPromo.starts_at).toISOString(),
-      //     ends_at: new Date(newPromo.ends_at).toISOString(),
-      //   });
+      const { error } = await supabase
+        .from('driver_promotions')
+        .insert({
+          title: newPromo.title,
+          description: newPromo.description,
+          promo_type: newPromo.promo_type,
+          requirements: newPromo.requirements,
+          reward_amount: newPromo.reward_amount,
+          start_date: new Date(newPromo.start_date).toISOString(),
+          end_date: new Date(newPromo.end_date).toISOString(),
+        });
 
-      // if (error) throw error;
+      if (error) throw error;
 
       toast.success('Promo created successfully!');
       setShowCreateDialog(false);
       setNewPromo({
         title: '',
         description: '',
-        short_description: '',
-        icon: '🎯',
-        challenge_type: 'delivery_count',
-        requirement_value: 10,
-        reward_type: 'cash_bonus',
-        reward_amount_cents: 2500,
-        max_participants: null,
-        starts_at: new Date().toISOString().slice(0, 16),
-        ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+        promo_type: 'delivery_count',
+        requirements: {
+          count: 10,
+          timeframe: 'week'
+        },
+        reward_amount: 2500,
+        start_date: new Date().toISOString().slice(0, 16),
+        end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
       });
       fetchPromos();
     } catch (error: any) {
@@ -108,16 +107,12 @@ export function DriverPromoManagement() {
 
   const handleToggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      // TODO: Create driver_promotions table
-      toast.error('Driver promotions feature not yet implemented');
-      return;
-      
-      // const { error } = await supabase
-      //   .from('driver_promotions')
-      //   .update({ is_active: !currentStatus })
-      //   .eq('id', id);
+      const { error } = await supabase
+        .from('driver_promotions')
+        .update({ is_active: !currentStatus })
+        .eq('id', id);
 
-      // if (error) throw error;
+      if (error) throw error;
 
       toast.success(`Promo ${!currentStatus ? 'activated' : 'paused'}`);
       fetchPromos();
@@ -128,7 +123,7 @@ export function DriverPromoManagement() {
 
   const activePromos = promos.filter(p => p.is_active);
   const totalBudget = activePromos.reduce((sum, p) => 
-    sum + (p.reward_amount_cents * (p.max_participants || 100)), 0
+    sum + (p.reward_amount * 100), 0
   );
 
   return (
@@ -224,13 +219,10 @@ export function DriverPromoManagement() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 flex-1">
-                      <div className="text-3xl">{promo.icon}</div>
+                      <div className="text-3xl">🎯</div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="font-semibold">{promo.title}</h4>
-                          {promo.is_featured && (
-                            <Badge className="bg-purple-600">Featured</Badge>
-                          )}
                           <Badge variant={promo.is_active ? 'default' : 'secondary'}>
                             {promo.is_active ? 'Active' : 'Paused'}
                           </Badge>
@@ -240,16 +232,11 @@ export function DriverPromoManagement() {
                         <div className="flex items-center gap-4 mt-2 text-sm">
                           <span className="flex items-center gap-1 text-green-600 font-medium">
                             <DollarSign className="h-3 w-3" />
-                            ${(promo.reward_amount_cents / 100).toFixed(2)}
+                            ${(promo.reward_amount / 100).toFixed(2)}
                           </span>
                           <span className="text-muted-foreground">
-                            {promo.current_participants || 0} enrolled
+                            {promo.promo_type.replace('_', ' ')}
                           </span>
-                          {promo.max_participants && (
-                            <span className="text-muted-foreground">
-                              / {promo.max_participants} max
-                            </span>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -306,34 +293,14 @@ export function DriverPromoManagement() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="short_desc">Short Description</Label>
-              <Input
-                id="short_desc"
-                value={newPromo.short_description}
-                onChange={(e) => setNewPromo({ ...newPromo, short_description: e.target.value })}
-                placeholder="20 deliveries → $50"
-              />
-            </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="icon">Icon (Emoji)</Label>
-                <Input
-                  id="icon"
-                  value={newPromo.icon}
-                  onChange={(e) => setNewPromo({ ...newPromo, icon: e.target.value })}
-                  placeholder="🎯"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="challenge_type">Challenge Type</Label>
+                <Label htmlFor="promo_type">Promo Type</Label>
                 <select
-                  id="challenge_type"
-                  value={newPromo.challenge_type}
-                  onChange={(e) => setNewPromo({ ...newPromo, challenge_type: e.target.value })}
-                  className="w-full p-2 border rounded-md"
+                  id="promo_type"
+                  value={newPromo.promo_type}
+                  onChange={(e) => setNewPromo({ ...newPromo, promo_type: e.target.value })}
+                  className="w-full p-2 border rounded-md bg-background"
                 >
                   <option value="delivery_count">Delivery Count</option>
                   <option value="time_based">Time Based</option>
@@ -344,18 +311,6 @@ export function DriverPromoManagement() {
                   <option value="referral">Referral</option>
                 </select>
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="requirement">Requirement Value</Label>
-                <Input
-                  id="requirement"
-                  type="number"
-                  value={newPromo.requirement_value}
-                  onChange={(e) => setNewPromo({ ...newPromo, requirement_value: parseInt(e.target.value) })}
-                />
-              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="reward_amount">Reward Amount ($)</Label>
@@ -363,41 +318,30 @@ export function DriverPromoManagement() {
                   id="reward_amount"
                   type="number"
                   step="0.01"
-                  value={(newPromo.reward_amount_cents / 100).toFixed(2)}
-                  onChange={(e) => setNewPromo({ ...newPromo, reward_amount_cents: Math.round(parseFloat(e.target.value) * 100) })}
+                  value={(newPromo.reward_amount / 100).toFixed(2)}
+                  onChange={(e) => setNewPromo({ ...newPromo, reward_amount: Math.round(parseFloat(e.target.value) * 100) })}
                 />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="max_participants">Max Participants (Optional)</Label>
-              <Input
-                id="max_participants"
-                type="number"
-                value={newPromo.max_participants || ''}
-                onChange={(e) => setNewPromo({ ...newPromo, max_participants: e.target.value ? parseInt(e.target.value) : null })}
-                placeholder="Leave empty for unlimited"
-              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="starts_at">Starts At</Label>
+                <Label htmlFor="start_date">Starts At</Label>
                 <Input
-                  id="starts_at"
+                  id="start_date"
                   type="datetime-local"
-                  value={newPromo.starts_at}
-                  onChange={(e) => setNewPromo({ ...newPromo, starts_at: e.target.value })}
+                  value={newPromo.start_date}
+                  onChange={(e) => setNewPromo({ ...newPromo, start_date: e.target.value })}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="ends_at">Ends At</Label>
+                <Label htmlFor="end_date">Ends At</Label>
                 <Input
-                  id="ends_at"
+                  id="end_date"
                   type="datetime-local"
-                  value={newPromo.ends_at}
-                  onChange={(e) => setNewPromo({ ...newPromo, ends_at: e.target.value })}
+                  value={newPromo.end_date}
+                  onChange={(e) => setNewPromo({ ...newPromo, end_date: e.target.value })}
                 />
               </div>
             </div>
