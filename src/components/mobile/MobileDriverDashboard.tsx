@@ -99,6 +99,7 @@ export const MobileDriverDashboard: React.FC = () => {
   // Persistent session management
   const [sessionData, setSessionData] = useState<any>(null);
   const [isSessionRestored, setIsSessionRestored] = useState(false);
+  const [heartbeatInterval, setHeartbeatInterval] = useState<NodeJS.Timeout | null>(null);
   const [userLocation, setUserLocation] = useState<{
     lat: number;
     lng: number;
@@ -146,7 +147,8 @@ export const MobileDriverDashboard: React.FC = () => {
           // Start background tasks after UI is ready
           setTimeout(() => {
             setupRealtimeListener(user.id);
-            startSessionHeartbeat(user.id);
+            const interval = startSessionHeartbeat(user.id);
+            setHeartbeatInterval(interval);
           }, 100);
         }
         
@@ -207,9 +209,11 @@ export const MobileDriverDashboard: React.FC = () => {
             if (user) {
               await supabase.from('driver_push_subscriptions').upsert({
                 driver_id: user.id,
-                subscription: newSubscription,
+                endpoint: newSubscription.endpoint,
+                p256dh_key: JSON.parse(JSON.stringify(newSubscription.keys))?.p256dh || '',
+                auth_key: JSON.parse(JSON.stringify(newSubscription.keys))?.auth || '',
                 created_at: new Date().toISOString()
-              });
+              } as any);
             }
           }
         } catch (error) {
@@ -239,7 +243,7 @@ export const MobileDriverDashboard: React.FC = () => {
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'earnings' | 'account' | 'ratings' | 'promos' | 'help'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'earnings' | 'account' | 'ratings' | 'promos' | 'preferences' | 'help'>('home');
   const [driverRating, setDriverRating] = useState<number>(5.0);
   const [driverDeliveries, setDriverDeliveries] = useState<number>(0);
   const [ratingTrend, setRatingTrend] = useState<number>(0);
@@ -297,6 +301,12 @@ export const MobileDriverDashboard: React.FC = () => {
   // Logout handler
   const handleLogout = async () => {
     try {
+      // Clear session heartbeat
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+        setHeartbeatInterval(null);
+      }
+      
       // Clear driver session
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -321,6 +331,11 @@ export const MobileDriverDashboard: React.FC = () => {
       navigate('/driver/auth');
     } catch (error) {
       console.error('Error during logout:', error);
+      // Clear session heartbeat even on error
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+        setHeartbeatInterval(null);
+      }
       // Force logout even if there's an error
       await supabase.auth.signOut();
       setIsMenuOpen(false);
@@ -508,17 +523,17 @@ export const MobileDriverDashboard: React.FC = () => {
     let loadingTimer: NodeJS.Timeout;
     let failsafeTimer: NodeJS.Timeout;
     
-    // Set up auth state change listener to prevent auto-logout
+    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state change:', event, session?.user?.id);
       
       if (event === 'SIGNED_OUT') {
-        console.log('User signed out, showing welcome screen');
-        // Stay on /mobile route and show welcome screen
-        setIsLoading(false);
-        setShowWelcomeScreen(true);
-        // Reset driver state
-        setDriverState('offline');
+        console.log('User signed out, redirecting to auth');
+        // Clear any ongoing timers/intervals
+        if (loadingTimer) clearTimeout(loadingTimer);
+        if (failsafeTimer) clearTimeout(failsafeTimer);
+        // Redirect to auth page on logout
+        navigate('/driver/auth');
         return;
       }
       
@@ -565,6 +580,7 @@ export const MobileDriverDashboard: React.FC = () => {
       isMounted = false;
       if (loadingTimer) clearTimeout(loadingTimer);
       if (failsafeTimer) clearTimeout(failsafeTimer);
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
       subscription?.unsubscribe();
     };
   }, []);
@@ -807,14 +823,21 @@ export const MobileDriverDashboard: React.FC = () => {
       }
       setupRealtimeListener(user.id);
       
-      // Start session heartbeat to keep driver online
-      startSessionHeartbeat(user.id);
+      // Start session heartbeat to keep driver online  
+      const interval = startSessionHeartbeat(user.id);
+      setHeartbeatInterval(interval);
     } catch (error) {
       console.error('Error going online:', error);
     }
   };
   const handleGoOffline = async () => {
     try {
+      // Clear session heartbeat when going offline
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+        setHeartbeatInterval(null);
+      }
+      
       const {
         data: {
           user

@@ -34,6 +34,7 @@ interface Driver {
   priority_score: number;
   waitlist_position: number;
   created_at: string;
+  region_id?: number;
   regions: {
     name: string;
     status: string;

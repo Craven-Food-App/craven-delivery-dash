@@ -21,6 +21,7 @@ interface CraverProfile {
   email: string;
   phone: string;
   status: string;
+  vehicle_type?: string;
   profile_photo?: string;
 }
 
@@ -98,6 +99,13 @@ export const AccountSection: React.FC<{
         .eq('driver_id', user.id)
         .eq('order_status', 'delivered')
         .gte('created_at', weekStart.toISOString());
+
+      // Get craver application data
+      const { data: application } = await supabase
+        .from('craver_applications')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
 
       if (application) {
         setProfile(application);

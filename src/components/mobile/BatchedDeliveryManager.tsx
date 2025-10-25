@@ -107,9 +107,9 @@ export function BatchedDeliveryManager({ driverId }: { driverId: string }) {
             id: o.id,
             restaurant_name: o.restaurants?.name || '',
             customer_name: o.customer_name || 'Customer',
-            total_amount: o.total_amount,
+            total_amount: o.delivery_fee_cents || 0,
             pickup_address: o.restaurants?.address || '',
-            delivery_address: o.delivery_address,
+            delivery_address: typeof o.delivery_address === 'string' ? o.delivery_address : JSON.stringify(o.delivery_address),
             items_count: o.order_items?.length || 0,
             estimated_earnings: o.delivery_fee || 0,
             order_status: o.order_status
@@ -150,9 +150,9 @@ export function BatchedDeliveryManager({ driverId }: { driverId: string }) {
         id: o.id,
         restaurant_name: o.restaurants?.name || '',
         customer_name: o.customer_name || 'Customer',
-        total_amount: o.total_amount,
+        total_amount: o.delivery_fee_cents || 0,
         pickup_address: o.restaurants?.address || '',
-        delivery_address: o.delivery_address,
+        delivery_address: typeof o.delivery_address === 'string' ? o.delivery_address : JSON.stringify(o.delivery_address),
         items_count: o.order_items?.length || 0,
         estimated_earnings: o.delivery_fee || 500, // $5 default
         order_status: o.order_status
@@ -279,7 +279,7 @@ export function BatchedDeliveryManager({ driverId }: { driverId: string }) {
         .update({
           total_distance_meters: distance || 0,
           total_duration_seconds: duration || 0,
-          optimized_route: route
+          optimized_route: route as any
         })
         .eq('id', currentBatch.id);
 

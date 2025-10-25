@@ -19,6 +19,7 @@ interface UserProfile {
   id: string;
   full_name: string | null;
   phone: string | null;
+  email?: string;
   avatar_url: string | null;
   role: string;
   preferences: any;
@@ -29,18 +30,25 @@ interface PaymentMethod {
   id: string;
   last4: string;
   brand: string;
+  card_number?: string;
+  cardholder_name?: string;
+  expiry_date?: string;
   exp_month: number;
   exp_year: number;
   is_default: boolean;
+  user_id?: string;
 }
 
 interface DeliveryAddress {
   id: string;
   label: string;
+  name?: string;
   street_address: string;
   city: string;
   state: string;
   zip_code: string;
+  phone?: string;
+  delivery_instructions?: string;
   is_default: boolean;
 }
 
