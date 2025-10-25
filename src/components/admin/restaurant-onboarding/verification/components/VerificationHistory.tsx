@@ -53,7 +53,7 @@ export function VerificationHistory({ restaurantId }: VerificationHistoryProps) 
         .eq('restaurant_id', restaurantId)
         .in('action_type', ['approved', 'rejected', 'document_verified', 'updated'])
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(20) as any;
 
       if (error) {
         console.error('Error fetching history:', error);

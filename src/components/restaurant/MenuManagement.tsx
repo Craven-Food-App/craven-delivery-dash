@@ -96,7 +96,7 @@ export function MenuManagement({ restaurantId }: { restaurantId: string }) {
       if (error) throw error;
 
       // Group by category
-      const grouped = data.reduce((acc: Record<string, MenuItem[]>, item: MenuItem) => {
+      const grouped = (data as any).reduce((acc: Record<string, any[]>, item: any) => {
         if (!acc[item.category]) {
           acc[item.category] = [];
         }
@@ -159,7 +159,7 @@ export function MenuManagement({ restaurantId }: { restaurantId: string }) {
         // Update existing item
         const { error } = await supabase
           .from('menu_items')
-          .update(itemData)
+          .update(itemData as any)
           .eq('id', currentItem.id);
 
         if (error) throw error;
@@ -172,7 +172,7 @@ export function MenuManagement({ restaurantId }: { restaurantId: string }) {
         // Create new item
         const { error } = await supabase
           .from('menu_items')
-          .insert(itemData);
+          .insert(itemData as any);
 
         if (error) throw error;
 

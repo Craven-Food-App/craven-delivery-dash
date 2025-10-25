@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useApplicationState } from "@/hooks/useApplicationState";
 import { validateStep } from "@/utils/applicationValidation";
-import { ApplicationService } from "@/services/applicationService";
 import { useToast } from "@/hooks/use-toast";
 import { AccountSetupStep } from "./application/AccountSetupStep";
 import { AddressStep } from "./application/AddressStep";

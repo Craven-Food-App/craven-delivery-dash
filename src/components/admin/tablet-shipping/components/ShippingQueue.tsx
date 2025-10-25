@@ -108,7 +108,7 @@ export function ShippingQueue({ onRefresh }: ShippingQueueProps) {
               zip: restaurant.restaurant.zip_code,
               phone: restaurant.restaurant.phone,
             },
-          });
+          }) as any;
 
           // Update database
           await supabase
