@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { useApplicationState } from "@/hooks/useApplicationState";
 import { validateStep } from "@/utils/applicationValidation";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { AccountSetupStep } from "./application/AccountSetupStep";
 import { AddressStep } from "./application/AddressStep";
 import { VehicleStep } from "./application/VehicleStep";
@@ -70,14 +71,25 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
       let isNewUser = false;
 
       if (!existingUser) {
-        const { user, isNewUser: newUser } = await ApplicationService.authenticateUser(
-          data.email,
-          password,
-          `${data.firstName} ${data.lastName}`,
-          data.phone
-        );
-        userId = user.id;
-        isNewUser = newUser;
+        // Create user account
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: data.email,
+          password: password,
+        });
+
+        if (authError) throw authError;
+        if (!authData.user) throw new Error('Failed to create user');
+        
+        userId = authData.user.id;
+        isNewUser = true;
+
+        // Create user profile
+        await supabase.from('user_profiles').insert({
+          user_id: userId,
+          full_name: `${data.firstName} ${data.lastName}`,
+          phone: data.phone,
+          role: 'driver'
+        });
       }
 
       // Step 2: Upload documents
@@ -85,8 +97,14 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
       const uploadPromises = Object.entries(files).map(async ([key, file]) => {
         if (file) {
           try {
-            const path = await ApplicationService.uploadDocument(userId!, key, file);
-            documentPaths[key] = path;
+            const filePath = `${userId}/${key}-${Date.now()}`;
+            const { error: uploadError } = await supabase.storage
+              .from('craver-documents')
+              .upload(filePath, file);
+            
+            if (!uploadError) {
+              documentPaths[key] = filePath;
+            }
           } catch (error) {
             console.error(`Failed to upload ${key}:`, error);
           }
@@ -95,7 +113,17 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
       await Promise.all(uploadPromises);
 
       // Step 3: Submit application (goes to waitlist now)
-      const application = await ApplicationService.submitApplication(userId!, data, documentPaths);
+      const { data: application, error: appError } = await supabase
+        .from('craver_applications')
+        .insert({
+          ...data,
+          ...documentPaths,
+          status: 'pending',
+        } as any)
+        .select()
+        .single();
+
+      if (appError) throw appError;
 
       // Step 4: Show waitlist success modal
       setWaitlistData({

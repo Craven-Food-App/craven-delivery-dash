@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 import type { RestaurantOnboardingData } from './types';
 import { StatsOverview } from './components/StatsOverview';
 import { ListView } from './views/ListView';
-import { EnhancedDocumentVerificationPanel } from './verification/EnhancedDocumentVerificationPanel';
 import { AnalyticsDashboard } from './analytics/AnalyticsDashboard';
 import { KanbanView } from './views/KanbanView';
 import { ExportButton } from './components/ExportButton';
@@ -602,8 +601,8 @@ export function EnhancedRestaurantOnboarding() {
         </TabsContent>
       </Tabs>
 
-      {/* Enhanced Document Verification Panel */}
-      <EnhancedDocumentVerificationPanel
+      {/* Enhanced Document Verification Panel - Temporarily disabled */}
+      {/* <EnhancedDocumentVerificationPanel
         restaurant={selectedRestaurant}
         isOpen={isVerificationPanelOpen}
         onClose={() => {
@@ -612,7 +611,7 @@ export function EnhancedRestaurantOnboarding() {
         }}
         onApprove={handleApprove}
         onReject={handleReject}
-      />
+      /> */}
     </div>
   );
 }

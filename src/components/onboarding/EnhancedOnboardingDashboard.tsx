@@ -117,11 +117,39 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const result = await ApplicationService.completeTask(user.id, taskKey);
+      // Get application
+      const { data: application } = await supabase
+        .from('craver_applications')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!application) throw new Error('Application not found');
+
+      // Get task
+      const { data: task } = await supabase
+        .from('onboarding_tasks')
+        .select('*')
+        .eq('driver_id', application.id)
+        .eq('task_key', taskKey)
+        .single();
+
+      if (!task) throw new Error('Task not found');
+
+      // Mark task as completed
+      const { error: updateError } = await supabase
+        .from('onboarding_tasks')
+        .update({ 
+          completed: true, 
+          completed_at: new Date().toISOString() 
+        })
+        .eq('id', task.id);
+
+      if (updateError) throw updateError;
       
       toast({
         title: "Task Completed! 🎉",
-        description: `You earned ${result.pointsAwarded} points! Total: ${result.totalPoints}`,
+        description: `You earned ${task.points_reward} points!`,
       });
 
       // Reload progress to show updated state
@@ -143,7 +171,16 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const referralCode = await ApplicationService.getReferralCode(user.id);
+      // Get or generate referral code
+      const { data: application } = await supabase
+        .from('craver_applications')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!application) return;
+
+      const referralCode = `CRV${application.id.substring(0, 6).toUpperCase()}`;
       const referralLink = `${window.location.origin}/feeder?ref=${referralCode}`;
       
       await navigator.clipboard.writeText(referralLink);

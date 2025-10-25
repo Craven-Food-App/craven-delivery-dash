@@ -10,7 +10,6 @@ import RestaurantOnboardingDashboard from '@/components/admin/RestaurantOnboardi
 import { EnhancedRestaurantOnboarding } from '@/components/admin/restaurant-onboarding/EnhancedRestaurantOnboarding';
 import { EnhancedRestaurantVerificationDashboard } from '@/components/admin/EnhancedRestaurantVerificationDashboard';
 import { TabletShippingManagement } from '@/components/admin/TabletShippingManagement';
-import { EnhancedTabletShippingDashboard } from '@/components/admin/tablet-shipping/EnhancedTabletShippingDashboard';
 import { NotificationSettingsManager } from '@/components/admin/NotificationSettingsManager';
 import { PayoutSettingsManager } from '@/components/admin/PayoutSettingsManager';
 import CommissionSettingsManager from '@/components/admin/CommissionSettingsManager';
@@ -118,7 +117,7 @@ const Admin: React.FC = () => {
       case 'merchant-verification':
         return <EnhancedRestaurantVerificationDashboard />;
       case 'merchant-tablet':
-        return <EnhancedTabletShippingDashboard />;
+        return <TabletShippingManagement />;
       case 'merchant-settings':
         return <EnhancedCommissionDashboard />;
       case 'driver-applications':

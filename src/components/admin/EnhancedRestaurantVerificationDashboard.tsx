@@ -21,7 +21,6 @@ import {
   CheckSquare,
   Square
 } from 'lucide-react';
-import { EnhancedDocumentVerificationPanel } from './restaurant-onboarding/verification/EnhancedDocumentVerificationPanel';
 import { QueueMode } from './restaurant-onboarding/verification/QueueMode';
 import type { RestaurantOnboardingData } from './restaurant-onboarding/types';
 import { logActivity, ActivityActionTypes } from './restaurant-onboarding/utils/activityLogger';
@@ -570,8 +569,8 @@ export const EnhancedRestaurantVerificationDashboard = () => {
         </div>
       )}
 
-      {/* Enhanced Verification Panel */}
-      <EnhancedDocumentVerificationPanel
+      {/* Enhanced Verification Panel - Temporarily disabled */}
+      {/* <EnhancedDocumentVerificationPanel
         restaurant={selectedRestaurant}
         isOpen={isVerificationPanelOpen}
         onClose={() => {
@@ -584,7 +583,7 @@ export const EnhancedRestaurantVerificationDashboard = () => {
         }}
         onApprove={handleApprove}
         onReject={handleReject}
-      />
+      /> */}
     </div>
   );
 };
