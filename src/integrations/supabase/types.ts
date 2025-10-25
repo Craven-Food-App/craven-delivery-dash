@@ -2962,6 +2962,7 @@ export type Database = {
         Row: {
           active_quota: number | null
           created_at: string | null
+          display_quota: number | null
           id: number
           name: string
           status: string | null
@@ -2971,6 +2972,7 @@ export type Database = {
         Insert: {
           active_quota?: number | null
           created_at?: string | null
+          display_quota?: number | null
           id?: number
           name: string
           status?: string | null
@@ -2980,6 +2982,7 @@ export type Database = {
         Update: {
           active_quota?: number | null
           created_at?: string | null
+          display_quota?: number | null
           id?: number
           name?: string
           status?: string | null

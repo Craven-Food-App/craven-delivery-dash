@@ -50,10 +50,12 @@ interface Region {
 }
 
 interface RegionStats {
+  region_id: number;
   region_name: string;
   current_active: number;
   quota: number;
   waitlist_count: number;
+  display_quota: number;
   status: string;
 }
 
@@ -66,6 +68,8 @@ export const DriverWaitlistDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDrivers, setSelectedDrivers] = useState<string[]>([]);
   const [viewingDriver, setViewingDriver] = useState<Driver | null>(null);
+  const [editingRegion, setEditingRegion] = useState<number | null>(null);
+  const [newDisplayQuota, setNewDisplayQuota] = useState<number>(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -115,27 +119,16 @@ export const DriverWaitlistDashboard: React.FC = () => {
       if (regionsError) throw regionsError;
       setRegions(regionsData || []);
 
-      // Load region stats
-      const { data: statsData, error: statsError } = await supabase
-        .from('regions')
-        .select(`
-          id,
-          name,
-          status,
-          active_quota,
-          craver_applications!inner(status)
-        `);
-
-      if (statsError) throw statsError;
-      
-      // Process stats data
+      // Process stats data with display_quota
       const processedStats = regionsData?.map(region => {
         const regionDrivers = driversData?.filter(d => d.region_id === region.id) || [];
         return {
+          region_id: region.id,
           region_name: region.name,
           current_active: regionDrivers.filter(d => d.status === 'approved').length,
           quota: region.active_quota,
           waitlist_count: regionDrivers.filter(d => d.status === 'waitlist').length,
+          display_quota: region.display_quota || 0,
           status: region.status
         };
       }) || [];
@@ -274,6 +267,32 @@ export const DriverWaitlistDashboard: React.FC = () => {
     setViewingDriver(driver);
   };
 
+  const updateDisplayQuota = async (regionId: number, displayQuota: number) => {
+    try {
+      const { error } = await supabase
+        .from('regions')
+        .update({ display_quota: displayQuota })
+        .eq('id', regionId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Display Quota Updated",
+        description: `Applicants will now see "${displayQuota}" total drivers in queue`,
+      });
+
+      await loadData();
+      setEditingRegion(null);
+    } catch (error) {
+      console.error('Error updating display quota:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update display quota",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -330,8 +349,41 @@ export const DriverWaitlistDashboard: React.FC = () => {
                     <span className="font-medium">{stat.current_active}/{stat.quota}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Waitlist:</span>
+                    <span className="text-gray-600">Real Waitlist:</span>
                     <span className="font-medium">{stat.waitlist_count}</span>
+                  </div>
+                  <div className="flex justify-between text-sm items-center">
+                    <span className="text-gray-600">Shown to Drivers:</span>
+                    {editingRegion === stat.region_id ? (
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          value={newDisplayQuota}
+                          onChange={(e) => setNewDisplayQuota(parseInt(e.target.value) || 0)}
+                          className="w-20 h-8"
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => updateDisplayQuota(stat.region_id, newDisplayQuota)}
+                        >
+                          Save
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2 items-center">
+                        <span className="font-medium text-orange-600">{stat.display_quota}</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditingRegion(stat.region_id);
+                            setNewDisplayQuota(stat.display_quota);
+                          }}
+                        >
+                          Edit
+                        </Button>
+                      </div>
+                    )}
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div 
@@ -344,7 +396,7 @@ export const DriverWaitlistDashboard: React.FC = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => updateRegionStatus(index + 1, 'active')}
+                    onClick={() => updateRegionStatus(stat.region_id, 'active')}
                     disabled={stat.status === 'active'}
                   >
                     Open
@@ -352,7 +404,7 @@ export const DriverWaitlistDashboard: React.FC = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => updateRegionStatus(index + 1, 'limited')}
+                    onClick={() => updateRegionStatus(stat.region_id, 'limited')}
                     disabled={stat.status === 'limited'}
                   >
                     Limit
@@ -360,7 +412,7 @@ export const DriverWaitlistDashboard: React.FC = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => updateRegionStatus(index + 1, 'paused')}
+                    onClick={() => updateRegionStatus(stat.region_id, 'paused')}
                     disabled={stat.status === 'paused'}
                   >
                     Pause
