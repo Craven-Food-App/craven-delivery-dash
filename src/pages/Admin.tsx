@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import AdminAccessGuard from '@/components/AdminAccessGuard';
 import ApplicationReview from '@/components/admin/ApplicationReview';
-import OnboardingDashboard from '@/components/admin/OnboardingDashboard';
+import { EnhancedOnboardingDashboard } from '@/components/onboarding/EnhancedOnboardingDashboard';
 import LiveDashboard from '@/components/admin/LiveDashboard';
 import ChatPortal from '@/components/admin/ChatPortal';
 import BackgroundCheckDashboard from '@/components/admin/BackgroundCheckDashboard';
 import { BackgroundCheckSettings } from '@/components/admin/BackgroundCheckSettings';
-import RestaurantOnboardingDashboard from '@/components/admin/RestaurantOnboardingDashboard';
 import { EnhancedRestaurantOnboarding } from '@/components/admin/restaurant-onboarding/EnhancedRestaurantOnboarding';
 import { EnhancedRestaurantVerificationDashboard } from '@/components/admin/EnhancedRestaurantVerificationDashboard';
 import { TabletShippingManagement } from '@/components/admin/TabletShippingManagement';
@@ -127,7 +126,7 @@ const Admin: React.FC = () => {
       case 'driver-background-settings':
         return <BackgroundCheckSettings />;
       case 'driver-onboarding':
-        return <OnboardingDashboard />;
+        return <EnhancedOnboardingDashboard />;
       case 'driver-ratings':
         return <DriverRatingManagement />;
       case 'driver-promos':

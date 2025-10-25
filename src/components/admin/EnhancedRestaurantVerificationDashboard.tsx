@@ -25,6 +25,7 @@ import {
 import { QueueMode } from './restaurant-onboarding/verification/QueueMode';
 import type { RestaurantOnboardingData } from './restaurant-onboarding/types';
 import { logActivity, ActivityActionTypes } from './restaurant-onboarding/utils/activityLogger';
+import { DocumentVerificationPanel } from './restaurant-onboarding/verification/DocumentVerificationPanel';
 
 export const EnhancedRestaurantVerificationDashboard = () => {
   const [restaurants, setRestaurants] = useState<RestaurantOnboardingData[]>([]);
@@ -255,7 +256,7 @@ export const EnhancedRestaurantVerificationDashboard = () => {
     }
   };
 
-  const handleReject = async (restaurantId: string, notes: string, reason: string) => {
+  const handleReject = async (restaurantId: string, notes: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
@@ -267,7 +268,7 @@ export const EnhancedRestaurantVerificationDashboard = () => {
             rejected_by: user?.id,
             rejected_at: new Date().toISOString(),
             notes: notes,
-            reason: reason,
+            reason: notes, // Use notes as reason
           },
           onboarding_status: 'rejected',
         })
@@ -290,8 +291,8 @@ export const EnhancedRestaurantVerificationDashboard = () => {
       await logActivity({
         restaurantId,
         actionType: ActivityActionTypes.REJECTED,
-        actionDescription: `Rejected: ${reason || notes}`,
-        metadata: { notes, reason }
+        actionDescription: `Rejected: ${notes}`,
+        metadata: { notes, reason: notes }
       });
 
       toast.success('Restaurant verification rejected');
@@ -571,119 +572,22 @@ export const EnhancedRestaurantVerificationDashboard = () => {
       )}
 
       {/* Verification Panel */}
-      <Dialog open={isVerificationPanelOpen && !!selectedRestaurant} onOpenChange={(open) => {
-        if (!open) {
-          setIsVerificationPanelOpen(false);
-          setSelectedRestaurant(null);
-          if (queueMode) {
-            setQueueMode(false);
-            toast.info('Queue mode ended');
-          }
-        }
-      }}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>{selectedRestaurant?.restaurant.name}</DialogTitle>
-            <DialogDescription>Review documents and verification details</DialogDescription>
-          </DialogHeader>
-          {selectedRestaurant && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium">{selectedRestaurant.restaurant.email || '—'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Phone</p>
-                  <p className="font-medium">{selectedRestaurant.restaurant.phone || '—'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Location</p>
-                  <p className="font-medium">{[selectedRestaurant.restaurant.city, selectedRestaurant.restaurant.state].filter(Boolean).join(', ') || '—'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Applied</p>
-                  <p className="font-medium">{new Date(selectedRestaurant.created_at).toLocaleDateString()}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                <div className="p-3 rounded-md border">
-                  <p className="text-sm text-muted-foreground">Business License</p>
-                  {selectedRestaurant.restaurant.business_license_url ? (
-                    <a className="text-primary underline text-sm" href={selectedRestaurant.restaurant.business_license_url} target="_blank" rel="noreferrer">View</a>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Missing</p>
-                  )}
-                </div>
-                <div className="p-3 rounded-md border">
-                  <p className="text-sm text-muted-foreground">Owner ID</p>
-                  {selectedRestaurant.restaurant.owner_id_url ? (
-                    <a className="text-primary underline text-sm" href={selectedRestaurant.restaurant.owner_id_url} target="_blank" rel="noreferrer">View</a>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Missing</p>
-                  )}
-                </div>
-                <div className="p-3 rounded-md border">
-                  <p className="text-sm text-muted-foreground">Insurance</p>
-                  {selectedRestaurant.restaurant.insurance_certificate_url ? (
-                    <a className="text-primary underline text-sm" href={selectedRestaurant.restaurant.insurance_certificate_url} target="_blank" rel="noreferrer">View</a>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Missing</p>
-                  )}
-                </div>
-                <div className="p-3 rounded-md border">
-                  <p className="text-sm text-muted-foreground">Health Permit</p>
-                  {selectedRestaurant.restaurant.health_permit_url ? (
-                    <a className="text-primary underline text-sm" href={selectedRestaurant.restaurant.health_permit_url} target="_blank" rel="noreferrer">View</a>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Missing</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2">
-                <Button variant="outline" onClick={() => {
-                  setIsVerificationPanelOpen(false);
-                  setSelectedRestaurant(null);
-                  if (queueMode) {
-                    setQueueMode(false);
-                    toast.info('Queue mode ended');
-                  }
-                }}>Close</Button>
-                {!selectedRestaurant.business_info_verified && selectedRestaurant.restaurant.onboarding_status !== 'rejected' && (
-                  <>
-                    <Button
-                      className="bg-green-600 hover:bg-green-700"
-                      onClick={async () => {
-                        await handleApprove(selectedRestaurant.restaurant_id, 'Approved via verification panel');
-                        if (!queueMode) {
-                          setIsVerificationPanelOpen(false);
-                          setSelectedRestaurant(null);
-                        }
-                      }}
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={async () => {
-                        await handleReject(selectedRestaurant.restaurant_id, 'Rejected via verification panel', 'Incomplete or invalid documents');
-                        if (!queueMode) {
-                          setIsVerificationPanelOpen(false);
-                          setSelectedRestaurant(null);
-                        }
-                      }}
-                    >
-                      Reject
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {selectedRestaurant && (
+        <DocumentVerificationPanel
+          restaurant={selectedRestaurant}
+          isOpen={isVerificationPanelOpen}
+          onClose={() => {
+            setIsVerificationPanelOpen(false);
+            setSelectedRestaurant(null);
+            if (queueMode) {
+              setQueueMode(false);
+              toast.info('Queue mode ended');
+            }
+          }}
+          onApprove={handleApprove}
+          onReject={handleReject}
+        />
+      )}
     </div>
   );
 };
