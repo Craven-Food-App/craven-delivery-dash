@@ -5,10 +5,11 @@ DELETE FROM onboarding_tasks;
 DELETE FROM craver_applications;
 DELETE FROM regions;
 
--- Insert demo regions
+-- Insert demo regions (prevent duplicates with ON CONFLICT)
 INSERT INTO regions (name, zip_prefix, status, active_quota) VALUES
-('Toledo', '436', 'active', 50),
-('Detroit', '482', 'active', 75);
+('Toledo, OH', '436', 'active', 436),
+('Detroit, MI', '482', 'active', 75)
+ON CONFLICT (zip_prefix) DO NOTHING;
 
 -- Insert 2 driver applications
 INSERT INTO craver_applications (

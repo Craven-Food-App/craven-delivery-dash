@@ -1,8 +1,9 @@
 -- Ultra Simple Demo Data - Just the basics
--- Insert demo regions
+-- Insert demo regions (prevent duplicates with ON CONFLICT)
 INSERT INTO regions (name, zip_prefix, status, active_quota) VALUES
-('Toledo', '436', 'active', 50),
-('Detroit', '482', 'active', 75);
+('Toledo, OH', '436', 'active', 436),
+('Detroit, MI', '482', 'active', 75)
+ON CONFLICT (zip_prefix) DO NOTHING;
 
 -- Insert just 2 simple driver applications with minimal columns
 INSERT INTO craver_applications (
