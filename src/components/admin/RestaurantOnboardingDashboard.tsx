@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Loader2, Store, CheckCircle, Clock, AlertCircle, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -28,6 +29,7 @@ const RestaurantOnboardingDashboard = () => {
   const [restaurants, setRestaurants] = useState<RestaurantOnboarding[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
+  const [viewingRestaurant, setViewingRestaurant] = useState<RestaurantOnboarding | null>(null);
 
   useEffect(() => {
     fetchRestaurants();
@@ -243,7 +245,7 @@ const RestaurantOnboardingDashboard = () => {
                     Mark Menu Ready
                   </Button>
                 )}
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" onClick={() => setViewingRestaurant(restaurant)}>
                   <Eye className="h-4 w-4 mr-2" />
                   View Details
                 </Button>
@@ -252,6 +254,95 @@ const RestaurantOnboardingDashboard = () => {
           </Card>
         ))}
       </div>
+
+      {/* View Details Modal */}
+      <Dialog open={!!viewingRestaurant} onOpenChange={(open) => !open && setViewingRestaurant(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{viewingRestaurant?.restaurant.name}</DialogTitle>
+            <DialogDescription>Restaurant onboarding details</DialogDescription>
+          </DialogHeader>
+          {viewingRestaurant && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold mb-2">Contact Information</h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Email:</span>
+                    <p>{viewingRestaurant.restaurant.email}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Phone:</span>
+                    <p>{viewingRestaurant.restaurant.phone || 'Not provided'}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2">Onboarding Status</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Overall Status</span>
+                    {getStatusBadge(viewingRestaurant)}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Readiness Score</span>
+                    <span className="font-semibold">{viewingRestaurant.restaurant.readiness_score || 0}%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2">Verification Progress</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    {viewingRestaurant.business_info_verified ? (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 text-yellow-500" />
+                    )}
+                    <span className="text-sm">Business Information Verified</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {viewingRestaurant.restaurant.banking_complete ? (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 text-yellow-500" />
+                    )}
+                    <span className="text-sm">Banking Setup Complete</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {viewingRestaurant.menu_preparation_status === 'ready' ? (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    ) : viewingRestaurant.menu_preparation_status === 'in_progress' ? (
+                      <Clock className="h-4 w-4 text-blue-500" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 text-yellow-500" />
+                    )}
+                    <span className="text-sm">Menu Preparation: {viewingRestaurant.menu_preparation_status}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {viewingRestaurant.go_live_ready ? (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 text-yellow-500" />
+                    )}
+                    <span className="text-sm">Ready to Go Live</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2">Timeline</h3>
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Application Date:</span>
+                  <p>{new Date(viewingRestaurant.restaurant.created_at).toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
