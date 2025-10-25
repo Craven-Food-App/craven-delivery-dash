@@ -440,41 +440,46 @@ export function EnhancedRestaurantOnboarding() {
 
       {/* Main Content */}
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-11">
-          <TabsTrigger value="all">
-            All ({stats.total})
-          </TabsTrigger>
-          <TabsTrigger value="kanban">
-            📋 Kanban
-          </TabsTrigger>
-          <TabsTrigger value="pending">
-            Pending Review ({stats.pendingReview})
-          </TabsTrigger>
-          <TabsTrigger value="in-progress">
-            In Progress ({stats.inProgress})
-          </TabsTrigger>
-          <TabsTrigger value="ready">
-            Ready to Launch ({stats.readyToLaunch})
-          </TabsTrigger>
-          <TabsTrigger value="live">
-            Live ({stats.live})
-          </TabsTrigger>
-          <TabsTrigger value="analytics">
-            📊 Analytics
-          </TabsTrigger>
-          <TabsTrigger value="emails">
-            📧 Email Templates
-          </TabsTrigger>
-          <TabsTrigger value="team">
-            👥 Team
-          </TabsTrigger>
-          <TabsTrigger value="sla">
-            ⏱️ SLA Tracking
-          </TabsTrigger>
-          <TabsTrigger value="activity">
-            🕐 Activity Log
-          </TabsTrigger>
-        </TabsList>
+        <div className="space-y-2">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="all">
+              All ({stats.total})
+            </TabsTrigger>
+            <TabsTrigger value="kanban">
+              📋 Kanban
+            </TabsTrigger>
+            <TabsTrigger value="pending">
+              Pending Review ({stats.pendingReview})
+            </TabsTrigger>
+            <TabsTrigger value="in-progress">
+              In Progress ({stats.inProgress})
+            </TabsTrigger>
+            <TabsTrigger value="ready">
+              Ready to Launch ({stats.readyToLaunch})
+            </TabsTrigger>
+            <TabsTrigger value="live">
+              Live ({stats.live})
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="analytics">
+              📊 Analytics
+            </TabsTrigger>
+            <TabsTrigger value="emails">
+              📧 Email Templates
+            </TabsTrigger>
+            <TabsTrigger value="team">
+              👥 Team
+            </TabsTrigger>
+            <TabsTrigger value="sla">
+              ⏱️ SLA Tracking
+            </TabsTrigger>
+            <TabsTrigger value="activity">
+              🕐 Activity Log
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="all" className="mt-6">
           <ListView
