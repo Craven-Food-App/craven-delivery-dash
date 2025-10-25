@@ -53,34 +53,51 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
 
   const loadProgress = async () => {
     try {
-      // For demo purposes, use the first demo driver
-      console.log('Looking for demo driver...');
-      const { data: applications, error } = await supabase
+      // Get the current logged-in user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.log('No user logged in');
+        setProgress(null);
+        return;
+      }
+
+      console.log('Loading progress for user:', user.id);
+
+      // Get the user's application
+      const { data: application, error: appError } = await supabase
         .from('craver_applications')
         .select('*')
-        .limit(1);
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
       
-      console.log('Demo driver query result:', { applications, error });
+      console.log('Application query result:', { application, error: appError });
 
-      if (!applications) {
-        console.log('No demo driver found, showing demo message');
+      if (!application) {
+        console.log('No application found for user');
         setProgress(null);
         return;
       }
 
       // Get onboarding tasks
-      const { data: tasks } = await supabase
+      const { data: tasks, error: tasksError } = await supabase
         .from('onboarding_tasks')
         .select('*')
-        .eq('driver_id', applications.id)
+        .eq('driver_id', application.id)
         .order('created_at');
 
+      console.log('Tasks query result:', { tasks, error: tasksError });
+
       // Get queue position
-      const { data: queuePosition } = await supabase
-        .rpc('get_driver_queue_position', { driver_uuid: applications.id });
+      const { data: queuePosition, error: queueError } = await supabase
+        .rpc('get_driver_queue_position', { driver_uuid: application.id });
+
+      console.log('Queue position query result:', { queuePosition, error: queueError });
 
       setProgress({
-        application: applications,
+        application,
         tasks: tasks || [],
         queuePosition: queuePosition?.[0] || null
       });
@@ -358,13 +375,13 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
                 <div>
                   <h4 className="font-medium text-gray-900">{queuePosition.region_name}</h4>
                   <p className="text-sm text-gray-600">
-                    You're #{queuePosition.position} of {queuePosition.total_in_region} drivers
+                    You're #{queuePosition.queue_position} of {queuePosition.total_in_region} drivers
                   </p>
                 </div>
                 <div>
                   <h4 className="font-medium text-gray-900">Priority Score</h4>
                   <p className="text-sm text-gray-600">
-                    {queuePosition.priority_score} points
+                    {application.priority_score || 0} points
                   </p>
                 </div>
               </div>

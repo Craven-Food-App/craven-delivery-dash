@@ -1335,6 +1335,7 @@ export type Database = {
           points_awarded: number | null
           referee_id: string | null
           referral_code: string | null
+          referred_id: string | null
           referrer_id: string | null
           status: string | null
         }
@@ -1345,6 +1346,7 @@ export type Database = {
           points_awarded?: number | null
           referee_id?: string | null
           referral_code?: string | null
+          referred_id?: string | null
           referrer_id?: string | null
           status?: string | null
         }
@@ -1355,6 +1357,7 @@ export type Database = {
           points_awarded?: number | null
           referee_id?: string | null
           referral_code?: string | null
+          referred_id?: string | null
           referrer_id?: string | null
           status?: string | null
         }
@@ -1362,6 +1365,13 @@ export type Database = {
           {
             foreignKeyName: "driver_referrals_referee_id_fkey"
             columns: ["referee_id"]
+            isOneToOne: false
+            referencedRelation: "craver_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_referrals_referred_id_fkey"
+            columns: ["referred_id"]
             isOneToOne: false
             referencedRelation: "craver_applications"
             referencedColumns: ["id"]
@@ -4189,6 +4199,14 @@ export type Database = {
         Args: { target_date: string; target_driver_id: string }
         Returns: number
       }
+      calculate_waitlist_position: {
+        Args: { driver_uuid: string }
+        Returns: number
+      }
+      create_default_onboarding_tasks: {
+        Args: { driver_uuid: string }
+        Returns: undefined
+      }
       create_driver_profile_from_application: {
         Args: { target_user_id: string }
         Returns: boolean
@@ -4205,7 +4223,6 @@ export type Database = {
       get_driver_queue_position: {
         Args: { driver_uuid: string }
         Returns: {
-          priority_score: number
           queue_position: number
           region_name: string
           total_in_region: number
@@ -4214,8 +4231,8 @@ export type Database = {
       get_region_capacity_status: {
         Args: { region_id_param: number }
         Returns: {
-          current_active: number
-          quota: number
+          capacity: number
+          current_drivers: number
           region_name: string
           status: string
           waitlist_count: number
