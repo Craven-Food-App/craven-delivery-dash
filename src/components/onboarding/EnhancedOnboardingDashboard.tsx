@@ -73,8 +73,24 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
       
       console.log('Application query result:', { application, error: appError });
 
+      if (appError) {
+        console.error('Error loading application:', appError);
+        toast({
+          title: "Error",
+          description: `Failed to load your application: ${appError.message}`,
+          variant: "destructive",
+        });
+        setProgress(null);
+        return;
+      }
+
       if (!application) {
         console.log('No application found for user');
+        toast({
+          title: "Application Not Found",
+          description: "Please complete your Feeder application first.",
+          variant: "destructive",
+        });
         setProgress(null);
         return;
       }
@@ -118,21 +134,31 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
       if (!user) return;
 
       // Get application
-      const { data: application } = await supabase
+      const { data: application, error: appError } = await supabase
         .from('craver_applications')
         .select('id')
         .eq('user_id', user.id)
         .single();
 
+      if (appError) {
+        console.error('Error fetching application:', appError);
+        throw new Error(`Failed to fetch application: ${appError.message}`);
+      }
+
       if (!application) throw new Error('Application not found');
 
       // Get task
-      const { data: task } = await supabase
+      const { data: task, error: taskError } = await supabase
         .from('onboarding_tasks')
         .select('*')
         .eq('driver_id', application.id)
         .eq('task_key', taskKey)
         .single();
+
+      if (taskError) {
+        console.error('Error fetching task:', taskError);
+        throw new Error(`Failed to fetch task: ${taskError.message}`);
+      }
 
       if (!task) throw new Error('Task not found');
 
