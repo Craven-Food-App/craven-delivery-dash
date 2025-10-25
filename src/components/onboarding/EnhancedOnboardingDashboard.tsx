@@ -62,14 +62,15 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
 
       console.log('Loading progress for user:', user.id);
 
-      // Get the user's application
-      const { data: application, error: appError } = await supabase
+      // Get the user's application (get most recent one if multiple exist)
+      const { data: applications, error: appError } = await supabase
         .from('craver_applications')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(1);
+      
+      const application = applications?.[0];
       
       console.log('Application query result:', { application, error: appError });
 
@@ -133,12 +134,15 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get application
-      const { data: application, error: appError } = await supabase
+      // Get application (most recent if multiple exist)
+      const { data: applications, error: appError } = await supabase
         .from('craver_applications')
         .select('id')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      const application = applications?.[0];
 
       if (appError) {
         console.error('Error fetching application:', appError);
@@ -148,12 +152,14 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
       if (!application) throw new Error('Application not found');
 
       // Get task
-      const { data: task, error: taskError } = await supabase
+      const { data: tasks, error: taskError } = await supabase
         .from('onboarding_tasks')
         .select('*')
         .eq('driver_id', application.id)
         .eq('task_key', taskKey)
-        .maybeSingle();
+        .limit(1);
+
+      const task = tasks?.[0];
 
       if (taskError) {
         console.error('Error fetching task:', taskError);
