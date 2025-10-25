@@ -42,7 +42,6 @@ interface DriverProgress {
 export const EnhancedOnboardingDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState<DriverProgress | null>(null);
-  const [completingTask, setCompletingTask] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -128,75 +127,6 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
     }
   };
 
-  const completeTask = async (taskKey: string) => {
-    try {
-      setCompletingTask(taskKey);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Get application (most recent if multiple exist)
-      const { data: applications, error: appError } = await supabase
-        .from('craver_applications')
-        .select('id')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      const application = applications?.[0];
-
-      if (appError) {
-        console.error('Error fetching application:', appError);
-        throw new Error(`Failed to fetch application: ${appError.message}`);
-      }
-
-      if (!application) throw new Error('Application not found');
-
-      // Get task
-      const { data: tasks, error: taskError } = await supabase
-        .from('onboarding_tasks')
-        .select('*')
-        .eq('driver_id', application.id)
-        .eq('task_key', taskKey)
-        .limit(1);
-
-      const task = tasks?.[0];
-
-      if (taskError) {
-        console.error('Error fetching task:', taskError);
-        throw new Error(`Failed to fetch task: ${taskError.message}`);
-      }
-
-      if (!task) throw new Error('Task not found');
-
-      // Mark task as completed
-      const { error: updateError } = await supabase
-        .from('onboarding_tasks')
-        .update({ 
-          completed: true, 
-          completed_at: new Date().toISOString() 
-        })
-        .eq('id', task.id);
-
-      if (updateError) throw updateError;
-      
-      toast({
-        title: "Task Completed! 🎉",
-        description: `You earned ${task.points_reward} points!`,
-      });
-
-      // Reload progress to show updated state
-      await loadProgress();
-    } catch (error) {
-      console.error('Error completing task:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to complete task",
-        variant: "destructive",
-      });
-    } finally {
-      setCompletingTask(null);
-    }
-  };
 
   const getReferralLink = async () => {
     try {
@@ -379,18 +309,14 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
                     +{task.points_reward} pts
                   </Badge>
                   {task.completed ? (
-                    <Badge variant="default" className="bg-green-500">
-                      Completed
+                    <Badge variant="default" className="bg-green-500 flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      Complete
                     </Badge>
                   ) : (
-                    <Button
-                      size="sm"
-                      onClick={() => completeTask(task.task_key)}
-                      disabled={completingTask === task.task_key}
-                      className="bg-orange-500 hover:bg-orange-600"
-                    >
-                      {completingTask === task.task_key ? 'Completing...' : 'Complete'}
-                    </Button>
+                    <Badge variant="outline" className="text-gray-600 border-gray-300">
+                      Incomplete
+                    </Badge>
                   )}
                 </div>
               </div>
