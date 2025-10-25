@@ -187,38 +187,65 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Step 12: Create trigger to set waitlist position
+-- Step 12: Create function to generate default onboarding tasks
+CREATE OR REPLACE FUNCTION create_default_onboarding_tasks(driver_uuid UUID)
+RETURNS VOID AS $$
+BEGIN
+  -- High-Value Tasks (25-50 points)
+  INSERT INTO public.onboarding_tasks (driver_id, task_key, task_name, description, points_reward) VALUES
+  (driver_uuid, 'complete_profile', 'Complete Profile Setup', 'Fill out all required profile information and verify your details', 25),
+  (driver_uuid, 'upload_vehicle_photos', 'Upload Vehicle Photos', 'Take and upload clear photos of your vehicle from multiple angles', 30),
+  (driver_uuid, 'pass_safety_quiz', 'Pass Safety Quiz', 'Complete the driver safety quiz with a passing score of 80% or higher', 50),
+  (driver_uuid, 'setup_cashapp_payouts', 'Setup CashApp Payouts', 'Connect your CashApp account for instant payout processing', 35),
+  
+  -- Engagement Tasks (15-25 points)
+  (driver_uuid, 'download_mobile_app', 'Download Mobile App', 'Download and log in to the Craven delivery mobile app', 20),
+  (driver_uuid, 'complete_practice_route', 'Complete First Practice Route', 'Complete a practice delivery route to familiarize yourself with the app', 25),
+  (driver_uuid, 'join_facebook_group', 'Join Driver Facebook Group', 'Join our exclusive driver community on Facebook for tips and support', 15),
+  (driver_uuid, 'complete_service_training', 'Complete Customer Service Training', 'Watch customer service training videos and pass the assessment', 30),
+  
+  -- Referral Bonus (50+ points)
+  (driver_uuid, 'social_media_share', 'Social Media Share', 'Share about joining Craven on your social media accounts', 10);
+  
+  -- Note: "Refer Another Driver (50 pts each)" is handled separately by the referral system
+END;
+$$ LANGUAGE plpgsql;
+
+-- Step 13: Create trigger to set waitlist position and create tasks
 CREATE OR REPLACE FUNCTION set_waitlist_position()
 RETURNS TRIGGER AS $$
 BEGIN
   IF NEW.status = 'pending' AND (OLD.status IS NULL OR OLD.status != 'pending') THEN
     INSERT INTO public.activation_queue (driver_id, region_id, priority_score)
     VALUES (NEW.id, NEW.region_id, NEW.priority_score);
+    
+    -- Create default onboarding tasks for new pending applications
+    PERFORM create_default_onboarding_tasks(NEW.id);
   END IF;
   
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Step 13: Create trigger for task completion
+-- Step 14: Create trigger for task completion
 CREATE OR REPLACE TRIGGER update_priority_on_task_complete
   AFTER UPDATE ON public.onboarding_tasks
   FOR EACH ROW
   EXECUTE FUNCTION update_driver_priority_on_task_complete();
 
--- Step 14: Create trigger for referral points
+-- Step 15: Create trigger for referral points
 CREATE OR REPLACE TRIGGER update_priority_on_referral
   AFTER INSERT ON public.driver_referrals
   FOR EACH ROW
   EXECUTE FUNCTION handle_referral_points();
 
--- Step 15: Create trigger for waitlist position
+-- Step 16: Create trigger for waitlist position
 CREATE OR REPLACE TRIGGER set_waitlist_position_trigger
   AFTER INSERT OR UPDATE ON public.craver_applications
   FOR EACH ROW
   EXECUTE FUNCTION set_waitlist_position();
 
--- Step 16: Insert default regions
+-- Step 17: Insert default regions
 INSERT INTO public.regions (name, zip_prefix, status, active_quota) VALUES
 ('Toledo, OH', '436', 'limited', 50),
 ('Detroit, MI', '482', 'limited', 75),
@@ -226,7 +253,7 @@ INSERT INTO public.regions (name, zip_prefix, status, active_quota) VALUES
 ('Columbus, OH', '432', 'limited', 40),
 ('Cincinnati, OH', '452', 'limited', 35);
 
--- Step 17: Create RLS policies
+-- Step 18: Create RLS policies
 ALTER TABLE public.regions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.activation_queue ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.onboarding_tasks ENABLE ROW LEVEL SECURITY;
@@ -287,4 +314,35 @@ CREATE POLICY "Admins can manage referrals" ON public.driver_referrals FOR ALL U
   )
 );
 
-SELECT 'Enhanced Driver Waitlist System created successfully!' as status;
+-- Create tasks for existing drivers who don't have any tasks yet
+INSERT INTO public.onboarding_tasks (driver_id, task_key, task_name, description, points_reward)
+SELECT 
+  ca.id,
+  t.task_key,
+  t.task_name,
+  t.description,
+  t.points_reward
+FROM public.craver_applications ca
+CROSS JOIN (VALUES
+  -- High-Value Tasks (25-50 points)
+  ('complete_profile', 'Complete Profile Setup', 'Fill out all required profile information and verify your details', 25),
+  ('upload_vehicle_photos', 'Upload Vehicle Photos', 'Take and upload clear photos of your vehicle from multiple angles', 30),
+  ('pass_safety_quiz', 'Pass Safety Quiz', 'Complete the driver safety quiz with a passing score of 80% or higher', 50),
+  ('setup_cashapp_payouts', 'Setup CashApp Payouts', 'Connect your CashApp account for instant payout processing', 35),
+  
+  -- Engagement Tasks (15-25 points)
+  ('download_mobile_app', 'Download Mobile App', 'Download and log in to the Craven delivery mobile app', 20),
+  ('complete_practice_route', 'Complete First Practice Route', 'Complete a practice delivery route to familiarize yourself with the app', 25),
+  ('join_facebook_group', 'Join Driver Facebook Group', 'Join our exclusive driver community on Facebook for tips and support', 15),
+  ('complete_service_training', 'Complete Customer Service Training', 'Watch customer service training videos and pass the assessment', 30),
+  
+  -- Referral Bonus (50+ points)
+  ('social_media_share', 'Social Media Share', 'Share about joining Craven on your social media accounts', 10)
+) AS t(task_key, task_name, description, points_reward)
+WHERE ca.status IN ('pending', 'approved', 'waitlist')
+AND NOT EXISTS (
+  SELECT 1 FROM public.onboarding_tasks ot 
+  WHERE ot.driver_id = ca.id AND ot.task_key = t.task_key
+);
+
+SELECT 'Enhanced Driver Waitlist System with Onboarding Tasks created successfully!' as status;
