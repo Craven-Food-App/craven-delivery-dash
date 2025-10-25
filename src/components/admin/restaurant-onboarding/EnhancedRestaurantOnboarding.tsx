@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import type { RestaurantOnboardingData } from './types';
@@ -606,17 +607,65 @@ export function EnhancedRestaurantOnboarding() {
         </TabsContent>
       </Tabs>
 
-      {/* Enhanced Document Verification Panel - Temporarily disabled */}
-      {/* <EnhancedDocumentVerificationPanel
-        restaurant={selectedRestaurant}
-        isOpen={isVerificationPanelOpen}
-        onClose={() => {
+      {/* View/Verify Panel */}
+      <Dialog open={isVerificationPanelOpen && !!selectedRestaurant} onOpenChange={(open) => {
+        if (!open) {
           setIsVerificationPanelOpen(false);
           setSelectedRestaurant(null);
-        }}
-        onApprove={handleApprove}
-        onReject={handleReject}
-      /> */}
+        }
+      }}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{selectedRestaurant?.restaurant.name}</DialogTitle>
+            <DialogDescription>Review onboarding details and documents</DialogDescription>
+          </DialogHeader>
+          {selectedRestaurant && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="font-medium">{selectedRestaurant.restaurant.email || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Phone</p>
+                  <p className="font-medium">{selectedRestaurant.restaurant.phone || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Location</p>
+                  <p className="font-medium">{[selectedRestaurant.restaurant.city, selectedRestaurant.restaurant.state].filter(Boolean).join(', ') || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Applied</p>
+                  <p className="font-medium">{new Date(selectedRestaurant.created_at).toLocaleDateString()}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-3 rounded-md border">
+                  <p className="text-sm text-muted-foreground">Verification</p>
+                  <p className="font-semibold">{selectedRestaurant.business_info_verified ? 'Verified' : 'Pending'}</p>
+                </div>
+                <div className="p-3 rounded-md border">
+                  <p className="text-sm text-muted-foreground">Banking</p>
+                  <p className="font-semibold">{selectedRestaurant.restaurant.banking_complete ? 'Complete' : 'Incomplete'}</p>
+                </div>
+                <div className="p-3 rounded-md border">
+                  <p className="text-sm text-muted-foreground">Menu</p>
+                  <p className="font-semibold capitalize">{selectedRestaurant.menu_preparation_status?.replace('_', ' ') || '—'}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsVerificationPanelOpen(false)}>Close</Button>
+                <Button variant="outline" onClick={() => {
+                  setIsVerificationPanelOpen(false);
+                  setSelectedRestaurant(null);
+                }}>Done</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
