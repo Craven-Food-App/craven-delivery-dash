@@ -133,13 +133,16 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get or generate referral code
-      const { data: application } = await supabase
+      // Get or generate referral code (get most recent application)
+      const { data: applications } = await supabase
         .from('craver_applications')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .order('created_at', { ascending: false })
+        .limit(1);
 
+      const application = applications?.[0];
+      
       if (!application) return;
 
       const referralCode = `CRV${application.id.substring(0, 6).toUpperCase()}`;
