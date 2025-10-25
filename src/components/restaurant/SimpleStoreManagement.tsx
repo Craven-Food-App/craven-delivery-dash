@@ -88,8 +88,17 @@ export default function SimpleStoreManagement() {
             phone: restaurantData.phone || '',
             email: restaurantData.email || '',
             is_active: true,
-            created_at: restaurantData.created_at || new Date().toISOString()
-          }];
+            created_at: restaurantData.created_at || new Date().toISOString(),
+            coordinates: { x: 0, y: 0 },
+            delivery_radius_miles: 5,
+            is_primary: true,
+            manager_email: restaurantData.email || '',
+            manager_name: '',
+            manager_phone: restaurantData.phone || '',
+            operating_hours: {},
+            state_province: restaurantData.state || '',
+            updated_at: new Date().toISOString()
+          } as any];
         }
       }
 

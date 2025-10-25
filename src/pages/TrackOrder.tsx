@@ -57,13 +57,12 @@ const TrackOrder: React.FC = () => {
       const { error: logError } = await supabase
         .from('notification_logs')
         .insert({
-          user_id: driverId,
-          type: 'order_assigned',
+          notification_type: 'order_assigned',
           title: 'New Order Assigned!',
-          message: `You have been assigned to order #${orderId.slice(0, 8)}`,
-          data: { order_id: orderId },
-          sent_at: new Date().toISOString()
-        });
+          body: `You have been assigned to order #${orderId.slice(0, 8)}`,
+          user_id: driverId,
+          data: { order_id: orderId }
+        } as any);
 
       if (logError) {
         console.error('Error logging notification:', logError);

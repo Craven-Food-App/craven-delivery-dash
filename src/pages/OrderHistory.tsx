@@ -40,6 +40,7 @@ interface OrderHistoryItem {
     name: string;
     image_url?: string;
     address: string;
+    city?: string;
   };
   order_items: Array<{
     id: string;
@@ -122,7 +123,7 @@ export default function OrderHistory() {
         is_favorite: favoriteIds.has(order.restaurant_id)
       }));
 
-      setOrders(ordersWithFavorites);
+      setOrders(ordersWithFavorites as any);
     } catch (error) {
       console.error('Error fetching order history:', error);
       toast({
@@ -141,7 +142,7 @@ export default function OrderHistory() {
     // Filter by search query
     if (searchQuery) {
       filtered = filtered.filter(order =>
-        order.restaurants?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.restaurant?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.order_items.some(item => 
           item.name?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -175,7 +176,7 @@ export default function OrderHistory() {
 
       // Store cart items in session storage
       sessionStorage.setItem('reorder_cart', JSON.stringify(cartItems));
-      sessionStorage.setItem('reorder_restaurant_id', order.restaurants.id);
+      sessionStorage.setItem('reorder_restaurant_id', order.restaurant.id);
 
       toast({
         title: 'Reordering',
@@ -183,7 +184,7 @@ export default function OrderHistory() {
       });
 
       // Navigate to restaurant
-      navigate(`/restaurant/${order.restaurants.id}`);
+      navigate(`/restaurant/${order.restaurant.id}`);
     } catch (error) {
       console.error('Error reordering:', error);
       toast({
@@ -323,10 +324,10 @@ export default function OrderHistory() {
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-start gap-4 flex-1">
                           {/* Restaurant Image */}
-                          {order.restaurants?.image_url ? (
+                          {order.restaurant?.image_url ? (
                             <img 
-                              src={order.restaurants.image_url}
-                              alt={order.restaurants.name}
+                              src={order.restaurant.image_url}
+                              alt={order.restaurant.name}
                               className="w-20 h-20 rounded-lg object-cover"
                             />
                           ) : (
@@ -338,11 +339,11 @@ export default function OrderHistory() {
                           {/* Order Info */}
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-bold text-xl">{order.restaurants?.name}</h3>
+                              <h3 className="font-bold text-xl">{order.restaurant?.name}</h3>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleToggleFavorite(order.restaurants.id, order.is_favorite || false)}
+                                onClick={() => handleToggleFavorite(order.restaurant.id, order.is_favorite || false)}
                                 className="p-1"
                               >
                                 <Heart 
@@ -351,7 +352,7 @@ export default function OrderHistory() {
                               </Button>
                             </div>
                             <p className="text-sm text-gray-600 mb-2">
-                              {order.restaurants?.address}, {order.restaurants?.city}
+                              {order.restaurant?.address}, {order.restaurant?.city}
                             </p>
                             <div className="flex items-center gap-3 flex-wrap">
                               <Badge className={`${statusInfo.color} text-white`}>

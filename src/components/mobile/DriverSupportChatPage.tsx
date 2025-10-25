@@ -86,7 +86,7 @@ export function DriverSupportChatPage() {
         .eq('chat_id', chat.id)
         .order('created_at', { ascending: true });
 
-      setMessages(msgs || []);
+      setMessages((msgs || []) as any);
     } catch (error: any) {
       console.error('Error initializing chat:', error);
       setInitError(error.message || 'Failed to initialize chat');

@@ -1313,33 +1313,42 @@ export type Database = {
       driver_preferences: {
         Row: {
           auto_accept_orders: boolean | null
+          avoid_highways: boolean | null
+          avoid_tolls: boolean | null
           created_at: string
           driver_id: string
           id: string
           map_style: string | null
           notification_sound: boolean | null
+          preferred_nav_app: string | null
           show_earnings_summary: boolean | null
           updated_at: string
           voice_navigation: boolean | null
         }
         Insert: {
           auto_accept_orders?: boolean | null
+          avoid_highways?: boolean | null
+          avoid_tolls?: boolean | null
           created_at?: string
           driver_id: string
           id?: string
           map_style?: string | null
           notification_sound?: boolean | null
+          preferred_nav_app?: string | null
           show_earnings_summary?: boolean | null
           updated_at?: string
           voice_navigation?: boolean | null
         }
         Update: {
           auto_accept_orders?: boolean | null
+          avoid_highways?: boolean | null
+          avoid_tolls?: boolean | null
           created_at?: string
           driver_id?: string
           id?: string
           map_style?: string | null
           notification_sound?: boolean | null
+          preferred_nav_app?: string | null
           show_earnings_summary?: boolean | null
           updated_at?: string
           voice_navigation?: boolean | null
@@ -1825,6 +1834,27 @@ export type Database = {
           surge_multiplier?: number
           updated_at?: string
           zone_name?: string
+        }
+        Relationships: []
+      }
+      favorite_restaurants: {
+        Row: {
+          created_at: string | null
+          id: string
+          restaurant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          restaurant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          restaurant_id?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -2376,6 +2406,7 @@ export type Database = {
           delivery_address: Json | null
           delivery_fee: number | null
           delivery_fee_cents: number | null
+          delivery_method: string | null
           distance_km: number | null
           driver_id: string | null
           dropoff_address: Json | null
@@ -2395,6 +2426,7 @@ export type Database = {
           subtotal_cents: number
           tax_cents: number | null
           tip_cents: number | null
+          total_amount: number | null
           total_cents: number
           updated_at: string | null
         }
@@ -2407,6 +2439,7 @@ export type Database = {
           delivery_address?: Json | null
           delivery_fee?: number | null
           delivery_fee_cents?: number | null
+          delivery_method?: string | null
           distance_km?: number | null
           driver_id?: string | null
           dropoff_address?: Json | null
@@ -2426,6 +2459,7 @@ export type Database = {
           subtotal_cents: number
           tax_cents?: number | null
           tip_cents?: number | null
+          total_amount?: number | null
           total_cents: number
           updated_at?: string | null
         }
@@ -2438,6 +2472,7 @@ export type Database = {
           delivery_address?: Json | null
           delivery_fee?: number | null
           delivery_fee_cents?: number | null
+          delivery_method?: string | null
           distance_km?: number | null
           driver_id?: string | null
           dropoff_address?: Json | null
@@ -2457,6 +2492,7 @@ export type Database = {
           subtotal_cents?: number
           tax_cents?: number | null
           tip_cents?: number | null
+          total_amount?: number | null
           total_cents?: number
           updated_at?: string | null
         }

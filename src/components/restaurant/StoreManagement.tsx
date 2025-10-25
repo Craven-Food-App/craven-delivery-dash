@@ -127,7 +127,7 @@ export default function StoreManagement() {
 
       if (error) throw error;
 
-      setStores(storeData || []);
+      setStores((storeData || []) as any);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching stores:', error);

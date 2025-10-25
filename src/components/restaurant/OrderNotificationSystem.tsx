@@ -86,7 +86,7 @@ export function OrderNotificationSystem({ restaurantId }: { restaurantId: string
             orderNumber: order.id.substring(0, 8).toUpperCase(),
             customerName: order.customer_name || 'Customer',
             totalAmount: order.total_amount,
-            items: order.order_items || [],
+            items: (order.order_items || []) as any,
             deliveryMethod: order.delivery_method || 'delivery',
             timestamp: new Date(order.created_at)
           };

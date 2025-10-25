@@ -634,6 +634,8 @@ const CraveMore: React.FC = () => {
           setShowCart(false);
         }}
         deliveryMethod="delivery"
+        isProcessing={false}
+        orderTotal={0}
       />
     </div>
   );

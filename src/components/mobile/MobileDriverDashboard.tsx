@@ -210,8 +210,8 @@ export const MobileDriverDashboard: React.FC = () => {
               await supabase.from('driver_push_subscriptions').upsert({
                 driver_id: user.id,
                 endpoint: newSubscription.endpoint,
-                p256dh_key: JSON.parse(JSON.stringify(newSubscription.keys))?.p256dh || '',
-                auth_key: JSON.parse(JSON.stringify(newSubscription.keys))?.auth || '',
+              p256dh_key: (newSubscription as any).keys?.p256dh || '',
+                auth_key: (newSubscription as any).keys?.auth || '',
                 created_at: new Date().toISOString()
               } as any);
             }
