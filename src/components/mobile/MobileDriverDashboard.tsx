@@ -24,6 +24,7 @@ import { DriverRatingsPage } from './DriverRatingsPage';
 import { DriverPromosPage } from './DriverPromosPage';
 import { DriverSupportChatPage } from './DriverSupportChatPage';
 import { getRatingColor, getRatingTier, formatRating, getTrendIcon, getTrendColor } from '@/utils/ratingHelpers';
+import { DriverBottomNav } from './DriverBottomNav';
 // Production readiness imports
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
@@ -243,10 +244,11 @@ export const MobileDriverDashboard: React.FC = () => {
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'earnings' | 'account' | 'ratings' | 'promos' | 'preferences' | 'help'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'schedule' | 'earnings' | 'notifications' | 'account' | 'ratings' | 'promos' | 'preferences' | 'help'>('home');
   const [driverRating, setDriverRating] = useState<number>(5.0);
   const [driverDeliveries, setDriverDeliveries] = useState<number>(0);
   const [ratingTrend, setRatingTrend] = useState<number>(0);
+  const [notifications, setNotifications] = useState<any[]>([]); // Add notifications state
   
   // Get location and speed data
   const {
@@ -264,8 +266,8 @@ export const MobileDriverDashboard: React.FC = () => {
   // Handle URL parameter changes
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['schedule', 'earnings', 'account', 'ratings', 'promos', 'preferences', 'help'].includes(tab)) {
-      setActiveTab(tab as 'schedule' | 'earnings' | 'account' | 'ratings' | 'promos' | 'preferences' | 'help');
+    if (tab && ['schedule', 'earnings', 'notifications', 'account', 'ratings', 'promos', 'preferences', 'help'].includes(tab)) {
+      setActiveTab(tab as 'schedule' | 'earnings' | 'notifications' | 'account' | 'ratings' | 'promos' | 'preferences' | 'help');
     } else {
       setActiveTab('home');
     }
@@ -1465,13 +1467,14 @@ export const MobileDriverDashboard: React.FC = () => {
             {/* Menu Items */}
             <div className="p-4 space-y-2">
               {[
-                { icon: Home, label: 'Home', active: true, path: 'Home' },
-                { icon: Calendar, label: 'Schedule', active: false, path: 'Schedule' },
-                { icon: User, label: 'Account', active: false, path: 'Account' },
-                { icon: Star, label: 'Ratings', active: false, path: 'Ratings' },
-                { icon: DollarSign, label: 'Earnings', active: false, path: 'Earnings' },
-                { icon: TrendingUp, label: 'Promos', active: false, path: 'Promos' },
-                { icon: MessageCircle, label: 'Help', active: false, path: 'Help' },
+                { icon: Home, label: 'Home', active: activeTab === 'home', path: 'Home' },
+                { icon: Calendar, label: 'Schedule', active: activeTab === 'schedule', path: 'Schedule' },
+                { icon: DollarSign, label: 'Earnings', active: activeTab === 'earnings', path: 'Earnings' },
+                { icon: Bell, label: 'Notifications', active: activeTab === 'notifications', path: 'Notifications' },
+                { icon: User, label: 'Account', active: activeTab === 'account', path: 'Account' },
+                { icon: Star, label: 'Ratings', active: activeTab === 'ratings', path: 'Ratings' },
+                { icon: TrendingUp, label: 'Promos', active: activeTab === 'promos', path: 'Promos' },
+                { icon: MessageCircle, label: 'Help', active: activeTab === 'help', path: 'Help' },
                 { icon: LogOut, label: 'Logout', active: false, path: 'Logout' }
               ].map((item, index) => (
                 <button
@@ -1491,6 +1494,13 @@ export const MobileDriverDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Driver Bottom Navigation */}
+      <DriverBottomNav
+        activeTab={activeTab === 'ratings' || activeTab === 'promos' || activeTab === 'help' || activeTab === 'preferences' ? 'home' : activeTab}
+        onTabChange={(tab) => setActiveTab(tab)}
+        notificationCount={notifications.length}
+      />
     </div>
     )}
   </>;

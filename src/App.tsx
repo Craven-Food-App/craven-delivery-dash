@@ -81,6 +81,13 @@ const App = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Helper to check if current route is driver-related
+  const isDriverRoute = (path: string) => {
+    return path.startsWith('/mobile') || 
+           path.startsWith('/driver') || 
+           path.startsWith('/enhanced-onboarding');
+  };
+
   // Check if running on native mobile (iOS/Android)
   const isNative = Capacitor.isNativePlatform();
 
@@ -207,7 +214,7 @@ const App = () => {
         </div>
 
         {/* Global Mobile Bottom Navigation - Hide on driver routes */}
-        {!window.location.pathname.startsWith('/mobile') && <MobileBottomNav user={user} />}
+        {!isDriverRoute(window.location.pathname) && <MobileBottomNav user={user} />}
       </BrowserRouter>
     </TooltipProvider>
     </ThemeProvider>
