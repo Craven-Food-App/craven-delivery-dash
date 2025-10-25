@@ -43,6 +43,7 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState<DriverProgress | null>(null);
   const { toast } = useToast();
+  const [completingTask, setCompletingTask] = useState<number | null>(null);
 
   useEffect(() => {
     loadProgress();
@@ -128,6 +129,38 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
   };
 
 
+  const completeTask = async (taskId: number, taskKey: string) => {
+    try {
+      setCompletingTask(taskId);
+
+      const { data, error } = await supabase.functions.invoke('complete-onboarding-task', {
+        body: {
+          task_id: taskId,
+          driver_id: progress?.application.id,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Task Completed! 🎉",
+        description: data.message,
+      });
+
+      // Reload progress
+      await loadProgress();
+    } catch (error) {
+      console.error('Error completing task:', error);
+      toast({
+        title: "Error",
+        description: "Failed to complete task. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setCompletingTask(null);
+    }
+  };
+
   const getReferralLink = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -192,6 +225,64 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
   const totalTasks = tasks.length;
   const progressPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
   const totalPoints = application.points || 0;
+  const isOnboardingComplete = !!application.onboarding_completed_at;
+
+  const getTaskActionButton = (task: OnboardingTask) => {
+    if (task.completed) return null;
+
+    const isLoading = completingTask === task.id;
+
+    switch (task.task_key) {
+      case 'complete_profile':
+      case 'upload_vehicle_photos':
+      case 'setup_cashapp_payouts':
+        return (
+          <Button
+            size="sm"
+            onClick={() => completeTask(task.id, task.task_key)}
+            disabled={isLoading}
+            className="bg-orange-500 hover:bg-orange-600"
+          >
+            {isLoading ? 'Processing...' : 'Complete'}
+          </Button>
+        );
+      case 'pass_safety_quiz':
+        return (
+          <Button
+            size="sm"
+            onClick={() => completeTask(task.id, task.task_key)}
+            disabled={isLoading}
+            className="bg-blue-500 hover:bg-blue-600"
+          >
+            {isLoading ? 'Processing...' : 'Take Quiz'}
+          </Button>
+        );
+      case 'download_mobile_app':
+      case 'join_facebook_group':
+      case 'complete_service_training':
+        return (
+          <Button
+            size="sm"
+            onClick={() => completeTask(task.id, task.task_key)}
+            disabled={isLoading}
+            className="bg-green-500 hover:bg-green-600"
+          >
+            {isLoading ? 'Processing...' : "I've Done This"}
+          </Button>
+        );
+      default:
+        return (
+          <Button
+            size="sm"
+            onClick={() => completeTask(task.id, task.task_key)}
+            disabled={isLoading}
+            variant="outline"
+          >
+            {isLoading ? 'Processing...' : 'Complete'}
+          </Button>
+        );
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -257,6 +348,30 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
           </Card>
         </div>
 
+        {/* Congratulations Message */}
+        {isOnboardingComplete && (
+          <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="bg-green-500 rounded-full p-3">
+                  <CheckCircle className="h-8 w-8 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-green-900 mb-2">
+                    🎉 Congratulations! Onboarding Complete!
+                  </h3>
+                  <p className="text-green-800 mb-3">
+                    You've completed all onboarding tasks! You're now in position <span className="font-bold">#{queuePosition?.queue_position || 'N/A'}</span> in the waitlist for <span className="font-bold">{queuePosition?.region_name}</span>.
+                  </p>
+                  <p className="text-green-700 text-sm">
+                    ✉️ We'll email you when your region opens up and you're activated as a driver. Stay tuned!
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Progress Bar */}
         <Card>
           <CardContent className="p-6">
@@ -269,7 +384,10 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
               </div>
               <Progress value={progressPercentage} className="h-3" />
               <p className="text-sm text-gray-600">
-                Complete all tasks to maximize your priority score and move up in the queue!
+                {isOnboardingComplete 
+                  ? 'All tasks complete! You\'re in the waitlist queue.'
+                  : 'Complete all tasks to maximize your priority score and move up in the queue!'
+                }
               </p>
             </div>
           </CardContent>
@@ -317,9 +435,7 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
                       Complete
                     </Badge>
                   ) : (
-                    <Badge variant="outline" className="text-gray-600 border-gray-300">
-                      Incomplete
-                    </Badge>
+                    getTaskActionButton(task)
                   )}
                 </div>
               </div>

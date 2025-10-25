@@ -166,21 +166,23 @@ export const DriverWaitlistDashboard: React.FC = () => {
 
   const activateDrivers = async (driverIds: string[]) => {
     try {
-      const { error } = await supabase
-        .from('craver_applications')
-        .update({ 
-          status: 'approved',
-          background_check: true,
-          background_check_initiated_at: new Date().toISOString()
-        })
-        .in('id', driverIds);
+      const { data, error } = await supabase.functions.invoke('activate-drivers', {
+        body: { driver_ids: driverIds },
+      });
 
       if (error) throw error;
 
       toast({
         title: "Drivers Activated! 🎉",
-        description: `${driverIds.length} drivers have been activated and will receive notification emails.`,
+        description: `${data.activated_count} of ${data.total} drivers have been activated successfully.`,
       });
+
+      if (data.activated_count > 0) {
+        toast({
+          title: "Emails Sent ✉️",
+          description: `Activation emails sent to all ${data.activated_count} drivers.`,
+        });
+      }
 
       // Reload data
       await loadData();
@@ -208,6 +210,38 @@ export const DriverWaitlistDashboard: React.FC = () => {
         title: "Region Updated",
         description: `Region status updated to ${status}`,
       });
+
+      // If opening region, auto-activate top waitlist drivers
+      if (status === 'active') {
+        toast({
+          title: "Auto-Activating Drivers...",
+          description: "Activating top waitlist drivers for this region",
+        });
+
+        const { data: autoActivateData, error: autoActivateError } = await supabase.functions.invoke(
+          'auto-activate-region-drivers',
+          { body: { region_id: regionId } }
+        );
+
+        if (autoActivateError) {
+          console.error('Auto-activation error:', autoActivateError);
+          toast({
+            title: "Warning",
+            description: "Region opened but auto-activation failed. Please manually activate drivers.",
+            variant: "destructive",
+          });
+        } else if (autoActivateData?.activated_count > 0) {
+          toast({
+            title: "Auto-Activation Complete! 🎉",
+            description: `${autoActivateData.activated_count} drivers activated for ${autoActivateData.region_name}`,
+          });
+        } else {
+          toast({
+            title: "No Eligible Drivers",
+            description: "No drivers with completed onboarding found in waitlist",
+          });
+        }
+      }
 
       await loadData();
     } catch (error) {
