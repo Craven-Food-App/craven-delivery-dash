@@ -68,7 +68,7 @@ export function ReferralProgram({ userType = 'customer' }: { userType?: 'custome
       // Get referral stats
       const { data: referrals } = await supabase
         .from('referrals')
-        .select('*')
+        .select('id, status')
         .eq('referrer_id', user.id);
 
       const { data: bonuses } = await supabase

@@ -76,7 +76,7 @@ export function SubscriptionProgram() {
         .eq('is_active', true);
 
       if (plansError) throw plansError;
-      setPlans(plansData || []);
+      setPlans((plansData || []) as unknown as SubscriptionPlan[]);
 
       if (!user) {
         setLoading(false);

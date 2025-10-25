@@ -144,7 +144,7 @@ export function EnhancedRestaurantOnboarding() {
       // Get restaurant emails
       const { data: restaurants } = await supabase
         .from('restaurants')
-        .select('email, name')
+        .select('id, email, name')
         .in('id', restaurantIds);
 
       if (!restaurants) return;

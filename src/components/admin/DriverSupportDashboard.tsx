@@ -147,7 +147,7 @@ export const DriverSupportDashboard = () => {
         const { data: profilesData, error: profilesError } = await supabase
           .from('user_profiles')
           .select('user_id, full_name, phone')
-          .in('user_id', driverIds);
+          .in('user_id', driverIds as string[]);
 
         if (profilesError) {
           console.error('Error fetching profiles:', profilesError);

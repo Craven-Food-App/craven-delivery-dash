@@ -28,13 +28,10 @@ interface UserProfile {
 
 interface PaymentMethod {
   id: string;
+  provider: string;
+  token: string;
   last4: string;
   brand: string;
-  card_number?: string;
-  cardholder_name?: string;
-  expiry_date?: string;
-  exp_month: number;
-  exp_year: number;
   is_default: boolean;
   user_id?: string;
 }
@@ -367,13 +364,11 @@ export const AccountSection = () => {
       const { error } = await supabase
         .from('payment_methods')
         .insert({
-          user_id: user.id,
-          card_number: newPaymentMethod.card_number.replace(/\s/g, ''),
-          expiry_date: newPaymentMethod.expiry_date,
-          cardholder_name: newPaymentMethod.cardholder_name,
-          billing_address: newPaymentMethod.billing_address,
-          is_default: newPaymentMethod.is_default || paymentMethods.length === 0,
-          created_at: new Date().toISOString()
+          provider: 'card',
+          token: `card_${Date.now()}`, // In production, this would come from a payment processor
+          last4: newPaymentMethod.card_number.replace(/\s/g, '').slice(-4),
+          brand: newPaymentMethod.cardholder_name || 'Card',
+          is_default: newPaymentMethod.is_default || paymentMethods.length === 0
         });
 
       if (error) throw error;
@@ -1000,10 +995,10 @@ export const AccountSection = () => {
                         </div>
                         <div>
                           <p className="font-semibold text-gray-900">
-                            •••• •••• •••• {payment.card_number.slice(-4)}
+                            {payment.brand || payment.provider} •••• {payment.last4 || '****'}
                           </p>
                           <p className="text-sm text-gray-600">
-                            {payment.cardholder_name} • Expires {payment.expiry_date}
+                            {payment.provider}
                           </p>
                           {payment.is_default && (
                             <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white text-xs mt-1">
@@ -1185,7 +1180,7 @@ export const AccountSection = () => {
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
-                            <p className="font-semibold text-gray-900">{address.name}</p>
+                            <p className="font-semibold text-gray-900">{address.label || 'Address'}</p>
                             {address.is_default && (
                               <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white text-xs">
                                 Default
@@ -1198,16 +1193,6 @@ export const AccountSection = () => {
                           <p className="text-sm text-gray-600">
                             {address.city}, {address.state} {address.zip_code}
                           </p>
-                          {address.phone && (
-                            <p className="text-sm text-gray-600">
-                              Phone: {address.phone}
-                            </p>
-                          )}
-                          {address.delivery_instructions && (
-                            <p className="text-sm text-gray-500 mt-2 italic">
-                              Instructions: {address.delivery_instructions}
-                            </p>
-                          )}
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
