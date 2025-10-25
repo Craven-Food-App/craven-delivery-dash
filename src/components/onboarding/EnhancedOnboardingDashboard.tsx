@@ -69,7 +69,7 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
       
       console.log('Application query result:', { application, error: appError });
 
@@ -138,7 +138,7 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
         .from('craver_applications')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (appError) {
         console.error('Error fetching application:', appError);
@@ -153,7 +153,7 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
         .select('*')
         .eq('driver_id', application.id)
         .eq('task_key', taskKey)
-        .single();
+        .maybeSingle();
 
       if (taskError) {
         console.error('Error fetching task:', taskError);
