@@ -3866,6 +3866,14 @@ export type Database = {
           owner_id_url: string | null
           phone: string | null
           pos_system: string | null
+          promotion_description: string | null
+          promotion_discount_amount_cents: number | null
+          promotion_discount_percentage: number | null
+          promotion_image_url: string | null
+          promotion_maximum_discount_cents: number | null
+          promotion_minimum_order_cents: number | null
+          promotion_title: string | null
+          promotion_valid_until: string | null
           rating: number | null
           readiness_score: number | null
           restaurant_type: string | null
@@ -3928,6 +3936,14 @@ export type Database = {
           owner_id_url?: string | null
           phone?: string | null
           pos_system?: string | null
+          promotion_description?: string | null
+          promotion_discount_amount_cents?: number | null
+          promotion_discount_percentage?: number | null
+          promotion_image_url?: string | null
+          promotion_maximum_discount_cents?: number | null
+          promotion_minimum_order_cents?: number | null
+          promotion_title?: string | null
+          promotion_valid_until?: string | null
           rating?: number | null
           readiness_score?: number | null
           restaurant_type?: string | null
@@ -3990,6 +4006,14 @@ export type Database = {
           owner_id_url?: string | null
           phone?: string | null
           pos_system?: string | null
+          promotion_description?: string | null
+          promotion_discount_amount_cents?: number | null
+          promotion_discount_percentage?: number | null
+          promotion_image_url?: string | null
+          promotion_maximum_discount_cents?: number | null
+          promotion_minimum_order_cents?: number | null
+          promotion_title?: string | null
+          promotion_valid_until?: string | null
           rating?: number | null
           readiness_score?: number | null
           restaurant_type?: string | null
