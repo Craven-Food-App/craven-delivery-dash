@@ -51,6 +51,10 @@ import { DownloadApp } from "./pages/DownloadApp";
 import { InstallAppBanner } from "./components/InstallAppBanner";
 import { EnhancedDriverOnboarding } from "./pages/EnhancedDriverOnboarding";
 import { AdminDriverWaitlist } from "./pages/AdminDriverWaitlist";
+import { ProfileCompletionForm } from "./components/onboarding/ProfileCompletionForm";
+import { VehiclePhotosUpload } from "./components/onboarding/VehiclePhotosUpload";
+import { PayoutSetup } from "./components/onboarding/PayoutSetup";
+import { SafetyQuiz } from "./components/onboarding/SafetyQuiz";
 
 // Lazy load guide pages
 const AdminGuide = lazy(() => import("./pages/AdminGuide"));
@@ -145,6 +149,10 @@ const App = () => {
           <Route path="/driver/auth" element={<DriverAuth />} />
           <Route path="/feeder" element={<FeederHub />} />
           <Route path="/enhanced-onboarding" element={<EnhancedDriverOnboarding />} />
+          <Route path="/enhanced-onboarding/profile" element={<ProfileCompletionForm />} />
+          <Route path="/enhanced-onboarding/vehicle-photos" element={<VehiclePhotosUpload />} />
+          <Route path="/enhanced-onboarding/payout" element={<PayoutSetup />} />
+          <Route path="/enhanced-onboarding/safety-quiz" element={<SafetyQuiz />} />
           <Route path="/admin/waitlist" element={<AdminDriverWaitlist />} />
           <Route path="/customer-dashboard" element={<CustomerDashboard />} />
           <Route path="/mobile" element={<MobileDriverDashboard />} />

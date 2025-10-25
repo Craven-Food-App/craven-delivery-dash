@@ -52,6 +52,31 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
     loadProgress();
   }, []);
 
+  useEffect(() => {
+    // Auto-complete tasks that were done during application
+    if (progress?.application && progress.tasks.length > 0) {
+      autoCompleteApplicationTasks();
+    }
+  }, [progress?.application]);
+
+  const autoCompleteApplicationTasks = async () => {
+    if (!progress) return;
+    
+    const { application, tasks } = progress;
+    
+    // Check for documents upload task
+    const documentsTask = tasks.find(t => t.task_key === 'upload_documents' && !t.completed);
+    if (documentsTask && application.drivers_license_front && application.drivers_license_back) {
+      await completeTask(documentsTask.id, documentsTask.task_key);
+    }
+
+    // Check for profile photo task
+    const photoTask = tasks.find(t => t.task_key === 'upload_profile_photo' && !t.completed);
+    if (photoTask && application.profile_photo) {
+      await completeTask(photoTask.id, photoTask.task_key);
+    }
+  };
+
   const loadProgress = async () => {
     try {
       // Get the current logged-in user
@@ -280,27 +305,61 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
 
     switch (task.task_key) {
       case 'complete_profile':
+        return (
+          <Button
+            size="sm"
+            onClick={() => navigate('/enhanced-onboarding/profile')}
+            className="bg-orange-500 hover:bg-orange-600"
+          >
+            Start Task
+          </Button>
+        );
       case 'upload_vehicle_photos':
+        return (
+          <Button
+            size="sm"
+            onClick={() => navigate('/enhanced-onboarding/vehicle-photos')}
+            className="bg-orange-500 hover:bg-orange-600"
+          >
+            Upload Photos
+          </Button>
+        );
       case 'setup_cashapp_payouts':
         return (
           <Button
             size="sm"
-            onClick={() => completeTask(task.id, task.task_key)}
-            disabled={isLoading}
+            onClick={() => navigate('/enhanced-onboarding/payout')}
             className="bg-orange-500 hover:bg-orange-600"
           >
-            {isLoading ? 'Processing...' : 'Complete'}
+            Set Up Payout
           </Button>
         );
       case 'pass_safety_quiz':
         return (
           <Button
             size="sm"
-            onClick={() => completeTask(task.id, task.task_key)}
-            disabled={isLoading}
+            onClick={() => navigate('/enhanced-onboarding/safety-quiz')}
             className="bg-blue-500 hover:bg-blue-600"
           >
-            {isLoading ? 'Processing...' : 'Take Quiz'}
+            Take Quiz
+          </Button>
+        );
+      case 'upload_documents':
+      case 'upload_profile_photo':
+        // Auto-completed if documents/photos were uploaded during application
+        return (
+          <Badge variant="outline" className="text-green-600 border-green-200">
+            Auto-Checking...
+          </Badge>
+        );
+      case 'refer_friend':
+        return (
+          <Button
+            size="sm"
+            onClick={getReferralLink}
+            className="bg-purple-500 hover:bg-purple-600"
+          >
+            Get Referral Link
           </Button>
         );
       case 'download_mobile_app':
@@ -324,7 +383,7 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
             disabled={isLoading}
             variant="outline"
           >
-            {isLoading ? 'Processing...' : 'Complete'}
+            {isLoading ? 'Processing...' : 'Start Task'}
           </Button>
         );
     }

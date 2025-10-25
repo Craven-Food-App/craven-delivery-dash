@@ -566,6 +566,10 @@ export type Database = {
           vehicle_inspection: boolean | null
           vehicle_make: string
           vehicle_model: string
+          vehicle_photo_back: string | null
+          vehicle_photo_front: string | null
+          vehicle_photo_left: string | null
+          vehicle_photo_right: string | null
           vehicle_registration: string | null
           vehicle_type: string
           vehicle_year: number
@@ -633,6 +637,10 @@ export type Database = {
           vehicle_inspection?: boolean | null
           vehicle_make: string
           vehicle_model: string
+          vehicle_photo_back?: string | null
+          vehicle_photo_front?: string | null
+          vehicle_photo_left?: string | null
+          vehicle_photo_right?: string | null
           vehicle_registration?: string | null
           vehicle_type: string
           vehicle_year: number
@@ -700,6 +708,10 @@ export type Database = {
           vehicle_inspection?: boolean | null
           vehicle_make?: string
           vehicle_model?: string
+          vehicle_photo_back?: string | null
+          vehicle_photo_front?: string | null
+          vehicle_photo_left?: string | null
+          vehicle_photo_right?: string | null
           vehicle_registration?: string | null
           vehicle_type?: string
           vehicle_year?: number
