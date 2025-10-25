@@ -62,7 +62,7 @@ export function TeamAssignment({
 
       // Get all admin users (in real app, filter by role)
       const { data: profiles, error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .select('id, email, full_name, role')
         .eq('role', 'admin')
         .order('email');

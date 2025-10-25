@@ -83,7 +83,7 @@ export const CustomerManagement: React.FC = () => {
   const fetchCustomers = async () => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -134,7 +134,7 @@ export const CustomerManagement: React.FC = () => {
   const handleUpdateStatus = async (customerId: string, newStatus: string) => {
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .update({ account_status: newStatus })
         .eq('id', customerId);
 
@@ -180,7 +180,7 @@ export const CustomerManagement: React.FC = () => {
       if (!user) throw new Error('Not authenticated');
 
       const { error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .update({
           account_status: 'suspended',
           suspension_reason: newSuspensionReason.trim(),
@@ -226,7 +226,7 @@ export const CustomerManagement: React.FC = () => {
       if (!user) throw new Error('Not authenticated');
 
       const { error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .update({
           account_status: 'active',
           suspension_reason: null,

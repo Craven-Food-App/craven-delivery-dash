@@ -162,7 +162,7 @@ export function BulkActionBar({
     const fetchAdmins = async () => {
       try {
         const { data } = await supabase
-          .from('profiles')
+          .from('user_profiles')
           .select('id, email, full_name')
           .eq('role', 'admin');
         
