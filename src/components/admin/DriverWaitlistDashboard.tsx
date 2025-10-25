@@ -87,7 +87,24 @@ export const DriverWaitlistDashboard: React.FC = () => {
         .order('priority_score', { ascending: false });
 
       if (driversError) throw driversError;
-      setDrivers(driversData || []);
+      
+      // Calculate waitlist positions by region for waitlist drivers
+      const driversWithPositions = (driversData || []).map(driver => {
+        if (driver.status === 'waitlist') {
+          // Get all waitlist drivers in the same region, sorted by priority
+          const regionWaitlist = driversData
+            ?.filter(d => d.region_id === driver.region_id && d.status === 'waitlist')
+            .sort((a, b) => (b.priority_score || 0) - (a.priority_score || 0)) || [];
+          
+          // Find position (1-indexed)
+          const position = regionWaitlist.findIndex(d => d.id === driver.id) + 1;
+          
+          return { ...driver, waitlist_position: position };
+        }
+        return { ...driver, waitlist_position: null };
+      });
+      
+      setDrivers(driversWithPositions);
 
       // Load regions
       const { data: regionsData, error: regionsError } = await supabase
