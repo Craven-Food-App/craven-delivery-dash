@@ -1115,7 +1115,7 @@ export const MobileDriverDashboard: React.FC = () => {
             </div>
 
             {/* Content Container */}
-            <div className="flex flex-col justify-end h-full px-4 space-y-4 pointer-events-auto">
+            <div className="flex flex-col justify-end h-full px-4 space-y-4 pointer-events-auto" style={{ paddingBottom: '100px' }}>
               {/* Popular Times Chart with CRAVE NOW Button */}
               <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/10 overflow-hidden">
                 {/* Main Action Button - Centered at top */}
@@ -1187,7 +1187,7 @@ export const MobileDriverDashboard: React.FC = () => {
 
             {/* Get Offers Until Section - Top */}
             {/* Bottom Content - Still Searching + Popular Times */}
-            <div className="absolute bottom-[67px] left-4 right-4 z-20 space-y-3 pointer-events-auto">
+            <div className="absolute bottom-[100px] left-4 right-4 z-20 space-y-3 pointer-events-auto">
               {/* Still Searching Section with Get offers until */}
               <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/20 overflow-hidden">
                 <div className="flex items-center justify-between">
