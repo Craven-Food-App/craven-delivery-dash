@@ -175,7 +175,7 @@ const DoorDashStyleScheduleDashboard: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
         <Settings className="h-6 w-6 text-gray-600" />
-        <h1 className="text-xl font-bold text-gray-900">Dash Paused</h1>
+        <h1 className="text-xl font-bold text-gray-900">Crave Paused</h1>
         <div className="flex items-center space-x-3">
           <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
             <span className="text-xs">+</span>
@@ -229,7 +229,7 @@ const DoorDashStyleScheduleDashboard: React.FC = () => {
             You won't get offers while you're paused
           </p>
           <p className="text-sm text-gray-600">
-            If you pause for more than 35 minutes, your dash will end.
+            If you pause for more than 35 minutes, your Crave will end.
           </p>
         </div>
 
@@ -239,13 +239,13 @@ const DoorDashStyleScheduleDashboard: React.FC = () => {
             onClick={handleResume}
             className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-4 px-6 rounded-lg transition-colors"
           >
-            Resume dash
+            Resume Crave
           </button>
           <button 
             onClick={() => setIsPaused(false)}
             className="w-full text-gray-900 font-semibold py-2"
           >
-            End dash
+            End Crave
           </button>
         </div>
       </div>
