@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { OrderAssignmentModal } from './OrderAssignmentModal';
 import ActiveDeliveryFlow from './ActiveDeliveryFlow';
 import TestCompletionModal from './TestCompletionModal';
@@ -736,6 +737,8 @@ export const MobileDriverDashboard: React.FC = () => {
         const error = new Error('No authenticated user');
         trackError('driver_go_online_failed', { reason: 'no_user' });
         reportCustomError(error, 'handleGoOnline');
+        toast.error('Authentication error. Please log in again.');
+        setIsGoingOnline(false);
         return;
       }
       
@@ -750,6 +753,8 @@ export const MobileDriverDashboard: React.FC = () => {
       });
       if (ensureError) {
         console.error('Failed to ensure driver can go online:', ensureError);
+        toast.error('Unable to go online. Please try again.');
+        setIsGoingOnline(false);
         return;
       }
       console.log('Driver can go online - proceeding');
@@ -765,6 +770,10 @@ export const MobileDriverDashboard: React.FC = () => {
       if (endTime) {
         sessionData.end_time = endTime.toISOString();
       }
+      
+      // CRITICAL: Set driver state FIRST before any async operations
+      setDriverState('online_searching');
+      setOnlineTime(0);
       
       // Save session data to state for persistence
       setSessionData(sessionData);
@@ -823,9 +832,6 @@ export const MobileDriverDashboard: React.FC = () => {
       window.dispatchEvent(new CustomEvent('driverStatusChange', { 
         detail: { status: 'online' } 
       }));
-      
-      setDriverState('online_searching');
-      setOnlineTime(0);
 
       // Only show time selector if no end time is already set
       if (!endTime) {
@@ -838,9 +844,10 @@ export const MobileDriverDashboard: React.FC = () => {
       setHeartbeatInterval(interval);
       
       console.log('Successfully went online - driver state changed to online_searching');
+      toast.success('You are now online and searching for orders!');
     } catch (error) {
       console.error('Error going online:', error);
-      // Reset state on error
+      toast.error('Failed to go online. Please try again.');
       setDriverState('offline');
     } finally {
       setIsGoingOnline(false);
