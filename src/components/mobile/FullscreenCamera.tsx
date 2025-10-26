@@ -16,6 +16,7 @@ interface FullscreenCameraProps {
   title: string;
   description: string;
   type: 'pickup' | 'delivery';
+  onVisibilityChange?: (isVisible: boolean) => void;
 }
 
 const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
@@ -24,7 +25,8 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
   onCapture,
   title,
   description,
-  type
+  type,
+  onVisibilityChange
 }) => {
   const [flashOn, setFlashOn] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -35,10 +37,12 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
   useEffect(() => {
     if (isOpen) {
       startCamera();
+      onVisibilityChange?.(true);
     } else {
       stopCamera();
+      onVisibilityChange?.(false);
     }
-  }, [isOpen]);
+  }, [isOpen, onVisibilityChange]);
 
   const startCamera = async () => {
     try {

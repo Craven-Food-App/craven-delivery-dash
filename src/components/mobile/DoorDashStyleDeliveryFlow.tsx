@@ -82,6 +82,7 @@ interface DoorDashStyleDeliveryFlowProps {
   orderDetails: any;
   onCompleteDelivery: () => void;
   onProgressChange?: (progress: DeliveryProgress) => void;
+  onCameraStateChange?: (isOpen: boolean) => void;
 }
 
 // Main Delivery Stages - DoorDash Style
@@ -140,7 +141,8 @@ const DELIVERY_STAGES = [
 const DoorDashStyleDeliveryFlow: React.FC<DoorDashStyleDeliveryFlowProps> = ({ 
   orderDetails, 
   onCompleteDelivery, 
-  onProgressChange 
+  onProgressChange,
+  onCameraStateChange
 }) => {
   const [currentStage, setCurrentStage] = useState<DeliveryStage>('navigate_to_restaurant');
   const [pickupPhoto, setPickupPhoto] = useState<string | null>(null);
@@ -149,6 +151,7 @@ const DoorDashStyleDeliveryFlow: React.FC<DoorDashStyleDeliveryFlowProps> = ({
   const [photoType, setPhotoType] = useState<'pickup' | 'delivery'>('pickup');
   const [selectedNavigationApp, setSelectedNavigationApp] = useState<'apple' | 'google' | 'waze'>('apple');
   const [showNavigationSettings, setShowNavigationSettings] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   // Mock data - in real app, this would come from props
   const customer: Customer = {
@@ -205,6 +208,7 @@ const DoorDashStyleDeliveryFlow: React.FC<DoorDashStyleDeliveryFlowProps> = ({
   const handlePhotoCapture = (type: 'pickup' | 'delivery') => {
     setPhotoType(type);
     setShowCamera(true);
+    onCameraStateChange?.(true);
   };
 
   const handlePhotoConfirm = (photoUrl: string) => {
@@ -216,6 +220,7 @@ const DoorDashStyleDeliveryFlow: React.FC<DoorDashStyleDeliveryFlowProps> = ({
       handleStageComplete('capture_proof');
     }
     setShowCamera(false);
+    onCameraStateChange?.(false);
   };
 
   const handleNavigation = () => {
@@ -634,7 +639,10 @@ const DoorDashStyleDeliveryFlow: React.FC<DoorDashStyleDeliveryFlowProps> = ({
       {/* Fullscreen Camera */}
       <FullscreenCamera
         isOpen={showCamera}
-        onClose={() => setShowCamera(false)}
+        onClose={() => {
+          setShowCamera(false);
+          onCameraStateChange?.(false);
+        }}
         onCapture={handlePhotoConfirm}
         title={photoType === 'pickup' ? 'Pickup Photo' : 'Delivery Photo'}
         description={photoType === 'pickup' 
@@ -642,6 +650,10 @@ const DoorDashStyleDeliveryFlow: React.FC<DoorDashStyleDeliveryFlowProps> = ({
           : 'Take a photo to confirm delivery'
         }
         type={photoType}
+        onVisibilityChange={(isVisible) => {
+          setIsCameraOpen(isVisible);
+          onCameraStateChange?.(isVisible);
+        }}
       />
 
       {/* Navigation Settings Modal */}

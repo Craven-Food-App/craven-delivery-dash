@@ -25,6 +25,7 @@ interface ActiveDeliveryProps {
   orderDetails: any;
   onCompleteDelivery: () => void;
   onProgressChange?: (progress: DeliveryProgress) => void;
+  onCameraStateChange?: (isOpen: boolean) => void;
 }
 
 const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = (props) => {

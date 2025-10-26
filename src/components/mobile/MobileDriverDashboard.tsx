@@ -110,6 +110,7 @@ export const MobileDriverDashboard: React.FC = () => {
   // Pause timer state
   const [pauseTimeRemaining, setPauseTimeRemaining] = useState(1800); // 30 minutes in seconds
   const [pauseStartTime, setPauseStartTime] = useState<Date | null>(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   
   const [userLocation, setUserLocation] = useState<{
     lat: number;
@@ -1463,7 +1464,8 @@ export const MobileDriverDashboard: React.FC = () => {
 
         {/* ON DELIVERY STATE */}
         {activeTab === 'home' && driverState === 'on_delivery' && activeDelivery && <div className="pointer-events-auto">
-          <ActiveDeliveryFlow orderDetails={{
+          <ActiveDeliveryFlow 
+            orderDetails={{
             id: activeDelivery.id || activeDelivery.order_id || 'missing-order-id',
             order_number: activeDelivery.order_number || 'MISSING-ORDER',
             restaurant_name: activeDelivery.restaurant_name || 'Restaurant',
@@ -1507,7 +1509,9 @@ export const MobileDriverDashboard: React.FC = () => {
             }
             setActiveDelivery(null);
             setDriverState('online_searching');
-          }} />
+          }} 
+          onCameraStateChange={setIsCameraOpen}
+        />
         </div>}
 
       </div>
@@ -1653,11 +1657,13 @@ export const MobileDriverDashboard: React.FC = () => {
       )}
 
       {/* Driver Bottom Navigation */}
-      <DriverBottomNav
-        activeTab={activeTab === 'ratings' || activeTab === 'promos' || activeTab === 'help' || activeTab === 'preferences' ? 'home' : activeTab}
-        onTabChange={(tab) => setActiveTab(tab)}
-        notificationCount={notifications.length}
-      />
+      {!isCameraOpen && (
+        <DriverBottomNav
+          activeTab={activeTab === 'ratings' || activeTab === 'promos' || activeTab === 'help' || activeTab === 'preferences' ? 'home' : activeTab}
+          onTabChange={(tab) => setActiveTab(tab)}
+          notificationCount={notifications.length}
+        />
+      )}
     </div>
     )}
   </>;
