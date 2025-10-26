@@ -1053,26 +1053,30 @@ export const MobileDriverDashboard: React.FC = () => {
         <MobileMapbox />
       </div>
 
-      {/* Hamburger Menu Button - Top Left */}
-      <div className="fixed left-4 z-50 pointer-events-auto" style={{ top: 'calc(env(safe-area-inset-top, 150px) + 8px)' }}>
-        <button
-          onClick={() => setIsMenuOpen(true)}
-          className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center hover:bg-white transition-all"
-        >
-          <Menu className="h-5 w-5 text-gray-700" />
-        </button>
-      </div>
+      {/* Hamburger Menu Button - Top Left - Only on Home Tab */}
+      {activeTab === 'home' && (
+        <div className="fixed left-4 z-50 pointer-events-auto" style={{ top: 'calc(env(safe-area-inset-top, 150px) + 8px)' }}>
+          <button
+            onClick={() => setIsMenuOpen(true)}
+            className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center hover:bg-white transition-all"
+          >
+            <Menu className="h-5 w-5 text-gray-700" />
+          </button>
+        </div>
+      )}
 
-      {/* Speed Limit & Current Speed - Under Hamburger Menu */}
-      <div className="fixed left-4 z-40 pointer-events-auto" style={{ top: 'calc(env(safe-area-inset-top, 150px) + 60px)' }}>
-        <SpeedLimitSign 
-          currentSpeed={location?.speed ? location.speed * 2.237 : 0} // Convert m/s to mph
-          location={location ? {
-            latitude: location.latitude,
-            longitude: location.longitude
-          } : undefined} 
-        />
-      </div>
+      {/* Speed Limit & Current Speed - Under Hamburger Menu - Only on Home Tab */}
+      {activeTab === 'home' && (
+        <div className="fixed left-4 z-40 pointer-events-auto" style={{ top: 'calc(env(safe-area-inset-top, 150px) + 60px)' }}>
+          <SpeedLimitSign 
+            currentSpeed={location?.speed ? location.speed * 2.237 : 0} // Convert m/s to mph
+            location={location ? {
+              latitude: location.latitude,
+              longitude: location.longitude
+            } : undefined} 
+          />
+        </div>
+      )}
 
       {/* Main Content Overlay - Allow for bottom nav space - Non-interactive overlay */}
       <div className={`fixed inset-0 z-10 flex flex-col py-0 safe-area-top ${activeTab === 'home' ? 'pointer-events-none' : 'pointer-events-auto'}`} style={{ paddingBottom: '100px' }}>
