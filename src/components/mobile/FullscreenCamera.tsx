@@ -1,0 +1,239 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { 
+  Camera, 
+  X, 
+  RotateCcw, 
+  Flashlight, 
+  FlashlightOff,
+  Check,
+  ArrowLeft
+} from 'lucide-react';
+
+interface FullscreenCameraProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCapture: (imageData: string) => void;
+  title: string;
+  description: string;
+  type: 'pickup' | 'delivery';
+}
+
+const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
+  isOpen,
+  onClose,
+  onCapture,
+  title,
+  description,
+  type
+}) => {
+  const [flashOn, setFlashOn] = useState(false);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+  }, [isOpen]);
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: 'environment', // Use back camera
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        }
+      });
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      // Fallback to placeholder for demo
+    }
+  };
+
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+    }
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    setIsCapturing(true);
+    
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+    
+    if (!context) return;
+
+    // Set canvas dimensions to match video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Draw video frame to canvas
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Convert to base64
+    const imageData = canvas.toDataURL('image/jpeg', 0.8);
+    setCapturedImage(imageData);
+    setIsCapturing(false);
+  };
+
+  const confirmPhoto = () => {
+    if (capturedImage) {
+      onCapture(capturedImage);
+      setCapturedImage(null);
+      onClose();
+    }
+  };
+
+  const retakePhoto = () => {
+    setCapturedImage(null);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black z-50 flex flex-col">
+      {/* Header */}
+      <div className="bg-black text-white p-4 flex items-center justify-between">
+        <button 
+          onClick={onClose}
+          className="p-2 hover:bg-gray-800 rounded-full transition-colors"
+        >
+          <X className="w-6 h-6" />
+        </button>
+        <div className="text-center">
+          <h3 className="text-lg font-semibold">{title}</h3>
+          <p className="text-sm text-gray-300">{description}</p>
+        </div>
+        <div className="w-10" />
+      </div>
+
+      {/* Camera View */}
+      <div className="flex-1 relative bg-gray-900">
+        {capturedImage ? (
+          <div className="w-full h-full flex items-center justify-center">
+            <img 
+              src={capturedImage} 
+              alt="Captured photo"
+              className="max-w-full max-h-full object-contain"
+            />
+          </div>
+        ) : (
+          <div className="w-full h-full relative">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full object-cover"
+            />
+            
+            {/* Camera Overlay */}
+            <div className="absolute inset-0 pointer-events-none">
+              {/* Focus Frame */}
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                <div className="w-64 h-64 border-2 border-white rounded-lg opacity-50">
+                  <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-white rounded-tl-lg"></div>
+                  <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-white rounded-tr-lg"></div>
+                  <div className="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 border-white rounded-bl-lg"></div>
+                  <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-white rounded-br-lg"></div>
+                </div>
+              </div>
+              
+              {/* Instructions */}
+              <div className="absolute top-20 left-4 right-4 text-center">
+                <div className="bg-black bg-opacity-50 rounded-lg p-3">
+                  <p className="text-white text-sm font-medium">
+                    {type === 'pickup' 
+                      ? 'Position the order in the frame' 
+                      : 'Position the delivery location in the frame'
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Controls */}
+      <div className="bg-black p-6">
+        {capturedImage ? (
+          // Photo Review Controls
+          <div className="flex items-center justify-center space-x-8">
+            <button 
+              onClick={retakePhoto}
+              className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 transition-colors"
+            >
+              <RotateCcw className="w-6 h-6 text-white" />
+            </button>
+            
+            <button 
+              onClick={confirmPhoto}
+              className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center hover:bg-green-700 transition-colors"
+            >
+              <Check className="w-8 h-8 text-white" />
+            </button>
+            
+            <button 
+              onClick={onClose}
+              className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 transition-colors"
+            >
+              <X className="w-6 h-6 text-white" />
+            </button>
+          </div>
+        ) : (
+          // Camera Controls
+          <div className="flex items-center justify-center space-x-8">
+            <button 
+              onClick={onClose}
+              className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center hover:bg-gray-500 transition-colors"
+            >
+              <ArrowLeft className="w-6 h-6 text-white" />
+            </button>
+            
+            <button 
+              onClick={capturePhoto}
+              disabled={isCapturing}
+              className="w-16 h-16 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors disabled:opacity-50"
+            >
+              {isCapturing ? (
+                <div className="w-8 h-8 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Camera className="w-8 h-8 text-gray-900" />
+              )}
+            </button>
+            
+            <button 
+              onClick={() => setFlashOn(!flashOn)}
+              className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                flashOn ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-gray-600 hover:bg-gray-500'
+              }`}
+            >
+              {flashOn ? (
+                <Flashlight className="w-6 h-6 text-white" />
+              ) : (
+                <FlashlightOff className="w-6 h-6 text-white" />
+              )}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default FullscreenCamera;
