@@ -1,5 +1,4 @@
 import React from 'react';
-import { Home, Calendar, DollarSign, Bell, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -12,11 +11,11 @@ interface DriverBottomNavProps {
 }
 
 const tabs = [
-  { id: 'home' as const, label: 'Home', icon: Home },
-  { id: 'schedule' as const, label: 'Schedule', icon: Calendar },
-  { id: 'earnings' as const, label: 'Earnings', icon: DollarSign },
-  { id: 'notifications' as const, label: 'Alerts', icon: Bell },
-  { id: 'account' as const, label: 'Account', icon: User },
+  { id: 'home' as const, label: 'Home', icon: '/src/assets/app-home.png' },
+  { id: 'schedule' as const, label: 'Schedule', icon: '/src/assets/app-schedule.png' },
+  { id: 'earnings' as const, label: 'Earnings', icon: '/src/assets/app-earnings.png' },
+  { id: 'notifications' as const, label: 'Alerts', icon: '/src/assets/app-alerts.png' },
+  { id: 'account' as const, label: 'Account', icon: '/src/assets/app-account.png' },
 ];
 
 export const DriverBottomNav: React.FC<DriverBottomNavProps> = ({
@@ -34,7 +33,6 @@ export const DriverBottomNav: React.FC<DriverBottomNavProps> = ({
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 h-20 shadow-lg safe-area-padding-bottom">
         <div className="flex h-full">
           {tabs.map((tab) => {
-            const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             const hasNotification = tab.id === 'notifications' && notificationCount > 0;
             
@@ -50,7 +48,14 @@ export const DriverBottomNav: React.FC<DriverBottomNavProps> = ({
                 )}
               >
                 <div className="relative">
-                  <Icon className={cn("h-6 w-6 mb-1.5", isActive && "text-orange-600")} />
+                  <img 
+                    src={tab.icon} 
+                    alt={tab.label}
+                    className={cn(
+                      "h-6 w-6 mb-1.5 transition-all duration-200",
+                      isActive ? "opacity-100" : "opacity-60"
+                    )}
+                  />
                   {hasNotification && (
                     <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs font-bold">
