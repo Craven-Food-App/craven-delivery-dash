@@ -154,39 +154,105 @@ const DoorDashStyleScheduleDashboard: React.FC = () => {
     }
   };
 
-  // Pause Interface Component - Exact replica of the image
+  // DoorDash Pause Interface - Exact replica of the image
   const PauseInterface = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl p-8 mx-4 max-w-sm w-full shadow-2xl">
-        <div className="text-center">
-          {/* Pause Icon - Exact match to image */}
-          <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center">
-              <div className="w-2 h-4 bg-white rounded-sm"></div>
-              <div className="w-2 h-4 bg-white rounded-sm ml-1"></div>
+    <div className="fixed inset-0 bg-white z-50">
+      {/* Status Bar */}
+      <div className="flex items-center justify-between px-4 py-2 text-sm">
+        <div className="flex items-center space-x-1">
+          <span>10:15</span>
+          <div className="w-1 h-1 bg-black rounded-full"></div>
+        </div>
+        <div className="flex items-center space-x-1">
+          <div className="w-4 h-2 bg-black rounded-sm"></div>
+          <span>5G</span>
+          <div className="w-6 h-3 border border-black rounded-sm flex items-center justify-end pr-1">
+            <div className="w-4 h-2 bg-black rounded-sm"></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+        <Settings className="h-6 w-6 text-gray-600" />
+        <h1 className="text-xl font-bold text-gray-900">Dash Paused</h1>
+        <div className="flex items-center space-x-3">
+          <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
+            <span className="text-xs">+</span>
+          </div>
+          <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
+            <span className="text-xs">?</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+        {/* Circular Timer */}
+        <div className="relative w-48 h-48 mb-8">
+          {/* Progress Ring */}
+          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+            <circle
+              cx="50"
+              cy="50"
+              r="45"
+              stroke="#e5e7eb"
+              strokeWidth="8"
+              fill="none"
+            />
+            <circle
+              cx="50"
+              cy="50"
+              r="45"
+              stroke="#ef4444"
+              strokeWidth="8"
+              fill="none"
+              strokeDasharray={`${2 * Math.PI * 45}`}
+              strokeDashoffset={`${2 * Math.PI * 45 * (1 - pauseTimeRemaining / 1800)}`}
+              className="transition-all duration-1000"
+            />
+          </svg>
+          
+          {/* Time Display */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-4xl font-bold text-gray-900">
+                {Math.floor(pauseTimeRemaining / 60)}:{(pauseTimeRemaining % 60).toString().padStart(2, '0')}
+              </div>
             </div>
           </div>
-          
-          {/* Status Text - Exact match */}
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">You're on a break</h2>
-          <p className="text-gray-600 mb-6">Take your time, we'll be here when you're ready</p>
-          
-          {/* Time Remaining - Exact styling */}
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <div className="text-3xl font-bold text-gray-900">
-              {Math.floor(pauseTimeRemaining / 60)}:{(pauseTimeRemaining % 60).toString().padStart(2, '0')}
-            </div>
-            <div className="text-sm text-gray-500">Time remaining</div>
-          </div>
-          
-          {/* Resume Button - Exact styling */}
+        </div>
+
+        {/* Information Text */}
+        <div className="text-center mb-8 max-w-sm">
+          <p className="text-lg font-semibold text-gray-900 mb-2">
+            You won't get offers while you're paused
+          </p>
+          <p className="text-sm text-gray-600">
+            If you pause for more than 35 minutes, your dash will end.
+          </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="w-full max-w-sm space-y-4">
           <button 
             onClick={handleResume}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-4 px-6 rounded-lg transition-colors"
+            className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-4 px-6 rounded-lg transition-colors"
           >
-            Resume
+            Resume dash
+          </button>
+          <button 
+            onClick={() => setIsPaused(false)}
+            className="w-full text-gray-900 font-semibold py-2"
+          >
+            End dash
           </button>
         </div>
+      </div>
+
+      {/* Home Indicator */}
+      <div className="flex justify-center pb-2">
+        <div className="w-32 h-1 bg-black rounded-full"></div>
       </div>
     </div>
   );
