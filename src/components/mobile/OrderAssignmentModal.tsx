@@ -1,8 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronRight, Users, MapPin, Clock, DollarSign, Navigation2, X } from 'lucide-react';
+import { ChevronRight, Users, MapPin, Clock, DollarSign, Navigation2, X, Package, Phone, MessageSquare, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { DeliveryMap } from './DeliveryMap';
+import { 
+  DeliveryCard, 
+  DeliveryButton, 
+  DeliveryHeader, 
+  DeliveryInfoCard, 
+  DeliveryActionGroup,
+  DeliveryDivider,
+  DeliveryMapContainer,
+  typography 
+} from '@/components/delivery/DeliveryDesignSystem';
 
 interface OrderAssignment {
   assignment_id: string;
@@ -232,142 +242,179 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
     return parts.join(', ') || 'Address unavailable';
   };
 
+  const getCustomerName = () => {
+    if (typeof assignment.dropoff_address === 'object' && assignment.dropoff_address?.name) {
+      return assignment.dropoff_address.name;
+    }
+    return 'Customer';
+  };
+
   return (
-    <div className="fixed modal-overlay" style={{ top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
-      <div className="absolute inset-0 flex items-end sm:items-center sm:justify-center">
-        {/* Backdrop */}
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleDecline} />
-        
-        {/* Modal */}
-        <div className="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl transform transition-all duration-300 max-h-[90vh] overflow-y-auto">
-        {/* Timer Progress Bar */}
-        <div className="sticky top-0 left-0 right-0 h-2 bg-gray-100 rounded-t-3xl overflow-hidden z-10">
-          <div 
-            className="h-full bg-gradient-to-r from-orange-500 to-orange-600 transition-all duration-1000"
-            style={{ width: `${(timeLeft / 45) * 100}%` }}
-          />
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center">
+      <div className="bg-white rounded-t-3xl w-full max-w-md mx-4 mb-4 max-h-[90vh] overflow-y-auto">
+        {/* Professional Header */}
+        <DeliveryHeader
+          title="New Delivery Request"
+          subtitle={`Order #${assignment.order_id.slice(-6)}`}
+          onBack={handleDecline}
+          rightAction={
+            <button
+              onClick={handleDecline}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <X className="h-5 w-5 text-gray-500" />
+            </button>
+          }
+        />
+
+        {/* Timer Alert */}
+        <div className="px-4 py-3 bg-red-50 border-b border-red-100">
+          <div className="flex items-center justify-center space-x-2">
+            <Clock className="h-5 w-5 text-red-600" />
+            <span className="text-red-700 font-semibold">
+              {timeLeft}s remaining to accept
+            </span>
+          </div>
         </div>
 
-        {/* Close Button */}
-        <button
-          onClick={handleDecline}
-          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-        >
-          <X className="h-5 w-5 text-gray-600" />
-        </button>
-
-        <div className="p-6 pb-8 space-y-6">
+        <div className="p-4 space-y-4">
           {/* Test Order Badge */}
           {assignment.isTestOrder && (
-            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-              <div className="flex items-center gap-2 mb-1">
+            <DeliveryCard className="bg-yellow-50 border-yellow-200">
+              <div className="flex items-center space-x-2">
                 <span className="text-lg">🧪</span>
-                <span className="font-bold text-yellow-900">Test Order</span>
+                <div>
+                  <h3 className="font-semibold text-yellow-900">Test Order</h3>
+                  <p className="text-sm text-yellow-700">This is a test order for training purposes.</p>
+                </div>
               </div>
-              <p className="text-sm text-yellow-700">
-                This is a test order for training purposes.
-              </p>
-            </div>
+            </DeliveryCard>
           )}
 
-          {/* Header */}
-          <div className="text-center safe-area-top">
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">New Delivery Offer</h2>
-            <p className="text-sm text-gray-500">Accept within <span className="font-semibold text-orange-600">{timeLeft}s</span></p>
-          </div>
+          {/* Map Section */}
+          <DeliveryCard variant="elevated" padding="none" className="overflow-hidden">
+            <DeliveryMapContainer>
+              <DeliveryMap 
+                pickupAddress={assignment.pickup_address}
+                dropoffAddress={assignment.dropoff_address}
+                showRoute={true}
+                className="w-full h-full"
+              />
+            </DeliveryMapContainer>
+          </DeliveryCard>
 
-          {/* Earnings Card */}
-          <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-100">
-            <div className="flex items-baseline justify-center gap-2 mb-2">
-              <DollarSign className="h-8 w-8 text-green-600" />
-              <span className="text-5xl font-bold text-gray-900">${estimatedPayout}</span>
-            </div>
-            <p className="text-center text-sm text-gray-600">Estimated earnings</p>
-            
-            <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-green-200">
-              <div className="text-center">
-                <div className="flex items-center gap-1 justify-center">
-                  <Navigation2 className="h-4 w-4 text-gray-500" />
-                  <span className="text-lg font-bold text-gray-900">{miles}</span>
-                </div>
-                <span className="text-xs text-gray-600">miles</span>
-              </div>
-              <div className="w-px h-8 bg-green-200" />
-              <div className="text-center">
-                <div className="flex items-center gap-1 justify-center">
-                  <Clock className="h-4 w-4 text-gray-500" />
-                  <span className="text-lg font-bold text-gray-900">{mins}</span>
-                </div>
-                <span className="text-xs text-gray-600">minutes</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Live Map */}
-          <div className="rounded-2xl overflow-hidden border border-gray-200">
-            <DeliveryMap 
-              pickupAddress={assignment.pickup_address}
-              dropoffAddress={assignment.dropoff_address}
-              showRoute={true}
-              className="h-64"
-            />
-          </div>
-
-          {/* Pickup Info */}
-          <div className="flex items-start gap-4 p-4 bg-orange-50 rounded-xl border border-orange-100">
-            <div className="w-12 h-12 rounded-full bg-orange-600 flex items-center justify-center flex-shrink-0">
-              <MapPin className="h-6 w-6 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-orange-600 mb-1">PICKUP</p>
-              <p className="font-semibold text-gray-900 mb-1">{assignment.restaurant_name}</p>
-              <p className="text-sm text-gray-600 line-clamp-2">
+          {/* Pickup Information */}
+          <DeliveryInfoCard
+            title="Pickup Location"
+            subtitle={assignment.restaurant_name}
+            icon={Package}
+          >
+            <div className="flex items-start space-x-3">
+              <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-gray-600 leading-relaxed">
                 {formatAddress(assignment.pickup_address)}
               </p>
             </div>
-          </div>
+          </DeliveryInfoCard>
 
-          {/* Route Indicator */}
-          <div className="flex items-center justify-center">
-            <div className="w-1 h-12 bg-gradient-to-b from-orange-300 to-green-300 rounded-full" />
-          </div>
-
-          {/* Dropoff Info */}
-          <div className="flex items-start gap-4 p-4 bg-green-50 rounded-xl border border-green-100">
-            <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0">
-              <MapPin className="h-6 w-6 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-green-600 mb-1">DROPOFF</p>
-              <p className="font-semibold text-gray-900 mb-1">Customer Location</p>
-              <p className="text-sm text-gray-600 line-clamp-2">
-                {formatAddress(assignment.dropoff_address)}
-              </p>
+          {/* Delivery Information */}
+          <DeliveryInfoCard
+            title="Delivery Location"
+            subtitle={getCustomerName()}
+            icon={Users}
+          >
+            <div className="space-y-3">
+              <div className="flex items-start space-x-3">
+                <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  {formatAddress(assignment.dropoff_address)}
+                </p>
+              </div>
+              
+              {/* Location Type Badge */}
               {locationType && (
-                <span className="inline-block mt-2 px-3 py-1 bg-white rounded-lg text-xs text-gray-600 border border-gray-200 font-medium">
-                  {locationType}
-                </span>
+                <div className="flex items-center space-x-2">
+                  <Star className="w-4 h-4 text-orange-500" />
+                  <span className="text-xs font-medium text-orange-700 bg-orange-50 px-2 py-1 rounded-full">
+                    {locationType}
+                  </span>
+                </div>
               )}
             </div>
-          </div>
+          </DeliveryInfoCard>
+
+          {/* Route Information */}
+          <DeliveryCard variant="filled">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-900">{miles}</div>
+                <div className="text-sm text-gray-500 font-medium">Distance</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-900">{mins}</div>
+                <div className="text-sm text-gray-500 font-medium">Est. Time</div>
+              </div>
+            </div>
+            
+            {/* Route Details */}
+            {routeMiles && routeMins && (
+              <DeliveryDivider />
+            )}
+            {routeMiles && routeMins && (
+              <div className="text-center">
+                <p className="text-xs text-gray-500">
+                  Actual route: {routeMiles.toFixed(1)} mi • {routeMins} min
+                </p>
+              </div>
+            )}
+          </DeliveryCard>
+
+          {/* Earnings Section */}
+          <DeliveryCard variant="elevated" className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-orange-900">Your Earnings</h3>
+                <p className="text-sm text-orange-600">Base pay + tips</p>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold text-orange-900">
+                  ${estimatedPayout}
+                </div>
+                <div className="text-sm text-orange-600">
+                  {payoutPercent}% of delivery fee
+                </div>
+              </div>
+            </div>
+            
+            {/* Earnings Breakdown */}
+            <DeliveryDivider />
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">Subtotal:</span>
+                <span className="float-right font-medium">${(subtotalCents / 100).toFixed(2)}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Tips:</span>
+                <span className="float-right font-medium">${(tipCents / 100).toFixed(2)}</span>
+              </div>
+            </div>
+          </DeliveryCard>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-2">
-            <button
-              onClick={handleDecline}
-              className="flex-1 h-14 px-6 rounded-xl font-semibold bg-gray-100 text-gray-900 hover:bg-gray-200 transition-all active:scale-95"
-            >
-              Decline
-            </button>
-            <button
-              onClick={handleAccept}
-              className="flex-1 h-14 px-6 rounded-xl font-semibold bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white shadow-lg shadow-orange-500/30 transition-all active:scale-95"
-            >
-              Accept Order
-            </button>
-          </div>
+          <DeliveryActionGroup
+            primaryAction={{
+              children: "Accept Delivery",
+              onClick: handleAccept,
+              icon: <Package className="w-5 h-5" />,
+              className: "shadow-lg"
+            }}
+            secondaryAction={{
+              children: "Decline",
+              onClick: handleDecline,
+              icon: <X className="w-5 h-5" />
+            }}
+          />
         </div>
-      </div>
       </div>
     </div>
   );

@@ -2,14 +2,6 @@
 // @ts-nocheck
 import React, { useState } from "react";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
   Package,
   User,
   MapPin,
@@ -25,11 +17,23 @@ import {
   Store,
   Truck,
   Home,
+  Star,
+  Users,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DeliveryCamera } from "./DeliveryCamera";
 import { supabase } from "@/integrations/supabase/client";
 import cravenLogo from "@/assets/craven-c.png";
+import { 
+  DeliveryCard, 
+  DeliveryButton, 
+  DeliveryHeader, 
+  DeliveryInfoCard, 
+  DeliveryActionGroup,
+  DeliveryDivider,
+  DeliveryPhotoPreview,
+  typography 
+} from '@/components/delivery/DeliveryDesignSystem';
 
 interface OrderItem {
   name: string;
@@ -193,194 +197,226 @@ export const OrderVerificationScreen: React.FC<OrderVerificationProps> = ({
   }
 
   return (
-    <div className="absolute inset-0 z-10 bg-background">
-      <div className="max-w-md mx-auto space-y-4">
-        {/* Header with pickup time */}
-        <div className="bg-black text-white rounded-b-3xl px-4 py-6 text-center safe-area-top">
-          <Clock className="h-5 w-5 mx-auto mb-2 text-orange-400" />
-          <h1 className="text-lg font-semibold">
-            Pick up by{" "}
-            {orderDetails.pickup_by
-              ? new Date(orderDetails.pickup_by).toLocaleTimeString([], {
-                  hour: "numeric",
-                  minute: "2-digit",
-                })
-              : "N/A"}
-          </h1>
-        </div>
-
-        <div className="px-4 space-y-4">
-          {orderDetails.isTestOrder && (
-            <div className="p-4 bg-orange-100 border border-orange-300 rounded-xl">
-              <p className="font-bold text-orange-800">🧪 Test Order</p>
-              <p className="text-sm text-orange-700">
-                This is a test order. You can skip the photo or take one for testing.
-              </p>
-            </div>
-          )}
-
-          {/* Customer + Restaurant Info */}
-          <div className="flex items-center gap-3">
-            <img src={cravenLogo} alt="Crave'N" className="w-8 h-8" />
-            <div>
-              <p className="text-gray-600 text-sm">Order for</p>
-              <h2 className="text-2xl font-bold text-gray-900">
-                {orderDetails.customer_name || "Customer"}
-              </h2>
-            </div>
-            <div className="ml-auto flex gap-2">
+    <div className="absolute inset-0 z-10 bg-gray-50">
+      <div className="h-full flex flex-col">
+        {/* Professional Header */}
+        <DeliveryHeader
+          title="Order Verification"
+          subtitle={`Order #${orderDetails.order_number}`}
+          onBack={onCancel}
+          rightAction={
+            <div className="flex items-center space-x-2">
               {orderDetails.customer_phone && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-10 h-10 rounded-full bg-gray-200"
+                <button
                   onClick={() =>
                     orderDetails.isTestOrder
                       ? toast({
                           title: "Test Mode",
-                          description:
-                            "Would call " + orderDetails.customer_phone,
+                          description: "Would call " + orderDetails.customer_phone,
                         })
                       : window.open(`tel:${orderDetails.customer_phone}`)
                   }
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                 >
-                  <Phone className="h-4 w-4" />
-                </Button>
+                  <Phone className="h-4 w-4 text-gray-600" />
+                </button>
               )}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-10 h-10 rounded-full bg-gray-200"
-              >
-                <MessageSquare className="h-4 w-4" />
-              </Button>
+              <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <MessageSquare className="h-4 w-4 text-gray-600" />
+              </button>
+            </div>
+          }
+        />
+
+        {/* Pickup Time Alert */}
+        {orderDetails.pickup_by && (
+          <div className="px-4 py-3 bg-orange-50 border-b border-orange-100">
+            <div className="flex items-center justify-center space-x-2">
+              <Clock className="h-5 w-5 text-orange-600" />
+              <span className="text-orange-700 font-semibold">
+                Pick up by {new Date(orderDetails.pickup_by).toLocaleTimeString([], {
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}
+              </span>
             </div>
           </div>
+        )}
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Test Order Badge */}
+          {orderDetails.isTestOrder && (
+            <DeliveryCard className="bg-yellow-50 border-yellow-200">
+              <div className="flex items-center space-x-2">
+                <span className="text-lg">🧪</span>
+                <div>
+                  <h3 className="font-semibold text-yellow-900">Test Order</h3>
+                  <p className="text-sm text-yellow-700">This is a test order. You can skip the photo or take one for testing.</p>
+                </div>
+              </div>
+            </DeliveryCard>
+          )}
+
+          {/* Customer Information */}
+          <DeliveryInfoCard
+            title="Order for"
+            subtitle={orderDetails.customer_name || "Customer"}
+            icon={Users}
+          >
+            <div className="flex items-center space-x-2">
+              <img src={cravenLogo} alt="Crave'N" className="w-6 h-6" />
+              <span className="text-sm text-gray-600">Crave'n Delivery</span>
+            </div>
+          </DeliveryInfoCard>
 
           {/* Delivery Notes */}
           {orderDetails.delivery_notes && (
-            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex gap-3">
-              <StickyNote className="text-yellow-600 h-5 w-5 mt-0.5" />
-              <p className="text-sm text-yellow-700">
-                {orderDetails.delivery_notes}
-              </p>
-            </div>
+            <DeliveryCard className="bg-yellow-50 border-yellow-200">
+              <div className="flex items-start space-x-3">
+                <StickyNote className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="font-semibold text-yellow-900 mb-1">Delivery Notes</h3>
+                  <p className="text-sm text-yellow-700">{orderDetails.delivery_notes}</p>
+                </div>
+              </div>
+            </DeliveryCard>
           )}
 
           {/* Order Summary */}
-          <div className="bg-white rounded-xl shadow-sm">
+          <DeliveryCard>
             <div
-              className="flex items-center justify-between cursor-pointer py-3 px-4"
+              className="flex items-center justify-between cursor-pointer"
               onClick={() => setShowOrderItems(!showOrderItems)}
             >
-              <div className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                <span className="font-semibold">
+              <div className="flex items-center space-x-2">
+                <Package className="w-5 h-5 text-orange-500" />
+                <span className="font-semibold text-gray-900">
                   {orderDetails.items.length} items
                 </span>
               </div>
               {showOrderItems ? (
-                <ChevronUp className="h-4 w-4" />
+                <ChevronUp className="w-4 h-4 text-gray-400" />
               ) : (
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="w-4 h-4 text-gray-400" />
               )}
             </div>
+            
             {showOrderItems && (
-              <div className="space-y-3 pb-4 px-4">
+              <div className="mt-4 space-y-3">
+                <DeliveryDivider />
                 {orderDetails.items.map((item, index) => (
-                  <div key={index} className="border-l-2 border-orange-200 pl-4">
-                    <div className="flex items-start gap-2">
-                      <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
-                        <span className="text-xs">{item.quantity}×</span>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold">{item.name}</h4>
-                        {item.special_instructions && (
-                          <p className="text-sm text-gray-600">
-                            {item.special_instructions}
-                          </p>
-                        )}
-                      </div>
+                  <div key={index} className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-medium text-orange-600">{item.quantity}×</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-gray-900">{item.name}</h4>
+                      {item.special_instructions && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          {item.special_instructions}
+                        </p>
+                      )}
+                      <p className="text-sm text-gray-500 mt-1">
+                        ${(item.price_cents / 100).toFixed(2)}
+                      </p>
                     </div>
                   </div>
                 ))}
               </div>
             )}
-          </div>
+          </DeliveryCard>
 
-          {/* DD-style Action Buttons */}
-          <Button
-            onClick={() => updateOrderStatus("arrived_at_store")}
-            className="w-full h-12 bg-blue-500 text-white rounded-xl"
-          >
-            <Store className="h-4 w-4 mr-2" />
-            Arrived at Store
-          </Button>
-
-          <Button
-            onClick={() => setShowCamera(true)}
-            className="w-full h-14 text-lg font-semibold bg-red-500 hover:bg-red-600 text-white shadow-lg rounded-xl"
-          >
-            <Camera className="h-5 w-5 mr-2" />
-            Verify Pickup with Photo
-          </Button>
-
-          <Button
-            onClick={handleConfirmWithoutPhoto}
-            variant="outline"
-            className="w-full h-12 border-2 border-gray-300 text-gray-600 hover:bg-gray-50"
-          >
-            <CheckCircle className="h-4 w-4 mr-2" />
-            {orderDetails.isTestOrder
-              ? "Test: Confirm Pickup"
-              : "Confirm Pickup (No Photo)"}
-          </Button>
-
-          <Button
-            onClick={() => updateOrderStatus("delivering")}
-            className="w-full h-12 bg-indigo-500 text-white rounded-xl"
-          >
-            <Truck className="h-4 w-4 mr-2" />
-            Start Delivery
-          </Button>
-
-          <Button
-            onClick={() => updateOrderStatus("delivered")}
-            className="w-full h-12 bg-green-500 text-white rounded-xl"
-          >
-            <Home className="h-4 w-4 mr-2" />
-            Confirm Delivery
-          </Button>
-
-          <Button
-            onClick={onCancel}
-            variant="ghost"
-            className="w-full h-10 text-gray-500"
-          >
-            Back to Navigation
-          </Button>
-
-          {/* Earnings */}
-          <div className="p-4 bg-gray-100 rounded-xl flex items-center justify-between">
-            <span className="text-gray-600">Earnings</span>
-            <span className="font-bold text-lg">
-              ${(calculatePayout() / 100).toFixed(2)}
-            </span>
-          </div>
-
+          {/* Photo Verification */}
           {pickupPhoto && (
-            <Card className="border-green-200 bg-green-50">
-              <CardContent className="pt-4">
-                <div className="text-center space-y-2">
-                  <CheckCircle className="h-8 w-8 text-green-600 mx-auto" />
-                  <p className="text-green-800 font-semibold">Pickup Confirmed!</p>
-                  <p className="text-sm text-green-600">
-                    Photo uploaded successfully
-                  </p>
+            <DeliveryCard className="bg-green-50 border-green-200">
+              <div className="text-center space-y-3">
+                <CheckCircle className="h-8 w-8 text-green-600 mx-auto" />
+                <div>
+                  <h3 className="font-semibold text-green-900">Pickup Confirmed!</h3>
+                  <p className="text-sm text-green-700">Photo uploaded successfully</p>
                 </div>
-              </CardContent>
-            </Card>
+                <DeliveryPhotoPreview
+                  src={pickupPhoto}
+                  alt="Pickup photo"
+                  onRemove={() => setPickupPhoto(null)}
+                />
+              </div>
+            </DeliveryCard>
           )}
+
+          {/* Earnings Summary */}
+          <DeliveryCard className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-orange-900">Your Earnings</h3>
+                <p className="text-sm text-orange-600">For this delivery</p>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-orange-900">
+                  ${(calculatePayout() / 100).toFixed(2)}
+                </div>
+                <div className="text-sm text-orange-600">
+                  Base + tips
+                </div>
+              </div>
+            </div>
+          </DeliveryCard>
+
+          {/* Action Buttons */}
+          <div className="space-y-3">
+            <DeliveryButton
+              onClick={() => updateOrderStatus("arrived_at_store")}
+              fullWidth
+              icon={<Store className="w-5 h-5" />}
+            >
+              Arrived at Store
+            </DeliveryButton>
+
+            <DeliveryButton
+              onClick={() => setShowCamera(true)}
+              fullWidth
+              size="lg"
+              variant="primary"
+              icon={<Camera className="w-5 h-5" />}
+            >
+              Verify Pickup with Photo
+            </DeliveryButton>
+
+            <DeliveryButton
+              onClick={handleConfirmWithoutPhoto}
+              fullWidth
+              variant="outline"
+              icon={<CheckCircle className="w-5 h-5" />}
+            >
+              {orderDetails.isTestOrder ? "Test: Confirm Pickup" : "Confirm Pickup (No Photo)"}
+            </DeliveryButton>
+
+            <div className="grid grid-cols-2 gap-3">
+              <DeliveryButton
+                onClick={() => updateOrderStatus("delivering")}
+                variant="secondary"
+                icon={<Truck className="w-4 h-4" />}
+              >
+                Start Delivery
+              </DeliveryButton>
+
+              <DeliveryButton
+                onClick={() => updateOrderStatus("delivered")}
+                variant="success"
+                icon={<Home className="w-4 h-4" />}
+              >
+                Confirm Delivery
+              </DeliveryButton>
+            </div>
+
+            <DeliveryButton
+              onClick={onCancel}
+              variant="ghost"
+              fullWidth
+            >
+              Back to Navigation
+            </DeliveryButton>
+          </div>
         </div>
       </div>
     </div>
