@@ -59,13 +59,9 @@ const DoorDashStyleScheduleDashboard: React.FC = () => {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showQuickStart, setShowQuickStart] = useState(false);
-  const [activeTab, setActiveTab] = useState<'schedule' | 'availability' | 'earnings'>('schedule');
+  const [activeTab, setActiveTab] = useState<'schedule' | 'availability'>('schedule');
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
   
-  // Pause feature state
-  const [isPaused, setIsPaused] = useState(false);
-  const [pauseTimeRemaining, setPauseTimeRemaining] = useState(0);
-  const [pauseStartTime, setPauseStartTime] = useState<Date | null>(null);
 
   // Sample data
   const peakHours: PeakHours[] = [
@@ -109,30 +105,6 @@ const DoorDashStyleScheduleDashboard: React.FC = () => {
     ]);
   }, []);
 
-  // Pause timer effect
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isPaused && pauseStartTime) {
-      interval = setInterval(() => {
-        const now = new Date();
-        const elapsed = Math.floor((now.getTime() - pauseStartTime.getTime()) / 1000);
-        setPauseTimeRemaining(Math.max(0, 1800 - elapsed)); // 30 minutes = 1800 seconds
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isPaused, pauseStartTime]);
-
-  const handlePause = () => {
-    setIsPaused(true);
-    setPauseStartTime(new Date());
-    setPauseTimeRemaining(1800); // 30 minutes
-  };
-
-  const handleResume = () => {
-    setIsPaused(false);
-    setPauseStartTime(null);
-    setPauseTimeRemaining(0);
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -154,114 +126,9 @@ const DoorDashStyleScheduleDashboard: React.FC = () => {
     }
   };
 
-  // DoorDash Pause Interface - Exact replica of the image
-  const PauseInterface = () => (
-    <div className="fixed inset-0 bg-white z-50">
-      {/* Status Bar */}
-      <div className="flex items-center justify-between px-4 py-2 text-sm">
-        <div className="flex items-center space-x-1">
-          <span>10:15</span>
-          <div className="w-1 h-1 bg-black rounded-full"></div>
-        </div>
-        <div className="flex items-center space-x-1">
-          <div className="w-4 h-2 bg-black rounded-sm"></div>
-          <span>5G</span>
-          <div className="w-6 h-3 border border-black rounded-sm flex items-center justify-end pr-1">
-            <div className="w-4 h-2 bg-black rounded-sm"></div>
-          </div>
-        </div>
-      </div>
-
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-        <Settings className="h-6 w-6 text-gray-600" />
-        <h1 className="text-xl font-bold text-gray-900">Crave Paused</h1>
-        <div className="flex items-center space-x-3">
-          <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
-            <span className="text-xs">+</span>
-          </div>
-          <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
-            <span className="text-xs">?</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
-        {/* Circular Timer */}
-        <div className="relative w-48 h-48 mb-8">
-          {/* Progress Ring */}
-          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-            <circle
-              cx="50"
-              cy="50"
-              r="45"
-              stroke="#e5e7eb"
-              strokeWidth="8"
-              fill="none"
-            />
-            <circle
-              cx="50"
-              cy="50"
-              r="45"
-              stroke="#ef4444"
-              strokeWidth="8"
-              fill="none"
-              strokeDasharray={`${2 * Math.PI * 45}`}
-              strokeDashoffset={`${2 * Math.PI * 45 * (1 - pauseTimeRemaining / 1800)}`}
-              className="transition-all duration-1000"
-            />
-          </svg>
-          
-          {/* Time Display */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-gray-900">
-                {Math.floor(pauseTimeRemaining / 60)}:{(pauseTimeRemaining % 60).toString().padStart(2, '0')}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Information Text */}
-        <div className="text-center mb-8 max-w-sm">
-          <p className="text-lg font-semibold text-gray-900 mb-2">
-            You won't get offers while you're paused
-          </p>
-          <p className="text-sm text-gray-600">
-            If you pause for more than 35 minutes, your Crave will end.
-          </p>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="w-full max-w-sm space-y-4">
-          <button 
-            onClick={handleResume}
-            className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-4 px-6 rounded-lg transition-colors"
-          >
-            Resume Crave
-          </button>
-          <button 
-            onClick={() => setIsPaused(false)}
-            className="w-full text-gray-900 font-semibold py-2"
-          >
-            End Crave
-          </button>
-        </div>
-      </div>
-
-      {/* Home Indicator */}
-      <div className="flex justify-center pb-2">
-        <div className="w-32 h-1 bg-black rounded-full"></div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Pause Interface - Renders when paused */}
-      {isPaused && <PauseInterface />}
-      
       <div className="max-w-4xl mx-auto">
         {/* DoorDash-style Header */}
         <div className="bg-white border-b border-gray-200 px-6 py-4 safe-area-top">
@@ -274,14 +141,6 @@ const DoorDashStyleScheduleDashboard: React.FC = () => {
               <Button variant="outline" size="sm" className="border-gray-300">
                 <Filter className="h-4 w-4 mr-1" />
                 Filter
-              </Button>
-              <Button 
-                onClick={handlePause}
-                size="sm" 
-                className="bg-orange-600 hover:bg-orange-700 text-white"
-              >
-                <Pause className="h-4 w-4 mr-1" />
-                Pause
               </Button>
               <Button size="sm" className="bg-orange-600 hover:bg-orange-700 text-white">
                 <Plus className="h-4 w-4 mr-1" />
@@ -316,10 +175,9 @@ const DoorDashStyleScheduleDashboard: React.FC = () => {
 
           {/* DoorDash-style Tabs */}
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-white border border-gray-200">
+            <TabsList className="grid w-full grid-cols-2 bg-white border border-gray-200">
               <TabsTrigger value="schedule" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">Schedule</TabsTrigger>
               <TabsTrigger value="availability" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">Availability</TabsTrigger>
-              <TabsTrigger value="earnings" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">Earnings</TabsTrigger>
             </TabsList>
 
             <TabsContent value="schedule" className="space-y-4 mt-6">
@@ -418,23 +276,6 @@ const DoorDashStyleScheduleDashboard: React.FC = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="earnings" className="space-y-4 mt-6">
-              <Card className="bg-white border-gray-200">
-                <CardHeader>
-                  <CardTitle className="text-lg">Earnings Overview</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8">
-                    <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 mb-4">Track your earnings from scheduled shifts</p>
-                    <Button className="bg-orange-600 hover:bg-orange-700 text-white">
-                      <BarChart3 className="h-4 w-4 mr-2" />
-                      View Detailed Earnings
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
           </Tabs>
         </div>
       </div>

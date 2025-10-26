@@ -27,6 +27,7 @@ import { DriverSupportChatPage } from './DriverSupportChatPage';
 import { getRatingColor, getRatingTier, formatRating, getTrendIcon, getTrendColor } from '@/utils/ratingHelpers';
 import { DriverBottomNav } from './DriverBottomNav';
 import NotificationsPage from '@/components/notifications/NotificationsPage';
+import CravenFillCountdownFlow from '@/components/CravenFillCountdownFlow';
 // Production readiness imports
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
@@ -105,6 +106,11 @@ export const MobileDriverDashboard: React.FC = () => {
   const [isSessionRestored, setIsSessionRestored] = useState(false);
   const [heartbeatInterval, setHeartbeatInterval] = useState<NodeJS.Timeout | null>(null);
   const [isGoingOnline, setIsGoingOnline] = useState(false);
+  
+  // Pause timer state
+  const [pauseTimeRemaining, setPauseTimeRemaining] = useState(2100); // 35 minutes in seconds
+  const [pauseStartTime, setPauseStartTime] = useState<Date | null>(null);
+  
   const [userLocation, setUserLocation] = useState<{
     lat: number;
     lng: number;
@@ -254,13 +260,32 @@ export const MobileDriverDashboard: React.FC = () => {
       console.log('Pause after delivery requested');
       handlePause();
     };
-    
+
     window.addEventListener('pauseAfterDelivery', handlePauseAfterDelivery);
-    
+
     return () => {
       window.removeEventListener('pauseAfterDelivery', handlePauseAfterDelivery);
     };
   }, []);
+
+  // Pause timer effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (driverState === 'online_paused' && pauseStartTime) {
+      interval = setInterval(() => {
+        const now = new Date();
+        const elapsed = Math.floor((now.getTime() - pauseStartTime.getTime()) / 1000);
+        const remaining = Math.max(0, 2100 - elapsed);
+        setPauseTimeRemaining(remaining);
+        
+        // Auto-end pause after 35 minutes
+        if (remaining === 0) {
+          handleGoOffline();
+        }
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [driverState, pauseStartTime]);
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -939,6 +964,10 @@ export const MobileDriverDashboard: React.FC = () => {
         }
       }
       
+      // Start pause timer
+      setPauseStartTime(new Date());
+      setPauseTimeRemaining(2100); // 35 minutes
+      
       // Update schedule availability status to sync with paused state
       window.dispatchEvent(new CustomEvent('driverStatusChange', { 
         detail: { status: 'offline' } 
@@ -968,6 +997,10 @@ export const MobileDriverDashboard: React.FC = () => {
           console.error('Error updating driver profile:', profileError);
         }
       }
+      
+      // Clear pause timer
+      setPauseStartTime(null);
+      setPauseTimeRemaining(2100);
       
       // Update schedule availability status to sync with online state
       window.dispatchEvent(new CustomEvent('driverStatusChange', { 
@@ -1321,42 +1354,70 @@ export const MobileDriverDashboard: React.FC = () => {
             </div>
           </>}
 
-        {/* PAUSED STATE */}
-        {activeTab === 'home' && driverState === 'online_paused' && <>
-            {/* Paused Message - Center */}
-            <div className="flex flex-col justify-center items-center h-full px-4 pointer-events-auto">
-              <div className="bg-background/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-border/20 text-center max-w-sm w-full overflow-hidden">
-                <div className="text-4xl mb-3">⏸️</div>
-                <div className="text-lg font-bold text-foreground mb-2">
-                  Delivery Paused
+        {/* PAUSED STATE - DoorDash Style */}
+        {activeTab === 'home' && driverState === 'online_paused' && (
+          <div className="fixed inset-0 bg-white z-50">
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <Settings className="h-6 w-6 text-gray-600" />
+               <h1 className="text-xl font-bold text-gray-900">Feeding Paused</h1>
+              <div className="flex items-center space-x-3">
+                <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
+                  <span className="text-xs">+</span>
                 </div>
-                <div className="text-sm text-muted-foreground mb-4">
-                  You won't receive new offers
+                <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
+                  </svg>
                 </div>
-                
-                <div className="space-y-3">
-                  <div className="text-2xl font-bold text-green-600">
-                    ${todayEarnings.toFixed(2)}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Today's Earnings • {formatTime(onlineTime)} online
-                  </div>
-                </div>
-              </div>
-              
-              {/* Resume/Stop Controls */}
-              <div className="flex gap-3 mt-6 w-full max-w-sm overflow-hidden">
-                <Button onClick={handleUnpause} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 text-sm font-semibold rounded-xl shadow-lg">
-                  <Play className="h-4 w-4 mr-1" />
-                  Resume
-                </Button>
-                <Button onClick={handleGoOffline} variant="outline" className="flex-1 bg-background/95 backdrop-blur-sm border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 py-3 text-sm font-semibold rounded-xl shadow-lg">
-                  <Square className="h-4 w-4 mr-1" />
-                  Stop
-                </Button>
               </div>
             </div>
-          </>}
+
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+              {/* Crave'n C Logo Timer */}
+              <div className="relative w-64 h-64 mb-8 flex items-center justify-center">
+                <CravenFillCountdownFlow 
+                  duration={2100} 
+                  size={256}
+                  logoPng="/crave-c-logo.png"
+                />
+              </div>
+
+              {/* Information Text */}
+              <div className="text-center mb-8 max-w-sm">
+                 <p className="text-lg font-semibold text-gray-900 mb-2">
+                   You won't get offers while you're paused
+                 </p>
+                 <p className="text-sm text-gray-600">
+                   If you pause for more than 35 minutes, your Feeding will end.
+                 </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="w-full max-w-sm space-y-4">
+                 <button 
+                   onClick={handleUnpause}
+                   className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 shadow-lg"
+                 >
+                   Resume Feeding
+                 </button>
+                 <button 
+                   onClick={handleGoOffline}
+                   className="w-full text-orange-600 hover:text-orange-700 font-semibold py-2 border border-orange-200 hover:border-orange-300 rounded-lg transition-all duration-300"
+                 >
+                   End Feeding
+                 </button>
+              </div>
+            </div>
+
+            {/* Home Indicator */}
+            <div className="flex justify-center pb-2">
+              <div className="w-32 h-1 bg-black rounded-full"></div>
+            </div>
+          </div>
+        )}
 
         {/* ON DELIVERY STATE */}
         {activeTab === 'home' && driverState === 'on_delivery' && activeDelivery && <div className="pointer-events-auto">
