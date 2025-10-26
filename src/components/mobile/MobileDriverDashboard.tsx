@@ -108,7 +108,7 @@ export const MobileDriverDashboard: React.FC = () => {
   const [isGoingOnline, setIsGoingOnline] = useState(false);
   
   // Pause timer state
-  const [pauseTimeRemaining, setPauseTimeRemaining] = useState(2100); // 35 minutes in seconds
+  const [pauseTimeRemaining, setPauseTimeRemaining] = useState(1800); // 30 minutes in seconds
   const [pauseStartTime, setPauseStartTime] = useState<Date | null>(null);
   
   const [userLocation, setUserLocation] = useState<{
@@ -275,12 +275,20 @@ export const MobileDriverDashboard: React.FC = () => {
       interval = setInterval(() => {
         const now = new Date();
         const elapsed = Math.floor((now.getTime() - pauseStartTime.getTime()) / 1000);
-        const remaining = Math.max(0, 2100 - elapsed);
+        const remaining = Math.max(0, 1800 - elapsed); // 30 minutes in seconds
         setPauseTimeRemaining(remaining);
         
-        // Auto-end pause after 35 minutes
+        // Auto-end pause after 30 minutes (but allow 35 minutes before booting offline)
         if (remaining === 0) {
-          handleGoOffline();
+          // Check if they've been paused for 35+ minutes total
+          const totalPaused = Math.floor((now.getTime() - pauseStartTime.getTime()) / 1000);
+          if (totalPaused >= 2100) { // 35 minutes = 2100 seconds
+            // Boot them offline automatically
+            handleGoOffline();
+          } else {
+            // Just end the pause, they can resume
+            handleUnpause();
+          }
         }
       }, 1000);
     }
@@ -1379,7 +1387,7 @@ export const MobileDriverDashboard: React.FC = () => {
               {/* Crave'n C Logo Timer */}
               <div className="relative w-64 h-64 mb-8 flex items-center justify-center">
                 <CravenFillCountdownFlow 
-                  duration={2100} 
+                  duration={1800} // 30 minutes in seconds
                   size={256}
                   logoPng="/crave-c-logo.png"
                 />
@@ -1391,7 +1399,7 @@ export const MobileDriverDashboard: React.FC = () => {
                    You won't get offers while you're paused
                  </p>
                  <p className="text-sm text-gray-600">
-                   If you pause for more than 35 minutes, your Feeding will end.
+                   Timer shows 30 minutes. If paused for 35+ minutes total, your Feeding will end.
                  </p>
               </div>
 

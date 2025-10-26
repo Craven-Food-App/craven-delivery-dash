@@ -85,11 +85,11 @@ const CravenFillCountdownFlow = ({
         />
       </div>
 
-      {/* Animated fill - reveals from bottom to top */}
+      {/* Animated fill - drains from top to bottom (empties down) */}
       <div 
         className="absolute inset-0 flex items-center justify-center overflow-hidden"
         style={{ 
-          clipPath: `inset(${100 - (progress * 100)}% 0 0 0)`,
+          clipPath: `inset(${progress * 100}% 0 0 0)`,
           WebkitMaskImage: `url(${logoPng})`,
           maskImage: `url(${logoPng})`,
           WebkitMaskSize: "contain",
@@ -100,14 +100,14 @@ const CravenFillCountdownFlow = ({
           maskPosition: "center"
         }}
       >
-        {/* Moving gradient background - now properly masked to C shape */}
+        {/* Moving gradient background with soft edges */}
         <div
           className="absolute inset-0 animate-cravenFlow"
           style={{
-            background: "linear-gradient(180deg, #ff7a33 0%, #ff4f00 35%, #d93c00 70%, #ff7a33 100%)",
+            background: "linear-gradient(180deg, transparent 0%, #ff7a33 5%, #ff4f00 35%, #d93c00 70%, #ff7a33 95%, transparent 100%)",
             backgroundSize: "100% 200%",
             backgroundPositionY: "0%",
-            filter: "drop-shadow(0 0 8px rgba(255,79,0,0.35))",
+            filter: "blur(2px) drop-shadow(0 0 8px rgba(255,79,0,0.35))",
           }}
         />
       </div>
