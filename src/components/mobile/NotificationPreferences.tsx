@@ -150,5 +150,59 @@ export const NotificationPreferences: React.FC = () => {
         </CardContent>
       </Card>;
   }
-  return;
+  return (
+    <div className="min-h-screen bg-background pb-20 overflow-y-auto">
+      <div className="max-w-md mx-auto">
+        {/* Header */}
+        <div className="bg-background border-b border-border/50 px-4 py-3 sticky top-0 z-10 safe-area-top">
+          <h1 className="text-2xl font-bold text-gray-900">Notification Preferences</h1>
+        </div>
+        
+        <div className="p-4 space-y-4">
+          {settings.map((setting) => (
+            <Card key={setting.id} className="border-2 border-gray-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center justify-between">
+                  <span className="text-lg">{setting.name}</span>
+                  <Badge variant={isPreferenceEnabled(setting.id) ? "default" : "secondary"}>
+                    {isPreferenceEnabled(setting.id) ? "Active" : "Inactive"}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-gray-600">{setting.description}</p>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Volume2 className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">Preview Sound</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => playNotificationPreview(setting)}
+                    disabled={playingAudio === setting.id}
+                  >
+                    {playingAudio === setting.id ? (
+                      <Pause className="h-4 w-4" />
+                    ) : (
+                      <Play className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Enable this notification</span>
+                  <Switch
+                    checked={isPreferenceEnabled(setting.id)}
+                    onCheckedChange={(checked) => handlePreferenceChange(setting.id, checked)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 };

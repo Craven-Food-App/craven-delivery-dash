@@ -145,7 +145,7 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
   return (
     <div className="p-4 space-y-4 bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 safe-area-top">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
           <p className="text-sm text-gray-600">Stay updated with your deliveries</p>

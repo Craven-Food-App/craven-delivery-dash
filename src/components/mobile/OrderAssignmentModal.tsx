@@ -271,7 +271,7 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
           )}
 
           {/* Header */}
-          <div className="text-center">
+          <div className="text-center safe-area-top">
             <h2 className="text-2xl font-bold text-gray-900 mb-1">New Delivery Offer</h2>
             <p className="text-sm text-gray-500">Accept within <span className="font-semibold text-orange-600">{timeLeft}s</span></p>
           </div>

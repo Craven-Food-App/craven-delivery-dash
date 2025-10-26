@@ -106,7 +106,7 @@ export const PerformanceDashboard: React.FC = () => {
   return (
     <div className="p-4 space-y-6 max-h-screen overflow-y-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between safe-area-top">
         <div>
           <h1 className="text-2xl font-bold">Performance Dashboard</h1>
           <p className="text-muted-foreground">Track your delivery metrics and earnings</p>

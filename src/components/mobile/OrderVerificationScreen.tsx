@@ -196,7 +196,7 @@ export const OrderVerificationScreen: React.FC<OrderVerificationProps> = ({
     <div className="absolute inset-0 z-10 bg-background">
       <div className="max-w-md mx-auto space-y-4">
         {/* Header with pickup time */}
-        <div className="bg-black text-white rounded-b-3xl px-4 py-6 text-center">
+        <div className="bg-black text-white rounded-b-3xl px-4 py-6 text-center safe-area-top">
           <Clock className="h-5 w-5 mx-auto mb-2 text-orange-400" />
           <h1 className="text-lg font-semibold">
             Pick up by{" "}

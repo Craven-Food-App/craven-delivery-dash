@@ -905,6 +905,7 @@ export const MobileDriverDashboard: React.FC = () => {
     }
   };
   const handleGoOffline = async () => {
+    console.log('handleGoOffline called');
     try {
       // Clear session heartbeat when going offline
       if (heartbeatInterval) {
@@ -948,6 +949,7 @@ export const MobileDriverDashboard: React.FC = () => {
       setDriverState('offline');
       setOnlineTime(0);
       setEndTime(null); // Clear end time
+      console.log('handleGoOffline completed successfully');
     } catch (error) {
       console.error('Error going offline:', error);
     }
@@ -987,6 +989,7 @@ export const MobileDriverDashboard: React.FC = () => {
     }
   };
   const handleUnpause = async () => {
+    console.log('handleUnpause called');
     try {
       const {
         data: {
@@ -1008,7 +1011,7 @@ export const MobileDriverDashboard: React.FC = () => {
       
       // Clear pause timer
       setPauseStartTime(null);
-      setPauseTimeRemaining(2100);
+      setPauseTimeRemaining(1800); // 30 minutes
       
       // Update schedule availability status to sync with online state
       window.dispatchEvent(new CustomEvent('driverStatusChange', { 
@@ -1016,6 +1019,7 @@ export const MobileDriverDashboard: React.FC = () => {
       }));
       
       setDriverState('online_searching');
+      console.log('handleUnpause completed successfully');
     } catch (error) {
       console.error('Error unpausing:', error);
     }
@@ -1364,7 +1368,8 @@ export const MobileDriverDashboard: React.FC = () => {
 
         {/* PAUSED STATE - DoorDash Style */}
         {activeTab === 'home' && driverState === 'online_paused' && (
-          <div className="fixed inset-0 bg-white z-50">
+          <div className="fixed inset-0 bg-white z-50" style={{ pointerEvents: 'auto' }}>
+            {console.log('Pause interface rendered, driverState:', driverState, 'activeTab:', activeTab)}
 
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
@@ -1406,14 +1411,22 @@ export const MobileDriverDashboard: React.FC = () => {
               {/* Action Buttons */}
               <div className="w-full max-w-sm space-y-4">
                  <button 
-                   onClick={handleUnpause}
-                   className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 shadow-lg"
+                   onClick={() => {
+                     console.log('Resume button clicked');
+                     handleUnpause();
+                   }}
+                   className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 shadow-lg active:scale-95 touch-manipulation"
+                   style={{ touchAction: 'manipulation' }}
                  >
                    Resume Feeding
                  </button>
                  <button 
-                   onClick={handleGoOffline}
-                   className="w-full text-orange-600 hover:text-orange-700 font-semibold py-2 border border-orange-200 hover:border-orange-300 rounded-lg transition-all duration-300"
+                   onClick={() => {
+                     console.log('End button clicked');
+                     handleGoOffline();
+                   }}
+                   className="w-full text-orange-600 hover:text-orange-700 font-semibold py-2 border border-orange-200 hover:border-orange-300 rounded-lg transition-all duration-300 active:scale-95 touch-manipulation"
+                   style={{ touchAction: 'manipulation' }}
                  >
                    End Feeding
                  </button>

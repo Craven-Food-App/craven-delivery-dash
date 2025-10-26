@@ -69,7 +69,7 @@ export const EndTimeSheet: React.FC<EndTimeSheetProps> = ({
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
       <div className="fixed bottom-0 left-0 right-0 p-4">
         <Card className="w-full animate-slide-up">
-          <CardHeader className="pb-4">
+          <CardHeader className="pb-4 safe-area-top">
             <CardTitle className="text-xl flex items-center gap-2">
               <Clock className="h-5 w-5" />
               How long do you want to drive?

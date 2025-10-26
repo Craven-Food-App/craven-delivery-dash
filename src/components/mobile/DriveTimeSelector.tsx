@@ -163,7 +163,7 @@ export const DriveTimeSelector: React.FC<DriveTimeSelectorProps> = ({ open, onCl
     <Drawer open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DrawerContent>
         <div className="mx-auto w-full max-w-md">
-          <DrawerHeader>
+          <DrawerHeader className="safe-area-top">
             <DrawerTitle>When do you want to stop driving?</DrawerTitle>
             <DrawerDescription>Select your end time.</DrawerDescription>
           </DrawerHeader>

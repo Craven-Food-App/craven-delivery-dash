@@ -509,6 +509,10 @@ export const PushNotificationSetup: React.FC = () => {
   return (
     <div className="min-h-screen bg-background pb-16">
       <div className="max-w-md mx-auto p-4 space-y-4">
+        {/* Header */}
+        <div className="bg-background border-b border-border/50 px-4 py-3 sticky top-0 z-10 safe-area-top">
+          <h1 className="text-2xl font-bold text-gray-900">Push Notifications</h1>
+        </div>
         
         {/* Permission Status */}
         <Card>

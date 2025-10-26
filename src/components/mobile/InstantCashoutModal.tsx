@@ -155,7 +155,7 @@ export const InstantCashoutModal: React.FC<InstantCashoutModalProps> = ({
       <div className="relative w-full bg-background rounded-t-3xl shadow-2xl transform transition-transform duration-300 ease-out animate-in slide-in-from-bottom-full">
         <div className="p-6 pb-8 space-y-6">
           {/* Header */}
-          <div className="text-center">
+          <div className="text-center safe-area-top">
             <div className="flex items-center justify-center mb-2">
               <div className="p-3 bg-orange-100 rounded-full">
                 <Zap className="h-6 w-6 text-orange-600" />

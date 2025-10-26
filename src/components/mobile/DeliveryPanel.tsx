@@ -416,7 +416,7 @@ const App: React.FC<AppProps> = ({
         />
         
         {/* Progress and Header */}
-        <div className="p-4 bg-orange-600 text-white">
+        <div className="p-4 bg-orange-600 text-white safe-area-top">
           <ProgressMock value={getStepProgress()} className="h-1 bg-orange-300 mb-2" />
           <div className="flex justify-between items-center mb-3">
             <BadgeMock className="bg-white text-orange-600 font-extrabold text-sm shadow-md">
