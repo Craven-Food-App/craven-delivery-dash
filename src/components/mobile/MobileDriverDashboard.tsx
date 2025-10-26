@@ -19,7 +19,7 @@ import { SpeedLimitSign } from './SpeedLimitSign';
 import { useDriverLocation } from '@/hooks/useDriverLocation';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ScheduleSection from './ScheduleSection';
-import { EarningsSection } from './EarningsSection';
+import CorporateEarningsDashboard from './CorporateEarningsDashboard';
 import { AccountSection } from './AccountSection';
 import { DriverRatingsPage } from './DriverRatingsPage';
 import { DriverPromosPage } from './DriverPromosPage';
@@ -1111,7 +1111,7 @@ export const MobileDriverDashboard: React.FC = () => {
         {activeTab === 'earnings' && (
           <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
             <div className="min-h-screen">
-              <EarningsSection />
+              <CorporateEarningsDashboard />
             </div>
           </div>
         )}
