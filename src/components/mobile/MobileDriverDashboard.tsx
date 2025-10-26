@@ -26,7 +26,7 @@ import { DriverPromosPage } from './DriverPromosPage';
 import { DriverSupportChatPage } from './DriverSupportChatPage';
 import { getRatingColor, getRatingTier, formatRating, getTrendIcon, getTrendColor } from '@/utils/ratingHelpers';
 import { DriverBottomNav } from './DriverBottomNav';
-import PushNotificationManager from '@/components/notifications/PushNotificationManager';
+import NotificationsPage from '@/components/notifications/NotificationsPage';
 // Production readiness imports
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
@@ -1146,7 +1146,7 @@ export const MobileDriverDashboard: React.FC = () => {
         {activeTab === 'notifications' && (
           <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
             <div className="min-h-screen">
-              <PushNotificationManager userId={user?.id || ''} />
+              <NotificationsPage userId={user?.id || ''} />
             </div>
           </div>
         )}
