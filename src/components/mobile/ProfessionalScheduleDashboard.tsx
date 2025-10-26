@@ -450,22 +450,22 @@ const ProfessionalScheduleDashboard: React.FC = () => {
     <div className="min-h-screen bg-gray-50 pb-20">
       <div className="max-w-4xl mx-auto">
         {/* Ultra High-Tech Header */}
-        <div className="bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white px-6 py-6 safe-area-top relative overflow-hidden">
+        <div className="bg-gradient-to-br from-orange-900 via-orange-800 to-red-900 text-white px-6 py-6 safe-area-top relative overflow-hidden">
           {/* Animated Background Elements */}
           <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-4 left-4 w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-            <div className="absolute top-8 right-8 w-1 h-1 bg-purple-400 rounded-full animate-ping"></div>
-            <div className="absolute bottom-4 left-8 w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce"></div>
-            <div className="absolute bottom-8 right-4 w-2 h-2 bg-pink-400 rounded-full animate-pulse"></div>
+            <div className="absolute top-4 left-4 w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
+            <div className="absolute top-8 right-8 w-1 h-1 bg-yellow-400 rounded-full animate-ping"></div>
+            <div className="absolute bottom-4 left-8 w-1.5 h-1.5 bg-red-400 rounded-full animate-bounce"></div>
+            <div className="absolute bottom-8 right-4 w-2 h-2 bg-orange-300 rounded-full animate-pulse"></div>
           </div>
           
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent mb-2">
                   AI Schedule Command
                 </h1>
-                <p className="text-blue-200 text-sm">Neural network optimized scheduling</p>
+                <p className="text-orange-200 text-sm">Neural network optimized scheduling</p>
               </div>
               <div className="flex space-x-2">
                 <Button
@@ -493,28 +493,28 @@ const ProfessionalScheduleDashboard: React.FC = () => {
             <div className="grid grid-cols-3 gap-4 mb-4">
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
                 <div className="flex items-center space-x-2">
-                  <Activity className="h-4 w-4 text-green-400" />
+                  <Activity className="h-4 w-4 text-orange-400" />
                   <div>
                     <div className="text-xs text-white/70">Demand</div>
-                    <div className="text-lg font-bold text-green-400">{marketData.demand}%</div>
+                    <div className="text-lg font-bold text-orange-400">{marketData.demand}%</div>
                   </div>
                 </div>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
                 <div className="flex items-center space-x-2">
-                  <TrendingUp className="h-4 w-4 text-orange-400" />
+                  <TrendingUp className="h-4 w-4 text-yellow-400" />
                   <div>
                     <div className="text-xs text-white/70">Surge</div>
-                    <div className="text-lg font-bold text-orange-400">{marketData.surgeMultiplier.toFixed(1)}x</div>
+                    <div className="text-lg font-bold text-yellow-400">{marketData.surgeMultiplier.toFixed(1)}x</div>
                   </div>
                 </div>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
                 <div className="flex items-center space-x-2">
-                  <Thermometer className="h-4 w-4 text-blue-400" />
+                  <Thermometer className="h-4 w-4 text-red-400" />
                   <div>
                     <div className="text-xs text-white/70">Weather</div>
-                    <div className="text-lg font-bold text-blue-400">{marketData.temperature}°F</div>
+                    <div className="text-lg font-bold text-red-400">{marketData.temperature}°F</div>
                   </div>
                 </div>
               </div>
@@ -523,8 +523,8 @@ const ProfessionalScheduleDashboard: React.FC = () => {
             {/* AI Recommendations */}
             <div className="space-y-2">
               <div className="flex items-center space-x-2 mb-2">
-                <Brain className="h-5 w-5 text-purple-400" />
-                <span className="text-sm font-semibold text-purple-300">AI Recommendations</span>
+                <Brain className="h-5 w-5 text-orange-400" />
+                <span className="text-sm font-semibold text-orange-300">AI Recommendations</span>
               </div>
               <div className="space-y-2 max-h-32 overflow-y-auto">
                 {aiRecommendations.slice(0, 2).map((rec) => (
@@ -560,11 +560,11 @@ const ProfessionalScheduleDashboard: React.FC = () => {
         {/* Advanced Analytics Dashboard */}
         {showAnalytics && (
           <div className="p-6 space-y-4">
-            <Card className="bg-gradient-to-br from-purple-900 to-blue-900 text-white border-purple-500">
+            <Card className="bg-gradient-to-br from-orange-900 to-red-900 text-white border-orange-500">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
-                    <Cpu className="h-6 w-6 text-purple-400" />
+                    <Cpu className="h-6 w-6 text-orange-400" />
                     <h2 className="text-lg font-semibold">Neural Analytics</h2>
                   </div>
                   <div className="flex space-x-2">
@@ -592,7 +592,7 @@ const ProfessionalScheduleDashboard: React.FC = () => {
                       <Trophy className="h-4 w-4 text-yellow-400" />
                     </div>
                     <div className="text-2xl font-bold text-white">{analyticsData.performance.efficiency}%</div>
-                    <div className="text-xs text-green-400">+12% this week</div>
+                    <div className="text-xs text-orange-400">+12% this week</div>
                   </div>
                   <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
                     <div className="flex items-center justify-between mb-2">
@@ -600,7 +600,7 @@ const ProfessionalScheduleDashboard: React.FC = () => {
                       <Star className="h-4 w-4 text-yellow-400" />
                     </div>
                     <div className="text-2xl font-bold text-white">{analyticsData.performance.rating}</div>
-                    <div className="text-xs text-blue-400">Top 5% driver</div>
+                    <div className="text-xs text-orange-400">Top 5% driver</div>
                   </div>
                 </div>
 
@@ -611,7 +611,7 @@ const ProfessionalScheduleDashboard: React.FC = () => {
                       {analyticsData.performance.trends.map((value, index) => (
                         <div
                           key={index}
-                          className="w-2 bg-gradient-to-t from-blue-400 to-purple-400 rounded-sm"
+                          className="w-2 bg-gradient-to-t from-orange-400 to-red-400 rounded-sm"
                           style={{ height: `${(value / 1400) * 40}px` }}
                         ></div>
                       ))}
@@ -625,9 +625,9 @@ const ProfessionalScheduleDashboard: React.FC = () => {
                 <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20 mt-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-semibold text-white">AI Prediction</span>
-                    <div className="text-xs text-green-400">{analyticsData.predictions.confidence}% confidence</div>
+                    <div className="text-xs text-orange-400">{analyticsData.predictions.confidence}% confidence</div>
                   </div>
-                  <div className="text-xl font-bold text-green-400">
+                  <div className="text-xl font-bold text-orange-400">
                     ${analyticsData.predictions.nextWeek} next week
                   </div>
                   <div className="text-xs text-white/70 mt-1">
@@ -760,17 +760,17 @@ const ProfessionalScheduleDashboard: React.FC = () => {
           {showQuickStart && (
             <div className="space-y-4">
               {/* AI Recommendation Banner */}
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl p-4 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20"></div>
+              <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl p-4 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-600/20 to-red-600/20"></div>
                 <div className="relative z-10">
                   <div className="flex items-center space-x-2 mb-2">
                     <Brain className="h-5 w-5 text-yellow-300" />
                     <span className="font-semibold">AI Recommendation</span>
-                    <div className="bg-yellow-300 text-blue-900 px-2 py-1 rounded-full text-xs font-bold">
+                    <div className="bg-yellow-300 text-orange-900 px-2 py-1 rounded-full text-xs font-bold">
                       94% Match
                     </div>
                   </div>
-                  <p className="text-sm text-blue-100">
+                  <p className="text-sm text-orange-100">
                     Based on your performance patterns, we recommend the <strong>Dinner Rush</strong> shift for maximum earnings potential.
                   </p>
                 </div>
@@ -788,11 +788,11 @@ const ProfessionalScheduleDashboard: React.FC = () => {
                     onClick={() => handleQuickStart(shift)}
                   >
                     {/* Animated Background */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 group-hover:from-blue-50 group-hover:to-purple-50 transition-all duration-300"></div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 group-hover:from-orange-50 group-hover:to-red-50 transition-all duration-300"></div>
                     
                     {/* Floating Particles */}
                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="w-1 h-1 bg-blue-400 rounded-full animate-ping"></div>
+                      <div className="w-1 h-1 bg-orange-400 rounded-full animate-ping"></div>
                     </div>
                     
                     <CardContent className="p-4 relative z-10">
@@ -801,7 +801,7 @@ const ProfessionalScheduleDashboard: React.FC = () => {
                           {shift.icon}
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                          <h3 className="font-semibold text-gray-900 group-hover:text-orange-600 transition-colors">
                             {shift.name}
                           </h3>
                           <p className="text-xs text-gray-600">{shift.description}</p>
@@ -820,7 +820,7 @@ const ProfessionalScheduleDashboard: React.FC = () => {
                           <div className="mt-2 flex items-center space-x-1">
                             <div className="w-full bg-gray-200 rounded-full h-1">
                               <div 
-                                className="bg-gradient-to-r from-green-400 to-blue-500 h-1 rounded-full transition-all duration-1000"
+                                className="bg-gradient-to-r from-orange-400 to-red-500 h-1 rounded-full transition-all duration-1000"
                                 style={{ width: `${85 + index * 3}%` }}
                               ></div>
                             </div>
@@ -834,12 +834,12 @@ const ProfessionalScheduleDashboard: React.FC = () => {
               </div>
 
               {/* Smart Scheduling Tips */}
-              <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-4">
+              <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-xl p-4">
                 <div className="flex items-center space-x-2 mb-2">
-                  <Lightning className="h-5 w-5 text-green-600" />
-                  <span className="font-semibold text-green-800">Smart Tips</span>
+                  <Lightning className="h-5 w-5 text-orange-600" />
+                  <span className="font-semibold text-orange-800">Smart Tips</span>
                 </div>
-                <ul className="text-sm text-green-700 space-y-1">
+                <ul className="text-sm text-orange-700 space-y-1">
                   <li>• Schedule 30 minutes before peak hours for maximum efficiency</li>
                   <li>• Weather conditions can increase demand by up to 40%</li>
                   <li>• Weekend evening shifts typically yield 25% higher earnings</li>
