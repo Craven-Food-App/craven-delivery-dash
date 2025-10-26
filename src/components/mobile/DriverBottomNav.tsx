@@ -11,11 +11,11 @@ interface DriverBottomNavProps {
 }
 
 const tabs = [
-  { id: 'home' as const, label: 'Home', icon: '/src/assets/app-home.png' },
-  { id: 'schedule' as const, label: 'Schedule', icon: '/src/assets/app-schedule.png' },
-  { id: 'earnings' as const, label: 'Earnings', icon: '/src/assets/app-earnings.png' },
-  { id: 'notifications' as const, label: 'Alerts', icon: '/src/assets/app-alerts.png' },
-  { id: 'account' as const, label: 'Account', icon: '/src/assets/app-account.png' },
+  { id: 'home' as const, label: 'Home', icon: '/app-home.png' },
+  { id: 'schedule' as const, label: 'Schedule', icon: '/app-schedule.png' },
+  { id: 'earnings' as const, label: 'Earnings', icon: '/app-earnings.png' },
+  { id: 'notifications' as const, label: 'Alerts', icon: '/app-alerts.png' },
+  { id: 'account' as const, label: 'Account', icon: '/app-account.png' },
 ];
 
 export const DriverBottomNav: React.FC<DriverBottomNavProps> = ({
