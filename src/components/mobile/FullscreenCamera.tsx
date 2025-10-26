@@ -80,8 +80,11 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
   };
 
   const capturePhoto = () => {
+    console.log('capturePhoto called, cameraError:', cameraError);
+    
     if (cameraError) {
       // Demo mode - create a placeholder image
+      console.log('Using demo mode for photo capture');
       setIsCapturing(true);
       setTimeout(() => {
         const canvas = canvasRef.current;
@@ -112,6 +115,7 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
       return;
     }
 
+    console.log('Starting photo capture process');
     setIsCapturing(true);
     
     const video = videoRef.current;
@@ -126,11 +130,12 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
 
     // Wait for video to be ready
     if (video.readyState < 2) {
-      console.log('Video not ready');
+      console.log('Video not ready, readyState:', video.readyState);
       setIsCapturing(false);
       return;
     }
 
+    console.log('Video is ready, capturing photo');
     // Set canvas dimensions to match video
     canvas.width = video.videoWidth || video.clientWidth;
     canvas.height = video.videoHeight || video.clientHeight;
@@ -143,14 +148,18 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
     setCapturedImage(imageData);
     setIsCapturing(false);
     
-    console.log('Photo captured successfully');
+    console.log('Photo captured successfully, imageData length:', imageData.length);
   };
 
   const confirmPhoto = () => {
+    console.log('confirmPhoto called, capturedImage exists:', !!capturedImage);
     if (capturedImage) {
+      console.log('Calling onCapture with image data');
       onCapture(capturedImage);
       setCapturedImage(null);
       onClose();
+    } else {
+      console.log('No captured image to confirm');
     }
   };
 

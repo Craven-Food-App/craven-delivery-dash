@@ -206,12 +206,16 @@ const DoorDashStyleDeliveryFlow: React.FC<DoorDashStyleDeliveryFlowProps> = ({
   };
 
   const handlePhotoCapture = (type: 'pickup' | 'delivery') => {
+    console.log('handlePhotoCapture called with type:', type);
     setPhotoType(type);
     setShowCamera(true);
     onCameraStateChange?.(true);
+    console.log('Camera should be opening, showCamera:', true);
   };
 
   const handlePhotoConfirm = (photoUrl: string) => {
+    console.log('handlePhotoConfirm called with photoUrl:', photoUrl ? 'Photo received' : 'No photo');
+    console.log('photoType:', photoType);
     if (photoType === 'pickup') {
       setPickupPhoto(photoUrl);
       handleStageComplete('pickup_photo_verification');
@@ -221,6 +225,7 @@ const DoorDashStyleDeliveryFlow: React.FC<DoorDashStyleDeliveryFlowProps> = ({
     }
     setShowCamera(false);
     onCameraStateChange?.(false);
+    console.log('Photo confirmed and camera closed');
   };
 
   const handleNavigation = () => {
