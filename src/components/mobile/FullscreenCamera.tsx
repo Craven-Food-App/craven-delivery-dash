@@ -273,7 +273,7 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
               </div>
               
               {/* Double Tap Hint */}
-              <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2">
+              <div className="absolute bottom-32 left-1/2 transform -translate-x-1/2">
                 <div className="bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
                   Double tap to capture
                 </div>
@@ -283,8 +283,8 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
         )}
       </div>
 
-      {/* Controls */}
-      <div className="bg-black p-6">
+      {/* Controls - Moved up into screen */}
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-6 pb-8">
         {capturedImage ? (
           // Photo Review Controls
           <div className="flex items-center justify-center space-x-8">
