@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import ZoneDrawingMap from './ZoneDrawingMap';
+import ZoneVisualizationMap from './ZoneVisualizationMap';
 
 interface DeliveryZone {
   id: string;
@@ -65,26 +67,28 @@ const DeliveryZoneManager: React.FC = () => {
     }
   };
 
-  // Create new zone
-  const createZone = async () => {
-    if (!newZone.name || !newZone.city || !newZone.state || !newZone.zip_code) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-
+  // Create new zone with GeoJSON
+  const createZone = async (zoneData: {
+    name: string;
+    city: string;
+    state: string;
+    zip_code: string;
+    geojson: any;
+  }) => {
     try {
       setIsCreating(true);
       
-      // For now, create a simple rectangular zone around the ZIP code center
-      // In a real implementation, you'd use a map interface to draw the polygon
+      // Convert GeoJSON to PostGIS WKT format
+      const wkt = `SRID=4326;${JSON.stringify(zoneData.geojson)}`;
+      
       const { data, error } = await supabase
         .from('delivery_zones')
         .insert({
-          name: newZone.name,
-          city: newZone.city,
-          state: newZone.state,
-          zip_code: newZone.zip_code,
-          geom: `SRID=4326;POLYGON((-84.0 41.0, -83.0 41.0, -83.0 42.0, -84.0 42.0, -84.0 41.0))`, // Placeholder polygon
+          name: zoneData.name,
+          city: zoneData.city,
+          state: zoneData.state,
+          zip_code: zoneData.zip_code,
+          geom: wkt,
           active: true
         })
         .select();
@@ -92,7 +96,6 @@ const DeliveryZoneManager: React.FC = () => {
       if (error) throw error;
       
       toast.success('Delivery zone created successfully');
-      setNewZone({ name: '', city: '', state: '', zip_code: '' });
       loadZones();
     } catch (error) {
       console.error('Error creating zone:', error);
@@ -299,78 +302,11 @@ const DeliveryZoneManager: React.FC = () => {
             <CardHeader>
               <CardTitle>Create New Delivery Zone</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  This is a simplified zone creation. In a full implementation, you would use a map interface to draw the exact delivery area polygon.
-                </AlertDescription>
-              </Alert>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name">Zone Name</Label>
-                  <Input
-                    id="name"
-                    value={newZone.name}
-                    onChange={(e) => setNewZone({ ...newZone, name: e.target.value })}
-                    placeholder="e.g., Downtown Toledo"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="zip_code">ZIP Code</Label>
-                  <Input
-                    id="zip_code"
-                    value={newZone.zip_code}
-                    onChange={(e) => setNewZone({ ...newZone, zip_code: e.target.value })}
-                    placeholder="e.g., 43604"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="city">City</Label>
-                  <Input
-                    id="city"
-                    value={newZone.city}
-                    onChange={(e) => setNewZone({ ...newZone, city: e.target.value })}
-                    placeholder="e.g., Toledo"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="state">State</Label>
-                  <Input
-                    id="state"
-                    value={newZone.state}
-                    onChange={(e) => setNewZone({ ...newZone, state: e.target.value })}
-                    placeholder="e.g., OH"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex justify-end space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setNewZone({ name: '', city: '', state: '', zip_code: '' })}
-                >
-                  Clear
-                </Button>
-                <Button
-                  onClick={createZone}
-                  disabled={isCreating}
-                  className="bg-orange-500 hover:bg-orange-600"
-                >
-                  {isCreating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Zone
-                    </>
-                  )}
-                </Button>
-              </div>
+            <CardContent>
+              <ZoneDrawingMap
+                onZoneCreated={createZone}
+                onCancel={() => setSelectedZone(null)}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -423,13 +359,10 @@ const DeliveryZoneManager: React.FC = () => {
               <CardTitle>Zone Coverage Map</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-                <div className="text-center">
-                  <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">Interactive map view coming soon</p>
-                  <p className="text-sm text-gray-500">This will show all delivery zones on a map</p>
-                </div>
-              </div>
+              <ZoneVisualizationMap
+                zones={zones}
+                onZoneClick={(zone) => setSelectedZone(zone)}
+              />
             </CardContent>
           </Card>
         </TabsContent>
