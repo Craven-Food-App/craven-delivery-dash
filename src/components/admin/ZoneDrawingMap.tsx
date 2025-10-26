@@ -1,51 +1,47 @@
-import React, { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
-import MapboxDraw from '@mapbox/mapbox-gl-draw';
-import { MAPBOX_CONFIG, ZONE_STYLES } from '@/config/mapbox';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Search, MapPin, Save, X, Edit3 } from 'lucide-react';
+import React, { useEffect, useRef, useState } from "react";
+import mapboxgl from "mapbox-gl";
+import MapboxDraw from "@mapbox/mapbox-gl-draw";
+import "mapbox-gl/dist/mapbox-gl.css";
+import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
+import { MAPBOX_CONFIG, ZONE_STYLES } from "@/config/mapbox";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { Search, MapPin, Save, X, Edit3 } from "lucide-react";
 
 interface ZoneDrawingMapProps {
-  onZoneCreated: (zone: {
-    name: string;
-    city: string;
-    state: string;
-    zip_code: string;
-    geojson: any;
-  }) => void;
+  onZoneCreated: (zone: { name: string; city: string; state: string; zip_code: string; geojson: any }) => void;
   onCancel: () => void;
   initialZone?: any;
 }
 
-const ZoneDrawingMap: React.FC<ZoneDrawingMapProps> = ({
-  onZoneCreated,
-  onCancel,
-  initialZone
-}) => {
+const ZoneDrawingMap: React.FC<ZoneDrawingMapProps> = ({ onZoneCreated, onCancel, initialZone }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const draw = useRef<MapboxDraw | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [zoneData, setZoneData] = useState({
-    name: initialZone?.name || '',
-    city: initialZone?.city || '',
-    state: initialZone?.state || '',
-    zip_code: initialZone?.zip_code || ''
+    name: initialZone?.name || "",
+    city: initialZone?.city || "",
+    state: initialZone?.state || "",
+    zip_code: initialZone?.zip_code || "",
   });
 
   useEffect(() => {
     if (!mapContainer.current) return;
+
+    // Set access token explicitly (ensures all plugins use it)
+    mapboxgl.accessToken = MAPBOX_CONFIG.accessToken;
 
     // Initialize map
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       accessToken: MAPBOX_CONFIG.accessToken,
       style: MAPBOX_CONFIG.style,
-      center: MAPBOX_CONFIG.center,
-      zoom: MAPBOX_CONFIG.zoom
+      center: MAPBOX_CONFIG.center as [number, number],
+      zoom: MAPBOX_CONFIG.zoom,
     });
 
     // Initialize draw
@@ -53,41 +49,66 @@ const ZoneDrawingMap: React.FC<ZoneDrawingMapProps> = ({
       displayControlsDefault: false,
       controls: {
         polygon: true,
-        trash: true
+        trash: true,
       },
-      defaultMode: 'draw_polygon',
+      defaultMode: "draw_polygon",
       styles: [
         {
-          id: 'gl-draw-polygon-fill-inactive',
-          type: 'fill',
-          filter: ['all', ['==', 'active', 'false'], ['==', '$type', 'Polygon']],
-          paint: ZONE_STYLES.drawing
+          id: "gl-draw-polygon-fill-inactive",
+          type: "fill",
+          filter: ["all", ["==", "active", "false"], ["==", "$type", "Polygon"]],
+          paint: {
+            "fill-color": ZONE_STYLES.drawing.fill,
+            "fill-opacity": ZONE_STYLES.drawing.fillOpacity,
+          },
         },
         {
-          id: 'gl-draw-polygon-stroke-inactive',
-          type: 'line',
-          filter: ['all', ['==', 'active', 'false'], ['==', '$type', 'Polygon']],
+          id: "gl-draw-polygon-stroke-inactive",
+          type: "line",
+          filter: ["all", ["==", "active", "false"], ["==", "$type", "Polygon"]],
           paint: {
-            'line-color': ZONE_STYLES.drawing.stroke,
-            'line-width': ZONE_STYLES.drawing.strokeWidth,
-            'line-dasharray': ZONE_STYLES.drawing.strokeDasharray
-          }
-        }
-      ]
+            "line-color": ZONE_STYLES.drawing.stroke,
+            "line-width": ZONE_STYLES.drawing.strokeWidth,
+            "line-dasharray": ZONE_STYLES.drawing.strokeDasharray,
+          },
+        },
+      ],
     });
 
     map.current.addControl(draw.current);
 
+    // Ensure draw mode is active and limit map interactions while drawing
+    map.current.on("load", () => {
+      draw.current?.changeMode("draw_polygon");
+      map.current?.dragPan.disable();
+      map.current?.doubleClickZoom.disable();
+      // boxZoom may not exist on some versions
+      // @ts-ignore
+      map.current?.boxZoom?.disable?.();
+    });
+
+    // Toggle interactions based on draw mode
+    map.current.on("draw.modechange", (e: any) => {
+      const mode = e?.mode;
+      if (mode && (mode === "draw_polygon" || mode.startsWith("draw_"))) {
+        map.current?.dragPan.disable();
+        map.current?.doubleClickZoom.disable();
+      } else {
+        map.current?.dragPan.enable();
+        map.current?.doubleClickZoom.enable();
+      }
+    });
+
     // Handle drawing events
-    map.current.on('draw.create', () => {
+    map.current.on("draw.create", () => {
       setIsDrawing(true);
     });
 
-    map.current.on('draw.update', () => {
+    map.current.on("draw.update", () => {
       setIsDrawing(true);
     });
 
-    map.current.on('draw.delete', () => {
+    map.current.on("draw.delete", () => {
       setIsDrawing(false);
     });
 
@@ -99,38 +120,82 @@ const ZoneDrawingMap: React.FC<ZoneDrawingMapProps> = ({
   }, []);
 
   const searchLocation = async () => {
-    if (!searchQuery || !map.current) return;
+    if (!searchQuery || !map.current) {
+      toast.error("Enter a city, ZIP, or address to search");
+      return;
+    }
 
+    // Try Mapbox first
     try {
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${MAPBOX_CONFIG.accessToken}&country=US&limit=1`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${MAPBOX_CONFIG.accessToken}&country=US&limit=1`,
       );
+      if (!response.ok) throw new Error("Mapbox geocoding failed");
       const data = await response.json();
 
       if (data.features && data.features.length > 0) {
         const feature = data.features[0];
         const [lng, lat] = feature.center;
-        
+
         map.current.flyTo({
           center: [lng, lat],
-          zoom: 12
+          zoom: 12,
         });
 
         // Extract location data
         const context = feature.context || [];
-        const city = context.find(c => c.id.startsWith('place'))?.text || '';
-        const state = context.find(c => c.id.startsWith('region'))?.text || '';
-        const zip = context.find(c => c.id.startsWith('postcode'))?.text || '';
+        const city = context.find((c: any) => c.id.startsWith("place"))?.text || "";
+        const state = context.find((c: any) => c.id.startsWith("region"))?.text || "";
+        const zip = context.find((c: any) => c.id.startsWith("postcode"))?.text || "";
 
-        setZoneData(prev => ({
+        setZoneData((prev) => ({
           ...prev,
           city: city || prev.city,
           state: state || prev.state,
-          zip_code: zip || prev.zip_code
+          zip_code: zip || prev.zip_code,
         }));
+        return;
+      }
+    } catch (err) {
+      // Fall back to Nominatim if Mapbox fails
+    }
+
+    // Fallback to OpenStreetMap Nominatim (no API key required)
+    try {
+      const nomRes = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&addressdetails=1&limit=1`,
+        {
+          headers: {
+            "Accept-Language": "en",
+          },
+        },
+      );
+      if (!nomRes.ok) throw new Error("Nominatim request failed");
+      const nomData = await nomRes.json();
+
+      if (nomData && nomData.length > 0) {
+        const r = nomData[0];
+        const lat = parseFloat(r.lat);
+        const lng = parseFloat(r.lon);
+
+        map.current.flyTo({
+          center: [lng, lat],
+          zoom: 12,
+        });
+
+        const addr = r.address || {};
+        setZoneData((prev) => ({
+          ...prev,
+          city: addr.city || addr.town || addr.village || prev.city,
+          state: addr.state || prev.state,
+          zip_code: addr.postcode || prev.zip_code,
+        }));
+      } else {
+        toast.error("No results found for that location");
       }
     } catch (error) {
-      console.error('Geocoding error:', error);
+      console.error("Geocoding error:", error);
+      toast.error("Search failed. Please try again.");
     }
   };
 
@@ -141,21 +206,20 @@ const ZoneDrawingMap: React.FC<ZoneDrawingMapProps> = ({
     if (features.features.length === 0) return;
 
     const polygon = features.features[0];
-    
+
     // Validate polygon
-    if (polygon.geometry.type !== 'Polygon') return;
+    if (polygon.geometry.type !== "Polygon") return;
     if (polygon.geometry.coordinates[0].length < 4) return;
 
     // Ensure polygon is closed
     const coords = polygon.geometry.coordinates[0];
-    if (coords[0][0] !== coords[coords.length - 1][0] || 
-        coords[0][1] !== coords[coords.length - 1][1]) {
+    if (coords[0][0] !== coords[coords.length - 1][0] || coords[0][1] !== coords[coords.length - 1][1]) {
       coords.push(coords[0]);
     }
 
     onZoneCreated({
       ...zoneData,
-      geojson: polygon.geometry
+      geojson: polygon.geometry,
     });
   };
 
@@ -224,14 +288,9 @@ const ZoneDrawingMap: React.FC<ZoneDrawingMapProps> = ({
 
       {/* Map Container */}
       <div className="relative">
-        <div 
-          ref={mapContainer} 
-          className="w-full h-96 rounded-lg border"
-        />
-        <div className="absolute top-4 right-4 bg-white p-2 rounded shadow">
-          <p className="text-sm text-gray-600">
-            Click to draw polygon points
-          </p>
+        <div ref={mapContainer} className="w-full h-96 rounded-lg border" />
+        <div className="absolute top-4 right-4 bg-white p-2 rounded shadow pointer-events-none">
+          <p className="text-sm text-gray-600">Click to draw polygon points</p>
         </div>
       </div>
 
@@ -253,8 +312,8 @@ const ZoneDrawingMap: React.FC<ZoneDrawingMapProps> = ({
           <X className="h-4 w-4 mr-2" />
           Cancel
         </Button>
-        <Button 
-          onClick={saveZone} 
+        <Button
+          onClick={saveZone}
           disabled={!isDrawing || !zoneData.name}
           className="bg-orange-500 hover:bg-orange-600"
         >
