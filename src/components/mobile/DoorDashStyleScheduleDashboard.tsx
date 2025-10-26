@@ -61,6 +61,11 @@ const DoorDashStyleScheduleDashboard: React.FC = () => {
   const [showQuickStart, setShowQuickStart] = useState(false);
   const [activeTab, setActiveTab] = useState<'schedule' | 'availability' | 'earnings'>('schedule');
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
+  
+  // Pause feature state
+  const [isPaused, setIsPaused] = useState(false);
+  const [pauseTimeRemaining, setPauseTimeRemaining] = useState(0);
+  const [pauseStartTime, setPauseStartTime] = useState<Date | null>(null);
 
   // Sample data
   const peakHours: PeakHours[] = [
@@ -104,6 +109,31 @@ const DoorDashStyleScheduleDashboard: React.FC = () => {
     ]);
   }, []);
 
+  // Pause timer effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isPaused && pauseStartTime) {
+      interval = setInterval(() => {
+        const now = new Date();
+        const elapsed = Math.floor((now.getTime() - pauseStartTime.getTime()) / 1000);
+        setPauseTimeRemaining(Math.max(0, 1800 - elapsed)); // 30 minutes = 1800 seconds
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isPaused, pauseStartTime]);
+
+  const handlePause = () => {
+    setIsPaused(true);
+    setPauseStartTime(new Date());
+    setPauseTimeRemaining(1800); // 30 minutes
+  };
+
+  const handleResume = () => {
+    setIsPaused(false);
+    setPauseStartTime(null);
+    setPauseTimeRemaining(0);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'scheduled': return 'bg-blue-100 text-blue-800';
@@ -124,8 +154,48 @@ const DoorDashStyleScheduleDashboard: React.FC = () => {
     }
   };
 
+  // Pause Interface Component - Exact replica of the image
+  const PauseInterface = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl p-8 mx-4 max-w-sm w-full shadow-2xl">
+        <div className="text-center">
+          {/* Pause Icon - Exact match to image */}
+          <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center">
+              <div className="w-2 h-4 bg-white rounded-sm"></div>
+              <div className="w-2 h-4 bg-white rounded-sm ml-1"></div>
+            </div>
+          </div>
+          
+          {/* Status Text - Exact match */}
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">You're on a break</h2>
+          <p className="text-gray-600 mb-6">Take your time, we'll be here when you're ready</p>
+          
+          {/* Time Remaining - Exact styling */}
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <div className="text-3xl font-bold text-gray-900">
+              {Math.floor(pauseTimeRemaining / 60)}:{(pauseTimeRemaining % 60).toString().padStart(2, '0')}
+            </div>
+            <div className="text-sm text-gray-500">Time remaining</div>
+          </div>
+          
+          {/* Resume Button - Exact styling */}
+          <button 
+            onClick={handleResume}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-4 px-6 rounded-lg transition-colors"
+          >
+            Resume
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Pause Interface - Renders when paused */}
+      {isPaused && <PauseInterface />}
+      
       <div className="max-w-4xl mx-auto">
         {/* DoorDash-style Header */}
         <div className="bg-white border-b border-gray-200 px-6 py-4 safe-area-top">
@@ -138,6 +208,14 @@ const DoorDashStyleScheduleDashboard: React.FC = () => {
               <Button variant="outline" size="sm" className="border-gray-300">
                 <Filter className="h-4 w-4 mr-1" />
                 Filter
+              </Button>
+              <Button 
+                onClick={handlePause}
+                size="sm" 
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                <Pause className="h-4 w-4 mr-1" />
+                Pause
               </Button>
               <Button size="sm" className="bg-orange-600 hover:bg-orange-700 text-white">
                 <Plus className="h-4 w-4 mr-1" />
