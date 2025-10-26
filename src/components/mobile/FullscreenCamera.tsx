@@ -33,6 +33,7 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
   const [isCapturing, setIsCapturing] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [cameraError, setCameraError] = useState(false);
+  const [lastTap, setLastTap] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -163,6 +164,25 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
     console.log('Flash toggled:', !flashOn);
   };
 
+  const handleDoubleTap = () => {
+    if (!capturedImage) {
+      capturePhoto();
+    }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const currentTime = new Date().getTime();
+    const tapLength = currentTime - lastTap;
+    
+    if (tapLength < 500 && tapLength > 0) {
+      // Double tap detected
+      e.preventDefault();
+      handleDoubleTap();
+    }
+    
+    setLastTap(currentTime);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -209,7 +229,12 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
             </div>
           </div>
         ) : (
-          <div className="w-full h-full relative">
+          <div 
+            className="w-full h-full relative"
+            onDoubleClick={handleDoubleTap}
+            onTouchStart={handleTouchStart}
+            style={{ touchAction: 'manipulation' }}
+          >
             <video
               ref={videoRef}
               autoPlay
@@ -244,6 +269,13 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
                       : 'Position the delivery location in the frame'
                     }
                   </p>
+                </div>
+              </div>
+              
+              {/* Double Tap Hint */}
+              <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2">
+                <div className="bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+                  Double tap to capture
                 </div>
               </div>
             </div>
