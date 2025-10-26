@@ -7,7 +7,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { playNotificationSound } from '@/utils/audioUtils';
 import { useIOSNotifications } from '@/hooks/useIOSNotifications';
 import { IOSNotificationBanner } from '@/components/mobile/IOSNotificationBanner';
-import { toast } from 'sonner';
 
 interface Notification {
   id: string;
