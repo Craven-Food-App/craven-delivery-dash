@@ -200,7 +200,7 @@ const PushNotificationManager = ({ userId }: PushNotificationManagerProps) => {
       channelAssign.unsubscribe();
       dbChannel.unsubscribe();
     };
-  }, [userId, toast]);
+  }, [userId]);
 
   const markAsRead = async (notificationId: string) => {
     const { error } = await supabase
