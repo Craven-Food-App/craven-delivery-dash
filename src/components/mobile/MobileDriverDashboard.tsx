@@ -101,6 +101,7 @@ export const MobileDriverDashboard: React.FC = () => {
   const [sessionData, setSessionData] = useState<any>(null);
   const [isSessionRestored, setIsSessionRestored] = useState(false);
   const [heartbeatInterval, setHeartbeatInterval] = useState<NodeJS.Timeout | null>(null);
+  const [isGoingOnline, setIsGoingOnline] = useState(false);
   const [userLocation, setUserLocation] = useState<{
     lat: number;
     lng: number;
@@ -721,6 +722,8 @@ export const MobileDriverDashboard: React.FC = () => {
     const startTime = Date.now();
     
     try {
+      setIsGoingOnline(true);
+      console.log('CRAVE NOW button clicked - starting go online process');
       trackUserAction('driver_go_online');
       
       const {
@@ -729,13 +732,17 @@ export const MobileDriverDashboard: React.FC = () => {
         }
       } = await supabase.auth.getUser();
       if (!user) {
+        console.error('No authenticated user found');
         const error = new Error('No authenticated user');
         trackError('driver_go_online_failed', { reason: 'no_user' });
         reportCustomError(error, 'handleGoOnline');
         return;
       }
+      
+      console.log('User authenticated:', user.id);
 
       // Use the database function to ensure driver can go online
+      console.log('Checking if driver can go online...');
       const {
         error: ensureError
       } = await supabase.rpc('ensure_driver_can_go_online', {
@@ -745,6 +752,7 @@ export const MobileDriverDashboard: React.FC = () => {
         console.error('Failed to ensure driver can go online:', ensureError);
         return;
       }
+      console.log('Driver can go online - proceeding');
 
       // Create session data with online timestamp
       const sessionData: Record<string, any> = {
@@ -828,8 +836,14 @@ export const MobileDriverDashboard: React.FC = () => {
       // Start session heartbeat to keep driver online  
       const interval = startSessionHeartbeat(user.id);
       setHeartbeatInterval(interval);
+      
+      console.log('Successfully went online - driver state changed to online_searching');
     } catch (error) {
       console.error('Error going online:', error);
+      // Reset state on error
+      setDriverState('offline');
+    } finally {
+      setIsGoingOnline(false);
     }
   };
   const handleGoOffline = async () => {
@@ -1120,8 +1134,12 @@ export const MobileDriverDashboard: React.FC = () => {
               <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/10 overflow-hidden">
                 {/* Main Action Button - Centered at top */}
                 <div className="flex justify-center mb-4">
-                  <Button onClick={handleGoOnline} className="w-full h-12 text-lg font-bold bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg rounded-2xl">
-                    CRAVE NOW
+                  <Button 
+                    onClick={handleGoOnline} 
+                    disabled={isGoingOnline}
+                    className="w-full h-12 text-lg font-bold bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isGoingOnline ? 'GOING ONLINE...' : 'CRAVE NOW'}
                   </Button>
                 </div>
                 
