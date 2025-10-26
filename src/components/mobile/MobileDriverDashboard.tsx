@@ -98,6 +98,7 @@ export const MobileDriverDashboard: React.FC = () => {
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [onlineTime, setOnlineTime] = useState(0);
   const [currentCity, setCurrentCity] = useState('Toledo');
+  const [user, setUser] = useState<any>(null);
   
   // Persistent session management
   const [sessionData, setSessionData] = useState<any>(null);
@@ -109,6 +110,22 @@ export const MobileDriverDashboard: React.FC = () => {
     lng: number;
   } | null>(null);
   
+  // Fetch and maintain user state
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    
+    fetchUser();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    
+    return () => subscription.unsubscribe();
+  }, []);
+
   // Fast session restoration on app startup
   useEffect(() => {
     const restoreSession = async () => {
