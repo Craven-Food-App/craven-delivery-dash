@@ -1,5 +1,5 @@
 // @ts-nocheck
-// Force rebuild to clear cache - v3
+// Force rebuild to clear cache - v5 - COMPLETE REWRITE
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Bell, X } from 'lucide-react';
