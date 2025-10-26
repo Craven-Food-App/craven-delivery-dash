@@ -35,6 +35,7 @@ import CustomerManagement from '@/components/admin/CustomerManagement';
 import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
 import SupportTickets from '@/components/admin/SupportTickets';
 import AuditLogs from '@/components/admin/AuditLogs';
+import DeliveryZoneManager from '@/components/admin/DeliveryZoneManager';
 
 const Admin: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -91,6 +92,7 @@ const Admin: React.FC = () => {
         { id: 'disputes', label: 'Disputes', icon: AlertCircle },
         { id: 'support-tickets', label: 'Support Tickets', icon: LifeBuoy },
         { id: 'audit-logs', label: 'Audit Logs', icon: FileText },
+        { id: 'delivery-zones', label: 'Delivery Zones', icon: BarChart3 },
       ]
     },
     {
@@ -153,6 +155,8 @@ const Admin: React.FC = () => {
         return <SupportTickets />;
       case 'audit-logs':
         return <AuditLogs />;
+      case 'delivery-zones':
+        return <DeliveryZoneManager />;
       case 'notifications':
         return <NotificationSettingsManager />;
       case 'test-customer':

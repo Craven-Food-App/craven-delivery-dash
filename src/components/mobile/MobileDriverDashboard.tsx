@@ -111,6 +111,27 @@ export const MobileDriverDashboard: React.FC = () => {
   const [pauseTimeRemaining, setPauseTimeRemaining] = useState(1800); // 30 minutes in seconds
   const [pauseStartTime, setPauseStartTime] = useState<Date | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isInDeliveryZone, setIsInDeliveryZone] = useState(true);
+  const [lastZoneCheck, setLastZoneCheck] = useState<Date | null>(null);
+  
+  // Check delivery availability
+  const checkDeliveryAvailability = async (lat: number, lng: number) => {
+    try {
+      const response = await supabase.functions.invoke('check-delivery-availability', {
+        body: { latitude: lat, longitude: lng }
+      });
+      
+      if (response.error) {
+        console.error('Error checking delivery availability:', response.error);
+        return false;
+      }
+      
+      return response.data.available;
+    } catch (error) {
+      console.error('Error checking delivery availability:', error);
+      return false;
+    }
+  };
   
   const [userLocation, setUserLocation] = useState<{
     lat: number;
@@ -865,6 +886,15 @@ export const MobileDriverDashboard: React.FC = () => {
           };
           setUserLocation(location);
 
+          // Check delivery zone availability
+          const isInZone = await checkDeliveryAvailability(location.lat, location.lng);
+          setIsInDeliveryZone(isInZone);
+          setLastZoneCheck(new Date());
+
+          if (!isInZone) {
+            toast.error('You are outside the delivery zone. Orders may not be available in your current location.');
+          }
+
           // Update driver location in database for auto-assignment
           const {
             error: locationError
@@ -1227,6 +1257,28 @@ export const MobileDriverDashboard: React.FC = () => {
 
             {/* Content Container */}
             <div className="flex flex-col justify-end h-full px-4 space-y-4 pointer-events-auto" style={{ paddingBottom: '100px' }}>
+              {/* Delivery Zone Status */}
+              {lastZoneCheck && (
+                <div className={`bg-card/95 backdrop-blur-sm rounded-2xl p-3 shadow-sm border border-border/10 ${
+                  isInDeliveryZone ? 'border-green-200 bg-green-50/50' : 'border-red-200 bg-red-50/50'
+                }`}>
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-2 h-2 rounded-full ${isInDeliveryZone ? 'bg-green-500' : 'bg-red-500'}`} />
+                    <span className={`text-sm font-medium ${isInDeliveryZone ? 'text-green-700' : 'text-red-700'}`}>
+                      {isInDeliveryZone ? 'In Delivery Zone' : 'Outside Delivery Zone'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {lastZoneCheck.toLocaleTimeString()}
+                    </span>
+                  </div>
+                  {!isInDeliveryZone && (
+                    <p className="text-xs text-red-600 mt-1">
+                      Move to a delivery zone to receive orders
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Popular Times Chart with CRAVE NOW Button */}
               <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/10 overflow-hidden">
                 {/* Main Action Button - Centered at top */}
