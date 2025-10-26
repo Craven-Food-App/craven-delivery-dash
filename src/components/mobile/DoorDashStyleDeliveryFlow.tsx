@@ -637,7 +637,7 @@ const DoorDashStyleDeliveryFlow: React.FC<DoorDashStyleDeliveryFlowProps> = ({
         totalSteps={DELIVERY_STAGES.length} 
       />
 
-      <div className="p-4 space-y-6">
+      <div className="p-4 pb-24 space-y-6">
         {renderStageContent()}
       </div>
 

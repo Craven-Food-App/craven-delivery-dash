@@ -251,7 +251,7 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center">
-      <div className="bg-white rounded-t-3xl w-full max-w-md mx-4 mb-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-t-3xl w-full max-w-md mx-4 mb-20 max-h-[85vh] overflow-y-auto">
         {/* Professional Header */}
         <DeliveryHeader
           title="New Delivery Request"

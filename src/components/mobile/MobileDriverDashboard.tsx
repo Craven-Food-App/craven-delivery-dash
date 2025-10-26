@@ -1487,6 +1487,7 @@ export const MobileDriverDashboard: React.FC = () => {
             // Check if this was a test order
             if (activeDelivery?.isTestOrder) {
               setShowTestCompletionModal(true);
+              // Don't reset state here - let the test completion modal handle it
             } else {
               // Record final driver earnings for real orders
               (async () => {
@@ -1506,9 +1507,10 @@ export const MobileDriverDashboard: React.FC = () => {
                   console.error('finalize-delivery failed', e);
                 }
               })();
+              // Reset state for real orders
+              setActiveDelivery(null);
+              setDriverState('online_searching');
             }
-            setActiveDelivery(null);
-            setDriverState('online_searching');
           }} 
           onCameraStateChange={setIsCameraOpen}
         />
@@ -1554,7 +1556,11 @@ export const MobileDriverDashboard: React.FC = () => {
           estimated_time: 30,
           isTestOrder: true
         }}
-        onCompleteDelivery={() => setShowTestCompletionModal(false)}
+        onCompleteDelivery={() => {
+          setShowTestCompletionModal(false);
+          setDriverState('online');
+          setActiveDelivery(null);
+        }}
       />}
 
       {/* Side Menu Overlay */}
