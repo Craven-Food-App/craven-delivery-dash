@@ -5,7 +5,7 @@ import { MAPBOX_CONFIG, ZONE_STYLES } from '@/config/mapbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, MapPin, Save, X, Edit3, AlertCircle } from 'lucide-react';
+import { Search, MapPin, Save, X, Edit3 } from 'lucide-react';
 
 interface ZoneDrawingMapProps {
   onZoneCreated: (zone: {
@@ -29,7 +29,6 @@ const ZoneDrawingMap: React.FC<ZoneDrawingMapProps> = ({
   const draw = useRef<MapboxDraw | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [mapError, setMapError] = useState<string | null>(null);
   const [zoneData, setZoneData] = useState({
     name: initialZone?.name || '',
     city: initialZone?.city || '',
@@ -40,74 +39,57 @@ const ZoneDrawingMap: React.FC<ZoneDrawingMapProps> = ({
   useEffect(() => {
     if (!mapContainer.current) return;
 
-    // Check if Mapbox token is available
-    if (!MAPBOX_CONFIG.accessToken || MAPBOX_CONFIG.accessToken === 'pk.your_token_here') {
-      setMapError('Mapbox access token not configured. Please add VITE_MAPBOX_ACCESS_TOKEN to your environment variables.');
-      return;
-    }
+    // Initialize map
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      accessToken: MAPBOX_CONFIG.accessToken,
+      style: MAPBOX_CONFIG.style,
+      center: MAPBOX_CONFIG.center,
+      zoom: MAPBOX_CONFIG.zoom
+    });
 
-    try {
-      // Initialize map
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        accessToken: MAPBOX_CONFIG.accessToken,
-        style: MAPBOX_CONFIG.style,
-        center: MAPBOX_CONFIG.center,
-        zoom: MAPBOX_CONFIG.zoom
-      });
-
-      // Initialize draw
-      draw.current = new MapboxDraw({
-        displayControlsDefault: false,
-        controls: {
-          polygon: true,
-          trash: true
+    // Initialize draw
+    draw.current = new MapboxDraw({
+      displayControlsDefault: false,
+      controls: {
+        polygon: true,
+        trash: true
+      },
+      defaultMode: 'draw_polygon',
+      styles: [
+        {
+          id: 'gl-draw-polygon-fill-inactive',
+          type: 'fill',
+          filter: ['all', ['==', 'active', 'false'], ['==', '$type', 'Polygon']],
+          paint: ZONE_STYLES.drawing
         },
-        defaultMode: 'draw_polygon',
-        styles: [
-          {
-            id: 'gl-draw-polygon-fill-inactive',
-            type: 'fill',
-            filter: ['all', ['==', 'active', 'false'], ['==', '$type', 'Polygon']],
-            paint: ZONE_STYLES.drawing
-          },
-          {
-            id: 'gl-draw-polygon-stroke-inactive',
-            type: 'line',
-            filter: ['all', ['==', 'active', 'false'], ['==', '$type', 'Polygon']],
-            paint: {
-              'line-color': ZONE_STYLES.drawing.stroke,
-              'line-width': ZONE_STYLES.drawing.strokeWidth,
-              'line-dasharray': ZONE_STYLES.drawing.strokeDasharray
-            }
+        {
+          id: 'gl-draw-polygon-stroke-inactive',
+          type: 'line',
+          filter: ['all', ['==', 'active', 'false'], ['==', '$type', 'Polygon']],
+          paint: {
+            'line-color': ZONE_STYLES.drawing.stroke,
+            'line-width': ZONE_STYLES.drawing.strokeWidth,
+            'line-dasharray': ZONE_STYLES.drawing.strokeDasharray
           }
-        ]
-      });
+        }
+      ]
+    });
 
-      map.current.addControl(draw.current);
+    map.current.addControl(draw.current);
 
-      // Handle drawing events
-      map.current.on('draw.create', () => {
-        setIsDrawing(true);
-      });
+    // Handle drawing events
+    map.current.on('draw.create', () => {
+      setIsDrawing(true);
+    });
 
-      map.current.on('draw.update', () => {
-        setIsDrawing(true);
-      });
+    map.current.on('draw.update', () => {
+      setIsDrawing(true);
+    });
 
-      map.current.on('draw.delete', () => {
-        setIsDrawing(false);
-      });
-
-      map.current.on('error', (e) => {
-        console.error('Mapbox error:', e);
-        setMapError('Failed to load map. Please check your Mapbox configuration.');
-      });
-
-    } catch (error) {
-      console.error('Error initializing map:', error);
-      setMapError('Failed to initialize map. Please check your Mapbox configuration.');
-    }
+    map.current.on('draw.delete', () => {
+      setIsDrawing(false);
+    });
 
     return () => {
       if (map.current) {
@@ -117,7 +99,7 @@ const ZoneDrawingMap: React.FC<ZoneDrawingMapProps> = ({
   }, []);
 
   const searchLocation = async () => {
-    if (!searchQuery || !map.current || mapError) return;
+    if (!searchQuery || !map.current) return;
 
     try {
       const response = await fetch(
@@ -153,7 +135,7 @@ const ZoneDrawingMap: React.FC<ZoneDrawingMapProps> = ({
   };
 
   const saveZone = () => {
-    if (!draw.current || !isDrawing || mapError) return;
+    if (!draw.current || !isDrawing) return;
 
     const features = draw.current.getAll();
     if (features.features.length === 0) return;
@@ -176,105 +158,6 @@ const ZoneDrawingMap: React.FC<ZoneDrawingMapProps> = ({
       geojson: polygon.geometry
     });
   };
-
-  // If there's a map error, show a simple form instead
-  if (mapError) {
-    return (
-      <div className="space-y-4">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center">
-            <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
-            <div>
-              <h3 className="text-sm font-medium text-red-800">Map Not Available</h3>
-              <p className="text-sm text-red-700 mt-1">{mapError}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Fallback form for manual zone creation */}
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name">Zone Name</Label>
-              <Input
-                id="name"
-                value={zoneData.name}
-                onChange={(e) => setZoneData({ ...zoneData, name: e.target.value })}
-                placeholder="e.g., Downtown Toledo"
-              />
-            </div>
-            <div>
-              <Label htmlFor="zip_code">ZIP Code</Label>
-              <Input
-                id="zip_code"
-                value={zoneData.zip_code}
-                onChange={(e) => setZoneData({ ...zoneData, zip_code: e.target.value })}
-                placeholder="e.g., 43604"
-              />
-            </div>
-            <div>
-              <Label htmlFor="city">City</Label>
-              <Input
-                id="city"
-                value={zoneData.city}
-                onChange={(e) => setZoneData({ ...zoneData, city: e.target.value })}
-                placeholder="e.g., Toledo"
-              />
-            </div>
-            <div>
-              <Label htmlFor="state">State</Label>
-              <Input
-                id="state"
-                value={zoneData.state}
-                onChange={(e) => setZoneData({ ...zoneData, state: e.target.value })}
-                placeholder="e.g., OH"
-              />
-            </div>
-          </div>
-
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h4 className="font-semibold text-yellow-900 mb-2">Manual Zone Creation</h4>
-            <p className="text-sm text-yellow-800">
-              Since the map is not available, this will create a zone with default coordinates. 
-              You can edit the zone later when the map is properly configured.
-            </p>
-          </div>
-
-          <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={onCancel}>
-              <X className="h-4 w-4 mr-2" />
-              Cancel
-            </Button>
-            <Button 
-              onClick={() => {
-                // Create a default polygon for Toledo area
-                const defaultPolygon = {
-                  type: 'Polygon',
-                  coordinates: [[
-                    [-83.6, 41.6],
-                    [-83.5, 41.6],
-                    [-83.5, 41.7],
-                    [-83.6, 41.7],
-                    [-83.6, 41.6]
-                  ]]
-                };
-                
-                onZoneCreated({
-                  ...zoneData,
-                  geojson: defaultPolygon
-                });
-              }}
-              disabled={!zoneData.name}
-              className="bg-orange-500 hover:bg-orange-600"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              Create Zone (Default Area)
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
