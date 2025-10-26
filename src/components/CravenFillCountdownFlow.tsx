@@ -100,14 +100,14 @@ const CravenFillCountdownFlow = ({
           maskPosition: "center"
         }}
       >
-        {/* Moving gradient background with soft edges */}
+        {/* Moving gradient background with minimal top edge fade */}
         <div
           className="absolute inset-0 animate-cravenFlow"
           style={{
-            background: "linear-gradient(180deg, transparent 0%, #ff7a33 5%, #ff4f00 35%, #d93c00 70%, #ff7a33 95%, transparent 100%)",
+            background: "linear-gradient(180deg, transparent 0%, rgba(255,122,51,0.3) 2%, #ff7a33 5%, #ff4f00 35%, #d93c00 70%, #ff7a33 95%, transparent 100%)",
             backgroundSize: "100% 200%",
             backgroundPositionY: "0%",
-            filter: "blur(2px) drop-shadow(0 0 8px rgba(255,79,0,0.35))",
+            filter: "blur(0.5px) drop-shadow(0 0 8px rgba(255,79,0,0.35))",
           }}
         />
       </div>

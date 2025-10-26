@@ -1024,6 +1024,21 @@ export const MobileDriverDashboard: React.FC = () => {
       console.error('Error unpausing:', error);
     }
   };
+
+  const handleAddTime = () => {
+    console.log('Adding 30 minutes to end time');
+    if (endTime) {
+      const newEndTime = new Date(endTime.getTime() + 30 * 60 * 1000); // Add 30 minutes
+      setEndTime(newEndTime);
+      console.log('End time extended to:', newEndTime);
+    }
+  };
+
+  const handleContactSupport = () => {
+    console.log('Opening customer service chat');
+    // TODO: Implement customer service chat functionality
+    // This could open a modal or navigate to a support page
+  };
   const handleSelectDriveTime = async (minutes: number) => {
     const now = new Date();
     const selectedEnd = new Date(now.getTime() + minutes * 60 * 1000);
@@ -1373,17 +1388,23 @@ export const MobileDriverDashboard: React.FC = () => {
 
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 safe-area-top">
-              <Settings className="h-6 w-6 text-gray-600" />
+              <div></div> {/* Empty div for spacing */}
                <h1 className="text-xl font-bold text-gray-900">Feeding Paused</h1>
               <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
-                  <span className="text-xs">+</span>
-                </div>
-                <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                <button 
+                  onClick={handleAddTime}
+                  className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center hover:bg-orange-600 transition-colors"
+                >
+                  <span className="text-xs text-white font-bold">+</span>
+                </button>
+                <button 
+                  onClick={handleContactSupport}
+                  className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center hover:bg-orange-600 transition-colors"
+                >
                   <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
                   </svg>
-                </div>
+                </button>
               </div>
             </div>
 
