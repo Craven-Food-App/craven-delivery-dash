@@ -119,7 +119,7 @@ const CravenFillCountdownFlow = ({
       </div>
 
       {/* Local CSS for the flowing gradient animation */}
-      <style jsx>{`
+      <style>{`
         @keyframes cravenFlow {
           0%   { background-position-y: 0%;   }
           50%  { background-position-y: 100%; }

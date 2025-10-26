@@ -521,6 +521,7 @@ const ProfessionalActiveDeliveryFlow = ({ orderDetails, onCompleteDelivery, onPr
             className="block w-full"
           >
             <DeliveryButton
+              onClick={() => {}}
               variant="outline"
               fullWidth
               disabled={isUploadingPhoto}

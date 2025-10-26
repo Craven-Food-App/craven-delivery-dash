@@ -129,7 +129,7 @@ export const DeliveryButton = ({
   disabled = false, 
   fullWidth = false,
   loading = false,
-  icon,
+  icon = null,
   animated = true,
   ...props 
 }) => {
@@ -187,7 +187,7 @@ export const DeliveryHeader = ({
   title, 
   subtitle, 
   onBack, 
-  rightAction,
+  rightAction = null,
   className = '',
   ...props 
 }) => (
@@ -327,7 +327,7 @@ export const DeliverySkeleton = ({
 // Action Button Group Component
 export const DeliveryActionGroup = ({ 
   primaryAction,
-  secondaryAction,
+  secondaryAction = null,
   className = '',
   ...props 
 }) => (
@@ -366,7 +366,7 @@ export const DeliveryEmptyState = ({
   icon: Icon,
   title,
   description,
-  action,
+  action = null,
   className = '',
   ...props 
 }) => (

@@ -69,12 +69,6 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
     if (documentsTask && application.drivers_license_front && application.drivers_license_back) {
       await completeTask(documentsTask.id, documentsTask.task_key);
     }
-
-    // Check for profile photo task
-    const photoTask = tasks.find(t => t.task_key === 'upload_profile_photo' && !t.completed);
-    if (photoTask && application.profile_photo) {
-      await completeTask(photoTask.id, photoTask.task_key);
-    }
   };
 
   const loadProgress = async () => {
@@ -345,8 +339,7 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
           </Button>
         );
       case 'upload_documents':
-      case 'upload_profile_photo':
-        // Auto-completed if documents/photos were uploaded during application
+        // Auto-completed if documents were uploaded during application
         return (
           <Badge variant="outline" className="text-green-600 border-green-200">
             Auto-Checking...

@@ -358,10 +358,13 @@ const DoorDashStyleDeliveryFlow: React.FC<DoorDashStyleDeliveryFlowProps> = ({
       case 'arrived_at_restaurant':
         return (
           <div className="space-y-6">
-            <DeliverySuccessState
-              title="You've Arrived!"
-              message="You're at the restaurant. Let them know you're here for pickup."
-            />
+            <DeliveryCard className="p-6 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-green-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">You've Arrived!</h3>
+              <p className="text-sm text-gray-600">You're at the restaurant. Let them know you're here for pickup.</p>
+            </DeliveryCard>
             
             <DeliveryCard className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Restaurant Contact</h3>
@@ -583,10 +586,15 @@ const DoorDashStyleDeliveryFlow: React.FC<DoorDashStyleDeliveryFlowProps> = ({
 
       case 'delivered':
         return (
-          <DeliverySuccessState
-            title="Delivery Complete! 🎉"
-            message="Great job! Your delivery has been completed successfully."
-          >
+          <div className="space-y-6">
+            <DeliveryCard className="p-6 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-green-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-green-900 mb-2">Delivery Complete! 🎉</h3>
+              <p className="text-sm text-green-600 mb-6">Great job! Your delivery has been completed successfully.</p>
+            </DeliveryCard>
+            
             <DeliveryCard className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Earnings Summary</h3>
               <div className="space-y-3">
@@ -616,7 +624,7 @@ const DoorDashStyleDeliveryFlow: React.FC<DoorDashStyleDeliveryFlowProps> = ({
                 children: 'Finish'
               }}
             />
-          </DeliverySuccessState>
+          </div>
         );
 
       default:

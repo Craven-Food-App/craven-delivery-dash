@@ -90,15 +90,6 @@ export const DocumentsStep = ({ files, onFileUpload, onNext, onBack, isValid }: 
       </Alert>
 
       <FileUploadField
-        label="Profile Photo"
-        description="A clear headshot photo (like a passport photo)"
-        required
-        file={files.profilePhoto}
-        onUpload={(file) => onFileUpload('profilePhoto', file)}
-        onRemove={() => {}}
-      />
-
-      <FileUploadField
         label="Driver's License (Front)"
         description="Front side of your driver's license with photo visible"
         required

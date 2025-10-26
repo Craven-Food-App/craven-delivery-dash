@@ -46,7 +46,6 @@ export interface ApplicationData {
 }
 
 export interface ApplicationFiles {
-  profilePhoto?: File;
   driversLicenseFront?: File;
   driversLicenseBack?: File;
   insuranceDocument?: File;

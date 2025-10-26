@@ -1385,7 +1385,7 @@ export const MobileDriverDashboard: React.FC = () => {
         {/* PAUSED STATE - DoorDash Style */}
         {activeTab === 'home' && driverState === 'online_paused' && (
           <div className="fixed inset-0 bg-white z-50" style={{ pointerEvents: 'auto' }}>
-            {console.log('Pause interface rendered, driverState:', driverState, 'activeTab:', activeTab)}
+            {(() => { console.log('Pause interface rendered, driverState:', driverState, 'activeTab:', activeTab); return null; })()}
 
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 safe-area-top">
@@ -1558,7 +1558,7 @@ export const MobileDriverDashboard: React.FC = () => {
         }}
         onCompleteDelivery={() => {
           setShowTestCompletionModal(false);
-          setDriverState('online');
+          setDriverState('online_searching');
           setActiveDelivery(null);
         }}
       />}
