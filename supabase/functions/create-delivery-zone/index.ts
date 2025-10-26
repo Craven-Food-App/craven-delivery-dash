@@ -9,8 +9,16 @@ serve(async (req) => {
     Deno.env.get('SUPABASE_ANON_KEY') ?? ''
   )
 
-  // Convert GeoJSON to PostGIS WKT format
-  const wkt = `SRID=4326;${JSON.stringify(geojson)}`;
+  // Convert GeoJSON to PostGIS geometry using the function
+  const { data: geomResult, error: geomError } = await supabase
+    .rpc('st_geomfromgeojson_text', { geojson: JSON.stringify(geojson) });
+
+  if (geomError) {
+    return new Response(JSON.stringify({ error: geomError.message }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' }
+    })
+  }
 
   const { data, error } = await supabase
     .from('delivery_zones')
@@ -19,7 +27,7 @@ serve(async (req) => {
       city,
       state,
       zip_code,
-      geom: wkt,
+      geom: geomResult,
       active: true
     })
     .select()

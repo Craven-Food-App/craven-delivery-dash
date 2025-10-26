@@ -78,20 +78,16 @@ const DeliveryZoneManager: React.FC = () => {
     try {
       setIsCreating(true);
       
-      // Convert GeoJSON to PostGIS WKT format
-      const wkt = `SRID=4326;${JSON.stringify(zoneData.geojson)}`;
-      
-      const { data, error } = await supabase
-        .from('delivery_zones')
-        .insert({
+      // Call the Edge Function instead of direct table insert
+      const { data, error } = await supabase.functions.invoke('create-delivery-zone', {
+        body: {
           name: zoneData.name,
           city: zoneData.city,
           state: zoneData.state,
           zip_code: zoneData.zip_code,
-          geom: wkt,
-          active: true
-        })
-        .select();
+          geojson: zoneData.geojson
+        }
+      });
 
       if (error) throw error;
       
