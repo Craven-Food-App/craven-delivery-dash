@@ -1372,7 +1372,7 @@ export const MobileDriverDashboard: React.FC = () => {
             {console.log('Pause interface rendered, driverState:', driverState, 'activeTab:', activeTab)}
 
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 safe-area-top">
               <Settings className="h-6 w-6 text-gray-600" />
                <h1 className="text-xl font-bold text-gray-900">Feeding Paused</h1>
               <div className="flex items-center space-x-3">
