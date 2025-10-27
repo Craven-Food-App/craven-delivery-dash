@@ -33,6 +33,7 @@ interface DeliveryZone {
   created_at: string;
   updated_at: string;
   created_by?: string;
+  geom?: any;
 }
 
 const DeliveryZoneManager: React.FC = () => {
@@ -52,7 +53,7 @@ const DeliveryZoneManager: React.FC = () => {
   const loadZones = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('delivery_zones')
         .select('*')
         .order('created_at', { ascending: false });
@@ -104,7 +105,7 @@ const DeliveryZoneManager: React.FC = () => {
   // Toggle zone active status
   const toggleZoneStatus = async (zoneId: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('delivery_zones')
         .update({ active: !currentStatus })
         .eq('id', zoneId);
@@ -125,7 +126,7 @@ const DeliveryZoneManager: React.FC = () => {
 
     try {
       const { error } = await supabase
-        .from('delivery_zones')
+        .from('delivery_zones' as any)
         .delete()
         .eq('id', zoneId);
 
@@ -356,8 +357,8 @@ const DeliveryZoneManager: React.FC = () => {
             </CardHeader>
             <CardContent>
               <ZoneVisualizationMap
-                zones={zones}
-                onZoneClick={(zone) => setSelectedZone(zone)}
+                zones={zones as any}
+                onZoneClick={(zone: any) => setSelectedZone(zone as DeliveryZone)}
               />
             </CardContent>
           </Card>
