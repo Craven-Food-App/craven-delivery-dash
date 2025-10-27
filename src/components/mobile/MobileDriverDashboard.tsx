@@ -623,7 +623,7 @@ export const MobileDriverDashboard: React.FC = () => {
     const initializeDashboard = async () => {
       console.log('MobileDriverDashboard: Starting initialization');
       
-      // Failsafe: If loading takes more than 10 seconds, force show welcome screen
+      // Failsafe: If loading takes more than 5 seconds, force show welcome screen
       failsafeTimer = setTimeout(() => {
         if (isMounted && isLoading) {
           console.warn('MobileDriverDashboard: Loading timeout reached, forcing welcome screen');
@@ -631,7 +631,7 @@ export const MobileDriverDashboard: React.FC = () => {
           setShowWelcomeScreen(true);
           setLoadingError(true);
         }
-      }, 10000);
+      }, 5000);
       
       try {
         await checkOnboardingAndSession();
