@@ -112,7 +112,7 @@ export const NavigationMapbox: React.FC<NavigationMapboxProps> = ({
     if (!mapContainer.current || !mapboxToken || !window.mapboxgl) return;
 
     try {
-      window.mapboxgl.accessToken = mapboxToken;
+      (window.mapboxgl as any).accessToken = mapboxToken;
 
       map.current = new window.mapboxgl.Map({
         container: mapContainer.current,
