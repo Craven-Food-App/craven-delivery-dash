@@ -1,8 +1,8 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.craven.delivery.driver',
-  appName: 'Crave\'N Driver',
+  appId: 'com.craven.delivery.feeder',
+  appName: 'Crave\'N Feeder',
   webDir: 'dist',
   server: {
     url: 'https://44d88461-c1ea-4d22-93fe-ebc1a7d81db9.lovableproject.com?forceHideBadge=true',
