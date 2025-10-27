@@ -115,8 +115,10 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
     try {
       console.log('Initializing Mapbox map...');
 
-      // Set the access token
-      window.mapboxgl.accessToken = 'pk.eyJ1IjoiY3JhdmUtbiIsImEiOiJjbWVxb21qbTQyNTRnMm1vaHg5bDZwcmw2In0.aOsYrL2B0cjfcCGW1jHAdw';
+      // Set the access token from env or use embedded token
+      const mapboxToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || 'pk.eyJ1IjoiY3JhdmUtbiIsImEiOiJjbWVxb21qbTQyNTRnMm1vaHg5bDZwcmw2In0.aOsYrL2B0cjfcCGW1jHAdw';
+      window.mapboxgl.accessToken = mapboxToken;
+      console.log('Using Mapbox token:', mapboxToken.substring(0, 20) + '...');
 
       // Get map style from driver preferences
       const preferredStyle = localStorage.getItem('driver_map_style') || 'standard';
