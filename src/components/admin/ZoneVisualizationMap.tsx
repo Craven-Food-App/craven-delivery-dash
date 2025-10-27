@@ -32,7 +32,7 @@ const ZoneVisualizationMap: React.FC<ZoneVisualizationMapProps> = ({
       container: mapContainer.current,
       accessToken: MAPBOX_CONFIG.accessToken,
       style: MAPBOX_CONFIG.style,
-      center: MAPBOX_CONFIG.center,
+      center: MAPBOX_CONFIG.center as [number, number],
       zoom: MAPBOX_CONFIG.zoom
     });
 
@@ -40,7 +40,7 @@ const ZoneVisualizationMap: React.FC<ZoneVisualizationMapProps> = ({
       if (!map.current) return;
 
       // Add zones as GeoJSON source
-      const zonesGeoJSON = {
+      const zonesGeoJSON: GeoJSON.FeatureCollection = {
         type: 'FeatureCollection',
         features: zones.map(zone => ({
           type: 'Feature',
@@ -58,7 +58,7 @@ const ZoneVisualizationMap: React.FC<ZoneVisualizationMapProps> = ({
 
       map.current.addSource('zones', {
         type: 'geojson',
-        data: zonesGeoJSON
+        data: zonesGeoJSON as any
       });
 
       // Add active zones layer

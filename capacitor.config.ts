@@ -1,9 +1,14 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.craven.delivery.driver',
-  appName: 'Craven Delivery Driver',
+  appId: 'com.craven.delivery.feeder',
+  appName: 'Crave\'N Feeder',
   webDir: 'dist',
+  android: {
+    allowMixedContent: true,
+    captureInput: true,
+    webContentsDebuggingEnabled: true
+  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 0
