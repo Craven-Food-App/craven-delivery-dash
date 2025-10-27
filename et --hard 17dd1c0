@@ -1,0 +1,10 @@
+[33mec6a19b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Revert ZoneDrawingMap to original working version
+[33m1bafddf[m Add fallback for delivery zone creation when Mapbox is not configured
+[33m43a07d7[m Fix CORS headers in delivery zone Edge Functions
+[33m17dd1c0[m Fix delivery zone Edge Function integration
+[33m09445a9[m Implement interactive delivery zone polygon system
+[33mda0d146[m Add complete delivery zone management system
+[33m9da6096[m Remove driver profile photo functionality
+[33mfeb0388[m Fix delivery flow issues: modal positioning, step 1 padding, and test order completion
+[33m64f9edb[m Fix camera capture issue by adding missing canvas element and improving video readiness checks
+[33m54faa83[m Add debugging to delivery flow camera capture
