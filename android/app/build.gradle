@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.craven.delivery.driver"
+    namespace "com.craven.delivery.feeder"
     compileSdk rootProject.ext.compileSdkVersion
     
     compileOptions {
@@ -9,7 +9,7 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
     defaultConfig {
-        applicationId "com.craven.delivery.driver"
+        applicationId "com.craven.delivery.feeder"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
