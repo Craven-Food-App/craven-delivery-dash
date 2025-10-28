@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import ChatButton from '@/components/chat/ChatButton';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 interface MobileBottomNavProps {
   cartCount?: number;
   user?: any;
@@ -15,28 +16,38 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
 }) => {
   const location = useLocation();
   const isMobile = useIsMobile();
+  const restaurantsVisible = useFeatureFlag('feature_restaurants_visible');
+  
   if (!isMobile) return null;
-  const tabs = [{
-    id: 'home',
-    label: 'Home',
-    icon: Home,
-    path: '/restaurants'
-  }, {
-    id: 'restaurants',
-    label: 'Search',
-    icon: Search,
-    path: '/restaurants'
-  }, {
-    id: 'orders',
-    label: 'Orders',
-    icon: ShoppingCart,
-    path: user ? '/customer-dashboard?tab=orders' : '/auth'
-  }, {
-    id: 'profile',
-    label: 'Account',
-    icon: User,
-    path: user ? '/customer-dashboard?tab=account' : '/auth'
-  }];
+  
+  const tabs = [
+    ...(restaurantsVisible ? [
+      {
+        id: 'home',
+        label: 'Home',
+        icon: Home,
+        path: '/restaurants'
+      }, 
+      {
+        id: 'restaurants',
+        label: 'Search',
+        icon: Search,
+        path: '/restaurants'
+      }
+    ] : []),
+    {
+      id: 'orders',
+      label: 'Orders',
+      icon: ShoppingCart,
+      path: user ? '/customer-dashboard?tab=orders' : '/auth'
+    }, 
+    {
+      id: 'profile',
+      label: 'Account',
+      icon: User,
+      path: user ? '/customer-dashboard?tab=account' : '/auth'
+    }
+  ];
   return <>
       {/* Floating Chat Button */}
       <div className="fixed bottom-20 right-4 z-50 my-[340px] px-0 mx-0 py-0">

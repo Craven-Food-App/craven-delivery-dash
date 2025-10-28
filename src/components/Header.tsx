@@ -26,6 +26,7 @@ import { useMerchantStatus } from "@/hooks/useMerchantStatus";
 import AuthModal from "./auth/AuthModal";
 import AddressSelector from "./address/AddressSelector";
 import { ThemeToggle } from "./ThemeToggle";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 interface User {
   id: string;
@@ -43,6 +44,7 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { toast } = useToast();
   const { isMerchant, merchantLoading } = useMerchantStatus(user?.id || null);
+  const restaurantsVisible = useFeatureFlag('feature_restaurants_visible');
 
   useEffect(() => {
     // Set up auth state listener
@@ -112,7 +114,9 @@ const Header = () => {
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex space-x-6">
-              <a href="/restaurants" className="text-foreground hover:text-primary transition-colors">Restaurants</a>
+              {restaurantsVisible && (
+                <a href="/restaurants" className="text-foreground hover:text-primary transition-colors">Restaurants</a>
+              )}
               <a href="/feeder" className="text-foreground hover:text-primary transition-colors">Become a Feeder</a>
             </nav>
 
@@ -240,13 +244,15 @@ const Header = () => {
             <div className="container mx-auto px-4 py-6 space-y-4">
               {/* Mobile Navigation */}
               <nav className="space-y-4">
-                <a 
-                  href="/restaurants" 
-                  className="block text-lg font-semibold text-foreground hover:text-primary"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Restaurants
-                </a>
+                {restaurantsVisible && (
+                  <a 
+                    href="/restaurants" 
+                    className="block text-lg font-semibold text-foreground hover:text-primary"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Restaurants
+                  </a>
+                )}
                 <a 
                   href="/feeder" 
                   className="block text-lg font-semibold text-foreground hover:text-primary"

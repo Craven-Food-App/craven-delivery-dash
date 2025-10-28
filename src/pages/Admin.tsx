@@ -26,7 +26,7 @@ import { LiveDriverTesting } from '@/components/testing/LiveDriverTesting';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, BarChart3, Users, Store, Car, ShoppingBag, MessageCircle, Bell, DollarSign, Tags, GraduationCap, FileCheck, Shield, ChevronRight, Package, Settings, AlertCircle, TrendingUp, LifeBuoy, FileText, TestTube, Zap, Database, Clock } from 'lucide-react';
+import { ArrowLeft, BarChart3, Users, Store, Car, ShoppingBag, MessageCircle, Bell, DollarSign, Tags, GraduationCap, FileCheck, Shield, ChevronRight, Package, Settings, AlertCircle, TrendingUp, LifeBuoy, FileText, TestTube, Zap, Database, Clock, Eye } from 'lucide-react';
 import cravenLogo from "@/assets/craven-logo.png";
 import { cn } from '@/lib/utils';
 import RefundManagement from '@/components/admin/RefundManagement';
@@ -36,6 +36,7 @@ import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
 import SupportTickets from '@/components/admin/SupportTickets';
 import AuditLogs from '@/components/admin/AuditLogs';
 import DeliveryZoneManager from '@/components/admin/DeliveryZoneManager';
+import { FeatureToggleManager } from '@/components/admin/FeatureToggleManager';
 
 const Admin: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -88,6 +89,7 @@ const Admin: React.FC = () => {
       title: 'Operations',
       icon: Settings,
       items: [
+        { id: 'feature-toggles', label: 'Feature Toggles', icon: Eye },
         { id: 'refunds', label: 'Refunds', icon: DollarSign },
         { id: 'disputes', label: 'Disputes', icon: AlertCircle },
         { id: 'support-tickets', label: 'Support Tickets', icon: LifeBuoy },
@@ -147,6 +149,8 @@ const Admin: React.FC = () => {
         return <PromoCodeManager />;
       case 'customer-support':
         return <ChatPortal />;
+      case 'feature-toggles':
+        return <FeatureToggleManager />;
       case 'refunds':
         return <RefundManagement />;
       case 'disputes':
