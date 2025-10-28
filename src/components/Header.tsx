@@ -45,6 +45,11 @@ const Header = () => {
   const { toast } = useToast();
   const { isMerchant, merchantLoading } = useMerchantStatus(user?.id || null);
   const restaurantsVisible = useFeatureFlag('feature_restaurants_visible');
+  
+  // Check if on feeder subdomain
+  const isFeederSubdomain = typeof window !== 'undefined' && 
+    (window.location.hostname === 'feeder.cravenusa.com' || 
+     window.location.hostname === 'feed.cravenusa.com');
 
   useEffect(() => {
     // Set up auth state listener
@@ -113,12 +118,14 @@ const Header = () => {
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex space-x-6">
-              {restaurantsVisible && (
-                <a href="/restaurants" className="text-foreground hover:text-primary transition-colors">Restaurants</a>
-              )}
-              <a href="/feeder" className="text-foreground hover:text-primary transition-colors">Become a Feeder</a>
-            </nav>
+            {!isFeederSubdomain && (
+              <nav className="hidden lg:flex space-x-6">
+                {restaurantsVisible && (
+                  <a href="/restaurants" className="text-foreground hover:text-primary transition-colors">Restaurants</a>
+                )}
+                <a href="/feeder" className="text-foreground hover:text-primary transition-colors">Become a Feeder</a>
+              </nav>
+            )}
 
             {/* Desktop Location/Address Selector */}
             <div className="hidden lg:flex">
@@ -151,14 +158,16 @@ const Header = () => {
             <div className="hidden md:flex items-center space-x-2">
               <ThemeToggle />
               
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-primary hover:text-primary hover:bg-primary/10"
-                onClick={() => window.location.href = '/admin'}
-              >
-                Admin
-              </Button>
+              {!isFeederSubdomain && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-primary hover:text-primary hover:bg-primary/10"
+                  onClick={() => window.location.href = '/admin'}
+                >
+                  Admin
+                </Button>
+              )}
               
               {user && (
                 <Button variant="ghost" size="icon" className="relative">
@@ -244,7 +253,7 @@ const Header = () => {
             <div className="container mx-auto px-4 py-6 space-y-4">
               {/* Mobile Navigation */}
               <nav className="space-y-4">
-                {restaurantsVisible && (
+                {!isFeederSubdomain && restaurantsVisible && (
                   <a 
                     href="/restaurants" 
                     className="block text-lg font-semibold text-foreground hover:text-primary"
@@ -253,20 +262,24 @@ const Header = () => {
                     Restaurants
                   </a>
                 )}
-                <a 
-                  href="/feeder" 
-                  className="block text-lg font-semibold text-foreground hover:text-primary"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Become a Feeder
-                </a>
-                <a 
-                  href="/admin" 
-                  className="block text-lg font-semibold text-primary hover:text-primary/80"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Admin
-                </a>
+                {!isFeederSubdomain && (
+                  <>
+                    <a 
+                      href="/feeder" 
+                      className="block text-lg font-semibold text-foreground hover:text-primary"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Become a Feeder
+                    </a>
+                    <a 
+                      href="/admin" 
+                      className="block text-lg font-semibold text-primary hover:text-primary/80"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Admin
+                    </a>
+                  </>
+                )}
               </nav>
 
               {/* Mobile Theme Toggle */}

@@ -66,6 +66,11 @@ const queryClient = new QueryClient();
 const App = () => {
   const [user, setUser] = useState(null);
 
+  // Check if on feeder subdomain
+  const isFeederSubdomain = typeof window !== 'undefined' && 
+    (window.location.hostname === 'feeder.cravenusa.com' || 
+     window.location.hostname === 'feed.cravenusa.com');
+
   useEffect(() => {
     // Validate environment configuration
     if (!validateEnvironmentConfig()) {
@@ -129,6 +134,36 @@ const App = () => {
               </Routes>
             </HashRouter>
           </TooltipProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    );
+  }
+
+  // If on feeder subdomain, show only feeder-related routes
+  if (isFeederSubdomain) {
+    return (
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider defaultTheme="system">
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<FeederHub />} />
+                  <Route path="/driver/auth" element={<DriverAuth />} />
+                  <Route path="/enhanced-onboarding" element={<EnhancedDriverOnboarding />} />
+                  <Route path="/enhanced-onboarding/profile" element={<ProfileCompletionForm />} />
+                  <Route path="/enhanced-onboarding/vehicle-photos" element={<VehiclePhotosUpload />} />
+                  <Route path="/enhanced-onboarding/payout" element={<PayoutSetup />} />
+                  <Route path="/enhanced-onboarding/safety-quiz" element={<SafetyQuiz />} />
+                  <Route path="/mobile" element={<MobileDriverDashboard />} />
+                  <Route path="/mobile/background-check-status" element={<MobileBackgroundCheckStatus />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </ThemeProvider>
         </QueryClientProvider>
       </ErrorBoundary>
     );
