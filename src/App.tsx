@@ -56,6 +56,7 @@ import { VehiclePhotosUpload } from "./components/onboarding/VehiclePhotosUpload
 import { PayoutSetup } from "./components/onboarding/PayoutSetup";
 import { SafetyQuiz } from "./components/onboarding/SafetyQuiz";
 import BoardPortal from "./pages/BoardPortal";
+import CEOPortal from "./pages/CEOPortal";
 
 // Lazy load guide pages
 const AdminGuide = lazy(() => import("./pages/AdminGuide"));
@@ -79,6 +80,10 @@ const App = () => {
   // Check if on board subdomain
   const isBoardSubdomain = typeof window !== 'undefined' && 
     window.location.hostname === 'board.cravenusa.com';
+
+  // Check if on CEO subdomain
+  const isCEOSubdomain = typeof window !== 'undefined' && 
+    window.location.hostname === 'ceo.cravenusa.com';
 
   useEffect(() => {
     // Validate environment configuration
@@ -230,6 +235,29 @@ const App = () => {
     );
   }
 
+  // If on CEO subdomain, show only CEO Command Center
+  if (isCEOSubdomain) {
+    return (
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider defaultTheme="system">
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<CEOPortal />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    );
+  }
+
   // Web version with full routing
   return (
     <ErrorBoundary>
@@ -269,6 +297,7 @@ const App = () => {
           <Route path="/restaurant/most-loved" element={<MostLovedProgram />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/board" element={<BoardPortal />} />
+          <Route path="/ceo" element={<CEOPortal />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/track-order/:orderId" element={<TrackOrder />} />
