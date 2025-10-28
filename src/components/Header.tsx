@@ -50,6 +50,10 @@ const Header = () => {
   const isFeederSubdomain = typeof window !== 'undefined' && 
     (window.location.hostname === 'feeder.cravenusa.com' || 
      window.location.hostname === 'feed.cravenusa.com');
+  
+  // Check if on merchant subdomain
+  const isMerchantSubdomain = typeof window !== 'undefined' && 
+    window.location.hostname === 'merchant.cravenusa.com';
 
   useEffect(() => {
     // Set up auth state listener
@@ -118,12 +122,18 @@ const Header = () => {
             </div>
 
             {/* Desktop Navigation */}
-            {!isFeederSubdomain && (
+            {!isFeederSubdomain && !isMerchantSubdomain && (
               <nav className="hidden lg:flex space-x-6">
                 {restaurantsVisible && (
                   <a href="/restaurants" className="text-foreground hover:text-primary transition-colors">Restaurants</a>
                 )}
                 <a href="/feeder" className="text-foreground hover:text-primary transition-colors">Become a Feeder</a>
+              </nav>
+            )}
+            {isMerchantSubdomain && (
+              <nav className="hidden lg:flex space-x-6">
+                <a href="/solutions" className="text-foreground hover:text-primary transition-colors">Solutions</a>
+                <a href="/register" className="text-foreground hover:text-primary transition-colors">Get Started</a>
               </nav>
             )}
 
@@ -158,7 +168,7 @@ const Header = () => {
             <div className="hidden md:flex items-center space-x-2">
               <ThemeToggle />
               
-              {!isFeederSubdomain && (
+              {!isFeederSubdomain && !isMerchantSubdomain && (
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -166,6 +176,16 @@ const Header = () => {
                   onClick={() => window.location.href = '/admin'}
                 >
                   Admin
+                </Button>
+              )}
+              
+              {isMerchantSubdomain && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => window.location.href = '/auth'}
+                >
+                  Sign In
                 </Button>
               )}
               
@@ -253,7 +273,7 @@ const Header = () => {
             <div className="container mx-auto px-4 py-6 space-y-4">
               {/* Mobile Navigation */}
               <nav className="space-y-4">
-                {!isFeederSubdomain && restaurantsVisible && (
+                {!isFeederSubdomain && !isMerchantSubdomain && restaurantsVisible && (
                   <a 
                     href="/restaurants" 
                     className="block text-lg font-semibold text-foreground hover:text-primary"
@@ -262,7 +282,7 @@ const Header = () => {
                     Restaurants
                   </a>
                 )}
-                {!isFeederSubdomain && (
+                {!isFeederSubdomain && !isMerchantSubdomain && (
                   <>
                     <a 
                       href="/feeder" 
@@ -277,6 +297,31 @@ const Header = () => {
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       Admin
+                    </a>
+                  </>
+                )}
+                {isMerchantSubdomain && (
+                  <>
+                    <a 
+                      href="/solutions" 
+                      className="block text-lg font-semibold text-foreground hover:text-primary"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Solutions
+                    </a>
+                    <a 
+                      href="/register" 
+                      className="block text-lg font-semibold text-foreground hover:text-primary"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Get Started
+                    </a>
+                    <a 
+                      href="/auth" 
+                      className="block text-lg font-semibold text-primary hover:text-primary/80"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Sign In
                     </a>
                   </>
                 )}

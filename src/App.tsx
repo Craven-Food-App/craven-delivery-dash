@@ -71,6 +71,10 @@ const App = () => {
     (window.location.hostname === 'feeder.cravenusa.com' || 
      window.location.hostname === 'feed.cravenusa.com');
 
+  // Check if on merchant subdomain
+  const isMerchantSubdomain = typeof window !== 'undefined' && 
+    window.location.hostname === 'merchant.cravenusa.com';
+
   useEffect(() => {
     // Validate environment configuration
     if (!validateEnvironmentConfig()) {
@@ -159,6 +163,35 @@ const App = () => {
                   <Route path="/enhanced-onboarding/safety-quiz" element={<SafetyQuiz />} />
                   <Route path="/mobile" element={<MobileDriverDashboard />} />
                   <Route path="/mobile/background-check-status" element={<MobileBackgroundCheckStatus />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    );
+  }
+
+  // If on merchant subdomain, show only merchant-related routes
+  if (isMerchantSubdomain) {
+    return (
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider defaultTheme="system">
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<PartnerWithUs />} />
+                  <Route path="/register" element={<RestaurantRegister />} />
+                  <Route path="/auth" element={<RestaurantAuth />} />
+                  <Route path="/dashboard" element={<RestaurantDashboard />} />
+                  <Route path="/portal" element={<MerchantPortal />} />
+                  <Route path="/solutions" element={<SolutionsCenter />} />
+                  <Route path="/most-loved" element={<MostLovedProgram />} />
+                  <Route path="/request-delivery" element={<RequestDelivery />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </BrowserRouter>
