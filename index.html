@@ -113,17 +113,19 @@
     
     <!-- Detect mobile driver route and add loading class -->
     <script>
-      // Add loading class only for mobile driver route
-      if (window.location.pathname.includes('/mobile') && window.innerWidth <= 768) {
-        document.body.classList.add('mobile-driver-loading');
-        
-        // Remove loading class once React loads
-        window.addEventListener('DOMContentLoaded', function() {
-          setTimeout(function() {
-            document.body.classList.remove('mobile-driver-loading');
-          }, 100);
-        });
-      }
+      // Add loading class only for mobile driver route (supports hash routing for Capacitor)
+      (function() {
+        var isMobilePath = (window.location.pathname + window.location.hash).includes('/mobile');
+        if (isMobilePath && window.innerWidth <= 768) {
+          document.body.classList.add('mobile-driver-loading');
+          // Remove loading class once React loads
+          window.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+              document.body.classList.remove('mobile-driver-loading');
+            }, 100);
+          });
+        }
+      })();
     </script>
 
     <!-- Swap iOS app icon/title for Feeder only on /mobile -->
@@ -164,7 +166,8 @@
       // Detect PWA mode and add classes immediately (runs after body exists)
       (function () {
         var isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator && window.navigator.standalone === true);
-        var isMobileRoute = window.location.pathname.startsWith('/mobile');
+        var pathAndHash = window.location.pathname + window.location.hash;
+        var isMobileRoute = pathAndHash.includes('/mobile');
         
         console.log('PWA Detection:', { isStandalone, isMobileRoute });
         
