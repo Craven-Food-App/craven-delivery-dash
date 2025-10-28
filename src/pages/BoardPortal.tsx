@@ -11,6 +11,7 @@ import {
   FolderOutlined,
   TeamOutlined,
   BarChartOutlined,
+  RocketOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +19,9 @@ import { ExecutiveComms } from '@/components/board/ExecutiveComms';
 import { BoardMeetings } from '@/components/board/BoardMeetings';
 import { DocumentVault } from '@/components/board/DocumentVault';
 import { ExecutiveDirectory } from '@/components/board/ExecutiveDirectory';
+import { PersonnelOverview } from '@/components/board/PersonnelOverview';
+import { FinancialDashboard } from '@/components/board/FinancialDashboard';
+import { StrategicOverview } from '@/components/board/StrategicOverview';
 
 interface DashboardMetrics {
   revenue: number;
@@ -343,6 +347,36 @@ const BoardPortal: React.FC = () => {
                   </span>
                 ),
                 children: <ExecutiveDirectory />,
+              },
+              {
+                key: 'personnel',
+                label: (
+                  <span>
+                    <UserOutlined />
+                    Personnel
+                  </span>
+                ),
+                children: <PersonnelOverview />,
+              },
+              {
+                key: 'financial',
+                label: (
+                  <span>
+                    <DollarOutlined />
+                    Financials
+                  </span>
+                ),
+                children: <FinancialDashboard />,
+              },
+              {
+                key: 'strategic',
+                label: (
+                  <span>
+                    <RocketOutlined />
+                    Strategic
+                  </span>
+                ),
+                children: <StrategicOverview />,
               },
             ]}
           />
