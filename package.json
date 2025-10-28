@@ -35,6 +35,8 @@
     "postinstall": "cap sync"
   },
   "dependencies": {
+    "@ant-design/charts": "^2.6.6",
+    "@ant-design/icons": "^6.1.0",
     "@capacitor/android": "^7.4.3",
     "@capacitor/cli": "^7.4.3",
     "@capacitor/core": "^7.4.3",
@@ -74,6 +76,7 @@
     "@tanstack/react-query": "^5.56.2",
     "@types/leaflet": "^1.9.20",
     "@types/qrcode": "^1.5.5",
+    "antd": "^5.27.6",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",

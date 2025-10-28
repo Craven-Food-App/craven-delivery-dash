@@ -55,6 +55,7 @@ import { ProfileCompletionForm } from "./components/onboarding/ProfileCompletion
 import { VehiclePhotosUpload } from "./components/onboarding/VehiclePhotosUpload";
 import { PayoutSetup } from "./components/onboarding/PayoutSetup";
 import { SafetyQuiz } from "./components/onboarding/SafetyQuiz";
+import BoardPortal from "./pages/BoardPortal";
 
 // Lazy load guide pages
 const AdminGuide = lazy(() => import("./pages/AdminGuide"));
@@ -74,6 +75,10 @@ const App = () => {
   // Check if on merchant subdomain
   const isMerchantSubdomain = typeof window !== 'undefined' && 
     window.location.hostname === 'merchant.cravenusa.com';
+
+  // Check if on board subdomain
+  const isBoardSubdomain = typeof window !== 'undefined' && 
+    window.location.hostname === 'board.cravenusa.com';
 
   useEffect(() => {
     // Validate environment configuration
@@ -192,6 +197,29 @@ const App = () => {
                   <Route path="/solutions" element={<SolutionsCenter />} />
                   <Route path="/most-loved" element={<MostLovedProgram />} />
                   <Route path="/request-delivery" element={<RequestDelivery />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    );
+  }
+
+  // If on board subdomain, show only executive board portal
+  if (isBoardSubdomain) {
+    return (
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider defaultTheme="system">
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<BoardPortal />} />
+                  <Route path="/auth" element={<Auth />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </BrowserRouter>
