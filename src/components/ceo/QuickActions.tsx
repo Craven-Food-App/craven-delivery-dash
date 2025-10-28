@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, Row, Col, Button, message } from 'antd';
 import {
   UserAddOutlined,
@@ -13,9 +13,13 @@ import {
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { MeetingScheduler } from './MeetingScheduler';
+import { ReportsViewer } from './ReportsViewer';
 
 export const QuickActions: React.FC = () => {
   const navigate = useNavigate();
+  const [meetingModalVisible, setMeetingModalVisible] = useState(false);
+  const [reportsModalVisible, setReportsModalVisible] = useState(false);
 
   const logAction = async (action: string, description: string) => {
     try {
@@ -59,7 +63,7 @@ export const QuickActions: React.FC = () => {
       color: 'from-purple-500 to-purple-600',
       action: async () => {
         await logAction('view_reports', 'Accessed company reports');
-        message.success('Reports feature coming soon');
+        setReportsModalVisible(true);
       },
     },
     {
@@ -103,8 +107,8 @@ export const QuickActions: React.FC = () => {
       icon: <TeamOutlined className="text-3xl" />,
       color: 'from-pink-500 to-pink-600',
       action: async () => {
-        await logAction('schedule_meeting', 'Scheduled team meeting');
-        message.success('Meeting scheduler coming soon');
+        await logAction('schedule_meeting', 'Opened meeting scheduler');
+        setMeetingModalVisible(true);
       },
     },
   ];
@@ -131,6 +135,10 @@ export const QuickActions: React.FC = () => {
           </Col>
         ))}
       </Row>
+
+      {/* Modals */}
+      <MeetingScheduler visible={meetingModalVisible} onClose={() => setMeetingModalVisible(false)} />
+      <ReportsViewer visible={reportsModalVisible} onClose={() => setReportsModalVisible(false)} />
     </div>
   );
 };
