@@ -18,36 +18,63 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
-    // Load Mapbox GL JS
-    const script = document.createElement('script');
-    script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
-    script.onload = () => {
-      const link = document.createElement('link');
-      link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
-      link.rel = 'stylesheet';
-      document.head.appendChild(link);
+    const initMap = () => {
+      if (!(window as any).mapboxgl) {
+        console.error('Mapbox GL JS not loaded');
+        return;
+      }
 
-      // Initialize map
-      map.current = new (window as any).mapboxgl.Map({
-        container: mapContainer.current,
-        style: MAPBOX_CONFIG.style,
-        center: [MAPBOX_CONFIG.center[0], MAPBOX_CONFIG.center[1]],
-        zoom: MAPBOX_CONFIG.zoom,
-        accessToken: MAPBOX_CONFIG.accessToken
-      });
+      // Set access token globally (required by Mapbox GL JS)
+      (window as any).mapboxgl.accessToken = MAPBOX_CONFIG.accessToken;
 
-      map.current.on('load', () => {
-        setIsMapReady(true);
-      });
+      try {
+        // Initialize map
+        map.current = new (window as any).mapboxgl.Map({
+          container: mapContainer.current,
+          style: MAPBOX_CONFIG.style,
+          center: [MAPBOX_CONFIG.center[0], MAPBOX_CONFIG.center[1]],
+          zoom: MAPBOX_CONFIG.zoom
+        });
 
-      // Add driver marker
-      marker.current = new (window as any).mapboxgl.Marker({
-        color: '#ff6b35'
-      })
-        .setLngLat([MAPBOX_CONFIG.center[0], MAPBOX_CONFIG.center[1]])
-        .addTo(map.current);
+        map.current.on('load', () => {
+          console.log('Mapbox loaded successfully');
+          setIsMapReady(true);
+        });
+
+        map.current.on('error', (e: any) => {
+          console.error('Mapbox error:', e);
+        });
+
+        // Add driver marker
+        marker.current = new (window as any).mapboxgl.Marker({
+          color: '#ff6b35'
+        })
+          .setLngLat([MAPBOX_CONFIG.center[0], MAPBOX_CONFIG.center[1]])
+          .addTo(map.current);
+      } catch (error) {
+        console.error('Error initializing Mapbox:', error);
+      }
     };
-    document.head.appendChild(script);
+
+    // Check if Mapbox GL JS is already loaded
+    if ((window as any).mapboxgl) {
+      initMap();
+    } else {
+      // Load Mapbox GL JS
+      const script = document.createElement('script');
+      script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
+      script.onload = () => {
+        const link = document.createElement('link');
+        link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+        initMap();
+      };
+      script.onerror = () => {
+        console.error('Failed to load Mapbox GL JS');
+      };
+      document.head.appendChild(script);
+    }
 
     return () => {
       if (map.current) {
