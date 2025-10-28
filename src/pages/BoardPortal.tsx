@@ -1,15 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Row, Col, Statistic, Badge, Progress, Avatar, Spin } from 'antd';
+import { Card, Row, Col, Statistic, Badge, Progress, Avatar, Spin, Tabs } from 'antd';
 import {
   ArrowUpOutlined,
-  ArrowDownOutlined,
   DollarOutlined,
   ShoppingOutlined,
   UserOutlined,
   CarOutlined,
+  MessageOutlined,
+  CalendarOutlined,
+  FolderOutlined,
+  TeamOutlined,
+  BarChartOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { ExecutiveComms } from '@/components/board/ExecutiveComms';
+import { BoardMeetings } from '@/components/board/BoardMeetings';
+import { DocumentVault } from '@/components/board/DocumentVault';
+import { ExecutiveDirectory } from '@/components/board/ExecutiveDirectory';
 
 interface DashboardMetrics {
   revenue: number;
@@ -20,6 +28,8 @@ interface DashboardMetrics {
   feedersChange: number;
   profitMargin: number;
   utilization: number;
+  totalEmployees: number;
+  pendingApprovals: number;
 }
 
 const BoardPortal: React.FC = () => {
@@ -27,6 +37,9 @@ const BoardPortal: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [isExecutive, setIsExecutive] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [userRole, setUserRole] = useState('');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   useEffect(() => {
     checkExecutiveAccess();
@@ -49,15 +62,15 @@ const BoardPortal: React.FC = () => {
         .single();
 
       if (error || !execUser) {
-        // Not an executive, show access denied
         setIsExecutive(false);
         setLoading(false);
         return;
       }
 
       setIsExecutive(true);
+      setUserName(user.email?.split('@')[0] || 'Executive');
+      setUserRole(execUser.title || execUser.role.toUpperCase());
       
-      // Fetch dashboard metrics
       await fetchDashboardMetrics();
       
       setLoading(false);
@@ -69,27 +82,56 @@ const BoardPortal: React.FC = () => {
 
   const fetchDashboardMetrics = async () => {
     try {
-      // Fetch real-time metrics from your database
-      // For now, using mock data - replace with real queries
+      // Fetch real metrics from database
+      const [employeesRes, approvalsRes, ordersRes] = await Promise.all([
+        supabase.from('employees').select('id, employment_status, salary'),
+        supabase.from('ceo_financial_approvals').select('id, status'),
+        supabase.from('orders').select('id, total_amount').gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+      ]);
+
+      const employees = employeesRes.data || [];
+      const orders = ordersRes.data || [];
+      const approvals = approvalsRes.data || [];
+      
+      const monthlyRevenue = orders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+      const totalPayroll = employees.reduce((sum, e) => sum + (e.salary || 0), 0);
+
       setMetrics({
-        revenue: 2450680,
+        revenue: monthlyRevenue,
         revenueChange: 15.2,
-        orders: 12458,
+        orders: orders.length,
         ordersChange: 8.4,
-        activeFeeders: 487,
+        activeFeeders: 0, // From feeders table when available
         feedersChange: 3.2,
-        profitMargin: 23.5,
+        profitMargin: monthlyRevenue > 0 ? ((monthlyRevenue - (totalPayroll / 12)) / monthlyRevenue * 100) : 0,
         utilization: 87,
+        totalEmployees: employees.length,
+        pendingApprovals: approvals.filter(a => a.status === 'pending').length,
       });
     } catch (error) {
       console.error('Error fetching metrics:', error);
+      setMetrics({
+        revenue: 0,
+        revenueChange: 0,
+        orders: 0,
+        ordersChange: 0,
+        activeFeeders: 0,
+        feedersChange: 0,
+        profitMargin: 0,
+        utilization: 0,
+        totalEmployees: 0,
+        pendingApprovals: 0,
+      });
     }
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Spin size="large" />
+        <div className="text-center">
+          <Spin size="large" />
+          <p className="mt-4 text-slate-600">Loading Executive Portal...</p>
+        </div>
       </div>
     );
   }
@@ -127,15 +169,17 @@ const BoardPortal: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-                Executive Dashboard
+                Executive Board Portal
               </h1>
               <p className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
-                Real-time insights
+                Welcome back, <strong>{userName}</strong> • {userRole}
                 <Badge status="processing" text="Live Data" />
-                <span className="text-sm">• Updated 2 minutes ago</span>
               </p>
             </div>
             <div className="flex items-center gap-4">
+              <Button type="default" onClick={() => navigate('/ceo')}>
+                CEO Portal
+              </Button>
               <Avatar size="large" icon={<UserOutlined />} className="bg-blue-600" />
             </div>
           </div>
@@ -147,151 +191,148 @@ const BoardPortal: React.FC = () => {
         {/* Key Metrics Row */}
         <Row gutter={[24, 24]} className="mb-8">
           <Col xs={24} sm={12} lg={6}>
-            <Card
-              bordered={false}
-              className="shadow-lg hover:shadow-xl transition-all duration-300 bg-white dark:bg-slate-800"
-            >
+            <Card bordered={false} className="shadow-lg hover:shadow-xl transition-all duration-300">
               <Statistic
-                title={
-                  <span className="text-slate-600 dark:text-slate-400 font-medium text-sm">
-                    Total Revenue
-                  </span>
-                }
+                title={<span className="text-slate-600 font-medium text-sm">Total Revenue</span>}
                 value={metrics?.revenue}
                 precision={2}
                 prefix={<DollarOutlined className="text-blue-600" />}
-                valueStyle={{
-                  fontSize: '28px',
-                  fontWeight: 'bold',
-                  color: '#1e293b',
-                }}
+                valueStyle={{ fontSize: '28px', fontWeight: 'bold', color: '#1e293b' }}
                 suffix={
                   <span className="text-sm text-green-600 font-semibold ml-2">
                     <ArrowUpOutlined /> {metrics?.revenueChange}%
                   </span>
                 }
               />
-              <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  vs last period: ${((metrics?.revenue || 0) / 1.152).toFixed(0)}
-                </p>
-              </div>
             </Card>
           </Col>
 
           <Col xs={24} sm={12} lg={6}>
-            <Card
-              bordered={false}
-              className="shadow-lg hover:shadow-xl transition-all duration-300 bg-white dark:bg-slate-800"
-            >
+            <Card bordered={false} className="shadow-lg hover:shadow-xl transition-all duration-300">
               <Statistic
-                title={
-                  <span className="text-slate-600 dark:text-slate-400 font-medium text-sm">
-                    Total Orders
-                  </span>
-                }
+                title={<span className="text-slate-600 font-medium text-sm">Total Orders</span>}
                 value={metrics?.orders}
                 prefix={<ShoppingOutlined className="text-purple-600" />}
-                valueStyle={{
-                  fontSize: '28px',
-                  fontWeight: 'bold',
-                  color: '#1e293b',
-                }}
+                valueStyle={{ fontSize: '28px', fontWeight: 'bold', color: '#1e293b' }}
                 suffix={
                   <span className="text-sm text-green-600 font-semibold ml-2">
                     <ArrowUpOutlined /> {metrics?.ordersChange}%
                   </span>
                 }
               />
-              <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  +{Math.floor((metrics?.orders || 0) * 0.078)} from yesterday
-                </p>
-              </div>
             </Card>
           </Col>
 
           <Col xs={24} sm={12} lg={6}>
-            <Card
-              bordered={false}
-              className="shadow-lg hover:shadow-xl transition-all duration-300 bg-white dark:bg-slate-800"
-            >
+            <Card bordered={false} className="shadow-lg hover:shadow-xl transition-all duration-300">
               <Statistic
-                title={
-                  <span className="text-slate-600 dark:text-slate-400 font-medium text-sm">
-                    Active Feeders
-                  </span>
-                }
-                value={metrics?.activeFeeders}
-                prefix={<CarOutlined className="text-orange-600" />}
-                valueStyle={{
-                  fontSize: '28px',
-                  fontWeight: 'bold',
-                  color: '#1e293b',
-                }}
-                suffix={
-                  <span className="text-sm text-green-600 font-semibold ml-2">
-                    <ArrowUpOutlined /> {metrics?.feedersChange}%
-                  </span>
-                }
+                title={<span className="text-slate-600 font-medium text-sm">Employees</span>}
+                value={metrics?.totalEmployees}
+                prefix={<TeamOutlined className="text-orange-600" />}
+                valueStyle={{ fontSize: '28px', fontWeight: 'bold', color: '#1e293b' }}
               />
-              <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
-                <Progress
-                  percent={metrics?.utilization}
-                  size="small"
-                  status="active"
-                  strokeColor="#f97316"
-                  className="mb-1"
-                />
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {metrics?.utilization}% Utilization Rate
-                </p>
-              </div>
             </Card>
           </Col>
 
           <Col xs={24} sm={12} lg={6}>
-            <Card
-              bordered={false}
-              className="shadow-lg hover:shadow-xl transition-all duration-300 bg-white dark:bg-slate-800"
-            >
+            <Card bordered={false} className="shadow-lg hover:shadow-xl transition-all duration-300">
               <Statistic
-                title={
-                  <span className="text-slate-600 dark:text-slate-400 font-medium text-sm">
-                    Net Profit Margin
-                  </span>
-                }
+                title={<span className="text-slate-600 font-medium text-sm">Net Profit Margin</span>}
                 value={metrics?.profitMargin}
                 precision={1}
                 suffix="%"
-                valueStyle={{
-                  fontSize: '28px',
-                  fontWeight: 'bold',
-                  color: '#059669',
-                }}
+                valueStyle={{ fontSize: '28px', fontWeight: 'bold', color: '#059669' }}
               />
-              <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
-                <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                  Target: 20%
-                  <Badge status="success" text="Above Target" />
-                </p>
-              </div>
             </Card>
           </Col>
         </Row>
 
-        {/* Coming Soon Section */}
-        <Card className="shadow-lg bg-white dark:bg-slate-800">
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">📊</div>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">
-              More Analytics Coming Soon
-            </h2>
-            <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-              Advanced charts, executive communications, board meetings, document vault,
-              and video conferencing features are being built.
-            </p>
-          </div>
+        {/* Tabbed Interface */}
+        <Card className="shadow-2xl">
+          <Tabs
+            activeKey={activeTab}
+            onChange={setActiveTab}
+            size="large"
+            items={[
+              {
+                key: 'dashboard',
+                label: (
+                  <span>
+                    <BarChartOutlined />
+                    Dashboard
+                  </span>
+                ),
+                children: (
+                  <div className="p-4">
+                    <h3 className="text-xl font-bold mb-4">Company Overview</h3>
+                    <Row gutter={[16, 16]}>
+                      <Col span={12}>
+                        <Card>
+                          <Statistic
+                            title="Pending Approvals"
+                            value={metrics?.pendingApprovals}
+                            valueStyle={{ color: '#faad14' }}
+                          />
+                        </Card>
+                      </Col>
+                      <Col span={12}>
+                        <Card>
+                          <div className="text-center">
+                            <Progress
+                              type="dashboard"
+                              percent={metrics?.utilization}
+                              strokeColor={{ '0%': '#108ee9', '100%': '#87d068' }}
+                            />
+                            <div className="text-sm text-slate-600 mt-2">Fleet Utilization</div>
+                          </div>
+                        </Card>
+                      </Col>
+                    </Row>
+                  </div>
+                ),
+              },
+              {
+                key: 'comms',
+                label: (
+                  <span>
+                    <MessageOutlined />
+                    Communications
+                  </span>
+                ),
+                children: <ExecutiveComms />,
+              },
+              {
+                key: 'meetings',
+                label: (
+                  <span>
+                    <CalendarOutlined />
+                    Meetings
+                  </span>
+                ),
+                children: <BoardMeetings />,
+              },
+              {
+                key: 'documents',
+                label: (
+                  <span>
+                    <FolderOutlined />
+                    Documents
+                  </span>
+                ),
+                children: <DocumentVault />,
+              },
+              {
+                key: 'directory',
+                label: (
+                  <span>
+                    <TeamOutlined />
+                    Directory
+                  </span>
+                ),
+                children: <ExecutiveDirectory />,
+              },
+            ]}
+          />
         </Card>
       </div>
     </div>
@@ -299,4 +340,3 @@ const BoardPortal: React.FC = () => {
 };
 
 export default BoardPortal;
-
