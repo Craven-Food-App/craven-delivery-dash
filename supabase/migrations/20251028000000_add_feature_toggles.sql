@@ -8,9 +8,9 @@ VALUES (
 ON CONFLICT (setting_key) DO NOTHING;
 
 -- Make admin_settings readable by everyone (for feature flags)
--- Admins still need special permission to modify
-DROP POLICY IF EXISTS "Everyone can view feature flags" ON public.admin_settings;
-CREATE POLICY "Everyone can view feature flags"
+-- Note: Update permission is already granted by existing "Admins can manage settings" policy
+DROP POLICY IF EXISTS "Public can view admin settings" ON public.admin_settings;
+CREATE POLICY "Public can view admin settings"
 ON public.admin_settings
 FOR SELECT
 USING (true);
