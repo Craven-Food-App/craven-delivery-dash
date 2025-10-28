@@ -49,12 +49,24 @@ const BoardPortal: React.FC = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      if (!user) {
+      if (!user || !user.email) {
         navigate('/auth');
         return;
       }
 
-      // Check if user is an executive
+      // SIMPLIFIED: Check if user is CEO first (automatic access)
+      const isCEO = user.email === 'craven@usa.com';
+      
+      if (isCEO) {
+        setIsExecutive(true);
+        setUserName('Torrance');
+        setUserRole('Founder & CEO');
+        await fetchDashboardMetrics();
+        setLoading(false);
+        return;
+      }
+
+      // For other users, check exec_users table
       const { data: execUser, error } = await supabase
         .from('exec_users')
         .select('*')
@@ -62,6 +74,7 @@ const BoardPortal: React.FC = () => {
         .single();
 
       if (error || !execUser) {
+        console.error('Board portal access check:', { error, execUser });
         setIsExecutive(false);
         setLoading(false);
         return;
