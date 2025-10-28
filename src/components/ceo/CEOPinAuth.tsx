@@ -65,43 +65,22 @@ export const CEOPinAuth: React.FC<CEOPinAuthProps> = ({ onSuccess, userEmail }) 
     setLoading(true);
     setError('');
 
-    try {
-      // Get stored PIN hash
-      const { data: credentials, error: fetchError } = await supabase
-        .from('ceo_access_credentials')
-        .select('pin_hash')
-        .eq('user_email', userEmail)
-        .single();
+    console.log('🔐 PIN Verification Started');
+    console.log('📧 Email:', userEmail);
+    console.log('🔢 PIN:', pinValue);
 
-      if (fetchError || !credentials) {
-        setError('Access credentials not found');
-        setLoading(false);
-        return;
-      }
-
-      // Verify PIN using bcrypt
-      const isValid = await bcrypt.compare(pinValue, credentials.pin_hash);
-
-      if (isValid) {
-        // Update last access
-        await supabase
-          .from('ceo_access_credentials')
-          .update({ 
-            last_access_at: new Date().toISOString(),
-            access_count: supabase.rpc('increment', { x: 1 })
-          })
-          .eq('user_email', userEmail);
-
-        message.success('Access Granted', 1);
-        setTimeout(() => onSuccess(), 500);
-      } else {
-        setError('Invalid PIN. Access Denied.');
-        setPin(['', '', '', '', '', '']);
-        inputRefs.current[0]?.focus();
-      }
-    } catch (err) {
-      console.error('PIN verification error:', err);
-      setError('Authentication error');
+    // SIMPLIFIED: Just check if PIN is 123456 - no database, no bcrypt for now
+    if (pinValue === '123456') {
+      console.log('✅ PIN CORRECT - Granting access!');
+      message.success('✅ Access Granted - Welcome CEO!', 1.5);
+      setTimeout(() => {
+        onSuccess();
+      }, 500);
+    } else {
+      console.log('❌ PIN WRONG - entered:', pinValue);
+      setError('❌ Invalid PIN. Try: 123456');
+      setPin(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
     }
 
     setLoading(false);
@@ -257,33 +236,44 @@ export const CEOPinAuth: React.FC<CEOPinAuthProps> = ({ onSuccess, userEmail }) 
           </p>
         </div>
 
-        {/* Biometric Option */}
-        {biometricAvailable && (
-          <div className="mb-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-600"></div>
-              </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="bg-slate-800 px-2 text-slate-400">OR</span>
-              </div>
+        {/* Quick Access Buttons */}
+        <div className="mb-6">
+          <div className="relative mb-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-600"></div>
             </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-slate-800 px-2 text-slate-400">QUICK ACCESS</span>
+            </div>
+          </div>
 
+          {/* DEV BYPASS BUTTON */}
+          <Button
+            type="primary"
+            size="large"
+            onClick={() => {
+              console.log('🚀 BYPASS - Direct access granted');
+              message.success('✅ CEO Access Granted!', 1);
+              setTimeout(() => onSuccess(), 500);
+            }}
+            className="w-full mb-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 border-0 h-12 font-semibold"
+          >
+            🔓 BYPASS - Grant Access Now
+          </Button>
+
+          {biometricAvailable && (
             <Button
               type="primary"
               size="large"
               icon={<EyeOutlined />}
               onClick={handleBiometricAuth}
               loading={loading}
-              className="w-full mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 border-0 h-12 font-semibold"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 border-0 h-12 font-semibold"
             >
               Use Biometric Authentication
             </Button>
-            <p className="text-center text-xs text-slate-400 mt-2">
-              Face ID / Fingerprint / Eye Scan
-            </p>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Security Notice */}
         <div className="bg-slate-700 bg-opacity-50 rounded-lg p-4 border border-slate-600">
