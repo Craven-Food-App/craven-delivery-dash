@@ -1,77 +1,111 @@
 import React from 'react';
-import { Card, Row, Col, Button, Space, Statistic } from 'antd';
+import { Card, Row, Col, Button, message } from 'antd';
 import {
   UserAddOutlined,
   DollarOutlined,
+  RocketOutlined,
+  BellOutlined,
+  PauseCircleOutlined,
   ThunderboltOutlined,
-  NotificationOutlined,
-  SettingOutlined,
+  FileTextOutlined,
   TeamOutlined,
-  ShopOutlined,
-  CarOutlined,
+  BarChartOutlined,
 } from '@ant-design/icons';
+import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
 export const QuickActions: React.FC = () => {
   const navigate = useNavigate();
 
-  const quickActions = [
+  const logAction = async (action: string, description: string) => {
+    try {
+      await supabase.rpc('log_ceo_action', {
+        p_action_type: action,
+        p_action_category: 'system',
+        p_target_type: 'quick_action',
+        p_target_id: null,
+        p_target_name: action,
+        p_description: description,
+        p_severity: 'normal'
+      });
+    } catch (error) {
+      console.error('Error logging action:', error);
+    }
+  };
+
+  const actions = [
     {
-      title: 'Hire New Admin',
-      icon: <UserAddOutlined className="text-4xl text-blue-600" />,
-      description: 'Add new admin to operations team',
-      action: () => console.log('Hire Admin'),
+      title: 'Hire Employee',
+      icon: <UserAddOutlined className="text-3xl" />,
       color: 'from-blue-500 to-blue-600',
+      action: () => {
+        logAction('navigate_hire', 'Navigated to hire employee');
+        // Personnel tab is already open, just scroll to top
+        message.info('Click "Hire New Employee" button in Personnel tab');
+      },
     },
     {
-      title: 'Approve Expenses',
-      icon: <DollarOutlined className="text-4xl text-green-600" />,
-      description: '3 pending approvals',
-      action: () => console.log('Approve Expenses'),
+      title: 'Approve Budget',
+      icon: <DollarOutlined className="text-3xl" />,
       color: 'from-green-500 to-green-600',
-      badge: 3,
+      action: () => {
+        logAction('navigate_approvals', 'Navigated to financial approvals');
+        message.info('Switch to "Financial Approvals" tab');
+      },
     },
     {
-      title: 'Emergency Controls',
-      icon: <ThunderboltOutlined className="text-4xl text-red-600" />,
-      description: 'System-wide controls',
-      action: () => console.log('Emergency'),
-      color: 'from-red-500 to-red-600',
-    },
-    {
-      title: 'Broadcast Message',
-      icon: <NotificationOutlined className="text-4xl text-purple-600" />,
-      description: 'Send announcement to all',
-      action: () => console.log('Broadcast'),
+      title: 'View Reports',
+      icon: <FileTextOutlined className="text-3xl" />,
       color: 'from-purple-500 to-purple-600',
+      action: async () => {
+        await logAction('view_reports', 'Accessed company reports');
+        message.success('Reports feature coming soon');
+      },
     },
     {
-      title: 'Admin Portal',
-      icon: <SettingOutlined className="text-4xl text-slate-600" />,
-      description: 'Jump to operations',
-      action: () => navigate('/admin'),
-      color: 'from-slate-500 to-slate-600',
+      title: 'Send Alert',
+      icon: <BellOutlined className="text-3xl" />,
+      color: 'from-red-500 to-red-600',
+      action: async () => {
+        await logAction('send_alert', 'Prepared to send company-wide alert');
+        message.info('Alert system ready - check Emergency tab');
+      },
     },
     {
-      title: 'Board Portal',
-      icon: <TeamOutlined className="text-4xl text-indigo-600" />,
-      description: 'Executive dashboard',
-      action: () => navigate('/board'),
-      color: 'from-indigo-500 to-indigo-600',
-    },
-    {
-      title: 'View Merchants',
-      icon: <ShopOutlined className="text-4xl text-orange-600" />,
-      description: '156 active partners',
-      action: () => navigate('/admin'),
+      title: 'Pause Orders',
+      icon: <PauseCircleOutlined className="text-3xl" />,
       color: 'from-orange-500 to-orange-600',
+      action: async () => {
+        await logAction('toggle_orders', 'Toggled order acceptance');
+        message.info('Go to Emergency Controls tab');
+      },
     },
     {
-      title: 'View Feeders',
-      icon: <CarOutlined className="text-4xl text-teal-600" />,
-      description: '487 active drivers',
-      action: () => navigate('/admin'),
-      color: 'from-teal-500 to-teal-600',
+      title: 'View Metrics',
+      icon: <BarChartOutlined className="text-3xl" />,
+      color: 'from-cyan-500 to-cyan-600',
+      action: async () => {
+        await logAction('view_metrics', 'Viewed company metrics dashboard');
+        message.info('Metrics displayed at top of page');
+      },
+    },
+    {
+      title: 'Launch Initiative',
+      icon: <RocketOutlined className="text-3xl" />,
+      color: 'from-indigo-500 to-indigo-600',
+      action: () => {
+        logAction('launch_initiative', 'Navigated to strategic planning');
+        message.info('Go to Strategic Planning tab');
+      },
+    },
+    {
+      title: 'Team Meeting',
+      icon: <TeamOutlined className="text-3xl" />,
+      color: 'from-pink-500 to-pink-600',
+      action: async () => {
+        await logAction('schedule_meeting', 'Scheduled team meeting');
+        message.success('Meeting scheduler coming soon');
+      },
     },
   ];
 
@@ -79,65 +113,24 @@ export const QuickActions: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-slate-900 mb-2">Quick Actions</h2>
-        <p className="text-slate-600">One-click access to critical functions</p>
+        <p className="text-slate-600">Common CEO actions - one click away</p>
       </div>
 
-      <Row gutter={[24, 24]}>
-        {quickActions.map((action, index) => (
-          <Col key={index} xs={24} sm={12} lg={6}>
+      <Row gutter={[16, 16]}>
+        {actions.map((action, index) => (
+          <Col xs={24} sm={12} lg={6} key={index}>
             <Card
-              hoverable
-              className={`bg-gradient-to-br ${action.color} border-0 shadow-lg hover:shadow-2xl transition-all cursor-pointer h-full`}
+              className={`cursor-pointer hover:shadow-xl transition-all duration-300 bg-gradient-to-br ${action.color} border-0`}
               onClick={action.action}
             >
               <div className="text-center text-white">
-                <div className="mb-4">{action.icon}</div>
-                <h3 className="text-xl font-bold mb-2">{action.title}</h3>
-                <p className="text-sm opacity-90">{action.description}</p>
-                {action.badge && (
-                  <div className="mt-4">
-                    <span className="bg-white text-slate-900 px-3 py-1 rounded-full text-sm font-bold">
-                      {action.badge} pending
-                    </span>
-                  </div>
-                )}
+                <div className="mb-3">{action.icon}</div>
+                <h3 className="text-lg font-semibold">{action.title}</h3>
               </div>
             </Card>
           </Col>
         ))}
       </Row>
-
-      {/* System Status */}
-      <Card className="bg-gradient-to-r from-slate-50 to-slate-100 border-2 border-slate-200">
-        <h3 className="text-lg font-bold text-slate-900 mb-4">System Status</h3>
-        <Row gutter={[16, 16]}>
-          <Col xs={24} sm={8}>
-            <Statistic
-              title="Platform Uptime"
-              value={99.98}
-              precision={2}
-              suffix="%"
-              valueStyle={{ color: '#059669', fontWeight: 'bold' }}
-            />
-          </Col>
-          <Col xs={24} sm={8}>
-            <Statistic
-              title="Response Time"
-              value={124}
-              suffix="ms"
-              valueStyle={{ color: '#3b82f6', fontWeight: 'bold' }}
-            />
-          </Col>
-          <Col xs={24} sm={8}>
-            <Statistic
-              title="Active Users"
-              value={1247}
-              valueStyle={{ color: '#8b5cf6', fontWeight: 'bold' }}
-            />
-          </Col>
-        </Row>
-      </Card>
     </div>
   );
 };
-

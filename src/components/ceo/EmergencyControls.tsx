@@ -1,150 +1,237 @@
-import React, { useState } from 'react';
-import { Card, Button, Alert, Modal, Input, Space } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, Switch, Button, Modal, Input, message, Alert } from 'antd';
 import {
   PauseCircleOutlined,
   PlayCircleOutlined,
   WarningOutlined,
-  NotificationOutlined,
-  StopOutlined,
+  BellOutlined,
+  ToolOutlined,
+  DollarOutlined,
 } from '@ant-design/icons';
+import { supabase } from '@/integrations/supabase/client';
 
 const { TextArea } = Input;
 
-export const EmergencyControls: React.FC = () => {
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [action, setAction] = useState('');
+interface SystemSetting {
+  id: string;
+  setting_key: string;
+  setting_value: any;
+  category: string;
+  description: string;
+  is_critical: boolean;
+  requires_confirmation: boolean;
+}
 
-  const handleEmergencyAction = (actionType: string) => {
-    setAction(actionType);
-    setIsModalVisible(true);
+export const EmergencyControls: React.FC = () => {
+  const [settings, setSettings] = useState<SystemSetting[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [confirmModal, setConfirmModal] = useState(false);
+  const [selectedSetting, setSelectedSetting] = useState<SystemSetting | null>(null);
+  const [confirmationReason, setConfirmationReason] = useState('');
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('ceo_system_settings')
+        .select('*')
+        .order('is_critical', { ascending: false });
+
+      if (error) throw error;
+      setSettings(data || []);
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+      message.error('Failed to load system settings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleSetting = async (setting: SystemSetting) => {
+    if (setting.requires_confirmation) {
+      setSelectedSetting(setting);
+      setConfirmModal(true);
+      return;
+    }
+    await updateSetting(setting);
+  };
+
+  const updateSetting = async (setting: SystemSetting) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const newEnabled = !setting.setting_value.enabled;
+
+      const { error } = await supabase
+        .from('ceo_system_settings')
+        .update({
+          setting_value: { ...setting.setting_value, enabled: newEnabled },
+          last_changed_by: user?.id,
+          last_changed_at: new Date().toISOString()
+        })
+        .eq('id', setting.id);
+
+      if (error) throw error;
+
+      await supabase.rpc('log_ceo_action', {
+        p_action_type: `toggle_${setting.setting_key}`,
+        p_action_category: 'emergency',
+        p_target_type: 'system_setting',
+        p_target_id: setting.id,
+        p_target_name: setting.setting_key,
+        p_description: `${newEnabled ? 'Enabled' : 'Disabled'} ${setting.description}${confirmationReason ? `: ${confirmationReason}` : ''}`,
+        p_severity: setting.is_critical ? 'critical' : 'high'
+      });
+
+      message.success(`${newEnabled ? 'Enabled' : 'Disabled'} ${setting.description}`);
+      setConfirmModal(false);
+      setConfirmationReason('');
+      fetchSettings();
+    } catch (error: any) {
+      console.error('Error updating setting:', error);
+      message.error(error.message || 'Failed to update setting');
+    }
+  };
+
+  const getSettingIcon = (key: string) => {
+    const icons: Record<string, any> = {
+      system_maintenance_mode: <ToolOutlined className="text-2xl" />,
+      orders_paused: <PauseCircleOutlined className="text-2xl" />,
+      payment_processing: <DollarOutlined className="text-2xl" />,
+      emergency_alerts: <BellOutlined className="text-2xl" />,
+    };
+    return icons[key] || <WarningOutlined className="text-2xl" />;
+  };
+
+  const getSettingColor = (setting: SystemSetting) => {
+    if (setting.is_critical) {
+      return setting.setting_value.enabled ? 'border-red-500' : 'border-green-500';
+    }
+    return setting.setting_value.enabled ? 'border-green-500' : 'border-gray-300';
   };
 
   return (
     <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">Emergency Controls</h2>
+        <p className="text-slate-600">System-wide toggles and emergency settings</p>
+      </div>
+
       <Alert
-        message="Emergency Controls"
-        description="These controls have immediate system-wide impact. Use with extreme caution."
-        type="error"
+        message="⚠️ Critical Controls"
+        description="These settings affect the entire platform. Use with caution."
+        type="warning"
         showIcon
-        icon={<WarningOutlined />}
+        className="mb-4"
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card
-          hoverable
-          className="border-2 border-red-500 shadow-lg hover:shadow-xl transition-shadow"
-        >
-          <div className="text-center py-4">
-            <PauseCircleOutlined className="text-6xl text-red-600 mb-4" />
-            <h3 className="text-2xl font-bold text-slate-900 mb-2">Pause All Orders</h3>
-            <p className="text-slate-600 mb-4">
-              Immediately stop accepting new orders platform-wide
-            </p>
-            <Button
-              danger
-              size="large"
-              icon={<PauseCircleOutlined />}
-              onClick={() => handleEmergencyAction('pause')}
-            >
-              Pause Orders
-            </Button>
-          </div>
-        </Card>
-
-        <Card
-          hoverable
-          className="border-2 border-yellow-500 shadow-lg hover:shadow-xl transition-shadow"
-        >
-          <div className="text-center py-4">
-            <StopOutlined className="text-6xl text-yellow-600 mb-4" />
-            <h3 className="text-2xl font-bold text-slate-900 mb-2">Maintenance Mode</h3>
-            <p className="text-slate-600 mb-4">
-              Enable maintenance mode for system updates
-            </p>
-            <Button
-              type="primary"
-              size="large"
-              icon={<StopOutlined />}
-              onClick={() => handleEmergencyAction('maintenance')}
-              className="bg-yellow-600 hover:bg-yellow-700"
-            >
-              Enable Maintenance
-            </Button>
-          </div>
-        </Card>
-
-        <Card
-          hoverable
-          className="border-2 border-green-500 shadow-lg hover:shadow-xl transition-shadow"
-        >
-          <div className="text-center py-4">
-            <PlayCircleOutlined className="text-6xl text-green-600 mb-4" />
-            <h3 className="text-2xl font-bold text-slate-900 mb-2">Resume Operations</h3>
-            <p className="text-slate-600 mb-4">
-              Restore normal operations and accept orders
-            </p>
-            <Button
-              type="primary"
-              size="large"
-              icon={<PlayCircleOutlined />}
-              onClick={() => handleEmergencyAction('resume')}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              Resume Operations
-            </Button>
-          </div>
-        </Card>
-
-        <Card
-          hoverable
-          className="border-2 border-purple-500 shadow-lg hover:shadow-xl transition-shadow"
-        >
-          <div className="text-center py-4">
-            <NotificationOutlined className="text-6xl text-purple-600 mb-4" />
-            <h3 className="text-2xl font-bold text-slate-900 mb-2">Broadcast Message</h3>
-            <p className="text-slate-600 mb-4">
-              Send urgent message to all users
-            </p>
-            <Button
-              type="primary"
-              size="large"
-              icon={<NotificationOutlined />}
-              onClick={() => handleEmergencyAction('broadcast')}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              Broadcast Now
-            </Button>
-          </div>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {settings.map((setting) => (
+          <Card
+            key={setting.id}
+            className={`border-2 ${getSettingColor(setting)} hover:shadow-lg transition-shadow`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 flex-1">
+                <div className={setting.setting_value.enabled ? 'text-green-600' : 'text-gray-400'}>
+                  {getSettingIcon(setting.setting_key)}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg mb-1">
+                    {setting.description}
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    {setting.is_critical && (
+                      <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">
+                        CRITICAL
+                      </span>
+                    )}
+                    <span className="text-xs text-slate-500 capitalize">
+                      {setting.category}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <Switch
+                checked={setting.setting_value.enabled}
+                onChange={() => toggleSetting(setting)}
+                loading={loading}
+                checkedChildren={<PlayCircleOutlined />}
+                unCheckedChildren={<PauseCircleOutlined />}
+                className={setting.setting_value.enabled ? 'bg-green-600' : ''}
+              />
+            </div>
+            {setting.setting_value.enabled && setting.setting_value.reason && (
+              <div className="mt-3 p-2 bg-yellow-50 rounded text-sm text-yellow-800">
+                <strong>Reason:</strong> {setting.setting_value.reason}
+              </div>
+            )}
+          </Card>
+        ))}
       </div>
 
       <Modal
-        title={`Confirm ${action.toUpperCase()} Action`}
-        open={isModalVisible}
-        onCancel={() => setIsModalVisible(false)}
-        footer={[
-          <Button key="cancel" onClick={() => setIsModalVisible(false)}>
-            Cancel
-          </Button>,
-          <Button key="confirm" type="primary" danger>
-            Confirm Action
-          </Button>,
-        ]}
+        title={
+          <div className="flex items-center gap-2">
+            <WarningOutlined className="text-red-600" />
+            <span>Confirm Critical Action</span>
+          </div>
+        }
+        open={confirmModal}
+        onCancel={() => {
+          setConfirmModal(false);
+          setConfirmationReason('');
+        }}
+        footer={null}
+        width={500}
       >
-        <Space direction="vertical" className="w-full">
-          <Alert
-            message="This action will be logged and audited"
-            type="warning"
-            showIcon
-          />
-          <TextArea
-            rows={4}
-            placeholder="Please provide a reason for this emergency action..."
-            required
-          />
-        </Space>
+        {selectedSetting && (
+          <div className="space-y-4">
+            <Alert
+              message="This is a critical system setting"
+              description={`You are about to ${selectedSetting.setting_value.enabled ? 'DISABLE' : 'ENABLE'} ${selectedSetting.description}. This action will be logged.`}
+              type="error"
+              showIcon
+            />
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Reason for this action <span className="text-red-500">*</span>
+              </label>
+              <TextArea
+                rows={3}
+                value={confirmationReason}
+                onChange={(e) => setConfirmationReason(e.target.value)}
+                placeholder="Explain why this action is necessary..."
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={() => {
+                  setConfirmModal(false);
+                  setConfirmationReason('');
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="primary"
+                danger
+                onClick={() => updateSetting(selectedSetting)}
+                disabled={!confirmationReason.trim()}
+                className="flex-1"
+              >
+                Confirm Action
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
 };
-

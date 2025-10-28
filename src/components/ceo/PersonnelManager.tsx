@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Tag, Space, Input, Modal, Form, Select, InputNumber, DatePicker, message, Popconfirm } from 'antd';
+import { Table, Button, Tag, Space, Input, Modal, Form, Select, InputNumber, DatePicker, message, Popconfirm, Statistic, Card } from 'antd';
 import {
   UserAddOutlined,
-  SearchOutlined,
   DeleteOutlined,
-  EditOutlined,
   RiseOutlined,
   DollarOutlined,
+  TeamOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import dayjs from 'dayjs';
@@ -344,6 +343,10 @@ export const PersonnelManager: React.FC = () => {
     },
   ];
 
+  const activeEmployees = employees.filter(e => e.employment_status === 'active');
+  const totalPayroll = employees.reduce((sum, e) => sum + (e.salary || 0), 0);
+  const recentHires = employees.filter(e => dayjs(e.hire_date).isAfter(dayjs().subtract(30, 'days')));
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -369,31 +372,39 @@ export const PersonnelManager: React.FC = () => {
         </Space>
       </div>
 
-      <div className="bg-white p-4 rounded-lg shadow mb-4">
-        <div className="grid grid-cols-4 gap-4 text-center">
-          <div>
-            <div className="text-3xl font-bold text-blue-600">{employees.length}</div>
-            <div className="text-sm text-slate-600">Total Employees</div>
-          </div>
-          <div>
-            <div className="text-3xl font-bold text-green-600">
-              {employees.filter(e => e.employment_status === 'active').length}
-            </div>
-            <div className="text-sm text-slate-600">Active</div>
-          </div>
-          <div>
-            <div className="text-3xl font-bold text-purple-600">
-              ${Math.round(employees.reduce((sum, e) => sum + (e.salary || 0), 0) / 12).toLocaleString()}
-            </div>
-            <div className="text-sm text-slate-600">Monthly Payroll</div>
-          </div>
-          <div>
-            <div className="text-3xl font-bold text-orange-600">
-              {employees.filter(e => dayjs(e.hire_date).isAfter(dayjs().subtract(30, 'days'))).length}
-            </div>
-            <div className="text-sm text-slate-600">Hired (30d)</div>
-          </div>
-        </div>
+      {/* Metrics */}
+      <div className="grid grid-cols-4 gap-4">
+        <Card>
+          <Statistic
+            title="Total Employees"
+            value={employees.length}
+            prefix={<TeamOutlined />}
+            valueStyle={{ color: '#3f8600' }}
+          />
+        </Card>
+        <Card>
+          <Statistic
+            title="Active Employees"
+            value={activeEmployees.length}
+            valueStyle={{ color: '#1890ff' }}
+          />
+        </Card>
+        <Card>
+          <Statistic
+            title="Monthly Payroll"
+            value={Math.round(totalPayroll / 12)}
+            prefix={<DollarOutlined />}
+            precision={0}
+            valueStyle={{ color: '#cf1322' }}
+          />
+        </Card>
+        <Card>
+          <Statistic
+            title="Hired (30 days)"
+            value={recentHires.length}
+            valueStyle={{ color: '#faad14' }}
+          />
+        </Card>
       </div>
 
       <Table
@@ -606,4 +617,3 @@ export const PersonnelManager: React.FC = () => {
     </div>
   );
 };
-

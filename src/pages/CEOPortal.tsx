@@ -89,23 +89,52 @@ const CEOPortal: React.FC = () => {
 
   const fetchCEOMetrics = async () => {
     try {
-      // In production, these would be real-time queries
-      // For now, using calculated/mock data
+      // Fetch real metrics from database
+      const [employeesRes, approvalsRes, ordersRes] = await Promise.all([
+        supabase.from('employees').select('id, employment_status, salary'),
+        supabase.from('ceo_financial_approvals').select('id, status, amount'),
+        supabase.from('orders').select('id, total_amount, created_at').gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+      ]);
+
+      const employees = employeesRes.data || [];
+      const activeEmployees = employees.filter(e => e.employment_status === 'active');
+      const totalPayroll = employees.reduce((sum, e) => sum + (e.salary || 0), 0);
+      
+      const approvals = approvalsRes.data || [];
+      const pendingApprovals = approvals.filter(a => a.status === 'pending');
+      
+      const orders = ordersRes.data || [];
+      const monthlyRevenue = orders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+
       setMetrics({
-        totalRevenue: 2450680,
-        revenueGrowth: 15.2,
-        cashFlow: 847000,
-        burnRate: 124000,
-        runway: 18,
-        totalEmployees: 234,
-        admins: 12,
-        feeders: 487,
-        merchants: 156,
-        pendingApprovals: 3,
+        totalRevenue: monthlyRevenue,
+        revenueGrowth: 15.2, // Calculate from historical data
+        cashFlow: monthlyRevenue * 0.35, // Estimated
+        burnRate: totalPayroll / 12,
+        runway: monthlyRevenue > 0 ? Math.floor((monthlyRevenue * 0.35) / (totalPayroll / 12)) : 0,
+        totalEmployees: employees.length,
+        admins: activeEmployees.filter(e => e.employment_type === 'full-time').length,
+        feeders: 0, // From feeders table when available
+        merchants: 0, // From merchants table when available
+        pendingApprovals: pendingApprovals.length,
         criticalAlerts: 0,
       });
     } catch (error) {
       console.error('Error fetching CEO metrics:', error);
+      // Fallback to defaults if error
+      setMetrics({
+        totalRevenue: 0,
+        revenueGrowth: 0,
+        cashFlow: 0,
+        burnRate: 0,
+        runway: 0,
+        totalEmployees: 0,
+        admins: 0,
+        feeders: 0,
+        merchants: 0,
+        pendingApprovals: 0,
+        criticalAlerts: 0,
+      });
     }
   };
 
