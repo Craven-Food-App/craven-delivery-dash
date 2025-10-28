@@ -20,6 +20,7 @@ import { EmergencyControls } from '@/components/ceo/EmergencyControls';
 import { StrategicPlanning } from '@/components/ceo/StrategicPlanning';
 import { AuditTrail } from '@/components/ceo/AuditTrail';
 import { QuickActions } from '@/components/ceo/QuickActions';
+import { CEOPinAuth } from '@/components/ceo/CEOPinAuth';
 
 const { TabPane } = Tabs;
 
@@ -40,51 +41,50 @@ interface CEOMetrics {
 const CEOPortal: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [isCEO, setIsCEO] = useState(false);
+  const [pinAuthenticated, setPinAuthenticated] = useState(false);
   const [userName, setUserName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
   const [metrics, setMetrics] = useState<CEOMetrics | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    checkCEOAccess();
+    checkInitialAuth();
   }, []);
 
-  const checkCEOAccess = async () => {
+  const checkInitialAuth = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      if (!user) {
+      if (!user || !user.email) {
         navigate('/auth');
         return;
       }
 
-      // Check if user is CEO
-      const { data: execUser, error } = await supabase
-        .from('exec_users')
-        .select('*, user:user_id(*)')
-        .eq('user_id', user.id)
-        .eq('role', 'ceo')
-        .eq('access_level', 1)
+      // Check if user is authorized CEO (email in whitelist)
+      const { data: credentials } = await supabase
+        .from('ceo_access_credentials')
+        .select('user_email')
+        .eq('user_email', user.email)
         .single();
 
-      if (error || !execUser) {
-        // Not CEO, deny access
-        setIsCEO(false);
-        setLoading(false);
+      if (!credentials) {
+        // Not authorized
+        navigate('/');
         return;
       }
 
-      setIsCEO(true);
-      setUserName(user.email?.split('@')[0] || 'CEO');
-      
-      // Fetch CEO dashboard metrics
-      await fetchCEOMetrics();
-      
+      setUserEmail(user.email);
+      setUserName(user.email.split('@')[0] || 'CEO');
       setLoading(false);
     } catch (error) {
-      console.error('Error checking CEO access:', error);
-      setLoading(false);
+      console.error('Error checking initial auth:', error);
+      navigate('/');
     }
+  };
+
+  const handlePinSuccess = async () => {
+    setPinAuthenticated(true);
+    await fetchCEOMetrics();
   };
 
   const fetchCEOMetrics = async () => {
@@ -114,44 +114,15 @@ const CEOPortal: React.FC = () => {
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-white text-lg">Loading CEO Command Center...</p>
+          <p className="text-white text-lg">Initializing Security Protocol...</p>
         </div>
       </div>
     );
   }
 
-  if (!isCEO) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-        <div className="text-center max-w-md bg-white rounded-2xl p-8 shadow-2xl border-4 border-red-500">
-          <div className="mb-6">
-            <WarningOutlined className="text-8xl text-red-600" />
-          </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-4">
-            🚨 Unauthorized Access
-          </h1>
-          <p className="text-slate-700 text-lg mb-4">
-            This portal is <strong>EXCLUSIVELY</strong> for the CEO/Founder.
-          </p>
-          <p className="text-sm text-slate-500 mb-6">
-            Unauthorized access attempts are logged and monitored.
-          </p>
-          <Alert
-            message="Security Notice"
-            description="This incident has been logged for security purposes."
-            type="error"
-            showIcon
-            className="mb-6"
-          />
-          <button
-            onClick={() => navigate('/')}
-            className="px-8 py-3 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors font-semibold"
-          >
-            Return to Home
-          </button>
-        </div>
-      </div>
-    );
+  // Show PIN authentication screen if not authenticated
+  if (!pinAuthenticated) {
+    return <CEOPinAuth onSuccess={handlePinSuccess} userEmail={userEmail} />;
   }
 
   return (
