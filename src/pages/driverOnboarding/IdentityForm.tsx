@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, Card, Typography, Space, message, DatePicker, Select, Alert, Row, Col } from 'antd';
-import { SafetyOutlined, IdcardOutlined, LockOutlined, CarOutlined } from '@ant-design/icons';
+import { SafetyOutlined, IdcardOutlined, LockOutlined, CarOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
