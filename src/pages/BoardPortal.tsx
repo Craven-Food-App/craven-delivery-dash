@@ -12,6 +12,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { ExecutiveDirectory } from '@/components/board/ExecutiveDirectory';
+import { ExecutiveComms } from '@/components/board/ExecutiveComms';
 import { executiveTheme } from '@/config/antd-theme';
 import { useExecAuth } from '@/hooks/useExecAuth';
 
@@ -32,7 +33,7 @@ const BoardPortal: React.FC = () => {
   const navigate = useNavigate();
   const { loading, user, execUser, isAuthorized, signOut } = useExecAuth();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('communications');
 
   useEffect(() => {
     if (isAuthorized) {
@@ -215,6 +216,16 @@ const BoardPortal: React.FC = () => {
               onChange={setActiveTab}
               size="large"
               items={[
+                {
+                  key: 'communications',
+                  label: (
+                    <span>
+                      <UserOutlined />
+                      Communications
+                    </span>
+                  ),
+                  children: <ExecutiveComms />,
+                },
                 {
                   key: 'dashboard',
                   label: (
