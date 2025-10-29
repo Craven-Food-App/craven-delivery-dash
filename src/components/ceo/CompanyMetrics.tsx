@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Card, Row, Col, Statistic, Typography, Space, Progress, 
-  Table, Tag, Button, Select, DatePicker, Divider, Tooltip
+  Table, Tag, Button, Select, DatePicker, Divider, Tooltip, Avatar
 } from 'antd';
 import {
   DollarOutlined,
