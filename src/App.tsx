@@ -57,6 +57,13 @@ import { PayoutSetup } from "./components/onboarding/PayoutSetup";
 import { SafetyQuiz } from "./components/onboarding/SafetyQuiz";
 import BoardPortal from "./pages/BoardPortal";
 import CEOPortal from "./pages/CEOPortal";
+import { DriverSignup } from "./pages/driverOnboarding/Signup";
+import { LegalConsent } from "./pages/driverOnboarding/LegalConsent";
+import { IdentityForm } from "./pages/driverOnboarding/IdentityForm";
+import { BackgroundCheckPending } from "./pages/driverOnboarding/BackgroundCheckPending";
+import { SignAgreement } from "./pages/driverOnboarding/SignAgreement";
+import { WaitlistReveal } from "./pages/driverOnboarding/WaitlistReveal";
+import { ActivationReady } from "./pages/driverOnboarding/ActivationReady";
 
 // Lazy load guide pages
 const AdminGuide = lazy(() => import("./pages/AdminGuide"));
@@ -277,6 +284,17 @@ const App = () => {
           <Route path="/auth" element={<Auth />} />
           <Route path="/driver/auth" element={<DriverAuth />} />
           <Route path="/feeder" element={<FeederHub />} />
+          
+          {/* New Driver Onboarding Flow with DocuSign + Waitlist */}
+          <Route path="/driver-onboarding/signup" element={<DriverSignup />} />
+          <Route path="/driver-onboarding/consent" element={<LegalConsent />} />
+          <Route path="/driver-onboarding/identity" element={<IdentityForm />} />
+          <Route path="/driver-onboarding/background-check" element={<BackgroundCheckPending />} />
+          <Route path="/driver-onboarding/sign-agreement" element={<SignAgreement />} />
+          <Route path="/driver-onboarding/waitlist" element={<WaitlistReveal />} />
+          <Route path="/driver-onboarding/activation" element={<ActivationReady />} />
+          
+          {/* Legacy Enhanced Onboarding */}
           <Route path="/enhanced-onboarding" element={<EnhancedDriverOnboarding />} />
           <Route path="/enhanced-onboarding/profile" element={<ProfileCompletionForm />} />
           <Route path="/enhanced-onboarding/vehicle-photos" element={<VehiclePhotosUpload />} />

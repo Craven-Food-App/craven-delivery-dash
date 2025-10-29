@@ -1,5 +1,57 @@
 import { ThemeConfig } from 'antd';
 
+// Crave'n Driver theme - burnt orange branding
+export const cravenDriverTheme: ThemeConfig = {
+  token: {
+    // Crave'n burnt orange as primary color
+    colorPrimary: '#ff7a00',
+    colorSuccess: '#52c41a',
+    colorWarning: '#faad14',
+    colorError: '#f5222d',
+    colorInfo: '#1890ff',
+    
+    // Typography
+    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    fontSize: 14,
+    fontSizeHeading1: 36,
+    fontSizeHeading2: 28,
+    fontSizeHeading3: 24,
+    fontSizeHeading4: 20,
+    fontSizeHeading5: 16,
+    
+    // Layout
+    borderRadius: 8,
+    
+    // Colors for components
+    colorLink: '#ff7a00',
+    colorLinkHover: '#ff9f40',
+    colorLinkActive: '#e66d00',
+  },
+  components: {
+    Card: {
+      borderRadiusLG: 16,
+      paddingLG: 24,
+    },
+    Button: {
+      borderRadius: 8,
+      controlHeight: 40,
+      fontWeight: 600,
+      primaryColor: '#ffffff',
+    },
+    Input: {
+      borderRadius: 8,
+      controlHeight: 40,
+    },
+    Form: {
+      labelFontSize: 14,
+      labelColor: '#262626',
+    },
+    Alert: {
+      borderRadiusLG: 8,
+    },
+  },
+};
+
 // Professional executive theme for board portal
 export const executiveTheme: ThemeConfig = {
   token: {
