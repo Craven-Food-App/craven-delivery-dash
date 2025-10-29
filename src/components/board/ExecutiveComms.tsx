@@ -486,7 +486,7 @@ export const ExecutiveComms: React.FC = () => {
                         style={{
                           cursor: 'pointer',
                           background: isUnread ? '#f0f9ff' : 'transparent',
-                          padding: '16px',
+                          padding: window.innerWidth < 768 ? '12px' : '16px',
                           borderRadius: '8px',
                           marginBottom: '8px',
                           border: isUnread ? '1px solid #91d5ff' : '1px solid #f0f0f0'
@@ -500,23 +500,32 @@ export const ExecutiveComms: React.FC = () => {
                             </Badge>
                           }
                           title={
-                            <Space>
-                              <Text strong style={{ fontSize: '16px' }}>{msg.subject}</Text>
-                              <Tag color={getPriorityColor(msg.priority)}>
+                            <Space wrap size={[4, 8]} style={{ width: '100%' }}>
+                              <Text strong style={{ 
+                                fontSize: window.innerWidth < 768 ? '14px' : '16px',
+                                wordBreak: 'normal'
+                              }}>{msg.subject}</Text>
+                              <Tag color={getPriorityColor(msg.priority)} style={{ margin: 0 }}>
                                 {getPriorityIcon(msg.priority)} {msg.priority.toUpperCase()}
                               </Tag>
                               {msg.is_confidential && (
-                                <Tag color="gold" icon={<SafetyOutlined />}>CONFIDENTIAL</Tag>
+                                <Tag color="gold" icon={<SafetyOutlined />} style={{ margin: 0 }}>
+                                  CONFIDENTIAL
+                                </Tag>
                               )}
                             </Space>
                           }
                           description={
-                            <Space direction="vertical" size={0}>
-                              <Text type="secondary">
+                            <Space direction="vertical" size={0} style={{ width: '100%' }}>
+                              <Text type="secondary" style={{ wordBreak: 'normal' }}>
                                 From: {msg.from_user?.title || 'Unknown'}
                               </Text>
-                              <Text type="secondary" ellipsis style={{ maxWidth: 600 }}>
-                                {msg.message.substring(0, 100)}...
+                              <Text type="secondary" ellipsis style={{ 
+                                maxWidth: '100%',
+                                wordBreak: 'normal',
+                                fontSize: window.innerWidth < 768 ? '13px' : '14px'
+                              }}>
+                                {msg.message.substring(0, window.innerWidth < 768 ? 50 : 100)}...
                               </Text>
                               <Text type="secondary" style={{ fontSize: '12px' }}>
                                 <ClockCircleOutlined /> {dayjs(msg.created_at).fromNow()}
