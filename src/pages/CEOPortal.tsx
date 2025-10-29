@@ -21,9 +21,6 @@ import { EmergencyControls } from '@/components/ceo/EmergencyControls';
 import { StrategicPlanning } from '@/components/ceo/StrategicPlanning';
 import { AuditTrail } from '@/components/ceo/AuditTrail';
 import { QuickActions } from '@/components/ceo/QuickActions';
-import { RealTimeDashboard } from '@/components/ceo/RealTimeDashboard';
-import { CompanyMetrics } from '@/components/ceo/CompanyMetrics';
-import { RiskManagement } from '@/components/ceo/RiskManagement';
 import { useExecAuth } from '@/hooks/useExecAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -47,7 +44,7 @@ const CEOPortal: React.FC = () => {
   const navigate = useNavigate();
   const { loading, user, execUser, isAuthorized, signOut } = useExecAuth('ceo');
   const [metrics, setMetrics] = useState<CEOMetrics | null>(null);
-  const [activeTab, setActiveTab] = useState('realtime');
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     if (isAuthorized) {
@@ -323,37 +320,13 @@ const CEOPortal: React.FC = () => {
             <TabPane
               tab={
                 <span>
-                  <ThunderboltOutlined />
-                  Real-Time Dashboard
-                </span>
-              }
-              key="realtime"
-            >
-              <RealTimeDashboard />
-            </TabPane>
-
-            <TabPane
-              tab={
-                <span>
                   <BarChartOutlined />
-                  Company Metrics
+                  Quick Actions
                 </span>
               }
-              key="metrics"
+              key="overview"
             >
-              <CompanyMetrics />
-            </TabPane>
-
-            <TabPane
-              tab={
-                <span>
-                  <SafetyOutlined />
-                  Risk Management
-                </span>
-              }
-              key="risk"
-            >
-              <RiskManagement />
+              <QuickActions />
             </TabPane>
 
             <TabPane
