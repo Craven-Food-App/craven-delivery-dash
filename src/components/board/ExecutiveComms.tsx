@@ -373,22 +373,38 @@ export const ExecutiveComms: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ padding: window.innerWidth < 768 ? '12px' : '24px' }}>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: window.innerWidth < 768 ? 'column' : 'row',
+          justifyContent: 'space-between', 
+          alignItems: window.innerWidth < 768 ? 'flex-start' : 'center',
+          gap: '16px'
+        }}>
           <div>
-            <Title level={2} style={{ margin: 0, color: '#262626' }}>
+            <Title level={2} style={{ 
+              margin: 0, 
+              color: '#262626',
+              fontSize: window.innerWidth < 768 ? '20px' : '24px',
+              wordBreak: 'normal'
+            }}>
               <MessageOutlined style={{ marginRight: '8px', color: '#1890ff' }} />
               Executive Communications
             </Title>
-            <Text type="secondary" style={{ fontSize: '16px' }}>
+            <Text type="secondary" style={{ fontSize: window.innerWidth < 768 ? '14px' : '16px' }}>
               Secure messaging for board members and administrators
             </Text>
           </div>
-          <Space>
+          <Space direction={window.innerWidth < 768 ? 'vertical' : 'horizontal'}>
             <Badge count={unreadCount} offset={[-5, 5]}>
-              <Button icon={<ReloadOutlined />} onClick={fetchMessages} loading={loading}>
+              <Button 
+                icon={<ReloadOutlined />} 
+                onClick={fetchMessages} 
+                loading={loading}
+                size={window.innerWidth < 768 ? 'small' : 'middle'}
+              >
                 Refresh
               </Button>
             </Badge>
@@ -396,7 +412,7 @@ export const ExecutiveComms: React.FC = () => {
               type="primary" 
               icon={<SendOutlined />}
               onClick={() => setModalVisible(true)}
-              size="large"
+              size={window.innerWidth < 768 ? 'small' : 'large'}
             >
               New Message
             </Button>
