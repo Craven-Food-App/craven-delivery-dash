@@ -163,38 +163,42 @@ export const ExecutiveDirectory: React.FC = () => {
         </Card>
       </div>
 
-      <Row gutter={[16, 16]}>
+      <Row gutter={[8, 12]}>
         {filteredExecutives.map((exec) => (
-          <Col xs={24} sm={12} lg={8} key={exec.id}>
+          <Col xs={12} sm={12} lg={8} key={exec.id}>
             <Card
               className="hover:shadow-lg transition-shadow"
               bordered={false}
             >
               <div className="flex flex-col items-center text-center">
-                <div className="relative mb-4">
-                  <Avatar size={80} icon={<UserOutlined />} className="bg-gradient-to-br from-blue-500 to-purple-500" />
-                  <div className="absolute -bottom-2 -right-2 text-3xl">
+                <div className="relative mb-3">
+                  <Avatar 
+                    size={window.innerWidth < 640 ? 60 : 80} 
+                    icon={<UserOutlined />} 
+                    className="bg-gradient-to-br from-blue-500 to-purple-500" 
+                  />
+                  <div className="absolute -bottom-2 -right-2 text-2xl sm:text-3xl">
                     {getRoleIcon(exec.role)}
                   </div>
                 </div>
 
-                <Tag color={getRoleColor(exec.role)} className="mb-2">
+                <Tag color={getRoleColor(exec.role)} className="mb-2 text-xs">
                   {exec.role.toUpperCase().replace('_', ' ')}
                 </Tag>
 
-                <h3 className="text-lg font-bold text-slate-900 mb-1">
+                <h3 className="text-sm sm:text-lg font-bold text-slate-900 mb-1">
                   {exec.name || exec.title || exec.role.toUpperCase()}
                 </h3>
 
-                <p className="text-sm text-slate-600 mb-1">{exec.title}</p>
+                <p className="text-xs sm:text-sm text-slate-600 mb-1">{exec.title}</p>
 
                 {exec.department && (
-                  <p className="text-xs text-slate-500 mb-3">{exec.department}</p>
+                  <p className="text-xs text-slate-500 mb-2">{exec.department}</p>
                 )}
 
-                <div className="w-full space-y-2 mt-4">
+                <div className="w-full space-y-2 mt-2">
                   {exec.email && (
-                    <div className="flex items-center justify-center gap-2 text-sm text-slate-600">
+                    <div className="flex items-center justify-center gap-1 text-xs text-slate-600">
                       <MailOutlined />
                       <span className="truncate text-xs">{exec.email}</span>
                     </div>
@@ -202,7 +206,7 @@ export const ExecutiveDirectory: React.FC = () => {
                   
                   {exec.last_login && (
                     <div className="text-xs text-slate-500">
-                      Last active: {dayjs(exec.last_login).fromNow()}
+                      {dayjs(exec.last_login).fromNow()}
                     </div>
                   )}
 
@@ -211,8 +215,8 @@ export const ExecutiveDirectory: React.FC = () => {
                   )}
                 </div>
 
-                <div className="w-full mt-4 pt-4 border-t border-slate-200">
-                  <Button type="link" icon={<MessageOutlined />} size="small">
+                <div className="w-full mt-3 pt-2 border-t border-slate-200">
+                  <Button type="link" icon={<MessageOutlined />} size="small" className="text-xs">
                     Send Message
                   </Button>
                 </div>
