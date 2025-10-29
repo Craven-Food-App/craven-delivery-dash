@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Typography, Space, Spin, Result, Progress, message } from 'antd';
+import { Card, Typography, Space, Spin, Result, Progress, message, Alert } from 'antd';
 import { LoadingOutlined, CheckCircleOutlined, SafetyOutlined } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
