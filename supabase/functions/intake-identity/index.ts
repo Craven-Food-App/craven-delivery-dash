@@ -83,8 +83,13 @@ Deno.serve(async (req) => {
 
     if (encryptError) {
       console.error('Encryption error:', encryptError);
+      console.error('Error details:', JSON.stringify(encryptError, null, 2));
       return new Response(
-        JSON.stringify({ error: 'Failed to encrypt identity data' }),
+        JSON.stringify({ 
+          error: 'Failed to encrypt identity data',
+          details: encryptError.message || 'Unknown encryption error',
+          hint: 'Check if encrypt_driver_identity function exists in database'
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

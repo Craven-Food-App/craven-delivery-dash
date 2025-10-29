@@ -47,34 +47,47 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Find zone for driver's ZIP
-    const { data: zone, error: zoneError } = await supabase
-      .from('zones')
+    // Find region for driver's ZIP (use existing regions table)
+    const zipPrefix = driver.zip.substring(0, 3);
+    const { data: region, error: regionError } = await supabase
+      .from('regions')
       .select('*')
-      .eq('zip_code', driver.zip)
-      .eq('is_active', true)
+      .or(`zip_prefix.eq.${zipPrefix},status.eq.active`)
       .single();
 
-    if (zoneError || !zone) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'No active zone for this ZIP code',
-          zip: driver.zip 
-        }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // If no specific region, try to find any active region
+    let regionToUse = region;
+    if (regionError || !region) {
+      const { data: anyRegion } = await supabase
+        .from('regions')
+        .select('*')
+        .eq('status', 'active')
+        .limit(1)
+        .single();
+      
+      if (!anyRegion) {
+        // No active regions - add to waitlist automatically
+        regionToUse = null;
+      } else {
+        regionToUse = anyRegion;
+      }
     }
 
-    // Check zone capacity
-    const hasCapacity = zone.active_drivers < zone.capacity;
+    // Count active drivers in this region
+    const { count: activeCount } = await supabase
+      .from('craver_applications')
+      .select('*', { count: 'exact', head: true })
+      .eq('region_id', regionToUse?.id)
+      .eq('status', 'active');
 
-    if (hasCapacity) {
-      // Zone has capacity - mark driver as eligible
+    const hasCapacity = regionToUse && (activeCount || 0) < (regionToUse.active_quota || 50);
+
+    if (hasCapacity && regionToUse) {
+      // Region has capacity - mark driver as eligible
       const { error: updateError } = await supabase
         .from('drivers')
         .update({
           status: 'eligible',
-          zone_id: zone.id,
           updated_at: new Date().toISOString()
         })
         .eq('id', driverId);
@@ -88,22 +101,20 @@ Deno.serve(async (req) => {
           success: true,
           status: 'eligible',
           message: 'Driver is eligible and can be activated',
-          zone: {
-            city: zone.city,
-            state: zone.state,
-            availableSlots: zone.capacity - zone.active_drivers
+          region: {
+            name: regionToUse.name,
+            availableSlots: (regionToUse.active_quota || 50) - (activeCount || 0)
           }
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
 
     } else {
-      // Zone is full - add to waitlist
+      // Region is full or no active regions - add to waitlist
       const { error: updateError } = await supabase
         .from('drivers')
         .update({
           status: 'waitlisted_contract_signed',
-          zone_id: zone.id,
           updated_at: new Date().toISOString()
         })
         .eq('id', driverId);
@@ -112,35 +123,28 @@ Deno.serve(async (req) => {
         throw updateError;
       }
 
-      // Add to waitlist
-      const { data: waitlistData, error: waitlistError } = await supabase
-        .from('driver_waitlist')
-        .insert({
-          driver_id: driverId,
-          zone_id: zone.id,
-          contract_signed: true,
-          position: zone.waitlist_count + 1
-        })
-        .select()
-        .single();
-
-      if (waitlistError) {
-        console.error('Waitlist error:', waitlistError);
-      }
+      // Count current waitlist position
+      const { count: waitlistCount } = await supabase
+        .from('craver_applications')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'waitlist');
 
       return new Response(
         JSON.stringify({
           success: true,
           status: 'waitlisted',
-          message: 'Driver added to waitlist - zone is at capacity',
-          zone: {
-            city: zone.city,
-            state: zone.state,
-            capacity: zone.capacity,
-            currentDrivers: zone.active_drivers
+          message: 'Driver added to waitlist - region is at capacity',
+          region: regionToUse ? {
+            name: regionToUse.name,
+            capacity: regionToUse.active_quota,
+            currentDrivers: activeCount
+          } : {
+            name: 'General Waitlist',
+            capacity: 0,
+            currentDrivers: 0
           },
           waitlist: {
-            position: waitlistData?.position || zone.waitlist_count + 1
+            position: (waitlistCount || 0) + 1
           }
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
