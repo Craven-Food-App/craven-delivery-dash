@@ -428,12 +428,20 @@ export const ExecutiveComms: React.FC = () => {
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               allowClear
+              style={{ width: '100%' }}
             />
-            <Space>
+            <Space 
+              direction={window.innerWidth < 768 ? 'vertical' : 'horizontal'}
+              style={{ width: '100%' }}
+              size="small"
+            >
               <Select
                 value={filterPriority}
                 onChange={setFilterPriority}
-                style={{ width: 150 }}
+                style={{ 
+                  width: window.innerWidth < 768 ? '100%' : 150,
+                  maxWidth: '100%'
+                }}
                 suffixIcon={<FilterOutlined />}
               >
                 <Option value="all">All Priorities</Option>
@@ -446,6 +454,7 @@ export const ExecutiveComms: React.FC = () => {
                 type={filterUnread ? 'primary' : 'default'}
                 onClick={() => setFilterUnread(!filterUnread)}
                 icon={<MailOutlined />}
+                style={{ width: window.innerWidth < 768 ? '100%' : 'auto' }}
               >
                 {filterUnread ? 'Unread Only' : 'All Messages'}
               </Button>
