@@ -48,14 +48,21 @@ export const ExecutiveDirectory: React.FC = () => {
   const fetchExecutives = async () => {
     setLoading(true);
     try {
+      console.log('🔍 Fetching executives from exec_users...');
       // Fetch from exec_users (board members, advisors)
       const { data: execUsersData, error: execError } = await supabase
         .from('exec_users')
         .select('*')
         .order('role');
 
-      if (execError) throw execError;
+      console.log('📊 exec_users result:', { data: execUsersData, error: execError });
+      if (execError) {
+        console.error('❌ exec_users error:', execError);
+        console.error('❌ Error details:', JSON.stringify(execError, null, 2));
+        throw execError;
+      }
 
+      console.log('🔍 Fetching C-level employees...');
       // Fetch from employees (C-level employees like CFO, COO, CTO)
       const { data: employeesData, error: empError } = await supabase
         .from('employees')
@@ -64,7 +71,8 @@ export const ExecutiveDirectory: React.FC = () => {
         .eq('employment_status', 'active')
         .order('job_title');
 
-      if (empError) console.warn('Error fetching employees:', empError);
+      console.log('📊 employees result:', { data: employeesData, error: empError });
+      if (empError) console.warn('⚠️ Error fetching employees:', empError);
 
       // Map exec_users to Executive interface
       const execUsers: Executive[] = (execUsersData || []).map(exec => ({
@@ -102,10 +110,12 @@ export const ExecutiveDirectory: React.FC = () => {
 
       // Combine and deduplicate
       const combined = [...execUsers, ...employees];
+      console.log('✅ Combined executives:', combined);
+      console.log(`📈 Total: ${combined.length} (${execUsers.length} from exec_users + ${employees.length} from employees)`);
       setExecutives(combined);
       setFilteredExecutives(combined);
     } catch (error) {
-      console.error('Error fetching executives:', error);
+      console.error('❌ Error fetching executives:', error);
       message.error('Failed to load executives');
     } finally {
       setLoading(false);
