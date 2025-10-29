@@ -6,13 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { DriverApplicationWizard } from "@/components/DriverApplicationWizard";
 import becomeDriverHero from "@/assets/20251002_2239_Animated-Logo-Driver_remix_01k6kyy1m7f108g2r5qjd0a8x8.png";
 
 
 const FeederHub = () => {
   const navigate = useNavigate();
-  const [showApplicationForm, setShowApplicationForm] = useState(false);
   const benefits = [
     {
       icon: DollarSign,
@@ -75,7 +73,7 @@ const FeederHub = () => {
                 <Button 
                   size="lg" 
                   className="text-lg px-8 py-6"
-                  onClick={() => setShowApplicationForm(true)}
+                  onClick={() => navigate('/driver-onboarding/signup')}
                 >
                   Start Earning Today
                 </Button>
@@ -213,7 +211,7 @@ const FeederHub = () => {
           <Button 
             size="lg" 
             className="text-lg px-8 py-6"
-            onClick={() => setShowApplicationForm(true)}
+            onClick={() => navigate('/driver-onboarding/signup')}
           >
             Apply to Become a Feeder
           </Button>
@@ -224,10 +222,6 @@ const FeederHub = () => {
       </section>
 
       <Footer />
-      
-      {showApplicationForm && (
-        <DriverApplicationWizard onClose={() => setShowApplicationForm(false)} />
-      )}
     </div>
   );
 };
