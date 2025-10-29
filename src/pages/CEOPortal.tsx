@@ -20,7 +20,8 @@ import { EmergencyControls } from '@/components/ceo/EmergencyControls';
 import { StrategicPlanning } from '@/components/ceo/StrategicPlanning';
 import { AuditTrail } from '@/components/ceo/AuditTrail';
 import { QuickActions } from '@/components/ceo/QuickActions';
-import { CEOPinAuth } from '@/components/ceo/CEOPinAuth';
+import { useExecAuth } from '@/hooks/useExecAuth';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const { TabPane } = Tabs;
 
@@ -40,52 +41,15 @@ interface CEOMetrics {
 
 const CEOPortal: React.FC = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [pinAuthenticated, setPinAuthenticated] = useState(false);
-  const [userName, setUserName] = useState('');
-  const [userEmail, setUserEmail] = useState('');
+  const { loading, user, execUser, isAuthorized, signOut } = useExecAuth('ceo');
   const [metrics, setMetrics] = useState<CEOMetrics | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    checkInitialAuth();
-  }, []);
-
-  const checkInitialAuth = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user || !user.email) {
-        navigate('/auth');
-        return;
-      }
-
-      // Check if user is authorized CEO (email in whitelist)
-      const { data: credentials } = await supabase
-        .from('ceo_access_credentials')
-        .select('user_email')
-        .eq('user_email', user.email)
-        .single();
-
-      if (!credentials) {
-        // Not authorized
-        navigate('/');
-        return;
-      }
-
-      setUserEmail(user.email);
-      setUserName(user.email.split('@')[0] || 'CEO');
-      setLoading(false);
-    } catch (error) {
-      console.error('Error checking initial auth:', error);
-      navigate('/');
+    if (isAuthorized) {
+      fetchCEOMetrics();
     }
-  };
-
-  const handlePinSuccess = async () => {
-    setPinAuthenticated(true);
-    await fetchCEOMetrics();
-  };
+  }, [isAuthorized]);
 
   const fetchCEOMetrics = async () => {
     try {
@@ -143,15 +107,39 @@ const CEOPortal: React.FC = () => {
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-white text-lg">Initializing Security Protocol...</p>
+          <p className="text-white text-lg">Verifying access...</p>
         </div>
       </div>
     );
   }
 
-  // Show PIN authentication screen if not authenticated
-  if (!pinAuthenticated) {
-    return <CEOPinAuth onSuccess={handlePinSuccess} userEmail={userEmail} />;
+  if (!isAuthorized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle className="text-destructive text-center">Access Denied</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-center">
+            <p className="text-lg">You don't have CEO access to this portal.</p>
+            <p className="text-sm text-muted-foreground">
+              This portal is restricted to the Chief Executive Officer only.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Logged in as: <span className="font-semibold">{user?.email}</span>
+            </p>
+            <div className="flex gap-2 pt-4">
+              <Button onClick={() => navigate('/')} variant="outline" className="flex-1">
+                Go Home
+              </Button>
+              <Button onClick={signOut} variant="destructive" className="flex-1">
+                Sign Out
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -168,7 +156,7 @@ const CEOPortal: React.FC = () => {
                 </h1>
               </div>
               <p className="text-blue-200 flex items-center gap-3 text-lg">
-                <span>Welcome back, <strong>{userName}</strong></span>
+                <span>Welcome back, <strong>{execUser?.title || 'CEO'}</strong></span>
                 <Badge status="processing" text="System Operational" className="text-white" />
                 <span className="text-sm">• All Systems Online</span>
               </p>
@@ -198,6 +186,13 @@ const CEOPortal: React.FC = () => {
                 className="bg-slate-700 hover:bg-slate-600 text-white"
               >
                 Board Portal
+              </Button>
+              <Button
+                type="default"
+                size="large"
+                onClick={signOut}
+              >
+                Sign Out
               </Button>
             </div>
           </div>
