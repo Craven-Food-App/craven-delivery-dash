@@ -11,200 +11,289 @@ const PrivacyPolicy = () => {
       <main className="flex-1 container mx-auto px-4 py-12">
         <Card className="max-w-4xl mx-auto">
           <CardHeader>
-            <CardTitle className="text-3xl font-bold text-center">Privacy Policy</CardTitle>
-            <p className="text-center text-muted-foreground">Last Updated: January 2025</p>
+            <CardTitle className="text-3xl font-bold text-center">
+              Crave'n Inc. Privacy Policy
+              <div className="text-lg font-normal mt-2">(Master Version – U.S. & International)</div>
+              <div className="text-base font-normal mt-1">(for Customers, Feeders, and Restaurant Partners)</div>
+            </CardTitle>
+            <p className="text-center text-muted-foreground">Last Updated: October 2025</p>
           </CardHeader>
           
           <CardContent className="prose prose-slate max-w-none">
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
               <p className="text-muted-foreground mb-4">
-                Welcome to Crave'N ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our food delivery platform.
+                Welcome to Crave'n Inc. ("Crave'n," "we," "our," or "us").
+                We are committed to protecting your personal information and respecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use any Crave'n service, including:
+              </p>
+              <ul className="list-disc pl-6 mb-4 text-muted-foreground">
+                <li>The Crave'n App and website for customers;</li>
+                <li>The Crave'n Feeder App for delivery drivers ("Feeders"); and</li>
+                <li>The Crave'n Partner Portal for restaurants and merchants.</li>
+              </ul>
+              <p className="text-muted-foreground">
+                This Policy applies to all Crave'n users across the United States and, where applicable, internationally through Crave'n Europe Ltd.
               </p>
             </section>
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">2. Information We Collect</h2>
-              <h3 className="text-xl font-semibold mb-3">Personal Information</h3>
+              <p className="text-muted-foreground mb-4">
+                We collect several categories of information to operate our delivery platform efficiently and legally.
+              </p>
+              
+              <h3 className="text-xl font-semibold mb-3">a. Personal Information</h3>
+              <p className="text-muted-foreground mb-4">
+                Depending on your relationship with Crave'n, we may collect:
+              </p>
+              
+              <p className="font-semibold text-muted-foreground mb-2">Customers:</p>
               <ul className="list-disc pl-6 mb-4 text-muted-foreground">
-                <li>Name, email address, phone number</li>
-                <li>Delivery addresses</li>
-                <li>Payment information (processed securely through third-party payment processors)</li>
-                <li>Order history and preferences</li>
-                <li><CraveMoreText /> membership status and subscription information</li>
-                <li>Billing and payment history for membership subscriptions</li>
+                <li>Name, email address, phone number, and delivery addresses</li>
+                <li>Order history, payment method (processed securely through third-party processors)</li>
+                <li>Device identifiers, location data, and preferences</li>
               </ul>
               
-              <h3 className="text-xl font-semibold mb-3">Driver Information</h3>
-              <p className="text-sm text-muted-foreground mb-2 italic">
-                We collect this information to compensate drivers for delivery services and comply with tax laws.
-              </p>
+              <p className="font-semibold text-muted-foreground mb-2">Feeders (Drivers):</p>
               <ul className="list-disc pl-6 mb-4 text-muted-foreground">
-                <li>Driver's license and vehicle information</li>
-                <li>Background check results</li>
-                <li>Real-time location data (only while actively delivering)</li>
-                <li>Banking information for ACH payouts including bank account numbers and routing numbers (encrypted and stored securely) - <strong>Required to pay you for deliveries</strong></li>
-                <li>Payment method preferences (Cash App, bank accounts)</li>
-                <li>Earnings and payout history - <strong>Required for accurate compensation and tax reporting</strong></li>
-                <li>Tax information (W-9, SSN/EIN for IRS reporting) - <strong>Required by law for payments over $600/year</strong></li>
+                <li>Full name, contact information, driver's license and vehicle details</li>
+                <li>Background check results and identity verification documents</li>
+                <li>Real-time location data (active deliveries only)</li>
+                <li>Banking information (encrypted for ACH payouts)</li>
+                <li>Earnings and payout history for tax reporting</li>
+                <li>Tax forms (W-9, SSN/EIN) required by IRS for payments exceeding $600/year</li>
+                <li>Preferred payment method (e.g., bank transfer, Cash App)</li>
               </ul>
 
-              <h3 className="text-xl font-semibold mb-3">Restaurant Partner Information</h3>
-              <p className="text-sm text-muted-foreground mb-2 italic">
-                We collect this information to transfer revenue from food sales and comply with financial regulations.
-              </p>
+              <p className="font-semibold text-muted-foreground mb-2">Restaurant Partners:</p>
               <ul className="list-disc pl-6 mb-4 text-muted-foreground">
-                <li>Business name, address, and contact information</li>
-                <li>Menu items and pricing</li>
-                <li>Order and sales data</li>
-                <li>Banking information for ACH deposits via Stripe Connect (bank account numbers, routing numbers) - <strong>Required to pay you for customer orders</strong></li>
-                <li>Business tax identification numbers (EIN) - <strong>Required by law for business transactions and tax reporting</strong></li>
-                <li>Business owner verification documents - <strong>Required to prevent fraud and comply with Know Your Customer (KYC) regulations</strong></li>
-                <li>Revenue and payout transaction history - <strong>Required for accurate accounting and tax compliance</strong></li>
+                <li>Business name, address, and contact details</li>
+                <li>Menu items, pricing, and order history</li>
+                <li>Banking information for ACH deposits via Stripe Connect</li>
+                <li>Tax identification number (EIN) and ownership verification documents</li>
+                <li>Sales and payout transaction history</li>
               </ul>
 
-              <h3 className="text-xl font-semibold mb-3">Automatically Collected Information</h3>
+              <h3 className="text-xl font-semibold mb-3 mt-6">b. Automatically Collected Information</h3>
+              <p className="text-muted-foreground mb-4">
+                When you interact with the Crave'n Platform Services, we may collect:
+              </p>
               <ul className="list-disc pl-6 mb-4 text-muted-foreground">
                 <li>Device information (browser type, operating system)</li>
-                <li>IP address and location data</li>
-                <li>Usage data and analytics</li>
-                <li>Cookies and similar tracking technologies</li>
+                <li>IP address, geolocation, and session data</li>
+                <li>Cookies, SDKs, and analytics tools (e.g., Google Analytics)</li>
+                <li>Usage data (page views, click activity, frequency, time on app)</li>
+                <li>Delivery metrics for Feeders (accepted/canceled orders, mileage, delivery time)</li>
+              </ul>
+
+              <h3 className="text-xl font-semibold mb-3 mt-6">c. Information from Third Parties</h3>
+              <p className="text-muted-foreground mb-4">We may also receive information from:</p>
+              <ul className="list-disc pl-6 mb-4 text-muted-foreground">
+                <li>Background check vendors (e.g., criminal, driving, or identity records)</li>
+                <li>Payment processors and financial institutions (e.g., Stripe, Cash App)</li>
+                <li>Merchant partners and customers (ratings, feedback)</li>
+                <li>Fraud-prevention and analytics partners</li>
+                <li>Government or law enforcement agencies (as legally required)</li>
+                <li>Publicly available data sources</li>
               </ul>
             </section>
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">3. How We Use Your Information</h2>
-              
-              <h3 className="text-xl font-semibold mb-3">Why We Need Your Banking Information</h3>
               <p className="text-muted-foreground mb-4">
-                We collect and use banking information for specific, lawful purposes:
+                We collect and process your information for the following lawful purposes:
               </p>
+              
+              <h3 className="text-xl font-semibold mb-3">a. Platform Operations</h3>
               <ul className="list-disc pl-6 mb-4 text-muted-foreground">
-                <li><strong>To Pay You:</strong> We need bank account details to transfer money you've earned through our platform. Without this information, we cannot compensate you for your work.</li>
-                <li><strong>Legal Compliance:</strong> Federal law requires us to collect tax information (W-9, SSN/EIN) for anyone earning over $600 per year and issue 1099 forms to the IRS.</li>
-                <li><strong>Fraud Prevention:</strong> Bank verification helps us ensure accounts are legitimate and prevent unauthorized access to funds.</li>
-                <li><strong>Financial Regulations:</strong> We must comply with Anti-Money Laundering (AML) and Know Your Customer (KYC) regulations.</li>
+                <li>Process and fulfill customer orders</li>
+                <li>Facilitate communication among customers, Feeders, and restaurants</li>
+                <li>Calculate and distribute earnings for Feeders and payments for partners</li>
+                <li>Manage <CraveMoreText /> memberships, benefits, and billing</li>
+                <li>Deliver in-app notifications, order updates, and support messages</li>
               </ul>
 
-              <h3 className="text-xl font-semibold mb-3 mt-6">General Uses of Your Information</h3>
+              <h3 className="text-xl font-semibold mb-3 mt-6">b. Payment and Financial Compliance</h3>
               <ul className="list-disc pl-6 mb-4 text-muted-foreground">
-                <li>Process and fulfill your orders</li>
-                <li>Facilitate communication between customers, drivers, and restaurants</li>
-                <li>Process payments and prevent fraud</li>
-                <li>Send order updates and notifications</li>
-                <li>Manage <CraveMoreText /> membership subscriptions and benefits</li>
-                <li>Process recurring subscription payments</li>
-                <li>Apply membership discounts and benefits to orders</li>
-                <li><strong>Process ACH bank transfers and payouts</strong> to drivers and restaurant partners</li>
-                <li><strong>Verify bank account ownership</strong> for fraud prevention</li>
-                <li><strong>Calculate and distribute earnings</strong> through daily automated payout systems</li>
-                <li><strong>Generate tax documentation</strong> (1099 forms) for independent contractors</li>
-                <li>Comply with financial regulations and reporting requirements</li>
-                <li>Improve our services and user experience</li>
-                <li>Comply with legal obligations</li>
-                <li>Send promotional communications (with your consent)</li>
+                <li>Process ACH bank transfers through Stripe Connect</li>
+                <li>Verify account ownership to prevent fraud</li>
+                <li>Comply with IRS 1099 reporting, KYC/AML regulations, and PCI-DSS standards</li>
+                <li>Generate invoices, receipts, and tax documentation for contractors and partners</li>
+              </ul>
+
+              <h3 className="text-xl font-semibold mb-3 mt-6">c. Security and Fraud Prevention</h3>
+              <ul className="list-disc pl-6 mb-4 text-muted-foreground">
+                <li>Verify identity and prevent unauthorized access</li>
+                <li>Detect suspicious activity (e.g., duplicate accounts, payment anomalies)</li>
+                <li>Protect financial and personal data through encryption and monitoring</li>
+              </ul>
+
+              <h3 className="text-xl font-semibold mb-3 mt-6">d. Service Improvement and Analytics</h3>
+              <ul className="list-disc pl-6 mb-4 text-muted-foreground">
+                <li>Analyze platform usage, delivery performance, and user experience</li>
+                <li>Develop new features, optimize logistics, and personalize content</li>
+              </ul>
+
+              <h3 className="text-xl font-semibold mb-3 mt-6">e. Marketing and Communication</h3>
+              <ul className="list-disc pl-6 mb-4 text-muted-foreground">
+                <li>Send promotional materials, referral offers, or <CraveMoreText /> updates (with your consent)</li>
+                <li>Manage subscriptions and opt-outs</li>
+              </ul>
+
+              <h3 className="text-xl font-semibold mb-3 mt-6">f. Legal Compliance</h3>
+              <ul className="list-disc pl-6 mb-4 text-muted-foreground">
+                <li>Respond to subpoenas, regulatory requests, or applicable legal obligations</li>
+                <li>Maintain records for tax, audit, and compliance purposes</li>
               </ul>
             </section>
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">4. Information Sharing and Disclosure</h2>
-              <p className="text-muted-foreground mb-4">We may share your information with:</p>
-              <ul className="list-disc pl-6 mb-4 text-muted-foreground">
-                <li><strong>Restaurants:</strong> Order details and delivery addresses</li>
-                <li><strong>Drivers:</strong> Pickup and delivery information</li>
-                <li><strong>Payment Processors:</strong> Stripe (including Stripe Connect for ACH transfers), Cash App, and other secure payment services for processing bank transfers and payouts</li>
-                <li><strong>Banking Partners:</strong> Your bank account information is shared with our payment processors to facilitate ACH deposits and withdrawals</li>
-                <li><strong>Tax Authorities:</strong> Earnings and tax information as required by law (IRS 1099 reporting)</li>
-                <li><strong>Service Providers:</strong> Analytics, marketing, and technical support</li>
-                <li><strong>Legal Authorities:</strong> When required by law or to protect rights</li>
-              </ul>
               <p className="text-muted-foreground mb-4">
-                <strong>Financial Data Protection:</strong> Banking information is encrypted in transit and at rest. We use industry-standard security measures including tokenization and PCI-DSS compliant processors. Bank account numbers are never stored in plain text.
+                Crave'n does not sell your Personal Information. We share it only as needed to operate legally and effectively:
               </p>
-              <p className="text-muted-foreground">
-                We do not sell your personal information to third parties.
-              </p>
+              <ul className="list-disc pl-6 mb-4 text-muted-foreground">
+                <li><strong>Restaurants:</strong> Order details, delivery status, and customer names/addresses</li>
+                <li><strong>Feeders:</strong> Pickup and delivery instructions</li>
+                <li><strong>Payment Processors:</strong> Stripe, Cash App, and regulated ACH banking partners</li>
+                <li><strong>Tax Authorities:</strong> IRS or other government entities for compliance</li>
+                <li><strong>Vendors and Service Providers:</strong> Hosting, analytics, marketing, security, and support</li>
+                <li><strong>Law Enforcement:</strong> When required by law or to protect safety and rights</li>
+                <li><strong>Business Transfers:</strong> In connection with mergers, acquisitions, or restructuring</li>
+              </ul>
             </section>
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">5. Data Security</h2>
               <p className="text-muted-foreground mb-4">
-                We implement appropriate technical and organizational measures to protect your personal information, including:
+                We apply industry-standard safeguards to protect your information:
               </p>
               <ul className="list-disc pl-6 mb-4 text-muted-foreground">
-                <li>Encryption of sensitive data in transit (TLS/SSL) and at rest (AES-256)</li>
-                <li><strong>Banking Data Protection:</strong> All bank account numbers and routing numbers are encrypted and tokenized</li>
-                <li><strong>PCI-DSS Compliance:</strong> Payment processing through certified payment processors</li>
-                <li>Secure authentication and access controls with role-based permissions</li>
-                <li>Regular security audits and penetration testing</li>
-                <li>Compliance with industry security standards (SOC 2, PCI-DSS)</li>
-                <li>Secure data centers with 24/7 monitoring</li>
-                <li>Two-factor authentication for sensitive account operations</li>
+                <li><strong>Encryption:</strong> TLS/SSL in transit and AES-256 at rest</li>
+                <li><strong>PCI-DSS Compliance:</strong> For all payment handling through certified processors</li>
+                <li><strong>Tokenization:</strong> Bank account data is never stored in plain text</li>
+                <li><strong>Two-Factor Authentication:</strong> For sensitive account actions</li>
+                <li><strong>Security Audits:</strong> Regular penetration tests and SOC 2 alignment</li>
+                <li><strong>Bank-Level Protection:</strong> All ACH transfers occur through regulated institutions</li>
               </ul>
-              <p className="text-muted-foreground mb-4">
-                <strong>ACH Transfer Security:</strong> All bank transfers are processed through regulated financial institutions and use bank-level encryption standards.
-              </p>
             </section>
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">6. Your Privacy Rights</h2>
-              <p className="text-muted-foreground mb-4">Depending on your location, you may have the following rights:</p>
-              <ul className="list-disc pl-6 mb-4 text-muted-foreground">
-                <li><strong>Access:</strong> Request a copy of your personal data</li>
-                <li><strong>Correction:</strong> Update inaccurate or incomplete information</li>
-                <li><strong>Deletion:</strong> Request deletion of your personal data</li>
-                <li><strong>Opt-out:</strong> Unsubscribe from marketing communications</li>
-                <li><strong>Data Portability:</strong> Receive your data in a portable format</li>
-                <li><strong>Restriction:</strong> Limit how we use your data</li>
-              </ul>
-              <p className="text-muted-foreground">
-                To exercise these rights, contact us at customerservice@cravenusa.com
+              <p className="text-muted-foreground mb-4">
+                Depending on your location, you may have the right to:
               </p>
+              <ul className="list-disc pl-6 mb-4 text-muted-foreground">
+                <li><strong>Access</strong> your data</li>
+                <li><strong>Correct</strong> inaccurate or incomplete data</li>
+                <li><strong>Delete</strong> your personal information</li>
+                <li><strong>Restrict or Opt-Out</strong> of certain processing</li>
+                <li><strong>Portability:</strong> Request an export of your data</li>
+              </ul>
+              <p className="text-muted-foreground mb-4">To exercise these rights:</p>
+              <ul className="list-none mb-4 text-muted-foreground">
+                <li>Contact <strong>privacy@craven.com</strong> (privacy and data requests)</li>
+                <li>Or <strong>customerservice@cravenusa.com</strong> (general account help)</li>
+              </ul>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">7. Cookies and Tracking</h2>
+              <h2 className="text-2xl font-semibold mb-4">7. Cookies and Tracking Technologies</h2>
               <p className="text-muted-foreground mb-4">
-                We use cookies and similar technologies to enhance your experience. You can control cookies through your browser settings. See our <a href="/cookie-policy" className="text-primary hover:underline">Cookie Policy</a> for details.
+                Crave'n uses cookies, pixels, and SDKs to:
+              </p>
+              <ul className="list-disc pl-6 mb-4 text-muted-foreground">
+                <li>Keep you signed in securely</li>
+                <li>Personalize your experience</li>
+                <li>Analyze app and web usage</li>
+                <li>Display relevant offers or promotions</li>
+              </ul>
+              <p className="text-muted-foreground mb-4">
+                You can adjust cookie preferences in your browser or mobile settings.
+                Visit <a href="https://allaboutcookies.org" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">https://allaboutcookies.org</a> for more details.
               </p>
             </section>
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">8. Children's Privacy</h2>
               <p className="text-muted-foreground mb-4">
-                Our services are not intended for individuals under 18 years of age. We do not knowingly collect personal information from children.
+                Crave'n's Services are intended only for individuals 18 years and older.
+                We do not knowingly collect information from minors.
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">9. International Data Transfers</h2>
+              <h2 className="text-2xl font-semibold mb-4">9. Biometric and Identity Verification</h2>
               <p className="text-muted-foreground mb-4">
-                Your information may be transferred to and processed in countries other than your own. We ensure appropriate safeguards are in place for such transfers.
+                Feeders may be asked to provide a live photo or ID scan for fraud prevention and identity confirmation.
+                Biometric data (e.g., facial geometry) is securely processed and deleted after three (3) years of inactivity or once verification needs are met.
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">10. Changes to This Policy</h2>
+              <h2 className="text-2xl font-semibold mb-4">10. International Data Transfers</h2>
               <p className="text-muted-foreground mb-4">
-                We may update this Privacy Policy from time to time. We will notify you of any material changes by posting the new policy on this page and updating the "Last Updated" date.
+                Your information may be transferred to or processed in the United States or other jurisdictions where Crave'n or its affiliates operate.
+                For future operations in the U.K. and E.U., Crave'n Europe Ltd. will ensure compliance with local privacy laws, including GDPR-equivalent protections.
               </p>
             </section>
 
             <section className="mb-8">
-              <h2 className="text-2xl font-semibold mb-4">11. Contact Us</h2>
-              <p className="text-muted-foreground mb-4">
-                If you have questions or concerns about this Privacy Policy, please contact us:
-              </p>
-              <ul className="list-none mb-4 text-muted-foreground">
-                <li><strong>Email:</strong> customerservice@cravenusa.com</li>
-                <li><strong>Phone:</strong> 1-800-CRAVE-N</li>
-                <li><strong>Mail:</strong> Crave'N Privacy Team, [Company Address]</li>
+              <h2 className="text-2xl font-semibold mb-4">11. Disclosures for California Residents (CCPA/CPRA)</h2>
+              <p className="text-muted-foreground mb-4">California residents have the right to:</p>
+              <ul className="list-disc pl-6 mb-4 text-muted-foreground">
+                <li>Request access, correction, or deletion of Personal Information</li>
+                <li>Opt out of "selling" or "sharing" of Personal Information</li>
+                <li>Request details on categories of data collected and shared</li>
+                <li>Designate an authorized agent to exercise rights on their behalf</li>
               </ul>
+              <p className="text-muted-foreground mb-4">
+                Submit requests via <strong>privacy@craven.com</strong> with verification information.
+                Crave'n will not discriminate against users who exercise these rights.
+              </p>
             </section>
 
-            <section className="mb-8 p-6 bg-muted rounded-lg">
+            <section className="mb-8">
+              <h2 className="text-2xl font-semibold mb-4">12. Data Retention</h2>
+              <p className="text-muted-foreground mb-4">
+                We retain information only as long as necessary for:
+              </p>
+              <ul className="list-disc pl-6 mb-4 text-muted-foreground">
+                <li>Fulfilling orders and processing payments</li>
+                <li>Meeting tax and financial reporting obligations</li>
+                <li>Resolving disputes or enforcing agreements</li>
+                <li>Complying with applicable laws and security standards</li>
+              </ul>
+              <p className="text-muted-foreground">
+                Retention periods vary by data type and legal requirement.
+              </p>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-2xl font-semibold mb-4">13. Changes to this Privacy Policy</h2>
+              <p className="text-muted-foreground mb-4">
+                We may update this Policy periodically to reflect changes in law or operations.
+                The "Last Updated" date indicates the latest revision.
+                We will notify you via app notification or email for material updates.
+              </p>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-2xl font-semibold mb-4">14. Contact Information</h2>
+              <div className="text-muted-foreground mb-4">
+                <p className="mb-2"><strong>Crave'n Inc.</strong></p>
+                <p className="mb-2">1121 W Sylvania Ave.</p>
+                <p className="mb-4">Toledo, Ohio 43612</p>
+                <p className="mb-2"><strong>Privacy & Data Requests:</strong> privacy@craven.com</p>
+                <p><strong>General Support:</strong> customerservice@cravenusa.com</p>
+              </div>
+            </section>
+
+            <section className="mb-8 p-6 bg-muted rounded-lg border-2 border-primary">
+              <h3 className="text-xl font-semibold mb-3">Acknowledgment and Agreement</h3>
               <p className="text-sm text-muted-foreground">
-                <strong>Note:</strong> This privacy policy is a template and should be reviewed by a legal professional before use in production. It may need to be customized based on your specific business practices, applicable laws (GDPR, CCPA, etc.), and jurisdictions.
+                ☑️ I acknowledge that I have read and understand the Crave'n Inc. Privacy Policy and consent to the collection, use, and disclosure of my information as described.
+                I understand that Crave'n may update this Policy periodically and that the latest version will always be accessible in the Crave'n App, Feeder App, and Partner Portal.
               </p>
             </section>
           </CardContent>
@@ -217,4 +306,3 @@ const PrivacyPolicy = () => {
 };
 
 export default PrivacyPolicy;
-
