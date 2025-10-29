@@ -87,7 +87,7 @@ export const DriverSignup: React.FC = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '24px'
+      padding: window.innerWidth < 768 ? '12px' : '24px'
     }}>
       <Card
         style={{
@@ -100,7 +100,11 @@ export const DriverSignup: React.FC = () => {
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           {/* Header */}
           <div style={{ textAlign: 'center' }}>
-            <Title level={1} style={{ margin: 0, color: '#ff7a00', fontSize: '36px' }}>
+            <Title level={1} style={{ 
+              margin: 0, 
+              color: '#ff7a00', 
+              fontSize: window.innerWidth < 768 ? '24px' : '36px'
+            }}>
               Start Driving with Crave'n Today
             </Title>
             <Paragraph style={{ fontSize: '16px', color: '#595959', marginTop: '8px' }}>
@@ -132,8 +136,8 @@ export const DriverSignup: React.FC = () => {
               />
             </Form.Item>
 
-            <Row gutter={16}>
-              <Col span={12}>
+            <Row gutter={[16, 0]}>
+              <Col xs={24} sm={12}>
                 <Form.Item
                   label="Email"
                   name="email"
@@ -149,7 +153,7 @@ export const DriverSignup: React.FC = () => {
                   />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <Form.Item
                   label="Phone"
                   name="phone"
@@ -168,8 +172,8 @@ export const DriverSignup: React.FC = () => {
               </Col>
             </Row>
 
-            <Row gutter={16}>
-              <Col span={12}>
+            <Row gutter={[16, 0]}>
+              <Col xs={24} sm={12}>
                 <Form.Item
                   label="City"
                   name="city"
@@ -182,7 +186,7 @@ export const DriverSignup: React.FC = () => {
                   />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <Form.Item
                   label="ZIP Code"
                   name="zip"
