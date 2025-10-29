@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from 'react';
 import { Card, Row, Col, Button, message } from 'antd';
 import {

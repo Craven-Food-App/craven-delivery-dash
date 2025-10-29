@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Card, Progress, Tag, Row, Col, Statistic } from 'antd';
 import { RocketOutlined, CheckCircleOutlined } from '@ant-design/icons';

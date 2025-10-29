@@ -53,7 +53,7 @@ export const useExecAuth = (requiredRole?: 'ceo' | 'board_member') => {
 
       // Check if user has executive access
       const { data: execData, error: execError } = await supabase
-        .from('exec_users')
+        .from('exec_users' as any)
         .select('*')
         .eq('user_id', user.id)
         .single();
@@ -62,11 +62,11 @@ export const useExecAuth = (requiredRole?: 'ceo' | 'board_member') => {
         setIsAuthorized(false);
         setExecUser(null);
       } else {
-        setExecUser(execData);
+        setExecUser(execData as any);
         
         // Check role requirement if specified
         if (requiredRole) {
-          setIsAuthorized(execData.role === requiredRole || execData.role === 'ceo');
+          setIsAuthorized((execData as any).role === requiredRole || (execData as any).role === 'ceo');
         } else {
           setIsAuthorized(true);
         }

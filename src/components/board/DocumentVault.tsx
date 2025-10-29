@@ -36,57 +36,16 @@ export const DocumentVault: React.FC = () => {
 
   const fetchDocuments = async () => {
     setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('exec_documents')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setDocuments(data || []);
-    } catch (error) {
-      console.error('Error fetching documents:', error);
-      message.error('Failed to load documents');
-    } finally {
-      setLoading(false);
-    }
+    // TODO: Implement once exec_documents table is created
+    setDocuments([]);
+    setLoading(false);
   };
 
   const uploadDocument = async (values: any) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { data: execUser } = await supabase
-        .from('exec_users')
-        .select('id')
-        .eq('user_id', user?.id)
-        .single();
-
-      // For now, using placeholder URL - in production, upload to Supabase Storage
-      const { error } = await supabase
-        .from('exec_documents')
-        .insert([
-          {
-            title: values.title,
-            description: values.description,
-            category: values.category,
-            file_url: values.file_url || 'https://placeholder.url/document.pdf',
-            file_size_bytes: 0,
-            access_level: values.access_level,
-            uploaded_by: execUser?.id,
-          }
-        ]);
-
-      if (error) throw error;
-
-      message.success('Document uploaded successfully!');
-      setModalVisible(false);
-      form.resetFields();
-      fetchDocuments();
-    } catch (error: any) {
-      console.error('Error uploading document:', error);
-      message.error(error.message || 'Failed to upload document');
-    }
+    // TODO: Implement once exec_documents table is created
+    message.info('Document uploads will be available once the database is configured');
+    setModalVisible(false);
+    form.resetFields();
   };
 
   const columns = [

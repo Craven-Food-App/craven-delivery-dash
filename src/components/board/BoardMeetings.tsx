@@ -29,56 +29,16 @@ export const BoardMeetings: React.FC = () => {
 
   const fetchMeetings = async () => {
     setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('board_meetings')
-        .select('*')
-        .order('scheduled_at', { ascending: true });
-
-      if (error) throw error;
-      setMeetings(data || []);
-    } catch (error) {
-      console.error('Error fetching meetings:', error);
-      message.error('Failed to load meetings');
-    } finally {
-      setLoading(false);
-    }
+    // TODO: Implement once board_meetings table is created
+    setMeetings([]);
+    setLoading(false);
   };
 
   const scheduleMeeting = async (values: any) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { data: execUser } = await supabase
-        .from('exec_users')
-        .select('id')
-        .eq('user_id', user?.id)
-        .single();
-
-      const { error } = await supabase
-        .from('board_meetings')
-        .insert([
-          {
-            title: values.title,
-            description: values.description,
-            scheduled_at: dayjs(values.scheduled_at).toISOString(),
-            duration_minutes: values.duration_minutes,
-            meeting_url: values.meeting_url,
-            meeting_password: values.meeting_password,
-            host_id: execUser?.id,
-          }
-        ]);
-
-      if (error) throw error;
-
-      message.success('Meeting scheduled successfully!');
-      setModalVisible(false);
-      form.resetFields();
-      fetchMeetings();
-    } catch (error: any) {
-      console.error('Error scheduling meeting:', error);
-      message.error(error.message || 'Failed to schedule meeting');
-    }
+    // TODO: Implement once board_meetings table is created
+    message.info('Meeting scheduling will be available once the database is configured');
+    setModalVisible(false);
+    form.resetFields();
   };
 
   const columns = [

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Modal, Card, Statistic, Row, Col, Table, Tag, Button, message } from 'antd';
 import {

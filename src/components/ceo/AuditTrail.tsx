@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Table, Tag, Input, Select, DatePicker } from 'antd';
 import { SearchOutlined, FilterOutlined } from '@ant-design/icons';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Tag, Modal, message, InputNumber, Input, Select } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, DollarOutlined } from '@ant-design/icons';

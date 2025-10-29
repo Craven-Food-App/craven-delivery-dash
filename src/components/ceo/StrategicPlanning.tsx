@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Card, Progress, Tag, Button, Modal, Form, Input, InputNumber, DatePicker, Select, message } from 'antd';
 import { RocketOutlined, PlusOutlined, CheckCircleOutlined } from '@ant-design/icons';

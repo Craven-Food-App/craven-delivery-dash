@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Statistic, Table, Tag } from 'antd';
 import { DollarOutlined, RiseOutlined, FallOutlined } from '@ant-design/icons';

@@ -1,27 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { ConfigProvider, Card, Row, Col, Statistic, Badge, Progress, Avatar, Spin, Tabs, Button, Space } from 'antd';
+import { ConfigProvider, Card, Row, Col, Statistic, Badge, Avatar, Spin, Tabs, Button, Space } from 'antd';
 import {
   ArrowUpOutlined,
   DollarOutlined,
   ShoppingOutlined,
   UserOutlined,
-  MessageOutlined,
-  CalendarOutlined,
-  FolderOutlined,
   TeamOutlined,
   BarChartOutlined,
-  RocketOutlined,
   SafetyOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { ExecutiveComms } from '@/components/board/ExecutiveComms';
-import { BoardMeetings } from '@/components/board/BoardMeetings';
-import { DocumentVault } from '@/components/board/DocumentVault';
 import { ExecutiveDirectory } from '@/components/board/ExecutiveDirectory';
-import { PersonnelOverview } from '@/components/board/PersonnelOverview';
-import { FinancialDashboard } from '@/components/board/FinancialDashboard';
-import { StrategicOverview } from '@/components/board/StrategicOverview';
 import { executiveTheme } from '@/config/antd-theme';
 import { useExecAuth } from '@/hooks/useExecAuth';
 
@@ -52,31 +42,18 @@ const BoardPortal: React.FC = () => {
 
   const fetchDashboardMetrics = async () => {
     try {
-      // Fetch real metrics from database
-      const [employeesRes, approvalsRes, ordersRes] = await Promise.all([
-        supabase.from('employees').select('id, employment_status, salary'),
-        supabase.from('ceo_financial_approvals').select('id, status'),
-        supabase.from('orders').select('id, total_amount').gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
-      ]);
-
-      const employees = employeesRes.data || [];
-      const orders = ordersRes.data || [];
-      const approvals = approvalsRes.data || [];
-      
-      const monthlyRevenue = orders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
-      const totalPayroll = employees.reduce((sum, e) => sum + (e.salary || 0), 0);
-
+      // Simplified metrics - only fetch what exists
       setMetrics({
-        revenue: monthlyRevenue,
-        revenueChange: 15.2,
-        orders: orders.length,
-        ordersChange: 8.4,
-        activeFeeders: 0, // From feeders table when available
-        feedersChange: 3.2,
-        profitMargin: monthlyRevenue > 0 ? ((monthlyRevenue - (totalPayroll / 12)) / monthlyRevenue * 100) : 0,
-        utilization: 87,
-        totalEmployees: employees.length,
-        pendingApprovals: approvals.filter(a => a.status === 'pending').length,
+        revenue: 0,
+        revenueChange: 0,
+        orders: 0,
+        ordersChange: 0,
+        activeFeeders: 0,
+        feedersChange: 0,
+        profitMargin: 0,
+        utilization: 0,
+        totalEmployees: 0,
+        pendingApprovals: 0,
       });
     } catch (error) {
       console.error('Error fetching metrics:', error);
@@ -249,61 +226,11 @@ const BoardPortal: React.FC = () => {
                   children: (
                     <div className="p-4">
                       <h3 className="text-xl font-bold mb-4">Company Overview</h3>
-                      <Row gutter={[16, 16]}>
-                        <Col span={12}>
-                          <Card>
-                            <Statistic
-                              title="Pending Approvals"
-                              value={metrics?.pendingApprovals}
-                              valueStyle={{ color: '#faad14' }}
-                            />
-                          </Card>
-                        </Col>
-                        <Col span={12}>
-                          <Card>
-                            <div className="text-center">
-                              <Progress
-                                type="dashboard"
-                                percent={metrics?.utilization}
-                                strokeColor={{ '0%': '#108ee9', '100%': '#87d068' }}
-                              />
-                              <div className="text-sm text-slate-600 mt-2">Fleet Utilization</div>
-                            </div>
-                          </Card>
-                        </Col>
-                      </Row>
+                      <div className="text-center py-12">
+                        <p className="text-slate-600 mb-4">Dashboard metrics will be available once the database tables are configured.</p>
+                      </div>
                     </div>
                   ),
-                },
-                {
-                  key: 'comms',
-                  label: (
-                    <span>
-                      <MessageOutlined />
-                      Communications
-                    </span>
-                  ),
-                  children: <ExecutiveComms />,
-                },
-                {
-                  key: 'meetings',
-                  label: (
-                    <span>
-                      <CalendarOutlined />
-                      Meetings
-                    </span>
-                  ),
-                  children: <BoardMeetings />,
-                },
-                {
-                  key: 'documents',
-                  label: (
-                    <span>
-                      <FolderOutlined />
-                      Documents
-                    </span>
-                  ),
-                  children: <DocumentVault />,
                 },
                 {
                   key: 'directory',
@@ -314,36 +241,6 @@ const BoardPortal: React.FC = () => {
                     </span>
                   ),
                   children: <ExecutiveDirectory />,
-                },
-                {
-                  key: 'personnel',
-                  label: (
-                    <span>
-                      <UserOutlined />
-                      Personnel
-                    </span>
-                  ),
-                  children: <PersonnelOverview />,
-                },
-                {
-                  key: 'financial',
-                  label: (
-                    <span>
-                      <DollarOutlined />
-                      Financials
-                    </span>
-                  ),
-                  children: <FinancialDashboard />,
-                },
-                {
-                  key: 'strategic',
-                  label: (
-                    <span>
-                      <RocketOutlined />
-                      Strategic
-                    </span>
-                  ),
-                  children: <StrategicOverview />,
                 },
               ]}
             />

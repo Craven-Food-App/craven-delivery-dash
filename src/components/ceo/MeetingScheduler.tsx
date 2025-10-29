@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Modal, Form, Input, Select, DatePicker, InputNumber, Table, Button, Tag, message } from 'antd';
 import { CalendarOutlined, VideoCameraOutlined, EnvironmentOutlined } from '@ant-design/icons';

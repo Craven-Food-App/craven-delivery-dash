@@ -3,6 +3,9 @@ import { Card, Avatar, Tag, Input, Row, Col, message, Button } from 'antd';
 import { UserOutlined, MailOutlined, PhoneOutlined, SearchOutlined, MessageOutlined } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+
+dayjs.extend(relativeTime);
 
 const { Search } = Input;
 
@@ -48,34 +51,16 @@ export const ExecutiveDirectory: React.FC = () => {
   const fetchExecutives = async () => {
     setLoading(true);
     try {
-      console.log('🔍 Fetching executives from exec_users...');
-      // Fetch from exec_users (board members, advisors)
+      // Fetch from exec_users only
       const { data: execUsersData, error: execError } = await supabase
-        .from('exec_users')
+        .from('exec_users' as any)
         .select('*')
         .order('role');
 
-      console.log('📊 exec_users result:', { data: execUsersData, error: execError });
-      if (execError) {
-        console.error('❌ exec_users error:', execError);
-        console.error('❌ Error details:', JSON.stringify(execError, null, 2));
-        throw execError;
-      }
-
-      console.log('🔍 Fetching C-level employees...');
-      // Fetch from employees (C-level employees like CFO, COO, CTO)
-      const { data: employeesData, error: empError } = await supabase
-        .from('employees')
-        .select('*')
-        .in('job_title', ['Chief Financial Officer', 'Chief Operating Officer', 'Chief Technology Officer', 'Chief Marketing Officer', 'Chief Product Officer'])
-        .eq('employment_status', 'active')
-        .order('job_title');
-
-      console.log('📊 employees result:', { data: employeesData, error: empError });
-      if (empError) console.warn('⚠️ Error fetching employees:', empError);
+      if (execError) throw execError;
 
       // Map exec_users to Executive interface
-      const execUsers: Executive[] = (execUsersData || []).map(exec => ({
+      const execUsers: Executive[] = ((execUsersData as any) || []).map((exec: any) => ({
         id: exec.id,
         user_id: exec.user_id,
         role: exec.role,
@@ -86,37 +71,13 @@ export const ExecutiveDirectory: React.FC = () => {
         source: 'exec_users' as const,
       }));
 
-      // Map employees to Executive interface
-      const employees: Executive[] = (employeesData || []).map(emp => {
-        // Map job_title to role
-        let role = 'executive';
-        if (emp.job_title.includes('Financial')) role = 'cfo';
-        else if (emp.job_title.includes('Operating')) role = 'coo';
-        else if (emp.job_title.includes('Technology')) role = 'cto';
-        else if (emp.job_title.includes('Marketing')) role = 'cmo';
-        else if (emp.job_title.includes('Product')) role = 'cpo';
-
-        return {
-          id: emp.id,
-          role,
-          title: emp.job_title,
-          department: emp.department,
-          name: `${emp.first_name} ${emp.last_name}`,
-          email: emp.email,
-          created_at: emp.hired_date || emp.created_at,
-          source: 'employees' as const,
-        };
-      });
-
-      // Combine and deduplicate
-      const combined = [...execUsers, ...employees];
-      console.log('✅ Combined executives:', combined);
-      console.log(`📈 Total: ${combined.length} (${execUsers.length} from exec_users + ${employees.length} from employees)`);
-      setExecutives(combined);
-      setFilteredExecutives(combined);
+      setExecutives(execUsers);
+      setFilteredExecutives(execUsers);
     } catch (error) {
-      console.error('❌ Error fetching executives:', error);
+      console.error('Error fetching executives:', error);
       message.error('Failed to load executives');
+      setExecutives([]);
+      setFilteredExecutives([]);
     } finally {
       setLoading(false);
     }
