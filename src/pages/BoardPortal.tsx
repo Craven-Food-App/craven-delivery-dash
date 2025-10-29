@@ -166,13 +166,13 @@ const BoardPortal: React.FC = () => {
             <Col xs={24} sm={12} lg={6}>
               <Card bordered={false} className="shadow-lg hover:shadow-xl transition-all duration-300">
                 <Statistic
-                  title={<span className="text-slate-600 font-medium text-sm">Total Revenue</span>}
+                  title={<span className="text-slate-600 font-medium text-xs sm:text-sm">Total Revenue</span>}
                   value={metrics?.revenue}
                   precision={2}
                   prefix={<DollarOutlined className="text-blue-600" />}
-                  valueStyle={{ fontSize: '28px', fontWeight: 'bold', color: '#1e293b' }}
+                  valueStyle={{ fontSize: window.innerWidth < 640 ? '20px' : '28px', fontWeight: 'bold', color: '#1e293b' }}
                   suffix={
-                    <span className="text-sm text-green-600 font-semibold ml-2">
+                    <span className="text-xs sm:text-sm text-green-600 font-semibold ml-2">
                       <ArrowUpOutlined /> {metrics?.revenueChange}%
                     </span>
                   }
@@ -183,12 +183,12 @@ const BoardPortal: React.FC = () => {
             <Col xs={24} sm={12} lg={6}>
               <Card bordered={false} className="shadow-lg hover:shadow-xl transition-all duration-300">
                 <Statistic
-                  title={<span className="text-slate-600 font-medium text-sm">Total Orders</span>}
+                  title={<span className="text-slate-600 font-medium text-xs sm:text-sm">Total Orders</span>}
                   value={metrics?.orders}
                   prefix={<ShoppingOutlined className="text-purple-600" />}
-                  valueStyle={{ fontSize: '28px', fontWeight: 'bold', color: '#1e293b' }}
+                  valueStyle={{ fontSize: window.innerWidth < 640 ? '20px' : '28px', fontWeight: 'bold', color: '#1e293b' }}
                   suffix={
-                    <span className="text-sm text-green-600 font-semibold ml-2">
+                    <span className="text-xs sm:text-sm text-green-600 font-semibold ml-2">
                       <ArrowUpOutlined /> {metrics?.ordersChange}%
                     </span>
                   }
@@ -199,10 +199,10 @@ const BoardPortal: React.FC = () => {
             <Col xs={24} sm={12} lg={6}>
               <Card bordered={false} className="shadow-lg hover:shadow-xl transition-all duration-300">
                 <Statistic
-                  title={<span className="text-slate-600 font-medium text-sm">Employees</span>}
+                  title={<span className="text-slate-600 font-medium text-xs sm:text-sm">Employees</span>}
                   value={metrics?.totalEmployees}
                   prefix={<TeamOutlined className="text-orange-600" />}
-                  valueStyle={{ fontSize: '28px', fontWeight: 'bold', color: '#1e293b' }}
+                  valueStyle={{ fontSize: window.innerWidth < 640 ? '20px' : '28px', fontWeight: 'bold', color: '#1e293b' }}
                 />
               </Card>
             </Col>
@@ -210,11 +210,11 @@ const BoardPortal: React.FC = () => {
             <Col xs={24} sm={12} lg={6}>
               <Card bordered={false} className="shadow-lg hover:shadow-xl transition-all duration-300">
                 <Statistic
-                  title={<span className="text-slate-600 font-medium text-sm">Net Profit Margin</span>}
+                  title={<span className="text-slate-600 font-medium text-xs sm:text-sm">Net Profit Margin</span>}
                   value={metrics?.profitMargin}
                   precision={1}
                   suffix="%"
-                  valueStyle={{ fontSize: '28px', fontWeight: 'bold', color: '#059669' }}
+                  valueStyle={{ fontSize: window.innerWidth < 640 ? '20px' : '28px', fontWeight: 'bold', color: '#059669' }}
                 />
               </Card>
             </Col>
@@ -226,13 +226,15 @@ const BoardPortal: React.FC = () => {
               activeKey={activeTab}
               onChange={setActiveTab}
               size="large"
+              tabBarGutter={16}
+              className="board-portal-tabs"
               items={[
                 {
                   key: 'communications',
                   label: (
-                    <span>
+                    <span className="flex items-center gap-1 sm:gap-2">
                       <UserOutlined />
-                      Communications
+                      <span className="text-xs sm:text-base">Communications</span>
                     </span>
                   ),
                   children: <ExecutiveComms />,
@@ -240,16 +242,16 @@ const BoardPortal: React.FC = () => {
                 {
                   key: 'dashboard',
                   label: (
-                    <span>
+                    <span className="flex items-center gap-1 sm:gap-2">
                       <BarChartOutlined />
-                      Dashboard
+                      <span className="text-xs sm:text-base">Dashboard</span>
                     </span>
                   ),
                   children: (
-                    <div className="p-4">
-                      <h3 className="text-xl font-bold mb-4">Company Overview</h3>
-                      <div className="text-center py-12">
-                        <p className="text-slate-600 mb-4">Dashboard metrics will be available once the database tables are configured.</p>
+                    <div className="p-2 sm:p-4">
+                      <h3 className="text-lg sm:text-xl font-bold mb-4">Company Overview</h3>
+                      <div className="text-center py-8 sm:py-12">
+                        <p className="text-sm sm:text-base text-slate-600 mb-4">Dashboard metrics will be available once the database tables are configured.</p>
                       </div>
                     </div>
                   ),
@@ -257,9 +259,9 @@ const BoardPortal: React.FC = () => {
                 {
                   key: 'directory',
                   label: (
-                    <span>
+                    <span className="flex items-center gap-1 sm:gap-2">
                       <TeamOutlined />
-                      Directory
+                      <span className="text-xs sm:text-base">Directory</span>
                     </span>
                   ),
                   children: <ExecutiveDirectory />,
