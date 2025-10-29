@@ -60,6 +60,9 @@ export const SignAgreement: React.FC = () => {
   };
 
   const submitAgreement = async () => {
+    // Prevent double-submission
+    if (signing) return;
+
     if (!hasReadAgreement) {
       message.error('Please confirm you have read the agreement');
       return;
@@ -100,10 +103,10 @@ export const SignAgreement: React.FC = () => {
         .from('driver-signatures')
         .getPublicUrl(fileName);
 
-      // Save signature record with legal metadata
+      // Save signature record with legal metadata (upsert to prevent duplicate error)
       const { error: sigError } = await supabase
         .from('driver_signatures')
-        .insert({
+        .upsert({
           driver_id: driverId,
           agreement_type: 'ICA',
           agreement_version: '2025-10-29',
@@ -113,6 +116,8 @@ export const SignAgreement: React.FC = () => {
           latitude: location.latitude,
           longitude: location.longitude,
           signed_at: new Date().toISOString()
+        }, {
+          onConflict: 'driver_id,agreement_type'
         });
 
       if (sigError) {
@@ -301,8 +306,8 @@ export const SignAgreement: React.FC = () => {
                 <Button 
                   type="primary" 
                   size="large"
-                  loading={loading}
-                  disabled={!hasReadAgreement || !signatureData}
+                  loading={signing}
+                  disabled={!hasReadAgreement || !signatureData || signing}
                   onClick={submitAgreement}
                   icon={<CheckCircleOutlined />}
                   style={{
