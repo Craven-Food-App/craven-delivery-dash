@@ -171,8 +171,8 @@ const App = () => {
               <Sonner />
               <BrowserRouter>
                 <Routes>
-                  {/* Redirect root to new onboarding signup */}
-                  <Route path="/" element={<Navigate to="/driver-onboarding/signup" replace />} />
+                  {/* Feeder Hub (landing page) */}
+                  <Route path="/" element={<FeederHub />} />
                   
                   {/* New Driver Onboarding Flow */}
                   <Route path="/driver-onboarding/signup" element={<DriverSignup />} />
