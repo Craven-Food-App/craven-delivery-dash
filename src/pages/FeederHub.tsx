@@ -213,7 +213,7 @@ const FeederHub = () => {
           <Button 
             size="lg" 
             className="text-lg px-8 py-6"
-            onClick={() => navigate('/driver-onboarding/signup')}
+            onClick={() => setShowApplicationForm(true)}
           >
             Apply to Become a Feeder
           </Button>
