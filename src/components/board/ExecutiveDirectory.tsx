@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Avatar, Tag, Input, Row, Col, message, Button } from 'antd';
-import { UserOutlined, MailOutlined, PhoneOutlined, SearchOutlined } from '@ant-design/icons';
+import { UserOutlined, MailOutlined, PhoneOutlined, SearchOutlined, MessageOutlined } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import dayjs from 'dayjs';
 
@@ -8,12 +8,15 @@ const { Search } = Input;
 
 interface Executive {
   id: string;
-  user_id: string;
+  user_id?: string;
   role: string;
   title: string;
-  department: string;
-  last_login: string;
+  department?: string;
+  last_login?: string;
   created_at: string;
+  name?: string; // For employees
+  email?: string; // For employees
+  source: 'exec_users' | 'employees'; // Track where the data came from
 }
 
 export const ExecutiveDirectory: React.FC = () => {
@@ -32,7 +35,9 @@ export const ExecutiveDirectory: React.FC = () => {
         executives.filter(exec =>
           exec.role.toLowerCase().includes(searchText.toLowerCase()) ||
           exec.title?.toLowerCase().includes(searchText.toLowerCase()) ||
-          exec.department?.toLowerCase().includes(searchText.toLowerCase())
+          exec.department?.toLowerCase().includes(searchText.toLowerCase()) ||
+          exec.name?.toLowerCase().includes(searchText.toLowerCase()) ||
+          exec.email?.toLowerCase().includes(searchText.toLowerCase())
         )
       );
     } else {
@@ -43,14 +48,62 @@ export const ExecutiveDirectory: React.FC = () => {
   const fetchExecutives = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Fetch from exec_users (board members, advisors)
+      const { data: execUsersData, error: execError } = await supabase
         .from('exec_users')
         .select('*')
         .order('role');
 
-      if (error) throw error;
-      setExecutives(data || []);
-      setFilteredExecutives(data || []);
+      if (execError) throw execError;
+
+      // Fetch from employees (C-level employees like CFO, COO, CTO)
+      const { data: employeesData, error: empError } = await supabase
+        .from('employees')
+        .select('*')
+        .in('job_title', ['Chief Financial Officer', 'Chief Operating Officer', 'Chief Technology Officer', 'Chief Marketing Officer', 'Chief Product Officer'])
+        .eq('employment_status', 'active')
+        .order('job_title');
+
+      if (empError) console.warn('Error fetching employees:', empError);
+
+      // Map exec_users to Executive interface
+      const execUsers: Executive[] = (execUsersData || []).map(exec => ({
+        id: exec.id,
+        user_id: exec.user_id,
+        role: exec.role,
+        title: exec.title,
+        department: exec.department,
+        last_login: exec.last_login,
+        created_at: exec.created_at,
+        source: 'exec_users' as const,
+      }));
+
+      // Map employees to Executive interface
+      const employees: Executive[] = (employeesData || []).map(emp => {
+        // Map job_title to role
+        let role = 'executive';
+        if (emp.job_title.includes('Financial')) role = 'cfo';
+        else if (emp.job_title.includes('Operating')) role = 'coo';
+        else if (emp.job_title.includes('Technology')) role = 'cto';
+        else if (emp.job_title.includes('Marketing')) role = 'cmo';
+        else if (emp.job_title.includes('Product')) role = 'cpo';
+
+        return {
+          id: emp.id,
+          role,
+          title: emp.job_title,
+          department: emp.department,
+          name: `${emp.first_name} ${emp.last_name}`,
+          email: emp.email,
+          created_at: emp.hired_date || emp.created_at,
+          source: 'employees' as const,
+        };
+      });
+
+      // Combine and deduplicate
+      const combined = [...execUsers, ...employees];
+      setExecutives(combined);
+      setFilteredExecutives(combined);
     } catch (error) {
       console.error('Error fetching executives:', error);
       message.error('Failed to load executives');
@@ -65,8 +118,11 @@ export const ExecutiveDirectory: React.FC = () => {
       cfo: 'green',
       coo: 'blue',
       cto: 'purple',
+      cmo: 'magenta',
+      cpo: 'orange',
       board_member: 'gold',
       advisor: 'cyan',
+      executive: 'default',
     };
     return colors[role] || 'default';
   };
@@ -77,8 +133,11 @@ export const ExecutiveDirectory: React.FC = () => {
       cfo: '💰',
       coo: '⚙️',
       cto: '💻',
+      cmo: '📢',
+      cpo: '🚀',
       board_member: '🎯',
       advisor: '🧠',
+      executive: '👤',
     };
     return icons[role] || '👤';
   };
@@ -153,23 +212,31 @@ export const ExecutiveDirectory: React.FC = () => {
                 </Tag>
 
                 <h3 className="text-lg font-bold text-slate-900 mb-1">
-                  {exec.title || exec.role.toUpperCase()}
+                  {exec.name || exec.title || exec.role.toUpperCase()}
                 </h3>
 
+                <p className="text-sm text-slate-600 mb-1">{exec.title}</p>
+
                 {exec.department && (
-                  <p className="text-sm text-slate-600 mb-3">{exec.department}</p>
+                  <p className="text-xs text-slate-500 mb-3">{exec.department}</p>
                 )}
 
                 <div className="w-full space-y-2 mt-4">
-                  <div className="flex items-center justify-center gap-2 text-sm text-slate-600">
-                    <MailOutlined />
-                    <span>Executive Email</span>
-                  </div>
+                  {exec.email && (
+                    <div className="flex items-center justify-center gap-2 text-sm text-slate-600">
+                      <MailOutlined />
+                      <span className="truncate text-xs">{exec.email}</span>
+                    </div>
+                  )}
                   
                   {exec.last_login && (
                     <div className="text-xs text-slate-500">
                       Last active: {dayjs(exec.last_login).fromNow()}
                     </div>
+                  )}
+
+                  {exec.source === 'employees' && (
+                    <Tag color="blue" className="text-xs">From Personnel</Tag>
                   )}
                 </div>
 

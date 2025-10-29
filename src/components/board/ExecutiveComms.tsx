@@ -52,12 +52,37 @@ export const ExecutiveComms: React.FC = () => {
 
   const fetchExecutives = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch from exec_users
+      const { data: execUsersData, error: execError } = await supabase
         .from('exec_users')
         .select('*');
 
-      if (error) throw error;
-      setExecutives(data || []);
+      if (execError) throw execError;
+
+      // Fetch C-level employees
+      const { data: employeesData, error: empError } = await supabase
+        .from('employees')
+        .select('*')
+        .in('job_title', ['Chief Financial Officer', 'Chief Operating Officer', 'Chief Technology Officer', 'Chief Marketing Officer', 'Chief Product Officer'])
+        .eq('employment_status', 'active');
+
+      if (empError) console.warn('Error fetching employees:', empError);
+
+      // Map employees to match exec_users structure
+      const mappedEmployees = (employeesData || []).map(emp => ({
+        id: emp.id,
+        user_id: emp.user_id,
+        role: emp.job_title.includes('Financial') ? 'cfo' : 
+              emp.job_title.includes('Operating') ? 'coo' : 
+              emp.job_title.includes('Technology') ? 'cto' : 
+              emp.job_title.includes('Marketing') ? 'cmo' : 'executive',
+        title: `${emp.first_name} ${emp.last_name} - ${emp.job_title}`,
+        department: emp.department,
+      }));
+
+      // Combine both sources
+      const combined = [...(execUsersData || []), ...mappedEmployees];
+      setExecutives(combined);
     } catch (error) {
       console.error('Error fetching executives:', error);
     }
