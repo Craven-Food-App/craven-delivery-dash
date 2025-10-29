@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Card, Row, Col, Typography, Space, Progress, 
   Table, Tag, Button, Select, Alert, Timeline, 
-  Modal, Form, Input, Rate, Divider, Tooltip
+  Modal, Form, Input, Rate, Divider, Tooltip, Statistic
 } from 'antd';
 import {
   ExclamationCircleOutlined,

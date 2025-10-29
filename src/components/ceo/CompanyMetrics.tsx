@@ -55,7 +55,7 @@ export const CompanyMetrics: React.FC = () => {
       const endDate = dayjs();
       const startDate = timeRange === '7d' ? endDate.subtract(7, 'days') :
                       timeRange === '30d' ? endDate.subtract(30, 'days') :
-                      timeRange === '90d' ? endjs.subtract(90, 'days') :
+                      timeRange === '90d' ? endDate.subtract(90, 'days') :
                       endDate.subtract(365, 'days');
 
       // Fetch revenue data
