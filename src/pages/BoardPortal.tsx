@@ -90,12 +90,12 @@ const BoardPortal: React.FC = () => {
     return (
       <ConfigProvider theme={executiveTheme}>
         <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-br from-slate-900 to-slate-800">
-          <div className="text-center max-w-md bg-white rounded-2xl p-8 shadow-2xl">
-            <SafetyOutlined className="text-6xl text-red-500 mb-6" />
-            <h1 className="text-3xl font-bold text-slate-900 mb-4">
+          <div className="text-center max-w-md bg-white rounded-2xl p-6 sm:p-8 shadow-2xl">
+            <SafetyOutlined className="text-5xl sm:text-6xl text-red-500 mb-4 sm:mb-6" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-4">
               Executive Access Required
             </h1>
-            <p className="text-slate-600 text-lg mb-4">
+            <p className="text-slate-600 text-base sm:text-lg mb-4">
               This portal is restricted to board members and C-suite executives only.
             </p>
             <p className="text-sm text-slate-500 mb-6">
@@ -126,30 +126,41 @@ const BoardPortal: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         {/* Header */}
         <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-sm">
-          <div className="container mx-auto px-6 py-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+          <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex-1">
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2">
                   Executive Board Portal
                 </h1>
-                <p className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                <p className="text-slate-600 dark:text-slate-400 flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
                   Welcome back, <strong>{execUser?.title || user?.email?.split('@')[0]}</strong> • {execUser?.role?.toUpperCase()}
-                  <Badge status="processing" text="Live Data" />
+                  <Badge status="processing" text="Live Data" className="ml-0 sm:ml-2" />
                 </p>
               </div>
-              <div className="flex items-center gap-4">
-                <Button type="default" onClick={() => navigate('/ceo')}>
+              <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
+                <Button 
+                  type="default" 
+                  size="small"
+                  className="text-xs sm:text-base"
+                  onClick={() => navigate('/ceo')}
+                >
                   CEO Portal
                 </Button>
-                <Button onClick={signOut}>Sign Out</Button>
-                <Avatar size="large" icon={<UserOutlined />} className="bg-blue-600" />
+                <Button 
+                  size="small"
+                  className="text-xs sm:text-base"
+                  onClick={signOut}
+                >
+                  Sign Out
+                </Button>
+                <Avatar size="default" icon={<UserOutlined />} className="bg-blue-600" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="container mx-auto px-6 py-8">
+        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-8">
           {/* Key Metrics Row */}
           <Row gutter={[24, 24]} className="mb-8">
             <Col xs={24} sm={12} lg={6}>
