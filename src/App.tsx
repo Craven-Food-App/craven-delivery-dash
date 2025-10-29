@@ -171,7 +171,18 @@ const App = () => {
               <Sonner />
               <BrowserRouter>
                 <Routes>
-                  <Route path="/" element={<FeederHub />} />
+                  {/* Redirect root to new onboarding signup */}
+                  <Route path="/" element={<Navigate to="/driver-onboarding/signup" replace />} />
+                  
+                  {/* New Driver Onboarding Flow */}
+                  <Route path="/driver-onboarding/signup" element={<DriverSignup />} />
+                  <Route path="/driver-onboarding/consent" element={<LegalConsent />} />
+                  <Route path="/driver-onboarding/identity" element={<IdentityForm />} />
+                  <Route path="/driver-onboarding/background-check" element={<BackgroundCheckPending />} />
+                  <Route path="/driver-onboarding/sign-agreement" element={<SignAgreement />} />
+                  <Route path="/driver-onboarding/waitlist" element={<WaitlistReveal />} />
+                  <Route path="/driver-onboarding/activation" element={<ActivationReady />} />
+                  
                   <Route path="/driver/auth" element={<DriverAuth />} />
                   <Route path="/enhanced-onboarding" element={<EnhancedDriverOnboarding />} />
                   <Route path="/enhanced-onboarding/profile" element={<ProfileCompletionForm />} />
@@ -283,9 +294,10 @@ const App = () => {
           <Route path="/crave-more" element={<CraveMore />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/driver/auth" element={<DriverAuth />} />
-          <Route path="/feeder" element={<FeederHub />} />
+          {/* Redirect old feeder link to new onboarding flow */}
+          <Route path="/feeder" element={<Navigate to="/driver-onboarding/signup" replace />} />
           
-          {/* New Driver Onboarding Flow with DocuSign + Waitlist */}
+          {/* New Driver Onboarding Flow with In-App Signature + Waitlist */}
           <Route path="/driver-onboarding/signup" element={<DriverSignup />} />
           <Route path="/driver-onboarding/consent" element={<LegalConsent />} />
           <Route path="/driver-onboarding/identity" element={<IdentityForm />} />
