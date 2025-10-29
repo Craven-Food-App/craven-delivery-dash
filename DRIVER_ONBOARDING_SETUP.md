@@ -1,7 +1,7 @@
 # 🚘 Crave'n Driver Onboarding System - Setup Guide
 
 ## Overview
-Complete driver onboarding system with DocuSign integration, encrypted identity storage, background checks, and zone-based waitlist management.
+Complete driver onboarding system with **in-app digital signatures**, encrypted identity storage, background checks, and zone-based waitlist management. No external e-signature service required!
 
 ## 🔧 Environment Variables Required
 
@@ -18,18 +18,12 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 IDENTITY_ENCRYPTION_KEY=your-super-secret-encryption-key-min-32-chars
 ```
 
-### DocuSign Configuration  
-Add these to your Supabase Edge Functions secrets:
-
-```bash
-# DocuSign API Credentials
-DOCUSIGN_ACCOUNT_ID=your-account-id
-DOCUSIGN_ACCESS_TOKEN=your-access-token
-DOCUSIGN_TEMPLATE_ID=your-ica-template-id
-DOCUSIGN_BASE_URL=https://demo.docusign.net/restapi
-
-# Note: For production, use: https://www.docusign.net/restapi
-```
+### Supabase Storage
+Create a storage bucket for driver signatures:
+- **Bucket name**: `driver-signatures`
+- **Public**: `false` (private - only authenticated users)
+- **File size limit**: `5MB`
+- **Allowed MIME types**: `image/png`
 
 ### Client Environment (.env)
 ```bash
@@ -46,11 +40,14 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 Run these migrations in order:
 
 ```bash
-# 1. Main schema
+# 1. Main schema (tables, RLS, triggers, sample zones)
 supabase/migrations/20251029000000_create_driver_onboarding_system.sql
 
-# 2. Encryption functions
+# 2. Encryption functions (pgcrypto helpers)
 supabase/migrations/20251029000001_create_identity_encryption_function.sql
+
+# 3. Signature tracking (in-app signatures)
+supabase/migrations/20251029000002_add_driver_signatures.sql
 ```
 
 **Or use Supabase CLI:**
@@ -73,6 +70,7 @@ You should see:
 - driver_identity
 - driver_background_checks
 - driver_waitlist
+- driver_signatures
 - zones
 
 ---
@@ -82,46 +80,53 @@ You should see:
 ### 1. Deploy Edge Functions
 
 ```bash
-# Deploy all functions
+# Deploy required functions
 supabase functions deploy intake-identity
 supabase functions deploy start-onboarding
-supabase functions deploy create-docusign-envelope
-supabase functions deploy docusign-webhook
 ```
 
 ### 2. Set Edge Function Secrets
 
 ```bash
-supabase secrets set IDENTITY_ENCRYPTION_KEY=your-key-here
-supabase secrets set DOCUSIGN_ACCOUNT_ID=your-account-id
-supabase secrets set DOCUSIGN_ACCESS_TOKEN=your-token
-supabase secrets set DOCUSIGN_TEMPLATE_ID=your-template-id
-supabase secrets set DOCUSIGN_BASE_URL=https://demo.docusign.net/restapi
+# Only need encryption key - no DocuSign needed!
+supabase secrets set IDENTITY_ENCRYPTION_KEY=your-super-secret-32-char-minimum-key
 ```
 
 ---
 
-## 📝 DocuSign Template Setup
+## 📦 Supabase Storage Setup
 
-### 1. Create ICA Template in DocuSign
+### Create Signature Storage Bucket
 
-1. Log into DocuSign
-2. Go to Templates → New Template
-3. Upload your Independent Contractor Agreement PDF
-4. Add fields:
-   - **Signature** field (required)
-   - **Date Signed** field (auto-fill)
-   - **Full Name** field (tab label: "FullName")
-   - **Sign Date** field (tab label: "SignDate")
-5. Set Recipient Role Name: "Driver"
-6. Save template and copy the Template ID
+1. Go to: [Supabase Storage](https://supabase.com/dashboard/project/xaxbucnjlrfkccsfiddq/storage/buckets)
+2. Click **"New bucket"**
+3. Configure:
+   - **Name**: `driver-signatures`
+   - **Public**: `false` (private)
+   - **File size limit**: `5MB`
+   - **Allowed MIME types**: `image/png`
+4. Click **"Create bucket"**
 
-### 2. Configure Webhook
+### Set Bucket Policies
 
-In DocuSign, set up Connect webhook:
-- **URL**: `https://your-project.supabase.co/functions/v1/docusign-webhook`
-- **Events**: Envelope Completed
-- **Include**: Envelope ID, Status
+Run this SQL to allow drivers to upload their own signatures:
+
+```sql
+-- Allow authenticated users to upload their signatures
+CREATE POLICY "drivers_upload_own_signature"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (
+  bucket_id = 'driver-signatures' AND
+  auth.uid()::text = (storage.foldername(name))[1]
+);
+
+-- Allow drivers to view their own signatures
+CREATE POLICY "drivers_view_own_signature"
+ON storage.objects FOR SELECT
+TO authenticated
+USING (bucket_id = 'driver-signatures');
+```
 
 ---
 
@@ -149,21 +154,29 @@ In DocuSign, set up Connect webhook:
 
 5. **Wait for background check** (auto-clears after 5 seconds)
 
-6. **Click "Sign Agreement"** → DocuSign envelope sent
+6. **Review ICA** → Scroll through agreement
 
-7. **Check email** → Sign in DocuSign
+7. **Check "I have read and understand"** checkbox
 
-8. **Return to app** → Auto-redirected based on zone capacity
+8. **Draw your signature** in the canvas (mouse or touch)
+
+9. **Click "Save Signature"** → Signature captured
+
+10. **Click "Sign Agreement"** → Agreement signed!
+
+11. **Auto-redirect** based on zone capacity:
+    - If zone has space → Activation screen
+    - If zone is full → Waitlist screen
 
 ---
 
 ## 🔍 Troubleshooting
 
-### Issue: "DocuSign not configured" error
-**Fix**: Ensure all DocuSign secrets are set in Edge Functions
+### Issue: "Failed to upload signature" error
+**Fix**: Ensure `driver-signatures` storage bucket is created and policies are set
 
 ### Issue: "Encryption failed" error  
-**Fix**: Verify `IDENTITY_ENCRYPTION_KEY` is set and at least 32 characters
+**Fix**: Verify `IDENTITY_ENCRYPTION_KEY` is set in Edge Functions (min 32 characters)
 
 ### Issue: No zones available
 **Fix**: Run the sample zones insert from the migration or add zones manually:
@@ -234,17 +247,19 @@ WHERE zip_code = '43615';
 
 ## ✅ System Status Checklist
 
-- [ ] Database migrations applied
+- [ ] Database migrations applied (all 3)
 - [ ] Encryption functions created
 - [ ] RLS policies active
-- [ ] Edge Functions deployed
-- [ ] DocuSign template configured
-- [ ] DocuSign webhook set up
-- [ ] Environment variables configured
+- [ ] Supabase Storage bucket created (`driver-signatures`)
+- [ ] Storage policies configured
+- [ ] Edge Functions deployed (intake-identity, start-onboarding)
+- [ ] Encryption key secret set
 - [ ] Sample zones created
 - [ ] Test signup successful
-- [ ] Test encryption working
-- [ ] Test DocuSign integration
+- [ ] Test consent flow working
+- [ ] Test identity encryption working
+- [ ] Test in-app signature capture
+- [ ] Test signature storage
 - [ ] Test waitlist logic
 - [ ] Test activation flow
 
