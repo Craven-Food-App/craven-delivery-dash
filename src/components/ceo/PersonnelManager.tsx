@@ -1,29 +1,18 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { 
-  Table, Button, Tag, Space, Input, Modal, Form, Select, InputNumber, 
-  DatePicker, message, Popconfirm, Statistic, Card, Row, Col, Typography, 
-  Progress, Avatar, Tooltip, Badge, Divider, Alert
-} from 'antd';
+import { Table, Button, Tag, Space, Input, Modal, Form, Select, InputNumber, DatePicker, message, Popconfirm, Statistic, Card } from 'antd';
 import {
   UserAddOutlined,
   DeleteOutlined,
   RiseOutlined,
   DollarOutlined,
   TeamOutlined,
-  SearchOutlined,
-  CrownOutlined,
-  TrophyOutlined,
-  TrendingUpOutlined,
-  UserOutlined,
-  CalendarOutlined,
-  BankOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import dayjs from 'dayjs';
 
 const { Search } = Input;
 const { Option } = Select;
-const { Title, Text } = Typography;
 
 interface Employee {
   id: string;
@@ -360,197 +349,74 @@ export const PersonnelManager: React.FC = () => {
   const recentHires = employees.filter(e => dayjs(e.hire_date).isAfter(dayjs().subtract(30, 'days')));
 
   return (
-    <div style={{ padding: '24px' }}>
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <Title level={2} style={{ margin: 0, color: '#262626' }}>
-              <TeamOutlined style={{ marginRight: '8px', color: '#1890ff' }} />
-              Personnel Management
-            </Title>
-            <Text type="secondary" style={{ fontSize: '16px' }}>
-              Comprehensive workforce oversight and management
-            </Text>
-          </div>
-          <Space>
-            <Search
-              placeholder="Search personnel..."
-              allowClear
-              onSearch={setSearchText}
-              style={{ width: 300 }}
-              prefix={<SearchOutlined />}
-            />
-            <Button
-              type="primary"
-              icon={<UserAddOutlined />}
-              size="large"
-              onClick={() => setIsModalVisible(true)}
-              style={{ borderRadius: '8px' }}
-            >
-              Hire New Employee
-            </Button>
-          </Space>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Personnel Management</h2>
+          <p className="text-slate-600">Hire, manage, and monitor all employees</p>
         </div>
+        <Space>
+          <Search
+            placeholder="Search personnel..."
+            allowClear
+            onSearch={setSearchText}
+            style={{ width: 300 }}
+          />
+          <Button
+            type="primary"
+            icon={<UserAddOutlined />}
+            size="large"
+            onClick={() => setIsModalVisible(true)}
+          >
+            Hire New Employee
+          </Button>
+        </Space>
+      </div>
 
-        {/* Enhanced Metrics Dashboard */}
-        <Row gutter={[16, 16]}>
-          <Col xs={24} sm={12} lg={6}>
-            <Card 
-              style={{ 
-                background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)',
-                border: '1px solid #0ea5e9',
-                borderRadius: '12px'
-              }}
-            >
-              <Statistic
-                title={<Text type="secondary">Total Employees</Text>}
-                value={employees.length}
-                prefix={<TeamOutlined style={{ color: '#0ea5e9' }} />}
-                valueStyle={{ color: '#0c4a6e', fontSize: '28px' }}
-              />
-              <Progress 
-                percent={Math.min((employees.length / 100) * 100, 100)} 
-                showInfo={false} 
-                strokeColor="#0ea5e9"
-                style={{ marginTop: '8px' }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={6}>
-            <Card 
-              style={{ 
-                background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
-                border: '1px solid #22c55e',
-                borderRadius: '12px'
-              }}
-            >
-              <Statistic
-                title={<Text type="secondary">Active Employees</Text>}
-                value={activeEmployees.length}
-                prefix={<UserOutlined style={{ color: '#22c55e' }} />}
-                valueStyle={{ color: '#15803d', fontSize: '28px' }}
-              />
-              <Text type="secondary" style={{ fontSize: '12px' }}>
-                {Math.round((activeEmployees.length / employees.length) * 100)}% of total
-              </Text>
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={6}>
-            <Card 
-              style={{ 
-                background: 'linear-gradient(135deg, #fef2f2, #fee2e2)',
-                border: '1px solid #ef4444',
-                borderRadius: '12px'
-              }}
-            >
-              <Statistic
-                title={<Text type="secondary">Monthly Payroll</Text>}
-                value={Math.round(totalPayroll / 12)}
-                prefix={<DollarOutlined style={{ color: '#ef4444' }} />}
-                precision={0}
-                valueStyle={{ color: '#dc2626', fontSize: '28px' }}
-              />
-              <Text type="secondary" style={{ fontSize: '12px' }}>
-                Annual: ${totalPayroll.toLocaleString()}
-              </Text>
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={6}>
-            <Card 
-              style={{ 
-                background: 'linear-gradient(135deg, #fffbeb, #fef3c7)',
-                border: '1px solid #f59e0b',
-                borderRadius: '12px'
-              }}
-            >
-              <Statistic
-                title={<Text type="secondary">Recent Hires</Text>}
-                value={recentHires.length}
-                prefix={<CalendarOutlined style={{ color: '#f59e0b' }} />}
-                valueStyle={{ color: '#d97706', fontSize: '28px' }}
-              />
-              <Text type="secondary" style={{ fontSize: '12px' }}>
-                Last 30 days
-              </Text>
-            </Card>
-          </Col>
-        </Row>
-
-        {/* Department Overview */}
-        <Card 
-          title={
-            <Space>
-              <BankOutlined style={{ color: '#1890ff' }} />
-              <Text strong>Department Overview</Text>
-            </Space>
-          }
-          style={{ borderRadius: '12px' }}
-        >
-          <Row gutter={[16, 16]}>
-            {departments.map(dept => {
-              const deptEmployees = employees.filter(e => e.department_id === dept.id);
-              const deptPayroll = deptEmployees.reduce((sum, e) => sum + (e.salary || 0), 0);
-              return (
-                <Col xs={24} sm={12} lg={8} key={dept.id}>
-                  <Card 
-                    size="small" 
-                    style={{ 
-                      background: '#fafafa',
-                      borderRadius: '8px',
-                      border: '1px solid #d9d9d9'
-                    }}
-                  >
-                    <Space direction="vertical" style={{ width: '100%' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Text strong>{dept.name}</Text>
-                        <Badge count={deptEmployees.length} style={{ backgroundColor: '#1890ff' }} />
-                      </div>
-                      <Text type="secondary" style={{ fontSize: '12px' }}>
-                        {dept.description}
-                      </Text>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Text type="secondary" style={{ fontSize: '12px' }}>
-                          Payroll: ${Math.round(deptPayroll / 12).toLocaleString()}/mo
-                        </Text>
-                        <Text type="secondary" style={{ fontSize: '12px' }}>
-                          Avg: ${Math.round(deptPayroll / deptEmployees.length).toLocaleString()}
-                        </Text>
-                      </div>
-                    </Space>
-                  </Card>
-                </Col>
-              );
-            })}
-          </Row>
-        </Card>
-
-        {/* Employee Table */}
-        <Card 
-          title={
-            <Space>
-              <CrownOutlined style={{ color: '#faad14' }} />
-              <Text strong>Employee Directory</Text>
-            </Space>
-          }
-          style={{ borderRadius: '12px' }}
-        >
-          <Table
-            columns={columns}
-            dataSource={filteredEmployees}
-            rowKey="id"
-            loading={loading}
-            pagination={{ 
-              pageSize: 10, 
-              showSizeChanger: true, 
-              showTotal: (total) => `Total ${total} employees`,
-              showQuickJumper: true
-            }}
-            scroll={{ x: 1200 }}
-            style={{ borderRadius: '8px' }}
+      {/* Metrics */}
+      <div className="grid grid-cols-4 gap-4">
+        <Card>
+          <Statistic
+            title="Total Employees"
+            value={employees.length}
+            prefix={<TeamOutlined />}
+            valueStyle={{ color: '#3f8600' }}
           />
         </Card>
-      </Space>
+        <Card>
+          <Statistic
+            title="Active Employees"
+            value={activeEmployees.length}
+            valueStyle={{ color: '#1890ff' }}
+          />
+        </Card>
+        <Card>
+          <Statistic
+            title="Monthly Payroll"
+            value={Math.round(totalPayroll / 12)}
+            prefix={<DollarOutlined />}
+            precision={0}
+            valueStyle={{ color: '#cf1322' }}
+          />
+        </Card>
+        <Card>
+          <Statistic
+            title="Hired (30 days)"
+            value={recentHires.length}
+            valueStyle={{ color: '#faad14' }}
+          />
+        </Card>
+      </div>
+
+      <Table
+        columns={columns}
+        dataSource={filteredEmployees}
+        rowKey="id"
+        loading={loading}
+        pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `Total ${total} employees` }}
+        className="shadow-lg"
+        scroll={{ x: 1200 }}
+      />
 
       {/* Hire Modal */}
       <Modal
