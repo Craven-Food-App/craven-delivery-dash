@@ -380,6 +380,23 @@ export const PersonnelManager: React.FC = () => {
           },
         });
 
+        // Pre-acceptance notification: provisional emails
+        try {
+          const posDef = POSITIONS.find(p => p.code === (values.position || ''));
+          if (posDef) {
+            const emails = buildEmails(values.first_name, values.last_name, posDef.code, 'cravenusa.com');
+            await supabase.functions.invoke('send-preaccept-email', {
+              body: {
+                candidateEmail: values.email,
+                candidateName: `${values.first_name} ${values.last_name}`,
+                namedEmail: emails.named,
+                roleAlias: posDef.isExecutive ? emails.roleAlias : null,
+                position: posDef.label
+              }
+            });
+          }
+        } catch (_) {}
+
         // Send offer letter
         await supabase.functions.invoke('send-executive-offer-letter', {
           body: {
@@ -454,6 +471,23 @@ export const PersonnelManager: React.FC = () => {
       setIsModalVisible(false);
       form.resetFields();
       fetchEmployees();
+
+      // Post-acceptance provisioning (welcome email sent by function)
+      try {
+        const posDef = POSITIONS.find(p => p.code === (values.position || ''));
+        await supabase.functions.invoke('msgraph-provision', {
+          body: {
+            firstName: values.first_name,
+            lastName: values.last_name,
+            positionCode: posDef?.code || values.position,
+            domain: 'cravenusa.com',
+            executive: !!posDef?.isExecutive,
+            personalEmail: values.email
+          }
+        });
+      } catch (e) {
+        console.error('Provisioning failed', e);
+      }
     } catch (error: any) {
       console.error('Error hiring employee:', error);
       message.error(error.message || 'Failed to hire employee');
