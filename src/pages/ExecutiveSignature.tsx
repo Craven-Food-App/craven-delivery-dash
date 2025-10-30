@@ -23,17 +23,19 @@ export default function ExecutiveSignature() {
   useEffect(() => {
     const fetchRecord = async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('executive_signatures')
-        .select('*')
-        .eq('token', token)
-        .maybeSingle();
-      if (error || !data) {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-executive-signature-by-token', {
+          body: { token }
+        });
+        if (error) throw error;
+        const rec = (data as any)?.record || null;
+        setRecord(rec);
+      } catch (e) {
+        console.error('Failed to load signature record', e);
+        setRecord(null);
+      } finally {
         setLoading(false);
-        return;
       }
-      setRecord(data);
-      setLoading(false);
     };
     if (token) fetchRecord();
     supabase.auth.getSession().then(({ data }) => setSession(data.session));

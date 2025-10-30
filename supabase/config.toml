@@ -114,3 +114,6 @@ verify_jwt = true
 
 [functions.appoint-executive]
 verify_jwt = true
+
+[functions.get-executive-signature-by-token]
+verify_jwt = false
