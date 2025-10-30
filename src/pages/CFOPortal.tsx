@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useState } from "react";
-import { Layout, Typography, Row, Col, Statistic, Tabs, Table, DatePicker, Space, Button, Divider, Alert } from "antd";
+import { Layout, Typography, Row, Col, Statistic, Tabs, Table, DatePicker, Space, Button, Divider, Alert, Modal, InputNumber, Form, message } from "antd";
 import {
   DollarOutlined,
   BarChartOutlined,
@@ -435,6 +435,8 @@ function AccountsPayable() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string>('pending');
+  const [creatingRun, setCreatingRun] = useState(false);
+  const [runDate, setRunDate] = useState<Date>(new Date());
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -457,7 +459,58 @@ function AccountsPayable() {
         <Button type={status==='pending'? 'primary':'default'} onClick={() => setStatus('pending')}>Pending</Button>
         <Button type={status==='approved'? 'primary':'default'} onClick={() => setStatus('approved')}>Approved</Button>
         <Button type={status==='paid'? 'primary':'default'} onClick={() => setStatus('paid')}>Paid</Button>
+        <Divider type="vertical" />
+        <Button onClick={async () => {
+          setCreatingRun(true);
+        }}>Create Payment Run</Button>
+        <Button onClick={async () => {
+          // Approve all pending invoices (demo flow)
+          setLoading(true);
+          try {
+            const pendingIds = invoices.filter((i) => i.status === 'pending').map((i) => i.key);
+            if (pendingIds.length) {
+              const { error } = await supabase.from('invoices').update({ status: 'approved' }).in('id', pendingIds);
+              if (error) throw error;
+              message.success('Approved pending invoices');
+              const { data } = await supabase
+                .from('invoices')
+                .select('id, vendor, invoice_number, amount, due_date, status, invoice_date')
+                .eq('status', status)
+                .order('due_date', { ascending: true });
+              setInvoices((data || []).map((d: any) => ({ key: d.id, ...d })));
+            } else {
+              message.info('No pending invoices');
+            }
+          } finally {
+            setLoading(false);
+          }
+        }}>Approve Pending</Button>
       </Space>
+      <Modal
+        title="Create Payment Run"
+        open={creatingRun}
+        onCancel={() => setCreatingRun(false)}
+        onOk={async () => {
+          setLoading(true);
+          try {
+            const dueBefore = runDate;
+            const selected = invoices.filter((i) => new Date(i.due_date) <= dueBefore && (i.status === 'approved' || i.status === 'pending'));
+            const total = selected.reduce((s, i) => s + (i.amount || 0), 0);
+            const { error } = await supabase.from('payment_runs').insert({ scheduled_date: dueBefore.toISOString().slice(0,10), status: 'draft', total_amount: total });
+            if (error) throw error;
+            message.success(`Payment run created for $${total.toLocaleString()}`);
+            setCreatingRun(false);
+          } finally {
+            setLoading(false);
+          }
+        }}
+      >
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Typography.Text>Select due date cutoff</Typography.Text>
+          <DatePicker onChange={(d)=> setRunDate(d ? d.toDate() : new Date())} style={{ width: '100%' }} />
+          <Typography.Text type="secondary">Includes invoices with due date on or before selected date.</Typography.Text>
+        </Space>
+      </Modal>
       <Table
         loading={loading}
         dataSource={invoices}
@@ -477,6 +530,7 @@ function AccountsPayable() {
 function AccountsReceivable() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState<any[]>([]);
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -498,6 +552,35 @@ function AccountsReceivable() {
   }, []);
   return (
     <div>
+      <Space style={{ marginBottom: 12 }}>
+        <Button onClick={async () => {
+          if (!selected.length) { message.info('Select at least one receivable'); return; }
+          setLoading(true);
+          try {
+            const inserts = selected.map((r) => ({ receivable_id: r.key, action: 'email_1', notes: 'Automated dunning email 1' }));
+            const { error } = await supabase.from('dunning_events').insert(inserts);
+            if (error) throw error;
+            message.success('Dunning events logged');
+          } finally {
+            setLoading(false);
+          }
+        }}>Log Dunning (Email 1)</Button>
+        <Button onClick={() => {
+          // CSV export of current grid
+          const headers = ['Customer','Reference','Issue Date','Due Date','Days Past Due','Bucket','Amount','Status'];
+          const lines = rows.map(r => [r.customer, r.reference, new Date(r.issue_date).toISOString().slice(0,10), new Date(r.due_date).toISOString().slice(0,10), r.daysPast, r.bucket, r.amount, r.status]);
+          const csv = [headers, ...lines].map((arr) => arr.map((v) => `"${(v??'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `ar_aging_${new Date().toISOString().slice(0,10)}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }}>Export CSV</Button>
+      </Space>
       <Row gutter={[16,16]} style={{ marginBottom: 12 }}>
         {['Current','0-30','31-60','61-90','90+'].map((b) => {
           const sum = rows.filter(r => r.bucket === b).reduce((s, r) => s + (r.amount || 0), 0);
@@ -509,6 +592,7 @@ function AccountsReceivable() {
       <Table
         loading={loading}
         dataSource={rows}
+        rowSelection={{ selectedRowKeys: selected.map(s=>s.key), onChange: (_keys, selRows)=> setSelected(selRows as any[]) }}
         columns={[
           { title: 'Customer', dataIndex: 'customer' },
           { title: 'Ref', dataIndex: 'reference' },
@@ -528,6 +612,7 @@ function CloseManagement() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [recs, setRecs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [rolling, setRolling] = useState(false);
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -547,6 +632,29 @@ function CloseManagement() {
     <Row gutter={[16,16]}>
       <Col xs={24} lg={14}>
         <Typography.Title level={5}>Close Checklist</Typography.Title>
+        <Space style={{ marginBottom: 8 }}>
+          <Button onClick={async () => {
+            setRolling(true);
+            try {
+              const now = new Date();
+              const currentPeriod = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().slice(0,7);
+              const prev = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth()-1, 1)).toISOString().slice(0,7);
+              // Pull previous tasks and clone to current
+              const { data: prevTasks } = await supabase.from('close_tasks').select('*').eq('period', prev);
+              if (prevTasks && prevTasks.length) {
+                const inserts = prevTasks.map((t: any) => ({ period: currentPeriod, name: t.name, owner: t.owner, status: 'todo', due_day: t.due_day }));
+                await supabase.from('close_tasks').insert(inserts);
+                message.success('Rolled close tasks forward');
+                const t = await supabase.from('close_tasks').select('id, period, name, owner, status, due_day').order('due_day', { ascending: true });
+                setTasks((t.data || []).map((x: any) => ({ key: x.id, ...x })));
+              } else {
+                message.info('No previous tasks to roll');
+              }
+            } finally {
+              setRolling(false);
+            }
+          }}>Roll Previous Month</Button>
+        </Space>
         <Table
           loading={loading}
           dataSource={tasks}
@@ -581,6 +689,8 @@ function CloseManagement() {
 function TreasuryView() {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [editAcc, setEditAcc] = useState<any | null>(null);
+  const [form] = Form.useForm();
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -607,8 +717,34 @@ function TreasuryView() {
           { title: 'Currency', dataIndex: 'currency', width: 100 },
           { title: 'Current Balance', dataIndex: 'current_balance', render: (v: number) => `$${(v||0).toLocaleString()}` },
           { title: 'Updated', dataIndex: 'updated_at', render: (v: string) => new Date(v).toLocaleString(), width: 180 },
+          { title: 'Actions', key: 'actions', render: (_: any, rec: any) => <Button size="small" onClick={() => { setEditAcc(rec); form.setFieldsValue({ current_balance: rec.current_balance }); }}>Update</Button> },
         ]}
       />
+      <Modal
+        title={`Update Balance - ${editAcc?.name || ''}`}
+        open={!!editAcc}
+        onCancel={() => setEditAcc(null)}
+        onOk={async () => {
+          const vals = await form.validateFields();
+          setLoading(true);
+          try {
+            const { error } = await supabase.from('bank_accounts').update({ current_balance: vals.current_balance, updated_at: new Date().toISOString() }).eq('id', editAcc.id);
+            if (error) throw error;
+            message.success('Balance updated');
+            const { data } = await supabase.from('bank_accounts').select('id, name, institution, currency, current_balance, updated_at');
+            setAccounts((data || []).map((x: any) => ({ key: x.id, ...x })));
+            setEditAcc(null);
+          } finally {
+            setLoading(false);
+          }
+        }}
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item label="Current Balance" name="current_balance" rules={[{ required: true, message: 'Enter balance' }]}>
+            <InputNumber style={{ width: '100%' }} min={0} step={100} formatter={(v)=> String(v)} />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }
