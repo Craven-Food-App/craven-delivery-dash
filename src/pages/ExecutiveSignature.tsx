@@ -99,56 +99,24 @@ export default function ExecutiveSignature() {
     const svg = null; // optional, we only capture PNG here
     setIsSigning(true);
 
-    if (record?.id) {
-      // Normal DB path
-      const { error } = await supabase
-        .from('executive_signatures')
-        .update({
-          typed_name: typedName || null,
-          signature_png_base64: png,
-          signature_svg: svg,
-          signer_ip: (await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ ip: null }))).ip,
-          signer_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
-          signed_at: new Date().toISOString(),
-        })
-        .eq('id', record.id);
-      setIsSigning(false);
-      if (!error) return navigate('/thank-you');
-    } else {
-      // Fallback storage path (no DB record)
-      const signerIp = (await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ ip: null }))).ip;
-      const { data, error } = await supabase.functions.invoke('submit-executive-signature', {
-        body: {
-          token,
-          typed_name: typedName || null,
-          signature_png_base64: png,
-          signature_svg: svg,
-          signer_ip: signerIp,
-          signer_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
-        }
-      });
-      setIsSigning(false);
-      if (!error) return navigate('/thank-you');
-    }
+    // Always submit via edge function (service role), avoiding RLS/auth issues
+    const signerIp = (await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ ip: null }))).ip;
+    const { error } = await supabase.functions.invoke('submit-executive-signature', {
+      body: {
+        token,
+        typed_name: typedName || null,
+        signature_png_base64: png,
+        signature_svg: svg,
+        signer_ip: signerIp,
+        signer_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+      }
+    }) as any;
+    setIsSigning(false);
+    if (!error) return navigate('/thank-you');
   };
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (!token) return <div className="p-6">Invalid or expired link.</div>;
-  if (!session) {
-    return (
-      <div className="p-6 max-w-xl mx-auto">
-        <Card>
-          <CardHeader>
-            <CardTitle>Sign in required</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-slate-600 mb-4">Please sign in to review and sign your documents.</p>
-            <Button onClick={() => navigate(`/auth?next=/executive-sign?token=${encodeURIComponent(token)}`)}>Go to Login</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   const hasRecord = !!record;
 
