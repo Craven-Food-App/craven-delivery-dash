@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { POSITIONS, buildEmails } from '@/config/positions';
+import { DEFAULT_EMPLOYEE_PACKET } from '@/config/hiringPacket';
 import dayjs from 'dayjs';
 
 const { Search } = Input;
@@ -462,7 +463,20 @@ export const PersonnelManager: React.FC = () => {
           }
         });
 
-        message.success(`🎉 ${values.first_name} ${values.last_name} hired successfully! ${documentsSent} sent. Portal access emailed.`);
+        // Send Hiring Packet (state-specific)
+        const stateCode = (values.work_location || '').match(/\b(OH|MI|FL|GA|NY|MO|KS|LA)\b/i)?.[1]?.toUpperCase() || 'OH';
+        const docs = DEFAULT_EMPLOYEE_PACKET.states[stateCode as any] || [];
+        await supabase.functions.invoke('send-hiring-packet', {
+          body: {
+            candidateEmail: values.email,
+            candidateName: `${values.first_name} ${values.last_name}`,
+            state: stateCode,
+            packetType: 'employee',
+            docs
+          }
+        });
+
+        message.success(`🎉 ${values.first_name} ${values.last_name} hired successfully! ${documentsSent} sent. Portal access and hiring packet emailed.`);
       } catch (emailError) {
         console.error('Error sending documents:', emailError);
         message.success(`🎉 ${values.first_name} ${values.last_name} hired successfully! (Some documents failed to send)`);
