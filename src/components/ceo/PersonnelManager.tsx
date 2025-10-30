@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Tag, Space, Input, Modal, Form, Select, InputNumber, DatePicker, message, Popconfirm, Statistic, Card } from 'antd';
+import { Table, Button, Tag, Space, Input, Modal, Form, Select, InputNumber, DatePicker, message, Popconfirm, Statistic, Card, Upload } from 'antd';
 import {
   UserAddOutlined,
   DeleteOutlined,
@@ -52,6 +52,8 @@ export const PersonnelManager: React.FC = () => {
   const [form] = Form.useForm();
   const [promoteForm] = Form.useForm();
   const [suggestedEmails, setSuggestedEmails] = useState<{named?:string; roleAlias?:string}>({});
+  const [packetDocs, setPacketDocs] = useState<any[]>([]);
+  const [packetForEmail, setPacketForEmail] = useState<string | null>(null);
 
   useEffect(() => {
     fetchEmployees();
@@ -225,6 +227,18 @@ export const PersonnelManager: React.FC = () => {
       message.error('Failed to load employees');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPacketStatus = async (email: string) => {
+    const { data: packets } = await supabase.from('hiring_packets').select('id').eq('employee_email', email).order('created_at', { ascending: false }).limit(1);
+    if (packets && packets[0]) {
+      setPacketForEmail(email);
+      const { data: docs } = await supabase.from('hiring_packet_docs').select('*').eq('packet_id', packets[0].id).order('label');
+      setPacketDocs(docs || []);
+    } else {
+      setPacketDocs([]);
+      setPacketForEmail(null);
     }
   };
 
@@ -1104,6 +1118,54 @@ export const PersonnelManager: React.FC = () => {
           </Button>
         </Space>
       </Modal>
+
+      {/* Hiring Packet Status */}
+      <div className="mt-6 mb-6">
+        <div className="flex items-center justify-between">
+          <div style={{ fontWeight: 700, fontSize: 18 }}>Hiring Packet Status</div>
+          <Space>
+            <Input.Search placeholder="Lookup by email" onSearch={loadPacketStatus} allowClear style={{ width: 320 }} />
+          </Space>
+        </div>
+        {packetForEmail && (
+          <div className="text-sm text-slate-600 mt-1">Showing: {packetForEmail}</div>
+        )}
+        <Table
+          className="mt-3"
+          dataSource={packetDocs.map(d => ({ key: d.id, ...d }))}
+          pagination={false}
+          columns={[
+            { title: 'Document', dataIndex: 'label' },
+            { title: 'Required', dataIndex: 'required', render: (v)=> v? 'Yes':'No', width: 90 },
+            { title: 'Status', dataIndex: 'status', width: 120 },
+            { title: 'File', dataIndex: 'file_url', render: (v)=> v? <a href={v} target="_blank">View</a> : '-' },
+            { title: 'Actions', key:'actions', render: (_:any, rec:any) => (
+              <Space>
+                <Upload
+                  beforeUpload={() => false}
+                  maxCount={1}
+                  onChange={async ({ file }) => {
+                    // @ts-ignore
+                    if (!file || file.originFileObj == null) return;
+                    // @ts-ignore
+                    const blob = file.originFileObj;
+                    const filename = `${rec.id}_${Date.now()}_${file.name}`;
+                    const { data, error } = await supabase.storage.from('hiring-packets').upload(filename, blob);
+                    if (!error && data) {
+                      const { data: pub } = supabase.storage.from('hiring-packets').getPublicUrl(data.path);
+                      await supabase.functions.invoke('mark-packet-doc', { body: { docId: rec.id, status: 'uploaded', fileUrl: pub.publicUrl } });
+                      if (packetForEmail) loadPacketStatus(packetForEmail);
+                      message.success('Uploaded');
+                    }
+                  }}
+                >
+                  <Button size="small">Upload Signed</Button>
+                </Upload>
+              </Space>
+            ) }
+          ]}
+        />
+      </div>
 
       {/* Promote Modal */}
       <Modal
