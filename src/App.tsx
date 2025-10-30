@@ -42,6 +42,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import CookiePolicy from "./pages/CookiePolicy";
 import CraveMore from "./pages/CraveMore";
+import ExecutiveSignature from "./pages/ExecutiveSignature";
 import ChatButton from "./components/chat/ChatButton";
 import { ThemeProvider } from "./components/ThemeProvider";
 import SuspenseLoader from "./components/SuspenseLoader";
@@ -320,6 +321,8 @@ const App = () => {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/track-order/:orderId" element={<TrackOrder />} />
           <Route path="/payment-canceled" element={<PaymentCanceled />} />
+          {/* Executive signature route */}
+          <Route path="/executive-sign" element={<ExecutiveSignature />} />
 
           {/* Footer pages */}
           <Route path="/help" element={<HelpCenter />} />

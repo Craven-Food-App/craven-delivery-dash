@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from 'antd';
 import { supabase } from '@/integrations/supabase/client';
+import Auth from './Auth';
 
 export default function ExecutiveSignature() {
   const [params] = useSearchParams();
@@ -12,6 +13,9 @@ export default function ExecutiveSignature() {
   const token = params.get('token') || '';
   const [loading, setLoading] = useState(true);
   const [record, setRecord] = useState<any>(null);
+  const [session, setSession] = useState<any>(null);
+  const [agreeOffer, setAgreeOffer] = useState(false);
+  const [agreeEquity, setAgreeEquity] = useState(false);
   const [typedName, setTypedName] = useState('');
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isSigning, setIsSigning] = useState(false);
@@ -32,6 +36,7 @@ export default function ExecutiveSignature() {
       setLoading(false);
     };
     if (token) fetchRecord();
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
   }, [token]);
 
   const clearCanvas = () => {
@@ -110,6 +115,21 @@ export default function ExecutiveSignature() {
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (!record) return <div className="p-6">Invalid or expired link.</div>;
+  if (!session) {
+    return (
+      <div className="p-6 max-w-xl mx-auto">
+        <Card>
+          <CardHeader>
+            <CardTitle>Sign in required</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-slate-600 mb-4">Please sign in to review and sign your documents.</p>
+            <Button onClick={() => navigate(`/auth?next=/executive-sign?token=${encodeURIComponent(token)}`)}>Go to Login</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 max-w-4xl mx-auto">
@@ -137,8 +157,20 @@ export default function ExecutiveSignature() {
                 By signing, I acknowledge that I have read and agree to the terms of the attached document. I
                 understand this electronic signature is legally binding and equivalent to a handwritten signature.
               </p>
-              <div className="mt-6 flex justify-end">
-                <Button disabled={isSigning || (!typedName)} onClick={submitSignature}>
+              <div className="mt-6">
+                <label className="flex items-center gap-2 text-sm text-slate-700 mb-2">
+                  <input type="checkbox" checked={agreeOffer} onChange={e=>setAgreeOffer(e.target.checked)} />
+                  I have read and agree to the Offer Letter
+                </label>
+                {record.document_type !== 'offer_letter' && (
+                  <label className="flex items-center gap-2 text-sm text-slate-700 mb-2">
+                    <input type="checkbox" checked={agreeEquity} onChange={e=>setAgreeEquity(e.target.checked)} />
+                    I have read and agree to the Equity Offer Agreement
+                  </label>
+                )}
+              </div>
+              <div className="mt-4 flex justify-end">
+                <Button disabled={isSigning || (!typedName) || !agreeOffer || (record.document_type !== 'offer_letter' && !agreeEquity)} onClick={submitSignature}>
                   {isSigning ? 'Submitting...' : 'Sign & Submit'}
                 </Button>
               </div>
