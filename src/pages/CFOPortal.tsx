@@ -192,6 +192,18 @@ export default function CFOPortal() {
             <TabPane tab={<span>Approvals</span>} key="approvals">
               <ApprovalsPanel />
             </TabPane>
+            <TabPane tab={<span>Accounts Payable</span>} key="ap">
+              <AccountsPayable />
+            </TabPane>
+            <TabPane tab={<span>Accounts Receivable</span>} key="ar">
+              <AccountsReceivable />
+            </TabPane>
+            <TabPane tab={<span>Close</span>} key="close">
+              <CloseManagement />
+            </TabPane>
+            <TabPane tab={<span>Treasury</span>} key="treasury">
+              <TreasuryView />
+            </TabPane>
             <TabPane
               tab={
                 <span>
@@ -413,6 +425,188 @@ function ApprovalsPanel() {
           { title: 'Amount', dataIndex: 'amount', render: (v: number) => `$${(v||0).toLocaleString()}` },
           { title: 'Status', dataIndex: 'status' },
           { title: 'Created', dataIndex: 'created_at', render: (v: string) => new Date(v).toLocaleString(), width: 180 },
+        ]}
+      />
+    </div>
+  );
+}
+
+function AccountsPayable() {
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<string>('pending');
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const { data } = await supabase
+          .from('invoices')
+          .select('id, vendor, invoice_number, amount, due_date, status, invoice_date')
+          .eq('status', status)
+          .order('due_date', { ascending: true });
+        setInvoices((data || []).map((d: any) => ({ key: d.id, ...d })));
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [status]);
+  return (
+    <div>
+      <Space style={{ marginBottom: 12 }}>
+        <Typography.Text>Status:</Typography.Text>
+        <Button type={status==='pending'? 'primary':'default'} onClick={() => setStatus('pending')}>Pending</Button>
+        <Button type={status==='approved'? 'primary':'default'} onClick={() => setStatus('approved')}>Approved</Button>
+        <Button type={status==='paid'? 'primary':'default'} onClick={() => setStatus('paid')}>Paid</Button>
+      </Space>
+      <Table
+        loading={loading}
+        dataSource={invoices}
+        columns={[
+          { title: 'Vendor', dataIndex: 'vendor' },
+          { title: 'Invoice #', dataIndex: 'invoice_number' },
+          { title: 'Invoice Date', dataIndex: 'invoice_date', render: (v: string) => new Date(v).toLocaleDateString() },
+          { title: 'Due', dataIndex: 'due_date', render: (v: string) => new Date(v).toLocaleDateString() },
+          { title: 'Amount', dataIndex: 'amount', render: (v: number) => `$${(v||0).toLocaleString()}` },
+          { title: 'Status', dataIndex: 'status' },
+        ]}
+      />
+    </div>
+  );
+}
+
+function AccountsReceivable() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const { data } = await supabase
+          .from('receivables')
+          .select('id, customer, reference, amount, due_date, status, issue_date')
+          .order('due_date', { ascending: true });
+        const list = (data || []).map((r: any) => {
+          const daysPast = Math.max(0, Math.floor((Date.now() - new Date(r.due_date).getTime()) / 86400000));
+          const bucket = daysPast === 0 ? 'Current' : daysPast <= 30 ? '0-30' : daysPast <= 60 ? '31-60' : daysPast <= 90 ? '61-90' : '90+';
+          return { key: r.id, ...r, daysPast, bucket };
+        });
+        setRows(list);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+  return (
+    <div>
+      <Row gutter={[16,16]} style={{ marginBottom: 12 }}>
+        {['Current','0-30','31-60','61-90','90+'].map((b) => {
+          const sum = rows.filter(r => r.bucket === b).reduce((s, r) => s + (r.amount || 0), 0);
+          return (
+            <Col key={b} xs={12} md={6} lg={4}><div style={{ background:'#f1f5f9', padding:12, borderRadius:8 }}><div style={{ color:'#64748b' }}>{b}</div><div style={{ fontWeight:700 }}>$ {sum.toLocaleString()}</div></div></Col>
+          );
+        })}
+      </Row>
+      <Table
+        loading={loading}
+        dataSource={rows}
+        columns={[
+          { title: 'Customer', dataIndex: 'customer' },
+          { title: 'Ref', dataIndex: 'reference' },
+          { title: 'Issue Date', dataIndex: 'issue_date', render: (v: string) => new Date(v).toLocaleDateString() },
+          { title: 'Due', dataIndex: 'due_date', render: (v: string) => new Date(v).toLocaleDateString() },
+          { title: 'Days Past Due', dataIndex: 'daysPast' },
+          { title: 'Bucket', dataIndex: 'bucket' },
+          { title: 'Amount', dataIndex: 'amount', render: (v: number) => `$${(v||0).toLocaleString()}` },
+          { title: 'Status', dataIndex: 'status' },
+        ]}
+      />
+    </div>
+  );
+}
+
+function CloseManagement() {
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [recs, setRecs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const [t, r] = await Promise.all([
+          supabase.from('close_tasks').select('id, period, name, owner, status, due_day').order('due_day', { ascending: true }),
+          supabase.from('reconciliations').select('id, period, type, status, notes').order('type', { ascending: true }),
+        ]);
+        setTasks((t.data || []).map((x: any) => ({ key: x.id, ...x })));
+        setRecs((r.data || []).map((x: any) => ({ key: x.id, ...x })));
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+  return (
+    <Row gutter={[16,16]}>
+      <Col xs={24} lg={14}>
+        <Typography.Title level={5}>Close Checklist</Typography.Title>
+        <Table
+          loading={loading}
+          dataSource={tasks}
+          pagination={false}
+          columns={[
+            { title: 'Period', dataIndex: 'period', width: 110 },
+            { title: 'Task', dataIndex: 'name' },
+            { title: 'Owner', dataIndex: 'owner', width: 140 },
+            { title: 'Due (Day)', dataIndex: 'due_day', width: 100 },
+            { title: 'Status', dataIndex: 'status', width: 120 },
+          ]}
+        />
+      </Col>
+      <Col xs={24} lg={10}>
+        <Typography.Title level={5}>Reconciliations</Typography.Title>
+        <Table
+          loading={loading}
+          dataSource={recs}
+          pagination={false}
+          columns={[
+            { title: 'Period', dataIndex: 'period', width: 110 },
+            { title: 'Type', dataIndex: 'type', width: 140 },
+            { title: 'Status', dataIndex: 'status', width: 120 },
+            { title: 'Notes', dataIndex: 'notes' },
+          ]}
+        />
+      </Col>
+    </Row>
+  );
+}
+
+function TreasuryView() {
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const { data } = await supabase.from('bank_accounts').select('id, name, institution, currency, current_balance, updated_at');
+        setAccounts((data || []).map((x: any) => ({ key: x.id, ...x })));
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+  const total = accounts.reduce((s, a) => s + (a.current_balance || 0), 0);
+  return (
+    <div>
+      <Row gutter={[16,16]} style={{ marginBottom: 12 }}>
+        <Col xs={24} md={8}><div style={{ background:'#ecfeff', padding:16, borderRadius:8 }}><div style={{ color:'#0891b2' }}>Total Cash</div><div style={{ fontWeight:700, fontSize:18 }}>$ {total.toLocaleString()}</div></div></Col>
+      </Row>
+      <Table
+        loading={loading}
+        dataSource={accounts}
+        columns={[
+          { title: 'Account', dataIndex: 'name' },
+          { title: 'Institution', dataIndex: 'institution' },
+          { title: 'Currency', dataIndex: 'currency', width: 100 },
+          { title: 'Current Balance', dataIndex: 'current_balance', render: (v: number) => `$${(v||0).toLocaleString()}` },
+          { title: 'Updated', dataIndex: 'updated_at', render: (v: string) => new Date(v).toLocaleString(), width: 180 },
         ]}
       />
     </div>
