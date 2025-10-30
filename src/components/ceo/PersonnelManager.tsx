@@ -9,6 +9,7 @@ import {
   TeamOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
+import { POSITIONS, buildEmails } from '@/config/positions';
 import dayjs from 'dayjs';
 
 const { Search } = Input;
@@ -49,6 +50,7 @@ export const PersonnelManager: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
   const [promoteForm] = Form.useForm();
+  const [suggestedEmails, setSuggestedEmails] = useState<{named?:string; roleAlias?:string}>({});
 
   useEffect(() => {
     fetchEmployees();
@@ -155,6 +157,40 @@ export const PersonnelManager: React.FC = () => {
       setIsPreviewVisible(true);
     } catch (e) {
       // validation error shown by antd
+    }
+  };
+
+  const onPositionChange = () => {
+    const v = form.getFieldsValue();
+    const pos = POSITIONS.find(p => p.label === v.position || p.code === v.position || p.label === v?.position_label);
+    if (pos) {
+      const { named, roleAlias } = buildEmails(v.first_name || '', v.last_name || '', pos.code, 'cravenusa.com');
+      setSuggestedEmails({ named, roleAlias: pos.isExecutive ? roleAlias : undefined });
+    } else {
+      setSuggestedEmails({});
+    }
+  };
+
+  const issueEmails = async () => {
+    try {
+      const v = await form.validateFields();
+      const pos = POSITIONS.find(p => p.label === v.position || p.code === v.position);
+      if (!pos) {
+        message.error('Select a position');
+        return;
+      }
+      const res = await supabase.functions.invoke('msgraph-provision', {
+        body: { firstName: v.first_name, lastName: v.last_name, positionCode: pos.code, domain: 'cravenusa.com' }
+      });
+      if ((res as any)?.data?.ok) {
+        const s = (res as any).data.suggested;
+        setSuggestedEmails(s);
+        message.success('Provision request queued.');
+      } else {
+        message.success('Provision request sent.');
+      }
+    } catch (e) {
+      // ignore
     }
   };
 
@@ -755,12 +791,27 @@ export const PersonnelManager: React.FC = () => {
           </Form.Item>
 
           <Form.Item
-            label="Position Title"
+            label="Position"
             name="position"
             rules={[{ required: true, message: 'Required' }]}
           >
-            <Input placeholder="e.g., Senior Operations Manager, Marketing Director" />
+            <Select placeholder="Select position" onChange={onPositionChange} onSelect={onPositionChange} onBlur={onPositionChange} showSearch>
+              {POSITIONS.map(p => (
+                <Option key={p.code} value={p.code}>{p.label}</Option>
+              ))}
+            </Select>
           </Form.Item>
+
+          {suggestedEmails?.named && (
+            <div className="p-3 rounded-md border bg-slate-50 mb-2">
+              <div className="text-sm text-slate-600 mb-1">Suggested emails for this hire:</div>
+              <div className="font-mono text-sm">{suggestedEmails.named}</div>
+              {suggestedEmails.roleAlias && <div className="font-mono text-sm">{suggestedEmails.roleAlias}</div>}
+              <div className="mt-2">
+                <Button size="small" onClick={issueEmails}>Issue Emails</Button>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <Form.Item
