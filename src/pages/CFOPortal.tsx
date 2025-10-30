@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useState } from "react";
-import { Layout, Typography, Row, Col, Statistic, Tabs, Table, DatePicker, Space, Button, Divider, Alert, Modal, InputNumber, Form, message } from "antd";
+import { Layout, Typography, Row, Col, Statistic, Tabs, Table, DatePicker, Space, Button, Divider, Alert, Modal, InputNumber, Form, message, Select } from "antd";
 import {
   DollarOutlined,
   BarChartOutlined,
@@ -437,16 +437,27 @@ function AccountsPayable() {
   const [status, setStatus] = useState<string>('pending');
   const [creatingRun, setCreatingRun] = useState(false);
   const [runDate, setRunDate] = useState<Date>(new Date());
+  const [linking, setLinking] = useState(false);
+  const [runs, setRuns] = useState<any[]>([]);
+  const [selectedInvoices, setSelectedInvoices] = useState<any[]>([]);
+  const [selectedRun, setSelectedRun] = useState<string | undefined>(undefined);
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
-        const { data } = await supabase
+        const [inv, pr] = await Promise.all([
+          supabase
           .from('invoices')
           .select('id, vendor, invoice_number, amount, due_date, status, invoice_date')
           .eq('status', status)
-          .order('due_date', { ascending: true });
-        setInvoices((data || []).map((d: any) => ({ key: d.id, ...d })));
+          .order('due_date', { ascending: true }),
+          supabase
+            .from('payment_runs')
+            .select('id, scheduled_date, status, total_amount, processed_at')
+            .order('scheduled_date', { ascending: false })
+        ]);
+        setInvoices((inv.data || []).map((d: any) => ({ key: d.id, ...d })));
+        setRuns((pr.data || []).map((r: any) => ({ key: r.id, ...r })));
       } finally {
         setLoading(false);
       }
@@ -454,6 +465,55 @@ function AccountsPayable() {
   }, [status]);
   return (
     <div>
+      <Row gutter={[16,16]} style={{ marginBottom: 12 }}>
+        <Col xs={24} md={12}>
+          <Typography.Text strong>AP Aging (by Due Date)</Typography.Text>
+          <div style={{ height: 220, background:'#fff' }}>
+            <ChartContainer config={{ current:{label:'Current', color:'#94a3b8'}, b30:{label:'0-30', color:'#22c55e'}, b60:{label:'31-60', color:'#eab308'}, b90:{label:'61-90', color:'#f97316'}, b90p:{label:'90+', color:'#ef4444'} }}>
+              <BarChart data={[(() => {
+                const now = Date.now();
+                const buckets = { current:0, b30:0, b60:0, b90:0, b90p:0 } as any;
+                invoices.forEach(i => {
+                  const days = Math.floor((new Date(i.due_date).getTime() - now)/86400000);
+                  const amt = i.amount || 0;
+                  if (days >= 0) buckets.current += amt; else if (days >= -30) buckets.b30 += amt; else if (days >= -60) buckets.b60 += amt; else if (days >= -90) buckets.b90 += amt; else buckets.b90p += amt;
+                });
+                return { name:'Aging', ...buckets };
+              })()]}
+              margin={{ left: 12, right: 12, top: 8, bottom: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" hide />
+                <YAxis tickFormatter={(v)=>`$${v.toLocaleString()}`} width={72} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="current" fill="var(--color-current)" />
+                <Bar dataKey="b30" fill="var(--color-b30)" />
+                <Bar dataKey="b60" fill="var(--color-b60)" />
+                <Bar dataKey="b90" fill="var(--color-b90)" />
+                <Bar dataKey="b90p" fill="var(--color-b90p)" />
+              </BarChart>
+            </ChartContainer>
+          </div>
+        </Col>
+        <Col xs={24} md={12}>
+          <Typography.Text strong>Upcoming Cash Needs (Approved/Pending)</Typography.Text>
+          <div style={{ height: 220, background:'#fff' }}>
+            <ChartContainer config={{ pending:{label:'Pending', color:'#60a5fa'}, approved:{label:'Approved', color:'#34d399'} }}>
+              <LineChart data={[1,2,3,4,5,6].map(m => {
+                const d = new Date(); d.setMonth(d.getMonth()+m-1); const ym = d.toISOString().slice(0,7);
+                const sum = (state:string) => invoices.filter(i=> (i.status===state) && new Date(i.due_date).toISOString().slice(0,7)===ym).reduce((s,i)=> s+(i.amount||0),0);
+                return { period: ym, pending: sum('pending'), approved: sum('approved') };
+              })} margin={{ left:12, right:12, top:8, bottom:8 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="period" tick={{ fontSize: 12 }} />
+                <YAxis tickFormatter={(v)=>`$${v.toLocaleString()}`} width={72} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Line type="monotone" dataKey="pending" stroke="var(--color-pending)" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="approved" stroke="var(--color-approved)" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ChartContainer>
+          </div>
+        </Col>
+      </Row>
       <Space style={{ marginBottom: 12 }}>
         <Typography.Text>Status:</Typography.Text>
         <Button type={status==='pending'? 'primary':'default'} onClick={() => setStatus('pending')}>Pending</Button>
@@ -463,6 +523,7 @@ function AccountsPayable() {
         <Button onClick={async () => {
           setCreatingRun(true);
         }}>Create Payment Run</Button>
+        <Button onClick={() => setLinking(true)} disabled={!selectedInvoices.length}>Link to Run</Button>
         <Button onClick={async () => {
           // Approve all pending invoices (demo flow)
           setLoading(true);
@@ -511,9 +572,46 @@ function AccountsPayable() {
           <Typography.Text type="secondary">Includes invoices with due date on or before selected date.</Typography.Text>
         </Space>
       </Modal>
+      <Modal
+        title="Link Invoices to Payment Run"
+        open={linking}
+        onCancel={() => setLinking(false)}
+        onOk={async () => {
+          if (!selectedRun || !selectedInvoices.length) { message.info('Select a run and invoices'); return; }
+          setLoading(true);
+          try {
+            const ids = selectedInvoices.map(i=> i.key);
+            const { error } = await supabase.from('invoices').update({ payment_run_id: selectedRun }).in('id', ids);
+            if (error) throw error;
+            message.success('Invoices linked to run');
+            setLinking(false);
+            const { data } = await supabase
+              .from('invoices')
+              .select('id, vendor, invoice_number, amount, due_date, status, invoice_date')
+              .eq('status', status)
+              .order('due_date', { ascending: true });
+            setInvoices((data || []).map((d: any) => ({ key: d.id, ...d })));
+          } finally {
+            setLoading(false);
+          }
+        }}
+      >
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Typography.Text>Select Payment Run</Typography.Text>
+          <Select
+            style={{ width: '100%' }}
+            placeholder="Select run"
+            value={selectedRun}
+            onChange={setSelectedRun}
+            options={runs.map(r => ({ label: `${r.scheduled_date} • ${r.status} • $${(r.total_amount||0).toLocaleString()}`, value: r.id }))}
+          />
+          <Typography.Text type="secondary">Link selected invoices to the chosen run.</Typography.Text>
+        </Space>
+      </Modal>
       <Table
         loading={loading}
         dataSource={invoices}
+        rowSelection={{ selectedRowKeys: selectedInvoices.map(s=>s.key), onChange: (_keys, sel)=> setSelectedInvoices(sel as any[]) }}
         columns={[
           { title: 'Vendor', dataIndex: 'vendor' },
           { title: 'Invoice #', dataIndex: 'invoice_number' },
@@ -521,6 +619,49 @@ function AccountsPayable() {
           { title: 'Due', dataIndex: 'due_date', render: (v: string) => new Date(v).toLocaleDateString() },
           { title: 'Amount', dataIndex: 'amount', render: (v: number) => `$${(v||0).toLocaleString()}` },
           { title: 'Status', dataIndex: 'status' },
+        ]}
+      />
+      <Divider />
+      <Typography.Title level={5}>Payment Runs</Typography.Title>
+      <Table
+        loading={loading}
+        dataSource={runs}
+        rowKey={(r)=> r.id}
+        columns={[
+          { title: 'Scheduled', dataIndex: 'scheduled_date', width: 140 },
+          { title: 'Status', dataIndex: 'status', width: 120 },
+          { title: 'Total', dataIndex: 'total_amount', render: (v:number)=> `$${(v||0).toLocaleString()}`, width: 140 },
+          { title: 'Processed', dataIndex: 'processed_at', render: (v:string)=> v ? new Date(v).toLocaleString() : '-', width: 180 },
+          { title: 'Actions', key: 'actions', render: (_:any, rec:any) => (
+            <Space>
+              <Button size="small" onClick={async () => {
+                // mark run processed and mark linked invoices as paid
+                setLoading(true);
+                try {
+                  const { error: e1 } = await supabase.from('payment_runs').update({ status: 'processed', processed_at: new Date().toISOString() }).eq('id', rec.id);
+                  if (e1) throw e1;
+                  const { error: e2 } = await supabase.from('invoices').update({ status: 'paid' }).eq('payment_run_id', rec.id);
+                  if (e2) throw e2;
+                  message.success('Run processed');
+                  const [inv, pr] = await Promise.all([
+                    supabase
+                      .from('invoices')
+                      .select('id, vendor, invoice_number, amount, due_date, status, invoice_date')
+                      .eq('status', status)
+                      .order('due_date', { ascending: true }),
+                    supabase
+                      .from('payment_runs')
+                      .select('id, scheduled_date, status, total_amount, processed_at')
+                      .order('scheduled_date', { ascending: false })
+                  ]);
+                  setInvoices((inv.data || []).map((d: any) => ({ key: d.id, ...d })));
+                  setRuns((pr.data || []).map((r: any) => ({ key: r.id, ...r })));
+                } finally {
+                  setLoading(false);
+                }
+              }}>Process Run</Button>
+            </Space>
+          )},
         ]}
       />
     </div>
@@ -552,6 +693,54 @@ function AccountsReceivable() {
   }, []);
   return (
     <div>
+      <Row gutter={[16,16]} style={{ marginBottom: 12 }}>
+        <Col xs={24} md={12}>
+          <Typography.Text strong>AR Aging Buckets</Typography.Text>
+          <div style={{ height: 220, background:'#fff' }}>
+            <ChartContainer config={{ current:{label:'Current', color:'#94a3b8'}, b30:{label:'0-30', color:'#22c55e'}, b60:{label:'31-60', color:'#eab308'}, b90:{label:'61-90', color:'#f97316'}, b90p:{label:'90+', color:'#ef4444'} }}>
+              <BarChart data={[(() => {
+                const buckets = { current:0, b30:0, b60:0, b90:0, b90p:0 } as any;
+                rows.forEach(r => {
+                  const amt = r.amount || 0;
+                  if (r.bucket==='Current') buckets.current += amt; else if (r.bucket==='0-30') buckets.b30 += amt; else if (r.bucket==='31-60') buckets.b60 += amt; else if (r.bucket==='61-90') buckets.b90 += amt; else buckets.b90p += amt;
+                });
+                return { name:'Aging', ...buckets };
+              })()]}
+              margin={{ left:12, right:12, top:8, bottom:8 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" hide />
+                <YAxis tickFormatter={(v)=>`$${v.toLocaleString()}`} width={72} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="current" fill="var(--color-current)" />
+                <Bar dataKey="b30" fill="var(--color-b30)" />
+                <Bar dataKey="b60" fill="var(--color-b60)" />
+                <Bar dataKey="b90" fill="var(--color-b90)" />
+                <Bar dataKey="b90p" fill="var(--color-b90p)" />
+              </BarChart>
+            </ChartContainer>
+          </div>
+        </Col>
+        <Col xs={24} md={12}>
+          <Typography.Text strong>Collections Trend (last 6 months)</Typography.Text>
+          <div style={{ height: 220, background:'#fff' }}>
+            <ChartContainer config={{ collected:{label:'Collected', color:'#16a34a'} }}>
+              <LineChart data={[...Array(6)].map((_,i) => {
+                const d = new Date(); d.setMonth(d.getMonth()- (5-i));
+                const ym = d.toISOString().slice(0,7);
+                // naive proxy: consider receivables with status paid in that month
+                const collected = rows.filter(r=> r.status==='paid' && new Date(r.due_date).toISOString().slice(0,7)===ym).reduce((s,r)=> s+(r.amount||0),0);
+                return { period: ym, collected };
+              })} margin={{ left:12, right:12, top:8, bottom:8 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="period" tick={{ fontSize: 12 }} />
+                <YAxis tickFormatter={(v)=>`$${v.toLocaleString()}`} width={72} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Line type="monotone" dataKey="collected" stroke="var(--color-collected)" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ChartContainer>
+          </div>
+        </Col>
+      </Row>
       <Space style={{ marginBottom: 12 }}>
         <Button onClick={async () => {
           if (!selected.length) { message.info('Select at least one receivable'); return; }
