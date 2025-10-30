@@ -146,7 +146,7 @@ const CEOPortal: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+    <div className="min-h-screen bg-white">
       {/* Header - Command Center Style */}
       <div className="bg-gradient-to-r from-slate-900 to-blue-900 border-b-4 border-blue-500 shadow-2xl">
         <div className="container mx-auto px-6 py-6">

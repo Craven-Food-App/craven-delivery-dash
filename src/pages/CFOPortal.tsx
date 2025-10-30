@@ -46,12 +46,10 @@ export default function CFOPortal() {
   };
 
   return (
-    <Layout style={{ minHeight: "100vh", background: "#0e1626" }}>
-      <Header style={{ background: "#0b1220", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Typography.Title level={3} style={{ color: "#fff", margin: 0 }}>
-            CFO Portal
-          </Typography.Title>
+    <Layout style={{ minHeight: '100vh', background: '#ffffff' }}>
+      <Header style={{ background: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography.Title level={3} style={{ color: '#0f172a', margin: 0 }}>CFO Portal</Typography.Title>
           <Space>
             <RangePicker onChange={setRange} />
             <Button onClick={fetchData}>Refresh</Button>
