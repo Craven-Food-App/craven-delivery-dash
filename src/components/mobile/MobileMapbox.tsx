@@ -14,6 +14,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
   const marker = useRef<any>(null);
   const [isMapReady, setIsMapReady] = useState(false);
   const { location } = useDriverLocation();
+  const [showRecenter, setShowRecenter] = useState(false);
 
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
@@ -39,6 +40,11 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
         map.current.on('load', () => {
           console.log('Mapbox loaded successfully');
           setIsMapReady(true);
+          try {
+            // Add basic zoom/rotation controls (top-right)
+            const ctrl = new (window as any).mapboxgl.NavigationControl({ visualizePitch: true });
+            map.current.addControl(ctrl, 'top-right');
+          } catch {}
         });
 
         map.current.on('error', (e: any) => {
@@ -91,12 +97,30 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
       if (map.current) {
         map.current.setCenter([location.longitude, location.latitude]);
       }
+      // Once we have a valid location, show recenter button
+      setShowRecenter(true);
     }
   }, [location]);
 
   return (
     <div className={`w-full h-full ${className}`}>
       <div ref={mapContainer} className="w-full h-full" />
+      {isMapReady && showRecenter && (
+        <button
+          onClick={() => {
+            if (location && map.current) {
+              map.current.flyTo({ center: [location.longitude, location.latitude], zoom: Math.max(map.current.getZoom() || 14, 14), essential: true });
+            }
+          }}
+          className="absolute right-4 bottom-28 z-40 w-11 h-11 rounded-full bg-white/90 backdrop-blur shadow-lg flex items-center justify-center active:scale-95"
+          aria-label="Recenter on my location"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-gray-700">
+            <path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </button>
+      )}
       {!isMapReady && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
           <div className="text-center">
