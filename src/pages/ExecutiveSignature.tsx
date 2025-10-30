@@ -18,6 +18,7 @@ export default function ExecutiveSignature() {
   const [agreeEquity, setAgreeEquity] = useState(false);
   const [typedName, setTypedName] = useState('');
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
 
   useEffect(() => {
@@ -49,48 +50,40 @@ export default function ExecutiveSignature() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   };
 
-  useEffect(() => {
+  // Canvas drawing handlers (same approach as driver flow)
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    setIsDrawing(true);
+    const rect = canvas.getBoundingClientRect();
+    const x = 'touches' in e ? e.touches[0].clientX - rect.left : (e as any).clientX - rect.left;
+    const y = 'touches' in e ? e.touches[0].clientY - rect.top : (e as any).clientY - rect.top;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    let drawing = false;
-    const start = (e: MouseEvent | TouchEvent) => {
-      drawing = true;
-      const { x, y } = getPos(e);
+    if (ctx) {
       ctx.beginPath();
       ctx.moveTo(x, y);
-    };
-    const move = (e: MouseEvent | TouchEvent) => {
-      if (!drawing) return;
-      const { x, y } = getPos(e);
+    }
+    if ('preventDefault' in e) e.preventDefault();
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = 'touches' in e ? e.touches[0].clientX - rect.left : (e as any).clientX - rect.left;
+    const y = 'touches' in e ? e.touches[0].clientY - rect.top : (e as any).clientY - rect.top;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
       ctx.lineTo(x, y);
       ctx.strokeStyle = '#111827';
       ctx.lineWidth = 2;
       ctx.stroke();
-    };
-    const end = () => (drawing = false);
-    const getPos = (e: any) => {
-      const rect = canvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      return { x: clientX - rect.left, y: clientY - rect.top };
-    };
-    canvas.addEventListener('mousedown', start);
-    canvas.addEventListener('mousemove', move);
-    window.addEventListener('mouseup', end);
-    canvas.addEventListener('touchstart', start);
-    canvas.addEventListener('touchmove', move);
-    window.addEventListener('touchend', end);
-    return () => {
-      canvas.removeEventListener('mousedown', start);
-      canvas.removeEventListener('mousemove', move);
-      window.removeEventListener('mouseup', end);
-      canvas.removeEventListener('touchstart', start);
-      canvas.removeEventListener('touchmove', move);
-      window.removeEventListener('touchend', end);
-    };
-  }, []);
+    }
+    if ('preventDefault' in e) e.preventDefault();
+  };
+
+  const stopDrawing = () => setIsDrawing(false);
 
   const submitSignature = async () => {
     if (!token) return;
@@ -147,8 +140,21 @@ export default function ExecutiveSignature() {
               <div className="font-semibold mb-2">Type your full legal name</div>
               <Input value={typedName} onChange={(e) => setTypedName(e.target.value)} placeholder="Full legal name" />
               <div className="font-semibold mt-6 mb-2">Draw your signature</div>
-              <div className="border rounded-md">
-                <canvas ref={canvasRef} width={520} height={180} style={{ width: '100%', height: 180, display: 'block' }} />
+              <div className="border-2 border-dashed rounded-lg p-2 mt-2">
+                <canvas
+                  ref={canvasRef}
+                  width={600}
+                  height={200}
+                  className="border rounded bg-white w-full"
+                  style={{ touchAction: 'none', display: 'block' }}
+                  onMouseDown={startDrawing}
+                  onMouseMove={draw}
+                  onMouseUp={stopDrawing}
+                  onMouseLeave={stopDrawing}
+                  onTouchStart={startDrawing}
+                  onTouchMove={draw}
+                  onTouchEnd={stopDrawing}
+                />
               </div>
               <div className="mt-2">
                 <Button variant="secondary" onClick={clearCanvas}>Clear</Button>
