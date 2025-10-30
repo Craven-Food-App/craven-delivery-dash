@@ -294,6 +294,18 @@ export const PersonnelManager: React.FC = () => {
 
       await supabase.from('board_resolutions').insert([boardResolution]);
 
+      // Prepare signature token
+      const signatureToken = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+      await supabase.from('executive_signatures').insert([
+        {
+          employee_email: values.email,
+          employee_name: `${values.first_name} ${values.last_name}`,
+          position: values.position,
+          document_type: 'offer_letter',
+          token: signatureToken,
+        }
+      ]);
+
       // Send documents based on position requirements
       try {
         // Always send board resolution first
@@ -323,6 +335,7 @@ export const PersonnelManager: React.FC = () => {
             equity: isCLevel && values.equity ? values.equity : undefined,
             startDate: values.hire_date || new Date().toISOString(),
             reportingTo: 'CEO - Torrence Stroman',
+            signatureToken,
           },
         });
 

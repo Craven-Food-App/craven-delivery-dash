@@ -18,6 +18,7 @@ interface OfferLetterRequest {
   equity?: number; // Percentage if applicable
   startDate: string;
   reportingTo: string;
+  signatureToken?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -48,6 +49,8 @@ const handler = async (req: Request): Promise<Response> => {
     const hasEquity = isCLevel && equity !== undefined && equity > 0;
 
     const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Crave'N <onboarding@resend.dev>";
+    const appUrl = Deno.env.get("PUBLIC_APP_URL") || Deno.env.get("SUPABASE_URL") || '';
+    const signUrl = signatureToken ? `${appUrl}/executive-sign?token=${signatureToken}` : '';
 
     const equitySection = hasEquity ? `
       <div style="background-color: #fff9e6; border: 2px solid #ffd700; border-radius: 6px; padding: 20px; margin: 25px 0;">
@@ -152,6 +155,11 @@ const handler = async (req: Request): Promise<Response> => {
                             ${hasEquity ? 'A separate equity agreement will be sent within 5 business days.' : ''}
                             HR will reach out shortly regarding onboarding paperwork.
                           </p>
+                          ${signUrl ? `
+                          <div style="text-align:center; margin-top: 16px;">
+                            <a href="${signUrl}" style="display:inline-block; background:#1890ff; color:#fff; text-decoration:none; padding:12px 24px; border-radius:6px; font-weight:600;">Review & Sign Offer</a>
+                          </div>
+                          ` : ''}
                         </div>
 
                         <p style="margin: 30px 0 0 0; color: #1a1a1a; font-size: 16px; font-weight: 600;">Reporting To:</p>
