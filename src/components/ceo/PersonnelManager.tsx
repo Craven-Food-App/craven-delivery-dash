@@ -176,7 +176,8 @@ export const PersonnelManager: React.FC = () => {
         .from('employees')
         .select(`
           *,
-          department:departments(name)
+          department:departments(name),
+          employee_equity(shares_percentage, equity_type, vesting_schedule)
         `)
         .order('hire_date', { ascending: false });
 

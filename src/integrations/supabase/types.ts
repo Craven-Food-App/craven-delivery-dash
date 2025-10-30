@@ -45,6 +45,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "activation_queue_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: true
+            referencedRelation: "unified_driver_applications"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "activation_queue_region_id_fkey"
             columns: ["region_id"]
             isOneToOne: false
@@ -80,6 +87,33 @@ export type Database = {
           entity_id?: string
           entity_type?: string
           id?: string
+        }
+        Relationships: []
+      }
+      admin_settings: {
+        Row: {
+          description: string | null
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          setting_key: string
+          setting_value: Json
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string | null
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -194,6 +228,13 @@ export type Database = {
             referencedRelation: "craver_applications"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "background_check_reports_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "unified_driver_applications"
+            referencedColumns: ["id"]
+          },
         ]
       }
       batch_orders: {
@@ -274,6 +315,236 @@ export type Database = {
           total_distance_meters?: number | null
           total_duration_seconds?: number | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      board_meetings: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          meeting_url: string | null
+          scheduled_at: string
+          status: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          meeting_url?: string | null
+          scheduled_at: string
+          status?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          meeting_url?: string | null
+          scheduled_at?: string
+          status?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      ceo_access_credentials: {
+        Row: {
+          access_count: number | null
+          biometric_credential_id: string | null
+          biometric_public_key: string | null
+          created_at: string | null
+          id: string
+          last_access_at: string | null
+          pin_hash: string | null
+          updated_at: string | null
+          user_email: string
+        }
+        Insert: {
+          access_count?: number | null
+          biometric_credential_id?: string | null
+          biometric_public_key?: string | null
+          created_at?: string | null
+          id?: string
+          last_access_at?: string | null
+          pin_hash?: string | null
+          updated_at?: string | null
+          user_email: string
+        }
+        Update: {
+          access_count?: number | null
+          biometric_credential_id?: string | null
+          biometric_public_key?: string | null
+          created_at?: string | null
+          id?: string
+          last_access_at?: string | null
+          pin_hash?: string | null
+          updated_at?: string | null
+          user_email?: string
+        }
+        Relationships: []
+      }
+      ceo_action_logs: {
+        Row: {
+          action_category: string
+          action_description: string
+          action_type: string
+          created_at: string | null
+          id: string
+          severity: string | null
+          target_name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_category: string
+          action_description: string
+          action_type: string
+          created_at?: string | null
+          id?: string
+          severity?: string | null
+          target_name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_category?: string
+          action_description?: string
+          action_type?: string
+          created_at?: string | null
+          id?: string
+          severity?: string | null
+          target_name?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      ceo_financial_approvals: {
+        Row: {
+          amount: number
+          created_at: string | null
+          department_id: string | null
+          description: string
+          id: string
+          priority: string | null
+          request_type: string
+          requested_date: string
+          requester_id: string | null
+          requester_name: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          department_id?: string | null
+          description: string
+          id?: string
+          priority?: string | null
+          request_type: string
+          requested_date?: string
+          requester_id?: string | null
+          requester_name: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          department_id?: string | null
+          description?: string
+          id?: string
+          priority?: string | null
+          request_type?: string
+          requested_date?: string
+          requester_id?: string | null
+          requester_name?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ceo_financial_approvals_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ceo_objectives: {
+        Row: {
+          created_at: string | null
+          current_value: number | null
+          description: string | null
+          id: string
+          objective_type: string
+          priority: string | null
+          progress_percentage: number | null
+          start_date: string
+          status: string | null
+          target_date: string | null
+          target_value: number | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_value?: number | null
+          description?: string | null
+          id?: string
+          objective_type: string
+          priority?: string | null
+          progress_percentage?: number | null
+          start_date?: string
+          status?: string | null
+          target_date?: string | null
+          target_value?: number | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          current_value?: number | null
+          description?: string | null
+          id?: string
+          objective_type?: string
+          priority?: string | null
+          progress_percentage?: number | null
+          start_date?: string
+          status?: string | null
+          target_date?: string | null
+          target_value?: number | null
+          title?: string
+        }
+        Relationships: []
+      }
+      ceo_system_settings: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_critical: boolean | null
+          requires_confirmation: boolean | null
+          setting_key: string
+          setting_value: Json
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_critical?: boolean | null
+          requires_confirmation?: boolean | null
+          setting_key: string
+          setting_value?: Json
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_critical?: boolean | null
+          requires_confirmation?: boolean | null
+          setting_key?: string
+          setting_value?: Json
         }
         Relationships: []
       }
@@ -524,12 +795,17 @@ export type Database = {
           business_name: string | null
           cash_tag: string | null
           city: string
+          consent_ip_address: string | null
+          consent_user_agent: string | null
+          contract_signed_at: string | null
           created_at: string | null
           date_of_birth: string
           drivers_license: string
           drivers_license_back: string | null
           drivers_license_front: string | null
           email: string
+          fcra_accepted: boolean | null
+          fcra_accepted_at: string | null
           first_name: string
           i9_document: string | null
           id: string
@@ -543,10 +819,13 @@ export type Database = {
           license_state: string | null
           onboarding_completed_at: string | null
           onboarding_started_at: string | null
+          onboarding_step: string | null
           payout_method: string | null
           phone: string
           points: number | null
           priority_score: number | null
+          privacy_accepted: boolean | null
+          privacy_accepted_at: string | null
           profile_photo: string | null
           referred_by: string | null
           region_id: number | null
@@ -554,12 +833,15 @@ export type Database = {
           reviewed_by: string | null
           reviewer_notes: string | null
           routing_number: string | null
+          signature_image_url: string | null
           ssn_encrypted: string | null
           ssn_last_four: string | null
           state: string
           status: string | null
           street_address: string
           tax_classification: string | null
+          tos_accepted: boolean | null
+          tos_accepted_at: string | null
           updated_at: string | null
           user_id: string | null
           vehicle_color: string
@@ -595,12 +877,17 @@ export type Database = {
           business_name?: string | null
           cash_tag?: string | null
           city: string
+          consent_ip_address?: string | null
+          consent_user_agent?: string | null
+          contract_signed_at?: string | null
           created_at?: string | null
           date_of_birth: string
           drivers_license: string
           drivers_license_back?: string | null
           drivers_license_front?: string | null
           email: string
+          fcra_accepted?: boolean | null
+          fcra_accepted_at?: string | null
           first_name: string
           i9_document?: string | null
           id?: string
@@ -614,10 +901,13 @@ export type Database = {
           license_state?: string | null
           onboarding_completed_at?: string | null
           onboarding_started_at?: string | null
+          onboarding_step?: string | null
           payout_method?: string | null
           phone: string
           points?: number | null
           priority_score?: number | null
+          privacy_accepted?: boolean | null
+          privacy_accepted_at?: string | null
           profile_photo?: string | null
           referred_by?: string | null
           region_id?: number | null
@@ -625,12 +915,15 @@ export type Database = {
           reviewed_by?: string | null
           reviewer_notes?: string | null
           routing_number?: string | null
+          signature_image_url?: string | null
           ssn_encrypted?: string | null
           ssn_last_four?: string | null
           state: string
           status?: string | null
           street_address: string
           tax_classification?: string | null
+          tos_accepted?: boolean | null
+          tos_accepted_at?: string | null
           updated_at?: string | null
           user_id?: string | null
           vehicle_color: string
@@ -666,12 +959,17 @@ export type Database = {
           business_name?: string | null
           cash_tag?: string | null
           city?: string
+          consent_ip_address?: string | null
+          consent_user_agent?: string | null
+          contract_signed_at?: string | null
           created_at?: string | null
           date_of_birth?: string
           drivers_license?: string
           drivers_license_back?: string | null
           drivers_license_front?: string | null
           email?: string
+          fcra_accepted?: boolean | null
+          fcra_accepted_at?: string | null
           first_name?: string
           i9_document?: string | null
           id?: string
@@ -685,10 +983,13 @@ export type Database = {
           license_state?: string | null
           onboarding_completed_at?: string | null
           onboarding_started_at?: string | null
+          onboarding_step?: string | null
           payout_method?: string | null
           phone?: string
           points?: number | null
           priority_score?: number | null
+          privacy_accepted?: boolean | null
+          privacy_accepted_at?: string | null
           profile_photo?: string | null
           referred_by?: string | null
           region_id?: number | null
@@ -696,12 +997,15 @@ export type Database = {
           reviewed_by?: string | null
           reviewer_notes?: string | null
           routing_number?: string | null
+          signature_image_url?: string | null
           ssn_encrypted?: string | null
           ssn_last_four?: string | null
           state?: string
           status?: string | null
           street_address?: string
           tax_classification?: string | null
+          tos_accepted?: boolean | null
+          tos_accepted_at?: string | null
           updated_at?: string | null
           user_id?: string | null
           vehicle_color?: string
@@ -736,6 +1040,13 @@ export type Database = {
             columns: ["referred_by"]
             isOneToOne: false
             referencedRelation: "craver_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "craver_applications_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "unified_driver_applications"
             referencedColumns: ["id"]
           },
           {
@@ -1007,6 +1318,36 @@ export type Database = {
         }
         Relationships: []
       }
+      departments: {
+        Row: {
+          budget: number | null
+          created_at: string | null
+          description: string | null
+          head_employee_id: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          budget?: number | null
+          created_at?: string | null
+          description?: string | null
+          head_employee_id?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          budget?: number | null
+          created_at?: string | null
+          description?: string | null
+          head_employee_id?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       dispute_messages: {
         Row: {
           created_at: string | null
@@ -1101,6 +1442,103 @@ export type Database = {
           },
         ]
       }
+      driver_background_checks: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          driver_id: string
+          external_check_id: string | null
+          id: string
+          initiated_at: string | null
+          notes: string | null
+          provider: string | null
+          result_data: Json | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          driver_id: string
+          external_check_id?: string | null
+          id?: string
+          initiated_at?: string | null
+          notes?: string | null
+          provider?: string | null
+          result_data?: Json | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          driver_id?: string
+          external_check_id?: string | null
+          id?: string
+          initiated_at?: string | null
+          notes?: string | null
+          provider?: string | null
+          result_data?: Json | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_background_checks_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: true
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_consents: {
+        Row: {
+          created_at: string | null
+          driver_id: string
+          fcra_authorization_accepted: boolean | null
+          fcra_authorization_accepted_at: string | null
+          id: string
+          ip_address: string | null
+          privacy_policy_accepted: boolean | null
+          privacy_policy_accepted_at: string | null
+          terms_of_service_accepted: boolean | null
+          terms_of_service_accepted_at: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          driver_id: string
+          fcra_authorization_accepted?: boolean | null
+          fcra_authorization_accepted_at?: string | null
+          id?: string
+          ip_address?: string | null
+          privacy_policy_accepted?: boolean | null
+          privacy_policy_accepted_at?: string | null
+          terms_of_service_accepted?: boolean | null
+          terms_of_service_accepted_at?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          driver_id?: string
+          fcra_authorization_accepted?: boolean | null
+          fcra_authorization_accepted_at?: string | null
+          id?: string
+          ip_address?: string | null
+          privacy_policy_accepted?: boolean | null
+          privacy_policy_accepted_at?: string | null
+          terms_of_service_accepted?: boolean | null
+          terms_of_service_accepted_at?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_consents_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: true
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       driver_earnings: {
         Row: {
           amount_cents: number
@@ -1148,6 +1586,44 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_identity: {
+        Row: {
+          created_at: string | null
+          date_of_birth_encrypted: string
+          dl_number_encrypted: string
+          dl_state: string
+          driver_id: string
+          id: string
+          ssn_encrypted: string
+        }
+        Insert: {
+          created_at?: string | null
+          date_of_birth_encrypted: string
+          dl_number_encrypted: string
+          dl_state: string
+          driver_id: string
+          id?: string
+          ssn_encrypted: string
+        }
+        Update: {
+          created_at?: string | null
+          date_of_birth_encrypted?: string
+          dl_number_encrypted?: string
+          dl_state?: string
+          driver_id?: string
+          id?: string
+          ssn_encrypted?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_identity_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: true
+            referencedRelation: "drivers"
             referencedColumns: ["id"]
           },
         ]
@@ -1240,6 +1716,13 @@ export type Database = {
             columns: ["application_id"]
             isOneToOne: false
             referencedRelation: "craver_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_onboarding_progress_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "unified_driver_applications"
             referencedColumns: ["id"]
           },
         ]
@@ -1658,8 +2141,29 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "driver_referrals_referee_id_fkey"
+            columns: ["referee_id"]
+            isOneToOne: false
+            referencedRelation: "unified_driver_applications"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "driver_referrals_referred_id_fkey"
             columns: ["referred_id"]
+            isOneToOne: false
+            referencedRelation: "craver_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_referrals_referred_id_fkey"
+            columns: ["referred_id"]
+            isOneToOne: false
+            referencedRelation: "unified_driver_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_referrals_referrer_id_fkey"
+            columns: ["referrer_id"]
             isOneToOne: false
             referencedRelation: "craver_applications"
             referencedColumns: ["id"]
@@ -1668,7 +2172,7 @@ export type Database = {
             foreignKeyName: "driver_referrals_referrer_id_fkey"
             columns: ["referrer_id"]
             isOneToOne: false
-            referencedRelation: "craver_applications"
+            referencedRelation: "unified_driver_applications"
             referencedColumns: ["id"]
           },
         ]
@@ -1743,6 +2247,56 @@ export type Database = {
             columns: ["driver_id"]
             isOneToOne: true
             referencedRelation: "driver_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_signatures: {
+        Row: {
+          agreement_type: string
+          agreement_version: string
+          created_at: string | null
+          driver_id: string
+          id: string
+          ip_address: string | null
+          latitude: number | null
+          longitude: number | null
+          signature_image_url: string
+          signed_at: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          agreement_type?: string
+          agreement_version?: string
+          created_at?: string | null
+          driver_id: string
+          id?: string
+          ip_address?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          signature_image_url: string
+          signed_at?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          agreement_type?: string
+          agreement_version?: string
+          created_at?: string | null
+          driver_id?: string
+          id?: string
+          ip_address?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          signature_image_url?: string
+          signed_at?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_signatures_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
             referencedColumns: ["id"]
           },
         ]
@@ -1895,6 +2449,494 @@ export type Database = {
           zone_name?: string
         }
         Relationships: []
+      }
+      driver_waitlist: {
+        Row: {
+          activated_at: string | null
+          added_at: string | null
+          contract_signed: boolean | null
+          driver_id: string
+          id: string
+          notified_at: string | null
+          position: number | null
+          zone_id: string
+        }
+        Insert: {
+          activated_at?: string | null
+          added_at?: string | null
+          contract_signed?: boolean | null
+          driver_id: string
+          id?: string
+          notified_at?: string | null
+          position?: number | null
+          zone_id: string
+        }
+        Update: {
+          activated_at?: string | null
+          added_at?: string | null
+          contract_signed?: boolean | null
+          driver_id?: string
+          id?: string
+          notified_at?: string | null
+          position?: number | null
+          zone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_waitlist_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: true
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_waitlist_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drivers: {
+        Row: {
+          activated_at: string | null
+          auth_user_id: string | null
+          city: string
+          contract_signed_at: string | null
+          created_at: string | null
+          docusign_envelope_id: string | null
+          email: string
+          full_name: string
+          id: string
+          phone: string
+          ssn_last4: string | null
+          status: string
+          updated_at: string | null
+          zip: string
+          zone_id: string | null
+        }
+        Insert: {
+          activated_at?: string | null
+          auth_user_id?: string | null
+          city: string
+          contract_signed_at?: string | null
+          created_at?: string | null
+          docusign_envelope_id?: string | null
+          email: string
+          full_name: string
+          id?: string
+          phone: string
+          ssn_last4?: string | null
+          status?: string
+          updated_at?: string | null
+          zip: string
+          zone_id?: string | null
+        }
+        Update: {
+          activated_at?: string | null
+          auth_user_id?: string | null
+          city?: string
+          contract_signed_at?: string | null
+          created_at?: string | null
+          docusign_envelope_id?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          phone?: string
+          ssn_last4?: string | null
+          status?: string
+          updated_at?: string | null
+          zip?: string
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drivers_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_equity: {
+        Row: {
+          authorized_by: string | null
+          created_at: string | null
+          employee_id: string
+          equity_type: string
+          grant_date: string | null
+          id: string
+          notes: string | null
+          shares_percentage: number
+          strike_price: number | null
+          updated_at: string | null
+          vesting_schedule: Json | null
+          vesting_start_date: string | null
+        }
+        Insert: {
+          authorized_by?: string | null
+          created_at?: string | null
+          employee_id: string
+          equity_type?: string
+          grant_date?: string | null
+          id?: string
+          notes?: string | null
+          shares_percentage: number
+          strike_price?: number | null
+          updated_at?: string | null
+          vesting_schedule?: Json | null
+          vesting_start_date?: string | null
+        }
+        Update: {
+          authorized_by?: string | null
+          created_at?: string | null
+          employee_id?: string
+          equity_type?: string
+          grant_date?: string | null
+          id?: string
+          notes?: string | null
+          shares_percentage?: number
+          strike_price?: number | null
+          updated_at?: string | null
+          vesting_schedule?: Json | null
+          vesting_start_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_equity_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_history: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          effective_date: string
+          employee_id: string
+          id: string
+          new_department_id: string | null
+          new_position: string | null
+          new_salary: number | null
+          notes: string | null
+          performed_by: string | null
+          previous_department_id: string | null
+          previous_position: string | null
+          previous_salary: number | null
+          reason: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          effective_date?: string
+          employee_id: string
+          id?: string
+          new_department_id?: string | null
+          new_position?: string | null
+          new_salary?: number | null
+          notes?: string | null
+          performed_by?: string | null
+          previous_department_id?: string | null
+          previous_position?: string | null
+          previous_salary?: number | null
+          reason?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          effective_date?: string
+          employee_id?: string
+          id?: string
+          new_department_id?: string | null
+          new_position?: string | null
+          new_salary?: number | null
+          notes?: string | null
+          performed_by?: string | null
+          previous_department_id?: string | null
+          previous_position?: string | null
+          previous_salary?: number | null
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_history_new_department_id_fkey"
+            columns: ["new_department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_history_previous_department_id_fkey"
+            columns: ["previous_department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employees: {
+        Row: {
+          commission_rate: number | null
+          created_at: string | null
+          date_of_birth: string | null
+          department_id: string | null
+          email: string
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          employee_number: string | null
+          employment_status: string
+          employment_type: string
+          first_name: string
+          hire_date: string
+          hired_by: string | null
+          hourly_rate: number | null
+          id: string
+          last_name: string
+          manager_id: string | null
+          notes: string | null
+          phone: string | null
+          position: string
+          remote_allowed: boolean | null
+          salary: number | null
+          start_date: string
+          terminated_by: string | null
+          termination_date: string | null
+          updated_at: string | null
+          user_id: string | null
+          work_location: string | null
+        }
+        Insert: {
+          commission_rate?: number | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          department_id?: string | null
+          email: string
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          employee_number?: string | null
+          employment_status?: string
+          employment_type: string
+          first_name: string
+          hire_date?: string
+          hired_by?: string | null
+          hourly_rate?: number | null
+          id?: string
+          last_name: string
+          manager_id?: string | null
+          notes?: string | null
+          phone?: string | null
+          position: string
+          remote_allowed?: boolean | null
+          salary?: number | null
+          start_date?: string
+          terminated_by?: string | null
+          termination_date?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          work_location?: string | null
+        }
+        Update: {
+          commission_rate?: number | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          department_id?: string | null
+          email?: string
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          employee_number?: string | null
+          employment_status?: string
+          employment_type?: string
+          first_name?: string
+          hire_date?: string
+          hired_by?: string | null
+          hourly_rate?: number | null
+          id?: string
+          last_name?: string
+          manager_id?: string | null
+          notes?: string | null
+          phone?: string | null
+          position?: string
+          remote_allowed?: boolean | null
+          salary?: number | null
+          start_date?: string
+          terminated_by?: string | null
+          termination_date?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          work_location?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employees_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exec_documents: {
+        Row: {
+          access_level: number | null
+          category: string
+          created_at: string | null
+          description: string | null
+          file_size_bytes: number | null
+          file_url: string
+          id: string
+          title: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          access_level?: number | null
+          category: string
+          created_at?: string | null
+          description?: string | null
+          file_size_bytes?: number | null
+          file_url: string
+          id?: string
+          title: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          access_level?: number | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          file_size_bytes?: number | null
+          file_url?: string
+          id?: string
+          title?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exec_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "exec_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exec_messages: {
+        Row: {
+          created_at: string | null
+          from_user_id: string
+          id: string
+          is_confidential: boolean | null
+          message: string
+          priority: string | null
+          read_by: string[] | null
+          subject: string
+          to_user_ids: string[]
+        }
+        Insert: {
+          created_at?: string | null
+          from_user_id: string
+          id?: string
+          is_confidential?: boolean | null
+          message: string
+          priority?: string | null
+          read_by?: string[] | null
+          subject: string
+          to_user_ids: string[]
+        }
+        Update: {
+          created_at?: string | null
+          from_user_id?: string
+          id?: string
+          is_confidential?: boolean | null
+          message?: string
+          priority?: string | null
+          read_by?: string[] | null
+          subject?: string
+          to_user_ids?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exec_messages_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "exec_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exec_users: {
+        Row: {
+          access_level: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          department: string | null
+          id: string
+          ip_whitelist: Json | null
+          last_login: string | null
+          mfa_enabled: boolean | null
+          role: string
+          title: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          access_level?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          department?: string | null
+          id?: string
+          ip_whitelist?: Json | null
+          last_login?: string | null
+          mfa_enabled?: boolean | null
+          role: string
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          access_level?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          department?: string | null
+          id?: string
+          ip_whitelist?: Json | null
+          last_login?: string | null
+          mfa_enabled?: boolean | null
+          role?: string
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exec_users_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "exec_users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       favorite_restaurants: {
         Row: {
@@ -2232,6 +3274,13 @@ export type Database = {
             columns: ["driver_id"]
             isOneToOne: false
             referencedRelation: "craver_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_tasks_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "unified_driver_applications"
             referencedColumns: ["id"]
           },
         ]
@@ -2602,6 +3651,136 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll: {
+        Row: {
+          base_pay: number
+          benefits: number | null
+          bonus: number | null
+          commission: number | null
+          created_at: string | null
+          employee_id: string
+          gross_pay: number | null
+          id: string
+          net_pay: number | null
+          notes: string | null
+          other_deductions: number | null
+          overtime_pay: number | null
+          pay_period_end: string
+          pay_period_start: string
+          payment_date: string | null
+          payment_method: string | null
+          payment_status: string | null
+          taxes: number | null
+          total_deductions: number | null
+        }
+        Insert: {
+          base_pay?: number
+          benefits?: number | null
+          bonus?: number | null
+          commission?: number | null
+          created_at?: string | null
+          employee_id: string
+          gross_pay?: number | null
+          id?: string
+          net_pay?: number | null
+          notes?: string | null
+          other_deductions?: number | null
+          overtime_pay?: number | null
+          pay_period_end: string
+          pay_period_start: string
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          taxes?: number | null
+          total_deductions?: number | null
+        }
+        Update: {
+          base_pay?: number
+          benefits?: number | null
+          bonus?: number | null
+          commission?: number | null
+          created_at?: string | null
+          employee_id?: string
+          gross_pay?: number | null
+          id?: string
+          net_pay?: number | null
+          notes?: string | null
+          other_deductions?: number | null
+          overtime_pay?: number | null
+          pay_period_end?: string
+          pay_period_start?: string
+          payment_date?: string | null
+          payment_method?: string | null
+          payment_status?: string | null
+          taxes?: number | null
+          total_deductions?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      performance_reviews: {
+        Row: {
+          areas_for_improvement: string | null
+          comments: string | null
+          created_at: string | null
+          employee_id: string
+          goals: string | null
+          id: string
+          overall_rating: number | null
+          review_date: string
+          review_period_end: string | null
+          review_period_start: string | null
+          reviewer_id: string | null
+          strengths: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          areas_for_improvement?: string | null
+          comments?: string | null
+          created_at?: string | null
+          employee_id: string
+          goals?: string | null
+          id?: string
+          overall_rating?: number | null
+          review_date?: string
+          review_period_end?: string | null
+          review_period_start?: string | null
+          reviewer_id?: string | null
+          strengths?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          areas_for_improvement?: string | null
+          comments?: string | null
+          created_at?: string | null
+          employee_id?: string
+          goals?: string | null
+          id?: string
+          overall_rating?: number | null
+          review_date?: string
+          review_period_end?: string | null
+          review_period_start?: string | null
+          reviewer_id?: string | null
+          strengths?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_reviews_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]
@@ -4838,6 +6017,45 @@ export type Database = {
         }
         Relationships: []
       }
+      zones: {
+        Row: {
+          active_drivers: number
+          capacity: number
+          city: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          state: string
+          updated_at: string | null
+          waitlist_count: number
+          zip_code: string
+        }
+        Insert: {
+          active_drivers?: number
+          capacity?: number
+          city: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          state: string
+          updated_at?: string | null
+          waitlist_count?: number
+          zip_code: string
+        }
+        Update: {
+          active_drivers?: number
+          capacity?: number
+          city?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          state?: string
+          updated_at?: string | null
+          waitlist_count?: number
+          zip_code?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       geography_columns: {
@@ -4881,6 +6099,39 @@ export type Database = {
           type?: string | null
         }
         Relationships: []
+      }
+      unified_driver_applications: {
+        Row: {
+          auth_user_id: string | null
+          city: string | null
+          contract_signed_at: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string | null
+          phone: string | null
+          points: number | null
+          priority_score: number | null
+          region_capacity: number | null
+          region_id: number | null
+          region_name: string | null
+          region_status: string | null
+          ssn_last4: string | null
+          status: string | null
+          updated_at: string | null
+          waitlist_joined_at: string | null
+          waitlist_position: number | null
+          zip: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "craver_applications_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "regions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
@@ -5063,6 +6314,10 @@ export type Database = {
         Returns: boolean
       }
       daitch_mokotoff: { Args: { "": string }; Returns: string[] }
+      decrypt_driver_identity: {
+        Args: { p_driver_id: string; p_encryption_key: string }
+        Returns: Json
+      }
       disablelongtransactions: { Args: never; Returns: string }
       dmetaphone: { Args: { "": string }; Returns: string }
       dmetaphone_alt: { Args: { "": string }; Returns: string }
@@ -5097,11 +6352,23 @@ export type Database = {
             Returns: string
           }
       enablelongtransactions: { Args: never; Returns: string }
+      encrypt_driver_identity: {
+        Args: {
+          p_dl_number: string
+          p_dl_state: string
+          p_dob: string
+          p_driver_id: string
+          p_encryption_key: string
+          p_ssn: string
+        }
+        Returns: Json
+      }
       ensure_driver_can_go_online: {
         Args: { target_user_id: string }
         Returns: boolean
       }
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      generate_employee_number: { Args: never; Returns: string }
       generate_order_number: { Args: never; Returns: string }
       generate_referral_code: {
         Args: { p_user_id: string; p_user_type: string }
@@ -5228,6 +6495,20 @@ export type Database = {
       has_active_subscription: { Args: { p_user_id: string }; Returns: boolean }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_admin_user: { Args: never; Returns: boolean }
+      is_ceo: { Args: { user_uuid: string }; Returns: boolean }
+      is_executive: { Args: { user_uuid: string }; Returns: boolean }
+      log_ceo_action: {
+        Args: {
+          p_action_category: string
+          p_action_type: string
+          p_description: string
+          p_severity?: string
+          p_target_id: string
+          p_target_name: string
+          p_target_type: string
+        }
+        Returns: string
+      }
       longtransactionsenabled: { Args: never; Returns: boolean }
       make_user_active_driver: {
         Args: { target_user_id: string; vehicle_info?: Json }
