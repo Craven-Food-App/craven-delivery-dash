@@ -195,6 +195,9 @@ export default function CFOPortal() {
             <TabPane tab={<span>Manager Console</span>} key="manager">
               <ManagerConsole />
             </TabPane>
+            <TabPane tab={<span>Role Management</span>} key="roles">
+              <RoleManagement />
+            </TabPane>
             <TabPane tab={<span>Accounts Payable</span>} key="ap">
               <AccountsPayable />
             </TabPane>
@@ -284,11 +287,34 @@ function ManagerConsole() {
   }, []);
   return (
     <div>
+      {(metrics.apOverdue > 0 || metrics.arPastDue > 0 || metrics.closeOpen > 5) && (
+        <Alert
+          type="warning"
+          showIcon
+          style={{ marginBottom: 12 }}
+          message={
+            <div>
+              {metrics.apOverdue > 0 && <div>AP overdue invoices: <strong>{metrics.apOverdue}</strong></div>}
+              {metrics.arPastDue > 0 && <div>AR past due: <strong>$ {metrics.arPastDue.toLocaleString()}</strong></div>}
+              {metrics.closeOpen > 5 && <div>Close tasks open: <strong>{metrics.closeOpen}</strong></div>}
+            </div>
+          }
+        />
+      )}
       <Row gutter={[16,16]} style={{ marginBottom: 12 }}>
         <Col xs={24} md={12} lg={6}><div style={{ background:'#f8fafc', padding:16, borderRadius:8 }}><div style={{ color:'#64748b' }}>AP Queue (pending/approved)</div><div style={{ fontWeight:700, fontSize:20 }}>{metrics.apPending}</div></div></Col>
         <Col xs={24} md={12} lg={6}><div style={{ background:'#fff7ed', padding:16, borderRadius:8 }}><div style={{ color:'#9a3412' }}>AP Overdue</div><div style={{ fontWeight:700, fontSize:20 }}>{metrics.apOverdue}</div></div></Col>
         <Col xs={24} md={12} lg={6}><div style={{ background:'#fff1f2', padding:16, borderRadius:8 }}><div style={{ color:'#9f1239' }}>AR Past Due $</div><div style={{ fontWeight:700, fontSize:20 }}>$ {metrics.arPastDue.toLocaleString()}</div></div></Col>
         <Col xs={24} md={12} lg={6}><div style={{ background:'#eef2ff', padding:16, borderRadius:8 }}><div style={{ color:'#3730a3' }}>Close Tasks Open</div><div style={{ fontWeight:700, fontSize:20 }}>{metrics.closeOpen}</div></div></Col>
+      </Row>
+      <Typography.Title level={5}>Team Workload</Typography.Title>
+      <Row gutter={[16,16]} style={{ marginBottom: 12 }}>
+        {['CFO','Controller','AP','AR','Treasury','Auditor'].map((r) => {
+          const count = roles.filter(x => x.role === r).length;
+          return (
+            <Col key={r} xs={12} md={8} lg={4}><div style={{ background:'#f1f5f9', padding:12, borderRadius:8 }}><div style={{ color:'#475569' }}>{r}</div><div style={{ fontWeight:700 }}>{count} member(s)</div></div></Col>
+          );
+        })}
       </Row>
       <Divider>Team Roles</Divider>
       <Space style={{ marginBottom: 8 }}>
@@ -333,6 +359,65 @@ function ManagerConsole() {
           </Form.Item>
         </Form>
       </Modal>
+    </div>
+  );
+}
+
+function RoleManagement() {
+  const [roles, setRoles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [form] = Form.useForm();
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const { data } = await supabase.from('finance_roles').select('user_id, user_label, role').order('user_label', { ascending: true });
+        setRoles((data || []).map((r:any, idx:number)=> ({ key: `${r.user_id}-${r.role}-${idx}`, ...r })));
+      } finally { setLoading(false); }
+    })();
+  }, []);
+  return (
+    <div>
+      <Typography.Title level={5}>Invite User & Assign Role</Typography.Title>
+      <Form
+        layout="inline"
+        form={form}
+        onFinish={async (vals) => {
+          setLoading(true);
+          try {
+            const { error } = await supabase.from('finance_roles').insert({ user_id: vals.user_id || crypto.randomUUID(), user_label: vals.user_label, role: vals.role });
+            if (error) throw error;
+            const { data } = await supabase.from('finance_roles').select('user_id, user_label, role').order('user_label', { ascending: true });
+            setRoles((data || []).map((r:any, idx:number)=> ({ key: `${r.user_id}-${r.role}-${idx}`, ...r })));
+            form.resetFields();
+            message.success('Role assigned');
+          } finally { setLoading(false); }
+        }}
+      >
+        <Form.Item name="user_label" rules={[{ required: true }]}>
+          <input className="ant-input" placeholder="User email or name" />
+        </Form.Item>
+        <Form.Item name="user_id">
+          <input className="ant-input" placeholder="User ID (optional)" />
+        </Form.Item>
+        <Form.Item name="role" rules={[{ required: true }]}>
+          <Select style={{ minWidth: 180 }} options={[{value:'CFO',label:'CFO'},{value:'Controller',label:'Controller'},{value:'AP',label:'AP'},{value:'AR',label:'AR'},{value:'Treasury',label:'Treasury'},{value:'Auditor',label:'Auditor'}]} />
+        </Form.Item>
+        <Form.Item>
+          <Button type="primary" htmlType="submit">Assign</Button>
+        </Form.Item>
+      </Form>
+
+      <Divider />
+      <Table
+        loading={loading}
+        dataSource={roles}
+        columns={[
+          { title: 'User', dataIndex: 'user_label' },
+          { title: 'User ID', dataIndex: 'user_id' },
+          { title: 'Role', dataIndex: 'role' },
+        ]}
+      />
     </div>
   );
 }
