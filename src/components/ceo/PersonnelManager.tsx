@@ -737,13 +737,22 @@ export const PersonnelManager: React.FC = () => {
               label="Annual Salary"
               name="salary"
               rules={[
-                { 
-                  required: (_, values) => {
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
                     const executiveDept = departments.find(d => d.name === 'Executive');
-                    return !executiveDept || values.department_id !== executiveDept.id;
-                  }, 
-                  message: 'Required for non-executive roles' 
-                }
+                    const deptId = getFieldValue('department_id');
+                    const isExecutive = executiveDept && deptId === executiveDept.id;
+                    if (isExecutive) {
+                      // Executive department: salary optional
+                      return Promise.resolve();
+                    }
+                    // Non-executive: require a numeric salary > 0
+                    if (value === undefined || value === null || value === '' || Number(value) <= 0) {
+                      return Promise.reject(new Error('Required for non-executive roles'));
+                    }
+                    return Promise.resolve();
+                  }
+                })
               ]}
             >
               <InputNumber
