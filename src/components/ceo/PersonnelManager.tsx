@@ -39,6 +39,9 @@ interface Department {
 export const PersonnelManager: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isPromoteModalVisible, setIsPromoteModalVisible] = useState(false);
+  const [isPreviewVisible, setIsPreviewVisible] = useState(false);
+  const [previewValues, setPreviewValues] = useState<any | null>(null);
+  const [isSending, setIsSending] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [searchText, setSearchText] = useState('');
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -64,6 +67,90 @@ export const PersonnelManager: React.FC = () => {
     } catch (error) {
       console.error('Error fetching departments:', error);
       message.error('Failed to load departments');
+    }
+  };
+
+  // --- Document preview helpers ---
+  const isExecutivePosition = (position?: string) => /chief|ceo|cfo|cto|coo|president|vp|vice president|executive/i.test(position || '');
+
+  const buildOfferLetterHtml = (v: any) => {
+    const salaryFormatted = v?.salary ? `$${Number(v.salary).toLocaleString()}/year` : 'Equity-only role';
+    const equityLine = v?.equity ? `<li>Equity Stake: <strong>${v.equity}%</strong>${v?.equity_type ? ` (${(v.equity_type || '').toString().replace('_',' ')})` : ''}</li>` : '';
+    return `
+      <div style="font-family: Arial, sans-serif; padding: 24px;">
+        <h2 style="margin-top:0;">Offer Letter - ${v.position}</h2>
+        <p>Dear ${v.first_name} ${v.last_name},</p>
+        <p>Craven Inc is pleased to extend an offer for the position of <strong>${v.position}</strong>.</p>
+        <ul>
+          <li>Department: ${v.department_name || 'Corporate'}</li>
+          <li>Start Date: ${dayjs(v.hire_date || new Date()).format('MMM D, YYYY')}</li>
+          <li>Compensation: ${salaryFormatted}</li>
+          ${equityLine}
+        </ul>
+        <p>Reporting to: CEO - Torrence Stroman.</p>
+        <p>Sincerely,<br/>Craven Inc HR</p>
+      </div>
+    `;
+  };
+
+  const buildEquityAgreementHtml = (v: any) => {
+    if (!v?.equity) return '<div style="padding:24px;">No equity specified.</div>';
+    const typeMap: Record<string,string> = { common_stock:'Common Stock', preferred_stock:'Preferred Stock', stock_options:'Stock Options', phantom_stock:'Phantom Stock' };
+    const vestingMap: Record<string,string> = { immediate:'Immediate (100% vested)', '4_year_1_cliff':'4 years, 1-year cliff', '3_year_1_cliff':'3 years, 1-year cliff', '2_year_1_cliff':'2 years, 1-year cliff', custom:'Custom schedule' };
+    return `
+      <div style="font-family: Arial, sans-serif; padding: 24px;">
+        <h2 style="margin-top:0;">Equity Offer Agreement</h2>
+        <p>Company: Craven Inc (Ohio)</p>
+        <ul>
+          <li>Grantee: ${v.first_name} ${v.last_name} (${v.position})</li>
+          <li>Ownership: <strong>${v.equity}%</strong></li>
+          <li>Equity Type: ${typeMap[v.equity_type || 'common_stock'] || 'Common Stock'}</li>
+          <li>Vesting: ${vestingMap[v.vesting_schedule || '4_year_1_cliff']}</li>
+          ${v.equity_type === 'stock_options' ? `<li>Strike Price: $${Number(v.strike_price || 0).toFixed(2)}</li>` : ''}
+        </ul>
+        <p>Governing law: Ohio.</p>
+      </div>
+    `;
+  };
+
+  const buildBoardResolutionHtml = (v: any, resolutionNumber: string) => `
+    <div style="font-family: Arial, sans-serif; padding: 24px;">
+      <h2 style="margin-top:0;">Board Resolution #${resolutionNumber}</h2>
+      <p>Appointment of ${v.first_name} ${v.last_name} as ${v.position} effective ${dayjs(v.hire_date || new Date()).format('MMM D, YYYY')}.</p>
+      ${v.equity ? `<p>Includes authorization to grant ${v.equity}% equity.</p>` : ''}
+      <p>Status: Approved.</p>
+    </div>
+  `;
+
+  const buildFoundersHtml = (v: any, resolutionNumber: string) => `
+    <div style="font-family: Arial, sans-serif; padding: 24px;">
+      <h2 style="margin-top:0;">Founders Equity Insurance Agreement</h2>
+      <p>Founder: ${v.first_name} ${v.last_name} (CEO).</p>
+      <p>Ownership protected: ${Number(v.equity || 0)}% (anti-dilution, board-supermajority exception).</p>
+      <p>Resolution reference: #${resolutionNumber}</p>
+    </div>
+  `;
+
+  const openPreview = async () => {
+    try {
+      const vals = await form.validateFields();
+      const dept = departments.find(d => d.id === vals.department_id);
+      const enriched = { ...vals, department_name: dept?.name };
+      setPreviewValues(enriched);
+      setIsPreviewVisible(true);
+    } catch (e) {
+      // validation error shown by antd
+    }
+  };
+
+  const confirmSendAndHire = async () => {
+    if (!previewValues) return;
+    setIsSending(true);
+    try {
+      await handleHire(previewValues);
+      setIsPreviewVisible(false);
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -753,12 +840,103 @@ export const PersonnelManager: React.FC = () => {
               }}>
                 Cancel
               </Button>
+              <Button onClick={openPreview} size="large">
+                👀 Preview Documents
+              </Button>
               <Button type="primary" htmlType="submit" size="large">
-                🎉 Hire Employee
+                🎉 Hire Employee (Skip Preview)
               </Button>
             </Space>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Document Preview Modal */}
+      <Modal
+        title="📄 Review Documents"
+        open={isPreviewVisible}
+        onCancel={() => setIsPreviewVisible(false)}
+        width={900}
+        footer={null}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          {/* Live-edit fields */}
+          <div className="md:col-span-1 space-y-3">
+            <div className="text-slate-700 font-semibold">Edit fields</div>
+            <Input
+              placeholder="Position"
+              value={previewValues?.position}
+              onChange={e => setPreviewValues((p:any) => ({...p, position: e.target.value}))}
+            />
+            <InputNumber
+              style={{ width: '100%' }}
+              placeholder="Equity %"
+              value={previewValues?.equity}
+              min={0}
+              max={100}
+              step={0.5}
+              onChange={(v) => setPreviewValues((p:any) => ({...p, equity: v}))}
+            />
+            <Select
+              value={previewValues?.equity_type || 'common_stock'}
+              onChange={(v) => setPreviewValues((p:any) => ({...p, equity_type: v}))}
+            >
+              <Option value="common_stock">Common Stock</Option>
+              <Option value="preferred_stock">Preferred Stock</Option>
+              <Option value="stock_options">Stock Options</Option>
+              <Option value="phantom_stock">Phantom Stock</Option>
+            </Select>
+            <Select
+              value={previewValues?.vesting_schedule || '4_year_1_cliff'}
+              onChange={(v) => setPreviewValues((p:any) => ({...p, vesting_schedule: v}))}
+            >
+              <Option value="immediate">Immediate (100% vested)</Option>
+              <Option value="4_year_1_cliff">4 years, 1 year cliff</Option>
+              <Option value="3_year_1_cliff">3 years, 1 year cliff</Option>
+              <Option value="2_year_1_cliff">2 years, 1 year cliff</Option>
+              <Option value="custom">Custom</Option>
+            </Select>
+            <InputNumber
+              style={{ width: '100%' }}
+              placeholder="Strike Price (if options)"
+              value={previewValues?.strike_price}
+              min={0}
+              step={0.01}
+              onChange={(v) => setPreviewValues((p:any) => ({...p, strike_price: v}))}
+            />
+          </div>
+
+          {/* Previews */}
+          <div className="md:col-span-2 space-y-6">
+            <div className="border rounded-md overflow-hidden">
+              <div className="px-3 py-2 text-sm font-semibold bg-slate-50 border-b">Board Resolution</div>
+              <div className="p-4 max-h-80 overflow-auto" dangerouslySetInnerHTML={{ __html: buildBoardResolutionHtml(previewValues || {}, 'PREVIEW') }} />
+            </div>
+            <div className="border rounded-md overflow-hidden">
+              <div className="px-3 py-2 text-sm font-semibold bg-slate-50 border-b">Offer Letter</div>
+              <div className="p-4 max-h-80 overflow-auto" dangerouslySetInnerHTML={{ __html: buildOfferLetterHtml(previewValues || {}) }} />
+            </div>
+            {isExecutivePosition(previewValues?.position) && (previewValues?.equity > 0) && (
+              <div className="border rounded-md overflow-hidden">
+                <div className="px-3 py-2 text-sm font-semibold bg-slate-50 border-b">Equity Offer Agreement</div>
+                <div className="p-4 max-h-80 overflow-auto" dangerouslySetInnerHTML={{ __html: buildEquityAgreementHtml(previewValues || {}) }} />
+              </div>
+            )}
+            {(previewValues?.position || '').toLowerCase().includes('ceo') && (
+              <div className="border rounded-md overflow-hidden">
+                <div className="px-3 py-2 text-sm font-semibold bg-slate-50 border-b">Founders Equity Insurance Agreement</div>
+                <div className="p-4 max-h-80 overflow-auto" dangerouslySetInnerHTML={{ __html: buildFoundersHtml(previewValues || {}, 'PREVIEW') }} />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <Space className="w-full justify-end">
+          <Button onClick={() => setIsPreviewVisible(false)}>Back</Button>
+          <Button type="primary" loading={isSending} onClick={confirmSendAndHire}>
+            Send Documents & Hire
+          </Button>
+        </Space>
       </Modal>
 
       {/* Promote Modal */}
