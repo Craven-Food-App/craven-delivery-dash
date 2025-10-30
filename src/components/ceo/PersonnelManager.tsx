@@ -120,10 +120,21 @@ export const PersonnelManager: React.FC = () => {
 
       // If C-suite and equity provided, add to equity table
       if (isCLevel && values.equity && values.equity > 0) {
+        const vestingSchedule = values.vesting_schedule || '4_year_1_cliff';
+        const vestingJson = {
+          type: vestingSchedule,
+          duration_months: vestingSchedule === 'immediate' ? 0 : 
+                          vestingSchedule === '2_year_1_cliff' ? 24 :
+                          vestingSchedule === '3_year_1_cliff' ? 36 : 48,
+          cliff_months: vestingSchedule === 'immediate' ? 0 : 12
+        };
+
         await supabase.from('employee_equity').insert([{
           employee_id: data[0].id,
           shares_percentage: values.equity,
-          equity_type: 'stock',
+          equity_type: values.equity_type || 'common_stock',
+          vesting_schedule: vestingJson,
+          strike_price: values.strike_price || null,
           authorized_by: user?.id,
         }]);
       }
@@ -161,10 +172,30 @@ export const PersonnelManager: React.FC = () => {
             reportingTo: 'CEO - Torrence Stroman',
           },
         });
-        message.success(`🎉 ${values.first_name} ${values.last_name} hired successfully! Offer letter sent.`);
+
+        // If C-suite with equity, also send Equity Offer Agreement
+        if (isCLevel && values.equity && values.equity > 0) {
+          await supabase.functions.invoke('send-equity-offer-agreement', {
+            body: {
+              employeeEmail: values.email,
+              employeeName: `${values.first_name} ${values.last_name}`,
+              position: values.position,
+              equityPercentage: values.equity,
+              equityType: values.equity_type || 'common_stock',
+              vestingSchedule: values.vesting_schedule || '4_year_1_cliff',
+              strikePrice: values.strike_price,
+              startDate: values.hire_date || new Date().toISOString(),
+              companyName: 'Craven Inc',
+              state: 'Ohio'
+            },
+          });
+          message.success(`🎉 ${values.first_name} ${values.last_name} hired successfully! Offer letter and Equity Agreement sent.`);
+        } else {
+          message.success(`🎉 ${values.first_name} ${values.last_name} hired successfully! Offer letter sent.`);
+        }
       } catch (emailError) {
-        console.error('Error sending offer letter:', emailError);
-        message.success(`🎉 ${values.first_name} ${values.last_name} hired successfully! (Email failed to send)`);
+        console.error('Error sending emails:', emailError);
+        message.success(`🎉 ${values.first_name} ${values.last_name} hired successfully! (Emails failed to send)`);
       }
 
       setIsModalVisible(false);
@@ -546,15 +577,24 @@ export const PersonnelManager: React.FC = () => {
             <Form.Item
               label="Annual Salary"
               name="salary"
-              rules={[{ required: true, message: 'Required' }]}
+              rules={[
+                { 
+                  required: (_, values) => {
+                    const executiveDept = departments.find(d => d.name === 'Executive');
+                    return !executiveDept || values.department_id !== executiveDept.id;
+                  }, 
+                  message: 'Required for non-executive roles' 
+                }
+              ]}
             >
               <InputNumber
                 style={{ width: '100%' }}
                 formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                 parser={value => value!.replace(/\$\s?|(,*)/g, '')}
-                min={30000}
+                min={0}
                 max={1000000}
                 step={5000}
+                placeholder="Leave blank for equity-only compensation"
               />
             </Form.Item>
 
@@ -567,21 +607,67 @@ export const PersonnelManager: React.FC = () => {
             </Form.Item>
           </div>
 
-          <Form.Item
-            label="Equity Stake (%)"
-            name="equity"
-            tooltip="For C-suite positions only (CEO, CFO, CTO, COO, President)"
-          >
-            <InputNumber
-              style={{ width: '100%' }}
-              min={0}
-              max={100}
-              precision={2}
-              step={0.5}
-              placeholder="e.g., 10.50 for 10.5%"
-              disabled={false}
-            />
-          </Form.Item>
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item
+              label="Equity Stake (%)"
+              name="equity"
+              tooltip="For C-suite positions only (CEO, CFO, CTO, COO, President)"
+            >
+              <InputNumber
+                style={{ width: '100%' }}
+                min={0}
+                max={100}
+                precision={2}
+                step={0.5}
+                placeholder="e.g., 10.50 for 10.5%"
+                disabled={false}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="Equity Type"
+              name="equity_type"
+              tooltip="Type of equity being granted"
+            >
+              <Select placeholder="Select equity type">
+                <Option value="common_stock">Common Stock</Option>
+                <Option value="preferred_stock">Preferred Stock</Option>
+                <Option value="stock_options">Stock Options</Option>
+                <Option value="phantom_stock">Phantom Stock</Option>
+              </Select>
+            </Form.Item>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item
+              label="Vesting Schedule"
+              name="vesting_schedule"
+              tooltip="How the equity vests over time"
+            >
+              <Select placeholder="Select vesting schedule">
+                <Option value="immediate">Immediate (100% vested)</Option>
+                <Option value="4_year_1_cliff">4 years, 1 year cliff</Option>
+                <Option value="3_year_1_cliff">3 years, 1 year cliff</Option>
+                <Option value="2_year_1_cliff">2 years, 1 year cliff</Option>
+                <Option value="custom">Custom Schedule</Option>
+              </Select>
+            </Form.Item>
+
+            <Form.Item
+              label="Strike Price (if options)"
+              name="strike_price"
+              tooltip="Exercise price for stock options"
+            >
+              <InputNumber
+                style={{ width: '100%' }}
+                min={0}
+                precision={2}
+                placeholder="e.g., 0.01 for $0.01"
+                formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={value => value!.replace(/\$\s?|(,*)/g, '')}
+              />
+            </Form.Item>
+          </div>
 
           <Form.Item label="Work Location" name="work_location">
             <Input placeholder="e.g., HQ - Los Angeles, Remote" />
