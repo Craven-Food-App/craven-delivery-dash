@@ -2691,6 +2691,7 @@ export type Database = {
           commission_rate: number | null
           created_at: string | null
           date_of_birth: string | null
+          deferred_salary_clause: boolean | null
           department_id: string | null
           email: string
           emergency_contact_name: string | null
@@ -2699,6 +2700,7 @@ export type Database = {
           employment_status: string
           employment_type: string
           first_name: string
+          funding_trigger: number | null
           hire_date: string
           hired_by: string | null
           hourly_rate: number | null
@@ -2710,6 +2712,7 @@ export type Database = {
           position: string
           remote_allowed: boolean | null
           salary: number | null
+          salary_status: string | null
           start_date: string
           terminated_by: string | null
           termination_date: string | null
@@ -2721,6 +2724,7 @@ export type Database = {
           commission_rate?: number | null
           created_at?: string | null
           date_of_birth?: string | null
+          deferred_salary_clause?: boolean | null
           department_id?: string | null
           email: string
           emergency_contact_name?: string | null
@@ -2729,6 +2733,7 @@ export type Database = {
           employment_status?: string
           employment_type: string
           first_name: string
+          funding_trigger?: number | null
           hire_date?: string
           hired_by?: string | null
           hourly_rate?: number | null
@@ -2740,6 +2745,7 @@ export type Database = {
           position: string
           remote_allowed?: boolean | null
           salary?: number | null
+          salary_status?: string | null
           start_date?: string
           terminated_by?: string | null
           termination_date?: string | null
@@ -2751,6 +2757,7 @@ export type Database = {
           commission_rate?: number | null
           created_at?: string | null
           date_of_birth?: string | null
+          deferred_salary_clause?: boolean | null
           department_id?: string | null
           email?: string
           emergency_contact_name?: string | null
@@ -2759,6 +2766,7 @@ export type Database = {
           employment_status?: string
           employment_type?: string
           first_name?: string
+          funding_trigger?: number | null
           hire_date?: string
           hired_by?: string | null
           hourly_rate?: number | null
@@ -2770,6 +2778,7 @@ export type Database = {
           position?: string
           remote_allowed?: boolean | null
           salary?: number | null
+          salary_status?: string | null
           start_date?: string
           terminated_by?: string | null
           termination_date?: string | null
@@ -6277,6 +6286,14 @@ export type Database = {
       calculate_waitlist_position: {
         Args: { driver_uuid: string }
         Returns: number
+      }
+      check_point_in_zones: {
+        Args: { lat: number; lng: number }
+        Returns: {
+          restaurant_id: string
+          zone_id: string
+          zone_name: string
+        }[]
       }
       create_default_onboarding_tasks: {
         Args: { driver_uuid: string }
