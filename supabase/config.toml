@@ -129,3 +129,9 @@ verify_jwt = false
 
 [functions.send-preaccept-email]
 verify_jwt = false
+
+[functions.patch-employee-equity]
+verify_jwt = false
+
+[functions.get-equity-dashboard]
+verify_jwt = false

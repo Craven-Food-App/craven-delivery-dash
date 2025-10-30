@@ -29,31 +29,11 @@ export const EquityDashboard: React.FC = () => {
   const fetchShareholders = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('employees')
-        .select(`
-          id,
-          first_name,
-          last_name,
-          position,
-          email,
-          employee_equity (
-            shares_percentage,
-            shares_total,
-            equity_type,
-            grant_date
-          )
-        `)
-        ;
-
+      // Use service-role edge function to bypass any RLS on employee_equity
+      const { data, error } = await supabase.functions.invoke('get-equity-dashboard', { body: {} });
       if (error) throw error;
-      
-      // Filter to only employees with equity
-      const filteredData = (data || []).filter(emp => 
-        emp.employee_equity && emp.employee_equity.length > 0
-      );
-      
-      setShareholders(filteredData);
+      const list = (data as any)?.shareholders || [];
+      setShareholders(list);
     } catch (error) {
       console.error('Error fetching shareholders:', error);
       message.error('Failed to load shareholder data');
