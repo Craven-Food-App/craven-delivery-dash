@@ -181,6 +181,15 @@ export default function CFOPortal() {
                 High-level KPIs and trends will be displayed here.
               </Typography.Paragraph>
             </TabPane>
+            <TabPane tab={<span>Budget vs Actuals</span>} key="bva">
+              <BudgetVsActuals />
+            </TabPane>
+            <TabPane tab={<span>Cash Flow Forecast</span>} key="forecast">
+              <CashFlowForecast />
+            </TabPane>
+            <TabPane tab={<span>Approvals</span>} key="approvals">
+              <ApprovalsPanel />
+            </TabPane>
             <TabPane
               tab={
                 <span>
@@ -223,5 +232,152 @@ export default function CFOPortal() {
         </div>
       </Content>
     </Layout>
+  );
+}
+
+function BudgetVsActuals() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const [{ data: budgets, error: bErr }, { data: orders, error: oErr }] = await Promise.all([
+          supabase.from('budgets').select('id, period, dept, amount').order('period', { ascending: true }),
+          supabase.from('orders').select('total_amount, created_at').gte('created_at', new Date(Date.now() - 365*24*60*60*1000).toISOString())
+        ]);
+        if (bErr) {
+          setRows([]);
+          return;
+        }
+        const actualsByPeriod: Record<string, number> = (orders || []).reduce((m: Record<string, number>, o: any) => {
+          const period = new Date(o.created_at).toISOString().slice(0,7); // YYYY-MM
+          m[period] = (m[period] || 0) + (o.total_amount || 0);
+          return m;
+        }, {});
+        const grouped = (budgets || []).map((b: any) => {
+          const actual = actualsByPeriod[b.period] || 0;
+          const variance = actual - (b.amount || 0);
+          const variancePct = b.amount ? (variance / b.amount) * 100 : 0;
+          return { key: b.id, ...b, actual, variance, variancePct };
+        });
+        setRows(grouped);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+  return (
+    <Table
+      loading={loading}
+      dataSource={rows}
+      pagination={{ pageSize: 10 }}
+      columns={[
+        { title: 'Period', dataIndex: 'period' },
+        { title: 'Dept', dataIndex: 'dept' },
+        { title: 'Budget', dataIndex: 'amount', render: (v: number) => `$${(v||0).toLocaleString()}` },
+        { title: 'Actual', dataIndex: 'actual', render: (v: number) => `$${(v||0).toLocaleString()}` },
+        { title: 'Variance', dataIndex: 'variance', render: (v: number) => {
+            const color = v >= 0 ? '#16a34a' : '#dc2626';
+            const prefix = v >= 0 ? '+' : '-';
+            return <span style={{ color }}>{prefix}$${Math.abs(v).toLocaleString()}</span>;
+          } },
+        { title: 'Variance %', dataIndex: 'variancePct', render: (v: number) => `${(v||0).toFixed(1)}%` },
+      ]}
+    />
+  );
+}
+
+function CashFlowForecast() {
+  const [series, setSeries] = useState<Array<{ period: string, cash: number }>>([]);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const { data: orders } = await supabase
+          .from('orders')
+          .select('total_amount, created_at')
+          .gte('created_at', new Date(Date.now() - 180*24*60*60*1000).toISOString());
+        const revenueByMonth: Record<string, number> = (orders || []).reduce((m: Record<string, number>, o: any) => {
+          const key = new Date(o.created_at).toISOString().slice(0,7);
+          m[key] = (m[key] || 0) + (o.total_amount || 0);
+          return m;
+        }, {});
+        // Simple expense model: 65% of revenue
+        const months = 6;
+        const now = new Date();
+        const forecast: Array<{ period: string, cash: number }> = [];
+        let cash = 0;
+        for (let i = -3; i < months; i++) {
+          const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + i, 1));
+          const period = d.toISOString().slice(0,7);
+          const revenue = revenueByMonth[period] || (i >= 0 ? (revenueByMonth[Object.keys(revenueByMonth).slice(-1)[0]] || 0) : 0);
+          const expenses = Math.round(revenue * 0.65);
+          cash += Math.max(0, revenue - expenses);
+          forecast.push({ period, cash });
+        }
+        setSeries(forecast);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+  return (
+    <div>
+      <Typography.Paragraph style={{ color: '#334155' }}>Projected cumulative cash over time based on recent revenue and estimated expenses.</Typography.Paragraph>
+      <Table
+        loading={loading}
+        dataSource={series.map((s) => ({ key: s.period, ...s }))}
+        pagination={false}
+        columns={[
+          { title: 'Period', dataIndex: 'period' },
+          { title: 'Projected Cash', dataIndex: 'cash', render: (v: number) => `$${(v||0).toLocaleString()}` },
+        ]}
+      />
+    </div>
+  );
+}
+
+function ApprovalsPanel() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [status, setStatus] = useState<string>('pending');
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const { data } = await supabase
+          .from('ceo_financial_approvals')
+          .select('id, requester, description, amount, status, created_at')
+          .eq('status', status)
+          .order('created_at', { ascending: false });
+        setRows((data || []).map((d: any) => ({ key: d.id, ...d })));
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [status]);
+  return (
+    <div>
+      <Space style={{ marginBottom: 12 }}>
+        <Typography.Text>Filter:</Typography.Text>
+        <Button type={status==='pending'? 'primary':'default'} onClick={() => setStatus('pending')}>Pending</Button>
+        <Button type={status==='approved'? 'primary':'default'} onClick={() => setStatus('approved')}>Approved</Button>
+        <Button type={status==='rejected'? 'primary':'default'} onClick={() => setStatus('rejected')}>Rejected</Button>
+      </Space>
+      <Table
+        loading={loading}
+        dataSource={rows}
+        columns={[
+          { title: 'ID', dataIndex: 'id', width: 90 },
+          { title: 'Requester', dataIndex: 'requester' },
+          { title: 'Description', dataIndex: 'description' },
+          { title: 'Amount', dataIndex: 'amount', render: (v: number) => `$${(v||0).toLocaleString()}` },
+          { title: 'Status', dataIndex: 'status' },
+          { title: 'Created', dataIndex: 'created_at', render: (v: string) => new Date(v).toLocaleString(), width: 180 },
+        ]}
+      />
+    </div>
   );
 }
