@@ -44,7 +44,6 @@ export const EquityDashboard: React.FC = () => {
             grant_date
           )
         `)
-        .not('employee_equity', 'is', null)
         ;
 
       if (error) throw error;

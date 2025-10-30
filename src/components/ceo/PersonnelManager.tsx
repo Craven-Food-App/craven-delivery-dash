@@ -51,10 +51,12 @@ export const PersonnelManager: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
   const [promoteForm] = Form.useForm();
+  const [editForm] = Form.useForm();
   const [suggestedEmails, setSuggestedEmails] = useState<{named?:string; roleAlias?:string}>({});
   const [packetDocs, setPacketDocs] = useState<any[]>([]);
   const [packetForEmail, setPacketForEmail] = useState<string | null>(null);
   const [showDeferred, setShowDeferred] = useState(false);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
 
   useEffect(() => {
     fetchEmployees();
@@ -643,6 +645,52 @@ export const PersonnelManager: React.FC = () => {
     }
   };
 
+  const handleEditEmployee = async (values: any) => {
+    if (!selectedEmployee) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Update basic fields
+      const { error: empErr } = await supabase
+        .from('employees')
+        .update({
+          first_name: values.first_name,
+          last_name: values.last_name,
+          email: values.email,
+          position: values.position,
+          department_id: values.department_id,
+          employment_type: values.employment_type,
+          salary: values.salary,
+        })
+        .eq('id', selectedEmployee.id);
+      if (empErr) throw empErr;
+
+      // Upsert equity if provided
+      if (values.equity_percentage || values.shares_total || values.equity_type) {
+        const equityPayload: any = {
+          employee_id: selectedEmployee.id,
+          shares_percentage: values.equity_percentage ?? null,
+          shares_total: values.shares_total ?? null,
+          equity_type: values.equity_type || 'stock',
+          authorized_by: user?.id || null,
+        };
+        const { error: eqErr } = await supabase
+          .from('employee_equity')
+          .upsert(equityPayload, { onConflict: 'employee_id' });
+        if (eqErr) throw eqErr;
+      }
+
+      message.success('Employee updated');
+      setIsEditModalVisible(false);
+      setSelectedEmployee(null);
+      editForm.resetFields();
+      fetchEmployees();
+    } catch (error: any) {
+      console.error('Error updating employee:', error);
+      message.error(error.message || 'Failed to update employee');
+    }
+  };
+
   const handleTerminate = async (employee: Employee) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -780,6 +828,29 @@ export const PersonnelManager: React.FC = () => {
             <>
               <Button 
                 type="link" 
+                size="small"
+                onClick={() => {
+                  setSelectedEmployee(record);
+                  const eq: any = (record as any).employee_equity?.[0] || {};
+                  editForm.setFieldsValue({
+                    first_name: (record as any).first_name,
+                    last_name: (record as any).last_name,
+                    email: (record as any).email,
+                    position: (record as any).position,
+                    department_id: (record as any).department_id,
+                    employment_type: (record as any).employment_type,
+                    salary: (record as any).salary,
+                    equity_percentage: eq.shares_percentage,
+                    shares_total: eq.shares_total,
+                    equity_type: eq.equity_type || 'stock',
+                  });
+                  setIsEditModalVisible(true);
+                }}
+              >
+                Edit
+              </Button>
+              <Button 
+                type="link" 
                 icon={<RiseOutlined />} 
                 size="small"
                 onClick={() => {
@@ -891,6 +962,91 @@ export const PersonnelManager: React.FC = () => {
         className="shadow-lg"
         scroll={{ x: 1200 }}
       />
+
+      {/* Edit Employee Modal */}
+      <Modal
+        title={`✏️ Edit ${selectedEmployee ? `${(selectedEmployee as any).first_name} ${(selectedEmployee as any).last_name}` : 'Employee'}`}
+        open={isEditModalVisible}
+        onCancel={() => {
+          setIsEditModalVisible(false);
+          setSelectedEmployee(null);
+          editForm.resetFields();
+        }}
+        footer={null}
+        width={700}
+      >
+        <Form layout="vertical" form={editForm} onFinish={handleEditEmployee}>
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item label="First Name" name="first_name" rules={[{ required: true }]}>
+              <Input />
+            </Form.Item>
+            <Form.Item label="Last Name" name="last_name" rules={[{ required: true }]}>
+              <Input />
+            </Form.Item>
+          </div>
+
+          <Form.Item label="Email" name="email" rules={[{ required: true, type: 'email' }]}>
+            <Input />
+          </Form.Item>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item label="Position" name="position" rules={[{ required: true }]}>
+              <Input />
+            </Form.Item>
+            <Form.Item label="Department" name="department_id">
+              <Select allowClear placeholder="Select department">
+                {departments.map(dept => (
+                  <Option key={dept.id} value={dept.id}>{dept.name}</Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item label="Employment Type" name="employment_type" initialValue="full-time">
+              <Select>
+                <Option value="full-time">Full-Time</Option>
+                <Option value="part-time">Part-Time</Option>
+                <Option value="contract">Contract</Option>
+                <Option value="intern">Intern</Option>
+              </Select>
+            </Form.Item>
+            <Form.Item label="Annual Salary" name="salary">
+              <InputNumber style={{ width: '100%' }} min={0} step={5000}
+                formatter={v => `$ ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={v => v!.replace(/\$\s?|(,*)/g, '')}
+              />
+            </Form.Item>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <Form.Item label="Equity %" name="equity_percentage">
+              <InputNumber style={{ width: '100%' }} min={0} max={100} step={0.25} precision={2} />
+            </Form.Item>
+            <Form.Item label="Shares Total" name="shares_total">
+              <InputNumber style={{ width: '100%' }} min={0} step={1000} />
+            </Form.Item>
+            <Form.Item label="Equity Type" name="equity_type" initialValue="stock">
+              <Select>
+                <Option value="stock">Stock</Option>
+                <Option value="options">Options</Option>
+                <Option value="phantom">Phantom</Option>
+              </Select>
+            </Form.Item>
+          </div>
+
+          <Form.Item>
+            <Space className="w-full justify-end">
+              <Button onClick={() => {
+                setIsEditModalVisible(false);
+                setSelectedEmployee(null);
+                editForm.resetFields();
+              }}>Cancel</Button>
+              <Button type="primary" htmlType="submit">Save Changes</Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
 
       {/* Hire Modal */}
       <Modal
