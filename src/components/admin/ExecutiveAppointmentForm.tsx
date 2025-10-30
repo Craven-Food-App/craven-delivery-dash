@@ -215,7 +215,14 @@ export const ExecutiveAppointmentForm: React.FC = () => {
               <option>COO</option>
               <option>CFO</option>
               <option>CTO</option>
+              <option>CXO</option>
               <option>CMO</option>
+              <option>CRO</option>
+              <option>CPO</option>
+              <option>CDO</option>
+              <option>CHRO</option>
+              <option>CLO</option>
+              <option>CSO</option>
               <option>Admin</option>
             </select>
           </label>

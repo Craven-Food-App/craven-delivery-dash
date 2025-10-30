@@ -2,7 +2,7 @@
 
 ```md
 # Purpose
-Define how Cursor automates the appointment of new C-class executives (CEO, COO, CFO, CTO, CMO, General Admin) for Crave’n Inc.
+Define how Cursor automates the appointment of new C-class executives (CEO, COO, CFO, CTO, CXO, CMO, CRO, CPO, CDO, CHRO, CLO, CSO, General Admin) for Crave'n Inc.
 This process generates all required legal documents, records equity, and manages deferred-salary logic.
 
 ---
@@ -18,7 +18,7 @@ Cursor must prompt for and collect the following variables:
 ```
 
 executive_name:
-executive_title: [CEO, COO, CFO, CTO, CMO, Admin]
+executive_title: [CEO, COO, CFO, CTO, CXO, CMO, CRO, CPO, CDO, CHRO, CLO, CSO, Admin]
 start_date:
 equity_percent:
 shares_issued:
