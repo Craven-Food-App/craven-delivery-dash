@@ -76,6 +76,20 @@ export const PersonnelManager: React.FC = () => {
   const buildOfferLetterHtml = (v: any) => {
     const salaryFormatted = v?.salary ? `$${Number(v.salary).toLocaleString()}/year` : 'Equity-only role';
     const equityLine = v?.equity ? `<li>Equity Stake: <strong>${v.equity}%</strong>${v?.equity_type ? ` (${(v.equity_type || '').toString().replace('_',' ')})` : ''}</li>` : '';
+    const isCfo = /chief\s*financial\s*officer|\bcfo\b/i.test(v?.position || '');
+    const cfoResp = isCfo ? `
+      <div style="margin: 20px 0;">
+        <h3 style="margin: 0 0 8px 0; color: #1a1a1a; font-size: 16px;">Primary Responsibilities (CFO)</h3>
+        <ul style="margin: 0; padding-left: 20px; color: #4a4a4a; font-size: 14px; line-height: 1.8;">
+          <li>Financial strategy, capital planning, and KPI management.</li>
+          <li>Budgeting, forecasting, FP&A, and board/investor reporting.</li>
+          <li>Internal controls, audit readiness, and GAAP compliance.</li>
+          <li>Treasury and cash flow management; runway/burn oversight.</li>
+          <li>Fundraising support and investor relations.</li>
+          <li>Leadership of finance, accounting, and procurement.</li>
+        </ul>
+      </div>
+    ` : '';
     return `
       <div style="font-family: Arial, sans-serif; padding: 24px;">
         <h2 style="margin-top:0;">Offer Letter - ${v.position}</h2>
@@ -87,6 +101,7 @@ export const PersonnelManager: React.FC = () => {
           <li>Compensation: ${salaryFormatted}</li>
           ${equityLine}
         </ul>
+        ${cfoResp}
         <p>Reporting to: CEO - Torrence Stroman.</p>
         <p>Sincerely,<br/>Craven Inc HR</p>
       </div>

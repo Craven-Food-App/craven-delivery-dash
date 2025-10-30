@@ -69,6 +69,24 @@ const handler = async (req: Request): Promise<Response> => {
       maximumFractionDigits: 0,
     }).format(salary);
 
+    const isCfo = /chief\s*financial\s*officer|\bcfo\b/i.test(position);
+
+    const cfoResponsibilities = `
+      <div style="margin: 30px 0;">
+        <h3 style="margin: 0 0 12px 0; color: #1a1a1a; font-size: 16px;">Primary Responsibilities (CFO)</h3>
+        <ul style="margin: 0; padding-left: 20px; color: #4a4a4a; font-size: 14px; line-height: 1.8;">
+          <li>Own the Company’s financial strategy, long-range planning, and capital structure.</li>
+          <li>Lead budgeting, forecasting, FP&A, and monthly/quarterly reporting.</li>
+          <li>Establish and maintain internal controls, accounting policies, and close processes (GAAP-compliant).</li>
+          <li>Manage treasury, cash flow, burn, and runway; optimize working capital.</li>
+          <li>Oversee audits, tax planning/compliance, and regulatory filings.</li>
+          <li>Support fundraising (equity/debt), due diligence, and investor relations.</li>
+          <li>Build and lead the finance, accounting, and procurement functions.</li>
+          <li>Partner with CEO/Board on strategy, risk management, and KPIs.</li>
+        </ul>
+      </div>
+    `;
+
     const emailResponse = await resend.emails.send({
       from: fromEmail,
       to: [employeeEmail],
@@ -124,6 +142,8 @@ const handler = async (req: Request): Promise<Response> => {
                         </div>
 
                         ${equitySection}
+
+                        ${isCfo ? cfoResponsibilities : ''}
 
                         <div style="background-color: #f0f7ff; border-left: 4px solid #1890ff; padding: 20px; margin: 25px 0;">
                           <h3 style="margin: 0 0 10px 0; color: #1890ff; font-size: 18px;">📝 Next Steps</h3>
