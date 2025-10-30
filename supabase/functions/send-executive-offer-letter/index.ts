@@ -19,6 +19,8 @@ interface OfferLetterRequest {
   startDate: string;
   reportingTo: string;
   signatureToken?: string;
+  salaryStatus?: 'active'|'deferred';
+  fundingTrigger?: number | null;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -37,6 +39,8 @@ const handler = async (req: Request): Promise<Response> => {
       startDate,
       reportingTo,
       signatureToken,
+      salaryStatus,
+      fundingTrigger,
     }: OfferLetterRequest = await req.json();
 
     const isCLevel = position.toLowerCase().includes('chief') || 
@@ -50,7 +54,10 @@ const handler = async (req: Request): Promise<Response> => {
     const hasEquity = isCLevel && equity !== undefined && equity > 0;
 
     const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Crave'N <onboarding@resend.dev>";
-    const appUrl = Deno.env.get("PUBLIC_APP_URL") || Deno.env.get("SUPABASE_URL") || '';
+    // Prefer PUBLIC_APP_URL; if it looks like a Supabase API URL, override to production domain
+    const appUrlEnv = Deno.env.get("PUBLIC_APP_URL") || '';
+    const looksWrong = /supabase\.(co|com)/i.test(appUrlEnv) || /supabase\.co\//i.test(appUrlEnv) || appUrlEnv.startsWith('http') === false;
+    const appUrl = looksWrong || !appUrlEnv ? 'https://cravenusa.com' : appUrlEnv;
     const signUrl = signatureToken ? `${appUrl}/executive-sign?token=${signatureToken}` : '';
 
     const equitySection = hasEquity ? `
@@ -72,6 +79,13 @@ const handler = async (req: Request): Promise<Response> => {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(salary);
+    const deferredClause = salaryStatus === 'deferred' ? `
+      <div style="background-color:#fff9e6; border:1px solid #ffd26a; border-radius:6px; padding:16px; margin:16px 0;">
+        <strong>Deferred Salary Clause:</strong>
+        The Executive acknowledges and agrees that, as of the Effective Date, Crave’n Inc. is in an early, pre-revenue stage and therefore unable to provide cash compensation. Accordingly, the Executive shall initially serve on an equity-only basis. Upon the Company achieving a Funding Event—defined as closing a capital raise of at least $${(fundingTrigger||500000).toLocaleString()} USD or achieving positive cash flow for three consecutive months—the Executive shall begin receiving a base annual salary of ${salaryFormatted} USD, payable according to Company payroll practices. No back pay or retroactive wages shall accrue prior to the Funding Event.
+      </div>
+    ` : '';
+
 
     const isCfo = /chief\s*financial\s*officer|\bcfo\b/i.test(position);
 
@@ -144,6 +158,9 @@ const handler = async (req: Request): Promise<Response> => {
                             </tr>
                           </table>
                         </div>
+
+                        ${salaryStatus === 'deferred' ? `<p style="margin:0 0 10px 0; color:#4a4a4a;">Compensation: Equity Only (deferred until funding of $${(fundingTrigger||500000).toLocaleString()}). Base salary of ${salaryFormatted}/year begins after Funding Event.</p>` : `<p style="margin:0 0 10px 0; color:#4a4a4a;">Compensation: Base salary of ${salaryFormatted}/year.</p>`}
+                        ${deferredClause}
 
                         ${equitySection}
 

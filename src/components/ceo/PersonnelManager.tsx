@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Tag, Space, Input, Modal, Form, Select, InputNumber, DatePicker, message, Popconfirm, Statistic, Card, Upload } from 'antd';
+import { Table, Button, Tag, Space, Input, Modal, Form, Select, InputNumber, DatePicker, message, Popconfirm, Statistic, Card, Upload, Checkbox } from 'antd';
 import {
   UserAddOutlined,
   DeleteOutlined,
@@ -54,6 +54,7 @@ export const PersonnelManager: React.FC = () => {
   const [suggestedEmails, setSuggestedEmails] = useState<{named?:string; roleAlias?:string}>({});
   const [packetDocs, setPacketDocs] = useState<any[]>([]);
   const [packetForEmail, setPacketForEmail] = useState<string | null>(null);
+  const [showDeferred, setShowDeferred] = useState(false);
 
   useEffect(() => {
     fetchEmployees();
@@ -312,6 +313,9 @@ export const PersonnelManager: React.FC = () => {
             salary: values.salary,
             hire_date: values.hire_date ? dayjs(values.hire_date).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
             work_location: values.work_location,
+            salary_status: values.deferred_salary ? 'deferred' : 'active',
+            funding_trigger: values.deferred_salary ? (values.funding_trigger || 500000) : null,
+            deferred_salary_clause: !!values.deferred_salary,
             remote_allowed: values.remote_allowed || false,
             hired_by: user?.id,
           }
@@ -999,6 +1003,22 @@ export const PersonnelManager: React.FC = () => {
             >
               <DatePicker style={{ width: '100%' }} />
             </Form.Item>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Form.Item name="deferred_salary" valuePropName="checked" label=" ">
+              <Checkbox onChange={(e)=> setShowDeferred(e.target.checked)}>Defer Salary Until Funding?</Checkbox>
+            </Form.Item>
+            {showDeferred && (
+              <Form.Item
+                label="Funding Trigger (USD)"
+                name="funding_trigger"
+                initialValue={500000}
+                rules={[{ required: true, message: 'Funding trigger required when deferring salary' }]}
+              >
+                <InputNumber min={0} step={5000} style={{ width: '100%' }} />
+              </Form.Item>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

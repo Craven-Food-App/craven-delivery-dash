@@ -139,6 +139,14 @@ export default function ExecutiveSignature() {
         </CardHeader>
         <CardContent>
           <div className="text-sm text-slate-600 mb-4">For: {record.employee_name || record.employee_email} — {record.position}</div>
+          {record.deferred_salary_clause && (
+            <div className="p-3 mb-4 rounded-md border border-yellow-300 bg-yellow-50 text-sm">
+              <div className="font-semibold mb-1">Deferred Salary Clause</div>
+              <div>
+                The Executive acknowledges and agrees that Crave’n Inc. is in an early, pre-revenue stage and therefore unable to provide cash compensation. Accordingly, the Executive shall initially serve on an equity-only basis. Upon the Company achieving a Funding Event—defined as closing a capital raise of at least ${record.funding_trigger || 500000} USD or achieving positive cash flow for three consecutive months—the Executive shall begin receiving a base annual salary of ${record.annual_salary ? `$${record.annual_salary.toLocaleString()}` : 'the agreed amount'} USD, payable according to Company payroll practices. No back pay or retroactive wages shall accrue prior to the Funding Event.
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <div className="font-semibold mb-2">Type your full legal name</div>
