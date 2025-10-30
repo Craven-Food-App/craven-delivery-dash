@@ -93,30 +93,47 @@ export default function ExecutiveSignature() {
   }, []);
 
   const submitSignature = async () => {
-    if (!record) return;
+    if (!token) return;
     const canvas = canvasRef.current;
     const png = canvas?.toDataURL('image/png') || null;
     const svg = null; // optional, we only capture PNG here
     setIsSigning(true);
-    const { error } = await supabase
-      .from('executive_signatures')
-      .update({
-        typed_name: typedName || null,
-        signature_png_base64: png,
-        signature_svg: svg,
-        signer_ip: (await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ ip: null }))).ip,
-        signer_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
-        signed_at: new Date().toISOString(),
-      })
-      .eq('id', record.id);
-    setIsSigning(false);
-    if (!error) {
-      navigate('/thank-you');
+
+    if (record?.id) {
+      // Normal DB path
+      const { error } = await supabase
+        .from('executive_signatures')
+        .update({
+          typed_name: typedName || null,
+          signature_png_base64: png,
+          signature_svg: svg,
+          signer_ip: (await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ ip: null }))).ip,
+          signer_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+          signed_at: new Date().toISOString(),
+        })
+        .eq('id', record.id);
+      setIsSigning(false);
+      if (!error) return navigate('/thank-you');
+    } else {
+      // Fallback storage path (no DB record)
+      const signerIp = (await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ ip: null }))).ip;
+      const { data, error } = await supabase.functions.invoke('submit-executive-signature', {
+        body: {
+          token,
+          typed_name: typedName || null,
+          signature_png_base64: png,
+          signature_svg: svg,
+          signer_ip: signerIp,
+          signer_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+        }
+      });
+      setIsSigning(false);
+      if (!error) return navigate('/thank-you');
     }
   };
 
   if (loading) return <div className="p-6">Loading...</div>;
-  if (!record) return <div className="p-6">Invalid or expired link.</div>;
+  if (!token) return <div className="p-6">Invalid or expired link.</div>;
   if (!session) {
     return (
       <div className="p-6 max-w-xl mx-auto">
@@ -133,15 +150,23 @@ export default function ExecutiveSignature() {
     );
   }
 
+  const hasRecord = !!record;
+
   return (
     <div className="p-4 max-w-4xl mx-auto">
       <Card>
         <CardHeader>
-          <CardTitle>Review & Sign — {record.document_type.replace('_',' ')}</CardTitle>
+          <CardTitle>Review & Sign — {hasRecord ? record.document_type.replace('_',' ') : 'Offer'}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-sm text-slate-600 mb-4">For: {record.employee_name || record.employee_email} — {record.position}</div>
-          {record.deferred_salary_clause && (
+          <div className="text-sm text-slate-600 mb-4">
+            {hasRecord ? (
+              <>For: {record.employee_name || record.employee_email} — {record.position}</>
+            ) : (
+              <>Token verified. Complete your signature below.</>
+            )}
+          </div>
+          {hasRecord && record.deferred_salary_clause && (
             <div className="p-3 mb-4 rounded-md border border-yellow-300 bg-yellow-50 text-sm">
               <div className="font-semibold mb-1">Deferred Salary Clause</div>
               <div>
@@ -172,7 +197,7 @@ export default function ExecutiveSignature() {
                   <input type="checkbox" checked={agreeOffer} onChange={e=>setAgreeOffer(e.target.checked)} />
                   I have read and agree to the Offer Letter
                 </label>
-                {record.document_type !== 'offer_letter' && (
+                {hasRecord && record.document_type !== 'offer_letter' && (
                   <label className="flex items-center gap-2 text-sm text-slate-700 mb-2">
                     <input type="checkbox" checked={agreeEquity} onChange={e=>setAgreeEquity(e.target.checked)} />
                     I have read and agree to the Equity Offer Agreement
@@ -180,7 +205,7 @@ export default function ExecutiveSignature() {
                 )}
               </div>
               <div className="mt-4 flex justify-end">
-                <Button disabled={isSigning || (!typedName) || !agreeOffer || (record.document_type !== 'offer_letter' && !agreeEquity)} onClick={submitSignature}>
+                <Button disabled={isSigning || (!typedName) || !agreeOffer || (hasRecord && record.document_type !== 'offer_letter' && !agreeEquity)} onClick={submitSignature}>
                   {isSigning ? 'Submitting...' : 'Sign & Submit'}
                 </Button>
               </div>

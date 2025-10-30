@@ -117,3 +117,6 @@ verify_jwt = true
 
 [functions.get-executive-signature-by-token]
 verify_jwt = false
+
+[functions.submit-executive-signature]
+verify_jwt = false
