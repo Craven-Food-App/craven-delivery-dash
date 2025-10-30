@@ -158,8 +158,59 @@ export const PersonnelManager: React.FC = () => {
       // Get department info for offer letter
       const dept = departments.find(d => d.id === values.department_id);
       
-      // Send offer letter email
+      // Generate board resolution number
+      const resolutionNumber = `BR${new Date().getFullYear()}${String(Math.floor(Math.random() * 9000) + 1000)}`;
+      
+      // Create board resolution record
+      const boardResolution = {
+        resolution_number: resolutionNumber,
+        resolution_type: 'appointment',
+        subject_position: values.position,
+        subject_person_name: `${values.first_name} ${values.last_name}`,
+        subject_person_email: values.email,
+        resolution_title: `Appointment of ${values.first_name} ${values.last_name} as ${values.position}`,
+        resolution_text: `Resolution to appoint ${values.first_name} ${values.last_name} to the position of ${values.position}`,
+        effective_date: values.hire_date || new Date().toISOString(),
+        board_members: [
+          { name: 'Torrence Stroman', title: 'CEO', vote: 'for' },
+          { name: 'Board Member 1', title: 'Independent Director', vote: 'for' },
+          { name: 'Board Member 2', title: 'Independent Director', vote: 'for' }
+        ],
+        votes_for: 3,
+        votes_against: 0,
+        votes_abstain: 0,
+        status: 'approved',
+        required_documents: isCLevel ? 
+          (values.position.toLowerCase().includes('ceo') ? 
+            ['board_resolution', 'founders_equity_insurance_agreement', 'equity_offer_agreement', 'offer_letter'] :
+            ['board_resolution', 'equity_offer_agreement', 'offer_letter']) :
+          ['offer_letter'],
+        created_by: user?.id,
+        executed_by: user?.id,
+        executed_at: new Date().toISOString()
+      };
+
+      await supabase.from('board_resolutions').insert([boardResolution]);
+
+      // Send documents based on position requirements
       try {
+        // Always send board resolution first
+        await supabase.functions.invoke('send-board-resolution', {
+          body: {
+            employeeEmail: values.email,
+            employeeName: `${values.first_name} ${values.last_name}`,
+            position: values.position,
+            resolutionNumber: resolutionNumber,
+            resolutionType: 'appointment',
+            effectiveDate: values.hire_date || new Date().toISOString(),
+            companyName: 'Craven Inc',
+            state: 'Ohio',
+            boardMembers: boardResolution.board_members,
+            equityPercentage: isCLevel && values.equity ? values.equity : undefined
+          },
+        });
+
+        // Send offer letter
         await supabase.functions.invoke('send-executive-offer-letter', {
           body: {
             employeeEmail: values.email,
@@ -173,7 +224,7 @@ export const PersonnelManager: React.FC = () => {
           },
         });
 
-        // If C-suite with equity, also send Equity Offer Agreement
+        // Send equity agreement if C-suite
         if (isCLevel && values.equity && values.equity > 0) {
           await supabase.functions.invoke('send-equity-offer-agreement', {
             body: {
@@ -189,13 +240,34 @@ export const PersonnelManager: React.FC = () => {
               state: 'Ohio'
             },
           });
-          message.success(`🎉 ${values.first_name} ${values.last_name} hired successfully! Offer letter and Equity Agreement sent.`);
-        } else {
-          message.success(`🎉 ${values.first_name} ${values.last_name} hired successfully! Offer letter sent.`);
         }
+
+        // Send founders agreement if CEO
+        if (values.position.toLowerCase().includes('ceo')) {
+          await supabase.functions.invoke('send-founders-equity-insurance-agreement', {
+            body: {
+              employeeEmail: values.email,
+              employeeName: `${values.first_name} ${values.last_name}`,
+              position: values.position,
+              equityPercentage: values.equity || 0,
+              startDate: values.hire_date || new Date().toISOString(),
+              companyName: 'Craven Inc',
+              state: 'Ohio',
+              resolutionNumber: resolutionNumber
+            },
+          });
+        }
+
+        const documentsSent = isCLevel ? 
+          (values.position.toLowerCase().includes('ceo') ? 
+            'Board Resolution, Offer Letter, Equity Agreement, and Founders Agreement' :
+            'Board Resolution, Offer Letter, and Equity Agreement') :
+          'Board Resolution and Offer Letter';
+
+        message.success(`🎉 ${values.first_name} ${values.last_name} hired successfully! ${documentsSent} sent.`);
       } catch (emailError) {
-        console.error('Error sending emails:', emailError);
-        message.success(`🎉 ${values.first_name} ${values.last_name} hired successfully! (Emails failed to send)`);
+        console.error('Error sending documents:', emailError);
+        message.success(`🎉 ${values.first_name} ${values.last_name} hired successfully! (Some documents failed to send)`);
       }
 
       setIsModalVisible(false);
