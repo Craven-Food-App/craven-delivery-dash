@@ -18,6 +18,29 @@ const { Header, Content } = Layout;
 const { RangePicker } = DatePicker;
 const { TabPane } = Tabs;
 
+function BigNavButton({ color, hover, title, subtitle, onClick }: { color: string; hover: string; title: string; subtitle: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        background: color,
+        color: '#fff',
+        borderRadius: 12,
+        padding: '16px 18px',
+        textAlign: 'left',
+        border: 'none',
+        cursor: 'pointer',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
+      }}
+      onMouseOver={(e)=> (e.currentTarget.style.background = hover)}
+      onMouseOut={(e)=> (e.currentTarget.style.background = color)}
+    >
+      <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1 }}>{title}</div>
+      <div style={{ opacity: 0.9 }}>{subtitle}</div>
+    </button>
+  );
+}
+
 export default function CFOPortal() {
   const [loading, setLoading] = useState(false);
   const [range, setRange] = useState<any>([]);
@@ -25,6 +48,7 @@ export default function CFOPortal() {
   const [payouts, setPayouts] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<string>('overview');
 
   useEffect(() => {
     fetchData();
@@ -166,8 +190,23 @@ export default function CFOPortal() {
 
           <Divider style={{ borderColor: "rgba(148,163,184,0.2)" }} />
 
+          {/* High-Priority Quick Access (2 rows x 4 buttons) */}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4, minmax(0,1fr))', gap:12, marginBottom: 16 }}>
+            <BigNavButton color="#2563eb" hover="#1d4ed8" title="Manager Console" subtitle="Team & KPIs" onClick={()=> setActiveTab('manager')} />
+            <BigNavButton color="#16a34a" hover="#15803d" title="Accounts Payable" subtitle="Invoices & Runs" onClick={()=> setActiveTab('ap')} />
+            <BigNavButton color="#f97316" hover="#ea580c" title="Accounts Receivable" subtitle="Aging & Collections" onClick={()=> setActiveTab('ar')} />
+            <BigNavButton color="#dc2626" hover="#b91c1c" title="Approvals" subtitle="Spend Reviews" onClick={()=> setActiveTab('approvals')} />
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4, minmax(0,1fr))', gap:12, marginBottom: 16 }}>
+            <BigNavButton color="#0ea5e9" hover="#0284c7" title="Forecast" subtitle="Cash Flow" onClick={()=> setActiveTab('forecast')} />
+            <BigNavButton color="#7c3aed" hover="#6d28d9" title="Budget vs Actuals" subtitle="Variance" onClick={()=> setActiveTab('bva')} />
+            <BigNavButton color="#9333ea" hover="#7e22ce" title="Close" subtitle="Checklist & Recs" onClick={()=> setActiveTab('close')} />
+            <BigNavButton color="#0891b2" hover="#0e7490" title="Treasury" subtitle="Bank Balances" onClick={()=> setActiveTab('treasury')} />
+          </div>
+
           <Tabs
-            defaultActiveKey="overview"
+            activeKey={activeTab}
+            onChange={setActiveTab}
             size="large"
             tabBarStyle={{ borderBottom: "1px solid rgba(148,163,184,0.2)" }}
           >
