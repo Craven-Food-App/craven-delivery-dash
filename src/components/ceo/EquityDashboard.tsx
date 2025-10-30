@@ -12,6 +12,7 @@ interface Shareholder {
   email: string;
   employee_equity: Array<{
     shares_percentage: number;
+    shares_total?: number;
     equity_type: string;
     grant_date: string;
   }>;
@@ -38,12 +39,13 @@ export const EquityDashboard: React.FC = () => {
           email,
           employee_equity (
             shares_percentage,
+            shares_total,
             equity_type,
             grant_date
           )
         `)
         .not('employee_equity', 'is', null)
-        .order('employee_equity.shares_percentage', { ascending: false });
+        ;
 
       if (error) throw error;
       
@@ -113,12 +115,18 @@ export const EquityDashboard: React.FC = () => {
       render: (_: any, record: Shareholder) => {
         const equity = record.employee_equity?.[0];
         const percentage = equity?.shares_percentage || 0;
+        const shares = equity?.shares_total;
         
         return (
           <div>
             <div style={{ fontSize: '20px', fontWeight: 700, color: '#ff6b00' }}>
               {percentage}%
             </div>
+            {typeof shares === 'number' && (
+              <div style={{ fontSize: '12px', color: '#475569' }}>
+                {shares.toLocaleString()} shares
+              </div>
+            )}
             <div style={{ fontSize: '11px', color: '#898989', textTransform: 'uppercase' }}>
               {equity?.equity_type || 'Stock'}
             </div>
