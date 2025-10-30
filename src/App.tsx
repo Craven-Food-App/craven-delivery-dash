@@ -57,6 +57,7 @@ import { VehiclePhotosUpload } from "./components/onboarding/VehiclePhotosUpload
 import { PayoutSetup } from "./components/onboarding/PayoutSetup";
 import { SafetyQuiz } from "./components/onboarding/SafetyQuiz";
 import BoardPortal from "./pages/BoardPortal";
+import CFOPortal from "./pages/CFOPortal";
 import CEOPortal from "./pages/CEOPortal";
 import { DriverSignup } from "./pages/driverOnboarding/Signup";
 import { LegalConsent } from "./pages/driverOnboarding/LegalConsent";
@@ -92,6 +93,9 @@ const App = () => {
   // Check if on CEO subdomain
   const isCEOSubdomain = typeof window !== 'undefined' && 
     window.location.hostname === 'ceo.cravenusa.com';
+  // Check if on CFO subdomain
+  const isCFOSubdomain = typeof window !== 'undefined' && 
+    window.location.hostname === 'cfo.cravenusa.com';
 
   useEffect(() => {
     // Validate environment configuration
@@ -243,6 +247,29 @@ const App = () => {
     );
   }
 
+  // If on CFO subdomain, show only CFO portal
+  if (isCFOSubdomain) {
+    return (
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider defaultTheme="system">
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<CFOPortal />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    );
+  }
+
   // If on CEO subdomain, show only CEO Command Center
   if (isCEOSubdomain) {
     return (
@@ -316,6 +343,7 @@ const App = () => {
           <Route path="/restaurant/most-loved" element={<MostLovedProgram />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/board" element={<BoardPortal />} />
+          <Route path="/cfo" element={<CFOPortal />} />
           <Route path="/ceo" element={<CEOPortal />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/checkout" element={<Checkout />} />

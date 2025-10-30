@@ -319,6 +319,9 @@ export const PersonnelManager: React.FC = () => {
           // Grant CEO email access credentials
           await supabase.from('ceo_access_credentials').insert([{ user_email: values.email }]).select();
         }
+        if (posLower.includes('cfo')) {
+          portals.push('cfo');
+        }
       } else {
         portals.push('admin');
       }
@@ -402,6 +405,7 @@ export const PersonnelManager: React.FC = () => {
             email: values.email,
             name: `${values.first_name} ${values.last_name}`,
             portals,
+            tempPassword: Math.random().toString(36).slice(2,10) + 'A1!',
           }
         });
 

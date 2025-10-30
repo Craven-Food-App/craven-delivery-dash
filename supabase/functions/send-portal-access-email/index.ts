@@ -17,7 +17,8 @@ const corsHeaders = {
 interface PortalAccessRequest {
   email: string;
   name: string;
-  portals: Array<'board'|'ceo'|'admin'>;
+  portals: Array<'board'|'ceo'|'admin'|'cfo'>;
+  tempPassword?: string;
 }
 
 serve(async (req) => {
@@ -26,7 +27,7 @@ serve(async (req) => {
   }
 
   try {
-    const { email, name, portals }: PortalAccessRequest = await req.json();
+    const { email, name, portals, tempPassword }: PortalAccessRequest = await req.json();
 
     // Create auth invite if user doesn't exist
     const { data: existing } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1, filter: { email } as any });
@@ -39,6 +40,7 @@ serve(async (req) => {
     if (portals.includes('board')) links.push(`<a href="${appUrl.replace('https://','https://board.')}" style="display:inline-block;margin:4px 6px;padding:10px 16px;background:#0ea5e9;color:#fff;border-radius:6px;text-decoration:none;">Open Board Portal</a>`);
     if (portals.includes('ceo')) links.push(`<a href="${appUrl.replace('https://','https://ceo.')}" style="display:inline-block;margin:4px 6px;padding:10px 16px;background:#10b981;color:#fff;border-radius:6px;text-decoration:none;">Open CEO Command Center</a>`);
     if (portals.includes('admin')) links.push(`<a href="${appUrl}/admin" style="display:inline-block;margin:4px 6px;padding:10px 16px;background:#6366f1;color:#fff;border-radius:6px;text-decoration:none;">Open Admin Portal</a>`);
+    if (portals.includes('cfo')) links.push(`<a href="${appUrl.replace('https://','https://cfo.')}" style="display:inline-block;margin:4px 6px;padding:10px 16px;background:#fb923c;color:#fff;border-radius:6px;text-decoration:none;">Open CFO Portal</a>`);
 
     await resend.emails.send({
       from: Deno.env.get('RESEND_FROM_EMAIL') || "Crave'N <onboarding@resend.dev>",
@@ -51,6 +53,11 @@ serve(async (req) => {
           <div style="margin:16px 0;">
             ${links.join(' ')}
           </div>
+          ${tempPassword ? `<div style="margin-top:12px;padding:12px;border:1px dashed #94a3b8;border-radius:8px;background:#0b1220;color:#e5e7eb;">
+            <div style="font-weight:700;margin-bottom:4px;">Temporary Login</div>
+            <div style="font-family:monospace;">Email: ${email}<br/>Password: ${tempPassword}</div>
+            <div style="font-size:12px;color:#94a3b8;margin-top:6px;">Please change your password after first login.</div>
+          </div>` : ''}
           <p style="color:#6b7280;font-size:12px;">If you didn't request this, please ignore.</p>
         </div>
       `,
