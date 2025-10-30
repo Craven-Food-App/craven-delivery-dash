@@ -130,38 +130,46 @@ export const ExecutiveDirectory: React.FC = () => {
         />
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
-        <Card>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-blue-600">{executives.length}</div>
-            <div className="text-sm text-slate-600">Total Executives</div>
-          </div>
-        </Card>
-        <Card>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-red-600">
-              {executives.filter(e => e.role === 'ceo').length}
+      <Row gutter={[8, 12]}>
+        <Col xs={12} sm={6}>
+          <Card>
+            <div className="text-center">
+              <div className="text-2xl sm:text-3xl font-bold text-blue-600">{executives.length}</div>
+              <div className="text-xs sm:text-sm text-slate-600">Total Executives</div>
             </div>
-            <div className="text-sm text-slate-600">CEOs</div>
-          </div>
-        </Card>
-        <Card>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-purple-600">
-              {executives.filter(e => ['cfo', 'coo', 'cto'].includes(e.role)).length}
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card>
+            <div className="text-center">
+              <div className="text-2xl sm:text-3xl font-bold text-red-600">
+                {executives.filter(e => e.role === 'ceo').length}
+              </div>
+              <div className="text-xs sm:text-sm text-slate-600">CEOs</div>
             </div>
-            <div className="text-sm text-slate-600">C-Suite</div>
-          </div>
-        </Card>
-        <Card>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-gold-600">
-              {executives.filter(e => e.role === 'board_member').length}
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card>
+            <div className="text-center">
+              <div className="text-2xl sm:text-3xl font-bold text-purple-600">
+                {executives.filter(e => ['cfo', 'coo', 'cto'].includes(e.role)).length}
+              </div>
+              <div className="text-xs sm:text-sm text-slate-600">C-Suite</div>
             </div>
-            <div className="text-sm text-slate-600">Board Members</div>
-          </div>
-        </Card>
-      </div>
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card>
+            <div className="text-center">
+              <div className="text-2xl sm:text-3xl font-bold text-gold-600">
+                {executives.filter(e => e.role === 'board_member').length}
+              </div>
+              <div className="text-xs sm:text-sm text-slate-600">Board Members</div>
+            </div>
+          </Card>
+        </Col>
+      </Row>
 
       <Row gutter={[8, 12]}>
         {filteredExecutives.map((exec) => (
