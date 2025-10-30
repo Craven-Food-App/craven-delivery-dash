@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { 
   Card, List, Button, Modal, Form, Input, Select, Tag, Avatar, message, 

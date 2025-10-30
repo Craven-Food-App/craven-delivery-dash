@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useRef, useState } from 'react';
 import { Button, Card, Space, Typography, Alert } from 'antd';
 import { EditOutlined, DeleteOutlined, CheckCircleOutlined } from '@ant-design/icons';

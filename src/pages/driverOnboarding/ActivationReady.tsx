@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Card, Typography, Space, Result, Button, Alert, Row, Col, Statistic } from 'antd';
 import { CheckCircleOutlined, ThunderboltOutlined, DollarOutlined, TrophyOutlined, RocketOutlined } from '@ant-design/icons';

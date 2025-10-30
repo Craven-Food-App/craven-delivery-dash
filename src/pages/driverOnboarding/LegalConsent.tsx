@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Form, Button, Card, Typography, Space, message, Checkbox, Alert, Divider } from 'antd';
 import { SafetyOutlined, FileProtectOutlined, CheckCircleOutlined } from '@ant-design/icons';

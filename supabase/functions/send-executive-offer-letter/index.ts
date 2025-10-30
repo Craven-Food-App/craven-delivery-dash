@@ -36,6 +36,7 @@ const handler = async (req: Request): Promise<Response> => {
       equity,
       startDate,
       reportingTo,
+      signatureToken,
     }: OfferLetterRequest = await req.json();
 
     const isCLevel = position.toLowerCase().includes('chief') || 
