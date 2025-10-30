@@ -27,6 +27,7 @@ interface Employee {
   salary: number;
   hire_date: string;
   employee_number: string;
+  employee_equity?: Array<{ shares_percentage: number; equity_type: string }>;
 }
 
 interface Department {
@@ -73,7 +74,8 @@ export const PersonnelManager: React.FC = () => {
         .from('employees')
         .select(`
           *,
-          department:departments(name)
+          department:departments(name),
+          employee_equity(shares_percentage, equity_type)
         `)
         .order('hire_date', { ascending: false });
 
@@ -113,6 +115,19 @@ export const PersonnelManager: React.FC = () => {
 
       if (error) throw error;
 
+      // Check if this is a C-suite position
+      const isCLevel = /chief|ceo|cfo|cto|coo|president/i.test(values.position);
+
+      // If C-suite and equity provided, add to equity table
+      if (isCLevel && values.equity && values.equity > 0) {
+        await supabase.from('employee_equity').insert([{
+          employee_id: data[0].id,
+          shares_percentage: values.equity,
+          equity_type: 'stock',
+          authorized_by: user?.id,
+        }]);
+      }
+
       // Log to employee history
       if (data && data[0]) {
         await supabase.from('employee_history').insert([
@@ -129,7 +144,29 @@ export const PersonnelManager: React.FC = () => {
         ]);
       }
 
-      message.success(`🎉 ${values.first_name} ${values.last_name} hired successfully!`);
+      // Get department info for offer letter
+      const dept = departments.find(d => d.id === values.department_id);
+      
+      // Send offer letter email
+      try {
+        await supabase.functions.invoke('send-executive-offer-letter', {
+          body: {
+            employeeEmail: values.email,
+            employeeName: `${values.first_name} ${values.last_name}`,
+            position: values.position,
+            department: dept?.name || 'Corporate',
+            salary: values.salary,
+            equity: isCLevel && values.equity ? values.equity : undefined,
+            startDate: values.hire_date || new Date().toISOString(),
+            reportingTo: 'CEO - Torrence Stroman',
+          },
+        });
+        message.success(`🎉 ${values.first_name} ${values.last_name} hired successfully! Offer letter sent.`);
+      } catch (emailError) {
+        console.error('Error sending offer letter:', emailError);
+        message.success(`🎉 ${values.first_name} ${values.last_name} hired successfully! (Email failed to send)`);
+      }
+
       setIsModalVisible(false);
       form.resetFields();
       fetchEmployees();
@@ -254,6 +291,15 @@ export const PersonnelManager: React.FC = () => {
       render: (_: any, record: Employee) => record.department?.name || 'N/A',
       filters: departments.map(d => ({ text: d.name, value: d.id })),
       onFilter: (value: any, record: Employee) => record.department_id === value,
+    },
+    {
+      title: 'Equity %',
+      key: 'equity',
+      render: (_: any, record: Employee) => {
+        const equity = record.employee_equity?.[0];
+        return equity ? `${equity.shares_percentage}%` : '-';
+      },
+      width: 100,
     },
     {
       title: 'Type',
@@ -520,6 +566,22 @@ export const PersonnelManager: React.FC = () => {
               <DatePicker style={{ width: '100%' }} />
             </Form.Item>
           </div>
+
+          <Form.Item
+            label="Equity Stake (%)"
+            name="equity"
+            tooltip="For C-suite positions only (CEO, CFO, CTO, COO, President)"
+          >
+            <InputNumber
+              style={{ width: '100%' }}
+              min={0}
+              max={100}
+              precision={2}
+              step={0.5}
+              placeholder="e.g., 10.50 for 10.5%"
+              disabled={false}
+            />
+          </Form.Item>
 
           <Form.Item label="Work Location" name="work_location">
             <Input placeholder="e.g., HQ - Los Angeles, Remote" />

@@ -21,6 +21,7 @@ import { EmergencyControls } from '@/components/ceo/EmergencyControls';
 import { StrategicPlanning } from '@/components/ceo/StrategicPlanning';
 import { AuditTrail } from '@/components/ceo/AuditTrail';
 import { QuickActions } from '@/components/ceo/QuickActions';
+import { EquityDashboard } from '@/components/ceo/EquityDashboard';
 import { useExecAuth } from '@/hooks/useExecAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -354,6 +355,18 @@ const CEOPortal: React.FC = () => {
               key="financial"
             >
               <FinancialApprovals />
+            </TabPane>
+
+            <TabPane
+              tab={
+                <span>
+                  <TrophyOutlined />
+                  Equity Ownership
+                </span>
+              }
+              key="equity"
+            >
+              <EquityDashboard />
             </TabPane>
 
             <TabPane
