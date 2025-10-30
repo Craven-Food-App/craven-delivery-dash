@@ -192,6 +192,9 @@ export default function CFOPortal() {
             <TabPane tab={<span>Approvals</span>} key="approvals">
               <ApprovalsPanel />
             </TabPane>
+            <TabPane tab={<span>Manager Console</span>} key="manager">
+              <ManagerConsole />
+            </TabPane>
             <TabPane tab={<span>Accounts Payable</span>} key="ap">
               <AccountsPayable />
             </TabPane>
@@ -249,6 +252,90 @@ export default function CFOPortal() {
   );
 }
 
+function ManagerConsole() {
+  const [metrics, setMetrics] = useState<any>({ apPending:0, apOverdue:0, arPastDue:0, closeOpen:0, recsOpen:0 });
+  const [roles, setRoles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [roleModal, setRoleModal] = useState(false);
+  const [form] = Form.useForm();
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const [inv, rec, tasks, recon, fr] = await Promise.all([
+          supabase.from('invoices').select('id, amount, due_date, status'),
+          supabase.from('receivables').select('id, amount, due_date, status'),
+          supabase.from('close_tasks').select('id, status'),
+          supabase.from('reconciliations').select('id, status'),
+          supabase.from('finance_roles').select('user_id, role, user_label')
+        ]);
+        const now = Date.now();
+        const apPending = (inv.data || []).filter(i=> i.status==='pending' || i.status==='approved').length;
+        const apOverdue = (inv.data || []).filter(i=> new Date(i.due_date).getTime() < now && i.status!=='paid').length;
+        const arPastDueAmt = (rec.data || [])
+          .filter(r=> new Date(r.due_date).getTime() < now && r.status!=='paid')
+          .reduce((s,r)=> s + (r.amount || 0), 0);
+        const closeOpen = (tasks.data || []).filter(t=> t.status!=='done').length;
+        const recsOpen = (recon.data || []).filter(r=> r.status!=='tied').length;
+        setMetrics({ apPending, apOverdue, arPastDue: arPastDueAmt, closeOpen, recsOpen });
+        setRoles((fr.data || []).map((r:any, idx:number)=> ({ key: `${r.user_id}-${r.role}-${idx}`, ...r })));
+      } finally { setLoading(false); }
+    })();
+  }, []);
+  return (
+    <div>
+      <Row gutter={[16,16]} style={{ marginBottom: 12 }}>
+        <Col xs={24} md={12} lg={6}><div style={{ background:'#f8fafc', padding:16, borderRadius:8 }}><div style={{ color:'#64748b' }}>AP Queue (pending/approved)</div><div style={{ fontWeight:700, fontSize:20 }}>{metrics.apPending}</div></div></Col>
+        <Col xs={24} md={12} lg={6}><div style={{ background:'#fff7ed', padding:16, borderRadius:8 }}><div style={{ color:'#9a3412' }}>AP Overdue</div><div style={{ fontWeight:700, fontSize:20 }}>{metrics.apOverdue}</div></div></Col>
+        <Col xs={24} md={12} lg={6}><div style={{ background:'#fff1f2', padding:16, borderRadius:8 }}><div style={{ color:'#9f1239' }}>AR Past Due $</div><div style={{ fontWeight:700, fontSize:20 }}>$ {metrics.arPastDue.toLocaleString()}</div></div></Col>
+        <Col xs={24} md={12} lg={6}><div style={{ background:'#eef2ff', padding:16, borderRadius:8 }}><div style={{ color:'#3730a3' }}>Close Tasks Open</div><div style={{ fontWeight:700, fontSize:20 }}>{metrics.closeOpen}</div></div></Col>
+      </Row>
+      <Divider>Team Roles</Divider>
+      <Space style={{ marginBottom: 8 }}>
+        <Button onClick={() => setRoleModal(true)}>Assign Role</Button>
+      </Space>
+      <Table
+        loading={loading}
+        dataSource={roles}
+        columns={[
+          { title: 'User', dataIndex: 'user_label' },
+          { title: 'User ID', dataIndex: 'user_id' },
+          { title: 'Role', dataIndex: 'role' },
+        ]}
+      />
+      <Modal
+        title="Assign Finance Role"
+        open={roleModal}
+        onCancel={() => setRoleModal(false)}
+        onOk={async () => {
+          const vals = await form.validateFields();
+          setLoading(true);
+          try {
+            const { error } = await supabase.from('finance_roles').insert({ user_id: vals.user_id, user_label: vals.user_label, role: vals.role });
+            if (error) throw error;
+            const { data } = await supabase.from('finance_roles').select('user_id, role, user_label');
+            setRoles((data || []).map((r:any, idx:number)=> ({ key: `${r.user_id}-${r.role}-${idx}`, ...r })));
+            setRoleModal(false);
+            form.resetFields();
+            message.success('Role assigned');
+          } finally { setLoading(false); }
+        }}
+      >
+        <Form layout="vertical" form={form}>
+          <Form.Item name="user_label" label="User (name or email)" rules={[{ required: true }]}>
+            <input className="ant-input" />
+          </Form.Item>
+          <Form.Item name="user_id" label="User ID (optional)" tooltip="If known; otherwise leave blank">
+            <input className="ant-input" />
+          </Form.Item>
+          <Form.Item name="role" label="Role" rules={[{ required: true }]}>
+            <Select options={[{value:'CFO',label:'CFO'},{value:'Controller',label:'Controller'},{value:'AP',label:'AP'},{value:'AR',label:'AR'},{value:'Treasury',label:'Treasury'},{value:'Auditor',label:'Auditor'}]} />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
+  );
+}
 function BudgetVsActuals() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
