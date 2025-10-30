@@ -16,6 +16,7 @@ import {
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { MessageCenter } from '@/components/messaging/MessageCenter';
 import { PersonnelManager } from '@/components/ceo/PersonnelManager';
 import { FinancialApprovals } from '@/components/ceo/FinancialApprovals';
 import { EmergencyControls } from '@/components/ceo/EmergencyControls';
@@ -205,6 +206,16 @@ const CEOPortal: React.FC = () => {
                 className="bg-slate-700 hover:bg-slate-600 text-white"
               >
                 Board Portal
+              </Button>
+              <Button
+                type="default"
+                size="large"
+                onClick={() => {
+                  const el = document.getElementById('ceo-messages');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                Message Center
               </Button>
               <Button
                 type="default"
@@ -408,6 +419,10 @@ const CEOPortal: React.FC = () => {
               <AuditTrail />
             </TabPane>
           </Tabs>
+      </div>
+      <div id="ceo-messages" className="container mx-auto px-6 py-8">
+        <Typography.Title level={3} style={{ marginTop: 0 }}>Message Center</Typography.Title>
+        <MessageCenter />
       </div>
     </div>
   );

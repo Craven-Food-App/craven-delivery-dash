@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar, ResponsiveContainer } from "recharts";
+import { MessageCenter } from "@/components/messaging/MessageCenter";
 
 const { Header, Content } = Layout;
 const { RangePicker } = DatePicker;
@@ -202,6 +203,8 @@ export default function CFOPortal() {
             <BigNavButton color="#7c3aed" hover="#6d28d9" title="Budget vs Actuals" subtitle="Variance" onClick={()=> setActiveTab('bva')} />
             <BigNavButton color="#9333ea" hover="#7e22ce" title="Close" subtitle="Checklist & Recs" onClick={()=> setActiveTab('close')} />
             <BigNavButton color="#0891b2" hover="#0e7490" title="Treasury" subtitle="Bank Balances" onClick={()=> setActiveTab('treasury')} />
+            {/* If screen is wider than 4 columns this will wrap correctly */}
+            <BigNavButton color="#0ea5e9" hover="#0284c7" title="Message Center" subtitle="Exec & Admin" onClick={()=> setActiveTab('messages')} />
           </div>
 
           <Tabs
@@ -272,6 +275,7 @@ export default function CFOPortal() {
           {activeTab === 'approvals' && <ApprovalsPanel />}
           {activeTab === 'forecast' && <CashFlowForecast />}
           {activeTab === 'bva' && <BudgetVsActuals />}
+          {activeTab === 'messages' && <MessageCenter />}
         </div>
       </Content>
     </Layout>
