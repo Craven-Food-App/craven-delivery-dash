@@ -203,12 +203,10 @@ export default function CFOPortal() {
             <BigNavButton color="#7c3aed" hover="#6d28d9" title="Budget vs Actuals" subtitle="Variance" onClick={()=> setActiveTab('bva')} />
             <BigNavButton color="#9333ea" hover="#7e22ce" title="Close" subtitle="Checklist & Recs" onClick={()=> setActiveTab('close')} />
             <BigNavButton color="#0891b2" hover="#0e7490" title="Treasury" subtitle="Bank Balances" onClick={()=> setActiveTab('treasury')} />
-            {/* If screen is wider than 4 columns this will wrap correctly */}
-            <BigNavButton color="#0ea5e9" hover="#0284c7" title="Message Center" subtitle="Exec & Admin" onClick={()=> setActiveTab('messages')} />
           </div>
 
           <Tabs
-            activeKey={['overview','transactions','payouts'].includes(activeTab) ? activeTab : 'overview'}
+            activeKey={['overview','transactions','payouts','messages'].includes(activeTab) ? activeTab : 'overview'}
             onChange={setActiveTab}
             size="large"
             tabBarStyle={{ borderBottom: "1px solid rgba(148,163,184,0.2)" }}
@@ -264,6 +262,9 @@ export default function CFOPortal() {
                 ]}
               />
             </TabPane>
+            <TabPane tab={<span>Message Center</span>} key="messages">
+              <MessageCenter />
+            </TabPane>
           </Tabs>
           {/* Render selected high-priority section below when chosen via buttons */}
           {activeTab === 'manager' && <ManagerConsole />}
@@ -275,7 +276,6 @@ export default function CFOPortal() {
           {activeTab === 'approvals' && <ApprovalsPanel />}
           {activeTab === 'forecast' && <CashFlowForecast />}
           {activeTab === 'bva' && <BudgetVsActuals />}
-          {activeTab === 'messages' && <MessageCenter />}
         </div>
       </Content>
     </Layout>
