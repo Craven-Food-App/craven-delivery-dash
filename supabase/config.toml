@@ -120,3 +120,12 @@ verify_jwt = false
 
 [functions.submit-executive-signature]
 verify_jwt = false
+
+[functions.send-hiring-packet]
+verify_jwt = false
+
+[functions.msgraph-provision]
+verify_jwt = false
+
+[functions.send-preaccept-email]
+verify_jwt = false

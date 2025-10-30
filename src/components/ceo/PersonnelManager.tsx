@@ -295,6 +295,26 @@ export const PersonnelManager: React.FC = () => {
     }
   };
 
+  const sendHiringPacketNow = async (emp: Employee) => {
+    try {
+      const stateCode = (emp as any).work_location?.match?.(/\b(OH|MI|FL|GA|NY|MO|KS|LA)\b/i)?.[1]?.toUpperCase() || 'OH';
+      const docs = DEFAULT_EMPLOYEE_PACKET.states[stateCode as any] || DEFAULT_EMPLOYEE_PACKET.states['OH'] || [];
+      await supabase.functions.invoke('send-hiring-packet', {
+        body: {
+          candidateEmail: emp.email,
+          candidateName: `${emp.first_name} ${emp.last_name}`,
+          state: stateCode,
+          packetType: 'executive',
+          docs,
+        }
+      });
+      message.success('Hiring packet sent.');
+    } catch (e) {
+      console.error('Error sending hiring packet:', e);
+      message.error('Failed to send hiring packet');
+    }
+  };
+
   const handleHire = async (values: any) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -787,6 +807,9 @@ export const PersonnelManager: React.FC = () => {
               </Popconfirm>
           <Button type="link" size="small" onClick={() => resendCommunications(record)}>
             Resend Offer/Emails
+          </Button>
+          <Button type="link" size="small" onClick={() => sendHiringPacketNow(record)}>
+            Send Hiring Packet
           </Button>
             </>
           )}
