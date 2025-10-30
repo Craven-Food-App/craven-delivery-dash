@@ -49,6 +49,26 @@ serve(async (req: Request) => {
       }]
     }));
 
+    // Also include executives_equity (name-only records from executive appointments)
+    try {
+      const { data: execs } = await supabase.from('executives_equity').select('*');
+      (execs || []).forEach((row: any) => {
+        shareholders.push({
+          id: row.id,
+          first_name: (row.name || '').split(' ')[0] || row.name,
+          last_name: (row.name || '').split(' ').slice(1).join(' '),
+          position: row.title || 'Executive',
+          email: '',
+          employee_equity: [{
+            shares_percentage: row.shares_percentage,
+            shares_total: row.shares_total,
+            equity_type: row.equity_type,
+            grant_date: row.created_at,
+          }]
+        });
+      });
+    } catch (_) {}
+
     return new Response(JSON.stringify({ ok: true, shareholders }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,

@@ -196,6 +196,44 @@ serve(async (req: Request) => {
       });
     }
 
+    // Also record equity for dashboard if we don't have an employee_id entry
+    try {
+      const eqTypeInput = (v.equity_type || '').toLowerCase();
+      const eqMap: Record<string, 'stock'|'options'|'phantom'> = {
+        'common stock': 'stock',
+        'preferred stock': 'stock',
+        'stock': 'stock',
+        'stock options': 'options',
+        'options': 'options',
+        'phantom stock': 'phantom',
+        'phantom': 'phantom',
+      };
+      const normalized = eqMap[eqTypeInput] || 'stock';
+      // Store a name-only equity record into a helper table executives_equity (create if missing)
+      await supabase.rpc('execute_sql_passthrough', { sql: `
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='executives_equity') THEN
+            CREATE TABLE public.executives_equity (
+              id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+              name TEXT NOT NULL,
+              title TEXT,
+              shares_percentage NUMERIC(5,2),
+              shares_total INTEGER,
+              equity_type TEXT CHECK (equity_type IN ('stock','options','phantom')),
+              created_at TIMESTAMPTZ DEFAULT now()
+            );
+          END IF;
+        END $$;` });
+      await supabase.from('executives_equity').upsert({
+        name: v.executive_name,
+        title: v.executive_title,
+        shares_percentage: Number(v.equity_percent || 0),
+        shares_total: Number(v.shares_issued || 0),
+        equity_type: normalized,
+      }, { onConflict: 'name' });
+    } catch (_) {}
+
     // Generate documents (Markdown)
     const eqOffer = fillTemplateEquityOffer(v);
     const boardRes = fillTemplateBoardResolution(v);

@@ -360,11 +360,24 @@ export const PersonnelManager: React.FC = () => {
           cliff_months: vestingSchedule === 'immediate' ? 0 : 12
         };
 
+        // Normalize equity_type to match DB constraint ('stock','options','phantom')
+        const equityTypeInput = (values.equity_type || '').toString().toLowerCase();
+        const equityTypeMap: Record<string, 'stock' | 'options' | 'phantom'> = {
+          'common_stock': 'stock',
+          'preferred_stock': 'stock',
+          'stock': 'stock',
+          'stock_options': 'options',
+          'options': 'options',
+          'phantom_stock': 'phantom',
+          'phantom': 'phantom',
+        };
+        const normalizedEquityType = equityTypeMap[equityTypeInput] || 'stock';
+
         await supabase.from('employee_equity').insert([{
           employee_id: data[0].id,
-          shares_percentage: values.equity || null,
-          shares_total: values.shares_total || null,
-          equity_type: values.equity_type || 'common_stock',
+          shares_percentage: values.equity ? Number(values.equity) : null,
+          shares_total: values.shares_total ? Number(values.shares_total) : null,
+          equity_type: normalizedEquityType,
           vesting_schedule: vestingJson,
           strike_price: values.strike_price || null,
           authorized_by: user?.id,
@@ -670,11 +683,22 @@ export const PersonnelManager: React.FC = () => {
 
       // Upsert equity if provided
       if (values.equity_percentage || values.shares_total || values.equity_type) {
+        const equityTypeInput = (values.equity_type || '').toString().toLowerCase();
+        const equityTypeMap: Record<string, 'stock' | 'options' | 'phantom'> = {
+          'common_stock': 'stock',
+          'preferred_stock': 'stock',
+          'stock': 'stock',
+          'stock_options': 'options',
+          'options': 'options',
+          'phantom_stock': 'phantom',
+          'phantom': 'phantom',
+        };
+        const normalizedEquityType = equityTypeMap[equityTypeInput] || 'stock';
         const equityPayload: any = {
           employee_id: selectedEmployee.id,
-          shares_percentage: values.equity_percentage ?? null,
-          shares_total: values.shares_total ?? null,
-          equity_type: values.equity_type || 'stock',
+          shares_percentage: values.equity_percentage != null ? Number(values.equity_percentage) : null,
+          shares_total: values.shares_total != null ? Number(values.shares_total) : null,
+          equity_type: normalizedEquityType,
           authorized_by: user?.id || null,
         };
         const { error: eqErr } = await supabase
