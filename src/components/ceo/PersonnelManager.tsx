@@ -219,7 +219,7 @@ export const PersonnelManager: React.FC = () => {
         .select(`
           *,
           department:departments(name),
-          employee_equity(shares_percentage, equity_type, vesting_schedule)
+          employee_equity(shares_percentage, shares_total, equity_type, vesting_schedule)
         `)
         .order('hire_date', { ascending: false });
 
@@ -349,8 +349,8 @@ export const PersonnelManager: React.FC = () => {
       // Check if this is a C-suite position
       const isCLevel = /chief|ceo|cfo|cto|coo|president/i.test(values.position);
 
-      // If C-suite and equity provided, add to equity table
-      if (isCLevel && values.equity && values.equity > 0) {
+      // Save equity for any hire when provided (C-level or not)
+      if ((values.equity && values.equity > 0) || (values.shares_total && values.shares_total > 0)) {
         const vestingSchedule = values.vesting_schedule || '4_year_1_cliff';
         const vestingJson = {
           type: vestingSchedule,
@@ -362,7 +362,8 @@ export const PersonnelManager: React.FC = () => {
 
         await supabase.from('employee_equity').insert([{
           employee_id: data[0].id,
-          shares_percentage: values.equity,
+          shares_percentage: values.equity || null,
+          shares_total: values.shares_total || null,
           equity_type: values.equity_type || 'common_stock',
           vesting_schedule: vestingJson,
           strike_price: values.strike_price || null,
@@ -502,6 +503,8 @@ export const PersonnelManager: React.FC = () => {
             startDate: values.hire_date || new Date().toISOString(),
             reportingTo: 'CEO - Torrence Stroman',
             signatureToken,
+            deferredSalary: !!values.deferred_salary,
+            fundingTrigger: values.funding_trigger || null,
           },
         });
 
@@ -1213,7 +1216,6 @@ export const PersonnelManager: React.FC = () => {
                 precision={2}
                 step={0.5}
                 placeholder="e.g., 10.50 for 10.5%"
-                disabled={false}
               />
             </Form.Item>
 
@@ -1230,6 +1232,14 @@ export const PersonnelManager: React.FC = () => {
               </Select>
             </Form.Item>
           </div>
+
+          <Form.Item
+            label="Shares Total"
+            name="shares_total"
+            tooltip="Total number of shares granted (optional)"
+          >
+            <InputNumber style={{ width: '100%' }} min={0} step={1000} />
+          </Form.Item>
 
           <div className="grid grid-cols-2 gap-4">
             <Form.Item

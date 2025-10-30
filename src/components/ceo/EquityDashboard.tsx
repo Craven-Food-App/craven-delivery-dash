@@ -218,12 +218,12 @@ export const EquityDashboard: React.FC = () => {
                   {emp.first_name} {emp.last_name.substring(0, 1)}.
                 </div>
                 <div className="flex-1">
-                  <div className="h-6 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-ff6b00 to-ff8c00"
-                      style={{ width: `${percentage}%`, transition: 'width 0.3s' }}
-                    />
-                  </div>
+                    <div className="h-6 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-orange-500 to-orange-400"
+                        style={{ width: `${percentage}%`, transition: 'width 0.3s' }}
+                      />
+                    </div>
                 </div>
                 <div className="w-20 text-right text-sm font-semibold text-slate-700">
                   {percentage}%

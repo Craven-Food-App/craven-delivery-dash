@@ -2570,6 +2570,7 @@ export type Database = {
           id: string
           notes: string | null
           shares_percentage: number
+          shares_total: number | null
           strike_price: number | null
           updated_at: string | null
           vesting_schedule: Json | null
@@ -2584,6 +2585,7 @@ export type Database = {
           id?: string
           notes?: string | null
           shares_percentage: number
+          shares_total?: number | null
           strike_price?: number | null
           updated_at?: string | null
           vesting_schedule?: Json | null
@@ -2598,6 +2600,7 @@ export type Database = {
           id?: string
           notes?: string | null
           shares_percentage?: number
+          shares_total?: number | null
           strike_price?: number | null
           updated_at?: string | null
           vesting_schedule?: Json | null
