@@ -306,6 +306,23 @@ export const PersonnelManager: React.FC = () => {
         }
       ]);
 
+      // Provision portal access based on role
+      const posLower = (values.position || '').toLowerCase();
+      const portals: Array<'board'|'ceo'|'admin'> = [];
+      if (/chief|ceo|cfo|cto|coo|president/i.test(values.position || '')) {
+        portals.push('board');
+        // Record exec user
+        const execRole = posLower.includes('ceo') ? 'ceo' : posLower.includes('cfo') ? 'cfo' : posLower.includes('cto') ? 'cto' : posLower.includes('coo') ? 'coo' : 'advisor';
+        await supabase.from('exec_users').insert([{ user_id: null, role: execRole, access_level: 2, title: values.position, department: dept?.name || 'Executive', approved_at: new Date().toISOString() }]).select();
+        if (posLower.includes('ceo')) {
+          portals.push('ceo');
+          // Grant CEO email access credentials
+          await supabase.from('ceo_access_credentials').insert([{ user_email: values.email }]).select();
+        }
+      } else {
+        portals.push('admin');
+      }
+
       // Send documents based on position requirements
       try {
         // Always send board resolution first
@@ -379,7 +396,16 @@ export const PersonnelManager: React.FC = () => {
             'Board Resolution, Offer Letter, and Equity Agreement') :
           'Board Resolution and Offer Letter';
 
-        message.success(`🎉 ${values.first_name} ${values.last_name} hired successfully! ${documentsSent} sent.`);
+        // Send portal access email
+        await supabase.functions.invoke('send-portal-access-email', {
+          body: {
+            email: values.email,
+            name: `${values.first_name} ${values.last_name}`,
+            portals,
+          }
+        });
+
+        message.success(`🎉 ${values.first_name} ${values.last_name} hired successfully! ${documentsSent} sent. Portal access emailed.`);
       } catch (emailError) {
         console.error('Error sending documents:', emailError);
         message.success(`🎉 ${values.first_name} ${values.last_name} hired successfully! (Some documents failed to send)`);
