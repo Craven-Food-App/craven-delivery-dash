@@ -205,7 +205,7 @@ export default function CFOPortal() {
           </div>
 
           <Tabs
-            activeKey={activeTab}
+            activeKey={['overview','transactions','payouts'].includes(activeTab) ? activeTab : 'overview'}
             onChange={setActiveTab}
             size="large"
             tabBarStyle={{ borderBottom: "1px solid rgba(148,163,184,0.2)" }}
@@ -222,33 +222,7 @@ export default function CFOPortal() {
                 High-level KPIs and trends will be displayed here.
               </Typography.Paragraph>
             </TabPane>
-            <TabPane tab={<span>Budget vs Actuals</span>} key="bva">
-              <BudgetVsActuals />
-            </TabPane>
-            <TabPane tab={<span>Cash Flow Forecast</span>} key="forecast">
-              <CashFlowForecast />
-            </TabPane>
-            <TabPane tab={<span>Approvals</span>} key="approvals">
-              <ApprovalsPanel />
-            </TabPane>
-            <TabPane tab={<span>Manager Console</span>} key="manager">
-              <ManagerConsole />
-            </TabPane>
-            <TabPane tab={<span>Role Management</span>} key="roles">
-              <RoleManagement />
-            </TabPane>
-            <TabPane tab={<span>Accounts Payable</span>} key="ap">
-              <AccountsPayable />
-            </TabPane>
-            <TabPane tab={<span>Accounts Receivable</span>} key="ar">
-              <AccountsReceivable />
-            </TabPane>
-            <TabPane tab={<span>Close</span>} key="close">
-              <CloseManagement />
-            </TabPane>
-            <TabPane tab={<span>Treasury</span>} key="treasury">
-              <TreasuryView />
-            </TabPane>
+            {/* High-priority sections moved to button navigation; keep tabs minimal */}
             <TabPane
               tab={
                 <span>
@@ -288,6 +262,16 @@ export default function CFOPortal() {
               />
             </TabPane>
           </Tabs>
+          {/* Render selected high-priority section below when chosen via buttons */}
+          {activeTab === 'manager' && <ManagerConsole />}
+          {activeTab === 'roles' && <RoleManagement />}
+          {activeTab === 'ap' && <AccountsPayable />}
+          {activeTab === 'ar' && <AccountsReceivable />}
+          {activeTab === 'close' && <CloseManagement />}
+          {activeTab === 'treasury' && <TreasuryView />}
+          {activeTab === 'approvals' && <ApprovalsPanel />}
+          {activeTab === 'forecast' && <CashFlowForecast />}
+          {activeTab === 'bva' && <BudgetVsActuals />}
         </div>
       </Content>
     </Layout>
