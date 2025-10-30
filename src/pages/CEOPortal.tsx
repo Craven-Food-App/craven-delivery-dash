@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Statistic, Badge, Button, Space, Tabs, Alert } from 'antd';
+import { Row, Col, Statistic, Badge, Button, Space, Tabs, Alert, Typography, Divider } from 'antd';
 import {
   DollarOutlined,
   UserOutlined,
@@ -24,7 +24,7 @@ import { AuditTrail } from '@/components/ceo/AuditTrail';
 import { QuickActions } from '@/components/ceo/QuickActions';
 import { EquityDashboard } from '@/components/ceo/EquityDashboard';
 import { useExecAuth } from '@/hooks/useExecAuth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+// No Card components: full-page Ant layout
 
 const { TabPane } = Tabs;
 
@@ -223,27 +223,24 @@ const CEOPortal: React.FC = () => {
 
       {/* Main Dashboard */}
       <div className="container mx-auto px-6 py-8">
-        {/* Key Metrics - Company Health */}
+        {/* Key Metrics - Full page, no cards */}
+        <Typography.Title level={3} style={{ marginTop: 0 }}>Company Health</Typography.Title>
         <Row gutter={[16, 16]} className="mb-8">
           <Col xs={24} sm={12} lg={4}>
-            <Card className="bg-gradient-to-br from-green-600 to-green-700 border-0 shadow-xl hover:shadow-2xl transition-shadow">
+            <div className="bg-green-600 rounded-md px-4 py-3">
               <Statistic
                 title={<span className="text-white font-semibold">Total Revenue</span>}
                 value={metrics?.totalRevenue}
                 precision={0}
                 prefix="$"
                 valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
-                suffix={
-                  <span className="text-sm text-green-100 ml-2">
-                    ↑ {metrics?.revenueGrowth}%
-                  </span>
-                }
+                suffix={<span className="text-sm text-green-100 ml-2">↑ {metrics?.revenueGrowth}%</span>}
               />
-            </Card>
+            </div>
           </Col>
 
           <Col xs={24} sm={12} lg={4}>
-            <Card className="bg-gradient-to-br from-blue-600 to-blue-700 border-0 shadow-xl hover:shadow-2xl transition-shadow">
+            <div className="bg-blue-600 rounded-md px-4 py-3">
               <Statistic
                 title={<span className="text-white font-semibold">Cash Flow</span>}
                 value={metrics?.cashFlow}
@@ -251,69 +248,58 @@ const CEOPortal: React.FC = () => {
                 prefix="$"
                 valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
               />
-              <div className="text-xs text-blue-100 mt-2">
-                Burn: ${metrics?.burnRate.toLocaleString()}/mo
-              </div>
-            </Card>
+              <div className="text-xs text-blue-100 mt-2">Burn: ${metrics?.burnRate.toLocaleString()}/mo</div>
+            </div>
           </Col>
 
           <Col xs={24} sm={12} lg={4}>
-            <Card className="bg-gradient-to-br from-purple-600 to-purple-700 border-0 shadow-xl hover:shadow-2xl transition-shadow">
+            <div className="bg-purple-600 rounded-md px-4 py-3">
               <Statistic
                 title={<span className="text-white font-semibold">Runway</span>}
                 value={metrics?.runway}
                 suffix="months"
                 valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
               />
-              <div className="text-xs text-purple-100 mt-2">
-                Financial Health: Excellent
-              </div>
-            </Card>
+              <div className="text-xs text-purple-100 mt-2">Financial Health: Excellent</div>
+            </div>
           </Col>
 
           <Col xs={24} sm={12} lg={4}>
-            <Card className="bg-gradient-to-br from-orange-600 to-orange-700 border-0 shadow-xl hover:shadow-2xl transition-shadow">
+            <div className="bg-orange-600 rounded-md px-4 py-3">
               <Statistic
                 title={<span className="text-white font-semibold">Total Employees</span>}
                 value={metrics?.totalEmployees}
                 valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
               />
-              <div className="text-xs text-orange-100 mt-2">
-                Admins: {metrics?.admins} • Feeders: {metrics?.feeders}
-              </div>
-            </Card>
+              <div className="text-xs text-orange-100 mt-2">Admins: {metrics?.admins} • Feeders: {metrics?.feeders}</div>
+            </div>
           </Col>
 
           <Col xs={24} sm={12} lg={4}>
-            <Card className="bg-gradient-to-br from-yellow-600 to-yellow-700 border-0 shadow-xl hover:shadow-2xl transition-shadow">
+            <div className="bg-yellow-600 rounded-md px-4 py-3">
               <Statistic
                 title={<span className="text-white font-semibold">Pending Approvals</span>}
                 value={metrics?.pendingApprovals}
                 valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
               />
-              <div className="text-xs text-yellow-100 mt-2">
-                Requires your attention
-              </div>
-            </Card>
+              <div className="text-xs text-yellow-100 mt-2">Requires your attention</div>
+            </div>
           </Col>
 
           <Col xs={24} sm={12} lg={4}>
-            <Card className="bg-gradient-to-br from-teal-600 to-teal-700 border-0 shadow-xl hover:shadow-2xl transition-shadow">
+            <div className="bg-teal-600 rounded-md px-4 py-3">
               <Statistic
                 title={<span className="text-white font-semibold">Merchants</span>}
                 value={metrics?.merchants}
                 valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
               />
-              <div className="text-xs text-teal-100 mt-2">
-                Active partners
-              </div>
-            </Card>
+              <div className="text-xs text-teal-100 mt-2">Active partners</div>
+            </div>
           </Col>
         </Row>
-
-        {/* Tabbed Interface */}
-        <Card className="shadow-2xl">
-          <Tabs
+        <Divider style={{ margin: '16px 0' }} />
+        {/* Tabbed Interface - no card wrapper */}
+        <Tabs
             activeKey={activeTab}
             onChange={setActiveTab}
             size="large"
@@ -406,7 +392,6 @@ const CEOPortal: React.FC = () => {
               <AuditTrail />
             </TabPane>
           </Tabs>
-        </Card>
       </div>
     </div>
   );
