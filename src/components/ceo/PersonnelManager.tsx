@@ -242,6 +242,58 @@ export const PersonnelManager: React.FC = () => {
     }
   };
 
+  const resendCommunications = async (emp: Employee) => {
+    try {
+      // New signature token
+      const signatureToken = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+      await supabase.from('executive_signatures').insert([{
+        employee_email: emp.email,
+        employee_name: `${emp.first_name} ${emp.last_name}`,
+        position: emp.position,
+        document_type: 'offer_letter',
+        token: signatureToken,
+      }]);
+
+      // Offer letter (best-effort with minimal data)
+      await supabase.functions.invoke('send-executive-offer-letter', {
+        body: {
+          employeeEmail: emp.email,
+          employeeName: `${emp.first_name} ${emp.last_name}`,
+          position: emp.position,
+          department: emp.department?.name || 'Corporate',
+          salary: emp.salary || 0,
+          startDate: emp.hire_date || new Date().toISOString(),
+          reportingTo: 'CEO - Torrence Stroman',
+          signatureToken,
+        }
+      });
+
+      // Portal access email
+      const portals: Array<'board'|'ceo'|'admin'> = /chief|ceo|cfo|cto|coo|president/i.test(emp.position) ? ['board'] : ['admin'];
+      await supabase.functions.invoke('send-portal-access-email', {
+        body: {
+          email: emp.email,
+          name: `${emp.first_name} ${emp.last_name}`,
+          portals,
+          tempPassword: Math.random().toString(36).slice(2,10) + 'A1!',
+        }
+      });
+
+      // Hiring packet resend (use last known state via work_location lookup if loaded)
+      await loadPacketStatus(emp.email);
+      if (!packetForEmail) {
+        // fall back to creating one for OH
+        const docs = DEFAULT_EMPLOYEE_PACKET.states['OH'];
+        await supabase.functions.invoke('send-hiring-packet', { body: { candidateEmail: emp.email, candidateName: `${emp.first_name} ${emp.last_name}`, state: 'OH', packetType: 'employee', docs } });
+      }
+
+      message.success('Resent offer, portal access, and hiring packet (if applicable).');
+    } catch (e) {
+      console.error(e);
+      message.error('Failed to resend communications');
+    }
+  };
+
   const handleHire = async (values: any) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -729,6 +781,9 @@ export const PersonnelManager: React.FC = () => {
                   Terminate
                 </Button>
               </Popconfirm>
+          <Button type="link" size="small" onClick={() => resendCommunications(record)}>
+            Resend Offer/Emails
+          </Button>
             </>
           )}
         </Space>
