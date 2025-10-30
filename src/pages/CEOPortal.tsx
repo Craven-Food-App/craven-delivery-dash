@@ -175,6 +175,22 @@ const CEOPortal: React.FC = () => {
                 Emergency
               </Button>
               <Button
+                type="default"
+                size="large"
+                onClick={() => {
+                  const host = window.location.hostname;
+                  if (/^ceo\./i.test(host)) {
+                    const target = host.replace(/^ceo\./i, 'cfo.');
+                    window.location.href = `${window.location.protocol}//${target}`;
+                  } else {
+                    navigate('/');
+                  }
+                }}
+                className="bg-slate-100 hover:bg-slate-200"
+              >
+                CFO Portal
+              </Button>
+              <Button
                 type="primary"
                 size="large"
                 onClick={() => navigate('/admin')}

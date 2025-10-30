@@ -10,6 +10,7 @@ import {
   CheckCircleOutlined,
 } from "@ant-design/icons";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const { Header, Content } = Layout;
 const { RangePicker } = DatePicker;
@@ -21,6 +22,7 @@ export default function CFOPortal() {
   const [metrics, setMetrics] = useState<any>({ revenue: 0, expenses: 0, grossMargin: 0, cash: 0, burn: 0, runway: 0 });
   const [payouts, setPayouts] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchData();
@@ -53,6 +55,33 @@ export default function CFOPortal() {
           <Space>
             <RangePicker onChange={setRange} />
             <Button onClick={fetchData}>Refresh</Button>
+            <Button onClick={() => {
+              const host = window.location.hostname;
+              if (/^cfo\./i.test(host)) {
+                const target = host.replace(/^cfo\./i, 'board.');
+                window.location.href = `${window.location.protocol}//${target}`;
+              } else {
+                navigate('/board');
+              }
+            }}>Board Portal</Button>
+            <Button onClick={() => {
+              const host = window.location.hostname;
+              if (/^cfo\./i.test(host)) {
+                const target = host.replace(/^cfo\./i, 'admin.');
+                window.location.href = `${window.location.protocol}//${target}`;
+              } else {
+                navigate('/admin');
+              }
+            }}>Admin Portal</Button>
+            <Button onClick={() => {
+              const host = window.location.hostname;
+              if (/^cfo\./i.test(host)) {
+                const target = host.replace(/^cfo\./i, 'ceo.');
+                window.location.href = `${window.location.protocol}//${target}`;
+              } else {
+                navigate('/');
+              }
+            }}>CEO Command Center</Button>
           </Space>
         </div>
       </Header>
