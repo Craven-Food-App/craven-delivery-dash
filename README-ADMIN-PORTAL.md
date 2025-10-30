@@ -1,3 +1,31 @@
+## Microsoft 365 Messaging Integration (Graph) – Setup Quickstart
+
+Tenant: 27a74b25-f7ec-4641-8e33-30915ad8c4bd
+Domain: cravenusa.com (DNS at GoDaddy)
+
+1) DNS (GoDaddy)
+- SPF (TXT at root): `v=spf1 include:spf.protection.outlook.com ~all`
+- DMARC (TXT at _dmarc): `v=DMARC1; p=quarantine; rua=mailto:dmarc@cravenusa.com; fo=1; pct=100`
+- DKIM: will be provided after enablement (two CNAMEs: selector1/selector2)
+
+2) Azure AD App (Graph)
+- Register an app (or let automation run). Capture `CLIENT_ID`, `CLIENT_SECRET`.
+- Application permissions: `Mail.ReadBasic.All`, `Mail.Read`, `Mail.Send` (+ optional `Directory.Read.All`).
+- Admin consent URL format:
+  `https://login.microsoftonline.com/27a74b25-f7ec-4641-8e33-30915ad8c4bd/v2.0/adminconsent?client_id=CLIENT_ID&redirect_uri=https%3A%2F%2Flogin.microsoftonline.com%2Fcommon%2Foauth2%2Fnativeclient&scope=https%3A%2F%2Fgraph.microsoft.com%2F.default`
+
+3) Webhook Endpoint
+- Supabase Edge Function (Graph notifications): `msgraph-webhook`
+- Deploy and provide its public URL to the Graph subscription.
+
+4) Exec Role Internal-Only (Exchange Online)
+- Group: `Exec Role Internal Only` with members: `ceo@, cfo@, coo@`.
+- Mail flow rules: block external send/receive for that group.
+
+5) Mailboxes
+- Users: `torrance.ceo@, justin.cfo@, torrance.stroman@, justin.sweet@, prosperity@`
+- Shared: `controller@, ap@, ar@, admin@, marketing@, privacy@, terms@, careers@`
+
 # Crave'n Admin Portal - Production Features
 
 ## 🎉 CRITICAL FEATURES COMPLETED
