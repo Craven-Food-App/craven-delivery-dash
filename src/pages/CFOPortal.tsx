@@ -11,6 +11,8 @@ import {
 } from "@ant-design/icons";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar, ResponsiveContainer } from "recharts";
 
 const { Header, Content } = Layout;
 const { RangePicker } = DatePicker;
@@ -238,6 +240,7 @@ export default function CFOPortal() {
 function BudgetVsActuals() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [chartData, setChartData] = useState<any[]>([]);
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -262,29 +265,52 @@ function BudgetVsActuals() {
           return { key: b.id, ...b, actual, variance, variancePct };
         });
         setRows(grouped);
+        // Aggregate by period for chart
+        const byPeriod: Record<string, { budget: number; actual: number }> = {};
+        for (const r of grouped) {
+          byPeriod[r.period] = byPeriod[r.period] || { budget: 0, actual: 0 };
+          byPeriod[r.period].budget += r.amount || 0;
+          byPeriod[r.period].actual += r.actual || 0;
+        }
+        const chart = Object.keys(byPeriod).sort().map((p) => ({ period: p, ...byPeriod[p] }));
+        setChartData(chart);
       } finally {
         setLoading(false);
       }
     })();
   }, []);
   return (
-    <Table
-      loading={loading}
-      dataSource={rows}
-      pagination={{ pageSize: 10 }}
-      columns={[
-        { title: 'Period', dataIndex: 'period' },
-        { title: 'Dept', dataIndex: 'dept' },
-        { title: 'Budget', dataIndex: 'amount', render: (v: number) => `$${(v||0).toLocaleString()}` },
-        { title: 'Actual', dataIndex: 'actual', render: (v: number) => `$${(v||0).toLocaleString()}` },
-        { title: 'Variance', dataIndex: 'variance', render: (v: number) => {
-            const color = v >= 0 ? '#16a34a' : '#dc2626';
-            const prefix = v >= 0 ? '+' : '-';
-            return <span style={{ color }}>{prefix}$${Math.abs(v).toLocaleString()}</span>;
-          } },
-        { title: 'Variance %', dataIndex: 'variancePct', render: (v: number) => `${(v||0).toFixed(1)}%` },
-      ]}
-    />
+    <div>
+      <div style={{ marginBottom: 16 }}>
+        <ChartContainer config={{ budget: { label: 'Budget', color: '#94a3b8' }, actual: { label: 'Actual', color: '#2563eb' } }}>
+          <BarChart data={chartData} margin={{ left: 12, right: 12, top: 8, bottom: 8 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="period" tick={{ fontSize: 12 }} />
+            <YAxis tickFormatter={(v)=>`$${v.toLocaleString()}`} width={72} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Bar dataKey="budget" fill="var(--color-budget)" />
+            <Bar dataKey="actual" fill="var(--color-actual)" />
+          </BarChart>
+        </ChartContainer>
+      </div>
+      <Table
+        loading={loading}
+        dataSource={rows}
+        pagination={{ pageSize: 10 }}
+        columns={[
+          { title: 'Period', dataIndex: 'period' },
+          { title: 'Dept', dataIndex: 'dept' },
+          { title: 'Budget', dataIndex: 'amount', render: (v: number) => `$${(v||0).toLocaleString()}` },
+          { title: 'Actual', dataIndex: 'actual', render: (v: number) => `$${(v||0).toLocaleString()}` },
+          { title: 'Variance', dataIndex: 'variance', render: (v: number) => {
+              const color = v >= 0 ? '#16a34a' : '#dc2626';
+              const prefix = v >= 0 ? '+' : '-';
+              return <span style={{ color }}>{prefix}$${Math.abs(v).toLocaleString()}</span>;
+            } },
+          { title: 'Variance %', dataIndex: 'variancePct', render: (v: number) => `${(v||0).toFixed(1)}%` },
+        ]}
+      />
+    </div>
   );
 }
 
@@ -326,6 +352,17 @@ function CashFlowForecast() {
   return (
     <div>
       <Typography.Paragraph style={{ color: '#334155' }}>Projected cumulative cash over time based on recent revenue and estimated expenses.</Typography.Paragraph>
+      <div style={{ height: 320, marginBottom: 16 }}>
+        <ChartContainer config={{ cash: { label: 'Cash', color: '#16a34a' } }}>
+          <LineChart data={series} margin={{ left: 12, right: 12, top: 8, bottom: 8 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="period" tick={{ fontSize: 12 }} />
+            <YAxis tickFormatter={(v)=>`$${v.toLocaleString()}`} width={72} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Line type="monotone" dataKey="cash" stroke="var(--color-cash)" strokeWidth={2} dot={false} />
+          </LineChart>
+        </ChartContainer>
+      </div>
       <Table
         loading={loading}
         dataSource={series.map((s) => ({ key: s.period, ...s }))}
