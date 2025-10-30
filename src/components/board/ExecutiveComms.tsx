@@ -611,9 +611,9 @@ export const ExecutiveComms: React.FC = () => {
       {/* New Message Modal */}
       <Modal
         title={
-          <Space>
+          <Space wrap>
             <SendOutlined />
-            <span>New Message</span>
+            <span style={{ fontSize: window.innerWidth < 768 ? '14px' : '16px' }}>New Message</span>
           </Space>
         }
         open={modalVisible}
@@ -622,7 +622,8 @@ export const ExecutiveComms: React.FC = () => {
           form.resetFields();
         }}
         footer={null}
-        width={700}
+        width={window.innerWidth < 768 ? '95%' : 700}
+        style={{ top: window.innerWidth < 768 ? 10 : 100 }}
       >
         <Form
           form={form}
@@ -708,9 +709,11 @@ export const ExecutiveComms: React.FC = () => {
       {/* Message Detail Modal */}
       <Modal
         title={
-          <Space>
+          <Space wrap>
             <MessageOutlined />
-            <span>{selectedMessage?.subject}</span>
+            <span style={{ fontSize: window.innerWidth < 768 ? '14px' : '16px' }}>
+              {selectedMessage?.subject}
+            </span>
           </Space>
         }
         open={detailModalVisible}
@@ -719,42 +722,54 @@ export const ExecutiveComms: React.FC = () => {
           setSelectedMessage(null);
         }}
         footer={[
-          <Button key="close" onClick={() => setDetailModalVisible(false)}>
+          <Button 
+            key="close" 
+            onClick={() => setDetailModalVisible(false)}
+            size={window.innerWidth < 768 ? 'small' : 'middle'}
+          >
             Close
           </Button>
         ]}
-        width={700}
+        width={window.innerWidth < 768 ? '95%' : 700}
+        style={{ top: window.innerWidth < 768 ? 10 : 100 }}
       >
         {selectedMessage && (
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-            <Alert
-              message={
-                <Space>
-                  <Text strong>From:</Text>
-                  <Text>{selectedMessage.from_user?.title || 'Unknown'}</Text>
-                  <Divider type="vertical" />
-                  <Text strong>Priority:</Text>
-                  <Tag color={getPriorityColor(selectedMessage.priority)}>
-                    {selectedMessage.priority.toUpperCase()}
+            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                <Text strong style={{ fontSize: window.innerWidth < 768 ? '13px' : '14px' }}>From:</Text>
+                <Text style={{ fontSize: window.innerWidth < 768 ? '13px' : '14px' }}>
+                  {selectedMessage.from_user?.title || 'Unknown'}
+                </Text>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                <Text strong style={{ fontSize: window.innerWidth < 768 ? '13px' : '14px' }}>Priority:</Text>
+                <Tag color={getPriorityColor(selectedMessage.priority)} style={{ margin: 0 }}>
+                  {selectedMessage.priority.toUpperCase()}
+                </Tag>
+                {selectedMessage.is_confidential && (
+                  <Tag color="gold" icon={<SafetyOutlined />} style={{ margin: 0 }}>
+                    CONFIDENTIAL
                   </Tag>
-                  {selectedMessage.is_confidential && (
-                    <>
-                      <Divider type="vertical" />
-                      <Tag color="gold" icon={<SafetyOutlined />}>CONFIDENTIAL</Tag>
-                    </>
-                  )}
-                </Space>
-              }
-              type="info"
-            />
+                )}
+              </div>
+            </Space>
             
-            <div style={{ padding: '16px', background: '#f5f5f5', borderRadius: '8px' }}>
-              <Text style={{ whiteSpace: 'pre-wrap', fontSize: '14px' }}>
+            <div style={{ 
+              padding: window.innerWidth < 768 ? '12px' : '16px', 
+              background: '#f5f5f5', 
+              borderRadius: '8px' 
+            }}>
+              <Text style={{ 
+                whiteSpace: 'pre-wrap', 
+                fontSize: window.innerWidth < 768 ? '13px' : '14px',
+                wordBreak: 'normal'
+              }}>
                 {selectedMessage.message}
               </Text>
             </div>
 
-            <div style={{ textAlign: 'right' }}>
+            <div style={{ textAlign: window.innerWidth < 768 ? 'center' : 'right' }}>
               <Text type="secondary" style={{ fontSize: '12px' }}>
                 <ClockCircleOutlined /> {dayjs(selectedMessage.created_at).format('MMMM D, YYYY [at] h:mm A')}
               </Text>
