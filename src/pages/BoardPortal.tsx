@@ -9,6 +9,7 @@ import {
   BarChartOutlined,
   SafetyOutlined,
   TrophyOutlined,
+  FileOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +18,7 @@ import { ExecutiveComms } from '@/components/board/ExecutiveComms';
 import { PersonnelManager } from '@/components/ceo/PersonnelManager';
 import { EquityDashboard } from '@/components/ceo/EquityDashboard';
 import { FinancialApprovals } from '@/components/ceo/FinancialApprovals';
+import { DocumentVault } from '@/components/board/DocumentVault';
 import { executiveTheme } from '@/config/antd-theme';
 import { useExecAuth } from '@/hooks/useExecAuth';
 
@@ -334,6 +336,16 @@ const BoardPortal: React.FC = () => {
                     </span>
                   ),
                   children: <PersonnelManager />,
+                },
+                {
+                  key: 'documents',
+                  label: (
+                    <span className="flex items-center gap-1 sm:gap-2">
+                      <FileOutlined />
+                      <span className="text-xs sm:text-base">Document Vault</span>
+                    </span>
+                  ),
+                  children: <DocumentVault />,
                 },
                 {
                   key: 'equity',
