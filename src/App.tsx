@@ -402,6 +402,8 @@ const App = () => {
           <Route path="/board" element={<BoardPortal />} />
           <Route path="/cfo" element={<CFOPortal />} />
           <Route path="/ceo" element={<CEOPortal />} />
+          <Route path="/coo" element={<COOPortal />} />
+          <Route path="/cto" element={<CTOPortal />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/track-order/:orderId" element={<TrackOrder />} />
