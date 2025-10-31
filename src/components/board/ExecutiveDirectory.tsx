@@ -51,49 +51,75 @@ export const ExecutiveDirectory: React.FC = () => {
   const fetchExecutives = async () => {
     setLoading(true);
     try {
-      // Fetch from employees table - only executive positions
+      // Fetch from employees table - get ALL employees, filter C-level in code
       const { data: employeesData, error: empError } = await supabase
         .from('employees' as any)
         .select('*')
-        .in('position', ['CEO', 'CFO', 'COO', 'CTO', 'CMO', 'CRO', 'CPO', 'CDO', 'CHRO', 'CLO', 'CSO', 'CXO', 'Board Member', 'Advisor'])
         .order('position');
 
       if (empError) throw empError;
 
-      // Map employees to Executive interface
-      const executives: Executive[] = ((employeesData as any) || []).map((emp: any) => {
-        const position = String(emp.position || '').toLowerCase();
-        let role = position;
-        
-        // Normalize position to role
-        if (position.includes('board member')) role = 'board_member';
-        else if (position.includes('advisor')) role = 'advisor';
-        else if (position.includes('ceo')) role = 'ceo';
-        else if (position.includes('cfo')) role = 'cfo';
-        else if (position.includes('coo')) role = 'coo';
-        else if (position.includes('cto')) role = 'cto';
-        else if (position.includes('cmo')) role = 'cmo';
-        else if (position.includes('cro')) role = 'cro';
-        else if (position.includes('cpo')) role = 'cpo';
-        else if (position.includes('cdo')) role = 'cdo';
-        else if (position.includes('chro')) role = 'chro';
-        else if (position.includes('clo')) role = 'clo';
-        else if (position.includes('cso')) role = 'cso';
-        else if (position.includes('cxo')) role = 'cxo';
-        
-        return {
-          id: emp.id,
-          user_id: emp.user_id,
-          role: role,
-          title: emp.position,
-          department: emp.department,
-          last_login: null,
-          created_at: emp.created_at,
-          name: `${emp.first_name} ${emp.last_name}`,
-          email: emp.email,
-          source: 'employees' as const,
-        };
-      });
+      // Helper function to check if position is C-level
+      const isCLevelPosition = (position: string): boolean => {
+        const pos = String(position || '').toLowerCase();
+        return (
+          pos.includes('ceo') ||
+          pos.includes('cfo') ||
+          pos.includes('coo') ||
+          pos.includes('cto') ||
+          pos.includes('cmo') ||
+          pos.includes('cro') ||
+          pos.includes('cpo') ||
+          pos.includes('cdo') ||
+          pos.includes('chro') ||
+          pos.includes('clo') ||
+          pos.includes('cso') ||
+          pos.includes('cxo') ||
+          pos.includes('chief') ||
+          pos.includes('president') ||
+          pos.includes('board member') ||
+          pos.includes('advisor') ||
+          pos === 'cxo'
+        );
+      };
+
+      // Filter to only C-level positions and map to Executive interface
+      const executives: Executive[] = ((employeesData as any) || [])
+        .filter((emp: any) => isCLevelPosition(emp.position))
+        .map((emp: any) => {
+          const position = String(emp.position || '').toLowerCase();
+          let role = position;
+          
+          // Normalize position to role
+          if (position.includes('board member')) role = 'board_member';
+          else if (position.includes('advisor')) role = 'advisor';
+          else if (position.includes('ceo') || position.includes('chief executive')) role = 'ceo';
+          else if (position.includes('cfo') || position.includes('chief financial')) role = 'cfo';
+          else if (position.includes('coo') || position.includes('chief operating')) role = 'coo';
+          else if (position.includes('cto') || position.includes('chief technology')) role = 'cto';
+          else if (position.includes('cmo') || position.includes('chief marketing')) role = 'cmo';
+          else if (position.includes('cro') || position.includes('chief revenue')) role = 'cro';
+          else if (position.includes('cpo') || position.includes('chief product')) role = 'cpo';
+          else if (position.includes('cdo') || position.includes('chief data')) role = 'cdo';
+          else if (position.includes('chro') || position.includes('chief human')) role = 'chro';
+          else if (position.includes('clo') || position.includes('chief legal')) role = 'clo';
+          else if (position.includes('cso') || position.includes('chief security')) role = 'cso';
+          else if (position.includes('cxo')) role = 'cxo';
+          else if (position.includes('president')) role = 'president';
+          
+          return {
+            id: emp.id,
+            user_id: emp.user_id,
+            role: role,
+            title: emp.position,
+            department: emp.department,
+            last_login: null,
+            created_at: emp.created_at,
+            name: `${emp.first_name} ${emp.last_name}`,
+            email: emp.email,
+            source: 'employees' as const,
+          };
+        });
 
       setExecutives(executives);
       setFilteredExecutives(executives);
