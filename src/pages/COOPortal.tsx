@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Row, Col, Statistic, Tabs, Table, Badge, Card, Button, Space, Divider } from 'antd';
-import { DashboardOutlined, CarOutlined, ShopOutlined, FileProtectOutlined, AlertOutlined } from '@ant-design/icons';
+import { Layout, Typography, Row, Col, Statistic, Tabs, Table, Badge, Card, Button, Space, Divider, Modal, Form, Input, InputNumber, Select, message, Popconfirm } from 'antd';
+import { DashboardOutlined, CarOutlined, ShopOutlined, FileProtectOutlined, AlertOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useExecAuth } from '@/hooks/useExecAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -136,6 +136,9 @@ export default function COOPortal() {
 function FleetDashboard() {
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<any>(null);
+  const [form] = Form.useForm();
 
   useEffect(() => {
     fetchVehicles();
@@ -144,17 +147,69 @@ function FleetDashboard() {
   const fetchVehicles = async () => {
     setLoading(true);
     try {
-      const { data } = await supabase.from('fleet_vehicles').select('*').limit(100);
+      const { data } = await supabase.from('fleet_vehicles').select('*').order('created_at', { ascending: false }).limit(100);
       setVehicles(data || []);
     } catch (error) {
       console.error('Error fetching vehicles:', error);
+      message.error('Failed to load vehicles');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCreate = () => {
+    setEditingVehicle(null);
+    form.resetFields();
+    setModalVisible(true);
+  };
+
+  const handleEdit = (record: any) => {
+    setEditingVehicle(record);
+    form.setFieldsValue(record);
+    setModalVisible(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase.from('fleet_vehicles').delete().eq('id', id);
+      if (error) throw error;
+      message.success('Vehicle deleted successfully');
+      fetchVehicles();
+    } catch (error: any) {
+      console.error('Error deleting vehicle:', error);
+      message.error(error.message || 'Failed to delete vehicle');
+    }
+  };
+
+  const handleSubmit = async (values: any) => {
+    try {
+      if (editingVehicle) {
+        const { error } = await supabase.from('fleet_vehicles').update(values).eq('id', editingVehicle.id);
+        if (error) throw error;
+        message.success('Vehicle updated successfully');
+      } else {
+        const { error } = await supabase.from('fleet_vehicles').insert(values);
+        if (error) throw error;
+        message.success('Vehicle created successfully');
+      }
+      setModalVisible(false);
+      form.resetFields();
+      fetchVehicles();
+    } catch (error: any) {
+      console.error('Error saving vehicle:', error);
+      message.error(error.message || 'Failed to save vehicle');
+    }
+  };
+
   return (
     <div>
+      <div className="mb-4 flex justify-between items-center">
+        <Typography.Title level={4} className="m-0">Fleet Vehicles</Typography.Title>
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+          Add Vehicle
+        </Button>
+      </div>
+
       <Table 
         loading={loading}
         dataSource={vehicles}
@@ -164,9 +219,64 @@ function FleetDashboard() {
           { title: 'License Plate', dataIndex: 'license_plate', key: 'license_plate' },
           { title: 'Status', dataIndex: 'status', key: 'status', render: (status) => <Badge status={status === 'active' ? 'success' : 'default'} text={status} /> },
           { title: 'Registration Expires', dataIndex: 'registration_expiry', key: 'registration_expiry' },
-          { title: 'Insurance Expires', dataIndex: 'insurance_expiry', key: 'insurance_expiry' }
+          { title: 'Insurance Expires', dataIndex: 'insurance_expiry', key: 'insurance_expiry' },
+          {
+            title: 'Actions',
+            key: 'actions',
+            width: 120,
+            render: (_, record) => (
+              <Space>
+                <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
+                <Popconfirm title="Delete this vehicle?" onConfirm={() => handleDelete(record.id)}>
+                  <Button size="small" danger icon={<DeleteOutlined />} />
+                </Popconfirm>
+              </Space>
+            )
+          }
         ]}
       />
+
+      <Modal
+        title={editingVehicle ? 'Edit Vehicle' : 'Add Vehicle'}
+        open={modalVisible}
+        onCancel={() => setModalVisible(false)}
+        onOk={() => form.submit()}
+        width={600}
+      >
+        <Form form={form} onFinish={handleSubmit} layout="vertical">
+          <Form.Item name="vehicle_type" label="Vehicle Type" rules={[{ required: true }]}>
+            <Select placeholder="Select type">
+              <Select.Option value="car">Car</Select.Option>
+              <Select.Option value="truck">Truck</Select.Option>
+              <Select.Option value="van">Van</Select.Option>
+              <Select.Option value="motorcycle">Motorcycle</Select.Option>
+              <Select.Option value="bicycle">Bicycle</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="license_plate" label="License Plate" rules={[{ required: true }]}>
+            <Input placeholder="ABC-123" />
+          </Form.Item>
+          <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+            <Select>
+              <Select.Option value="active">Active</Select.Option>
+              <Select.Option value="maintenance">Maintenance</Select.Option>
+              <Select.Option value="retired">Retired</Select.Option>
+            </Select>
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="registration_expiry" label="Registration Expiry" rules={[{ required: true }]}>
+                <Input type="date" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="insurance_expiry" label="Insurance Expiry" rules={[{ required: true }]}>
+                <Input type="date" />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
     </div>
   );
 }
@@ -174,6 +284,9 @@ function FleetDashboard() {
 function PartnerManagement() {
   const [partners, setPartners] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingPartner, setEditingPartner] = useState<any>(null);
+  const [form] = Form.useForm();
 
   useEffect(() => {
     fetchPartners();
@@ -182,17 +295,69 @@ function PartnerManagement() {
   const fetchPartners = async () => {
     setLoading(true);
     try {
-      const { data } = await supabase.from('partner_vendors').select('*').limit(100);
+      const { data } = await supabase.from('partner_vendors').select('*').order('created_at', { ascending: false }).limit(100);
       setPartners(data || []);
     } catch (error) {
       console.error('Error fetching partners:', error);
+      message.error('Failed to load partners');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCreate = () => {
+    setEditingPartner(null);
+    form.resetFields();
+    setModalVisible(true);
+  };
+
+  const handleEdit = (record: any) => {
+    setEditingPartner(record);
+    form.setFieldsValue(record);
+    setModalVisible(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase.from('partner_vendors').delete().eq('id', id);
+      if (error) throw error;
+      message.success('Partner deleted successfully');
+      fetchPartners();
+    } catch (error: any) {
+      console.error('Error deleting partner:', error);
+      message.error(error.message || 'Failed to delete partner');
+    }
+  };
+
+  const handleSubmit = async (values: any) => {
+    try {
+      if (editingPartner) {
+        const { error } = await supabase.from('partner_vendors').update(values).eq('id', editingPartner.id);
+        if (error) throw error;
+        message.success('Partner updated successfully');
+      } else {
+        const { error } = await supabase.from('partner_vendors').insert(values);
+        if (error) throw error;
+        message.success('Partner created successfully');
+      }
+      setModalVisible(false);
+      form.resetFields();
+      fetchPartners();
+    } catch (error: any) {
+      console.error('Error saving partner:', error);
+      message.error(error.message || 'Failed to save partner');
+    }
+  };
+
   return (
     <div>
+      <div className="mb-4 flex justify-between items-center">
+        <Typography.Title level={4} className="m-0">Partners & Vendors</Typography.Title>
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+          Add Partner
+        </Button>
+      </div>
+
       <Table 
         loading={loading}
         dataSource={partners}
@@ -202,9 +367,58 @@ function PartnerManagement() {
           { title: 'Type', dataIndex: 'vendor_type', key: 'vendor_type' },
           { title: 'Status', dataIndex: 'status', key: 'status' },
           { title: 'Performance Rating', dataIndex: 'performance_rating', key: 'performance_rating' },
-          { title: 'Contact Email', dataIndex: 'contact_email', key: 'contact_email' }
+          { title: 'Contact Email', dataIndex: 'contact_email', key: 'contact_email' },
+          {
+            title: 'Actions',
+            key: 'actions',
+            width: 120,
+            render: (_, record) => (
+              <Space>
+                <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
+                <Popconfirm title="Delete this partner?" onConfirm={() => handleDelete(record.id)}>
+                  <Button size="small" danger icon={<DeleteOutlined />} />
+                </Popconfirm>
+              </Space>
+            )
+          }
         ]}
       />
+
+      <Modal
+        title={editingPartner ? 'Edit Partner' : 'Add Partner'}
+        open={modalVisible}
+        onCancel={() => setModalVisible(false)}
+        onOk={() => form.submit()}
+        width={600}
+      >
+        <Form form={form} onFinish={handleSubmit} layout="vertical">
+          <Form.Item name="vendor_name" label="Vendor Name" rules={[{ required: true }]}>
+            <Input placeholder="Acme Supplies Inc" />
+          </Form.Item>
+          <Form.Item name="vendor_type" label="Type" rules={[{ required: true }]}>
+            <Select placeholder="Select type">
+              <Select.Option value="supplier">Supplier</Select.Option>
+              <Select.Option value="logistics">Logistics</Select.Option>
+              <Select.Option value="maintenance">Maintenance</Select.Option>
+              <Select.Option value="technology">Technology</Select.Option>
+              <Select.Option value="services">Services</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="contact_email" label="Contact Email" rules={[{ required: true, type: 'email' }]}>
+            <Input type="email" placeholder="contact@vendor.com" />
+          </Form.Item>
+          <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+            <Select>
+              <Select.Option value="active">Active</Select.Option>
+              <Select.Option value="on-hold">On Hold</Select.Option>
+              <Select.Option value="terminated">Terminated</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="performance_rating" label="Performance Rating">
+            <InputNumber min={0} max={100} placeholder="0-100" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }
@@ -212,6 +426,9 @@ function PartnerManagement() {
 function ComplianceDashboard() {
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<any>(null);
+  const [form] = Form.useForm();
 
   useEffect(() => {
     fetchCompliance();
@@ -220,17 +437,69 @@ function ComplianceDashboard() {
   const fetchCompliance = async () => {
     setLoading(true);
     try {
-      const { data } = await supabase.from('compliance_records').select('*').limit(100);
+      const { data } = await supabase.from('compliance_records').select('*').order('created_at', { ascending: false }).limit(100);
       setRecords(data || []);
     } catch (error) {
       console.error('Error fetching compliance:', error);
+      message.error('Failed to load compliance records');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCreate = () => {
+    setEditingRecord(null);
+    form.resetFields();
+    setModalVisible(true);
+  };
+
+  const handleEdit = (record: any) => {
+    setEditingRecord(record);
+    form.setFieldsValue(record);
+    setModalVisible(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase.from('compliance_records').delete().eq('id', id);
+      if (error) throw error;
+      message.success('Compliance record deleted successfully');
+      fetchCompliance();
+    } catch (error: any) {
+      console.error('Error deleting record:', error);
+      message.error(error.message || 'Failed to delete record');
+    }
+  };
+
+  const handleSubmit = async (values: any) => {
+    try {
+      if (editingRecord) {
+        const { error } = await supabase.from('compliance_records').update(values).eq('id', editingRecord.id);
+        if (error) throw error;
+        message.success('Compliance record updated successfully');
+      } else {
+        const { error } = await supabase.from('compliance_records').insert(values);
+        if (error) throw error;
+        message.success('Compliance record created successfully');
+      }
+      setModalVisible(false);
+      form.resetFields();
+      fetchCompliance();
+    } catch (error: any) {
+      console.error('Error saving record:', error);
+      message.error(error.message || 'Failed to save record');
+    }
+  };
+
   return (
     <div>
+      <div className="mb-4 flex justify-between items-center">
+        <Typography.Title level={4} className="m-0">Compliance Records</Typography.Title>
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+          Add Record
+        </Button>
+      </div>
+
       <Table 
         loading={loading}
         dataSource={records}
@@ -240,9 +509,62 @@ function ComplianceDashboard() {
           { title: 'Entity Type', dataIndex: 'entity_type', key: 'entity_type' },
           { title: 'Status', dataIndex: 'status', key: 'status' },
           { title: 'Expiry Date', dataIndex: 'expiry_date', key: 'expiry_date' },
-          { title: 'Issued By', dataIndex: 'issued_by', key: 'issued_by' }
+          { title: 'Issued By', dataIndex: 'issued_by', key: 'issued_by' },
+          {
+            title: 'Actions',
+            key: 'actions',
+            width: 120,
+            render: (_, record) => (
+              <Space>
+                <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
+                <Popconfirm title="Delete this record?" onConfirm={() => handleDelete(record.id)}>
+                  <Button size="small" danger icon={<DeleteOutlined />} />
+                </Popconfirm>
+              </Space>
+            )
+          }
         ]}
       />
+
+      <Modal
+        title={editingRecord ? 'Edit Compliance Record' : 'Add Compliance Record'}
+        open={modalVisible}
+        onCancel={() => setModalVisible(false)}
+        onOk={() => form.submit()}
+        width={600}
+      >
+        <Form form={form} onFinish={handleSubmit} layout="vertical">
+          <Form.Item name="record_type" label="Record Type" rules={[{ required: true }]}>
+            <Select placeholder="Select type">
+              <Select.Option value="license">License</Select.Option>
+              <Select.Option value="permit">Permit</Select.Option>
+              <Select.Option value="certification">Certification</Select.Option>
+              <Select.Option value="insurance">Insurance</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="entity_type" label="Entity Type" rules={[{ required: true }]}>
+            <Select placeholder="Select entity">
+              <Select.Option value="business">Business</Select.Option>
+              <Select.Option value="vehicle">Vehicle</Select.Option>
+              <Select.Option value="employee">Employee</Select.Option>
+              <Select.Option value="facility">Facility</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+            <Select>
+              <Select.Option value="valid">Valid</Select.Option>
+              <Select.Option value="expired">Expired</Select.Option>
+              <Select.Option value="pending">Pending</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="expiry_date" label="Expiry Date" rules={[{ required: true }]}>
+            <Input type="date" />
+          </Form.Item>
+          <Form.Item name="issued_by" label="Issued By">
+            <Input placeholder="State DMV" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }
