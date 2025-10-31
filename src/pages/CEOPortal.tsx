@@ -13,6 +13,7 @@ import {
   WarningOutlined,
   CheckCircleOutlined,
   TrophyOutlined,
+  BrainOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -21,6 +22,7 @@ import { PersonnelManager } from '@/components/ceo/PersonnelManager';
 import { FinancialApprovals } from '@/components/ceo/FinancialApprovals';
 import { EmergencyControls } from '@/components/ceo/EmergencyControls';
 import { StrategicPlanning } from '@/components/ceo/StrategicPlanning';
+import { StrategicMindMap } from '@/components/ceo/StrategicMindMap';
 import { AuditTrail } from '@/components/ceo/AuditTrail';
 import { QuickActions } from '@/components/ceo/QuickActions';
 import { EquityDashboard } from '@/components/ceo/EquityDashboard';
@@ -395,6 +397,18 @@ const CEOPortal: React.FC = () => {
               key="strategic"
             >
               <StrategicPlanning />
+            </TabPane>
+
+            <TabPane
+              tab={
+                <span>
+                  <BrainOutlined />
+                  Mind Map
+                </span>
+              }
+              key="mindmap"
+            >
+              <StrategicMindMap />
             </TabPane>
 
             <TabPane

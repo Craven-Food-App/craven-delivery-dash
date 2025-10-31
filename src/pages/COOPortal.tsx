@@ -171,9 +171,20 @@ function FleetDashboard() {
 
   const handleDelete = async (id: string) => {
     try {
+      const vehicle = vehicles.find(v => v.id === id);
       const { error } = await supabase.from('fleet_vehicles').delete().eq('id', id);
       if (error) throw error;
       message.success('Vehicle deleted successfully');
+      // Log audit trail
+      await supabase.rpc('log_ceo_action', {
+        p_action_type: 'delete_vehicle',
+        p_action_category: 'system',
+        p_target_type: 'fleet_vehicles',
+        p_target_id: id,
+        p_target_name: vehicle?.license_plate || 'Vehicle',
+        p_description: `Deleted vehicle ${vehicle?.license_plate}`,
+        p_severity: 'normal'
+      }).catch(() => {});
       fetchVehicles();
     } catch (error: any) {
       console.error('Error deleting vehicle:', error);
@@ -187,10 +198,30 @@ function FleetDashboard() {
         const { error } = await supabase.from('fleet_vehicles').update(values).eq('id', editingVehicle.id);
         if (error) throw error;
         message.success('Vehicle updated successfully');
+        // Log audit trail
+        await supabase.rpc('log_ceo_action', {
+          p_action_type: 'update_vehicle',
+          p_action_category: 'system',
+          p_target_type: 'fleet_vehicles',
+          p_target_id: editingVehicle.id,
+          p_target_name: values.license_plate || 'Vehicle',
+          p_description: `Updated vehicle ${values.license_plate}: ${JSON.stringify(values)}`,
+          p_severity: 'normal'
+        }).catch(() => {});
       } else {
         const { error } = await supabase.from('fleet_vehicles').insert(values);
         if (error) throw error;
         message.success('Vehicle created successfully');
+        // Log audit trail
+        await supabase.rpc('log_ceo_action', {
+          p_action_type: 'create_vehicle',
+          p_action_category: 'system',
+          p_target_type: 'fleet_vehicles',
+          p_target_id: null,
+          p_target_name: values.license_plate || 'Vehicle',
+          p_description: `Created new vehicle: ${values.license_plate}`,
+          p_severity: 'normal'
+        }).catch(() => {});
       }
       setModalVisible(false);
       form.resetFields();
