@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Input, Modal, Form, message, Space } from 'antd';
-import { BrainOutlined, PlusOutlined, SaveOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { BulbOutlined, PlusOutlined, SaveOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 
 interface MindMapNode {
@@ -252,7 +252,7 @@ export const StrategicMindMap: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-slate-900 mb-2 flex items-center gap-2">
-            <BrainOutlined /> Strategic Mind Map
+            <BulbOutlined /> Strategic Mind Map
           </h2>
           <p className="text-slate-600">Visualize strategic relationships and brainstorm initiatives</p>
         </div>

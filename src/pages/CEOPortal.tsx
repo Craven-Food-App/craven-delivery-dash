@@ -13,7 +13,7 @@ import {
   WarningOutlined,
   CheckCircleOutlined,
   TrophyOutlined,
-  BrainOutlined,
+  BulbOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -402,7 +402,7 @@ const CEOPortal: React.FC = () => {
             <TabPane
               tab={
                 <span>
-                  <BrainOutlined />
+                  <BulbOutlined />
                   Mind Map
                 </span>
               }
