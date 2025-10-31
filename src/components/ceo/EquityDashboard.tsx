@@ -21,9 +21,18 @@ interface Shareholder {
 export const EquityDashboard: React.FC = () => {
   const [shareholders, setShareholders] = useState<Shareholder[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     fetchShareholders();
+    
+    // Check screen size
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   const fetchShareholders = async () => {
@@ -48,7 +57,51 @@ export const EquityDashboard: React.FC = () => {
 
   const unallocatedEquity = 100 - totalEquity;
 
-  const columns = [
+  // Mobile columns - simplified view
+  const mobileColumns = [
+    {
+      title: 'Rank',
+      key: 'rank',
+      width: 50,
+      render: (_: any, __: any, index: number) => (
+        <span style={{ fontWeight: 600, color: '#1a1a1a', fontSize: '14px' }}>
+          #{index + 1}
+        </span>
+      ),
+    },
+    {
+      title: 'Shareholder',
+      key: 'name',
+      render: (_: any, record: Shareholder) => (
+        <div className="flex flex-col">
+          <div style={{ fontWeight: 600, color: '#1a1a1a', fontSize: '14px' }}>
+            {record.first_name} {record.last_name}
+          </div>
+          <div style={{ fontSize: '11px', color: '#898989' }}>
+            {record.email}
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: 'Equity',
+      key: 'equity',
+      width: 60,
+      render: (_: any, record: Shareholder) => {
+        const equity = record.employee_equity?.[0];
+        const percentage = equity?.shares_percentage || 0;
+        
+        return (
+          <div style={{ fontSize: '16px', fontWeight: 700, color: '#ff6b00' }}>
+            {percentage}%
+          </div>
+        );
+      },
+    },
+  ];
+
+  // Desktop columns - full view
+  const desktopColumns = [
     {
       title: 'Rank',
       key: 'rank',
@@ -132,55 +185,56 @@ export const EquityDashboard: React.FC = () => {
     },
   ];
 
+  const columns = isMobile ? mobileColumns : desktopColumns;
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">
-            🎯 Equity Ownership Dashboard
-          </h2>
-          <p className="text-slate-600">
-            Track C-suite and key executive equity stakes
-          </p>
-        </div>
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header - Responsive */}
+      <div>
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1 sm:mb-2">
+          🎯 Equity Ownership Dashboard
+        </h2>
+        <p className="text-sm sm:text-base text-slate-600">
+          Track C-suite and key executive equity stakes
+        </p>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      {/* Statistics Cards - Responsive Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card>
           <Statistic
-            title="Total Shareholders"
+            title={<span className="text-xs sm:text-sm">Total Shareholders</span>}
             value={shareholders.length}
-            prefix={<TeamOutlined />}
-            valueStyle={{ color: '#1890ff' }}
+            prefix={<TeamOutlined className="text-base sm:text-lg" />}
+            valueStyle={{ color: '#1890ff', fontSize: isMobile ? '20px' : '24px' }}
           />
         </Card>
         <Card>
           <Statistic
-            title="Total Allocated Equity"
+            title={<span className="text-xs sm:text-sm">Total Allocated Equity</span>}
             value={totalEquity}
             suffix="%"
-            prefix={<DollarOutlined />}
-            valueStyle={{ color: '#3f8600' }}
+            prefix={<DollarOutlined className="text-base sm:text-lg" />}
+            valueStyle={{ color: '#3f8600', fontSize: isMobile ? '18px' : '24px' }}
             precision={2}
           />
         </Card>
         <Card>
           <Statistic
-            title="Unallocated Equity"
+            title={<span className="text-xs sm:text-sm">Unallocated Equity</span>}
             value={unallocatedEquity}
             suffix="%"
-            prefix={<TrophyOutlined />}
-            valueStyle={{ color: '#faad14' }}
+            prefix={<TrophyOutlined className="text-base sm:text-lg" />}
+            valueStyle={{ color: '#faad14', fontSize: isMobile ? '20px' : '24px' }}
             precision={2}
           />
         </Card>
         <Card>
           <Statistic
-            title="Largest Stake"
+            title={<span className="text-xs sm:text-sm">Largest Stake</span>}
             value={shareholders[0]?.employee_equity?.[0]?.shares_percentage || 0}
             suffix="%"
-            valueStyle={{ color: '#cf1322', fontSize: '24px' }}
+            valueStyle={{ color: '#cf1322', fontSize: isMobile ? '20px' : '24px' }}
             precision={2}
           />
         </Card>
@@ -188,24 +242,24 @@ export const EquityDashboard: React.FC = () => {
 
       {/* Equity Allocation Progress Bar */}
       <Card>
-        <h3 className="text-lg font-semibold mb-4">Equity Allocation Overview</h3>
+        <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Equity Allocation Overview</h3>
         <div className="space-y-2">
           {shareholders.slice(0, 10).map((emp, index) => {
             const percentage = emp.employee_equity?.[0]?.shares_percentage || 0;
             return (
-              <div key={emp.id} className="flex items-center space-x-3">
-                <div className="w-24 text-sm font-medium text-slate-600">
+              <div key={emp.id} className="flex items-center space-x-2 sm:space-x-3">
+                <div className={`${isMobile ? 'w-16' : 'w-24'} text-xs sm:text-sm font-medium text-slate-600 truncate`}>
                   {emp.first_name} {emp.last_name.substring(0, 1)}.
                 </div>
                 <div className="flex-1">
-                    <div className="h-6 bg-slate-100 rounded-full overflow-hidden">
+                    <div className={`${isMobile ? 'h-4' : 'h-6'} bg-slate-100 rounded-full overflow-hidden`}>
                       <div
                         className="h-full bg-gradient-to-r from-orange-500 to-orange-400"
                         style={{ width: `${percentage}%`, transition: 'width 0.3s' }}
                       />
                     </div>
                 </div>
-                <div className="w-20 text-right text-sm font-semibold text-slate-700">
+                <div className={`${isMobile ? 'w-12' : 'w-20'} text-right text-xs sm:text-sm font-semibold text-slate-700`}>
                   {percentage}%
                 </div>
               </div>
@@ -216,16 +270,23 @@ export const EquityDashboard: React.FC = () => {
 
       {/* Shareholders Table */}
       <Card>
-        <h3 className="text-lg font-semibold mb-4">Complete Shareholder Registry</h3>
-        <Table
-          columns={columns}
-          dataSource={shareholders}
-          rowKey="id"
-          loading={loading}
-          pagination={{ pageSize: 20, showSizeChanger: true }}
-          className="shadow-lg"
-          scroll={{ x: 800 }}
-        />
+        <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Complete Shareholder Registry</h3>
+        <div className="overflow-hidden">
+          <Table
+            columns={columns}
+            dataSource={shareholders}
+            rowKey="id"
+            loading={loading}
+            pagination={{ 
+              pageSize: isMobile ? 5 : 20, 
+              showSizeChanger: !isMobile,
+              size: isMobile ? 'small' : 'default'
+            }}
+            className="shadow-lg"
+            scroll={{ x: isMobile ? 600 : 800 }}
+            size={isMobile ? 'small' : 'default'}
+          />
+        </div>
       </Card>
 
       {unallocatedEquity < 0 && (

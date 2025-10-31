@@ -57,10 +57,19 @@ export const PersonnelManager: React.FC = () => {
   const [packetForEmail, setPacketForEmail] = useState<string | null>(null);
   const [showDeferred, setShowDeferred] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     fetchEmployees();
     fetchDepartments();
+    
+    // Check screen size
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   const fetchDepartments = async () => {
@@ -759,7 +768,69 @@ export const PersonnelManager: React.FC = () => {
     emp.position.toLowerCase().includes(searchText.toLowerCase())
   );
 
-  const columns = [
+  // Mobile columns - simplified view
+  const mobileColumns = [
+    {
+      title: 'Name',
+      key: 'name',
+      render: (_: any, record: Employee) => (
+        <div className="flex flex-col">
+          <span className="font-medium">{`${record.first_name} ${record.last_name}`}</span>
+          <span className="text-xs text-gray-500">{record.email}</span>
+        </div>
+      ),
+    },
+    {
+      title: 'Status',
+      dataIndex: 'employment_status',
+      key: 'employment_status',
+      width: 80,
+      render: (status: string) => {
+        const colors: Record<string, string> = {
+          active: 'green',
+          'on-leave': 'orange',
+          suspended: 'red',
+          terminated: 'red',
+        };
+        return <Tag color={colors[status] || 'default'}>{status.toUpperCase()}</Tag>;
+      },
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      width: 80,
+      render: (_: any, record: Employee) => (
+        <Space size="small" direction="vertical">
+          <Button 
+            type="primary" 
+            size="small"
+            onClick={() => {
+              setSelectedEmployee(record);
+              const eq: any = (record as any).employee_equity?.[0] || {};
+              editForm.setFieldsValue({
+                first_name: (record as any).first_name,
+                last_name: (record as any).last_name,
+                email: (record as any).email,
+                position: (record as any).position,
+                department_id: (record as any).department_id,
+                employment_type: (record as any).employment_type,
+                salary: (record as any).salary,
+                equity_percentage: eq.shares_percentage,
+                shares_total: eq.shares_total,
+                equity_type: eq.equity_type || 'stock',
+              });
+              setIsEditModalVisible(true);
+            }}
+          >
+            Edit
+          </Button>
+        </Space>
+      ),
+    },
+  ];
+
+  // Desktop columns - full view
+  const desktopColumns = [
     {
       title: 'Employee #',
       dataIndex: 'employee_number',
@@ -916,79 +987,94 @@ export const PersonnelManager: React.FC = () => {
     },
   ];
 
+  const columns = isMobile ? mobileColumns : desktopColumns;
+
   const activeEmployees = employees.filter(e => e.employment_status === 'active');
   const totalPayroll = employees.reduce((sum, e) => sum + (e.salary || 0), 0);
   const recentHires = employees.filter(e => dayjs(e.hire_date).isAfter(dayjs().subtract(30, 'days')));
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header - Responsive */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Personnel Management</h2>
-          <p className="text-slate-600">Hire, manage, and monitor all employees</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1 sm:mb-2">Personnel Management</h2>
+          <p className="text-sm sm:text-base text-slate-600">Hire, manage, and monitor all employees</p>
         </div>
-        <Space>
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-0">
           <Search
             placeholder="Search personnel..."
             allowClear
             onSearch={setSearchText}
-            style={{ width: 300 }}
+            className="w-full sm:w-auto sm:min-w-[200px] sm:max-w-[300px]"
           />
           <Button
             type="primary"
             icon={<UserAddOutlined />}
             size="large"
             onClick={() => setIsModalVisible(true)}
+            className="w-full sm:w-auto"
           >
-            Hire New Employee
+            <span className="hidden sm:inline">Hire New Employee</span>
+            <span className="sm:hidden">Hire Employee</span>
           </Button>
-        </Space>
+        </div>
       </div>
 
-      {/* Metrics */}
-      <div className="grid grid-cols-4 gap-4">
+      {/* Metrics - Responsive Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card>
           <Statistic
-            title="Total Employees"
+            title={<span className="text-xs sm:text-sm">Total Employees</span>}
             value={employees.length}
-            prefix={<TeamOutlined />}
-            valueStyle={{ color: '#3f8600' }}
+            prefix={<TeamOutlined className="text-base sm:text-lg" />}
+            valueStyle={{ color: '#3f8600', fontSize: isMobile ? '20px' : '24px' }}
           />
         </Card>
         <Card>
           <Statistic
-            title="Active Employees"
+            title={<span className="text-xs sm:text-sm">Active Employees</span>}
             value={activeEmployees.length}
-            valueStyle={{ color: '#1890ff' }}
+            valueStyle={{ color: '#1890ff', fontSize: isMobile ? '20px' : '24px' }}
           />
         </Card>
         <Card>
           <Statistic
-            title="Monthly Payroll"
+            title={<span className="text-xs sm:text-sm">Monthly Payroll</span>}
             value={Math.round(totalPayroll / 12)}
-            prefix={<DollarOutlined />}
+            prefix={<DollarOutlined className="text-base sm:text-lg" />}
             precision={0}
-            valueStyle={{ color: '#cf1322' }}
+            valueStyle={{ color: '#cf1322', fontSize: isMobile ? '16px' : '20px' }}
           />
         </Card>
         <Card>
           <Statistic
-            title="Hired (30 days)"
+            title={<span className="text-xs sm:text-sm">Hired (30 days)</span>}
             value={recentHires.length}
-            valueStyle={{ color: '#faad14' }}
+            valueStyle={{ color: '#faad14', fontSize: isMobile ? '20px' : '24px' }}
           />
         </Card>
       </div>
 
-      <Table
-        columns={columns}
-        dataSource={filteredEmployees}
-        rowKey="id"
-        loading={loading}
-        pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `Total ${total} employees` }}
-        className="shadow-lg"
-        scroll={{ x: 1200 }}
-      />
+      {/* Table - Mobile Optimized */}
+      <div className="overflow-hidden">
+        <Table
+          columns={columns}
+          dataSource={filteredEmployees}
+          rowKey="id"
+          loading={loading}
+          pagination={{ 
+            pageSize: isMobile ? 5 : 10, 
+            showSizeChanger: !isMobile, 
+            showTotal: (total) => `Total ${total} employees`,
+            size: isMobile ? 'small' : 'default',
+            showQuickJumper: !isMobile
+          }}
+          className="shadow-lg"
+          scroll={{ x: isMobile ? 800 : 1200 }}
+          size={isMobile ? 'small' : 'default'}
+        />
+      </div>
 
       {/* Edit Employee Modal */}
       <Modal
@@ -1000,10 +1086,10 @@ export const PersonnelManager: React.FC = () => {
           editForm.resetFields();
         }}
         footer={null}
-        width={700}
+        width={isMobile ? '90%' : 700}
       >
         <Form layout="vertical" form={editForm} onFinish={handleEditEmployee}>
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
             <Form.Item label="First Name" name="first_name" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
@@ -1016,7 +1102,7 @@ export const PersonnelManager: React.FC = () => {
             <Input />
           </Form.Item>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
             <Form.Item label="Position" name="position" rules={[{ required: true }]}>
               <Input />
             </Form.Item>
@@ -1029,7 +1115,7 @@ export const PersonnelManager: React.FC = () => {
             </Form.Item>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
             <Form.Item label="Employment Type" name="employment_type" initialValue="full-time">
               <Select>
                 <Option value="full-time">Full-Time</Option>
@@ -1046,7 +1132,7 @@ export const PersonnelManager: React.FC = () => {
             </Form.Item>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-3'}`}>
             <Form.Item label="Equity %" name="equity_percentage">
               <InputNumber style={{ width: '100%' }} min={0} max={100} step={0.25} precision={2} />
             </Form.Item>
@@ -1063,7 +1149,7 @@ export const PersonnelManager: React.FC = () => {
           </div>
 
           <Form.Item>
-            <Space className="w-full justify-end">
+            <Space className="w-full justify-end flex-wrap">
               <Button onClick={() => {
                 setIsEditModalVisible(false);
                 setSelectedEmployee(null);
@@ -1084,10 +1170,10 @@ export const PersonnelManager: React.FC = () => {
           form.resetFields();
         }}
         footer={null}
-        width={700}
+        width={isMobile ? '90%' : 700}
       >
         <Form layout="vertical" form={form} onFinish={handleHire}>
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
             <Form.Item
               label="First Name"
               name="first_name"
@@ -1140,7 +1226,7 @@ export const PersonnelManager: React.FC = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
             <Form.Item
               label="Department"
               name="department_id"
@@ -1168,7 +1254,7 @@ export const PersonnelManager: React.FC = () => {
             </Form.Item>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
             <Form.Item
               label="Annual Salary"
               name="salary"
@@ -1211,7 +1297,7 @@ export const PersonnelManager: React.FC = () => {
             </Form.Item>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
             <Form.Item name="deferred_salary" valuePropName="checked" label=" ">
               <Checkbox onChange={(e)=> setShowDeferred(e.target.checked)}>Defer Salary Until Funding?</Checkbox>
             </Form.Item>
@@ -1227,7 +1313,7 @@ export const PersonnelManager: React.FC = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
             <Form.Item
               label="Equity Stake (%)"
               name="equity"
@@ -1265,7 +1351,7 @@ export const PersonnelManager: React.FC = () => {
             <InputNumber style={{ width: '100%' }} min={0} step={1000} />
           </Form.Item>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
             <Form.Item
               label="Vesting Schedule"
               name="vesting_schedule"
@@ -1301,18 +1387,18 @@ export const PersonnelManager: React.FC = () => {
           </Form.Item>
 
           <Form.Item>
-            <Space className="w-full justify-end">
+            <Space className={`w-full ${isMobile ? 'flex-col' : 'justify-end'}`} direction={isMobile ? 'vertical' : 'horizontal'} size="small">
               <Button onClick={() => {
                 setIsModalVisible(false);
                 form.resetFields();
-              }}>
+              }} block={isMobile}>
                 Cancel
               </Button>
-              <Button onClick={openPreview} size="large">
+              <Button onClick={openPreview} size="large" block={isMobile}>
                 👀 Preview Documents
               </Button>
-              <Button type="primary" htmlType="submit" size="large">
-                🎉 Hire Employee (Skip Preview)
+              <Button type="primary" htmlType="submit" size="large" block={isMobile}>
+                {isMobile ? '🎉 Hire' : '🎉 Hire Employee (Skip Preview)'}
               </Button>
             </Space>
           </Form.Item>
@@ -1324,7 +1410,7 @@ export const PersonnelManager: React.FC = () => {
         title="📄 Review Documents"
         open={isPreviewVisible}
         onCancel={() => setIsPreviewVisible(false)}
-        width={900}
+        width={isMobile ? '95%' : 900}
         footer={null}
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -1465,7 +1551,7 @@ export const PersonnelManager: React.FC = () => {
           promoteForm.resetFields();
         }}
         footer={null}
-        width={600}
+        width={isMobile ? '90%' : 600}
       >
         <Form layout="vertical" form={promoteForm} onFinish={handlePromote}>
           <div className="bg-slate-50 p-4 rounded-lg mb-4">
@@ -1514,15 +1600,15 @@ export const PersonnelManager: React.FC = () => {
           </Form.Item>
 
           <Form.Item>
-            <Space className="w-full justify-end">
+            <Space className={`w-full ${isMobile ? 'flex-col' : 'justify-end'}`} direction={isMobile ? 'vertical' : 'horizontal'}>
               <Button onClick={() => {
                 setIsPromoteModalVisible(false);
                 setSelectedEmployee(null);
                 promoteForm.resetFields();
-              }}>
+              }} block={isMobile}>
                 Cancel
               </Button>
-              <Button type="primary" htmlType="submit" size="large">
+              <Button type="primary" htmlType="submit" size="large" block={isMobile}>
                 ✅ Confirm Promotion
               </Button>
             </Space>
