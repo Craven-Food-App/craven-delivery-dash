@@ -144,64 +144,64 @@ export default function CFOPortal() {
           />
 
           {/* Key Finance Metrics - Responsive */}
-          <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-            <Col xs={12} sm={12} lg={4}>
-              <div style={{ background: "#1e293b", borderRadius: 8, padding: isMobile ? "8px 10px" : "12px 16px" }}>
+          <Row gutter={isMobile ? [8, 8] : [16, 16]} style={{ marginBottom: 16 }}>
+            <Col xs={12} sm={12} lg={4} style={{ paddingLeft: isMobile ? 4 : 0, paddingRight: isMobile ? 4 : 0 }}>
+              <div style={{ background: "#1e293b", borderRadius: 8, padding: isMobile ? "6px 8px" : "12px 16px" }}>
                 <Statistic
-                  title={<span style={{ color: "#94a3b8", fontSize: isMobile ? 12 : 14 }}>Revenue</span>}
+                  title={<span style={{ color: "#94a3b8", fontSize: isMobile ? 11 : 14 }}>Revenue</span>}
                   value={metrics.revenue}
-                  prefix={<DollarOutlined style={{ fontSize: isMobile ? 14 : 16 }} />}
-                  valueStyle={{ color: "#fff", fontWeight: 700, fontSize: isMobile ? 16 : 20 }}
+                  prefix={<DollarOutlined style={{ fontSize: isMobile ? 12 : 16 }} />}
+                  valueStyle={{ color: "#fff", fontWeight: 700, fontSize: isMobile ? 14 : 20 }}
                 />
               </div>
             </Col>
-            <Col xs={12} sm={12} lg={4}>
-              <div style={{ background: "#1e293b", borderRadius: 8, padding: isMobile ? "8px 10px" : "12px 16px" }}>
+            <Col xs={12} sm={12} lg={4} style={{ paddingLeft: isMobile ? 4 : 0, paddingRight: isMobile ? 4 : 0 }}>
+              <div style={{ background: "#1e293b", borderRadius: 8, padding: isMobile ? "6px 8px" : "12px 16px" }}>
                 <Statistic
-                  title={<span style={{ color: "#94a3b8", fontSize: isMobile ? 12 : 14 }}>Expenses</span>}
+                  title={<span style={{ color: "#94a3b8", fontSize: isMobile ? 11 : 14 }}>Expenses</span>}
                   value={metrics.expenses}
-                  prefix={<BankOutlined style={{ fontSize: isMobile ? 14 : 16 }} />}
-                  valueStyle={{ color: "#fff", fontWeight: 700, fontSize: isMobile ? 16 : 20 }}
+                  prefix={<BankOutlined style={{ fontSize: isMobile ? 12 : 16 }} />}
+                  valueStyle={{ color: "#fff", fontWeight: 700, fontSize: isMobile ? 14 : 20 }}
                 />
               </div>
             </Col>
-            <Col xs={12} sm={12} lg={4}>
-              <div style={{ background: "#1e293b", borderRadius: 8, padding: isMobile ? "8px 10px" : "12px 16px" }}>
+            <Col xs={12} sm={12} lg={4} style={{ paddingLeft: isMobile ? 4 : 0, paddingRight: isMobile ? 4 : 0 }}>
+              <div style={{ background: "#1e293b", borderRadius: 8, padding: isMobile ? "6px 8px" : "12px 16px" }}>
                 <Statistic
-                  title={<span style={{ color: "#94a3b8", fontSize: isMobile ? 12 : 14 }}>Gross Margin</span>}
+                  title={<span style={{ color: "#94a3b8", fontSize: isMobile ? 11 : 14 }}>Gross Margin</span>}
                   value={metrics.grossMargin}
-                  prefix={<FundOutlined style={{ fontSize: isMobile ? 14 : 16 }} />}
-                  valueStyle={{ color: "#fff", fontWeight: 700, fontSize: isMobile ? 16 : 20 }}
+                  prefix={<FundOutlined style={{ fontSize: isMobile ? 12 : 16 }} />}
+                  valueStyle={{ color: "#fff", fontWeight: 700, fontSize: isMobile ? 14 : 20 }}
                 />
               </div>
             </Col>
-            <Col xs={12} sm={12} lg={4}>
-              <div style={{ background: "#1e293b", borderRadius: 8, padding: isMobile ? "8px 10px" : "12px 16px" }}>
+            <Col xs={12} sm={12} lg={4} style={{ paddingLeft: isMobile ? 4 : 0, paddingRight: isMobile ? 4 : 0 }}>
+              <div style={{ background: "#1e293b", borderRadius: 8, padding: isMobile ? "6px 8px" : "12px 16px" }}>
                 <Statistic
-                  title={<span style={{ color: "#94a3b8", fontSize: isMobile ? 12 : 14 }}>Cash</span>}
+                  title={<span style={{ color: "#94a3b8", fontSize: isMobile ? 11 : 14 }}>Cash</span>}
                   value={metrics.cash}
                   prefix="$"
-                  valueStyle={{ color: "#fff", fontWeight: 700, fontSize: isMobile ? 16 : 20 }}
+                  valueStyle={{ color: "#fff", fontWeight: 700, fontSize: isMobile ? 14 : 20 }}
                 />
               </div>
             </Col>
-            <Col xs={12} sm={12} lg={4}>
-              <div style={{ background: "#1e293b", borderRadius: 8, padding: isMobile ? "8px 10px" : "12px 16px" }}>
+            <Col xs={12} sm={12} lg={4} style={{ paddingLeft: isMobile ? 4 : 0, paddingRight: isMobile ? 4 : 0 }}>
+              <div style={{ background: "#1e293b", borderRadius: 8, padding: isMobile ? "6px 8px" : "12px 16px" }}>
                 <Statistic
-                  title={<span style={{ color: "#94a3b8", fontSize: isMobile ? 12 : 14 }}>Burn</span>}
+                  title={<span style={{ color: "#94a3b8", fontSize: isMobile ? 11 : 14 }}>Burn</span>}
                   value={metrics.burn}
                   prefix="$"
-                  valueStyle={{ color: "#fff", fontWeight: 700, fontSize: isMobile ? 16 : 20 }}
+                  valueStyle={{ color: "#fff", fontWeight: 700, fontSize: isMobile ? 14 : 20 }}
                 />
               </div>
             </Col>
-            <Col xs={12} sm={12} lg={4}>
-              <div style={{ background: "#1e293b", borderRadius: 8, padding: isMobile ? "8px 10px" : "12px 16px" }}>
+            <Col xs={12} sm={12} lg={4} style={{ paddingLeft: isMobile ? 4 : 0, paddingRight: isMobile ? 4 : 0 }}>
+              <div style={{ background: "#1e293b", borderRadius: 8, padding: isMobile ? "6px 8px" : "12px 16px" }}>
                 <Statistic
-                  title={<span style={{ color: "#94a3b8", fontSize: isMobile ? 12 : 14 }}>Runway</span>}
+                  title={<span style={{ color: "#94a3b8", fontSize: isMobile ? 11 : 14 }}>Runway</span>}
                   value={metrics.runway}
                   suffix="months"
-                  valueStyle={{ color: "#fff", fontWeight: 700, fontSize: isMobile ? 16 : 20 }}
+                  valueStyle={{ color: "#fff", fontWeight: 700, fontSize: isMobile ? 14 : 20 }}
                 />
               </div>
             </Col>
