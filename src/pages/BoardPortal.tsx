@@ -33,7 +33,7 @@ const BoardPortal: React.FC = () => {
   const navigate = useNavigate();
   const { loading, user, execUser, isAuthorized, signOut } = useExecAuth();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
-  const [activeTab, setActiveTab] = useState('communications');
+  const [activeTab, setActiveTab] = useState('directory');
 
   useEffect(() => {
     if (isAuthorized) {
@@ -239,23 +239,7 @@ const BoardPortal: React.FC = () => {
                   ),
                   children: <ExecutiveComms />,
                 },
-                {
-                  key: 'dashboard',
-                  label: (
-                    <span className="flex items-center gap-1 sm:gap-2">
-                      <BarChartOutlined />
-                      <span className="text-xs sm:text-base">Dashboard</span>
-                    </span>
-                  ),
-                  children: (
-                    <div className="p-2 sm:p-4">
-                      <h3 className="text-lg sm:text-xl font-bold mb-4">Company Overview</h3>
-                      <div className="text-center py-8 sm:py-12">
-                        <p className="text-sm sm:text-base text-slate-600 mb-4">Dashboard metrics will be available once the database tables are configured.</p>
-                      </div>
-                    </div>
-                  ),
-                },
+                // Dashboard tab removed until real metrics are available to avoid placeholders
                 {
                   key: 'directory',
                   label: (
