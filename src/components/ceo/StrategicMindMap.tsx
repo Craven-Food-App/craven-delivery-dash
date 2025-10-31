@@ -1,10 +1,8 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Input, Modal, Form, Select, message, Space } from 'antd';
+import { Card, Button, Input, Modal, Form, message, Space } from 'antd';
 import { BrainOutlined, PlusOutlined, SaveOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
-
-const { TextArea } = Input;
 
 interface MindMapNode {
   id: string;
@@ -24,9 +22,15 @@ export const StrategicMindMap: React.FC = () => {
   const [editingNode, setEditingNode] = useState<MindMapNode | null>(null);
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchMindMap();
+    try {
+      fetchMindMap();
+    } catch (err: any) {
+      console.error('Error initializing mind map:', err);
+      setError('Failed to load mind map');
+    }
   }, []);
 
   const fetchMindMap = async () => {
@@ -36,13 +40,18 @@ export const StrategicMindMap: React.FC = () => {
         .from('ceo_mindmaps')
         .select('*')
         .eq('map_name', 'Strategic Overview')
-        .single();
+        .maybeSingle();
 
-      if (data && !error) {
-        setNodes(data.map_data);
+      if (data && !error && data.map_data) {
+        // Validate the data structure
+        if (Array.isArray(data.map_data) && data.map_data.length > 0) {
+          setNodes(data.map_data);
+        }
       }
-    } catch (error) {
-      console.error('Error fetching mind map:', error);
+    } catch (error: any) {
+      // Silently fail - table might not exist yet
+      console.warn('Mind map table not available yet:', error?.message || error);
+      // Keep default nodes
     } finally {
       setLoading(false);
     }
@@ -60,11 +69,19 @@ export const StrategicMindMap: React.FC = () => {
           onConflict: 'map_name'
         });
 
-      if (error) throw error;
-      message.success('Mind map saved!');
+      if (error) {
+        // If table doesn't exist, show helpful message
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          message.warning('Mind map table not created yet. Please run DEPLOY-MINDMAP.sql first.');
+        } else {
+          throw error;
+        }
+      } else {
+        message.success('Mind map saved!');
+      }
     } catch (error: any) {
       console.error('Error saving mind map:', error);
-      message.error('Failed to save mind map');
+      message.error('Failed to save mind map: ' + (error?.message || 'Unknown error'));
     }
   };
 
@@ -73,14 +90,15 @@ export const StrategicMindMap: React.FC = () => {
     if (!parentNode) return;
 
     const newId = Date.now().toString();
-    const angle = (parentNode.children.length * 60) * (Math.PI / 180);
+    const childCount = (parentNode.children || []).length;
+    const angle = (childCount * 60) * (Math.PI / 180);
     const radius = 150;
 
     const newNode: MindMapNode = {
       id: newId,
       text: 'New Node',
-      x: parentNode.x + Math.cos(angle) * radius,
-      y: parentNode.y + Math.sin(angle) * radius,
+      x: (parentNode.x || 0) + Math.cos(angle) * radius,
+      y: (parentNode.y || 0) + Math.sin(angle) * radius,
       children: [],
       parentId: parentId,
       color: '#' + Math.floor(Math.random()*16777215).toString(16)
@@ -88,24 +106,27 @@ export const StrategicMindMap: React.FC = () => {
 
     setNodes(updateNode(nodes, parentId, node => ({
       ...node,
-      children: [...node.children, newNode]
+      children: [...(node.children || []), newNode]
     })));
   };
 
   const updateNode = (nodeList: MindMapNode[], id: string, updater: (node: MindMapNode) => MindMapNode): MindMapNode[] => {
     return nodeList.map(node => {
-      if (node.id === id) return updater(node);
-      if (node.children.length > 0) {
+      if (node.id === id) {
+        const updated = updater(node);
+        return { ...updated, children: updated.children || [] };
+      }
+      if (node.children && node.children.length > 0) {
         return { ...node, children: updateNode(node.children, id, updater) };
       }
-      return node;
+      return { ...node, children: node.children || [] };
     });
   };
 
   const findNode = (nodeList: MindMapNode[], id: string): MindMapNode | null => {
     for (const node of nodeList) {
       if (node.id === id) return node;
-      if (node.children.length > 0) {
+      if (node.children && node.children.length > 0) {
         const found = findNode(node.children, id);
         if (found) return found;
       }
@@ -122,15 +143,17 @@ export const StrategicMindMap: React.FC = () => {
     setNodes(nodeList => {
       const updated = [...nodeList];
       const deleteFromChildren = (children: MindMapNode[]): MindMapNode[] => {
-        return children.filter(child => {
+        return (children || []).filter(child => {
           if (child.id === id) return false;
-          if (child.children.length > 0) {
+          if (child.children && child.children.length > 0) {
             child.children = deleteFromChildren(child.children);
           }
           return true;
         });
       };
-      updated[0] = { ...updated[0], children: deleteFromChildren(updated[0].children) };
+      if (updated[0]) {
+        updated[0] = { ...updated[0], children: deleteFromChildren(updated[0].children || []) };
+      }
       return updated;
     });
     message.success('Node deleted');
@@ -155,54 +178,74 @@ export const StrategicMindMap: React.FC = () => {
     message.success('Node updated');
   };
 
-  const renderNode = (node: MindMapNode, depth: number = 0): JSX.Element => {
+  const renderNode = (node: MindMapNode, depth: number = 0): JSX.Element | null => {
+    if (!node || !node.id || !node.text) return null;
+    if (depth > 10) return null; // Prevent infinite recursion
+    
     const nodeSize = depth === 0 ? { width: 120, height: 80 } : { width: 100, height: 60 };
     
-    return (
-      <g key={node.id}>
-        {node.children.map(child => (
-          <line
-            key={`line-${node.id}-${child.id}`}
-            x1={node.x}
-            y1={node.y + nodeSize.height / 2}
-            x2={child.x}
-            y2={child.y + 30}
-            stroke="#94a3b8"
-            strokeWidth="2"
-          />
-        ))}
-        
-        {node.children.map(child => renderNode(child, depth + 1))}
-        
-        <g>
-          <rect
-            x={node.x - nodeSize.width / 2}
-            y={node.y - nodeSize.height / 2}
-            width={nodeSize.width}
-            height={nodeSize.height}
-            rx="8"
-            fill={node.color || (depth === 0 ? '#3b82f6' : '#8b5cf6')}
-            stroke={selectedNode?.id === node.id ? '#f59e0b' : '#475569'}
-            strokeWidth={selectedNode?.id === node.id ? '3' : '2'}
-            className="cursor-pointer hover:brightness-110 transition-all"
-            onClick={() => setSelectedNode(node)}
-          />
-          <text
-            x={node.x}
-            y={node.y}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill="white"
-            fontSize={depth === 0 ? '16' : '14'}
-            fontWeight="bold"
-            className="pointer-events-none select-none"
-          >
-            {node.text}
-          </text>
+    try {
+      return (
+        <g key={node.id}>
+          {(node.children || []).map(child => {
+            if (!child || !child.id) return null;
+            return (
+              <line
+                key={`line-${node.id}-${child.id}`}
+                x1={node.x || 0}
+                y1={(node.y || 0) + nodeSize.height / 2}
+                x2={child.x || 0}
+                y2={(child.y || 0) + 30}
+                stroke="#94a3b8"
+                strokeWidth="2"
+              />
+            );
+          })}
+          
+          {(node.children || []).map(child => renderNode(child, depth + 1))}
+          
+          <g>
+            <rect
+              x={(node.x || 0) - nodeSize.width / 2}
+              y={(node.y || 0) - nodeSize.height / 2}
+              width={nodeSize.width}
+              height={nodeSize.height}
+              rx="8"
+              fill={node.color || (depth === 0 ? '#3b82f6' : '#8b5cf6')}
+              stroke={selectedNode?.id === node.id ? '#f59e0b' : '#475569'}
+              strokeWidth={selectedNode?.id === node.id ? '3' : '2'}
+              className="cursor-pointer hover:brightness-110 transition-all"
+              onClick={() => setSelectedNode(node)}
+            />
+            <text
+              x={node.x || 0}
+              y={node.y || 0}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill="white"
+              fontSize={depth === 0 ? '16' : '14'}
+              fontWeight="bold"
+              className="pointer-events-none select-none"
+            >
+              {node.text || 'Untitled'}
+            </text>
+          </g>
         </g>
-      </g>
-    );
+      );
+    } catch (error) {
+      console.error('Error rendering node:', error);
+      return null;
+    }
   };
+
+  if (error) {
+    return (
+      <div className="p-4 border border-red-200 rounded-lg bg-red-50">
+        <p className="text-red-600">Error: {error}</p>
+        <Button onClick={() => setError(null)} className="mt-2">Retry</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -227,7 +270,7 @@ export const StrategicMindMap: React.FC = () => {
       <Card>
         <div className="border-2 border-gray-200 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
           <svg width="100%" height="600px" className="bg-white">
-            {nodes.map(node => renderNode(node))}
+            {nodes.map(node => renderNode(node)).filter(Boolean)}
           </svg>
         </div>
 
