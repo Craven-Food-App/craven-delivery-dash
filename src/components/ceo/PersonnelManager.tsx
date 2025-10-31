@@ -1495,50 +1495,60 @@ export const PersonnelManager: React.FC = () => {
 
       {/* Hiring Packet Status */}
       <div className="mt-6 mb-6">
-        <div className="flex items-center justify-between">
-          <div style={{ fontWeight: 700, fontSize: 18 }}>Hiring Packet Status</div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+          <div className="text-base sm:text-lg font-bold">Hiring Packet Status</div>
           <Space>
-            <Input.Search placeholder="Lookup by email" onSearch={loadPacketStatus} allowClear style={{ width: 320 }} />
+            <Input.Search 
+              placeholder="Lookup by email" 
+              onSearch={loadPacketStatus} 
+              allowClear 
+              className={isMobile ? 'w-full' : ''}
+              style={isMobile ? {} : { width: 320 }} 
+            />
           </Space>
         </div>
         {packetForEmail && (
-          <div className="text-sm text-slate-600 mt-1">Showing: {packetForEmail}</div>
+          <div className="text-xs sm:text-sm text-slate-600 mt-1">Showing: {packetForEmail}</div>
         )}
-        <Table
-          className="mt-3"
-          dataSource={packetDocs.map(d => ({ key: d.id, ...d }))}
-          pagination={false}
-          columns={[
-            { title: 'Document', dataIndex: 'label' },
-            { title: 'Required', dataIndex: 'required', render: (v)=> v? 'Yes':'No', width: 90 },
-            { title: 'Status', dataIndex: 'status', width: 120 },
-            { title: 'File', dataIndex: 'file_url', render: (v)=> v? <a href={v} target="_blank">View</a> : '-' },
-            { title: 'Actions', key:'actions', render: (_:any, rec:any) => (
-              <Space>
-                <Upload
-                  beforeUpload={() => false}
-                  maxCount={1}
-                  onChange={async ({ file }) => {
-                    // @ts-ignore
-                    if (!file || file.originFileObj == null) return;
-                    // @ts-ignore
-                    const blob = file.originFileObj;
-                    const filename = `${rec.id}_${Date.now()}_${file.name}`;
-                    const { data, error } = await supabase.storage.from('hiring-packets').upload(filename, blob);
-                    if (!error && data) {
-                      const { data: pub } = supabase.storage.from('hiring-packets').getPublicUrl(data.path);
-                      await supabase.functions.invoke('mark-packet-doc', { body: { docId: rec.id, status: 'uploaded', fileUrl: pub.publicUrl } });
-                      if (packetForEmail) loadPacketStatus(packetForEmail);
-                      message.success('Uploaded');
-                    }
-                  }}
-                >
-                  <Button size="small">Upload Signed</Button>
-                </Upload>
-              </Space>
-            ) }
-          ]}
-        />
+        <div className="overflow-hidden">
+          <Table
+            className="mt-3"
+            dataSource={packetDocs.map(d => ({ key: d.id, ...d }))}
+            pagination={false}
+            size={isMobile ? 'small' : 'default'}
+            scroll={{ x: isMobile ? 600 : 'auto' }}
+            columns={[
+              { title: 'Document', dataIndex: 'label' },
+              { title: 'Required', dataIndex: 'required', render: (v)=> v? 'Yes':'No', width: 90 },
+              { title: 'Status', dataIndex: 'status', width: 120 },
+              { title: 'File', dataIndex: 'file_url', render: (v)=> v? <a href={v} target="_blank">View</a> : '-' },
+              { title: 'Actions', key:'actions', render: (_:any, rec:any) => (
+                <Space>
+                  <Upload
+                    beforeUpload={() => false}
+                    maxCount={1}
+                    onChange={async ({ file }) => {
+                      // @ts-ignore
+                      if (!file || file.originFileObj == null) return;
+                      // @ts-ignore
+                      const blob = file.originFileObj;
+                      const filename = `${rec.id}_${Date.now()}_${file.name}`;
+                      const { data, error } = await supabase.storage.from('hiring-packets').upload(filename, blob);
+                      if (!error && data) {
+                        const { data: pub } = supabase.storage.from('hiring-packets').getPublicUrl(data.path);
+                        await supabase.functions.invoke('mark-packet-doc', { body: { docId: rec.id, status: 'uploaded', fileUrl: pub.publicUrl } });
+                        if (packetForEmail) loadPacketStatus(packetForEmail);
+                        message.success('Uploaded');
+                      }
+                    }}
+                  >
+                    <Button size="small">Upload Signed</Button>
+                  </Upload>
+                </Space>
+              ) }
+            ]}
+          />
+        </div>
       </div>
 
       {/* Promote Modal */}

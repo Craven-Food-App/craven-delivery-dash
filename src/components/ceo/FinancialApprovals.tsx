@@ -25,9 +25,18 @@ export const FinancialApprovals: React.FC = () => {
   const [selectedApproval, setSelectedApproval] = useState<Approval | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [reviewNotes, setReviewNotes] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     fetchApprovals();
+    
+    // Check screen size
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   const fetchApprovals = async () => {
@@ -120,7 +129,66 @@ export const FinancialApprovals: React.FC = () => {
     }
   };
 
-  const columns = [
+  // Mobile columns - simplified view
+  const mobileColumns = [
+    {
+      title: 'Requester',
+      key: 'name',
+      render: (_: any, record: Approval) => (
+        <div className="flex flex-col">
+          <span className="font-medium">{record.requester_name}</span>
+          <span className="text-xs text-gray-500">{record.description.substring(0, 30)}...</span>
+        </div>
+      ),
+    },
+    {
+      title: 'Amount',
+      dataIndex: 'amount',
+      key: 'amount',
+      width: 80,
+      render: (amount: number) => (
+        <span className="font-bold text-green-600">${(amount / 1000).toFixed(0)}k</span>
+      ),
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      width: 70,
+      render: (status: string) => {
+        const colors: Record<string, string> = {
+          pending: 'gold',
+          approved: 'green',
+          denied: 'red',
+          'on-hold': 'orange',
+        };
+        return <Tag color={colors[status]}>{status.toUpperCase().substring(0, 3)}</Tag>;
+      },
+    },
+    {
+      title: 'Action',
+      key: 'actions',
+      width: 70,
+      render: (_: any, record: Approval) => (
+        record.status === 'pending' ? (
+          <Button
+            type="primary"
+            size="small"
+            icon={<CheckCircleOutlined />}
+            onClick={() => {
+              setSelectedApproval(record);
+              setModalVisible(true);
+            }}
+          >
+            View
+          </Button>
+        ) : null
+      ),
+    },
+  ];
+
+  // Desktop columns - full view
+  const desktopColumns = [
     {
       title: 'Type',
       dataIndex: 'request_type',
@@ -213,31 +281,43 @@ export const FinancialApprovals: React.FC = () => {
     },
   ];
 
+  const columns = isMobile ? mobileColumns : desktopColumns;
+
   const pendingApprovals = approvals.filter(a => a.status === 'pending');
   const totalPendingAmount = pendingApprovals.reduce((sum, a) => sum + a.amount, 0);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header - Responsive */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Financial Approvals</h2>
-          <p className="text-slate-600">Review and approve financial requests</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1 sm:mb-2">Financial Approvals</h2>
+          <p className="text-sm sm:text-base text-slate-600">Review and approve financial requests</p>
         </div>
-        <div className="text-right">
-          <div className="text-sm text-slate-600">Pending Requests</div>
-          <div className="text-3xl font-bold text-orange-600">{pendingApprovals.length}</div>
-          <div className="text-sm text-slate-500">${totalPendingAmount.toLocaleString()} total</div>
+        <div className="text-left sm:text-right">
+          <div className="text-xs sm:text-sm text-slate-600">Pending Requests</div>
+          <div className={`font-bold text-orange-600 ${isMobile ? 'text-2xl' : 'text-3xl'}`}>{pendingApprovals.length}</div>
+          <div className="text-xs sm:text-sm text-slate-500">${totalPendingAmount.toLocaleString()} total</div>
         </div>
       </div>
 
-      <Table
-        columns={columns}
-        dataSource={approvals}
-        rowKey="id"
-        loading={loading}
-        pagination={{ pageSize: 10 }}
-        className="shadow-lg"
-      />
+      {/* Table - Mobile Optimized */}
+      <div className="overflow-hidden">
+        <Table
+          columns={columns}
+          dataSource={approvals}
+          rowKey="id"
+          loading={loading}
+          pagination={{ 
+            pageSize: isMobile ? 5 : 10,
+            showSizeChanger: !isMobile,
+            size: isMobile ? 'small' : 'default'
+          }}
+          className="shadow-lg"
+          scroll={{ x: isMobile ? 600 : 'auto' }}
+          size={isMobile ? 'small' : 'default'}
+        />
+      </div>
 
       <Modal
         title={`Review: ${selectedApproval?.description}`}
@@ -247,41 +327,41 @@ export const FinancialApprovals: React.FC = () => {
           setReviewNotes('');
         }}
         footer={null}
-        width={600}
+        width={isMobile ? '90%' : 600}
       >
         {selectedApproval && (
           <div className="space-y-4">
             <div className="bg-slate-50 p-4 rounded-lg">
-              <div className="grid grid-cols-2 gap-4">
+              <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
                 <div>
-                  <div className="text-sm text-slate-600">Requester</div>
+                  <div className="text-xs sm:text-sm text-slate-600">Requester</div>
                   <div className="font-semibold">{selectedApproval.requester_name}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-slate-600">Amount</div>
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className="text-xs sm:text-sm text-slate-600">Amount</div>
+                  <div className={`font-bold text-green-600 ${isMobile ? 'text-xl' : 'text-2xl'}`}>
                     ${selectedApproval.amount.toLocaleString()}
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm text-slate-600">Type</div>
+                  <div className="text-xs sm:text-sm text-slate-600">Type</div>
                   <div className="font-semibold capitalize">{selectedApproval.request_type}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-slate-600">Priority</div>
+                  <div className="text-xs sm:text-sm text-slate-600">Priority</div>
                   <Tag color={selectedApproval.priority === 'urgent' ? 'red' : 'orange'}>
                     {selectedApproval.priority.toUpperCase()}
                   </Tag>
                 </div>
               </div>
               <div className="mt-4">
-                <div className="text-sm text-slate-600 mb-1">Description</div>
-                <div>{selectedApproval.description}</div>
+                <div className="text-xs sm:text-sm text-slate-600 mb-1">Description</div>
+                <div className="text-sm">{selectedApproval.description}</div>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Review Notes</label>
+              <label className="block text-xs sm:text-sm font-medium mb-2">Review Notes</label>
               <TextArea
                 rows={4}
                 value={reviewNotes}
@@ -290,13 +370,14 @@ export const FinancialApprovals: React.FC = () => {
               />
             </div>
 
-            <div className="flex gap-3">
+            <div className={`flex gap-3 ${isMobile ? 'flex-col' : ''}`}>
               <Button
                 type="primary"
                 size="large"
                 icon={<CheckCircleOutlined />}
                 onClick={() => handleApprove(selectedApproval)}
                 className="flex-1 bg-green-600 hover:bg-green-700"
+                block={isMobile}
               >
                 Approve
               </Button>
@@ -306,6 +387,7 @@ export const FinancialApprovals: React.FC = () => {
                 icon={<CloseCircleOutlined />}
                 onClick={() => handleDeny(selectedApproval)}
                 className="flex-1"
+                block={isMobile}
               >
                 Deny
               </Button>

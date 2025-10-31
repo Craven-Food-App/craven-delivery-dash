@@ -27,9 +27,18 @@ export const AuditTrail: React.FC = () => {
   const [searchText, setSearchText] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string | undefined>();
   const [severityFilter, setSeverityFilter] = useState<string | undefined>();
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     fetchLogs();
+    
+    // Check screen size
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   useEffect(() => {
@@ -137,50 +146,53 @@ export const AuditTrail: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header - Responsive */}
       <div>
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">Audit Trail</h2>
-        <p className="text-slate-600">Complete log of all CEO actions and system changes</p>
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1 sm:mb-2">Audit Trail</h2>
+        <p className="text-sm sm:text-base text-slate-600">Complete log of all CEO actions and system changes</p>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-5 gap-4">
-        <div className="bg-blue-50 p-4 rounded-lg text-center">
-          <div className="text-2xl font-bold text-blue-600">{categoryStats.personnel}</div>
-          <div className="text-sm text-slate-600">Personnel</div>
+      {/* Quick Stats - Responsive Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
+        <div className="bg-blue-50 p-3 sm:p-4 rounded-lg text-center">
+          <div className={`font-bold text-blue-600 ${isMobile ? 'text-xl' : 'text-2xl'}`}>{categoryStats.personnel}</div>
+          <div className="text-xs sm:text-sm text-slate-600">Personnel</div>
         </div>
-        <div className="bg-green-50 p-4 rounded-lg text-center">
-          <div className="text-2xl font-bold text-green-600">{categoryStats.financial}</div>
-          <div className="text-sm text-slate-600">Financial</div>
+        <div className="bg-green-50 p-3 sm:p-4 rounded-lg text-center">
+          <div className={`font-bold text-green-600 ${isMobile ? 'text-xl' : 'text-2xl'}`}>{categoryStats.financial}</div>
+          <div className="text-xs sm:text-sm text-slate-600">Financial</div>
         </div>
-        <div className="bg-purple-50 p-4 rounded-lg text-center">
-          <div className="text-2xl font-bold text-purple-600">{categoryStats.system}</div>
-          <div className="text-sm text-slate-600">System</div>
+        <div className="bg-purple-50 p-3 sm:p-4 rounded-lg text-center">
+          <div className={`font-bold text-purple-600 ${isMobile ? 'text-xl' : 'text-2xl'}`}>{categoryStats.system}</div>
+          <div className="text-xs sm:text-sm text-slate-600">System</div>
         </div>
-        <div className="bg-orange-50 p-4 rounded-lg text-center">
-          <div className="text-2xl font-bold text-orange-600">{categoryStats.strategic}</div>
-          <div className="text-sm text-slate-600">Strategic</div>
+        <div className="bg-orange-50 p-3 sm:p-4 rounded-lg text-center">
+          <div className={`font-bold text-orange-600 ${isMobile ? 'text-xl' : 'text-2xl'}`}>{categoryStats.strategic}</div>
+          <div className="text-xs sm:text-sm text-slate-600">Strategic</div>
         </div>
-        <div className="bg-red-50 p-4 rounded-lg text-center">
-          <div className="text-2xl font-bold text-red-600">{categoryStats.emergency}</div>
-          <div className="text-sm text-slate-600">Emergency</div>
+        <div className="bg-red-50 p-3 sm:p-4 rounded-lg text-center">
+          <div className={`font-bold text-red-600 ${isMobile ? 'text-xl' : 'text-2xl'}`}>{categoryStats.emergency}</div>
+          <div className="text-xs sm:text-sm text-slate-600">Emergency</div>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-4">
+      {/* Filters - Responsive */}
+      <div className={`flex gap-2 sm:gap-4 ${isMobile ? 'flex-col' : ''}`}>
         <Search
           placeholder="Search actions..."
           allowClear
           onSearch={setSearchText}
           onChange={(e) => setSearchText(e.target.value)}
-          style={{ width: 300 }}
+          className={isMobile ? 'w-full' : ''}
+          style={isMobile ? {} : { width: 300 }}
           prefix={<SearchOutlined />}
         />
         <Select
           placeholder="Category"
           allowClear
-          style={{ width: 150 }}
+          className={isMobile ? 'w-full' : ''}
+          style={isMobile ? {} : { width: 150 }}
           onChange={setCategoryFilter}
         >
           <Option value="personnel">Personnel</Option>
@@ -192,7 +204,8 @@ export const AuditTrail: React.FC = () => {
         <Select
           placeholder="Severity"
           allowClear
-          style={{ width: 150 }}
+          className={isMobile ? 'w-full' : ''}
+          style={isMobile ? {} : { width: 150 }}
           onChange={setSeverityFilter}
         >
           <Option value="low">Low</Option>
@@ -202,18 +215,24 @@ export const AuditTrail: React.FC = () => {
         </Select>
       </div>
 
-      <Table
-        columns={columns}
-        dataSource={filteredLogs}
-        rowKey="id"
-        loading={loading}
-        pagination={{
-          pageSize: 20,
-          showSizeChanger: true,
-          showTotal: (total) => `Total ${total} actions`,
-        }}
-        className="shadow-lg"
-      />
+      {/* Table - Mobile Optimized */}
+      <div className="overflow-hidden">
+        <Table
+          columns={columns}
+          dataSource={filteredLogs}
+          rowKey="id"
+          loading={loading}
+          pagination={{
+            pageSize: isMobile ? 10 : 20,
+            showSizeChanger: !isMobile,
+            showTotal: (total) => `Total ${total} actions`,
+            size: isMobile ? 'small' : 'default'
+          }}
+          className="shadow-lg"
+          scroll={{ x: isMobile ? 600 : 'auto' }}
+          size={isMobile ? 'small' : 'default'}
+        />
+      </div>
     </div>
   );
 };
