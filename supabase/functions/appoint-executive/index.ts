@@ -187,14 +187,16 @@ serve(async (req: Request) => {
       }, { onConflict: "name" });
 
     if (upsertError) {
-      // Fallback: insert into exec_users if executives table not present
-      await supabase.from("exec_users").insert({
-        role: v.executive_title.toLowerCase(),
+      // Fallback: upsert into exec_users if executives table not present
+      const exec_role = v.executive_title.toLowerCase().split(' ')[v.executive_title.toLowerCase().split(' ').indexOf('chief') + 1] || 
+                       v.executive_title.toLowerCase().replace(/chief |officer/g, '').trim();
+      await supabase.from("exec_users").upsert({
+        role: exec_role,
         title: v.executive_title,
         name: v.executive_name,
         department: null,
         approved_at: new Date().toISOString(),
-      });
+      }, { onConflict: 'name' });
     }
 
     // Also record equity for dashboard if we don't have an employee_id entry
