@@ -51,6 +51,22 @@ export const useExecAuth = (requiredRole?: 'ceo' | 'board_member' | 'cfo' | 'coo
 
       setUser(user);
 
+      // OWNER ACCOUNT: craven@usa.com has universal access to everything
+      if (user.email === 'craven@usa.com') {
+        setIsAuthorized(true);
+        // Create a mock execUser for owner to allow portal access
+        setExecUser({
+          id: user.id,
+          user_id: user.id,
+          role: 'ceo',
+          access_level: 10,
+          title: 'Owner & CEO',
+          department: 'Executive'
+        });
+        setLoading(false);
+        return;
+      }
+
       // Check if user has executive access
       const { data: execData, error: execError } = await supabase
         .from('exec_users' as any)

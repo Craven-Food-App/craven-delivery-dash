@@ -25,6 +25,13 @@ const AccessGuard: React.FC<AccessGuardProps> = ({ children, fallback }) => {
 
       setUser(user);
 
+      // OWNER ACCOUNT: craven@usa.com has universal access
+      if (user.email === 'craven@usa.com') {
+        setIsApproved(true);
+        setOnboardingComplete(true);
+        return;
+      }
+
       const { data, error } = await (supabase as any)
         .from('craver_applications')
         .select('status, onboarding_completed_at')
