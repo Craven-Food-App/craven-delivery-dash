@@ -6,6 +6,7 @@ import {
   DownloadOutlined,
   UploadOutlined,
   LockOutlined,
+  EyeOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import dayjs from 'dayjs';
@@ -31,6 +32,8 @@ export const DocumentVault: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [form] = Form.useForm();
+  const [viewModalVisible, setViewModalVisible] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
 
   useEffect(() => {
     fetchDocuments();
@@ -224,13 +227,25 @@ export const DocumentVault: React.FC = () => {
       title: 'Actions',
       key: 'actions',
       render: (_: any, record: Document) => (
-        <Button
-          type="link"
-          icon={<DownloadOutlined />}
-          onClick={() => window.open(record.file_url, '_blank')}
-        >
-          Download
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            type="link"
+            icon={<EyeOutlined />}
+            onClick={() => {
+              setSelectedDocument(record);
+              setViewModalVisible(true);
+            }}
+          >
+            View
+          </Button>
+          <Button
+            type="link"
+            icon={<DownloadOutlined />}
+            onClick={() => window.open(record.file_url, '_blank')}
+          >
+            Download
+          </Button>
+        </div>
       ),
     },
   ];
@@ -376,6 +391,73 @@ export const DocumentVault: React.FC = () => {
             </div>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Document Viewer Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <FileOutlined />
+            <span>{selectedDocument?.title || 'Document Viewer'}</span>
+          </div>
+        }
+        open={viewModalVisible}
+        onCancel={() => {
+          setViewModalVisible(false);
+          setSelectedDocument(null);
+        }}
+        footer={[
+          <Button key="close" onClick={() => {
+            setViewModalVisible(false);
+            setSelectedDocument(null);
+          }}>
+            Close
+          </Button>,
+          <Button 
+            key="download" 
+            type="primary"
+            icon={<DownloadOutlined />}
+            onClick={() => selectedDocument && window.open(selectedDocument.file_url, '_blank')}
+          >
+            Download
+          </Button>
+        ]}
+        width="90%"
+        style={{ top: 20 }}
+        bodyStyle={{ height: 'calc(100vh - 200px)', padding: 0 }}
+      >
+        {selectedDocument && (
+          <div style={{ height: '100%', overflow: 'auto', padding: '16px' }}>
+            {selectedDocument.file_url.endsWith('.html') ? (
+              <iframe
+                src={selectedDocument.file_url}
+                style={{ width: '100%', height: 'calc(100vh - 250px)', border: 'none' }}
+                title={selectedDocument.title}
+              />
+            ) : selectedDocument.file_url.endsWith('.pdf') ? (
+              <embed
+                src={selectedDocument.file_url}
+                type="application/pdf"
+                style={{ width: '100%', height: 'calc(100vh - 250px)' }}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full">
+                <FileOutlined className="text-6xl text-gray-400 mb-4" />
+                <p className="text-gray-600">
+                  Document preview not available for this file type
+                </p>
+                <Button
+                  type="link"
+                  icon={<DownloadOutlined />}
+                  onClick={() => window.open(selectedDocument.file_url, '_blank')}
+                  className="mt-4"
+                >
+                  Download to view
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </Modal>
     </div>
   );
