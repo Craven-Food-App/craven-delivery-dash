@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
         console.log('Driver activated successfully:', application.email);
       } catch (error) {
         console.error('Error processing driver:', driverId, error);
-        results.push({ driver_id: driverId, success: false, error: error.message });
+        results.push({ driver_id: driverId, success: false, error: error instanceof Error ? error.message : 'Unknown error' });
       }
     }
 
@@ -151,7 +151,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error activating drivers:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { 
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

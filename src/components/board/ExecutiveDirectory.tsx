@@ -51,30 +51,52 @@ export const ExecutiveDirectory: React.FC = () => {
   const fetchExecutives = async () => {
     setLoading(true);
     try {
-      // Fetch from exec_users only
-      const { data: execUsersData, error: execError } = await supabase
-        .from('exec_users' as any)
+      // Fetch from employees table - only executive positions
+      const { data: employeesData, error: empError } = await supabase
+        .from('employees' as any)
         .select('*')
-        .order('role');
+        .in('position', ['CEO', 'CFO', 'COO', 'CTO', 'CMO', 'CRO', 'CPO', 'CDO', 'CHRO', 'CLO', 'CSO', 'CXO', 'Board Member', 'Advisor'])
+        .order('position');
 
-      if (execError) throw execError;
+      if (empError) throw empError;
 
-      // Map exec_users to Executive interface
-      const execUsers: Executive[] = ((execUsersData as any) || []).map((exec: any) => ({
-        id: exec.id,
-        user_id: exec.user_id,
-        role: String(exec.role || '').toLowerCase(),
-        title: exec.title,
-        department: exec.department,
-        last_login: exec.last_login,
-        created_at: exec.created_at,
-        name: exec.name,
-        email: exec.email,
-        source: 'exec_users' as const,
-      }));
+      // Map employees to Executive interface
+      const executives: Executive[] = ((employeesData as any) || []).map((emp: any) => {
+        const position = String(emp.position || '').toLowerCase();
+        let role = position;
+        
+        // Normalize position to role
+        if (position.includes('board member')) role = 'board_member';
+        else if (position.includes('advisor')) role = 'advisor';
+        else if (position.includes('ceo')) role = 'ceo';
+        else if (position.includes('cfo')) role = 'cfo';
+        else if (position.includes('coo')) role = 'coo';
+        else if (position.includes('cto')) role = 'cto';
+        else if (position.includes('cmo')) role = 'cmo';
+        else if (position.includes('cro')) role = 'cro';
+        else if (position.includes('cpo')) role = 'cpo';
+        else if (position.includes('cdo')) role = 'cdo';
+        else if (position.includes('chro')) role = 'chro';
+        else if (position.includes('clo')) role = 'clo';
+        else if (position.includes('cso')) role = 'cso';
+        else if (position.includes('cxo')) role = 'cxo';
+        
+        return {
+          id: emp.id,
+          user_id: emp.user_id,
+          role: role,
+          title: emp.position,
+          department: emp.department,
+          last_login: null,
+          created_at: emp.created_at,
+          name: `${emp.first_name} ${emp.last_name}`,
+          email: emp.email,
+          source: 'employees' as const,
+        };
+      });
 
-      setExecutives(execUsers);
-      setFilteredExecutives(execUsers);
+      setExecutives(executives);
+      setFilteredExecutives(executives);
     } catch (error) {
       console.error('Error fetching executives:', error);
       message.error('Failed to load executives');

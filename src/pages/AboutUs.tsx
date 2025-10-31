@@ -16,16 +16,17 @@ const AboutUs = () => {
   const fetchExecutives = async () => {
     try {
       const { data, error } = await supabase
-        .from('exec_users')
-        .select('id, name, title, role')
+        .from('employees' as any)
+        .select('id, first_name, last_name, position, department')
+        .in('position', ['CEO', 'CFO', 'COO', 'CTO', 'CMO', 'CRO', 'CPO', 'CDO', 'CHRO', 'CLO', 'CSO', 'CXO', 'Board Member', 'Advisor'])
         .limit(8);
       
       if (error) throw error;
       
-      const formattedTeam = (data || []).map(exec => ({
-        name: exec.name || exec.title || 'Executive',
-        role: exec.title || exec.role.toUpperCase().replace('_', ' '),
-        bio: `Leadership team member in ${exec.role.toUpperCase().replace('_', ' ')}`
+      const formattedTeam = (data || []).map((exec: any) => ({
+        name: `${exec.first_name} ${exec.last_name}`,
+        role: exec.position,
+        bio: `Leadership team member in ${exec.department || exec.position}`
       }));
       
       // Always ensure Torrance Stroman (Founder & CEO) is at the top
