@@ -191,6 +191,7 @@ serve(async (req: Request) => {
       await supabase.from("exec_users").insert({
         role: v.executive_title.toLowerCase(),
         title: v.executive_title,
+        name: v.executive_name,
         department: null,
         approved_at: new Date().toISOString(),
       });
