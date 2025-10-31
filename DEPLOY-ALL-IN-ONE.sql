@@ -34,6 +34,53 @@ USING (
   )
 );
 
+-- Create board_resolutions table if missing
+CREATE TABLE IF NOT EXISTS public.board_resolutions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  resolution_number TEXT UNIQUE NOT NULL,
+  resolution_type TEXT NOT NULL CHECK (resolution_type IN ('appointment', 'removal', 'equity_grant', 'policy_change', 'other')),
+  subject_position TEXT NOT NULL,
+  subject_person_name TEXT NOT NULL,
+  subject_person_email TEXT NOT NULL,
+  resolution_title TEXT NOT NULL,
+  resolution_text TEXT NOT NULL,
+  effective_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  board_members JSONB NOT NULL DEFAULT '[]'::jsonb,
+  votes_for INTEGER NOT NULL DEFAULT 0,
+  votes_against INTEGER NOT NULL DEFAULT 0,
+  votes_abstain INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'executed')),
+  required_documents JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_by UUID REFERENCES auth.users(id),
+  executed_by UUID REFERENCES auth.users(id),
+  executed_at TIMESTAMP WITH TIME ZONE,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- Enable RLS on board_resolutions
+ALTER TABLE public.board_resolutions ENABLE ROW LEVEL SECURITY;
+
+-- RLS policy for board_resolutions
+DROP POLICY IF EXISTS "CEO and execs can view board resolutions" ON public.board_resolutions;
+CREATE POLICY "CEO and execs can view board resolutions"
+ON public.board_resolutions FOR SELECT
+TO authenticated
+USING (
+  EXISTS (SELECT 1 FROM public.exec_users WHERE user_id = auth.uid()) OR
+  EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'admin')
+);
+
+DROP POLICY IF EXISTS "CEO and admins can manage board resolutions" ON public.board_resolutions;
+CREATE POLICY "CEO and admins can manage board resolutions"
+ON public.board_resolutions FOR ALL
+TO authenticated
+USING (
+  EXISTS (SELECT 1 FROM public.exec_users WHERE user_id = auth.uid() AND role = 'ceo') OR
+  EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'admin')
+);
+
 -- Employee documents tracking table
 CREATE TABLE IF NOT EXISTS public.employee_documents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -97,6 +144,8 @@ USING (
 CREATE INDEX IF NOT EXISTS idx_employee_documents_employee ON public.employee_documents(employee_id);
 CREATE INDEX IF NOT EXISTS idx_employee_documents_type ON public.employee_documents(document_type);
 CREATE INDEX IF NOT EXISTS idx_board_resolutions_employee ON public.board_resolutions(employee_id);
+CREATE INDEX IF NOT EXISTS idx_board_resolutions_type ON public.board_resolutions(resolution_type);
+CREATE INDEX IF NOT EXISTS idx_board_resolutions_status ON public.board_resolutions(status);
 CREATE INDEX IF NOT EXISTS idx_exec_documents_employee ON public.exec_documents(employee_id);
 
 -- Function to get all documents for an employee
