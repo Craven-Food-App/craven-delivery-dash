@@ -11,7 +11,7 @@ export interface ExecUser {
   department: string;
 }
 
-export const useExecAuth = (requiredRole?: 'ceo' | 'board_member') => {
+export const useExecAuth = (requiredRole?: 'ceo' | 'board_member' | 'cfo' | 'coo' | 'cto') => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [execUser, setExecUser] = useState<ExecUser | null>(null);

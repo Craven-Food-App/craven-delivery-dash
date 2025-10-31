@@ -60,6 +60,8 @@ import { SafetyQuiz } from "./components/onboarding/SafetyQuiz";
 import BoardPortal from "./pages/BoardPortal";
 import CFOPortal from "./pages/CFOPortal";
 import CEOPortal from "./pages/CEOPortal";
+import COOPortal from "./pages/COOPortal";
+import CTOPortal from "./pages/CTOPortal";
 import { DriverSignup } from "./pages/driverOnboarding/Signup";
 import { LegalConsent } from "./pages/driverOnboarding/LegalConsent";
 import { IdentityForm } from "./pages/driverOnboarding/IdentityForm";
@@ -97,6 +99,14 @@ const App = () => {
   // Check if on CFO subdomain
   const isCFOSubdomain = typeof window !== 'undefined' && 
     window.location.hostname === 'cfo.cravenusa.com';
+  
+  // Check if on COO subdomain
+  const isCOOSubdomain = typeof window !== 'undefined' && 
+    window.location.hostname === 'coo.cravenusa.com';
+  
+  // Check if on CTO subdomain
+  const isCTOSubdomain = typeof window !== 'undefined' && 
+    window.location.hostname === 'cto.cravenusa.com';
 
   useEffect(() => {
     // Validate environment configuration
@@ -283,6 +293,52 @@ const App = () => {
               <BrowserRouter>
                 <Routes>
                   <Route path="/" element={<CEOPortal />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    );
+  }
+
+  // If on COO subdomain, show only COO Operations Portal
+  if (isCOOSubdomain) {
+    return (
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider defaultTheme="system">
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<COOPortal />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    );
+  }
+
+  // If on CTO subdomain, show only CTO Technology Portal
+  if (isCTOSubdomain) {
+    return (
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider defaultTheme="system">
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<CTOPortal />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
