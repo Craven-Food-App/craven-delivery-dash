@@ -1,10 +1,39 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Heart, Target, Users, Truck, Store, Globe, Award, TrendingUp, MapPin, Clock, Star, Zap } from 'lucide-react';
 import Footer from '@/components/Footer';
+import { supabase } from '@/integrations/supabase/client';
+
 const AboutUs = () => {
+  const [team, setTeam] = useState<Array<{name: string; role: string; bio: string}>>([]);
+  
+  useEffect(() => {
+    fetchExecutives();
+  }, []);
+
+  const fetchExecutives = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('exec_users')
+        .select('id, name, title, role')
+        .limit(8);
+      
+      if (error) throw error;
+      
+      const formattedTeam = (data || []).map(exec => ({
+        name: exec.name || exec.title || 'Executive',
+        role: exec.title || exec.role.toUpperCase().replace('_', ' '),
+        bio: `Leadership team member in ${exec.role.toUpperCase().replace('_', ' ')}`
+      }));
+      
+      setTeam(formattedTeam);
+    } catch (error) {
+      console.error('Error fetching executives:', error);
+      setTeam([]);
+    }
+  };
   const stats = [{
     icon: Users,
     label: 'Active Users',
@@ -55,12 +84,6 @@ const AboutUs = () => {
     year: '2025',
     title: 'Community Impact',
     description: 'Reached 20K active users and introduced our driver benefits program, safety features, and award-winning customer support platform.'
-  }];
-  const team = [{
-    name: 'Torrance Stroman',
-    role: 'CEO & Founder',
-    image: '/placeholder.svg',
-    bio: 'Visionary entrepreneur with a passion for revolutionizing food delivery and supporting local communities.'
   }];
   
   const futureRoles = [
