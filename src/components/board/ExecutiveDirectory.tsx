@@ -63,11 +63,13 @@ export const ExecutiveDirectory: React.FC = () => {
       const execUsers: Executive[] = ((execUsersData as any) || []).map((exec: any) => ({
         id: exec.id,
         user_id: exec.user_id,
-        role: exec.role,
+        role: String(exec.role || '').toLowerCase(),
         title: exec.title,
         department: exec.department,
         last_login: exec.last_login,
         created_at: exec.created_at,
+        name: exec.name,
+        email: exec.email,
         source: 'exec_users' as const,
       }));
 
@@ -123,6 +125,18 @@ export const ExecutiveDirectory: React.FC = () => {
       executive: '👤',
     };
     return icons[role] || '👤';
+  };
+
+  // Ensure C-suite abbreviations (CEO/CFO/COO/CTO/CMO/CRO/CPO/CDO/CHRO/CLO/CSO/CXO) are always ALL CAPS
+  const formatCLevel = (text?: string) => {
+    if (!text) return '';
+    const tokens = ['CEO','CFO','COO','CTO','CMO','CRO','CPO','CDO','CHRO','CLO','CSO','CXO'];
+    let formatted = text.replace(/\b(c(eo|fo|oo|to|mo|ro|po|do|hro|lo|so|xo))\b/gi, (m) => m.toUpperCase());
+    // Also convert patterns like "Chief Financial Officer (cfo)" trailing abbreviations
+    tokens.forEach(t => {
+      formatted = formatted.replace(new RegExp(`\\b${t.toLowerCase()}\\b`, 'gi'), t);
+    });
+    return formatted;
   };
 
   return (
@@ -207,10 +221,10 @@ export const ExecutiveDirectory: React.FC = () => {
                 </Tag>
 
                 <h3 className="text-sm sm:text-lg font-bold text-slate-900 mb-1">
-                  {exec.name || exec.title || exec.role.toUpperCase()}
+                  {exec.name || formatCLevel(exec.title) || exec.role.toUpperCase()}
                 </h3>
 
-                <p className="text-xs sm:text-sm text-slate-600 mb-1">{exec.title}</p>
+                <p className="text-xs sm:text-sm text-slate-600 mb-1">{formatCLevel(exec.title)}</p>
 
                 {exec.department && (
                   <p className="text-xs text-slate-500 mb-2">{exec.department}</p>
