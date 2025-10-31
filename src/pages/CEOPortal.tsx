@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Statistic, Badge, Button, Space, Tabs, Alert, Typography, Divider } from 'antd';
+import { Row, Col, Statistic, Badge, Button, Space, Tabs, Alert, Typography, Divider, Card } from 'antd';
 import {
   DollarOutlined,
   UserOutlined,
@@ -120,27 +120,27 @@ const CEOPortal: React.FC = () => {
   if (!isAuthorized) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4">
-        <Card className="max-w-md w-full">
-          <CardHeader>
-            <CardTitle className="text-destructive text-center">Access Denied</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-center">
+        <Card 
+          title={<div className="text-red-600 text-center font-bold text-xl">Access Denied</div>}
+          className="max-w-md w-full"
+        >
+          <div className="space-y-4 text-center">
             <p className="text-lg">You don't have CEO access to this portal.</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-gray-400">
               This portal is restricted to the Chief Executive Officer only.
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-gray-500">
               Logged in as: <span className="font-semibold">{user?.email}</span>
             </p>
             <div className="flex gap-2 pt-4">
-              <Button onClick={() => navigate('/')} variant="outline" className="flex-1">
+              <Button onClick={() => navigate('/')} className="flex-1">
                 Go Home
               </Button>
-              <Button onClick={signOut} variant="destructive" className="flex-1">
+              <Button onClick={signOut} danger className="flex-1">
                 Sign Out
               </Button>
             </div>
-          </CardContent>
+          </div>
         </Card>
       </div>
     );
