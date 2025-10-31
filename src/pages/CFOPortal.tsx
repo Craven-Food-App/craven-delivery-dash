@@ -60,9 +60,31 @@ export default function CFOPortal() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [isMobile, setIsMobile] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   useEffect(() => {
     fetchData();
+    
+    // Set up auto-refresh every 60 seconds
+    const interval = setInterval(() => {
+      fetchData();
+    }, 60000);
+    
+    // Set up real-time subscription for orders
+    const ordersChannel = supabase
+      .channel('cfo_orders_updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+        },
+        () => {
+          fetchData();
+        }
+      )
+      .subscribe();
     
     // Check screen size
     const checkMobile = () => {
@@ -70,7 +92,12 @@ export default function CFOPortal() {
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    
+    return () => {
+      clearInterval(interval);
+      ordersChannel.unsubscribe();
+      window.removeEventListener('resize', checkMobile);
+    };
   }, []);
 
   const fetchData = async () => {
@@ -87,6 +114,7 @@ export default function CFOPortal() {
 
       setPayouts([]);
       setTransactions(orders || []);
+      setLastUpdated(new Date());
     } finally {
       setLoading(false);
     }
@@ -136,8 +164,13 @@ export default function CFOPortal() {
             type="success"
             showIcon
             message={
-              <div className="flex items-center gap-2">
-                <CheckCircleOutlined /> Finance systems operational
+              <div className="flex items-center gap-2 justify-between w-full">
+                <span className="flex items-center gap-2">
+                  <CheckCircleOutlined /> Finance systems operational
+                </span>
+                <span className="text-xs text-gray-500">
+                  Last updated: {lastUpdated.toLocaleTimeString()}
+                </span>
               </div>
             }
             style={{ marginBottom: 16, background: "rgba(16,185,129,0.1)", borderColor: "rgba(16,185,129,0.25)" }}

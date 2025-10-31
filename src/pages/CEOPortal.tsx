@@ -50,10 +50,48 @@ const CEOPortal: React.FC = () => {
   const { loading, user, execUser, isAuthorized, signOut } = useExecAuth('ceo');
   const [metrics, setMetrics] = useState<CEOMetrics | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   useEffect(() => {
     if (isAuthorized) {
       fetchCEOMetrics();
+      
+      // Set up auto-refresh every 60 seconds
+      const interval = setInterval(() => {
+        fetchCEOMetrics();
+      }, 60000);
+      
+      // Set up real-time subscription for orders
+      const ordersChannel = supabase
+        .channel('ceo_orders_updates')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'orders',
+          },
+          () => {
+            fetchCEOMetrics();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'ceo_financial_approvals',
+          },
+          () => {
+            fetchCEOMetrics();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        clearInterval(interval);
+        ordersChannel.unsubscribe();
+      };
     }
   }, [isAuthorized]);
 
@@ -89,6 +127,7 @@ const CEOPortal: React.FC = () => {
         pendingApprovals: pendingApprovals.length,
         criticalAlerts: 0,
       });
+      setLastUpdated(new Date());
     } catch (error) {
       console.error('Error fetching CEO metrics:', error);
       // Fallback to defaults if error
@@ -255,7 +294,14 @@ const CEOPortal: React.FC = () => {
       {/* Main Dashboard */}
       <div className="container mx-auto px-4 sm:px-6 py-8">
         {/* Key Metrics - Full page, no cards */}
-        <Typography.Title level={3} style={{ marginTop: 0 }}>Company Health</Typography.Title>
+        <div className="flex items-center justify-between mb-4">
+          <Typography.Title level={3} style={{ marginTop: 0 }}>Company Health</Typography.Title>
+          <Badge status="processing" text={
+            <span className="text-gray-600 text-sm">
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </span>
+          } />
+        </div>
         <Row gutter={[16, 16]} className="mb-8">
           <Col xs={24} sm={12} lg={4}>
             <div className="bg-green-600 rounded-md px-4 py-3">
