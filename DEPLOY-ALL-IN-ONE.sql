@@ -8,7 +8,7 @@ VALUES (
   'hr-documents',
   false,
   10485760,
-  ARRAY['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+  ARRAY['application/pdf', 'text/html', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 ) ON CONFLICT (id) DO NOTHING;
 
 -- Create RLS policies for hr-documents bucket
