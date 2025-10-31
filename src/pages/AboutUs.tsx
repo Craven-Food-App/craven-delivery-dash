@@ -28,10 +28,25 @@ const AboutUs = () => {
         bio: `Leadership team member in ${exec.role.toUpperCase().replace('_', ' ')}`
       }));
       
+      // Always ensure Torrance Stroman (Founder & CEO) is at the top
+      const founder = formattedTeam.find(t => t.name.toLowerCase().includes('torrance') || t.role.toLowerCase().includes('ceo'));
+      if (!founder) {
+        formattedTeam.unshift({
+          name: 'Torrance Stroman',
+          role: 'CEO & Founder',
+          bio: 'Visionary entrepreneur with a passion for revolutionizing food delivery and supporting local communities.'
+        });
+      }
+      
       setTeam(formattedTeam);
     } catch (error) {
       console.error('Error fetching executives:', error);
-      setTeam([]);
+      // Fallback to Torrance Stroman if database fetch fails
+      setTeam([{
+        name: 'Torrance Stroman',
+        role: 'CEO & Founder',
+        bio: 'Visionary entrepreneur with a passion for revolutionizing food delivery and supporting local communities.'
+      }]);
     }
   };
   const stats = [{
