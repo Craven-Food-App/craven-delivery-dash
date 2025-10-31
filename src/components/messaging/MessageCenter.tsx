@@ -98,16 +98,16 @@ export function MessageCenter() {
   });
 
   return (
-    <div style={{ display:'grid', gridTemplateColumns:'260px 420px 1fr', gap:12, minHeight: 520 }}>
+    <div className="grid grid-cols-1 lg:grid-cols-[260px_420px_1fr] gap-3 lg:gap-6" style={{ minHeight: 520 }}>
       {/* Left: Folders/Shortcuts */}
-      <div style={{ borderRight:'1px solid #e5e7eb', paddingRight:12 }}>
+      <div className="hidden lg:block" style={{ borderRight:'1px solid #e5e7eb', paddingRight:12 }}>
         <Space direction="vertical" style={{ width:'100%' }}>
           <Button type="primary" block onClick={()=> setComposeOpen(true)}>New Message</Button>
           <Input.Search placeholder="Search" allowClear onSearch={setSearch} onChange={(e)=> setSearch(e.target.value)} />
-          <Space.Compact>
-            <Button type={filter==='all'?'primary':'default'} onClick={()=> setFilter('all')}>All</Button>
-            <Button type={filter==='unread'?'primary':'default'} onClick={()=> setFilter('unread')}>Unread</Button>
-            <Button type={filter==='mentions'?'primary':'default'} onClick={()=> setFilter('mentions')}>Mentions</Button>
+          <Space.Compact className="w-full">
+            <Button className="flex-1" type={filter==='all'?'primary':'default'} onClick={()=> setFilter('all')}>All</Button>
+            <Button className="flex-1" type={filter==='unread'?'primary':'default'} onClick={()=> setFilter('unread')}>Unread</Button>
+            <Button className="flex-1" type={filter==='mentions'?'primary':'default'} onClick={()=> setFilter('mentions')}>Mentions</Button>
           </Space.Compact>
           <div style={{ fontSize:12, color:'#64748b', marginTop:8 }}>Folders</div>
           <Space direction="vertical" style={{ width:'100%' }}>
@@ -119,47 +119,58 @@ export function MessageCenter() {
         </Space>
       </div>
 
+      {/* Mobile: Simplified top bar */}
+      <div className="lg:hidden mb-4 space-y-2">
+        <Button type="primary" block onClick={()=> setComposeOpen(true)}>New Message</Button>
+        <Input.Search placeholder="Search" allowClear onSearch={setSearch} onChange={(e)=> setSearch(e.target.value)} />
+        <Space.Compact className="w-full">
+          <Button className="flex-1" type={filter==='all'?'primary':'default'} onClick={()=> setFilter('all')}>All</Button>
+          <Button className="flex-1" type={filter==='unread'?'primary':'default'} onClick={()=> setFilter('unread')}>Unread</Button>
+          <Button className="flex-1" type={filter==='mentions'?'primary':'default'} onClick={()=> setFilter('mentions')}>Mentions</Button>
+        </Space.Compact>
+      </div>
+
       {/* Middle: Thread list */}
-      <div style={{ borderRight:'1px solid #e5e7eb', paddingRight:12, overflow:'auto' }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+      <div className={`${selectedThread && 'hidden lg:block'}`} style={{ borderRight:'1px solid #e5e7eb', paddingRight:12, overflow:'auto' }}>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 sm:mb-2">
           <Typography.Text strong>Conversations</Typography.Text>
           <Button size="small" onClick={loadThreads}>Refresh</Button>
         </div>
         <div>
           {filteredThreads.map(t => (
-            <div key={t.key} onClick={()=> openThread(t)} style={{ padding:'10px 8px', borderRadius:8, cursor:'pointer', background: selectedThread?.id===t.id? '#eff6ff':'transparent' }}>
-              <div style={{ display:'flex', justifyContent:'space-between' }}>
-                <div style={{ fontWeight: t.unread? 700: 500 }}>{t.subject || '(No subject)'}</div>
-                <div style={{ fontSize:12, color:'#64748b' }}>{new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+            <div key={t.key} onClick={()=> openThread(t)} className="p-2 sm:p-2.5 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors" style={{ background: selectedThread?.id===t.id? '#eff6ff':'transparent' }}>
+              <div className="flex flex-col sm:flex-row justify-between gap-1">
+                <div className="font-semibold text-sm sm:text-base" style={{ fontWeight: t.unread? 700: 500 }}>{t.subject || '(No subject)'}</div>
+                <div className="text-xs text-slate-500">{new Date(t.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
               </div>
-              {t.preview && <div style={{ color:'#64748b', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{t.preview}</div>}
+              {t.preview && <div className="text-xs sm:text-sm text-slate-500 truncate">{t.preview}</div>}
             </div>
           ))}
-          {!filteredThreads.length && <div style={{ color:'#94a3b8' }}>No conversations.</div>}
+          {!filteredThreads.length && <div className="text-slate-400 text-sm">No conversations.</div>}
         </div>
       </div>
 
       {/* Right: Reading Pane */}
-      <div>
+      <div className={!selectedThread ? 'hidden lg:block' : ''}>
         {selectedThread ? (
           <div>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
-              <Typography.Title level={5} style={{ margin:0 }}>{selectedThread.subject}</Typography.Title>
-              <Space>
-                <Button>Reply</Button>
-                <Button>Forward</Button>
-                <Button danger>Delete</Button>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+              <Typography.Title level={5} className="!mb-0 text-base sm:text-lg">{selectedThread.subject}</Typography.Title>
+              <Space className="w-full sm:w-auto flex flex-wrap">
+                <Button size="small">Reply</Button>
+                <Button size="small">Forward</Button>
+                <Button size="small" danger>Delete</Button>
               </Space>
             </div>
-            <div style={{ maxHeight: 380, overflow:'auto', border:'1px solid #e5e7eb', borderRadius:8, padding:12, marginBottom:8 }}>
+            <div className="border border-slate-200 rounded-lg p-3 sm:p-4 mb-4" style={{ maxHeight: 380, overflow:'auto' }}>
               {messagesList.map(m => (
-                <div key={m.id} style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize:12, color:'#64748b' }}>{m.sender_label} • {new Date(m.created_at).toLocaleString()}</div>
-                  <div>{renderMentions(m.body)}</div>
+                <div key={m.id} className="mb-3 sm:mb-4">
+                  <div className="text-xs text-slate-500 mb-1">{m.sender_label} • {new Date(m.created_at).toLocaleString()}</div>
+                  <div className="text-sm sm:text-base">{renderMentions(m.body)}</div>
                   {m.attachments?.length ? (
-                    <div style={{ marginTop: 6 }}>
+                    <div className="mt-2">
                       {m.attachments.map((a:any)=> (
-                        <div key={a.file_url}><a href={a.file_url} target="_blank" rel="noreferrer">{a.file_name || 'attachment'}</a></div>
+                        <div key={a.file_url}><a href={a.file_url} target="_blank" rel="noreferrer" className="text-blue-600 text-sm">{a.file_name || 'attachment'}</a></div>
                       ))}
                     </div>
                   ) : null}

@@ -150,28 +150,28 @@ const CEOPortal: React.FC = () => {
     <div className="min-h-screen bg-white">
       {/* Header - Command Center Style */}
       <div className="bg-gradient-to-r from-slate-900 to-blue-900 border-b-4 border-blue-500 shadow-2xl">
-        <div className="container mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
+        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <ThunderboltOutlined className="text-4xl text-yellow-400" />
-                <h1 className="text-4xl font-bold text-white">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                <ThunderboltOutlined className="text-2xl sm:text-4xl text-yellow-400" />
+                <h1 className="text-2xl sm:text-4xl font-bold text-white">
                   CEO COMMAND CENTER
                 </h1>
               </div>
-              <p className="text-blue-200 flex items-center gap-3 text-lg">
+              <p className="text-blue-200 flex flex-col sm:flex-row items-start sm:items-center gap-2 text-sm sm:text-lg">
                 <span>Welcome back, <strong>{execUser?.title || 'CEO'}</strong></span>
                 <Badge status="processing" text="System Operational" className="text-white" />
-                <span className="text-sm">• All Systems Online</span>
+                <span className="text-xs sm:text-sm">• All Systems Online</span>
               </p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex gap-2 w-full lg:w-auto">
               <Button
                 type="primary"
                 danger
                 size="large"
                 icon={<WarningOutlined />}
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-red-600 hover:bg-red-700 text-xs sm:text-base"
               >
                 Emergency
               </Button>
@@ -187,7 +187,7 @@ const CEOPortal: React.FC = () => {
                     navigate('/');
                   }
                 }}
-                className="bg-slate-100 hover:bg-slate-200"
+                className="bg-slate-100 hover:bg-slate-200 text-xs sm:text-base"
               >
                 CFO Portal
               </Button>
@@ -195,7 +195,7 @@ const CEOPortal: React.FC = () => {
                 type="primary"
                 size="large"
                 onClick={() => navigate('/admin')}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 text-xs sm:text-base col-span-2 sm:col-span-1"
               >
                 Admin Portal
               </Button>
@@ -203,7 +203,7 @@ const CEOPortal: React.FC = () => {
                 type="default"
                 size="large"
                 onClick={() => navigate('/board')}
-                className="bg-slate-700 hover:bg-slate-600 text-white"
+                className="bg-slate-700 hover:bg-slate-600 text-white text-xs sm:text-base"
               >
                 Board Portal
               </Button>
@@ -214,6 +214,7 @@ const CEOPortal: React.FC = () => {
                   const el = document.getElementById('ceo-messages');
                   if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }}
+                className="text-xs sm:text-base"
               >
                 Message Center
               </Button>
@@ -221,6 +222,7 @@ const CEOPortal: React.FC = () => {
                 type="default"
                 size="large"
                 onClick={signOut}
+                className="text-xs sm:text-base"
               >
                 Sign Out
               </Button>
@@ -231,7 +233,7 @@ const CEOPortal: React.FC = () => {
 
       {/* Critical Alerts */}
       {metrics?.criticalAlerts! > 0 && (
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-4 sm:px-6 py-4">
           <Alert
             message={`${metrics?.criticalAlerts} Critical Alert${metrics?.criticalAlerts! > 1 ? 's' : ''}`}
             description="Immediate action required. Click to view details."
@@ -249,7 +251,7 @@ const CEOPortal: React.FC = () => {
       )}
 
       {/* Main Dashboard */}
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto px-4 sm:px-6 py-8">
         {/* Key Metrics - Full page, no cards */}
         <Typography.Title level={3} style={{ marginTop: 0 }}>Company Health</Typography.Title>
         <Row gutter={[16, 16]} className="mb-8">
@@ -420,7 +422,7 @@ const CEOPortal: React.FC = () => {
             </TabPane>
           </Tabs>
       </div>
-      <div id="ceo-messages" className="container mx-auto px-6 py-8">
+      <div id="ceo-messages" className="container mx-auto px-4 sm:px-6 py-8">
         <Typography.Title level={3} style={{ marginTop: 0 }}>Message Center</Typography.Title>
         <MessageCenter />
       </div>
