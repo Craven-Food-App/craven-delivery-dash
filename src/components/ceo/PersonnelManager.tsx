@@ -645,18 +645,38 @@ export const PersonnelManager: React.FC = () => {
           });
         }
 
-        // Send Hiring Packet (state-specific)
+        // Generate Hiring Packet Forms as PDFs (state-specific)
         const stateCode = (values.work_location || '').match(/\b(OH|MI|FL|GA|NY|MO|KS|LA)\b/i)?.[1]?.toUpperCase() || 'OH';
         const docs = DEFAULT_EMPLOYEE_PACKET.states[stateCode as any] || [];
-        await supabase.functions.invoke('send-hiring-packet', {
-          body: {
-            candidateEmail: values.email,
-            candidateName: `${values.first_name} ${values.last_name}`,
-            state: stateCode,
-            packetType: 'employee',
-            docs
+        
+        // Generate each hiring packet form as a PDF
+        for (const doc of docs) {
+          const docKey = typeof doc === 'string' ? doc : doc.key;
+          try {
+            await supabase.functions.invoke('generate-hr-pdf', {
+              body: {
+                documentType: docKey,
+                employeeId: data[0].id,
+                metadata: {
+                  employeeName: `${values.first_name} ${values.last_name}`,
+                  firstName: values.first_name,
+                  lastName: values.last_name,
+                  employeeEmail: values.email,
+                  position: values.position,
+                  address: values.address || 'Address TBD',
+                  cityStateZip: values.work_location || 'City, ST ZIP',
+                  ssnLast4: null, // Employee will fill this
+                  companyName: 'Craven Inc',
+                  state: stateCode,
+                  createdBy: user?.id
+                },
+                alsoEmail: false // Don't email - stored for Document Vault
+              }
+            });
+          } catch (docError) {
+            console.error(`Error generating ${docKey}:`, docError);
           }
-        });
+        }
 
         message.success(`🎉 ${values.first_name} ${values.last_name} hired successfully! ${documentsSent} sent. Portal access and hiring packet emailed.`);
       } catch (emailError) {

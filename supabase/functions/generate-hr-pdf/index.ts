@@ -10,7 +10,9 @@ const corsHeaders = {
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 interface HRPDFRequest {
-  documentType: 'offer_letter' | 'board_resolution' | 'equity_agreement' | 'founders_equity_insurance_agreement';
+  documentType: 'offer_letter' | 'board_resolution' | 'equity_agreement' | 'founders_equity_insurance_agreement' | 
+                'w4' | 'i9' | 'oh_it4' | 'mi_w4' | 'ga_g4' | 'ny_it2104' | 'ks_k4' | 
+                'direct_deposit' | 'emergency_contact' | 'conf_ip' | 'arbitration';
   employeeId: string;
   metadata: any; // Document-specific data
   alsoEmail?: boolean; // Whether to send via email too
@@ -27,6 +29,28 @@ function generateDocumentHTML(documentType: string, metadata: any): string {
       return generateEquityAgreementHTML(metadata);
     case 'founders_equity_insurance_agreement':
       return generateFoundersAgreementHTML(metadata);
+    case 'w4':
+      return generateW4HTML(metadata);
+    case 'i9':
+      return generateI9HTML(metadata);
+    case 'oh_it4':
+      return generateOHIT4HTML(metadata);
+    case 'mi_w4':
+      return generateMIW4HTML(metadata);
+    case 'ga_g4':
+      return generateGAG4HTML(metadata);
+    case 'ny_it2104':
+      return generateNYIT2104HTML(metadata);
+    case 'ks_k4':
+      return generateKSK4HTML(metadata);
+    case 'direct_deposit':
+      return generateDirectDepositHTML(metadata);
+    case 'emergency_contact':
+      return generateEmergencyContactHTML(metadata);
+    case 'conf_ip':
+      return generateConfIPHTML(metadata);
+    case 'arbitration':
+      return generateArbitrationHTML(metadata);
     default:
       throw new Error(`Unknown document type: ${documentType}`);
   }
@@ -260,6 +284,348 @@ function generateFoundersAgreementHTML(data: any): string {
         <p><strong>Founder:</strong> ${data.employeeName} (CEO)</p>
         <p><strong>Ownership protected:</strong> ${data.equityPercentage}% (anti-dilution, board-supermajority exception)</p>
         <p><strong>Resolution reference:</strong> #${data.resolutionNumber}</p>
+      </body>
+    </html>
+  `;
+}
+
+// Government Form HTML Generators
+function generateW4HTML(data: any): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Form W-4</title>
+        <style>
+          body { font-family: 'Courier New', monospace; padding: 20px; }
+          .form-header { text-align: center; margin-bottom: 20px; }
+          .section { margin: 20px 0; border: 1px solid #000; padding: 10px; }
+          .row { display: flex; margin: 5px 0; }
+          .label { width: 200px; font-weight: bold; }
+          .field { border-bottom: 1px solid #000; flex: 1; }
+        </style>
+      </head>
+      <body>
+        <div class="form-header">
+          <h2>Form W-4 (2024)</h2>
+          <p><strong>Employee's Withholding Certificate</strong></p>
+        </div>
+        <div class="section">
+          <p><strong>Step 1: Enter Personal Information</strong></p>
+          <div class="row">
+            <span class="label">Name:</span>
+            <span class="field">${data.employeeName || 'Employee Name'}</span>
+          </div>
+          <div class="row">
+            <span class="label">Home Address:</span>
+            <span class="field">${data.address || 'Address'}</span>
+          </div>
+          <div class="row">
+            <span class="label">City, State ZIP:</span>
+            <span class="field">${data.cityStateZip || 'City, ST ZIP'}</span>
+          </div>
+          <div class="row">
+            <span class="label">Social Security Number:</span>
+            <span class="field">___-__-${data.ssnLast4 || '____'}</span>
+          </div>
+        </div>
+        <div class="section">
+          <p><strong>Step 2: Multiple Jobs or Spouse Works</strong></p>
+          <p>☐ Check here if you have more than one job or you and your spouse both have jobs.</p>
+        </div>
+        <div class="section">
+          <p><strong>Step 3: Claim Dependents</strong></p>
+          <p>If your total income will be \$200,000 or less (\$400,000 or less if married filing jointly):</p>
+          <p>Number of dependents: ___________</p>
+        </div>
+        <div class="section">
+          <p><strong>Step 4: Other Adjustments</strong></p>
+          <p>☐ Additional amount to withhold: \$__________</p>
+        </div>
+        <div class="section" style="margin-top: 30px;">
+          <p><strong>Employee Signature:</strong> _____________________</p>
+          <p><strong>Date:</strong> _____________________</p>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+function generateI9HTML(data: any): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Form I-9</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          .header { border: 2px solid #000; padding: 20px; text-align: center; }
+          .section { border: 1px solid #000; padding: 15px; margin: 15px 0; }
+          .line { border-bottom: 1px solid #000; height: 25px; margin: 5px 0; }
+          .label { font-weight: bold; font-size: 11px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h2>Employment Eligibility Verification</h2>
+          <p style="font-size: 12px;">Department of Homeland Security • U.S. Citizenship and Immigration Services</p>
+        </div>
+        <div class="section">
+          <p class="label">Section 1. Employee Information and Attestation</p>
+          <p>Last Name: ${data.lastName || 'Employee Last Name'}</p>
+          <p>First Name: ${data.firstName || 'Employee First Name'}</p>
+          <p>Middle Initial: ____</p>
+          <p>Other Names Used (if any): _______________________</p>
+          <p>Date of Birth: _______________________</p>
+          <p>SSN: ___-__-____</p>
+          <p style="margin-top: 15px;"><strong>Employee Signature:</strong> _____________________ <strong>Date:</strong> _____________________</p>
+        </div>
+        <div class="section">
+          <p class="label">Section 2. Employer Review and Verification</p>
+          <p><em>To be completed by Employer</em></p>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+function generateOHIT4HTML(data: any): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          .header { text-align: center; border: 2px solid #000; padding: 15px; }
+          .field { border-bottom: 1px solid #000; margin: 10px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h2>Ohio IT-4</h2>
+          <p>Employee's Ohio Withholding Exemption Certificate</p>
+        </div>
+        <p><strong>Name:</strong> ${data.employeeName || 'Employee Name'}</p>
+        <p><strong>SSN:</strong> ___-__-${data.ssnLast4 || '____'}</p>
+        <p><strong>Number of exemptions:</strong> ___</p>
+        <p><strong>Additional withholding:</strong> \$_____</p>
+        <p><strong>Signature:</strong> _____________________ <strong>Date:</strong> _____________________</p>
+      </body>
+    </html>
+  `;
+}
+
+function generateMIW4HTML(data: any): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          .header { text-align: center; border: 2px solid #000; padding: 15px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h2>Michigan W4-MI</h2>
+          <p>Employee's Michigan Withholding Exemption Certificate</p>
+        </div>
+        <p><strong>Name:</strong> ${data.employeeName || 'Employee Name'}</p>
+        <p><strong>SSN:</strong> ___-__-${data.ssnLast4 || '____'}</p>
+        <p><strong>Number of exemptions:</strong> ___</p>
+        <p><strong>Signature:</strong> _____________________ <strong>Date:</strong> _____________________</p>
+      </body>
+    </html>
+  `;
+}
+
+function generateGAG4HTML(data: any): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          .header { text-align: center; border: 2px solid #000; padding: 15px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h2>Georgia G-4</h2>
+          <p>Employee's Georgia Withholding Exemption Certificate</p>
+        </div>
+        <p><strong>Name:</strong> ${data.employeeName || 'Employee Name'}</p>
+        <p><strong>SSN:</strong> ___-__-${data.ssnLast4 || '____'}</p>
+        <p><strong>Number of exemptions:</strong> ___</p>
+        <p><strong>Signature:</strong> _____________________ <strong>Date:</strong> _____________________</p>
+      </body>
+    </html>
+  `;
+}
+
+function generateNYIT2104HTML(data: any): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          .header { text-align: center; border: 2px solid #000; padding: 15px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h2>New York IT-2104</h2>
+          <p>Employee's Withholding Allowance Certificate</p>
+        </div>
+        <p><strong>Name:</strong> ${data.employeeName || 'Employee Name'}</p>
+        <p><strong>SSN:</strong> ___-__-${data.ssnLast4 || '____'}</p>
+        <p><strong>Number of allowances:</strong> ___</p>
+        <p><strong>Signature:</strong> _____________________ <strong>Date:</strong> _____________________</p>
+      </body>
+    </html>
+  `;
+}
+
+function generateKSK4HTML(data: any): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          .header { text-align: center; border: 2px solid #000; padding: 15px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h2>Kansas K-4</h2>
+          <p>Employee's Withholding Exemption Certificate</p>
+        </div>
+        <p><strong>Name:</strong> ${data.employeeName || 'Employee Name'}</p>
+        <p><strong>SSN:</strong> ___-__-${data.ssnLast4 || '____'}</p>
+        <p><strong>Number of exemptions:</strong> ___</p>
+        <p><strong>Signature:</strong> _____________________ <strong>Date:</strong> _____________________</p>
+      </body>
+    </html>
+  `;
+}
+
+function generateDirectDepositHTML(data: any): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; }
+          .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px; text-align: center; color: white; margin-bottom: 40px; }
+          .section { margin: 20px 0; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>💰 Direct Deposit Authorization</h1>
+        </div>
+        <div class="section">
+          <p><strong>Employee Name:</strong> ${data.employeeName || 'Employee Name'}</p>
+          <p><strong>Bank Name:</strong> _______________________________________</p>
+          <p><strong>Routing Number:</strong> _______________________________________</p>
+          <p><strong>Account Number:</strong> _______________________________________</p>
+          <p><strong>Account Type:</strong> ☐ Checking ☐ Savings</p>
+          <p style="margin-top: 30px;"><strong>Signature:</strong> _____________________ <strong>Date:</strong> _____________________</p>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+function generateEmergencyContactHTML(data: any): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; }
+          .header { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 40px; text-align: center; color: white; margin-bottom: 40px; }
+          .section { margin: 20px 0; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>🚨 Emergency Contact Information</h1>
+        </div>
+        <div class="section">
+          <p><strong>Employee Name:</strong> ${data.employeeName || 'Employee Name'}</p>
+          <p><strong>Contact 1 Name:</strong> _______________________________________</p>
+          <p><strong>Relationship:</strong> _______________________________________</p>
+          <p><strong>Phone:</strong> _______________________________________</p>
+          <p><strong>Contact 2 Name:</strong> _______________________________________</p>
+          <p><strong>Relationship:</strong> _______________________________________</p>
+          <p><strong>Phone:</strong> _______________________________________</p>
+          <p style="margin-top: 30px;"><strong>Signature:</strong> _____________________ <strong>Date:</strong> _____________________</p>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+function generateConfIPHTML(data: any): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; }
+          .header { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); padding: 40px; text-align: center; color: white; margin-bottom: 40px; }
+          .section { margin: 20px 0; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>🔐 Confidentiality & IP Assignment</h1>
+        </div>
+        <div class="section">
+          <p><strong>Employee:</strong> ${data.employeeName || 'Employee Name'}</p>
+          <p><strong>Position:</strong> ${data.position || 'Position'}</p>
+          <p style="margin-top: 20px;">I acknowledge that I have read and agree to maintain confidentiality of company information and assign all intellectual property created in the course of employment to the company.</p>
+          <p style="margin-top: 30px;"><strong>Signature:</strong> _____________________ <strong>Date:</strong> _____________________</p>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+function generateArbitrationHTML(data: any): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; }
+          .header { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 40px; text-align: center; color: white; margin-bottom: 40px; }
+          .section { margin: 20px 0; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>⚖️ Arbitration Agreement</h1>
+        </div>
+        <div class="section">
+          <p><strong>Employee:</strong> ${data.employeeName || 'Employee Name'}</p>
+          <p style="margin-top: 20px;">I agree to arbitrate all disputes arising out of my employment through binding arbitration rather than litigation.</p>
+          <p style="margin-top: 30px;"><strong>Signature:</strong> _____________________ <strong>Date:</strong> _____________________</p>
+        </div>
       </body>
     </html>
   `;
