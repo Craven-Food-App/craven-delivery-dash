@@ -22,6 +22,8 @@ interface Document {
   file_size_bytes: number;
   access_level: number;
   created_at: string;
+  source?: 'exec_documents' | 'employee_documents';
+  storage_path?: string;
 }
 
 export const DocumentVault: React.FC = () => {
@@ -36,16 +38,121 @@ export const DocumentVault: React.FC = () => {
 
   const fetchDocuments = async () => {
     setLoading(true);
-    // TODO: Implement once exec_documents table is created
-    setDocuments([]);
-    setLoading(false);
+    try {
+      // Fetch from both exec_documents and employee_documents
+      const [execDocs, empDocs] = await Promise.all([
+        supabase.from('exec_documents').select('*').order('created_at', { ascending: false }),
+        supabase.from('employee_documents').select('*').order('created_at', { ascending: false })
+      ]);
+
+      const allDocs: Document[] = [];
+      
+      // Map exec_documents
+      if (execDocs.data) {
+        execDocs.data.forEach((doc: any) => {
+          allDocs.push({
+            id: doc.id,
+            title: doc.title,
+            description: doc.description || '',
+            category: doc.category,
+            file_url: doc.file_url,
+            file_size_bytes: doc.file_size_bytes || 0,
+            access_level: doc.access_level || 1,
+            created_at: doc.created_at,
+            source: 'exec_documents'
+          });
+        });
+      }
+
+      // Map employee_documents
+      if (empDocs.data) {
+        empDocs.data.forEach((doc: any) => {
+          // Map document_type to category
+          const categoryMap: Record<string, string> = {
+            'offer_letter': 'hr',
+            'board_resolution': 'board_materials',
+            'equity_agreement': 'legal',
+            'founders_equity_insurance_agreement': 'legal',
+            'employment_contract': 'hr',
+            'signed_offer_letter': 'hr',
+            'signed_equity_agreement': 'legal',
+            'onboarding_packet': 'hr',
+            'w2': 'financial',
+            'w9': 'financial',
+            'other': 'legal'
+          };
+
+          // Get public URL from storage
+          let fileUrl = doc.file_url || '';
+          if (doc.storage_path && !fileUrl) {
+            const { data: urlData } = supabase.storage
+              .from('hr-documents')
+              .getPublicUrl(doc.storage_path);
+            fileUrl = urlData.publicUrl;
+          }
+
+          allDocs.push({
+            id: doc.id,
+            title: doc.document_title || doc.document_type,
+            description: doc.document_type,
+            category: categoryMap[doc.document_type] || 'hr',
+            file_url: fileUrl,
+            file_size_bytes: doc.file_size_bytes || 0,
+            access_level: 2, // HR docs are confidential
+            created_at: doc.created_at,
+            source: 'employee_documents',
+            storage_path: doc.storage_path
+          });
+        });
+      }
+
+      // Sort by date, newest first
+      allDocs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      
+      setDocuments(allDocs);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      message.error('Failed to load documents');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const uploadDocument = async (values: any) => {
-    // TODO: Implement once exec_documents table is created
-    message.info('Document uploads will be available once the database is configured');
-    setModalVisible(false);
-    form.resetFields();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Get exec_user_id
+      const { data: execUser } = await supabase
+        .from('exec_users')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!execUser) throw new Error('Not an executive');
+
+      // Insert into exec_documents
+      const { error } = await supabase.from('exec_documents').insert({
+        title: values.title,
+        description: values.description,
+        category: values.category,
+        file_url: values.file_url,
+        file_size_bytes: 0,
+        access_level: values.access_level,
+        uploaded_by: execUser.id
+      });
+
+      if (error) throw error;
+
+      message.success('Document uploaded successfully');
+      setModalVisible(false);
+      form.resetFields();
+      fetchDocuments();
+    } catch (error: any) {
+      console.error('Error uploading document:', error);
+      message.error(error.message || 'Failed to upload document');
+    }
   };
 
   const columns = [

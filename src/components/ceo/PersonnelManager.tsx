@@ -415,7 +415,7 @@ export const PersonnelManager: React.FC = () => {
       // Generate board resolution number
       const resolutionNumber = `BR${new Date().getFullYear()}${String(Math.floor(Math.random() * 9000) + 1000)}`;
       
-      // Create board resolution record
+      // Create board resolution record with employee_id link
       const boardResolution = {
         resolution_number: resolutionNumber,
         resolution_type: 'appointment',
@@ -441,10 +441,12 @@ export const PersonnelManager: React.FC = () => {
           ['offer_letter'],
         created_by: user?.id,
         executed_by: user?.id,
-        executed_at: new Date().toISOString()
+        executed_at: new Date().toISOString(),
+        employee_id: data[0].id // Link to employee
       };
 
-      await supabase.from('board_resolutions').insert([boardResolution]);
+      const { data: boardResData } = await supabase.from('board_resolutions').insert([boardResolution]).select();
+      const boardResolutionId = boardResData?.[0]?.id;
 
       // Prepare signature token
       const signatureToken = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
@@ -461,11 +463,40 @@ export const PersonnelManager: React.FC = () => {
       // Provision portal access based on role
       const posLower = (values.position || '').toLowerCase();
       const portals: Array<'board'|'ceo'|'admin'> = [];
+      let tempPassword: string | undefined;
+      let userId: string | undefined;
+      
       if (/chief|ceo|cfo|cto|coo|president/i.test(values.position || '')) {
         portals.push('board');
-        // Record exec user
-        const execRole = posLower.includes('ceo') ? 'ceo' : posLower.includes('cfo') ? 'cfo' : posLower.includes('cto') ? 'cto' : posLower.includes('coo') ? 'coo' : 'advisor';
-        await supabase.from('exec_users').insert([{ user_id: null, role: execRole, access_level: 2, title: values.position, department: dept?.name || 'Executive', approved_at: new Date().toISOString() }]).select();
+        
+        // Create REAL auth user for C-level executives using edge function
+        const execRole = posLower.includes('ceo') ? 'ceo' : posLower.includes('cfo') ? 'cfo' : posLower.includes('cto') ? 'cto' : posLower.includes('coo') ? 'coo' : 'board_member';
+        
+        try {
+          const { data: execAuthData, error: execAuthError } = await supabase.functions.invoke('create-executive-user', {
+            body: {
+              firstName: values.first_name,
+              lastName: values.last_name,
+              email: values.email,
+              position: values.position,
+              department: dept?.name || 'Executive',
+              role: execRole
+            }
+          });
+
+          if (execAuthError || !execAuthData) {
+            console.error('Failed to create executive user:', execAuthError);
+          } else {
+            userId = execAuthData.userId;
+            tempPassword = execAuthData.tempPassword;
+            
+            // Update employee record with user_id from auth
+            await supabase.from('employees').update({ user_id: userId }).eq('id', data[0].id);
+          }
+        } catch (err) {
+          console.error('Error creating executive user:', err);
+        }
+        
         if (posLower.includes('ceo')) {
           portals.push('ceo');
           // Grant CEO email access credentials
@@ -478,23 +509,35 @@ export const PersonnelManager: React.FC = () => {
         portals.push('admin');
       }
 
-      // Send documents based on position requirements
+      // Generate and store PDF documents
       try {
-        // Always send board resolution first
-        await supabase.functions.invoke('send-board-resolution', {
+        // Generate Board Resolution PDF and store it
+        const boardResPDF = await supabase.functions.invoke('generate-hr-pdf', {
           body: {
-            employeeEmail: values.email,
-            employeeName: `${values.first_name} ${values.last_name}`,
-            position: values.position,
-            resolutionNumber: resolutionNumber,
-            resolutionType: 'appointment',
-            effectiveDate: values.hire_date || new Date().toISOString(),
-            companyName: 'Craven Inc',
-            state: 'Ohio',
-            boardMembers: boardResolution.board_members,
-            equityPercentage: isCLevel && values.equity ? values.equity : undefined
-          },
+            documentType: 'board_resolution',
+            employeeId: data[0].id,
+            metadata: {
+              employeeName: `${values.first_name} ${values.last_name}`,
+              employeeEmail: values.email,
+              position: values.position,
+              resolutionNumber: resolutionNumber,
+              effectiveDate: values.hire_date || new Date().toISOString(),
+              companyName: 'Craven Inc',
+              state: 'Ohio',
+              boardMembers: boardResolution.board_members,
+              equityPercentage: isCLevel && values.equity ? values.equity : undefined,
+              createdBy: user?.id
+            },
+            alsoEmail: true // Also send via email
+          }
         });
+
+        // Link board resolution to the generated PDF document
+        if (boardResPDF.data?.documentId && boardResolutionId) {
+          await supabase.from('board_resolutions')
+            .update({ document_id: boardResPDF.data.documentId })
+            .eq('id', boardResolutionId);
+        }
 
         // Pre-acceptance notification: provisional emails
         try {
@@ -513,54 +556,74 @@ export const PersonnelManager: React.FC = () => {
           }
         } catch (_) {}
 
-        // Send offer letter
-        await supabase.functions.invoke('send-executive-offer-letter', {
+        // Generate Offer Letter PDF and store it
+        await supabase.functions.invoke('generate-hr-pdf', {
           body: {
-            employeeEmail: values.email,
-            employeeName: `${values.first_name} ${values.last_name}`,
-            position: values.position,
-            department: dept?.name || 'Corporate',
-            salary: values.salary,
-            equity: isCLevel && values.equity ? values.equity : undefined,
-            startDate: values.hire_date || new Date().toISOString(),
-            reportingTo: 'CEO - Torrence Stroman',
-            signatureToken,
-            deferredSalary: !!values.deferred_salary,
-            fundingTrigger: values.funding_trigger || null,
-          },
+            documentType: 'offer_letter',
+            employeeId: data[0].id,
+            metadata: {
+              employeeName: `${values.first_name} ${values.last_name}`,
+              employeeEmail: values.email,
+              position: values.position,
+              department: dept?.name || 'Corporate',
+              salary: values.salary,
+              equity: isCLevel && values.equity ? values.equity : undefined,
+              startDate: values.hire_date || new Date().toISOString(),
+              reportingTo: 'CEO - Torrence Stroman',
+              signatureToken,
+              deferredSalary: !!values.deferred_salary,
+              fundingTrigger: values.funding_trigger || null,
+              companyName: 'Craven Inc',
+              state: 'Ohio',
+              createdBy: user?.id
+            },
+            alsoEmail: true // Also send via email
+          }
         });
 
-        // Send equity agreement if C-suite
+        // Generate Equity Agreement if C-suite
         if (isCLevel && values.equity && values.equity > 0) {
-          await supabase.functions.invoke('send-equity-offer-agreement', {
+          await supabase.functions.invoke('generate-hr-pdf', {
             body: {
-              employeeEmail: values.email,
-              employeeName: `${values.first_name} ${values.last_name}`,
-              position: values.position,
-              equityPercentage: values.equity,
-              equityType: values.equity_type || 'common_stock',
-              vestingSchedule: values.vesting_schedule || '4_year_1_cliff',
-              strikePrice: values.strike_price,
-              startDate: values.hire_date || new Date().toISOString(),
-              companyName: 'Craven Inc',
-              state: 'Ohio'
-            },
+              documentType: 'equity_agreement',
+              employeeId: data[0].id,
+              metadata: {
+                employeeName: `${values.first_name} ${values.last_name}`,
+                employeeEmail: values.email,
+                position: values.position,
+                equityPercentage: values.equity,
+                equityType: values.equity_type || 'common_stock',
+                vestingSchedule: values.vesting_schedule || '4_year_1_cliff',
+                strikePrice: values.strike_price,
+                startDate: values.hire_date || new Date().toISOString(),
+                companyName: 'Craven Inc',
+                state: 'Ohio',
+                createdBy: user?.id
+              },
+              alsoEmail: true // Also send via email
+            }
           });
         }
 
-        // Send founders agreement if CEO
+        // Generate Founders Agreement if CEO
         if (values.position.toLowerCase().includes('ceo')) {
-          await supabase.functions.invoke('send-founders-equity-insurance-agreement', {
+          await supabase.functions.invoke('generate-hr-pdf', {
             body: {
-              employeeEmail: values.email,
-              employeeName: `${values.first_name} ${values.last_name}`,
-              position: values.position,
-              equityPercentage: values.equity || 0,
-              startDate: values.hire_date || new Date().toISOString(),
-              companyName: 'Craven Inc',
-              state: 'Ohio',
-              resolutionNumber: resolutionNumber
-            },
+              documentType: 'founders_equity_insurance_agreement',
+              employeeId: data[0].id,
+              metadata: {
+                employeeName: `${values.first_name} ${values.last_name}`,
+                employeeEmail: values.email,
+                position: values.position,
+                equityPercentage: values.equity || 0,
+                startDate: values.hire_date || new Date().toISOString(),
+                companyName: 'Craven Inc',
+                state: 'Ohio',
+                resolutionNumber: resolutionNumber,
+                createdBy: user?.id
+              },
+              alsoEmail: true // Also send via email
+            }
           });
         }
 
@@ -570,15 +633,17 @@ export const PersonnelManager: React.FC = () => {
             'Board Resolution, Offer Letter, and Equity Agreement') :
           'Board Resolution and Offer Letter';
 
-        // Send portal access email
-        await supabase.functions.invoke('send-portal-access-email', {
-          body: {
-            email: values.email,
-            name: `${values.first_name} ${values.last_name}`,
-            portals,
-            tempPassword: Math.random().toString(36).slice(2,10) + 'A1!',
-          }
-        });
+        // Send portal access email (only for C-level with temp password)
+        if (tempPassword && portals.length > 0) {
+          await supabase.functions.invoke('send-portal-access-email', {
+            body: {
+              email: values.email,
+              name: `${values.first_name} ${values.last_name}`,
+              portals,
+              tempPassword: tempPassword
+            }
+          });
+        }
 
         // Send Hiring Packet (state-specific)
         const stateCode = (values.work_location || '').match(/\b(OH|MI|FL|GA|NY|MO|KS|LA)\b/i)?.[1]?.toUpperCase() || 'OH';
