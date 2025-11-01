@@ -116,6 +116,34 @@ export const EquityDashboard: React.FC = () => {
         );
       },
     },
+    {
+      title: '',
+      key: 'actions',
+      width: 80,
+      render: (_: any, record: Shareholder) => {
+        const equity = record.employee_equity?.[0];
+        if (!equity) return null;
+        
+        return (
+          <Popconfirm
+            title="Remove shares?"
+            description={`Remove ${record.first_name}'s equity?`}
+            onConfirm={() => handleRemoveShares(record.id, equity.id, `${record.first_name} ${record.last_name}`)}
+            okText="Remove"
+            okButtonProps={{ danger: true }}
+            cancelText="Cancel"
+          >
+            <Tag 
+              icon={<DeleteOutlined />} 
+              color="red"
+              style={{ cursor: 'pointer', fontSize: '11px' }}
+            >
+              Remove
+            </Tag>
+          </Popconfirm>
+        );
+      },
+    },
   ];
 
   // Desktop columns - full view
