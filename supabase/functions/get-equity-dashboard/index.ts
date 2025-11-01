@@ -19,7 +19,7 @@ serve(async (req: Request) => {
 
     const { data: equityRows, error } = await supabase
       .from('employee_equity')
-      .select('employee_id, shares_percentage, shares_total, equity_type, grant_date');
+      .select('id, employee_id, shares_percentage, shares_total, equity_type, grant_date');
 
     if (error) throw error;
 
@@ -42,6 +42,7 @@ serve(async (req: Request) => {
       position: employeesById[eq.employee_id]?.position || '',
       email: employeesById[eq.employee_id]?.email || '',
       employee_equity: [{
+        id: eq.id,
         shares_percentage: eq.shares_percentage,
         shares_total: eq.shares_total,
         equity_type: eq.equity_type,
