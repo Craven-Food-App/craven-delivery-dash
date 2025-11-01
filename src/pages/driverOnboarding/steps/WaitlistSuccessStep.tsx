@@ -1,8 +1,9 @@
 // @ts-nocheck
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Typography, Space, Alert, Divider } from 'antd';
 import { CheckCircleOutlined, ClockCircleOutlined, MailOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -12,6 +13,32 @@ interface WaitlistSuccessStepProps {
 
 export const WaitlistSuccessStep: React.FC<WaitlistSuccessStepProps> = ({ applicationData }) => {
   const navigate = useNavigate();
+  const [queuePosition, setQueuePosition] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchQueuePosition();
+  }, []);
+
+  const fetchQueuePosition = async () => {
+    if (!applicationData?.applicationId) return;
+
+    try {
+      const { data, error } = await supabase.rpc('get_driver_queue_position', {
+        driver_uuid: applicationData.applicationId
+      });
+
+      if (error) {
+        console.error('Error fetching queue position:', error);
+      } else if (data && data[0]) {
+        setQueuePosition(data[0]);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Card
@@ -98,6 +125,28 @@ export const WaitlistSuccessStep: React.FC<WaitlistSuccessStepProps> = ({ applic
             </div>
           </Space>
         </Card>
+
+        {/* Waitlist Position Info */}
+        {queuePosition && (
+          <Card
+            type="inner"
+            style={{ backgroundColor: '#fff7e6', border: '2px solid #ff7a00' }}
+          >
+            <Space direction="vertical" size="small" style={{ width: '100%', textAlign: 'center' }}>
+              <Text strong style={{ fontSize: '18px', color: '#ff7a00' }}>
+                🎯 Your Position in Queue
+              </Text>
+              <div style={{ marginTop: '8px' }}>
+                <Text style={{ fontSize: '48px', fontWeight: 'bold', color: '#ff7a00' }}>
+                  #{queuePosition.queue_position}
+                </Text>
+              </div>
+              <Paragraph style={{ marginBottom: 0, fontSize: '14px', marginTop: '8px' }}>
+                out of <strong>{queuePosition.total_in_region}</strong> drivers in {queuePosition.region_name || 'your area'}
+              </Paragraph>
+            </Space>
+          </Card>
+        )}
 
         {/* Additional Info */}
         <Card
