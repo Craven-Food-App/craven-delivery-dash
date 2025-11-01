@@ -41,14 +41,12 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Update craver_applications
+        // Update craver_applications to 'invited' status
         const { error: updateError } = await supabaseClient
           .from('craver_applications')
           .update({
-            status: 'approved',
-            background_check: true,
-            onboarding_completed_at: new Date().toISOString(),
-            background_check_initiated_at: new Date().toISOString(),
+            status: 'invited',
+            onboarding_started_at: new Date().toISOString()
           })
           .eq('id', driverId);
 
@@ -58,43 +56,7 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Call make_user_active_driver function
-        const vehicleInfo = {
-          vehicle_type: application.vehicle_type,
-          vehicle_make: application.vehicle_make,
-          vehicle_model: application.vehicle_model,
-          vehicle_year: application.vehicle_year,
-          license_plate: application.license_plate,
-        };
-
-        const { error: activateError } = await supabaseClient.rpc(
-          'make_user_active_driver',
-          {
-            target_user_id: application.user_id,
-            vehicle_info: vehicleInfo,
-          }
-        );
-
-        if (activateError) {
-          console.error('Error activating driver profile:', activateError);
-          results.push({ driver_id: driverId, success: false, error: activateError.message });
-          continue;
-        }
-
-        // Update driver_onboarding_progress
-        const { error: progressError } = await supabaseClient
-          .from('driver_onboarding_progress')
-          .update({
-            current_step: 'activated',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', application.user_id);
-
-        if (progressError) {
-          console.log('Warning: Could not update onboarding progress:', progressError);
-        }
-
-        // Send activation email
+        // Send invitation email to continue onboarding
         try {
           const emailResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-driver-waitlist-email`, {
             method: 'POST',
@@ -106,7 +68,7 @@ Deno.serve(async (req) => {
               driverName: `${application.first_name} ${application.last_name}`,
               driverEmail: application.email,
               location: 'Your Region',
-              emailType: 'activation',
+              emailType: 'invitation',
             }),
           });
 
