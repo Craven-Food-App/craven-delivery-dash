@@ -54,6 +54,11 @@ export const EquityDashboard: React.FC = () => {
 
   const handleRemoveShares = async (employeeId: string, equityId: string, employeeName: string) => {
     try {
+      if (!equityId || equityId === 'undefined') {
+        message.error('Invalid equity ID');
+        return;
+      }
+
       const { error } = await supabase
         .from('employee_equity')
         .delete()
