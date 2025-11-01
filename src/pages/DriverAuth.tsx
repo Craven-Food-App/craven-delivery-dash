@@ -105,7 +105,7 @@ const DriverAuth = () => {
   };
 
   const handleApplyRedirect = () => {
-    navigate('/craver-hub');
+    navigate('/driver-onboarding/apply');
   };
 
   return (

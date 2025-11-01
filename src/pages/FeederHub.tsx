@@ -73,7 +73,7 @@ const FeederHub = () => {
                 <Button 
                   size="lg" 
                   className="text-lg px-8 py-6"
-                  onClick={() => navigate('/driver-onboarding/signup')}
+                  onClick={() => navigate('/driver-onboarding/apply')}
                 >
                   Start Earning Today
                 </Button>
@@ -211,7 +211,7 @@ const FeederHub = () => {
           <Button 
             size="lg" 
             className="text-lg px-8 py-6"
-            onClick={() => navigate('/driver-onboarding/signup')}
+            onClick={() => navigate('/driver-onboarding/apply')}
           >
             Apply to Become a Feeder
           </Button>
