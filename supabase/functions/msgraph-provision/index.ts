@@ -16,6 +16,11 @@ const supabase = createClient(
 );
 
 async function token() {
+  if (!TENANT || !CLIENT || !SECRET) {
+    console.error('Missing Azure credentials:', { hasTenant: !!TENANT, hasClient: !!CLIENT, hasSecret: !!SECRET });
+    throw new Error('Azure credentials not configured. Set GRAPH_TENANT_ID, GRAPH_CLIENT_ID, and GRAPH_CLIENT_SECRET in Supabase Edge Function secrets.');
+  }
+  
   const url = `https://login.microsoftonline.com/${TENANT}/oauth2/v2.0/token`;
   const form = new URLSearchParams();
   form.set('client_id', CLIENT);
@@ -23,7 +28,11 @@ async function token() {
   form.set('grant_type', 'client_credentials');
   form.set('scope', 'https://graph.microsoft.com/.default');
   const res = await fetch(url, { method: 'POST', body: form });
-  if (!res.ok) throw new Error(`token_error ${res.status}`);
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error('Azure auth failed:', res.status, errorText);
+    throw new Error(`Azure authentication failed: ${res.status} ${errorText}`);
+  }
   const j = await res.json();
   return j.access_token as string;
 }
@@ -62,6 +71,8 @@ serve(async (req: Request) => {
     const { firstName, lastName, positionCode, personalEmail, executive, employeeId } = payload;
     const { named, roleAlias } = emailFor(firstName, lastName, positionCode, domain);
 
+    console.log(`Provisioning M365 account for ${firstName} ${lastName} -> ${named}`);
+    
     const bearer = await token();
 
     // 1) Ensure user exists (create if missing)
@@ -114,73 +125,53 @@ serve(async (req: Request) => {
       } catch (_) {}
     }
 
-    // 3) Send welcome email to personal email with credentials
-    // Try MS Graph first, fallback to Resend if it fails
+    // 3) Send welcome email via Resend (reliable email system)
     if (personalEmail && user?.__tempPassword) {
-      let emailSent = false;
-      
-      // Try Microsoft Graph first (preferred)
       try {
-        const body = {
-          message: {
-            subject: 'Welcome to Craven Inc – Your company email and login',
-            body: {
-              contentType: 'HTML',
-              content: `Hello ${firstName} ${lastName},<br/><br/>Your company email is <b>${named}</b>${executive ? ` and your role alias is <b>${roleAlias}</b>` : ''}.<br/>Temporary password: <b>${user.__tempPassword}</b><br/>Password change required on first login.<br/><br/>Sign in: https://portal.office.com<br/>MFA enrollment: https://aka.ms/mfasetup<br/><br/>– Craven IT`
-            },
-            toRecipients: [ { emailAddress: { address: personalEmail } } ]
-          },
-          saveToSentItems: false
-        };
-        await graph(`/users/${user.id}/sendMail`, 'POST', body, bearer);
-        console.log('✅ Welcome email sent via Microsoft Graph to:', personalEmail);
-        emailSent = true;
-      } catch (emailErr: any) {
-        console.error('❌ Failed to send via MS Graph, trying Resend fallback:', emailErr.message);
-      }
-      
-      // Fallback to Resend if MS Graph failed
-      if (!emailSent) {
-        try {
-          await resend.emails.send({
-            from: Deno.env.get('RESEND_FROM_EMAIL') || 'Crave\'N <onboarding@resend.dev>',
-            to: [personalEmail],
-            subject: 'Welcome to Craven Inc – Your company email and login',
-            html: `
-              <div style="font-family: Arial, sans-serif; padding: 20px;">
-                <h2>Welcome, ${firstName} ${lastName}!</h2>
-                <p>Your company email account has been created:</p>
-                <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                  <p><strong>Email:</strong> ${named}</p>
-                  ${executive && roleAlias ? `<p><strong>Role Alias:</strong> ${roleAlias}</p>` : ''}
-                  <p><strong>Temporary Password:</strong> ${user.__tempPassword}</p>
-                </div>
-                <p><strong>⚠️ You must change your password on first login.</strong></p>
-                <div style="margin: 30px 0;">
-                  <a href="https://portal.office.com" style="background: #ff6b00; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">Sign In to Office 365</a>
-                </div>
-                <p>For security, enroll in MFA: <a href="https://aka.ms/mfasetup">https://aka.ms/mfasetup</a></p>
-                <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
-                <p style="color: #666; font-size: 12px;">Craven IT Team</p>
+        const emailResponse = await resend.emails.send({
+          from: Deno.env.get('RESEND_FROM_EMAIL') || 'Crave\'N <onboarding@resend.dev>',
+          to: [personalEmail],
+          subject: 'Welcome to Craven Inc – Your company email and login',
+          html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px;">
+              <h2>Welcome, ${firstName} ${lastName}!</h2>
+              <p>Your company email account has been created:</p>
+              <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <p><strong>Email:</strong> ${named}</p>
+                ${executive && roleAlias ? `<p><strong>Role Alias:</strong> ${roleAlias}</p>` : ''}
+                <p><strong>Temporary Password:</strong> ${user.__tempPassword}</p>
               </div>
-            `
-          });
-          console.log('✅ Welcome email sent via Resend to:', personalEmail);
-          emailSent = true;
-          
-          // Track in email_logs
+              <p><strong>⚠️ You must change your password on first login.</strong></p>
+              <div style="margin: 30px 0;">
+                <a href="https://portal.office.com" style="background: #ff6b00; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">Sign In to Office 365</a>
+              </div>
+              <p>For security, enroll in MFA: <a href="https://aka.ms/mfasetup">https://aka.ms/mfasetup</a></p>
+              <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+              <p style="color: #666; font-size: 12px;">Craven IT Team</p>
+            </div>
+          `
+        });
+        
+        console.log('✅ Welcome email sent via Resend to:', personalEmail);
+        
+        // Track in email_logs
+        try {
+          const resendId = (emailResponse.data as any)?.id;
           await supabase.from('email_logs').insert({
             recipient_email: personalEmail,
             recipient_name: `${firstName} ${lastName}`,
             email_type: 'ms365_welcome',
             subject: 'Welcome to Craven Inc – Your company email and login',
             from_email: Deno.env.get('RESEND_FROM_EMAIL') || 'onboarding@resend.dev',
+            resend_email_id: resendId,
             status: 'sent',
             employee_id: employeeId || null
-          }).catch(e => console.error('Failed to log email:', e));
-        } catch (resendErr: any) {
-          console.error('❌ Failed to send via Resend:', resendErr.message);
+          });
+        } catch (logErr) {
+          console.error('Failed to log email:', logErr);
         }
+      } catch (emailErr: any) {
+        console.error('❌ Failed to send welcome email:', emailErr.message);
       }
     }
 
