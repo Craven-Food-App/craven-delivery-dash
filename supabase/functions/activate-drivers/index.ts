@@ -41,13 +41,12 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Update craver_applications to 'approved' status
+        // Update craver_applications to 'invited' status
         const { error: updateError } = await supabaseClient
           .from('craver_applications')
           .update({
-            status: 'approved',
-            background_check: true,
-            background_check_approved_at: new Date().toISOString()
+            status: 'invited',
+            onboarding_started_at: new Date().toISOString()
           })
           .eq('id', driverId);
 
@@ -57,9 +56,9 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Send approval email
+        // Send invitation email to continue onboarding
         try {
-          const emailResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-approval-email`, {
+          const emailResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-driver-waitlist-email`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -68,7 +67,8 @@ Deno.serve(async (req) => {
             body: JSON.stringify({
               driverName: `${application.first_name} ${application.last_name}`,
               driverEmail: application.email,
-              applicationId: driverId,
+              location: 'Your Region',
+              emailType: 'invitation',
             }),
           });
 
