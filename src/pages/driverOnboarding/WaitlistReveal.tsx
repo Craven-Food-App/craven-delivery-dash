@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Card, Typography, Space, Result, Button, Alert, Statistic, Row, Col, Tag } from 'antd';
-import { ClockCircleOutlined, CheckCircleOutlined, EnvironmentOutlined, TeamOutlined, BellOutlined } from '@ant-design/icons';
+import { ClockCircleOutlined, CheckCircleOutlined, EnvironmentOutlined, TeamOutlined, BellOutlined, LoadingOutlined } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
 
