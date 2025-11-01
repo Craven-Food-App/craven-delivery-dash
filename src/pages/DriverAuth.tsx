@@ -52,12 +52,6 @@ const DriverAuth = () => {
         return;
       }
 
-      // If background check not approved yet, show status page
-      if (!application.background_check || !application.background_check_approved_at) {
-        setShowBackgroundCheckStatus(true);
-        return;
-      }
-
       // If onboarding not complete, go to onboarding
       if (!application.onboarding_completed_at) {
         navigate('/enhanced-onboarding');
