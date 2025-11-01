@@ -143,7 +143,7 @@ const handler = async (req: Request): Promise<Response> => {
               </div>
               
               <div style="text-align: center; margin: 40px 0 30px 0;">
-                <a href="https://44d88461-c1ea-4d22-93fe-ebc1a7d81db9.lovableproject.com/onboarding" 
+                <a href="https://www.cravenusa.com/enhanced-onboarding" 
                    class="cta-button">
                   View My Dashboard
                 </a>
