@@ -69,6 +69,7 @@ import { BackgroundCheckPending } from "./pages/driverOnboarding/BackgroundCheck
 import { SignAgreement } from "./pages/driverOnboarding/SignAgreement";
 import { WaitlistReveal } from "./pages/driverOnboarding/WaitlistReveal";
 import { ActivationReady } from "./pages/driverOnboarding/ActivationReady";
+import { DriverApplicationWizard } from "./pages/driverOnboarding/DriverApplicationWizard";
 
 // Lazy load guide pages
 const AdminGuide = lazy(() => import("./pages/AdminGuide"));
@@ -370,7 +371,10 @@ const App = () => {
           <Route path="/driver/auth" element={<DriverAuth />} />
           <Route path="/feeder" element={<FeederHub />} />
           
-          {/* New Driver Onboarding Flow with DocuSign + Waitlist */}
+          {/* New Driver Application Wizard (Full Page Flow) */}
+          <Route path="/driver-onboarding/apply" element={<DriverApplicationWizard />} />
+          
+          {/* Legacy Driver Onboarding Flow */}
           <Route path="/driver-onboarding/signup" element={<DriverSignup />} />
           <Route path="/driver-onboarding/consent" element={<LegalConsent />} />
           <Route path="/driver-onboarding/identity" element={<IdentityForm />} />
