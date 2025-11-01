@@ -1,0 +1,28 @@
+[1mdiff --git a/supabase/migrations/20250120000008_enable_driver_support_realtime.sql b/supabase/migrations/20250120000010_enable_driver_support_realtime.sql[m
+[1msimilarity index 100%[m
+[1mrename from supabase/migrations/20250120000008_enable_driver_support_realtime.sql[m
+[1mrename to supabase/migrations/20250120000010_enable_driver_support_realtime.sql[m
+[1mdiff --git a/supabase/migrations/20250120000009_demo_data_setup.sql b/supabase/migrations/20250120000011_demo_data_setup.sql[m
+[1msimilarity index 100%[m
+[1mrename from supabase/migrations/20250120000009_demo_data_setup.sql[m
+[1mrename to supabase/migrations/20250120000011_demo_data_setup.sql[m
+[1mdiff --git a/supabase/migrations/20250121000001_create_profile_photos_bucket.sql b/supabase/migrations/20250121000007_create_profile_photos_bucket.sql[m
+[1msimilarity index 100%[m
+[1mrename from supabase/migrations/20250121000001_create_profile_photos_bucket.sql[m
+[1mrename to supabase/migrations/20250121000007_create_profile_photos_bucket.sql[m
+[1mdiff --git a/supabase/migrations/20250121000002_add_demo_restaurants.sql b/supabase/migrations/20250121000008_add_demo_restaurants.sql[m
+[1msimilarity index 100%[m
+[1mrename from supabase/migrations/20250121000002_add_demo_restaurants.sql[m
+[1mrename to supabase/migrations/20250121000008_add_demo_restaurants.sql[m
+[1mdiff --git a/supabase/migrations/20250121000003_add_real_demo_restaurants.sql b/supabase/migrations/20250121000009_add_real_demo_restaurants.sql[m
+[1msimilarity index 100%[m
+[1mrename from supabase/migrations/20250121000003_add_real_demo_restaurants.sql[m
+[1mrename to supabase/migrations/20250121000009_add_real_demo_restaurants.sql[m
+[1mdiff --git a/supabase/migrations/20250121000004_clean_demo_restaurants.sql b/supabase/migrations/20250121000010_clean_demo_restaurants.sql[m
+[1msimilarity index 100%[m
+[1mrename from supabase/migrations/20250121000004_clean_demo_restaurants.sql[m
+[1mrename to supabase/migrations/20250121000010_clean_demo_restaurants.sql[m
+[1mdiff --git a/supabase/migrations/20250122000001_add_notification_system.sql b/supabase/migrations/20250122000008_add_notification_system.sql[m
+[1msimilarity index 100%[m
+[1mrename from supabase/migrations/20250122000001_add_notification_system.sql[m
+[1mrename to supabase/migrations/20250122000008_add_notification_system.sql[m

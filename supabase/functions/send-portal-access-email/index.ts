@@ -36,7 +36,7 @@ serve(async (req) => {
       await supabase.auth.admin.inviteUserByEmail(email, { data: { full_name: name } });
     }
 
-    const appUrl = Deno.env.get('PUBLIC_APP_URL') || 'https://cravenusa.com';
+    const appUrl = 'https://44d88461-c1ea-4d22-93fe-ebc1a7d81db9.lovableproject.com';
     const links: string[] = [];
     if (portals.includes('board')) links.push(`<a href="${appUrl.replace('https://','https://board.')}" style="display:inline-block;margin:4px 6px;padding:10px 16px;background:#0ea5e9;color:#fff;border-radius:6px;text-decoration:none;">Open Board Portal</a>`);
     if (portals.includes('ceo')) links.push(`<a href="${appUrl.replace('https://','https://ceo.')}" style="display:inline-block;margin:4px 6px;padding:10px 16px;background:#10b981;color:#fff;border-radius:6px;text-decoration:none;">Open CEO Command Center</a>`);

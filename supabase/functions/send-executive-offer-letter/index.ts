@@ -63,10 +63,8 @@ const handler = async (req: Request): Promise<Response> => {
     const hasEquity = isCLevel && equity !== undefined && equity > 0;
 
     const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Crave'N <onboarding@resend.dev>";
-    // Prefer PUBLIC_APP_URL; if it looks like a Supabase API URL, override to production domain
-    const appUrlEnv = Deno.env.get("PUBLIC_APP_URL") || '';
-    const looksWrong = /supabase\.(co|com)/i.test(appUrlEnv) || /supabase\.co\//i.test(appUrlEnv) || appUrlEnv.startsWith('http') === false;
-    const appUrl = looksWrong || !appUrlEnv ? 'https://cravenusa.com' : appUrlEnv;
+    // Use the production domain for executive signatures
+    const appUrl = 'https://44d88461-c1ea-4d22-93fe-ebc1a7d81db9.lovableproject.com';
     const signUrl = signatureToken ? `${appUrl}/executive-sign?token=${signatureToken}` : '';
 
     const equitySection = hasEquity ? `
