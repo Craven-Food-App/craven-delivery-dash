@@ -98,11 +98,13 @@ GRANT SELECT, INSERT, UPDATE ON public.driver_signatures TO authenticated;
 COMMENT ON POLICY "drivers_own_signatures_update" ON public.driver_signatures IS 
 'Allows drivers to update their own signatures - critical for upsert operations';
 
--- STEP 4: Create storage bucket for driver signatures
+-- STEP 4: Create storage policies for driver signatures
 -- ================================================================
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('driver-signatures', 'driver-signatures', false, 5242880, ARRAY['image/png', 'image/jpeg', 'image/jpg'])
-ON CONFLICT (id) DO NOTHING;
+-- NOTE: Bucket must be created manually in Supabase Dashboard → Storage
+-- Bucket name: driver-signatures
+-- Public: false
+-- File size limit: 5MB
+-- Allowed MIME types: image/png, image/jpeg, image/jpg
 
 -- Drop existing storage policies
 DROP POLICY IF EXISTS "drivers_upload_own_signature" ON storage.objects;
@@ -152,12 +154,12 @@ WHERE table_schema = 'public'
 AND table_name = 'driver_signatures' 
 AND constraint_name = 'unique_driver_agreement';
 
--- Check bucket exists
+-- Check storage policies exist
 SELECT 
-  id,
-  name,
-  public,
-  file_size_limit
-FROM storage.buckets 
-WHERE id = 'driver-signatures';
+  policyname,
+  cmd
+FROM pg_policies 
+WHERE schemaname = 'storage' 
+AND tablename = 'objects' 
+AND policyname LIKE '%driver%signature%';
 
