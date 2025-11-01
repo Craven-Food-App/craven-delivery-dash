@@ -45,16 +45,16 @@ const DriverAuth = () => {
         return;
       }
 
-      // If background check not approved yet, show status page
-      if (!application.background_check || !application.background_check_approved_at) {
-        setShowBackgroundCheckStatus(true);
+      // If approved but haven't shown welcome confetti, show it!
+      if (application.status === 'approved' && !application.welcome_screen_shown) {
+        setFirstName(application.first_name);
+        setShowWelcomeConfetti(true);
         return;
       }
 
-      // If approved but haven't shown welcome confetti, show it!
-      if (application.background_check && !application.welcome_screen_shown) {
-        setFirstName(application.first_name);
-        setShowWelcomeConfetti(true);
+      // If background check not approved yet, show status page
+      if (!application.background_check || !application.background_check_approved_at) {
+        setShowBackgroundCheckStatus(true);
         return;
       }
 
