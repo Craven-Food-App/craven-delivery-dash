@@ -138,3 +138,12 @@ verify_jwt = false
 
 [functions.create-executive-user]
 verify_jwt = true
+
+[functions.create-payment]
+verify_jwt = false
+
+[functions.verify-payment]
+verify_jwt = false
+
+[functions.moov-webhook]
+verify_jwt = false
