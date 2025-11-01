@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { WelcomeConfetti } from '@/components/driver/WelcomeConfetti';
 import { 
   CheckCircle, 
   Clock, 
@@ -47,6 +48,8 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [completingTask, setCompletingTask] = useState<number | null>(null);
+  const [showWelcomeConfetti, setShowWelcomeConfetti] = useState(false);
+  const [firstName, setFirstName] = useState('');
 
   useEffect(() => {
     loadProgress();
@@ -115,6 +118,14 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
           variant: "destructive",
         });
         setProgress(null);
+        return;
+      }
+
+      // Check if approved but haven't shown welcome confetti
+      if (application.status === 'approved' && !application.welcome_screen_shown) {
+        setFirstName(application.first_name);
+        setShowWelcomeConfetti(true);
+        setLoading(false);
         return;
       }
 
@@ -662,6 +673,14 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Welcome Confetti Overlay */}
+      {showWelcomeConfetti && (
+        <WelcomeConfetti 
+          firstName={firstName} 
+          onComplete={() => setShowWelcomeConfetti(false)} 
+        />
+      )}
     </div>
   );
 };
