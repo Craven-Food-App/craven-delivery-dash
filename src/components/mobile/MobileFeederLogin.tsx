@@ -168,7 +168,7 @@ const MobileFeederLogin: React.FC<MobileFeederLoginProps> = ({ onBack, onLoginSu
   };
 
   const handleApplyRedirect = () => {
-    navigate('/feeder');
+    navigate('/driver-onboarding/apply');
   };
 
   return (

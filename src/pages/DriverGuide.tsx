@@ -54,7 +54,7 @@ const DriverGuide = () => {
         </Card>
 
         <div className="flex gap-4 justify-center">
-          <Button onClick={() => navigate('/craver-hub')}>Apply Now</Button>
+          <Button onClick={() => navigate('/driver-onboarding/apply')}>Apply Now</Button>
           <Button variant="outline" onClick={() => navigate('/contact-us')}>Get Support</Button>
         </div>
       </div>
