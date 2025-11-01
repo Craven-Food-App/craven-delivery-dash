@@ -182,7 +182,7 @@ const App = () => {
     return (
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider defaultTheme="system">
+          <ThemeProvider defaultTheme="light">
             <TooltipProvider>
               <Toaster />
               <Sonner />
@@ -212,7 +212,7 @@ const App = () => {
     return (
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider defaultTheme="system">
+          <ThemeProvider defaultTheme="light">
             <TooltipProvider>
               <Toaster />
               <Sonner />
@@ -241,7 +241,7 @@ const App = () => {
     return (
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider defaultTheme="system">
+          <ThemeProvider defaultTheme="light">
             <TooltipProvider>
               <Toaster />
               <Sonner />
@@ -264,7 +264,7 @@ const App = () => {
     return (
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider defaultTheme="system">
+          <ThemeProvider defaultTheme="light">
             <TooltipProvider>
               <Toaster />
               <Sonner />
@@ -287,7 +287,7 @@ const App = () => {
     return (
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider defaultTheme="system">
+          <ThemeProvider defaultTheme="light">
             <TooltipProvider>
               <Toaster />
               <Sonner />
@@ -310,7 +310,7 @@ const App = () => {
     return (
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider defaultTheme="system">
+          <ThemeProvider defaultTheme="light">
             <TooltipProvider>
               <Toaster />
               <Sonner />
@@ -333,7 +333,7 @@ const App = () => {
     return (
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider defaultTheme="system">
+          <ThemeProvider defaultTheme="light">
             <TooltipProvider>
               <Toaster />
               <Sonner />
