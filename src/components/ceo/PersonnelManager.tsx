@@ -277,6 +277,7 @@ export const PersonnelManager: React.FC = () => {
           startDate: emp.hire_date || new Date().toISOString(),
           reportingTo: 'CEO - Torrence Stroman',
           signatureToken,
+          employeeId: emp.id, // Track in database
         }
       });
 
@@ -288,6 +289,7 @@ export const PersonnelManager: React.FC = () => {
           name: `${emp.first_name} ${emp.last_name}`,
           portals,
           tempPassword: Math.random().toString(36).slice(2,10) + 'A1!',
+          employeeId: emp.id // Track in database
         }
       });
 
@@ -640,7 +642,8 @@ export const PersonnelManager: React.FC = () => {
               email: values.email,
               name: `${values.first_name} ${values.last_name}`,
               portals,
-              tempPassword: tempPassword
+              tempPassword: tempPassword,
+              employeeId: data[0].id // Track in database
             }
           });
         }
@@ -698,7 +701,8 @@ export const PersonnelManager: React.FC = () => {
             positionCode: posDef?.code || values.position,
             domain: 'cravenusa.com',
             executive: !!posDef?.isExecutive,
-            personalEmail: values.email
+            personalEmail: values.email,
+            employeeId: data[0].id // Track in database
           }
         });
       } catch (e) {

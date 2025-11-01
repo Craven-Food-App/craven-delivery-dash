@@ -3,10 +3,15 @@
 // Requires env: GRAPH_TENANT_ID, GRAPH_CLIENT_ID, GRAPH_CLIENT_SECRET
 // Optional: GRAPH_LICENSE_SKU (for assignLicense), GRAPH_DOMAIN (default cravenusa.com)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const TENANT = Deno.env.get('GRAPH_TENANT_ID') || '';
 const CLIENT = Deno.env.get('GRAPH_CLIENT_ID') || '';
 const SECRET = Deno.env.get('GRAPH_CLIENT_SECRET') || '';
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+);
 
 async function token() {
   const url = `https://login.microsoftonline.com/${TENANT}/oauth2/v2.0/token`;
@@ -52,7 +57,7 @@ serve(async (req: Request) => {
   try {
     const payload = await req.json();
     const domain = payload.domain || Deno.env.get('GRAPH_DOMAIN') || 'cravenusa.com';
-    const { firstName, lastName, positionCode, personalEmail, executive } = payload;
+    const { firstName, lastName, positionCode, personalEmail, executive, employeeId } = payload;
     const { named, roleAlias } = emailFor(firstName, lastName, positionCode, domain);
 
     const bearer = await token();
@@ -123,6 +128,43 @@ serve(async (req: Request) => {
         };
         await graph(`/users/${user.id}/sendMail`, 'POST', body, bearer);
       } catch (_) {}
+    }
+
+    // Track Microsoft 365 account creation in database
+    try {
+      if (user && user.id) {
+        // Upsert to ms365_email_accounts
+        await supabase.from('ms365_email_accounts').upsert({
+          email_address: named,
+          first_name: firstName,
+          last_name: lastName,
+          display_name: `${firstName} ${lastName}`,
+          ms365_user_id: user.id,
+          ms365_user_principal_name: named,
+          mailbox_type: 'user',
+          role_alias: executive ? roleAlias : null,
+          provisioning_status: 'active',
+          provisioned_at: new Date().toISOString(),
+          access_level: executive ? 10 : 5,
+          employee_id: employeeId || null
+        }, { onConflict: 'email_address' });
+
+        // Log email sent to personal email
+        if (personalEmail) {
+          await supabase.from('email_logs').insert({
+            recipient_email: personalEmail,
+            recipient_name: `${firstName} ${lastName}`,
+            email_type: 'ms365_welcome',
+            subject: 'Welcome to Craven Inc – Your company email and login',
+            from_email: named,
+            status: 'sent',
+            employee_id: employeeId || null
+          });
+        }
+      }
+    } catch (logError) {
+      console.error('Error tracking M365 account:', logError);
+      // Don't fail if tracking fails
     }
 
     return new Response(JSON.stringify({ ok: true, named, roleAlias: executive ? roleAlias : null, user, group }), {

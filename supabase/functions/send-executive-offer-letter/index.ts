@@ -1,7 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL") ?? "",
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,6 +26,8 @@ interface OfferLetterRequest {
   signatureToken?: string;
   salaryStatus?: 'active'|'deferred';
   fundingTrigger?: number | null;
+  employeeId?: string; // Optional: employee_id for tracking
+  executiveSignatureId?: string; // Optional: signature record id
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -41,6 +48,8 @@ const handler = async (req: Request): Promise<Response> => {
       signatureToken,
       salaryStatus,
       fundingTrigger,
+      employeeId,
+      executiveSignatureId,
     }: OfferLetterRequest = await req.json();
 
     const isCLevel = position.toLowerCase().includes('chief') || 
@@ -211,6 +220,25 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     console.log("Executive offer letter sent successfully:", emailResponse);
+
+    // Log email to database
+    try {
+      const resendId = (emailResponse.data as any)?.id;
+      await supabase.from('email_logs').insert({
+        recipient_email: employeeEmail,
+        recipient_name: employeeName,
+        email_type: 'offer_letter',
+        subject: `🎯 ${isCLevel ? 'Executive ' : ''}Offer Letter - ${position} at Crave'N Delivery`,
+        from_email: fromEmail,
+        resend_email_id: resendId,
+        status: 'sent',
+        employee_id: employeeId || null,
+        executive_signature_id: executiveSignatureId || null
+      });
+    } catch (logError) {
+      console.error('Error logging email:', logError);
+      // Don't fail the request if logging fails
+    }
 
     return new Response(
       JSON.stringify({ success: true, emailResponse }),
