@@ -101,6 +101,7 @@ const handler = async (req: Request): Promise<Response> => {
             .checklist li { padding: 8px 0; }
             .checklist li:before { content: "✓ "; color: #4CAF50; font-weight: bold; }
             .position-badge { background: #FF6B35; color: white; padding: 10px 20px; border-radius: 20px; display: inline-block; font-weight: bold; }
+            .cta-button { background: linear-gradient(135deg, #FF6B35 0%, #FF8E53 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; margin: 20px 0; box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3); }
             .footer { text-align: center; margin-top: 30px; color: #777; font-size: 12px; }
           </style>
         </head>
@@ -139,6 +140,13 @@ const handler = async (req: Request): Promise<Response> => {
               <div class="highlight-box">
                 <p><strong>⏳ Estimated Wait Time:</strong> 2-8 weeks</p>
                 <p style="font-size: 14px; margin: 5px 0 0 0;">We're expanding rapidly!</p>
+              </div>
+              
+              <div style="text-align: center; margin: 40px 0 30px 0;">
+                <a href="https://44d88461-c1ea-4d22-93fe-ebc1a7d81db9.lovableproject.com/onboarding" 
+                   class="cta-button">
+                  View My Dashboard
+                </a>
               </div>
               
               <p><strong>The Crave'N Team</strong></p>
