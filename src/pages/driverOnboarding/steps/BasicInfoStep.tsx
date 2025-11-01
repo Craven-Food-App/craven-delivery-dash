@@ -40,76 +40,52 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack }) 
         throw new Error('Failed to create user account');
       }
 
-      // 2. Find or create zone for this ZIP
-      const { data: zoneData } = await supabase
-        .from('zones')
-        .select('id')
-        .eq('zip_code', values.zip)
-        .single();
+      // 2. Determine region based on ZIP
+      let regionId = null;
+      const { data: regionsData } = await supabase
+        .from('regions')
+        .select('id, zip_prefix')
+        .order('created_at');
 
-      let zoneId = zoneData?.id;
-
-      // If no zone exists, create one
-      if (!zoneId) {
-        // Determine state from ZIP (simple logic - can be improved)
-        const stateMap: Record<string, string> = {
-          '43': 'OH', '45': 'OH', '44': 'OH', // Columbus, Cincinnati, Cleveland
-          '48': 'MI', '49': 'MI', '50': 'MI', // Detroit areas
-          '30': 'GA', '31': 'GA', '32': 'GA', // Atlanta areas
-          '33': 'FL', '34': 'FL', '32': 'FL', // Florida areas
-        };
-        const stateCode = stateMap[values.zip.substring(0, 2)] || 'OH';
-
-        const { data: newZone } = await supabase
-          .from('zones')
-          .insert({
-            zip_code: values.zip,
-            city: values.city,
-            state: stateCode,
-            capacity: 50,
-            is_active: true
-          })
-          .select()
-          .single();
-        
-        zoneId = newZone?.id;
+      // Find matching region by zip_prefix
+      if (regionsData && regionsData.length > 0) {
+        const matchingRegion = regionsData.find(r => 
+          values.zip.startsWith(r.zip_prefix)
+        );
+        regionId = matchingRegion?.id || regionsData[0].id; // Default to first region if no match
       }
 
-      // 3. Create driver record
-      const { data: driverData, error: driverError } = await supabase
-        .from('drivers')
+      // 3. Parse full name
+      const nameParts = values.fullName.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      // 4. Create craver application (waitlisted)
+      const { data: applicationData, error: appError } = await supabase
+        .from('craver_applications')
         .insert({
-          auth_user_id: authData.user.id,
-          full_name: values.fullName,
+          user_id: authData.user.id,
+          first_name: firstName,
+          last_name: lastName,
           email: values.email,
           phone: values.phone,
           city: values.city,
-          zip: values.zip,
-          zone_id: zoneId,
-          status: 'started'
+          state: 'OH', // TODO: determine from ZIP
+          zip_code: values.zip,
+          status: 'waitlist',
+          region_id: regionId,
+          points: 0,
+          priority_score: 0,
+          waitlist_joined_at: new Date().toISOString(),
+          tos_accepted: applicationData?.tos_accepted || false,
+          privacy_accepted: applicationData?.privacy_accepted || false
         })
         .select()
         .single();
 
-      if (driverError) {
-        console.error('Driver creation error:', driverError);
-        throw driverError;
-      }
-
-      // 4. Place on waitlist if zoneId exists
-      if (zoneId) {
-        const { error: waitlistError } = await supabase
-          .from('driver_waitlist')
-          .insert({
-            driver_id: driverData.id,
-            zone_id: zoneId,
-            added_at: new Date().toISOString()
-          });
-
-        if (waitlistError) {
-          console.error('Waitlist error:', waitlistError);
-          // Don't fail if waitlist insert fails - driver is still created
-        }
+      if (appError) {
+        console.error('Application creation error:', appError);
+        throw appError;
       }
 
       // 5. Create user profile
@@ -124,10 +100,11 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack }) 
 
       // Continue to success step
       onNext({
-        driverId: driverData.id,
+        applicationId: applicationData.id,
+        driverId: applicationData.id,
         email: values.email,
         city: values.city,
-        zoneId,
+        regionId,
         ...values
       });
 
