@@ -1,11 +1,10 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Button, Card, Typography, Space, message, Checkbox, Alert, Row, Col, Spin } from 'antd';
+import { Button, Card, Typography, Space, message, Checkbox, Alert, Row, Col, Spin, Input } from 'antd';
 import { FileTextOutlined, CheckCircleOutlined, SafetyOutlined, LoadingOutlined } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ICAViewer } from '@/components/driver/ICAViewer';
-import { DriverSignatureCanvas } from '@/components/driver/SignatureCanvas';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -15,7 +14,7 @@ export const SignAgreement: React.FC = () => {
   const [driverName, setDriverName] = useState<string>('');
   const [driverEmail, setDriverEmail] = useState<string>('');
   const [hasReadAgreement, setHasReadAgreement] = useState(false);
-  const [signatureData, setSignatureData] = useState<string>('');
+  const [typedName, setTypedName] = useState<string>('');
   const [signing, setSigning] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -55,11 +54,6 @@ export const SignAgreement: React.FC = () => {
     }
   };
 
-  const handleSignatureSaved = (dataUrl: string) => {
-    setSignatureData(dataUrl);
-    message.success('Signature captured successfully');
-  };
-
   const submitAgreement = async () => {
     // Prevent double-submission
     if (signing) return;
@@ -69,8 +63,14 @@ export const SignAgreement: React.FC = () => {
       return;
     }
 
-    if (!signatureData) {
-      message.error('Please provide your signature');
+    if (!typedName || typedName.trim() === '') {
+      message.error('Please type your full name to sign');
+      return;
+    }
+
+    // Check name matches driver name
+    if (typedName.toLowerCase() !== driverName.toLowerCase()) {
+      message.error('Name does not match driver account name');
       return;
     }
 
@@ -80,29 +80,6 @@ export const SignAgreement: React.FC = () => {
       const ipAddress = await getClientIP();
       const userAgent = navigator.userAgent;
       const location = await getClientLocation();
-
-      // Convert base64 to blob
-      const blob = dataURLtoBlob(signatureData);
-      const fileName = `${driverId}-ica-signature-${Date.now()}.png`;
-
-      // Upload signature to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('driver-signatures')
-        .upload(fileName, blob, {
-          contentType: 'image/png',
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw new Error('Failed to upload signature');
-      }
-
-      // Get public URL for signature
-      const { data: urlData } = supabase.storage
-        .from('driver-signatures')
-        .getPublicUrl(fileName);
 
       // Check if signature already exists
       const { data: existingSig } = await supabase
@@ -119,7 +96,7 @@ export const SignAgreement: React.FC = () => {
           .from('driver_signatures')
           .update({
             agreement_version: '2025-10-29',
-            signature_image_url: urlData.publicUrl,
+            typed_name: typedName,
             ip_address: ipAddress,
             user_agent: userAgent,
             latitude: location.latitude,
@@ -136,7 +113,7 @@ export const SignAgreement: React.FC = () => {
             driver_id: driverId,
             agreement_type: 'ICA',
             agreement_version: '2025-10-29',
-            signature_image_url: urlData.publicUrl,
+            typed_name: typedName,
             ip_address: ipAddress,
             user_agent: userAgent,
             latitude: location.latitude,
@@ -148,29 +125,6 @@ export const SignAgreement: React.FC = () => {
       if (sigError) {
         console.error('Signature record error:', sigError);
         throw sigError;
-      }
-
-      // Generate signed ICA document with embedded signature
-      try {
-        const { data: icaData, error: icaError } = await supabase.functions.invoke('generate-signed-driver-ica', {
-          body: {
-            driverId: driverId,
-            signatureImageUrl: signatureData,
-            driverName: driverName,
-            driverEmail: driverEmail,
-            signedAt: new Date().toISOString()
-          }
-        });
-
-        if (icaError) {
-          console.error('ICA generation error:', icaError);
-          // Don't fail the signature if ICA generation fails
-        } else {
-          console.log('Signed ICA generated:', icaData);
-        }
-      } catch (icaErr: any) {
-        console.error('ICA generation failed:', icaErr);
-        // Don't fail the signature if ICA generation fails
       }
 
       // Update driver status
@@ -224,18 +178,6 @@ export const SignAgreement: React.FC = () => {
       console.error('Zone check error:', error);
       navigate('/driver-onboarding/activation', { state: { driverId: id } });
     }
-  };
-
-  const dataURLtoBlob = (dataUrl: string): Blob => {
-    const arr = dataUrl.split(',');
-    const mime = arr[0].match(/:(.*?);/)![1];
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new Blob([u8arr], { type: mime });
   };
 
   const getClientIP = async (): Promise<string> => {
@@ -326,15 +268,23 @@ export const SignAgreement: React.FC = () => {
 
           {/* Signature Section */}
           {hasReadAgreement && (
-            <div>
-              <Title level={4} style={{ marginBottom: '16px', color: '#262626' }}>
-                Your Signature
-              </Title>
-              <DriverSignatureCanvas 
-                onSave={handleSignatureSaved}
-                disabled={!hasReadAgreement}
-              />
-            </div>
+            <Card style={{ borderRadius: '12px', background: '#f0f9ff', border: '1px solid #91d5ff' }}>
+              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                <Title level={4} style={{ marginBottom: '8px', color: '#262626' }}>
+                  Type Your Full Name to Sign
+                </Title>
+                <Paragraph type="secondary" style={{ fontSize: '14px', marginBottom: '16px' }}>
+                  Please type your full legal name exactly as it appears on your account: <Text strong>{driverName}</Text>
+                </Paragraph>
+                <Input 
+                  size="large"
+                  placeholder="Enter your full name"
+                  value={typedName}
+                  onChange={(e) => setTypedName(e.target.value)}
+                  style={{ fontSize: '16px' }}
+                />
+              </Space>
+            </Card>
           )}
 
           {/* Submit Button */}
@@ -355,7 +305,7 @@ export const SignAgreement: React.FC = () => {
                   type="primary" 
                   size="large"
                   loading={signing}
-                  disabled={!hasReadAgreement || !signatureData || signing}
+                  disabled={!hasReadAgreement || !typedName || signing}
                   onClick={submitAgreement}
                   icon={<CheckCircleOutlined />}
                   style={{
