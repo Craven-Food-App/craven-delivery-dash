@@ -70,7 +70,7 @@ const handler = async (req: Request): Promise<Response> => {
                         </div>
                         
                         <div style="text-align: center; margin: 40px 0 30px 0;">
-                          <a href="https://www.cravenusa.com/enhanced-onboarding" 
+                          <a href="https://www.cravenusa.com/driver/auth" 
                              style="display: inline-block; background: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 6px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);">
                             Access Driver Portal
                           </a>
