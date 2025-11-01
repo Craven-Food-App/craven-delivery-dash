@@ -236,7 +236,8 @@ export const PersonnelManager: React.FC = () => {
         .select(`
           *,
           department:departments(name),
-          employee_equity(shares_percentage, shares_total, equity_type, vesting_schedule)
+          employee_equity(shares_percentage, shares_total, equity_type, vesting_schedule),
+          ms365_emails:ms365_email_accounts(email_address, role_alias, provisioning_status)
         `)
         .order('hire_date', { ascending: false });
 
@@ -901,12 +902,16 @@ export const PersonnelManager: React.FC = () => {
     {
       title: 'Name',
       key: 'name',
-      render: (_: any, record: Employee) => (
-        <div className="flex flex-col">
-          <span className="font-medium">{`${record.first_name} ${record.last_name}`}</span>
-          <span className="text-xs text-gray-500">{record.email}</span>
-        </div>
-      ),
+      render: (_: any, record: any) => {
+        const m365 = record.ms365_emails?.[0];
+        return (
+          <div className="flex flex-col">
+            <span className="font-medium">{`${record.first_name} ${record.last_name}`}</span>
+            <span className="text-xs text-gray-500">{record.email}</span>
+            {m365 && <span className="text-xs text-blue-600">{m365.email_address}</span>}
+          </div>
+        );
+      },
     },
     {
       title: 'Status',
@@ -972,9 +977,28 @@ export const PersonnelManager: React.FC = () => {
       sorter: (a: Employee, b: Employee) => a.first_name.localeCompare(b.first_name),
     },
     {
-      title: 'Email',
+      title: 'Personal Email',
       dataIndex: 'email',
       key: 'email',
+      width: 200,
+    },
+    {
+      title: 'Company Email',
+      key: 'company_email',
+      render: (_: any, record: any) => {
+        const m365 = record.ms365_emails?.[0];
+        if (!m365) return <Tag color="default">Not Provisioned</Tag>;
+        return (
+          <div className="flex flex-col">
+            <span>{m365.email_address}</span>
+            {m365.role_alias && <span className="text-xs text-blue-600">{m365.role_alias}</span>}
+            <Tag color={m365.provisioning_status === 'active' ? 'green' : 'orange'}>
+              {m365.provisioning_status}
+            </Tag>
+          </div>
+        );
+      },
+      width: 250,
     },
     {
       title: 'Position',
