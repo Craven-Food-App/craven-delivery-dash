@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState } from 'react';
-import { Form, Input, Button, Card, Typography, Space, message, Row, Col } from 'antd';
+import { Form, Input, Button, Card, Typography, Space, message, Row, Col, Checkbox } from 'antd';
 import { UserOutlined, MailOutlined, PhoneOutlined, EnvironmentOutlined, LockOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -267,6 +267,33 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
               </Form.Item>
             </Col>
           </Row>
+
+          {/* Age Verification */}
+          <Form.Item
+            name="ageVerified"
+            valuePropName="checked"
+            rules={[
+              {
+                validator: (_, value) =>
+                  value
+                    ? Promise.resolve()
+                    : Promise.reject(new Error('You must confirm you are 18+ to apply'))
+              }
+            ]}
+          >
+            <div style={{
+              padding: '16px',
+              backgroundColor: '#fffbe6',
+              borderRadius: '8px',
+              border: '1px solid #ffd666'
+            }}>
+              <Checkbox style={{ width: '100%' }}>
+                <Text style={{ fontSize: '14px' }}>
+                  I confirm that I am at least 18 years of age and legally authorized to work as a delivery driver.
+                </Text>
+              </Checkbox>
+            </div>
+          </Form.Item>
 
           {/* Action Buttons */}
           <Form.Item style={{ marginTop: '24px' }}>
