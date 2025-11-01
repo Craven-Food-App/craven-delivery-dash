@@ -201,15 +201,19 @@ export const PersonnelManager: React.FC = () => {
       const res = await supabase.functions.invoke('msgraph-provision', {
         body: { firstName: v.first_name, lastName: v.last_name, positionCode: pos.code, domain: 'cravenusa.com' }
       });
+      
       if ((res as any)?.data?.ok) {
-        const s = (res as any).data.suggested;
-        setSuggestedEmails(s);
-        message.success('Provision request queued.');
+        const emails = (res as any).data;
+        const namedEmail = emails.named;
+        const roleAlias = emails.roleAlias || '';
+        setSuggestedEmails({ named: namedEmail, roleAlias });
+        message.success(`📧 Email account created: ${namedEmail}${roleAlias ? ` (alias: ${roleAlias})` : ''}`);
       } else {
-        message.success('Provision request sent.');
+        message.error('❌ Failed to provision email account. Check Supabase logs.');
       }
-    } catch (e) {
-      // ignore
+    } catch (e: any) {
+      console.error('Email provisioning error:', e);
+      message.error(`❌ Failed to provision email: ${e?.message || 'Unknown error'}`);
     }
   };
 
@@ -714,10 +718,10 @@ export const PersonnelManager: React.FC = () => {
       form.resetFields();
       fetchEmployees();
 
-      // Post-acceptance provisioning (welcome email sent by function)
+      // POST-HIRE: Provision M365 email accounts (REQUIRED)
       try {
         const posDef = POSITIONS.find(p => p.code === (values.position || ''));
-        await supabase.functions.invoke('msgraph-provision', {
+        const provResult = await supabase.functions.invoke('msgraph-provision', {
           body: {
             firstName: values.first_name,
             lastName: values.last_name,
@@ -728,8 +732,20 @@ export const PersonnelManager: React.FC = () => {
             employeeId: data[0].id // Track in database
           }
         });
-      } catch (e) {
-        console.error('Provisioning failed', e);
+        
+        // Show success message with generated email
+        if ((provResult as any)?.data?.ok) {
+          const emails = (provResult as any).data;
+          const namedEmail = emails.named || 'email';
+          const roleAlias = emails.roleAlias || '';
+          message.success(`📧 M365 account created: ${namedEmail}${roleAlias ? ` (alias: ${roleAlias})` : ''}`);
+        } else {
+          message.warning('⚠️ M365 provisioning may have failed. Check Supabase logs.');
+        }
+      } catch (e: any) {
+        console.error('M365 Provisioning Error:', e);
+        message.error(`⚠️ Failed to provision M365 account: ${e?.message || 'Unknown error'}`);
+        message.warning('⚠️ Employee hired but email account may not be ready. Check Supabase Edge Function logs.');
       }
     } catch (error: any) {
       console.error('Error hiring employee:', error);
