@@ -7,6 +7,7 @@ import {
   RiseOutlined,
   DollarOutlined,
   TeamOutlined,
+  MailOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { POSITIONS, buildEmails } from '@/config/positions';
@@ -58,6 +59,9 @@ export const PersonnelManager: React.FC = () => {
   const [showDeferred, setShowDeferred] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isEmailHistoryVisible, setIsEmailHistoryVisible] = useState(false);
+  const [emailHistory, setEmailHistory] = useState<any[]>([]);
+  const [loadingEmails, setLoadingEmails] = useState(false);
 
   useEffect(() => {
     fetchEmployees();
@@ -251,6 +255,25 @@ export const PersonnelManager: React.FC = () => {
     } else {
       setPacketDocs([]);
       setPacketForEmail(null);
+    }
+  };
+
+  const fetchEmailHistory = async (employeeId: string) => {
+    setLoadingEmails(true);
+    try {
+      const { data, error } = await supabase
+        .from('email_logs')
+        .select('*')
+        .eq('employee_id', employeeId)
+        .order('sent_at', { ascending: false });
+
+      if (error) throw error;
+      setEmailHistory(data || []);
+    } catch (error) {
+      console.error('Error fetching email history:', error);
+      message.error('Failed to load email history');
+    } finally {
+      setLoadingEmails(false);
     }
   };
 
@@ -1069,6 +1092,18 @@ export const PersonnelManager: React.FC = () => {
           <Button type="link" size="small" onClick={() => sendHiringPacketNow(record)}>
             Send Hiring Packet
           </Button>
+          <Button 
+            type="link" 
+            icon={<MailOutlined />} 
+            size="small"
+            onClick={async () => {
+              setSelectedEmployee(record);
+              await fetchEmailHistory(record.id);
+              setIsEmailHistoryVisible(true);
+            }}
+          >
+            View Emails
+          </Button>
             </>
           )}
         </Space>
@@ -1713,6 +1748,87 @@ export const PersonnelManager: React.FC = () => {
             </Space>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Email History Modal */}
+      <Modal
+        title={`📧 Email History - ${selectedEmployee ? `${(selectedEmployee as any).first_name} ${(selectedEmployee as any).last_name}` : ''}`}
+        open={isEmailHistoryVisible}
+        onCancel={() => {
+          setIsEmailHistoryVisible(false);
+          setSelectedEmployee(null);
+          setEmailHistory([]);
+        }}
+        footer={[
+          <Button key="close" onClick={() => {
+            setIsEmailHistoryVisible(false);
+            setSelectedEmployee(null);
+            setEmailHistory([]);
+          }}>
+            Close
+          </Button>
+        ]}
+        width={800}
+      >
+        <Table
+          columns={[
+            {
+              title: 'Type',
+              dataIndex: 'email_type',
+              key: 'email_type',
+              render: (type: string) => {
+                const colors: any = {
+                  'offer_letter': 'blue',
+                  'portal_access': 'green',
+                  'hiring_packet': 'orange',
+                  'board_resolution': 'purple',
+                  'equity_agreement': 'cyan',
+                  'ms365_welcome': 'geekblue',
+                  'other': 'default'
+                };
+                return <Tag color={colors[type] || 'default'}>{type.replace('_', ' ').toUpperCase()}</Tag>;
+              }
+            },
+            {
+              title: 'Subject',
+              dataIndex: 'subject',
+              key: 'subject',
+            },
+            {
+              title: 'Recipient',
+              dataIndex: 'recipient_email',
+              key: 'recipient_email',
+            },
+            {
+              title: 'Status',
+              dataIndex: 'status',
+              key: 'status',
+              render: (status: string) => {
+                const colors: any = {
+                  'sent': 'blue',
+                  'delivered': 'green',
+                  'opened': 'geekblue',
+                  'clicked': 'cyan',
+                  'bounced': 'red',
+                  'failed': 'volcano'
+                };
+                return <Tag color={colors[status] || 'default'}>{status?.toUpperCase() || 'SENT'}</Tag>;
+              }
+            },
+            {
+              title: 'Sent',
+              dataIndex: 'sent_at',
+              key: 'sent_at',
+              render: (date: string) => dayjs(date).format('MMM D, YYYY HH:mm'),
+              sorter: (a: any, b: any) => new Date(a.sent_at).getTime() - new Date(b.sent_at).getTime(),
+            }
+          ]}
+          dataSource={emailHistory}
+          rowKey="id"
+          loading={loadingEmails}
+          pagination={{ pageSize: 10 }}
+          size="small"
+        />
       </Modal>
     </div>
   );
