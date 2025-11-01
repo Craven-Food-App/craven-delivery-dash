@@ -69,7 +69,7 @@ export const SignAgreement: React.FC = () => {
     }
 
     // Check name matches driver name
-    if (typedName.toLowerCase() !== driverName.toLowerCase()) {
+    if (typedName.trim().toLowerCase() !== driverName.trim().toLowerCase()) {
       message.error('Name does not match driver account name');
       return;
     }
@@ -79,56 +79,55 @@ export const SignAgreement: React.FC = () => {
       // Get client info for legal tracking
       const ipAddress = await getClientIP();
       const userAgent = navigator.userAgent;
-      const location = await getClientLocation();
+      const geoLocation = await getClientLocation();
 
-      // Check if signature already exists
-      const { data: existingSig } = await supabase
+      const signatureData = {
+        driver_id: driverId,
+        agreement_type: 'ICA',
+        agreement_version: '2025-10-29',
+        typed_name: typedName.trim(),
+        ip_address: ipAddress,
+        user_agent: userAgent,
+        latitude: geoLocation.latitude,
+        longitude: geoLocation.longitude,
+        signed_at: new Date().toISOString()
+      };
+
+      // Try to insert signature
+      const { error: insertError } = await supabase
         .from('driver_signatures')
-        .select('id')
-        .eq('driver_id', driverId)
-        .eq('agreement_type', 'ICA')
-        .single();
+        .insert(signatureData);
 
-      let sigError;
-      if (existingSig) {
-        // Update existing signature
-        ({ error: sigError } = await supabase
-          .from('driver_signatures')
-          .update({
-            agreement_version: '2025-10-29',
-            typed_name: typedName,
-            ip_address: ipAddress,
-            user_agent: userAgent,
-            latitude: location.latitude,
-            longitude: location.longitude,
-            signed_at: new Date().toISOString()
-          })
-          .eq('driver_id', driverId)
-          .eq('agreement_type', 'ICA'));
-      } else {
-        // Insert new signature
-        ({ error: sigError } = await supabase
-          .from('driver_signatures')
-          .insert({
-            driver_id: driverId,
-            agreement_type: 'ICA',
-            agreement_version: '2025-10-29',
-            typed_name: typedName,
-            ip_address: ipAddress,
-            user_agent: userAgent,
-            latitude: location.latitude,
-            longitude: location.longitude,
-            signed_at: new Date().toISOString()
-          }));
-      }
+      // If duplicate key error (23505), update existing record
+      if (insertError) {
+        if (insertError.code === '23505') {
+          // Duplicate exists, update instead
+          const { error: updateError } = await supabase
+            .from('driver_signatures')
+            .update({
+              agreement_version: signatureData.agreement_version,
+              typed_name: signatureData.typed_name,
+              ip_address: signatureData.ip_address,
+              user_agent: signatureData.user_agent,
+              latitude: signatureData.latitude,
+              longitude: signatureData.longitude,
+              signed_at: signatureData.signed_at
+            })
+            .eq('driver_id', driverId)
+            .eq('agreement_type', 'ICA');
 
-      if (sigError) {
-        console.error('Signature record error:', sigError);
-        throw sigError;
+          if (updateError) {
+            console.error('Update signature error:', updateError);
+            throw updateError;
+          }
+        } else {
+          console.error('Insert signature error:', insertError);
+          throw insertError;
+        }
       }
 
       // Update driver status
-      const { error: updateError } = await supabase
+      const { error: driverUpdateError } = await supabase
         .from('drivers')
         .update({
           status: 'contract_signed',
@@ -137,7 +136,10 @@ export const SignAgreement: React.FC = () => {
         })
         .eq('id', driverId);
 
-      if (updateError) throw updateError;
+      if (driverUpdateError) {
+        console.error('Update driver error:', driverUpdateError);
+        throw driverUpdateError;
+      }
 
       message.success('Agreement signed successfully!');
 
@@ -148,7 +150,7 @@ export const SignAgreement: React.FC = () => {
 
     } catch (error: any) {
       console.error('Sign agreement error:', error);
-      message.error(error.message || 'Failed to sign agreement');
+      message.error(error.message || 'Failed to sign agreement. Please try again.');
     } finally {
       setSigning(false);
     }
@@ -202,7 +204,8 @@ export const SignAgreement: React.FC = () => {
           },
           () => {
             resolve({ latitude: null, longitude: null });
-          }
+          },
+          { timeout: 5000 } // Add timeout to prevent hanging
         );
       } else {
         resolve({ latitude: null, longitude: null });
@@ -282,6 +285,7 @@ export const SignAgreement: React.FC = () => {
                   value={typedName}
                   onChange={(e) => setTypedName(e.target.value)}
                   style={{ fontSize: '16px' }}
+                  disabled={signing}
                 />
               </Space>
             </Card>
