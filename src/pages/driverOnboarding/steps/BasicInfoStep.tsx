@@ -42,9 +42,10 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
 
       // 2. Determine region based on ZIP
       let regionId = null;
+      let regionName = '';
       const { data: regionsData } = await supabase
         .from('regions')
-        .select('id, zip_prefix')
+        .select('id, zip_prefix, name')
         .order('created_at');
 
       // Find matching region by zip_prefix
@@ -53,6 +54,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
           values.zip.startsWith(r.zip_prefix)
         );
         regionId = matchingRegion?.id || regionsData[0].id; // Default to first region if no match
+        regionName = matchingRegion?.name || regionsData[0].name || '';
       }
 
       // 3. Parse full name
@@ -95,6 +97,32 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
         phone: values.phone,
         role: 'driver'
       });
+
+      // 6. Send waitlist email
+      try {
+        const emailResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-driver-waitlist-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            driverName: values.fullName,
+            driverEmail: values.email,
+            city: values.city,
+            state: 'OH', // TODO: determine from ZIP
+            waitlistPosition: appData.waitlist_position,
+            location: regionName,
+            emailType: 'waitlist'
+          }),
+        });
+
+        if (!emailResponse.ok) {
+          console.log('Warning: Waitlist email sending failed');
+        }
+      } catch (emailError) {
+        console.log('Warning: Waitlist email sending error:', emailError);
+      }
 
       message.success('Application submitted successfully!');
 
