@@ -70,6 +70,7 @@ import { SignAgreement } from "./pages/driverOnboarding/SignAgreement";
 import { WaitlistReveal } from "./pages/driverOnboarding/WaitlistReveal";
 import { ActivationReady } from "./pages/driverOnboarding/ActivationReady";
 import { DriverApplicationWizard } from "./pages/driverOnboarding/DriverApplicationWizard";
+import { PostWaitlistOnboarding } from "./pages/driverOnboarding/PostWaitlistOnboarding";
 
 // Lazy load guide pages
 const AdminGuide = lazy(() => import("./pages/AdminGuide"));
@@ -373,6 +374,7 @@ const App = () => {
           
           {/* New Driver Application Wizard (Full Page Flow) */}
           <Route path="/driver-onboarding/apply" element={<DriverApplicationWizard />} />
+          <Route path="/driver/post-waitlist-onboarding" element={<PostWaitlistOnboarding />} />
           
           {/* Legacy Driver Onboarding Flow */}
           <Route path="/driver-onboarding/signup" element={<DriverSignup />} />
