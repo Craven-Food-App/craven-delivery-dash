@@ -127,7 +127,11 @@ serve(async (req: Request) => {
           saveToSentItems: false
         };
         await graph(`/users/${user.id}/sendMail`, 'POST', body, bearer);
-      } catch (_) {}
+        console.log('✅ Welcome email sent via Microsoft Graph to:', personalEmail);
+      } catch (emailErr: any) {
+        console.error('❌ Failed to send welcome email via MS Graph:', emailErr.message);
+        // Don't fail the whole provisioning if email fails
+      }
     }
 
     // Track Microsoft 365 account creation in database
