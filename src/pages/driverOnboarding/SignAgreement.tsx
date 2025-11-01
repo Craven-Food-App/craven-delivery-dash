@@ -150,6 +150,29 @@ export const SignAgreement: React.FC = () => {
         throw sigError;
       }
 
+      // Generate signed ICA document with embedded signature
+      try {
+        const { data: icaData, error: icaError } = await supabase.functions.invoke('generate-signed-driver-ica', {
+          body: {
+            driverId: driverId,
+            signatureImageUrl: signatureData,
+            driverName: driverName,
+            driverEmail: driverEmail,
+            signedAt: new Date().toISOString()
+          }
+        });
+
+        if (icaError) {
+          console.error('ICA generation error:', icaError);
+          // Don't fail the signature if ICA generation fails
+        } else {
+          console.log('Signed ICA generated:', icaData);
+        }
+      } catch (icaErr: any) {
+        console.error('ICA generation failed:', icaErr);
+        // Don't fail the signature if ICA generation fails
+      }
+
       // Update driver status
       const { error: updateError } = await supabase
         .from('drivers')
