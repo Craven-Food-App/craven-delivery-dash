@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Table, Card, Statistic, Tag, Space, message, Spin } from 'antd';
-import { DollarOutlined, TeamOutlined, TrophyOutlined } from '@ant-design/icons';
+import { Table, Card, Statistic, Tag, Space, message, Spin, Popconfirm } from 'antd';
+import { DollarOutlined, TeamOutlined, TrophyOutlined, DeleteOutlined } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Shareholder {
@@ -11,6 +11,7 @@ interface Shareholder {
   position: string;
   email: string;
   employee_equity: Array<{
+    id: string;
     shares_percentage: number;
     shares_total?: number;
     equity_type: string;
@@ -48,6 +49,23 @@ export const EquityDashboard: React.FC = () => {
       message.error('Failed to load shareholder data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRemoveShares = async (employeeId: string, equityId: string, employeeName: string) => {
+    try {
+      const { error } = await supabase
+        .from('employee_equity')
+        .delete()
+        .eq('id', equityId);
+
+      if (error) throw error;
+
+      message.success(`Equity removed for ${employeeName}`);
+      fetchShareholders(); // Refresh list
+    } catch (error: any) {
+      console.error('Error removing equity:', error);
+      message.error(error.message || 'Failed to remove equity');
     }
   };
 
@@ -181,6 +199,34 @@ export const EquityDashboard: React.FC = () => {
           month: 'short',
           day: 'numeric',
         });
+      },
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      width: 100,
+      render: (_: any, record: Shareholder) => {
+        const equity = record.employee_equity?.[0];
+        if (!equity) return null;
+        
+        return (
+          <Popconfirm
+            title="Remove equity shares?"
+            description={`This will permanently remove all equity for ${record.first_name} ${record.last_name}.`}
+            onConfirm={() => handleRemoveShares(record.id, equity.id, `${record.first_name} ${record.last_name}`)}
+            okText="Remove"
+            okButtonProps={{ danger: true }}
+            cancelText="Cancel"
+          >
+            <Tag 
+              icon={<DeleteOutlined />} 
+              color="red"
+              style={{ cursor: 'pointer' }}
+            >
+              Remove
+            </Tag>
+          </Popconfirm>
+        );
       },
     },
   ];
