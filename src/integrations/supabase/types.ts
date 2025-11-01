@@ -351,6 +351,106 @@ export type Database = {
         }
         Relationships: []
       }
+      board_resolutions: {
+        Row: {
+          board_members: Json
+          created_at: string | null
+          created_by: string | null
+          document_id: string | null
+          effective_date: string
+          employee_id: string | null
+          executed_at: string | null
+          executed_by: string | null
+          id: string
+          notes: string | null
+          required_documents: Json
+          resolution_number: string
+          resolution_text: string
+          resolution_title: string
+          resolution_type: string
+          status: string
+          subject_person_email: string
+          subject_person_name: string
+          subject_position: string
+          updated_at: string | null
+          votes_abstain: number
+          votes_against: number
+          votes_for: number
+        }
+        Insert: {
+          board_members?: Json
+          created_at?: string | null
+          created_by?: string | null
+          document_id?: string | null
+          effective_date?: string
+          employee_id?: string | null
+          executed_at?: string | null
+          executed_by?: string | null
+          id?: string
+          notes?: string | null
+          required_documents?: Json
+          resolution_number: string
+          resolution_text: string
+          resolution_title: string
+          resolution_type: string
+          status?: string
+          subject_person_email: string
+          subject_person_name: string
+          subject_position: string
+          updated_at?: string | null
+          votes_abstain?: number
+          votes_against?: number
+          votes_for?: number
+        }
+        Update: {
+          board_members?: Json
+          created_at?: string | null
+          created_by?: string | null
+          document_id?: string | null
+          effective_date?: string
+          employee_id?: string | null
+          executed_at?: string | null
+          executed_by?: string | null
+          id?: string
+          notes?: string | null
+          required_documents?: Json
+          resolution_number?: string
+          resolution_text?: string
+          resolution_title?: string
+          resolution_type?: string
+          status?: string
+          subject_person_email?: string
+          subject_person_name?: string
+          subject_position?: string
+          updated_at?: string | null
+          votes_abstain?: number
+          votes_against?: number
+          votes_for?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_resolutions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "employee_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_resolutions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "board_resolutions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_summary"
+            referencedColumns: ["employee_id"]
+          },
+        ]
+      }
       ceo_access_credentials: {
         Row: {
           access_count: number | null
@@ -470,13 +570,42 @@ export type Database = {
           },
         ]
       }
-      ceo_objectives: {
+      ceo_mindmaps: {
         Row: {
           created_at: string | null
+          id: string
+          map_data: Json
+          map_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          map_data: Json
+          map_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          map_data?: Json
+          map_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ceo_objectives: {
+        Row: {
+          completed_date: string | null
+          created_at: string | null
           current_value: number | null
+          department_id: string | null
           description: string | null
           id: string
+          milestones: Json | null
           objective_type: string
+          owner_id: string | null
+          owner_name: string | null
           priority: string | null
           progress_percentage: number | null
           start_date: string
@@ -484,13 +613,19 @@ export type Database = {
           target_date: string | null
           target_value: number | null
           title: string
+          updated_at: string | null
         }
         Insert: {
+          completed_date?: string | null
           created_at?: string | null
           current_value?: number | null
+          department_id?: string | null
           description?: string | null
           id?: string
+          milestones?: Json | null
           objective_type: string
+          owner_id?: string | null
+          owner_name?: string | null
           priority?: string | null
           progress_percentage?: number | null
           start_date?: string
@@ -498,13 +633,19 @@ export type Database = {
           target_date?: string | null
           target_value?: number | null
           title: string
+          updated_at?: string | null
         }
         Update: {
+          completed_date?: string | null
           created_at?: string | null
           current_value?: number | null
+          department_id?: string | null
           description?: string | null
           id?: string
+          milestones?: Json | null
           objective_type?: string
+          owner_id?: string | null
+          owner_name?: string | null
           priority?: string | null
           progress_percentage?: number | null
           start_date?: string
@@ -512,8 +653,17 @@ export type Database = {
           target_date?: string | null
           target_value?: number | null
           title?: string
+          updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ceo_objectives_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ceo_system_settings: {
         Row: {
@@ -779,6 +929,110 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      compliance_records: {
+        Row: {
+          created_at: string | null
+          entity_id: string
+          entity_type: string
+          expiry_date: string | null
+          id: string
+          issued_by: string | null
+          notes: string | null
+          record_type: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          entity_id: string
+          entity_type: string
+          expiry_date?: string | null
+          id?: string
+          issued_by?: string | null
+          notes?: string | null
+          record_type: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          entity_id?: string
+          entity_type?: string
+          expiry_date?: string | null
+          id?: string
+          issued_by?: string | null
+          notes?: string | null
+          record_type?: string
+          status?: string | null
+        }
+        Relationships: []
+      }
+      compliance_tracking: {
+        Row: {
+          applicability: string
+          audit_frequency_days: number | null
+          compliance_notes: string | null
+          compliance_status: string | null
+          created_at: string | null
+          id: string
+          jurisdiction: string
+          last_audit_date: string | null
+          metadata: Json | null
+          mitigation_plan: string | null
+          next_audit_date: string | null
+          regulation_name: string
+          regulation_type: string
+          responsible_department_id: string | null
+          responsible_person_id: string | null
+          risk_level: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          applicability: string
+          audit_frequency_days?: number | null
+          compliance_notes?: string | null
+          compliance_status?: string | null
+          created_at?: string | null
+          id?: string
+          jurisdiction: string
+          last_audit_date?: string | null
+          metadata?: Json | null
+          mitigation_plan?: string | null
+          next_audit_date?: string | null
+          regulation_name: string
+          regulation_type: string
+          responsible_department_id?: string | null
+          responsible_person_id?: string | null
+          risk_level?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          applicability?: string
+          audit_frequency_days?: number | null
+          compliance_notes?: string | null
+          compliance_status?: string | null
+          created_at?: string | null
+          id?: string
+          jurisdiction?: string
+          last_audit_date?: string | null
+          metadata?: Json | null
+          mitigation_plan?: string | null
+          next_audit_date?: string | null
+          regulation_name?: string
+          regulation_type?: string
+          responsible_department_id?: string | null
+          responsible_person_id?: string | null
+          risk_level?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_tracking_responsible_department_id_fkey"
+            columns: ["responsible_department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       craver_applications: {
         Row: {
@@ -1084,6 +1338,63 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      customer_acquisition: {
+        Row: {
+          acquisition_channel: string
+          acquisition_cost: number | null
+          acquisition_date: string | null
+          acquisition_source: string | null
+          attribution_model: string | null
+          campaign_id: string | null
+          customer_id: string | null
+          first_order_id: string | null
+          id: string
+          lifetime_value: number | null
+          metadata: Json | null
+        }
+        Insert: {
+          acquisition_channel: string
+          acquisition_cost?: number | null
+          acquisition_date?: string | null
+          acquisition_source?: string | null
+          attribution_model?: string | null
+          campaign_id?: string | null
+          customer_id?: string | null
+          first_order_id?: string | null
+          id?: string
+          lifetime_value?: number | null
+          metadata?: Json | null
+        }
+        Update: {
+          acquisition_channel?: string
+          acquisition_cost?: number | null
+          acquisition_date?: string | null
+          acquisition_source?: string | null
+          attribution_model?: string | null
+          campaign_id?: string | null
+          customer_id?: string | null
+          first_order_id?: string | null
+          id?: string
+          lifetime_value?: number | null
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_acquisition_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_performance"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "customer_acquisition_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       customer_carts: {
         Row: {
@@ -2560,6 +2871,120 @@ export type Database = {
           },
         ]
       }
+      email_logs: {
+        Row: {
+          created_at: string | null
+          email_type: string
+          employee_id: string | null
+          from_email: string
+          id: string
+          recipient_email: string
+          recipient_name: string | null
+          resend_email_id: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+        }
+        Insert: {
+          created_at?: string | null
+          email_type: string
+          employee_id?: string | null
+          from_email: string
+          id?: string
+          recipient_email: string
+          recipient_name?: string | null
+          resend_email_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+        }
+        Update: {
+          created_at?: string | null
+          email_type?: string
+          employee_id?: string | null
+          from_email?: string
+          id?: string
+          recipient_email?: string
+          recipient_name?: string | null
+          resend_email_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_logs_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_logs_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_summary"
+            referencedColumns: ["employee_id"]
+          },
+        ]
+      }
+      employee_documents: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          document_title: string
+          document_type: string
+          employee_id: string
+          file_size_bytes: number | null
+          id: string
+          metadata: Json | null
+          mime_type: string | null
+          storage_path: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          document_title: string
+          document_type: string
+          employee_id: string
+          file_size_bytes?: number | null
+          id?: string
+          metadata?: Json | null
+          mime_type?: string | null
+          storage_path: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          document_title?: string
+          document_type?: string
+          employee_id?: string
+          file_size_bytes?: number | null
+          id?: string
+          metadata?: Json | null
+          mime_type?: string | null
+          storage_path?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_summary"
+            referencedColumns: ["employee_id"]
+          },
+        ]
+      }
       employee_equity: {
         Row: {
           authorized_by: string | null
@@ -2613,6 +3038,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "employees"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_equity_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "payroll_summary"
+            referencedColumns: ["employee_id"]
           },
         ]
       }
@@ -2672,6 +3104,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_history_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_summary"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "employee_history_new_department_id_fkey"
@@ -2804,6 +3243,13 @@ export type Database = {
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "employees_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_summary"
+            referencedColumns: ["employee_id"]
+          },
         ]
       }
       exec_documents: {
@@ -2812,6 +3258,7 @@ export type Database = {
           category: string
           created_at: string | null
           description: string | null
+          employee_id: string | null
           file_size_bytes: number | null
           file_url: string
           id: string
@@ -2823,6 +3270,7 @@ export type Database = {
           category: string
           created_at?: string | null
           description?: string | null
+          employee_id?: string | null
           file_size_bytes?: number | null
           file_url: string
           id?: string
@@ -2834,6 +3282,7 @@ export type Database = {
           category?: string
           created_at?: string | null
           description?: string | null
+          employee_id?: string | null
           file_size_bytes?: number | null
           file_url?: string
           id?: string
@@ -2841,6 +3290,20 @@ export type Database = {
           uploaded_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "exec_documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exec_documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_summary"
+            referencedColumns: ["employee_id"]
+          },
           {
             foreignKeyName: "exec_documents_uploaded_by_fkey"
             columns: ["uploaded_by"]
@@ -2950,6 +3413,63 @@ export type Database = {
           },
         ]
       }
+      executive_signatures: {
+        Row: {
+          created_at: string | null
+          document_type: string
+          employee_email: string
+          employee_name: string | null
+          id: string
+          metadata: Json | null
+          position: string | null
+          signature_png_base64: string | null
+          signature_svg: string | null
+          signed_at: string | null
+          signer_ip: string | null
+          signer_user_agent: string | null
+          token: string
+          token_expires_at: string
+          typed_name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_type: string
+          employee_email: string
+          employee_name?: string | null
+          id?: string
+          metadata?: Json | null
+          position?: string | null
+          signature_png_base64?: string | null
+          signature_svg?: string | null
+          signed_at?: string | null
+          signer_ip?: string | null
+          signer_user_agent?: string | null
+          token: string
+          token_expires_at?: string
+          typed_name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          document_type?: string
+          employee_email?: string
+          employee_name?: string | null
+          id?: string
+          metadata?: Json | null
+          position?: string | null
+          signature_png_base64?: string | null
+          signature_svg?: string | null
+          signed_at?: string | null
+          signer_ip?: string | null
+          signer_user_agent?: string | null
+          token?: string
+          token_expires_at?: string
+          typed_name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       favorite_restaurants: {
         Row: {
           created_at: string | null
@@ -2970,6 +3490,416 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      fleet_vehicles: {
+        Row: {
+          created_at: string | null
+          driver_id: string | null
+          id: string
+          inspection_due: string | null
+          insurance_expiry: string | null
+          license_plate: string | null
+          registration_expiry: string | null
+          status: string | null
+          vehicle_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          driver_id?: string | null
+          id?: string
+          inspection_due?: string | null
+          insurance_expiry?: string | null
+          license_plate?: string | null
+          registration_expiry?: string | null
+          status?: string | null
+          vehicle_type: string
+        }
+        Update: {
+          created_at?: string | null
+          driver_id?: string | null
+          id?: string
+          inspection_due?: string | null
+          insurance_expiry?: string | null
+          license_plate?: string | null
+          registration_expiry?: string | null
+          status?: string | null
+          vehicle_type?: string
+        }
+        Relationships: []
+      }
+      it_assets: {
+        Row: {
+          asset_name: string
+          asset_type: string
+          assigned_to: string | null
+          created_at: string | null
+          id: string
+          manufacturer: string | null
+          metadata: Json | null
+          model: string | null
+          purchase_cost: number | null
+          purchase_date: string | null
+          serial_number: string | null
+          status: string | null
+          warranty_expiry: string | null
+        }
+        Insert: {
+          asset_name: string
+          asset_type: string
+          assigned_to?: string | null
+          created_at?: string | null
+          id?: string
+          manufacturer?: string | null
+          metadata?: Json | null
+          model?: string | null
+          purchase_cost?: number | null
+          purchase_date?: string | null
+          serial_number?: string | null
+          status?: string | null
+          warranty_expiry?: string | null
+        }
+        Update: {
+          asset_name?: string
+          asset_type?: string
+          assigned_to?: string | null
+          created_at?: string | null
+          id?: string
+          manufacturer?: string | null
+          metadata?: Json | null
+          model?: string | null
+          purchase_cost?: number | null
+          purchase_date?: string | null
+          serial_number?: string | null
+          status?: string | null
+          warranty_expiry?: string | null
+        }
+        Relationships: []
+      }
+      it_incidents: {
+        Row: {
+          affected_services: string[] | null
+          assigned_to: string | null
+          created_at: string | null
+          description: string
+          id: string
+          incident_type: string
+          reported_by: string | null
+          resolution: string | null
+          resolved_at: string | null
+          severity: string | null
+          status: string | null
+          title: string
+        }
+        Insert: {
+          affected_services?: string[] | null
+          assigned_to?: string | null
+          created_at?: string | null
+          description: string
+          id?: string
+          incident_type: string
+          reported_by?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          severity?: string | null
+          status?: string | null
+          title: string
+        }
+        Update: {
+          affected_services?: string[] | null
+          assigned_to?: string | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          incident_type?: string
+          reported_by?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          severity?: string | null
+          status?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      it_infrastructure: {
+        Row: {
+          id: string
+          last_check: string | null
+          metadata: Json | null
+          response_time_ms: number | null
+          service_name: string
+          service_provider: string | null
+          status: string | null
+          uptime_percent: number | null
+        }
+        Insert: {
+          id?: string
+          last_check?: string | null
+          metadata?: Json | null
+          response_time_ms?: number | null
+          service_name: string
+          service_provider?: string | null
+          status?: string | null
+          uptime_percent?: number | null
+        }
+        Update: {
+          id?: string
+          last_check?: string | null
+          metadata?: Json | null
+          response_time_ms?: number | null
+          service_name?: string
+          service_provider?: string | null
+          status?: string | null
+          uptime_percent?: number | null
+        }
+        Relationships: []
+      }
+      legal_documents: {
+        Row: {
+          category: string
+          created_at: string | null
+          document_type: string
+          document_url: string
+          effective_date: string | null
+          entity_id: string | null
+          entity_type: string | null
+          expiry_date: string | null
+          id: string
+          key_terms: Json | null
+          last_review_date: string | null
+          metadata: Json | null
+          next_review_date: string | null
+          renewal_required: boolean | null
+          review_frequency_days: number | null
+          reviewed_by: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          document_type: string
+          document_url: string
+          effective_date?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          expiry_date?: string | null
+          id?: string
+          key_terms?: Json | null
+          last_review_date?: string | null
+          metadata?: Json | null
+          next_review_date?: string | null
+          renewal_required?: boolean | null
+          review_frequency_days?: number | null
+          reviewed_by?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          document_type?: string
+          document_url?: string
+          effective_date?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          expiry_date?: string | null
+          id?: string
+          key_terms?: Json | null
+          last_review_date?: string | null
+          metadata?: Json | null
+          next_review_date?: string | null
+          renewal_required?: boolean | null
+          review_frequency_days?: number | null
+          reviewed_by?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      legal_reviews: {
+        Row: {
+          action_items: Json | null
+          action_required: boolean | null
+          created_at: string | null
+          document_id: string | null
+          findings: string | null
+          id: string
+          metadata: Json | null
+          next_review_date: string | null
+          recommendations: string | null
+          review_date: string
+          review_type: string
+          reviewer_id: string | null
+          status: string | null
+        }
+        Insert: {
+          action_items?: Json | null
+          action_required?: boolean | null
+          created_at?: string | null
+          document_id?: string | null
+          findings?: string | null
+          id?: string
+          metadata?: Json | null
+          next_review_date?: string | null
+          recommendations?: string | null
+          review_date?: string
+          review_type: string
+          reviewer_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          action_items?: Json | null
+          action_required?: boolean | null
+          created_at?: string | null
+          document_id?: string | null
+          findings?: string | null
+          id?: string
+          metadata?: Json | null
+          next_review_date?: string | null
+          recommendations?: string | null
+          review_date?: string
+          review_type?: string
+          reviewer_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_reviews_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "legal_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_campaigns: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          budget: number
+          campaign_name: string
+          campaign_type: string
+          channel: string
+          created_at: string | null
+          created_by: string | null
+          end_date: string | null
+          id: string
+          metadata: Json | null
+          objective: string
+          spend_to_date: number | null
+          start_date: string
+          status: string | null
+          target_audience: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          budget: number
+          campaign_name: string
+          campaign_type: string
+          channel: string
+          created_at?: string | null
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          metadata?: Json | null
+          objective: string
+          spend_to_date?: number | null
+          start_date: string
+          status?: string | null
+          target_audience?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          budget?: number
+          campaign_name?: string
+          campaign_type?: string
+          channel?: string
+          created_at?: string | null
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          metadata?: Json | null
+          objective?: string
+          spend_to_date?: number | null
+          start_date?: string
+          status?: string | null
+          target_audience?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      marketing_metrics: {
+        Row: {
+          campaign_id: string | null
+          clicks: number | null
+          conversions: number | null
+          cpa: number | null
+          created_at: string | null
+          ctr: number | null
+          id: string
+          impressions: number | null
+          metadata: Json | null
+          metric_date: string
+          new_customers: number | null
+          revenue_attributed: number | null
+          roas: number | null
+          spend: number | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          clicks?: number | null
+          conversions?: number | null
+          cpa?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          id?: string
+          impressions?: number | null
+          metadata?: Json | null
+          metric_date: string
+          new_customers?: number | null
+          revenue_attributed?: number | null
+          roas?: number | null
+          spend?: number | null
+        }
+        Update: {
+          campaign_id?: string | null
+          clicks?: number | null
+          conversions?: number | null
+          cpa?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          id?: string
+          impressions?: number | null
+          metadata?: Json | null
+          metric_date?: string
+          new_customers?: number | null
+          revenue_attributed?: number | null
+          roas?: number | null
+          spend?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_metrics_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_performance"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "marketing_metrics_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       menu_categories: {
         Row: {
@@ -3159,6 +4089,75 @@ export type Database = {
           },
         ]
       }
+      ms365_email_accounts: {
+        Row: {
+          access_level: number | null
+          created_at: string | null
+          display_name: string
+          email_address: string
+          employee_id: string | null
+          first_name: string
+          id: string
+          last_name: string
+          mailbox_type: string
+          ms365_user_id: string | null
+          ms365_user_principal_name: string | null
+          provisioned_at: string | null
+          provisioning_status: string
+          role_alias: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          access_level?: number | null
+          created_at?: string | null
+          display_name: string
+          email_address: string
+          employee_id?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+          mailbox_type?: string
+          ms365_user_id?: string | null
+          ms365_user_principal_name?: string | null
+          provisioned_at?: string | null
+          provisioning_status?: string
+          role_alias?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          access_level?: number | null
+          created_at?: string | null
+          display_name?: string
+          email_address?: string
+          employee_id?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+          mailbox_type?: string
+          ms365_user_id?: string | null
+          ms365_user_principal_name?: string | null
+          provisioned_at?: string | null
+          provisioning_status?: string
+          role_alias?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ms365_email_accounts_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ms365_email_accounts_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_summary"
+            referencedColumns: ["employee_id"]
+          },
+        ]
+      }
       notification_logs: {
         Row: {
           body: string
@@ -3296,6 +4295,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      operations_metrics: {
+        Row: {
+          id: string
+          measured_at: string | null
+          metadata: Json | null
+          metric_name: string
+          metric_type: string
+          metric_value: number
+        }
+        Insert: {
+          id?: string
+          measured_at?: string | null
+          metadata?: Json | null
+          metric_name: string
+          metric_type: string
+          metric_value: number
+        }
+        Update: {
+          id?: string
+          measured_at?: string | null
+          metadata?: Json | null
+          metric_name?: string
+          metric_type?: string
+          metric_value?: number
+        }
+        Relationships: []
       }
       order_assignments: {
         Row: {
@@ -3626,6 +4652,51 @@ export type Database = {
           },
         ]
       }
+      partner_vendors: {
+        Row: {
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          contract_value: number | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          performance_rating: number | null
+          relationship_start: string | null
+          status: string | null
+          vendor_name: string
+          vendor_type: string
+        }
+        Insert: {
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          contract_value?: number | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          performance_rating?: number | null
+          relationship_start?: string | null
+          status?: string | null
+          vendor_name: string
+          vendor_type: string
+        }
+        Update: {
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          contract_value?: number | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          performance_rating?: number | null
+          relationship_start?: string | null
+          status?: string | null
+          vendor_name?: string
+          vendor_type?: string
+        }
+        Relationships: []
+      }
       payment_methods: {
         Row: {
           brand: string | null
@@ -3677,6 +4748,7 @@ export type Database = {
           employee_id: string
           gross_pay: number | null
           id: string
+          invoice_id: string | null
           net_pay: number | null
           notes: string | null
           other_deductions: number | null
@@ -3685,6 +4757,7 @@ export type Database = {
           pay_period_start: string
           payment_date: string | null
           payment_method: string | null
+          payment_run_id: string | null
           payment_status: string | null
           taxes: number | null
           total_deductions: number | null
@@ -3698,6 +4771,7 @@ export type Database = {
           employee_id: string
           gross_pay?: number | null
           id?: string
+          invoice_id?: string | null
           net_pay?: number | null
           notes?: string | null
           other_deductions?: number | null
@@ -3706,6 +4780,7 @@ export type Database = {
           pay_period_start: string
           payment_date?: string | null
           payment_method?: string | null
+          payment_run_id?: string | null
           payment_status?: string | null
           taxes?: number | null
           total_deductions?: number | null
@@ -3719,6 +4794,7 @@ export type Database = {
           employee_id?: string
           gross_pay?: number | null
           id?: string
+          invoice_id?: string | null
           net_pay?: number | null
           notes?: string | null
           other_deductions?: number | null
@@ -3727,6 +4803,7 @@ export type Database = {
           pay_period_start?: string
           payment_date?: string | null
           payment_method?: string | null
+          payment_run_id?: string | null
           payment_status?: string | null
           taxes?: number | null
           total_deductions?: number | null
@@ -3738,6 +4815,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_summary"
+            referencedColumns: ["employee_id"]
           },
         ]
       }
@@ -3795,6 +4879,13 @@ export type Database = {
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "performance_reviews_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_summary"
+            referencedColumns: ["employee_id"]
+          },
         ]
       }
       pricing_plans: {
@@ -3838,6 +4929,113 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      procurement_categories: {
+        Row: {
+          budget_allocated: number | null
+          category_name: string
+          created_at: string | null
+          description: string | null
+          id: string
+          responsible_department_id: string | null
+        }
+        Insert: {
+          budget_allocated?: number | null
+          category_name: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          responsible_department_id?: string | null
+        }
+        Update: {
+          budget_allocated?: number | null
+          category_name?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          responsible_department_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procurement_categories_responsible_department_id_fkey"
+            columns: ["responsible_department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      procurement_requisitions: {
+        Row: {
+          approval_chain: string[] | null
+          approved_at: string | null
+          category_id: string | null
+          created_at: string | null
+          current_approver_id: string | null
+          department_id: string | null
+          description: string
+          estimated_cost: number | null
+          id: string
+          justification: string | null
+          notes: string | null
+          priority: string | null
+          rejected_at: string | null
+          requested_by: string | null
+          requisition_number: string
+          status: string | null
+        }
+        Insert: {
+          approval_chain?: string[] | null
+          approved_at?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          current_approver_id?: string | null
+          department_id?: string | null
+          description: string
+          estimated_cost?: number | null
+          id?: string
+          justification?: string | null
+          notes?: string | null
+          priority?: string | null
+          rejected_at?: string | null
+          requested_by?: string | null
+          requisition_number: string
+          status?: string | null
+        }
+        Update: {
+          approval_chain?: string[] | null
+          approved_at?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          current_approver_id?: string | null
+          department_id?: string | null
+          description?: string
+          estimated_cost?: number | null
+          id?: string
+          justification?: string | null
+          notes?: string | null
+          priority?: string | null
+          rejected_at?: string | null
+          requested_by?: string | null
+          requisition_number?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procurement_requisitions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "procurement_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "procurement_requisitions_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       promo_code_usage: {
         Row: {
@@ -3949,6 +5147,78 @@ export type Database = {
           valid_until?: string | null
         }
         Relationships: []
+      }
+      purchase_orders: {
+        Row: {
+          approval_workflow: string | null
+          approved_at: string | null
+          approved_by: string | null
+          category_id: string | null
+          created_at: string | null
+          currency: string | null
+          expected_delivery: string | null
+          id: string
+          items: Json
+          notes: string | null
+          po_number: string
+          requested_by: string | null
+          status: string | null
+          total_amount: number
+          updated_at: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          approval_workflow?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          expected_delivery?: string | null
+          id?: string
+          items?: Json
+          notes?: string | null
+          po_number: string
+          requested_by?: string | null
+          status?: string | null
+          total_amount: number
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          approval_workflow?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          category_id?: string | null
+          created_at?: string | null
+          currency?: string | null
+          expected_delivery?: string | null
+          id?: string
+          items?: Json
+          notes?: string | null
+          po_number?: string
+          requested_by?: string | null
+          status?: string | null
+          total_amount?: number
+          updated_at?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "procurement_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "partner_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       push_subscriptions: {
         Row: {
@@ -5286,6 +6556,99 @@ export type Database = {
         }
         Relationships: []
       }
+      risk_assessments: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          description: string
+          due_date: string | null
+          id: string
+          impact: string | null
+          likelihood: string | null
+          metadata: Json | null
+          mitigation_plan: string | null
+          responsible_person_id: string | null
+          risk_category: string
+          risk_score: number | null
+          risk_title: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          description: string
+          due_date?: string | null
+          id?: string
+          impact?: string | null
+          likelihood?: string | null
+          metadata?: Json | null
+          mitigation_plan?: string | null
+          responsible_person_id?: string | null
+          risk_category: string
+          risk_score?: number | null
+          risk_title: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string
+          due_date?: string | null
+          id?: string
+          impact?: string | null
+          likelihood?: string | null
+          metadata?: Json | null
+          mitigation_plan?: string | null
+          responsible_person_id?: string | null
+          risk_category?: string
+          risk_score?: number | null
+          risk_title?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      security_audits: {
+        Row: {
+          assigned_to: string | null
+          audit_type: string
+          created_at: string | null
+          finding: string
+          id: string
+          metadata: Json | null
+          recommendation: string | null
+          resolved_at: string | null
+          severity: string | null
+          status: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          audit_type: string
+          created_at?: string | null
+          finding: string
+          id?: string
+          metadata?: Json | null
+          recommendation?: string | null
+          resolved_at?: string | null
+          severity?: string | null
+          status?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          audit_type?: string
+          created_at?: string | null
+          finding?: string
+          id?: string
+          metadata?: Json | null
+          recommendation?: string | null
+          resolved_at?: string | null
+          severity?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       sensitive_data_access_log: {
         Row: {
           accessed_at: string | null
@@ -6029,6 +7392,65 @@ export type Database = {
         }
         Relationships: []
       }
+      vendor_contracts: {
+        Row: {
+          auto_renew: boolean | null
+          contract_type: string
+          contract_value: number | null
+          created_at: string | null
+          end_date: string
+          id: string
+          metadata: Json | null
+          renewal_terms: string | null
+          signed_at: string | null
+          signed_by: string | null
+          start_date: string
+          status: string | null
+          terms_document_url: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          auto_renew?: boolean | null
+          contract_type: string
+          contract_value?: number | null
+          created_at?: string | null
+          end_date: string
+          id?: string
+          metadata?: Json | null
+          renewal_terms?: string | null
+          signed_at?: string | null
+          signed_by?: string | null
+          start_date: string
+          status?: string | null
+          terms_document_url?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          auto_renew?: boolean | null
+          contract_type?: string
+          contract_value?: number | null
+          created_at?: string | null
+          end_date?: string
+          id?: string
+          metadata?: Json | null
+          renewal_terms?: string | null
+          signed_at?: string | null
+          signed_by?: string | null
+          start_date?: string
+          status?: string | null
+          terms_document_url?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_contracts_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "partner_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zones: {
         Row: {
           active_drivers: number
@@ -6070,6 +7492,26 @@ export type Database = {
       }
     }
     Views: {
+      campaign_performance: {
+        Row: {
+          avg_cpa: number | null
+          avg_ctr: number | null
+          avg_roas: number | null
+          budget: number | null
+          campaign_id: string | null
+          campaign_name: string | null
+          campaign_type: string | null
+          channel: string | null
+          new_customers: number | null
+          spend_to_date: number | null
+          status: string | null
+          total_clicks: number | null
+          total_conversions: number | null
+          total_impressions: number | null
+          total_revenue: number | null
+        }
+        Relationships: []
+      }
       geography_columns: {
         Row: {
           coord_dimension: number | null
@@ -6111,6 +7553,27 @@ export type Database = {
           type?: string | null
         }
         Relationships: []
+      }
+      payroll_summary: {
+        Row: {
+          department_id: string | null
+          department_name: string | null
+          employee_id: string | null
+          employee_name: string | null
+          last_payment_date: string | null
+          pay_periods: number | null
+          total_gross: number | null
+          total_net: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       unified_driver_applications: {
         Row: {
@@ -6274,6 +7737,14 @@ export type Database = {
             }
             Returns: string
           }
+      alert_expiring_contracts: {
+        Args: never
+        Returns: {
+          days_until_expiry: number
+          document_id: string
+          title: string
+        }[]
+      }
       apply_subscription_benefits: {
         Args: { p_order_id: string }
         Returns: Json
@@ -6286,6 +7757,17 @@ export type Database = {
         Args: { target_date: string; target_driver_id: string }
         Returns: number
       }
+      calculate_marketing_roi: {
+        Args: { campaign_uuid: string }
+        Returns: {
+          cpa: number
+          new_customers: number
+          roas: number
+          roi_percent: number
+          total_revenue: number
+          total_spend: number
+        }[]
+      }
       calculate_waitlist_position: {
         Args: { driver_uuid: string }
         Returns: number
@@ -6297,6 +7779,10 @@ export type Database = {
           zone_id: string
           zone_name: string
         }[]
+      }
+      create_budget_approval: {
+        Args: { budget_uuid: string; request_description?: string }
+        Returns: string
       }
       create_default_onboarding_tasks: {
         Args: { driver_uuid: string }
@@ -6390,6 +7876,14 @@ export type Database = {
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
       generate_employee_number: { Args: never; Returns: string }
       generate_order_number: { Args: never; Returns: string }
+      generate_payroll_invoice: {
+        Args: { payroll_end: string; payroll_start: string }
+        Returns: {
+          employee_count: number
+          invoice_id: string
+          total_amount: number
+        }[]
+      }
       generate_referral_code: {
         Args: { p_user_id: string; p_user_type: string }
         Returns: string
@@ -6492,6 +7986,14 @@ export type Database = {
         Returns: boolean
       }
       geomfromewkt: { Args: { "": string }; Returns: unknown }
+      get_document_statistics: {
+        Args: never
+        Returns: {
+          document_type: string
+          recent_count: number
+          total_count: number
+        }[]
+      }
       get_driver_queue_position: {
         Args: { driver_uuid: string }
         Returns: {
@@ -6499,6 +8001,31 @@ export type Database = {
           queue_position: number
           region_name: string
           total_in_region: number
+        }[]
+      }
+      get_employee_board_resolutions: {
+        Args: { emp_id: string }
+        Returns: {
+          created_at: string
+          document_id: string
+          effective_date: string
+          id: string
+          resolution_number: string
+          resolution_title: string
+          resolution_type: string
+          status: string
+        }[]
+      }
+      get_employee_documents: {
+        Args: { emp_id: string }
+        Returns: {
+          created_at: string
+          document_title: string
+          document_type: string
+          file_size_bytes: number
+          id: string
+          metadata: Json
+          storage_path: string
         }[]
       }
       get_region_capacity_status: {
@@ -6517,6 +8044,10 @@ export type Database = {
       is_admin_user: { Args: never; Returns: boolean }
       is_ceo: { Args: { user_uuid: string }; Returns: boolean }
       is_executive: { Args: { user_uuid: string }; Returns: boolean }
+      link_document_to_resolution: {
+        Args: { doc_id: string; resolution_id: string }
+        Returns: undefined
+      }
       log_ceo_action: {
         Args: {
           p_action_category: string
