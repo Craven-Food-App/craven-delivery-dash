@@ -135,3 +135,6 @@ verify_jwt = false
 
 [functions.get-equity-dashboard]
 verify_jwt = false
+
+[functions.create-executive-user]
+verify_jwt = true
