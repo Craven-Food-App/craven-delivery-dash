@@ -12,7 +12,7 @@ interface BasicInfoStepProps {
   applicationData: any;
 }
 
-export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack }) => {
+export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, applicationData }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
@@ -61,7 +61,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack }) 
       const lastName = nameParts.slice(1).join(' ') || '';
 
       // 4. Create craver application (waitlisted)
-      const { data: applicationData, error: appError } = await supabase
+      const { data: appData, error: appError } = await supabase
         .from('craver_applications')
         .insert({
           user_id: authData.user.id,
@@ -77,8 +77,8 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack }) 
           points: 0,
           priority_score: 0,
           waitlist_joined_at: new Date().toISOString(),
-          tos_accepted: applicationData?.tos_accepted || false,
-          privacy_accepted: applicationData?.privacy_accepted || false
+          tos_accepted: applicationData?.termsAccepted || false,
+          privacy_accepted: applicationData?.privacyAccepted || false
         })
         .select()
         .single();
@@ -100,8 +100,8 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack }) 
 
       // Continue to success step
       onNext({
-        applicationId: applicationData.id,
-        driverId: applicationData.id,
+        applicationId: appData.id,
+        driverId: appData.id,
         email: values.email,
         city: values.city,
         regionId,
