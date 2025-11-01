@@ -182,7 +182,16 @@ export const LegalConsent: React.FC = () => {
                     style={{ marginBottom: 0 }}
                   >
                     <Checkbox>
-                      I have read and agree to the <Button type="link" style={{ padding: 0 }}>Terms of Service</Button>
+                      I have read and agree to the <Button 
+                        type="link" 
+                        style={{ padding: 0 }} 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          window.open('/terms-of-service', '_blank');
+                        }}
+                      >
+                        Terms of Service
+                      </Button>
                     </Checkbox>
                   </Form.Item>
                 </Space>
@@ -224,7 +233,16 @@ export const LegalConsent: React.FC = () => {
                     style={{ marginBottom: 0 }}
                   >
                     <Checkbox>
-                      I have read and agree to the <Button type="link" style={{ padding: 0 }}>Privacy Policy</Button>
+                      I have read and agree to the <Button 
+                        type="link" 
+                        style={{ padding: 0 }} 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          window.open('/privacy-policy', '_blank');
+                        }}
+                      >
+                        Privacy Policy
+                      </Button>
                     </Checkbox>
                   </Form.Item>
                 </Space>
