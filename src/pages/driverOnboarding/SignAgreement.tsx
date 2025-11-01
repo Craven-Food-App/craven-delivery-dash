@@ -104,46 +104,22 @@ export const SignAgreement: React.FC = () => {
         .from('driver-signatures')
         .getPublicUrl(fileName);
 
-      // Check if signature already exists
-      const { data: existingSig } = await supabase
+      // Use upsert to handle both insert and update cases
+      const { error: sigError } = await supabase
         .from('driver_signatures')
-        .select('id')
-        .eq('driver_id', driverId)
-        .eq('agreement_type', 'ICA')
-        .single();
-
-      let sigError;
-      if (existingSig) {
-        // Update existing signature
-        ({ error: sigError } = await supabase
-          .from('driver_signatures')
-          .update({
-            agreement_version: '2025-10-29',
-            signature_image_url: urlData.publicUrl,
-            ip_address: ipAddress,
-            user_agent: userAgent,
-            latitude: location.latitude,
-            longitude: location.longitude,
-            signed_at: new Date().toISOString()
-          })
-          .eq('driver_id', driverId)
-          .eq('agreement_type', 'ICA'));
-      } else {
-        // Insert new signature
-        ({ error: sigError } = await supabase
-          .from('driver_signatures')
-          .insert({
-            driver_id: driverId,
-            agreement_type: 'ICA',
-            agreement_version: '2025-10-29',
-            signature_image_url: urlData.publicUrl,
-            ip_address: ipAddress,
-            user_agent: userAgent,
-            latitude: location.latitude,
-            longitude: location.longitude,
-            signed_at: new Date().toISOString()
-          }));
-      }
+        .upsert({
+          driver_id: driverId,
+          agreement_type: 'ICA',
+          agreement_version: '2025-10-29',
+          signature_image_url: urlData.publicUrl,
+          ip_address: ipAddress,
+          user_agent: userAgent,
+          latitude: location.latitude,
+          longitude: location.longitude,
+          signed_at: new Date().toISOString()
+        }, {
+          onConflict: 'driver_id,agreement_type'
+        });
 
       if (sigError) {
         console.error('Signature record error:', sigError);
