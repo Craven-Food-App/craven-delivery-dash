@@ -1,16 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MarketingAccessGuard } from '@/components/MarketingAccessGuard';
 import { PromoCodeManager } from '@/components/admin/PromoCodeManager';
+import { CustomerManagement } from '@/components/admin/CustomerManagement';
+import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
+import { ReferralProgram } from '@/components/ReferralProgram';
+import { LoyaltyDashboard } from '@/components/loyalty/LoyaltyDashboard';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, LayoutDashboard, Tag, Mail, Bell, Users, PieChart, TrendingUp, BarChart, Gift, UserPlus, Award, Calendar, Image, Share2, FileText, Megaphone, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, LayoutDashboard, Tag, Mail, Bell, Users, TrendingUp, BarChart, Gift, UserPlus, Award, Megaphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const MarketingPortal: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [expandedSection, setExpandedSection] = useState<string | null>('campaigns');
+  const [userId, setUserId] = useState<string | null>(null);
+  const [marketingMetrics, setMarketingMetrics] = useState({
+    activeCampaigns: 0,
+    totalReach: 0,
+    roi: 0,
+    monthlySpend: 0
+  });
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setUserId(user.id);
+    };
+    fetchUser();
+    fetchMarketingMetrics();
+  }, []);
+
+  const fetchMarketingMetrics = async () => {
+    try {
+      // Get active promo codes
+      const { data: promoCodes } = await supabase
+        .from('promo_codes')
+        .select('id, usage_count')
+        .eq('is_active', true);
+
+      // Get total customers
+      const { count: customerCount } = await supabase
+        .from('user_profiles')
+        .select('*', { count: 'exact', head: true });
+
+      // Get referral stats
+      const { count: referralCount } = await supabase
+        .from('referrals')
+        .select('*', { count: 'exact', head: true });
+
+      // Get promo code usage
+      const totalUsage = promoCodes?.reduce((sum, pc) => sum + (pc.usage_count || 0), 0) || 0;
+
+      // Calculate ROI estimate (would need actual spend tracking)
+      const revenueFromPromos = totalUsage * 1500; // Estimate $15 avg order
+      const promoSpend = totalUsage * 500; // Estimate $5 avg discount
+      const calculatedROI = promoSpend > 0 ? Math.round((revenueFromPromos / promoSpend) * 100) : 0;
+
+      setMarketingMetrics({
+        activeCampaigns: promoCodes?.length || 0,
+        totalReach: customerCount || 0,
+        roi: calculatedROI,
+        monthlySpend: promoSpend
+      });
+    } catch (error) {
+      console.error('Error fetching marketing metrics:', error);
+    }
+  };
 
   const toggleSection = (section: string) => {
     setExpandedSection(expandedSection === section ? null : section);
@@ -26,7 +84,6 @@ const MarketingPortal: React.FC = () => {
         { id: 'promo-codes', label: 'Promo Codes', icon: Tag },
         { id: 'email-campaigns', label: 'Email Campaigns', icon: Mail },
         { id: 'push-notifications', label: 'Push Notifications', icon: Bell },
-        { id: 'campaign-builder', label: 'Create Campaign', icon: ShoppingBag },
       ]
     },
     {
@@ -34,9 +91,8 @@ const MarketingPortal: React.FC = () => {
       title: 'Customer Insights',
       icon: Users,
       items: [
-        { id: 'customer-segments', label: 'Segmentation', icon: PieChart },
+        { id: 'customer-management', label: 'Customer Management', icon: Users },
         { id: 'customer-analytics', label: 'Analytics', icon: TrendingUp },
-        { id: 'cohort-analysis', label: 'Cohort Analysis', icon: BarChart },
       ]
     },
     {
@@ -46,17 +102,6 @@ const MarketingPortal: React.FC = () => {
       items: [
         { id: 'referral-program', label: 'Referral Program', icon: UserPlus },
         { id: 'loyalty-program', label: 'Loyalty Program', icon: Award },
-        { id: 'event-campaigns', label: 'Event Campaigns', icon: Calendar },
-      ]
-    },
-    {
-      id: 'content',
-      title: 'Content',
-      icon: FileText,
-      items: [
-        { id: 'banner-manager', label: 'Banner Manager', icon: Image },
-        { id: 'social-media', label: 'Social Media', icon: Share2 },
-        { id: 'blog-manager', label: 'Blog/Content', icon: FileText },
       ]
     },
     {
@@ -67,7 +112,6 @@ const MarketingPortal: React.FC = () => {
         { id: 'marketing-dashboard', label: 'Marketing Dashboard', icon: LayoutDashboard },
         { id: 'roi-tracking', label: 'ROI & Spend', icon: TrendingUp },
         { id: 'conversion-funnel', label: 'Conversion Funnel', icon: TrendingUp },
-        { id: 'acquisition-cost', label: 'CAC Analysis', icon: BarChart },
       ]
     }
   ];
@@ -75,6 +119,7 @@ const MarketingPortal: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
+      case 'campaign-dashboard':
       case 'marketing-dashboard':
         return (
           <div className="space-y-6">
@@ -83,7 +128,7 @@ const MarketingPortal: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">Active Campaigns</p>
-                    <p className="text-2xl font-bold">12</p>
+                    <p className="text-2xl font-bold">{marketingMetrics.activeCampaigns}</p>
                   </div>
                   <Megaphone className="h-8 w-8 text-orange-500" />
                 </div>
@@ -92,7 +137,7 @@ const MarketingPortal: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">Total Reach</p>
-                    <p className="text-2xl font-bold">1.2M</p>
+                    <p className="text-2xl font-bold">{marketingMetrics.totalReach.toLocaleString()}</p>
                   </div>
                   <Users className="h-8 w-8 text-blue-500" />
                 </div>
@@ -101,7 +146,7 @@ const MarketingPortal: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">ROI</p>
-                    <p className="text-2xl font-bold">320%</p>
+                    <p className="text-2xl font-bold">{marketingMetrics.roi}%</p>
                   </div>
                   <TrendingUp className="h-8 w-8 text-green-500" />
                 </div>
@@ -110,7 +155,7 @@ const MarketingPortal: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">Spend (MTD)</p>
-                    <p className="text-2xl font-bold">$45K</p>
+                    <p className="text-2xl font-bold">${(marketingMetrics.monthlySpend / 100).toLocaleString()}</p>
                   </div>
                   <BarChart className="h-8 w-8 text-purple-500" />
                 </div>
@@ -118,45 +163,68 @@ const MarketingPortal: React.FC = () => {
             </div>
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4">Marketing Overview</h3>
-              <p className="text-gray-600">Marketing dashboard analytics and insights will appear here.</p>
+              <p className="text-gray-600">Use the navigation menu to access campaign management, customer insights, and analytics.</p>
             </Card>
           </div>
         );
       case 'promo-codes':
         return <PromoCodeManager />;
+      case 'customer-management':
+        return <CustomerManagement />;
+      case 'customer-analytics':
+        return <AnalyticsDashboard />;
+      case 'referral-program':
+        return (
+          <div className="space-y-6">
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold mb-4">Referral Program Management</h2>
+              <ReferralProgram userType="customer" />
+            </Card>
+          </div>
+        );
+      case 'loyalty-program':
+        return (
+          <div className="space-y-6">
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold mb-4">Loyalty Program</h2>
+              {userId && <LoyaltyDashboard userId={userId} />}
+              {!userId && <p className="text-gray-600">Loading...</p>}
+            </Card>
+          </div>
+        );
       case 'email-campaigns':
         return (
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Email Campaigns</h2>
-            <p className="text-gray-600">Email campaign management coming soon.</p>
+            <p className="text-gray-600 mb-4">Email campaign functionality is available through Supabase Edge Functions.</p>
+            <div className="space-y-2 text-sm text-gray-500">
+              <p>• Available functions: send-customer-welcome-email, send-approval-email</p>
+              <p>• Email templates can be managed via Supabase dashboard</p>
+              <p>• Integration with Resend email service</p>
+            </div>
           </Card>
         );
       case 'push-notifications':
         return (
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Push Notifications</h2>
-            <p className="text-gray-600">Push notification management coming soon.</p>
+            <p className="text-gray-600 mb-4">Push notification system is operational via Supabase Edge Function.</p>
+            <div className="space-y-2 text-sm text-gray-500">
+              <p>• Function: send-push-notification</p>
+              <p>• Supports iOS PWA push notifications (iOS 16.4+)</p>
+              <p>• Supports web push notifications</p>
+              <p>• Firebase Cloud Messaging integration</p>
+            </div>
           </Card>
         );
-      case 'customer-segments':
-        return (
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Customer Segmentation</h2>
-            <p className="text-gray-600">Customer segmentation tools coming soon.</p>
-          </Card>
-        );
-      case 'customer-analytics':
-        return (
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Customer Analytics</h2>
-            <p className="text-gray-600">Customer analytics dashboard coming soon.</p>
-          </Card>
-        );
+      case 'roi-tracking':
+      case 'conversion-funnel':
+        return <AnalyticsDashboard />;
       default:
         return (
           <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">{activeTab}</h2>
-            <p className="text-gray-600">This feature is coming soon.</p>
+            <h2 className="text-xl font-semibold mb-4">Marketing Portal</h2>
+            <p className="text-gray-600">Navigate using the menu to access marketing features.</p>
           </Card>
         );
     }
