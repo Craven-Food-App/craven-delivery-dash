@@ -111,6 +111,17 @@ async function verifyMoovPayment(paymentId: string, orderId: string, supabase: a
       });
     }
 
+    // Trigger driver assignment for this confirmed order
+    try {
+      await supabase.functions.invoke('auto-assign-orders', {
+        body: { orderId }
+      });
+      console.log("Driver assignment triggered for order:", orderId);
+    } catch (assignError) {
+      console.error("Failed to trigger driver assignment:", assignError);
+      // Don't fail the payment verification if driver assignment fails
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -210,6 +221,17 @@ async function verifyStripePayment(sessionId: string, orderId: string, supabase:
         title: "New Order Received! 🍕",
         message: `Order #${orderId.slice(-8)} from ${order.customer_name} - $${(order.total_cents / 100).toFixed(2)}`,
       });
+    }
+
+    // Trigger driver assignment for this confirmed order
+    try {
+      await supabase.functions.invoke('auto-assign-orders', {
+        body: { orderId }
+      });
+      console.log("Driver assignment triggered for order:", orderId);
+    } catch (assignError) {
+      console.error("Failed to trigger driver assignment:", assignError);
+      // Don't fail the payment verification if driver assignment fails
     }
 
     return new Response(

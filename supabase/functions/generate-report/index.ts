@@ -70,7 +70,7 @@ serve(async (req: Request) => {
     }
 
     // Convert to CSV
-    const rows = queryResult || [];
+    const rows = (queryResult || []) as any[];
     if (rows.length === 0) {
       throw new Error("No data returned from query");
     }

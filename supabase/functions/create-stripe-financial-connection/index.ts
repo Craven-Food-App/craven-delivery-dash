@@ -45,7 +45,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error creating Financial Connections session:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error).message || 'Failed to create session' }),
       {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

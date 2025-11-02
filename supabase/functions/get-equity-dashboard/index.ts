@@ -61,6 +61,7 @@ serve(async (req: Request) => {
           position: row.title || 'Executive',
           email: '',
           employee_equity: [{
+            id: row.id,
             shares_percentage: row.shares_percentage,
             shares_total: row.shares_total,
             equity_type: row.equity_type,
