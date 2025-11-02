@@ -223,11 +223,27 @@ export const PostWaitlistOnboarding: React.FC = () => {
             signed_at: new Date().toISOString()
           };
           
-          const { error: sigError } = await supabase
+          // Try insert, if duplicate then update
+          const { error: insertError } = await supabase
             .from('driver_signatures')
-            .upsert(signatureData);
+            .insert(signatureData);
 
-          if (sigError) throw sigError;
+          if (insertError && insertError.code !== '23505') {
+            // If not a duplicate key error, try update instead
+            const { error: updateError } = await supabase
+              .from('driver_signatures')
+              .update({
+                agreement_version: signatureData.agreement_version,
+                typed_name: signatureData.typed_name,
+                signed_at: signatureData.signed_at
+              })
+              .eq('driver_id', applicationData.id)
+              .eq('agreement_type', 'ICA');
+
+            if (updateError) throw updateError;
+          } else if (insertError && insertError.code === '23505') {
+            throw new Error('Signature already exists');
+          }
 
           updateData = {
             contract_signed_at: new Date().toISOString()
