@@ -10,6 +10,7 @@ import {
   SafetyOutlined,
   TrophyOutlined,
   FileOutlined,
+  ArrowLeftOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -211,6 +212,15 @@ const BoardPortal: React.FC = () => {
                 </p>
               </div>
               <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
+                <Button 
+                  type="default" 
+                  size="small"
+                  icon={<ArrowLeftOutlined />}
+                  className="text-xs sm:text-base"
+                  onClick={() => navigate('/hub')}
+                >
+                  Back to Hub
+                </Button>
                 <Button 
                   type="default" 
                   size="small"

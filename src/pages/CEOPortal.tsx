@@ -14,6 +14,7 @@ import {
   CheckCircleOutlined,
   TrophyOutlined,
   BulbOutlined,
+  ArrowLeftOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -209,6 +210,15 @@ const CEOPortal: React.FC = () => {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex gap-2 w-full lg:w-auto">
               <Button
+                type="default"
+                size="large"
+                icon={<ArrowLeftOutlined />}
+                onClick={() => navigate('/hub')}
+                className="bg-slate-100 hover:bg-slate-200 text-xs sm:text-base"
+              >
+                Back to Hub
+              </Button>
+              <Button
                 type="primary"
                 danger
                 size="large"
@@ -226,7 +236,7 @@ const CEOPortal: React.FC = () => {
                     const target = host.replace(/^ceo\./i, 'cfo.');
                     window.location.href = `${window.location.protocol}//${target}`;
                   } else {
-                    navigate('/');
+                    navigate('/cfo');
                   }
                 }}
                 className="bg-slate-100 hover:bg-slate-200 text-xs sm:text-base"

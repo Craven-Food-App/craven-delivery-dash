@@ -191,11 +191,11 @@ const Admin: React.FC = () => {
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={() => window.location.href = '/'}
+              onClick={() => window.location.href = '/hub'}
               className="w-full justify-start"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to App
+              Back to Hub
             </Button>
           </div>
 

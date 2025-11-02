@@ -27,7 +27,15 @@ export const useExecAuth = (requiredRole?: 'ceo' | 'board_member' | 'cfo' | 'coo
           setUser(null);
           setExecUser(null);
           setIsAuthorized(false);
-          navigate('/auth');
+          // Redirect to HQ subdomain auth if not already there
+          const currentHost = window.location.hostname;
+          if (currentHost !== 'hq.cravenusa.com' && !currentHost.includes('board.cravenusa.com') && 
+              !currentHost.includes('ceo.cravenusa.com') && !currentHost.includes('cfo.cravenusa.com') &&
+              !currentHost.includes('coo.cravenusa.com') && !currentHost.includes('cto.cravenusa.com')) {
+            window.location.href = 'https://hq.cravenusa.com/auth';
+          } else {
+            navigate('/auth');
+          }
         } else if (event === 'SIGNED_IN' && session?.user) {
           checkAuth();
         }
@@ -45,7 +53,15 @@ export const useExecAuth = (requiredRole?: 'ceo' | 'board_member' | 'cfo' | 'coo
       if (userError || !user) {
         setIsAuthorized(false);
         setLoading(false);
-        navigate('/auth');
+        // Redirect to HQ subdomain auth if not already there
+        const currentHost = window.location.hostname;
+        if (currentHost !== 'hq.cravenusa.com' && !currentHost.includes('board.cravenusa.com') && 
+            !currentHost.includes('ceo.cravenusa.com') && !currentHost.includes('cfo.cravenusa.com') &&
+            !currentHost.includes('coo.cravenusa.com') && !currentHost.includes('cto.cravenusa.com')) {
+          window.location.href = 'https://hq.cravenusa.com/auth';
+        } else {
+          navigate('/auth');
+        }
         return;
       }
 

@@ -297,10 +297,12 @@ const MarketingPortal: React.FC = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/hub')}
                   className="p-0"
+                  title="Back to Hub"
                 >
-                  <ArrowLeft className="h-4 w-4" />
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Hub
                 </Button>
                 <h1 className="text-lg font-bold">Marketing Portal</h1>
               </div>

@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Row, Col, Statistic, Tabs, Table, Badge, Card, Button, Space, Progress, Alert, Modal, Form, Input, InputNumber, Select, message, Popconfirm } from 'antd';
-import { CloudOutlined, BugOutlined, LockOutlined, DatabaseOutlined, DashboardOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { CloudOutlined, BugOutlined, LockOutlined, DatabaseOutlined, DashboardOutlined, PlusOutlined, EditOutlined, DeleteOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useExecAuth } from '@/hooks/useExecAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -57,7 +57,10 @@ export default function CTOPortal() {
   return (
     <Layout className="min-h-screen">
       <Header className="bg-white border-b flex items-center justify-between px-6">
-        <Typography.Title level={3} className="m-0">CTO Technology Command</Typography.Title>
+        <Space>
+          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/hub')}>Back to Hub</Button>
+          <Typography.Title level={3} className="m-0">CTO Technology Command</Typography.Title>
+        </Space>
         <Space>
           <Button onClick={() => navigate('/ceo')}>CEO Portal</Button>
           <Button onClick={() => navigate('/cfo')}>CFO Portal</Button>

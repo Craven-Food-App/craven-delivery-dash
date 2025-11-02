@@ -63,6 +63,8 @@ import CEOPortal from "./pages/CEOPortal";
 import COOPortal from "./pages/COOPortal";
 import CTOPortal from "./pages/CTOPortal";
 import MarketingPortal from "./pages/MarketingPortal";
+import MainHub from "./pages/MainHub";
+import BusinessAuth from "./pages/BusinessAuth";
 import { DriverSignup } from "./pages/driverOnboarding/Signup";
 import { LegalConsent } from "./pages/driverOnboarding/LegalConsent";
 import { IdentityForm } from "./pages/driverOnboarding/IdentityForm";
@@ -82,6 +84,10 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const [user, setUser] = useState(null);
+
+  // Check if on HQ/business subdomain
+  const isHQSubdomain = typeof window !== 'undefined' && 
+    window.location.hostname === 'hq.cravenusa.com';
 
   // Check if on feeder subdomain
   const isFeederSubdomain = typeof window !== 'undefined' && 
@@ -185,6 +191,37 @@ const App = () => {
     );
   }
 
+  // If on HQ/business subdomain, show only business routes
+  if (isHQSubdomain) {
+    return (
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider defaultTheme="light">
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<MainHub />} />
+                  <Route path="/auth" element={<BusinessAuth />} />
+                  <Route path="/hub" element={<MainHub />} />
+                  <Route path="/admin" element={<Admin />} />
+                  <Route path="/marketing-portal" element={<MarketingPortal />} />
+                  <Route path="/board" element={<BoardPortal />} />
+                  <Route path="/ceo" element={<CEOPortal />} />
+                  <Route path="/cfo" element={<CFOPortal />} />
+                  <Route path="/coo" element={<COOPortal />} />
+                  <Route path="/cto" element={<CTOPortal />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    );
+  }
+
   // If on feeder subdomain, show only feeder-related routes
   if (isFeederSubdomain) {
     return (
@@ -257,7 +294,7 @@ const App = () => {
               <BrowserRouter>
                 <Routes>
                   <Route path="/" element={<BoardPortal />} />
-                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/auth" element={<BusinessAuth />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </BrowserRouter>
@@ -280,7 +317,7 @@ const App = () => {
               <BrowserRouter>
                 <Routes>
                   <Route path="/" element={<CFOPortal />} />
-                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/auth" element={<BusinessAuth />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </BrowserRouter>
@@ -303,7 +340,7 @@ const App = () => {
               <BrowserRouter>
                 <Routes>
                   <Route path="/" element={<CEOPortal />} />
-                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/auth" element={<BusinessAuth />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </BrowserRouter>
@@ -326,7 +363,7 @@ const App = () => {
               <BrowserRouter>
                 <Routes>
                   <Route path="/" element={<COOPortal />} />
-                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/auth" element={<BusinessAuth />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </BrowserRouter>
@@ -349,7 +386,7 @@ const App = () => {
               <BrowserRouter>
                 <Routes>
                   <Route path="/" element={<CTOPortal />} />
-                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/auth" element={<BusinessAuth />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </BrowserRouter>

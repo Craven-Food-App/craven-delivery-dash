@@ -8,6 +8,7 @@ import {
   FundOutlined,
   FileSearchOutlined,
   CheckCircleOutlined,
+  ArrowLeftOutlined,
 } from "@ant-design/icons";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -124,7 +125,17 @@ export default function CFOPortal() {
     <Layout style={{ minHeight: '100vh', background: '#ffffff' }}>
       <Header style={{ background: '#ffffff', borderBottom: '1px solid #e5e7eb', padding: isMobile ? '12px 12px' : '12px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: isMobile ? 8 : 0 }}>
-          <Typography.Title level={3} style={{ color: '#0f172a', margin: 0, fontSize: isMobile ? 18 : 24 }}>CFO Portal</Typography.Title>
+          <Space>
+            <Button
+              type="default"
+              size={isMobile ? 'small' : 'middle'}
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate('/hub')}
+            >
+              Back to Hub
+            </Button>
+            <Typography.Title level={3} style={{ color: '#0f172a', margin: 0, fontSize: isMobile ? 18 : 24 }}>CFO Portal</Typography.Title>
+          </Space>
           <Space direction={isMobile ? 'vertical' : 'horizontal'} size="small" style={{ width: isMobile ? '100%' : 'auto' }}>
             <RangePicker onChange={setRange} size={isMobile ? 'small' : 'default'} style={{ width: isMobile ? '100%' : 'auto' }} />
             <Button onClick={fetchData} size={isMobile ? 'small' : 'default'}>Refresh</Button>

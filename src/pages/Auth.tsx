@@ -17,13 +17,21 @@ const Auth: React.FC = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Get redirect parameter from URL
+    const getRedirectPath = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirect = urlParams.get('redirect');
+      return redirect || '/hub';
+    };
+
     // Check if user is already signed in
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUser(user);
-        // Redirect to main page if already signed in
-        window.location.href = '/';
+        // Redirect to hub or specified redirect path
+        const redirectPath = getRedirectPath();
+        window.location.href = redirectPath;
       }
     };
     
@@ -38,9 +46,10 @@ const Auth: React.FC = () => {
             title: "Welcome!",
             description: "You've been signed in successfully.",
           });
-          // Redirect to main page
+          // Redirect to hub or specified redirect path
+          const redirectPath = getRedirectPath();
           setTimeout(() => {
-            window.location.href = '/';
+            window.location.href = redirectPath;
           }, 1000);
         }
       }
@@ -108,6 +117,12 @@ const Auth: React.FC = () => {
           title: "Success!",
           description: "Signing you in...",
         });
+        // Get redirect parameter and redirect
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirect = urlParams.get('redirect') || '/hub';
+        setTimeout(() => {
+          window.location.href = redirect;
+        }, 1000);
       }
     } catch (error: any) {
       console.error('Sign in error:', error);
