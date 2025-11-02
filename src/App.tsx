@@ -62,6 +62,7 @@ import CFOPortal from "./pages/CFOPortal";
 import CEOPortal from "./pages/CEOPortal";
 import COOPortal from "./pages/COOPortal";
 import CTOPortal from "./pages/CTOPortal";
+import MarketingPortal from "./pages/MarketingPortal";
 import { DriverSignup } from "./pages/driverOnboarding/Signup";
 import { LegalConsent } from "./pages/driverOnboarding/LegalConsent";
 import { IdentityForm } from "./pages/driverOnboarding/IdentityForm";
@@ -417,6 +418,7 @@ const App = () => {
           <Route path="/ceo" element={<CEOPortal />} />
           <Route path="/coo" element={<COOPortal />} />
           <Route path="/cto" element={<CTOPortal />} />
+          <Route path="/marketing-portal" element={<MarketingPortal />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/track-order/:orderId" element={<TrackOrder />} />
