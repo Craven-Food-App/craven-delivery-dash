@@ -90,10 +90,11 @@ const Checkout: React.FC = () => {
       return;
     }
 
-    if (!selectedPaymentMethod) {
-      toast({ title: "Error", description: "Please select a payment method", variant: "destructive" });
-      return;
-    }
+    // Payment method is optional - we can use guest checkout
+    // if (!selectedPaymentMethod) {
+    //   toast({ title: "Error", description: "Please select a payment method", variant: "destructive" });
+    //   return;
+    // }
 
     setIsProcessing(true);
     try {
@@ -135,7 +136,14 @@ const Checkout: React.FC = () => {
         .select()
         .single();
 
-      if (orderError) throw orderError;
+      if (orderError) {
+        console.error('Order creation error:', orderError);
+        throw new Error(`Failed to create order: ${orderError.message || 'Unknown error'}`);
+      }
+
+      if (!newOrder) {
+        throw new Error('Order was not created');
+      }
 
       // Create order items
       const orderItems = cart.map(item => ({
@@ -146,35 +154,57 @@ const Checkout: React.FC = () => {
         special_instructions: item.special_instructions || null
       }));
 
-      await supabase.from('order_items').insert(orderItems);
+      const { error: orderItemsError } = await supabase.from('order_items').insert(orderItems);
+      
+      if (orderItemsError) {
+        console.error('Order items error:', orderItemsError);
+        throw new Error(`Failed to create order items: ${orderItemsError.message}`);
+      }
 
       // Record promo code usage if applied
       if (appliedPromo && user) {
-        await supabase.from('promo_code_usage').insert({
+        const { error: promoError } = await supabase.from('promo_code_usage').insert({
           promo_code_id: appliedPromo.id,
           user_id: user.id,
           order_id: newOrder.id,
           discount_applied_cents: promoDiscount
         });
+        
+        if (promoError) {
+          console.error('Promo code usage error:', promoError);
+          // Don't throw - this is non-critical
+        }
       }
 
       // Create payment session with Moov
+      const paymentBody: any = {
+        orderTotal: total,
+        orderId: newOrder.id,
+        customerInfo: {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone
+        },
+        paymentProvider: 'moov'
+      };
+
+      // Add payment method if selected
+      if (selectedPaymentMethod?.token) {
+        paymentBody.paymentMethodId = selectedPaymentMethod.token;
+      }
+
       const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-payment', {
-        body: {
-          orderTotal: total,
-          orderId: newOrder.id,
-          customerInfo: {
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone
-          },
-          paymentProvider: 'moov',
-          paymentMethodId: selectedPaymentMethod.token
-        }
+        body: paymentBody
       });
 
-      if (paymentError || !paymentData?.url) {
-        throw new Error('Failed to create payment session');
+      if (paymentError) {
+        console.error('Payment error:', paymentError);
+        throw new Error(`Payment creation failed: ${paymentError.message || 'Unknown error'}`);
+      }
+
+      if (!paymentData?.url) {
+        console.error('Payment response:', paymentData);
+        throw new Error('Payment session created but no redirect URL provided');
       }
 
       // Clear cart
@@ -184,9 +214,14 @@ const Checkout: React.FC = () => {
       // Redirect to payment page
       window.location.href = paymentData.url;
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Order error:', error);
-      toast({ title: "Error", description: "Failed to place order", variant: "destructive" });
+      const errorMessage = error?.message || error?.error?.message || 'Failed to place order. Please try again.';
+      toast({ 
+        title: "Error", 
+        description: errorMessage,
+        variant: "destructive" 
+      });
       setIsProcessing(false);
     }
   };
