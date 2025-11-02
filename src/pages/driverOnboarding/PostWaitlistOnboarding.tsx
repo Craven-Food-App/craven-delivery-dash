@@ -130,12 +130,22 @@ export const PostWaitlistOnboarding: React.FC = () => {
 
       switch (currentStep) {
         case 1: // Identity
+          if (!formData.dateOfBirth || !formData.streetAddress) {
+            message.error('Please fill in all required fields');
+            setSaving(false);
+            return;
+          }
           updateData = {
             date_of_birth: formData.dateOfBirth,
             street_address: formData.streetAddress
           };
           break;
         case 2: // License
+          if (!formData.driversLicenseNumber || !formData.driversLicenseState || !formData.licenseExpiry) {
+            message.error('Please fill in all required fields');
+            setSaving(false);
+            return;
+          }
           updateData = {
             drivers_license: formData.driversLicenseNumber,
             license_state: formData.driversLicenseState,
@@ -143,6 +153,11 @@ export const PostWaitlistOnboarding: React.FC = () => {
           };
           break;
         case 3: // Vehicle
+          if (!formData.vehicleType || !formData.vehicleMake || !formData.vehicleModel || !formData.vehicleYear || !formData.vehicleColor || !formData.licensePlate) {
+            message.error('Please fill in all required fields');
+            setSaving(false);
+            return;
+          }
           updateData = {
             vehicle_type: formData.vehicleType,
             vehicle_make: formData.vehicleMake,
@@ -153,13 +168,28 @@ export const PostWaitlistOnboarding: React.FC = () => {
           };
           break;
         case 4: // Insurance
+          if (!formData.insuranceProvider || !formData.insurancePolicy) {
+            message.error('Please fill in all required fields');
+            setSaving(false);
+            return;
+          }
           updateData = {
             insurance_provider: formData.insuranceProvider,
             insurance_policy: formData.insurancePolicy
           };
           break;
         case 5: // Tax & Payment
+          if (!formData.payoutMethod) {
+            message.error('Please select a payout method');
+            setSaving(false);
+            return;
+          }
           if (formData.payoutMethod === 'direct_deposit') {
+            if (!formData.routingNumber || !formData.accountNumber) {
+              message.error('Please fill in all required fields');
+              setSaving(false);
+              return;
+            }
             updateData = {
               payout_method: 'direct_deposit',
               routing_number: formData.routingNumber,
@@ -167,6 +197,11 @@ export const PostWaitlistOnboarding: React.FC = () => {
               account_number_last_four: formData.accountNumber.slice(-4)
             };
           } else if (formData.payoutMethod === 'cashapp') {
+            if (!formData.cashTag) {
+              message.error('Please enter your Cash App tag');
+              setSaving(false);
+              return;
+            }
             updateData = {
               payout_method: 'cashapp',
               cash_tag: formData.cashTag
