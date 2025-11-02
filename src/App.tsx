@@ -169,6 +169,11 @@ const App = () => {
                     <MobileDriverDashboard />
                   </AccessGuard>
                 } />
+                <Route path="/enhanced-onboarding" element={<EnhancedDriverOnboarding />} />
+                <Route path="/enhanced-onboarding/profile" element={<ProfileCompletionForm />} />
+                <Route path="/enhanced-onboarding/vehicle-photos" element={<VehiclePhotosUpload />} />
+                <Route path="/enhanced-onboarding/payout" element={<PayoutSetup />} />
+                <Route path="/enhanced-onboarding/safety-quiz" element={<SafetyQuiz />} />
                 <Route path="*" element={<Navigate to="/mobile" replace />} />
               </Routes>
             </HashRouter>
