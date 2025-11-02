@@ -74,12 +74,19 @@ const MainHub: React.FC = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        // Redirect to HQ subdomain if not already there
+        // Redirect to auth (on HQ subdomain in production, local in dev)
         const currentHost = window.location.hostname;
-        if (currentHost !== 'hq.cravenusa.com') {
+        const isHQ = currentHost === 'hq.cravenusa.com' || 
+                     currentHost === 'localhost' || 
+                     currentHost === '127.0.0.1' ||
+                     window.location.search.includes('hq=true');
+        
+        if (!isHQ && currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
+          // Production: redirect to HQ subdomain
           window.location.href = 'https://hq.cravenusa.com/auth?redirect=/hub';
         } else {
-          navigate('/auth?redirect=/hub');
+          // Development or already on HQ: use local routing with hq=true
+          navigate('/auth?hq=true&redirect=/hub');
         }
         return;
       }
@@ -100,12 +107,19 @@ const MainHub: React.FC = () => {
       setLoading(false);
     } catch (error) {
       console.error('Error checking user:', error);
-      // Redirect to HQ subdomain if not already there
+      // Redirect to auth (on HQ subdomain in production, local in dev)
       const currentHost = window.location.hostname;
-      if (currentHost !== 'hq.cravenusa.com') {
+      const isHQ = currentHost === 'hq.cravenusa.com' || 
+                   currentHost === 'localhost' || 
+                   currentHost === '127.0.0.1' ||
+                   window.location.search.includes('hq=true');
+      
+      if (!isHQ && currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
+        // Production: redirect to HQ subdomain
         window.location.href = 'https://hq.cravenusa.com/auth?redirect=/hub';
       } else {
-        navigate('/auth?redirect=/hub');
+        // Development or already on HQ: use local routing with hq=true
+        navigate('/auth?hq=true&redirect=/hub');
       }
     }
   };

@@ -1,34 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Building2 } from 'lucide-react';
-import cravenLogo from "@/assets/craven-logo.png";
+import { LogIn, User, Lock, Loader2 } from 'lucide-react';
+// Import the background image
+import hubBackgroundImage from '@/assets/hub_background.png';
 
 const BusinessAuth: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    // Get redirect parameter from URL
-    const getRedirectPath = () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const redirect = urlParams.get('redirect');
-      return redirect || '/hub';
-    };
+  // Get redirect parameter from URL
+  const getRedirectPath = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirect = urlParams.get('redirect');
+    return redirect || '/hub';
+  };
 
-    // Check if user is already signed in
+  // Check if user is already signed in
+  useEffect(() => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUser(user);
-        // Redirect to hub or specified redirect path
         const redirectPath = getRedirectPath();
         window.location.href = redirectPath;
       }
@@ -45,7 +43,6 @@ const BusinessAuth: React.FC = () => {
             title: "Welcome!",
             description: "You've been signed in successfully.",
           });
-          // Redirect to hub or specified redirect path
           const redirectPath = getRedirectPath();
           setTimeout(() => {
             window.location.href = redirectPath;
@@ -57,7 +54,9 @@ const BusinessAuth: React.FC = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleSignIn = async (e: React.FormEvent) => {
+
+  // --- Login Submission ---
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email || !password) {
@@ -69,19 +68,20 @@ const BusinessAuth: React.FC = () => {
       return;
     }
 
-    setLoading(true);
-    
+    setIsSubmitting(true);
+    setError(null);
+
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) {
-        if (error.message.includes('Invalid login credentials')) {
+      if (authError) {
+        if (authError.message.includes('Invalid login credentials')) {
           throw new Error('Invalid email or password. Please check your credentials.');
         }
-        throw error;
+        throw authError;
       }
 
       if (data.user) {
@@ -89,108 +89,197 @@ const BusinessAuth: React.FC = () => {
           title: "Success!",
           description: "Signing you in...",
         });
-        // Get redirect parameter and redirect
-        const urlParams = new URLSearchParams(window.location.search);
-        const redirect = urlParams.get('redirect') || '/hub';
+        const redirectPath = getRedirectPath();
         setTimeout(() => {
-          window.location.href = redirect;
+          window.location.href = redirectPath;
         }, 1000);
       }
     } catch (error: any) {
       console.error('Sign in error:', error);
+      setError(error.message || 'An error occurred during sign in');
       toast({
         title: "Sign In Failed",
         description: error.message || 'An error occurred during sign in',
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   if (user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-[#ff7a45]" />
-          <p className="text-gray-600">Redirecting to portal...</p>
+          <p className="text-gray-400">Redirecting to portal...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white p-4">
-      <Card className="w-full max-w-md shadow-lg border border-gray-200">
-        <CardHeader className="text-center pb-4">
-          <div className="flex justify-center mb-4">
-            <img src={cravenLogo} alt="Crave'N" className="h-12" />
-          </div>
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Building2 className="h-5 w-5 text-[#ff7a45]" />
-            <CardTitle className="text-2xl font-bold text-gray-900">Company Portal Access</CardTitle>
-          </div>
-          <CardDescription className="text-gray-600">
-            Authorized employees only. Sign in with your company credentials.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSignIn} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-700 font-medium">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="employee@cravenusa.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={loading}
-                required
-                className="h-11 border-gray-300 focus:border-[#ff7a45] focus:ring-[#ff7a45]"
-              />
+    <div className="min-h-screen flex items-center p-4 bg-gray-900 overflow-hidden">
+      {/* Background Container - Using static image */}
+      <div className="absolute inset-0 w-full h-full">
+        <div
+          className="w-full h-full bg-cover bg-center"
+          style={{
+            backgroundImage: `url(${hubBackgroundImage})`,
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            backgroundSize: 'cover',
+          }}
+        />
+      </div>
+
+      {/* Login Form Container (Overlay) */}
+      <div className="relative z-10 w-full max-w-md" style={{ marginLeft: '300px', alignSelf: 'center' }}>
+        <div 
+          className="p-8 sm:p-10 rounded-xl shadow-2xl border-t-4 border-[#ff7a45]"
+          style={{
+            background: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(20px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            border: '1px solid rgba(255, 122, 69, 0.3)',
+            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)',
+          }}
+        >
+          <div className="text-center mb-8">
+            <div className="inline-block p-3 rounded-full bg-[#ff7a45] shadow-lg mb-4">
+              <LogIn className="h-8 w-8 text-white" />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-700 font-medium">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={loading}
-                required
-                className="h-11 border-gray-300 focus:border-[#ff7a45] focus:ring-[#ff7a45]"
-              />
-            </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full h-11 bg-[#ff7a45] hover:bg-[#ff5a1f] text-white font-semibold" 
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                'Sign In to Portal'
-              )}
-            </Button>
-          </form>
-          
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-xs text-gray-500 text-center">
-              This portal is restricted to authorized employees only.<br />
-              If you need access, please contact your HR department.
+            <h1 className="text-3xl font-extrabold text-white">
+              CRAVE'N BUSINESS
+            </h1>
+            <p className="text-sm text-gray-300 mt-1">
+              Partner Portal Access
             </p>
           </div>
-        </CardContent>
-      </Card>
+
+          {error && (
+            <div 
+              className="mb-4 p-3 rounded-lg border"
+              style={{
+                background: 'rgba(220, 38, 38, 0.2)',
+                borderColor: 'rgba(220, 38, 38, 0.4)',
+              }}
+            >
+              <p className="text-sm text-red-400">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Email Field */}
+            <div>
+              <label htmlFor="email" className="sr-only">Email</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <User className="h-5 w-5 text-gray-300" />
+                </div>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email Address"
+                  className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-[#ff7a45] focus:border-[#ff7a45] transition duration-150 text-white placeholder:text-gray-400"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                  }}
+                  disabled={isSubmitting || loading}
+                />
+              </div>
+            </div>
+
+            {/* Password Field */}
+            <div>
+              <label htmlFor="password" className="sr-only">Password</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-300" />
+                </div>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password"
+                  className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-[#ff7a45] focus:border-[#ff7a45] transition duration-150 text-white placeholder:text-gray-400"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                  }}
+                  disabled={isSubmitting || loading}
+                />
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isSubmitting || loading || !!error}
+              className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg text-white font-semibold shadow-lg transition duration-200 ease-in-out
+                ${isSubmitting || loading || !!error
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-[#ff7a45] hover:bg-[#ff5a1f] focus:outline-none focus:ring-4 focus:ring-[#ff7a45] focus:ring-opacity-50 transform hover:scale-[1.01]'
+                }`}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  Logging In...
+                </>
+              ) : (
+                <>
+                  <LogIn className="h-5 w-5 mr-2" />
+                  Sign In
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Footer Links */}
+          <div className="mt-6 text-center text-sm">
+            <a 
+              href="#" 
+              onClick={(e) => {
+                e.preventDefault();
+                toast({
+                  title: "Password Reset",
+                  description: "Please contact your HR department for password reset assistance.",
+                });
+              }}
+              className="font-medium text-[#ff7a45] hover:text-[#ff9c6e] transition duration-150"
+            >
+              Forgot Password?
+            </a>
+            <span className="mx-2 text-gray-400">|</span>
+            <a 
+              href="#" 
+              onClick={(e) => {
+                e.preventDefault();
+                toast({
+                  title: "Support",
+                  description: "Contact IT support at support@cravenusa.com",
+                });
+              }}
+              className="font-medium text-gray-300 hover:text-[#ff7a45] transition duration-150"
+            >
+              Need Support?
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
 export default BusinessAuth;
-

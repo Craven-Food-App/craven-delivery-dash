@@ -65,6 +65,7 @@ import CTOPortal from "./pages/CTOPortal";
 import MarketingPortal from "./pages/MarketingPortal";
 import MainHub from "./pages/MainHub";
 import BusinessAuth from "./pages/BusinessAuth";
+import BusinessAuthWrapper from "./components/BusinessAuthWrapper";
 import { DriverSignup } from "./pages/driverOnboarding/Signup";
 import { LegalConsent } from "./pages/driverOnboarding/LegalConsent";
 import { IdentityForm } from "./pages/driverOnboarding/IdentityForm";
@@ -85,9 +86,21 @@ const queryClient = new QueryClient();
 const App = () => {
   const [user, setUser] = useState(null);
 
-  // Check if on HQ/business subdomain
+  // Check if on HQ/business subdomain (production) or localhost (development)
+  // For localhost, also check for ?hq=true or /hub path to enable business mode
   const isHQSubdomain = typeof window !== 'undefined' && 
-    window.location.hostname === 'hq.cravenusa.com';
+    (window.location.hostname === 'hq.cravenusa.com' ||
+     (window.location.hostname === 'localhost' && 
+      (window.location.search.includes('hq=true') || 
+       window.location.pathname.includes('/hub') ||
+       window.location.pathname.includes('/admin') ||
+       window.location.pathname.includes('/marketing-portal'))) ||
+     (window.location.hostname === '127.0.0.1' && 
+      (window.location.search.includes('hq=true') || 
+       window.location.pathname.includes('/hub') ||
+       window.location.pathname.includes('/admin') ||
+       window.location.pathname.includes('/marketing-portal'))) ||
+     window.location.search.includes('hq=true')); // Allow ?hq=true query param for testing
 
   // Check if on feeder subdomain
   const isFeederSubdomain = typeof window !== 'undefined' && 
@@ -410,10 +423,10 @@ const App = () => {
             <InstallAppBanner />
             
             <Routes>
+              <Route path="/auth" element={<BusinessAuthWrapper />} />
               <Route path="/" element={<Index />} />
           <Route path="/restaurants" element={<Restaurants />} />
           <Route path="/crave-more" element={<CraveMore />} />
-          <Route path="/auth" element={<Auth />} />
           <Route path="/driver/auth" element={<DriverAuth />} />
           <Route path="/feeder" element={<FeederHub />} />
           
