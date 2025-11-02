@@ -283,7 +283,19 @@ const MainHub: React.FC = () => {
     sessionStorage.removeItem('hub_employee_info');
     await supabase.auth.signOut();
     message.success('Signed out successfully');
-    navigate('/auth');
+    // Always redirect to hub login page (never main website)
+    const currentHost = window.location.hostname;
+    const isHQ = currentHost === 'hq.cravenusa.com' || 
+                 currentHost === 'localhost' || 
+                 currentHost === '127.0.0.1';
+    
+    if (!isHQ && currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
+      // Production: redirect to HQ subdomain auth
+      window.location.href = 'https://hq.cravenusa.com/auth';
+    } else {
+      // Development or already on HQ: use local routing with hq=true
+      navigate('/auth?hq=true');
+    }
   };
 
   // Company-side portals only
