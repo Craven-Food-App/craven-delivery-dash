@@ -1053,8 +1053,8 @@ export type Database = {
           consent_user_agent: string | null
           contract_signed_at: string | null
           created_at: string | null
-          date_of_birth: string
-          drivers_license: string
+          date_of_birth: string | null
+          drivers_license: string | null
           drivers_license_back: string | null
           drivers_license_front: string | null
           email: string
@@ -1064,12 +1064,12 @@ export type Database = {
           i9_document: string | null
           id: string
           insurance_document: string | null
-          insurance_policy: string
-          insurance_provider: string
+          insurance_policy: string | null
+          insurance_provider: string | null
           last_name: string
           license_expiry: string | null
           license_number: string | null
-          license_plate: string
+          license_plate: string | null
           license_state: string | null
           onboarding_completed_at: string | null
           onboarding_started_at: string | null
@@ -1092,23 +1092,23 @@ export type Database = {
           ssn_last_four: string | null
           state: string
           status: string | null
-          street_address: string
+          street_address: string | null
           tax_classification: string | null
           tos_accepted: boolean | null
           tos_accepted_at: string | null
           updated_at: string | null
           user_id: string | null
-          vehicle_color: string
+          vehicle_color: string | null
           vehicle_inspection: boolean | null
-          vehicle_make: string
-          vehicle_model: string
+          vehicle_make: string | null
+          vehicle_model: string | null
           vehicle_photo_back: string | null
           vehicle_photo_front: string | null
           vehicle_photo_left: string | null
           vehicle_photo_right: string | null
           vehicle_registration: string | null
-          vehicle_type: string
-          vehicle_year: number
+          vehicle_type: string | null
+          vehicle_year: number | null
           w9_document: string | null
           waitlist_joined_at: string | null
           waitlist_notes: string | null
@@ -1135,8 +1135,8 @@ export type Database = {
           consent_user_agent?: string | null
           contract_signed_at?: string | null
           created_at?: string | null
-          date_of_birth: string
-          drivers_license: string
+          date_of_birth?: string | null
+          drivers_license?: string | null
           drivers_license_back?: string | null
           drivers_license_front?: string | null
           email: string
@@ -1146,12 +1146,12 @@ export type Database = {
           i9_document?: string | null
           id?: string
           insurance_document?: string | null
-          insurance_policy: string
-          insurance_provider: string
+          insurance_policy?: string | null
+          insurance_provider?: string | null
           last_name: string
           license_expiry?: string | null
           license_number?: string | null
-          license_plate: string
+          license_plate?: string | null
           license_state?: string | null
           onboarding_completed_at?: string | null
           onboarding_started_at?: string | null
@@ -1174,23 +1174,23 @@ export type Database = {
           ssn_last_four?: string | null
           state: string
           status?: string | null
-          street_address: string
+          street_address?: string | null
           tax_classification?: string | null
           tos_accepted?: boolean | null
           tos_accepted_at?: string | null
           updated_at?: string | null
           user_id?: string | null
-          vehicle_color: string
+          vehicle_color?: string | null
           vehicle_inspection?: boolean | null
-          vehicle_make: string
-          vehicle_model: string
+          vehicle_make?: string | null
+          vehicle_model?: string | null
           vehicle_photo_back?: string | null
           vehicle_photo_front?: string | null
           vehicle_photo_left?: string | null
           vehicle_photo_right?: string | null
           vehicle_registration?: string | null
-          vehicle_type: string
-          vehicle_year: number
+          vehicle_type?: string | null
+          vehicle_year?: number | null
           w9_document?: string | null
           waitlist_joined_at?: string | null
           waitlist_notes?: string | null
@@ -1217,8 +1217,8 @@ export type Database = {
           consent_user_agent?: string | null
           contract_signed_at?: string | null
           created_at?: string | null
-          date_of_birth?: string
-          drivers_license?: string
+          date_of_birth?: string | null
+          drivers_license?: string | null
           drivers_license_back?: string | null
           drivers_license_front?: string | null
           email?: string
@@ -1228,12 +1228,12 @@ export type Database = {
           i9_document?: string | null
           id?: string
           insurance_document?: string | null
-          insurance_policy?: string
-          insurance_provider?: string
+          insurance_policy?: string | null
+          insurance_provider?: string | null
           last_name?: string
           license_expiry?: string | null
           license_number?: string | null
-          license_plate?: string
+          license_plate?: string | null
           license_state?: string | null
           onboarding_completed_at?: string | null
           onboarding_started_at?: string | null
@@ -1256,23 +1256,23 @@ export type Database = {
           ssn_last_four?: string | null
           state?: string
           status?: string | null
-          street_address?: string
+          street_address?: string | null
           tax_classification?: string | null
           tos_accepted?: boolean | null
           tos_accepted_at?: string | null
           updated_at?: string | null
           user_id?: string | null
-          vehicle_color?: string
+          vehicle_color?: string | null
           vehicle_inspection?: boolean | null
-          vehicle_make?: string
-          vehicle_model?: string
+          vehicle_make?: string | null
+          vehicle_model?: string | null
           vehicle_photo_back?: string | null
           vehicle_photo_front?: string | null
           vehicle_photo_left?: string | null
           vehicle_photo_right?: string | null
           vehicle_registration?: string | null
-          vehicle_type?: string
-          vehicle_year?: number
+          vehicle_type?: string | null
+          vehicle_year?: number | null
           w9_document?: string | null
           waitlist_joined_at?: string | null
           waitlist_notes?: string | null
@@ -1451,6 +1451,101 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "customer_favorites_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_orders: {
+        Row: {
+          created_at: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string | null
+          delivery_address: string | null
+          delivery_fee_cents: number
+          delivery_lat: number | null
+          delivery_lng: number | null
+          delivery_method: string
+          estimated_delivery_time: string | null
+          estimated_pickup_time: string | null
+          id: string
+          moov_payment_id: string | null
+          moov_transfer_id: string | null
+          order_items: Json
+          order_status: string
+          payment_provider: string | null
+          payment_status: string
+          restaurant_id: string
+          special_instructions: string | null
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
+          subtotal_cents: number
+          tax_cents: number
+          total_cents: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          customer_phone?: string | null
+          delivery_address?: string | null
+          delivery_fee_cents?: number
+          delivery_lat?: number | null
+          delivery_lng?: number | null
+          delivery_method: string
+          estimated_delivery_time?: string | null
+          estimated_pickup_time?: string | null
+          id?: string
+          moov_payment_id?: string | null
+          moov_transfer_id?: string | null
+          order_items: Json
+          order_status?: string
+          payment_provider?: string | null
+          payment_status?: string
+          restaurant_id: string
+          special_instructions?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          subtotal_cents: number
+          tax_cents: number
+          total_cents: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string | null
+          delivery_address?: string | null
+          delivery_fee_cents?: number
+          delivery_lat?: number | null
+          delivery_lng?: number | null
+          delivery_method?: string
+          estimated_delivery_time?: string | null
+          estimated_pickup_time?: string | null
+          id?: string
+          moov_payment_id?: string | null
+          moov_transfer_id?: string | null
+          order_items?: Json
+          order_status?: string
+          payment_provider?: string | null
+          payment_status?: string
+          restaurant_id?: string
+          special_instructions?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          subtotal_cents?: number
+          tax_cents?: number
+          total_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_orders_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
@@ -2572,8 +2667,9 @@ export type Database = {
           ip_address: string | null
           latitude: number | null
           longitude: number | null
-          signature_image_url: string
+          signature_image_url: string | null
           signed_at: string | null
+          typed_name: string | null
           user_agent: string | null
         }
         Insert: {
@@ -2585,8 +2681,9 @@ export type Database = {
           ip_address?: string | null
           latitude?: number | null
           longitude?: number | null
-          signature_image_url: string
+          signature_image_url?: string | null
           signed_at?: string | null
+          typed_name?: string | null
           user_agent?: string | null
         }
         Update: {
@@ -2598,8 +2695,9 @@ export type Database = {
           ip_address?: string | null
           latitude?: number | null
           longitude?: number | null
-          signature_image_url?: string
+          signature_image_url?: string | null
           signed_at?: string | null
+          typed_name?: string | null
           user_agent?: string | null
         }
         Relationships: [
@@ -3151,6 +3249,9 @@ export type Database = {
           manager_id: string | null
           notes: string | null
           phone: string | null
+          portal_access_granted: boolean | null
+          portal_pin: string | null
+          portal_pin_issued_at: string | null
           position: string
           remote_allowed: boolean | null
           salary: number | null
@@ -3184,6 +3285,9 @@ export type Database = {
           manager_id?: string | null
           notes?: string | null
           phone?: string | null
+          portal_access_granted?: boolean | null
+          portal_pin?: string | null
+          portal_pin_issued_at?: string | null
           position: string
           remote_allowed?: boolean | null
           salary?: number | null
@@ -3217,6 +3321,9 @@ export type Database = {
           manager_id?: string | null
           notes?: string | null
           phone?: string | null
+          portal_access_granted?: boolean | null
+          portal_pin?: string | null
+          portal_pin_issued_at?: string | null
           position?: string
           remote_allowed?: boolean | null
           salary?: number | null
@@ -3898,6 +4005,66 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "marketing_campaigns"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_portal_access: {
+        Row: {
+          access_level: string | null
+          created_at: string | null
+          employee_id: string | null
+          granted_at: string | null
+          granted_by: string | null
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          access_level?: string | null
+          created_at?: string | null
+          employee_id?: string | null
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          access_level?: string | null
+          created_at?: string | null
+          employee_id?: string | null
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_portal_access_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_portal_access_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_summary"
+            referencedColumns: ["employee_id"]
           },
         ]
       }
@@ -4704,6 +4871,7 @@ export type Database = {
           id: string
           is_default: boolean | null
           last4: string | null
+          moov_card_id: string | null
           provider: string
           token: string
           user_id: string | null
@@ -4714,6 +4882,7 @@ export type Database = {
           id?: string
           is_default?: boolean | null
           last4?: string | null
+          moov_card_id?: string | null
           provider: string
           token: string
           user_id?: string | null
@@ -4724,6 +4893,7 @@ export type Database = {
           id?: string
           is_default?: boolean | null
           last4?: string | null
+          moov_card_id?: string | null
           provider?: string
           token?: string
           user_id?: string | null
@@ -7869,6 +8039,7 @@ export type Database = {
         }
         Returns: Json
       }
+      ensure_ceo_marketing_access: { Args: never; Returns: undefined }
       ensure_driver_can_go_online: {
         Args: { target_user_id: string }
         Returns: boolean
@@ -8043,6 +8214,7 @@ export type Database = {
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_admin_user: { Args: never; Returns: boolean }
       is_ceo: { Args: { user_uuid: string }; Returns: boolean }
+      is_ceo_email: { Args: { p_email: string }; Returns: boolean }
       is_executive: { Args: { user_uuid: string }; Returns: boolean }
       link_document_to_resolution: {
         Args: { doc_id: string; resolution_id: string }
@@ -8699,6 +8871,18 @@ export type Database = {
           table_name: string
         }
         Returns: string
+      }
+      verify_ceo_master_pin: { Args: { p_pin: string }; Returns: boolean }
+      verify_employee_portal_pin: {
+        Args: { p_email: string; p_pin: string }
+        Returns: {
+          department_id: string
+          email: string
+          employee_id: string
+          employee_number: string
+          full_name: string
+          position: string
+        }[]
       }
     }
     Enums: {

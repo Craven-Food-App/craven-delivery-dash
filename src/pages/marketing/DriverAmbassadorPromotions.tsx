@@ -51,7 +51,7 @@ const DriverAmbassadorPromotions: React.FC = () => {
       // Get referral data
       const { data: referrals } = await supabase
         .from('referrals')
-        .select('referrer_id, reward_amount_cents');
+        .select('referrer_id, referrer_bonus_amount');
 
       const driverStats = (drivers || []).map(driver => {
         const driverReferrals = referrals?.filter(r => r.referrer_id === driver.user_id) || [];
@@ -60,7 +60,7 @@ const DriverAmbassadorPromotions: React.FC = () => {
           driverName: driver.full_name || 'Unknown Driver',
           referralCode: `DRIVER${driver.user_id.slice(0, 8).toUpperCase()}`,
           referrals: driverReferrals.length,
-          bonusesEarned: driverReferrals.reduce((sum, r) => sum + ((r.reward_amount_cents || 0) / 100), 0),
+          bonusesEarned: driverReferrals.reduce((sum, r) => sum + ((r.referrer_bonus_amount || 0) / 100), 0),
           status: 'active' as const
         };
       });
