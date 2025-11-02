@@ -56,11 +56,19 @@ const Checkout: React.FC = () => {
       return;
     }
 
+    // Validate required fields
+    if (!formData.name || !formData.phone || !formData.email || !formData.address || !formData.city || !formData.state || !formData.zip) {
+      toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
+      return;
+    }
+
     setIsProcessing(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Create order
+      const fullAddress = `${formData.address}, ${formData.city}, ${formData.state} ${formData.zip}`;
+      
+      // Create order with payment_status = 'pending'
       const orderData = {
         customer_id: user?.id || null,
         restaurant_id: restaurant.id,
@@ -70,15 +78,16 @@ const Checkout: React.FC = () => {
         tip_cents: tipAmount,
         total_cents: total,
         order_status: 'pending',
+        payment_status: 'pending',
         customer_name: formData.name,
         customer_phone: formData.phone,
-        delivery_address: {
-          name: formData.name,
-          phone: formData.phone,
-          email: formData.email,
-          address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zip}`,
-          special_instructions: formData.instructions
-        },
+        customer_email: formData.email,
+        delivery_address: fullAddress,
+        pickup_address: restaurant.address || 'Restaurant address',
+        pickup_name: restaurant.name,
+        pickup_lat: restaurant.latitude,
+        pickup_lng: restaurant.longitude,
+        special_instructions: formData.instructions,
         estimated_delivery_time: new Date(Date.now() + 45 * 60000).toISOString()
       };
 
@@ -101,17 +110,34 @@ const Checkout: React.FC = () => {
 
       await supabase.from('order_items').insert(orderItems);
 
+      // Create payment session
+      const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-payment', {
+        body: {
+          orderTotal: total,
+          orderId: newOrder.id,
+          customerInfo: {
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone
+          },
+          paymentProvider: 'moov' // Using Moov.io
+        }
+      });
+
+      if (paymentError || !paymentData?.url) {
+        throw new Error('Failed to create payment session');
+      }
+
       // Clear cart
       localStorage.removeItem('checkout_cart');
       localStorage.removeItem('checkout_restaurant');
 
-      toast({ title: "Order placed!", description: "Your order has been submitted." });
-      navigate(`/track-order/${newOrder.id}`);
+      // Redirect to payment page
+      window.location.href = paymentData.url;
       
     } catch (error) {
       console.error('Order error:', error);
       toast({ title: "Error", description: "Failed to place order", variant: "destructive" });
-    } finally {
       setIsProcessing(false);
     }
   };
