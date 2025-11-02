@@ -21,14 +21,21 @@ const Checkout: React.FC = () => {
     phone: '',
     email: '',
     address: '',
+    aptSuite: '',
     city: '',
     state: '',
     zip: '',
     instructions: '',
     tip: 0,
     tipType: 'percentage',
-    tipPercent: 15
+    tipPercent: 15,
+    deliveryMethod: 'delivery',
+    leaveAtDoor: false,
+    schedule: 'ASAP',
+    promoCode: '',
+    selectedPayment: 'Visa •••• 4242'
   });
+  const [selectedAddressTab, setSelectedAddressTab] = useState('Home');
 
   // Load cart from localStorage (from restaurant page)
   useEffect(() => {
@@ -66,34 +73,39 @@ const Checkout: React.FC = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      const fullAddress = `${formData.address}, ${formData.city}, ${formData.state} ${formData.zip}`;
-      
-      // Create order with payment_status = 'pending'
-      const orderData = {
-        customer_id: user?.id || null,
-        restaurant_id: restaurant.id,
-        subtotal_cents: subtotal,
-        delivery_fee_cents: deliveryFee,
-        tax_cents: tax,
-        tip_cents: tipAmount,
-        total_cents: total,
-        order_status: 'pending',
-        payment_status: 'pending',
-        customer_name: formData.name,
-        customer_phone: formData.phone,
-        customer_email: formData.email,
-        delivery_address: fullAddress,
-        pickup_address: restaurant.address || 'Restaurant address',
-        pickup_name: restaurant.name,
-        pickup_lat: restaurant.latitude,
-        pickup_lng: restaurant.longitude,
-        special_instructions: formData.instructions,
-        estimated_delivery_time: new Date(Date.now() + 45 * 60000).toISOString()
-      };
-
+      // Create order
       const { data: newOrder, error: orderError } = await supabase
         .from('orders')
-        .insert(orderData)
+        .insert({
+          customer_id: user?.id || null,
+          restaurant_id: restaurant.id,
+          subtotal_cents: subtotal,
+          delivery_fee_cents: deliveryFee,
+          tax_cents: tax,
+          tip_cents: tipAmount,
+          total_cents: total,
+          order_status: 'pending',
+          payment_status: 'pending',
+          customer_name: formData.name,
+          customer_phone: formData.phone,
+          customer_email: formData.email,
+          order_type: formData.deliveryMethod,
+          delivery_address: {
+            name: formData.name,
+            phone: formData.phone,
+            email: formData.email,
+            address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zip}`,
+            special_instructions: formData.instructions,
+            apt_suite: formData.aptSuite,
+            leave_at_door: formData.leaveAtDoor,
+            scheduled_time: formData.schedule
+          },
+          pickup_address: restaurant.address || 'Restaurant address',
+          pickup_name: restaurant.name,
+          pickup_lat: restaurant.latitude,
+          pickup_lng: restaurant.longitude,
+          estimated_delivery_time: new Date(Date.now() + 45 * 60000).toISOString()
+        })
         .select()
         .single();
 
@@ -155,7 +167,15 @@ const Checkout: React.FC = () => {
                 {/* Saved addresses */}
                 <div className="flex gap-2 overflow-x-auto hide-scrollbar">
                   {['Home','Work','Recent'].map((label, i) => (
-                    <button key={i} className="px-3 py-2 rounded-full border text-sm whitespace-nowrap">{label}</button>
+                    <button 
+                      key={i} 
+                      onClick={() => setSelectedAddressTab(label)}
+                      className={`px-3 py-2 rounded-full border text-sm whitespace-nowrap ${
+                        selectedAddressTab === label ? 'bg-orange-500 text-white border-orange-500' : ''
+                      }`}
+                    >
+                      {label}
+                    </button>
                   ))}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -165,7 +185,12 @@ const Checkout: React.FC = () => {
                     value={formData.address}
                     onChange={(e) => setFormData({...formData, address: e.target.value})}
                   />
-                  <input className="border rounded-lg px-3 py-2" placeholder="Apt, suite (optional)" />
+                  <input 
+                    className="border rounded-lg px-3 py-2" 
+                    placeholder="Apt, suite (optional)" 
+                    value={formData.aptSuite}
+                    onChange={(e) => setFormData({...formData, aptSuite: e.target.value})}
+                  />
                   <input 
                     className="border rounded-lg px-3 py-2" 
                     placeholder="City" 
@@ -193,12 +218,22 @@ const Checkout: React.FC = () => {
 
             <Section title="Delivery Options">
               <div className="flex items-center gap-4">
-                <label className="inline-flex items-center gap-2">
-                  <input type="radio" name="method" defaultChecked />
+                <label className="inline-flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="method" 
+                    checked={formData.deliveryMethod === 'delivery'}
+                    onChange={() => setFormData({...formData, deliveryMethod: 'delivery'})}
+                  />
                   <span>Delivery</span>
                 </label>
-                <label className="inline-flex items-center gap-2">
-                  <input type="radio" name="method" />
+                <label className="inline-flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="method" 
+                    checked={formData.deliveryMethod === 'pickup'}
+                    onChange={() => setFormData({...formData, deliveryMethod: 'pickup'})}
+                  />
                   <span>Pickup</span>
                 </label>
               </div>
@@ -211,12 +246,22 @@ const Checkout: React.FC = () => {
                   onChange={(e) => setFormData({...formData, instructions: e.target.value})}
                 />
                 <div className="flex items-center gap-2">
-                  <input id="leaveAtDoor" type="checkbox" className="accent-orange-500" />
-                  <label htmlFor="leaveAtDoor" className="text-sm">Leave at door</label>
+                  <input 
+                    id="leaveAtDoor" 
+                    type="checkbox" 
+                    className="accent-orange-500 cursor-pointer" 
+                    checked={formData.leaveAtDoor}
+                    onChange={(e) => setFormData({...formData, leaveAtDoor: e.target.checked})}
+                  />
+                  <label htmlFor="leaveAtDoor" className="text-sm cursor-pointer">Leave at door</label>
                 </div>
                 <div>
                   <label className="text-sm text-gray-600">Schedule</label>
-                  <select className="mt-1 w-full border rounded-lg px-3 py-2 text-sm">
+                  <select 
+                    className="mt-1 w-full border rounded-lg px-3 py-2 text-sm cursor-pointer"
+                    value={formData.schedule}
+                    onChange={(e) => setFormData({...formData, schedule: e.target.value})}
+                  >
                     <option>ASAP</option>
                     <option>In 30 minutes</option>
                     <option>In 1 hour</option>
@@ -254,12 +299,17 @@ const Checkout: React.FC = () => {
                 <div className="space-y-2">
                   {['Visa •••• 4242','Apple Pay','Add new card'].map((label, i) => (
                     <label key={i} className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer">
-                      <input type="radio" name="payment" defaultChecked={i===0} />
+                      <input 
+                        type="radio" 
+                        name="payment" 
+                        checked={formData.selectedPayment === label}
+                        onChange={() => setFormData({...formData, selectedPayment: label})}
+                      />
                       <span className="text-sm">{label}</span>
                     </label>
                   ))}
                 </div>
-                <div className="text-xs text-gray-500">You won’t be charged until the order is accepted.</div>
+                <div className="text-xs text-gray-500">You won't be charged until the order is accepted.</div>
               </div>
             </Section>
           </div>
@@ -272,15 +322,49 @@ const Checkout: React.FC = () => {
                 <div className="text-sm text-gray-600">Cart summary will appear here</div>
                 {/* Promo code */}
                 <div className="flex gap-2">
-                  <input className="flex-1 border rounded-lg px-3 py-2 text-sm" placeholder="Promo code" />
-                  <button className="px-3 py-2 rounded-lg border text-sm">Apply</button>
+                  <input 
+                    className="flex-1 border rounded-lg px-3 py-2 text-sm" 
+                    placeholder="Promo code" 
+                    value={formData.promoCode}
+                    onChange={(e) => setFormData({...formData, promoCode: e.target.value})}
+                  />
+                  <button 
+                    className="px-3 py-2 rounded-lg border text-sm hover:bg-gray-50"
+                    onClick={() => toast({ title: "Promo code", description: "Promo code feature coming soon" })}
+                  >
+                    Apply
+                  </button>
                 </div>
                 {/* Tip selector */}
                 <div>
                   <div className="text-sm font-medium mb-2">Tip your driver</div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     {["$0","10%","15%","20%","Custom"].map((t, i) => (
-                      <button key={i} className="px-3 py-2 rounded-full border text-sm">{t}</button>
+                      <button 
+                        key={i} 
+                        onClick={() => {
+                          if (t === "Custom") {
+                            const customAmount = prompt("Enter custom tip amount:");
+                            if (customAmount) {
+                              setFormData({...formData, tip: Math.round(parseFloat(customAmount) * 100), tipType: 'fixed'});
+                            }
+                          } else if (t === "$0") {
+                            setFormData({...formData, tipPercent: 0, tipType: 'percentage'});
+                          } else {
+                            const percent = parseInt(t);
+                            setFormData({...formData, tipPercent: percent, tipType: 'percentage'});
+                          }
+                        }}
+                        className={`px-3 py-2 rounded-full border text-sm hover:bg-gray-50 ${
+                          (formData.tipPercent === 0 && t === "$0") ||
+                          (formData.tipPercent === 10 && t === "10%") ||
+                          (formData.tipPercent === 15 && t === "15%") ||
+                          (formData.tipPercent === 20 && t === "20%")
+                            ? 'bg-orange-500 text-white border-orange-500' : ''
+                        }`}
+                      >
+                        {t}
+                      </button>
                     ))}
                   </div>
                 </div>
