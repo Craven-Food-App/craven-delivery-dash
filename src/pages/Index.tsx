@@ -18,7 +18,7 @@ const Index = () => {
   useEffect(() => {
     const search = searchParams.get("search");
     const address = searchParams.get("address");
-    
+
     if (search) setSearchQuery(search);
     if (address) setDeliveryAddress(address);
   }, [searchParams]);
@@ -27,67 +27,70 @@ const Index = () => {
   useEffect(() => {
     const checkAndRedirectDriver = async () => {
       // Only redirect if running as PWA (installed app)
-      const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
-                    (window.navigator as any).standalone === true;
-      
-      console.log('PWA Detection:', { isPWA, userAgent: navigator.userAgent });
-      
+      const isPWA =
+        window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone === true;
+
+      console.log("PWA Detection:", { isPWA, userAgent: navigator.userAgent });
+
       if (!isPWA) {
-        console.log('Not running as PWA - skipping redirect');
+        console.log("Not running as PWA - skipping redirect");
         return; // Don't redirect if browsing normally
       }
-      
-      console.log('Running as PWA - checking driver status...');
-      
+
+      console.log("Running as PWA - checking driver status...");
+
       // Check localStorage for cached driver status (faster)
-      const cachedDriverStatus = localStorage.getItem('user_is_driver');
-      if (cachedDriverStatus === 'true') {
-        console.log('Cached driver status found - redirecting immediately');
-        navigate('/mobile', { replace: true });
+      const cachedDriverStatus = localStorage.getItem("user_is_driver");
+      if (cachedDriverStatus === "true") {
+        console.log("Cached driver status found - redirecting immediately");
+        navigate("/mobile", { replace: true });
         return;
       }
-      
+
       try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        
-        console.log('Auth check:', { user: !!user, error: userError });
-        
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        console.log("Auth check:", { user: !!user, error: userError });
+
         if (!user) {
-          console.log('No user logged in');
+          console.log("No user logged in");
           return;
         }
-        
+
         // Check if user is an approved driver with completed onboarding
         const { data: application, error: appError } = await supabase
-          .from('craver_applications')
-          .select('status, onboarding_completed_at')
-          .eq('user_id', user.id)
+          .from("craver_applications")
+          .select("status, onboarding_completed_at")
+          .eq("user_id", user.id)
           .single();
-        
-        console.log('Application check:', { 
-          hasApplication: !!application, 
+
+        console.log("Application check:", {
+          hasApplication: !!application,
           onboardingComplete: !!application?.onboarding_completed_at,
-          error: appError 
+          error: appError,
         });
-        
+
         if (application?.onboarding_completed_at) {
           // User is an approved driver with completed onboarding
           // Cache the driver status for faster future loads
-          localStorage.setItem('user_is_driver', 'true');
-          
-          console.log('✅ PWA: Redirecting driver to mobile dashboard');
-          navigate('/mobile', { replace: true });
+          localStorage.setItem("user_is_driver", "true");
+
+          console.log("✅ PWA: Redirecting driver to mobile dashboard");
+          navigate("/mobile", { replace: true });
         } else {
-          console.log('User is not a driver or onboarding incomplete');
+          console.log("User is not a driver or onboarding incomplete");
           // Clear cached status if it exists
-          localStorage.removeItem('user_is_driver');
+          localStorage.removeItem("user_is_driver");
         }
       } catch (error) {
-        console.error('Error checking driver status:', error);
+        console.error("Error checking driver status:", error);
         // Silently fail - user stays on homepage
       }
     };
-    
+
     // Run immediately
     checkAndRedirectDriver();
   }, [navigate]);
@@ -96,33 +99,34 @@ const Index = () => {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "FoodEstablishment",
-    "name": "Crave'N",
-    "description": "Food delivery from local restaurants",
-    "url": "https://craven.app",
-    "logo": "https://craven.app/craven-logo.png",
-    "address": {
+    name: "Crave'N",
+    description: "Food delivery from local restaurants",
+    url: "https://craven.app",
+    logo: "https://craven.app/craven-logo.png",
+    address: {
       "@type": "PostalAddress",
-      "addressCountry": "US"
+      addressCountry: "US",
     },
-    "servesCuisine": ["American", "Italian", "Chinese", "Mexican", "Indian", "Japanese", "Thai"],
-    "priceRange": "$$",
-    "aggregateRating": {
+    servesCuisine: ["American", "Italian", "Chinese", "Mexican", "Indian", "Japanese", "Thai"],
+    priceRange: "$$",
+    aggregateRating: {
       "@type": "AggregateRating",
-      "ratingValue": "4.8",
-      "reviewCount": "2500"
-    }
+      ratingValue: "4.8",
+      reviewCount: "2500",
+    },
   };
 
   return (
     <>
       <Helmet>
         <title>Crave'N - Membership | Zero Delivery Fees & Exclusive Benefits</title>
-        <meta name="description" content="Join our membership for $8.99/month and enjoy zero delivery fees, priority support, and exclusive perks. Limited lifetime memberships available for $249." />
-        <script type="application/ld+json">
-          {JSON.stringify(structuredData)}
-        </script>
+        <meta
+          name="description"
+          content="Join our membership for $8.99/month and enjoy zero delivery fees, priority support, and exclusive perks. Limited lifetime memberships available for $249."
+        />
+        <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>
-      
+
       <div className="min-h-screen bg-background">
         <Header />
         <Hero />
