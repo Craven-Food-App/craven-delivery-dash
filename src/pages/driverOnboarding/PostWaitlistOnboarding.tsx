@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Save, Upload, CheckCircle, ArrowRight, FileText, Car, CreditCard, Shield } from 'lucide-react';
 import { message } from 'antd';
+import { generateICAPDF } from '@/utils/generateICAPDF';
 
 interface ApplicationData {
   id: string;
@@ -215,11 +216,53 @@ export const PostWaitlistOnboarding: React.FC = () => {
           };
           break;
         case 7: // ICA Sign
+          // Generate ICA PDF document
+          const icaPDF = generateICAPDF({
+            driverName: `${applicationData.first_name} ${applicationData.last_name}`,
+            dateOfBirth: formData.dateOfBirth,
+            address: formData.streetAddress,
+            city: applicationData.city,
+            state: applicationData.state,
+            zipCode: applicationData.zip_code,
+            email: applicationData.email,
+            phone: applicationData.phone,
+            driversLicenseNumber: formData.driversLicenseNumber,
+            driversLicenseState: formData.driversLicenseState,
+            driversLicenseExpiry: formData.licenseExpiry,
+            vehicleMake: formData.vehicleMake,
+            vehicleModel: formData.vehicleModel,
+            vehicleYear: parseInt(formData.vehicleYear) || 2024,
+            vehicleType: formData.vehicleType,
+            vehicleColor: formData.vehicleColor,
+            licensePlate: formData.licensePlate,
+            insuranceProvider: formData.insuranceProvider,
+            insurancePolicy: formData.insurancePolicy,
+            signatureName: `${applicationData.first_name} ${applicationData.last_name}`,
+            signatureDate: new Date().toLocaleDateString()
+          });
+
+          // Upload PDF to Supabase Storage
+          const fileName = `ica_${applicationData.id}_${Date.now()}.pdf`;
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('craver-documents')
+            .upload(fileName, icaPDF, {
+              contentType: 'application/pdf',
+              upsert: false
+            });
+
+          if (uploadError) throw uploadError;
+
+          // Get public URL for the PDF
+          const { data: urlData } = supabase.storage
+            .from('craver-documents')
+            .getPublicUrl(uploadData.path);
+
           const signatureData = {
             driver_id: applicationData.id,
             agreement_type: 'ICA',
             agreement_version: '2025-01-01',
             typed_name: `${applicationData.first_name} ${applicationData.last_name}`,
+            signature_image_url: urlData.publicUrl,
             signed_at: new Date().toISOString()
           };
           
@@ -235,6 +278,7 @@ export const PostWaitlistOnboarding: React.FC = () => {
               .update({
                 agreement_version: signatureData.agreement_version,
                 typed_name: signatureData.typed_name,
+                signature_image_url: signatureData.signature_image_url,
                 signed_at: signatureData.signed_at
               })
               .eq('driver_id', applicationData.id)
@@ -246,7 +290,8 @@ export const PostWaitlistOnboarding: React.FC = () => {
           }
 
           updateData = {
-            contract_signed_at: new Date().toISOString()
+            contract_signed_at: new Date().toISOString(),
+            signature_image_url: urlData.publicUrl
           };
           break;
       }
