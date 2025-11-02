@@ -52,6 +52,20 @@ const DriverAuth = () => {
         return;
       }
 
+      // Check if they need to complete required onboarding steps first
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: fullApp } = await supabase
+        .from('craver_applications')
+        .select('contract_signed_at, payout_method, vehicle_make')
+        .eq('user_id', user.id)
+        .single();
+
+      // If required info not collected, go to post-waitlist onboarding
+      if (fullApp && (!fullApp.contract_signed_at || !fullApp.payout_method || !fullApp.vehicle_make)) {
+        navigate('/driver/post-waitlist-onboarding');
+        return;
+      }
+
       // If onboarding not complete, go to onboarding
       if (!application.onboarding_completed_at) {
         navigate('/enhanced-onboarding');
