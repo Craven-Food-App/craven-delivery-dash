@@ -46,6 +46,17 @@ interface Application {
   created_at: string;
   updated_at: string;
   profile_photo?: string;
+  drivers_license_front?: string | null;
+  drivers_license_back?: string | null;
+  vehicle_photo_front?: string | null;
+  vehicle_photo_back?: string | null;
+  vehicle_photo_left?: string | null;
+  vehicle_photo_right?: string | null;
+  vehicle_registration?: string | null;
+  insurance_document?: string | null;
+  w9_document?: string | null;
+  i9_document?: string | null;
+  signature_image_url?: string | null;
   background_check_report_id?: string;
   background_check_reports?: {
     id: string;
@@ -53,6 +64,7 @@ interface Application {
     checkr_status: string | null;
     admin_review_required: boolean;
   };
+  [key: string]: any; // Allow any other fields
 }
 
 interface ApplicationCardProps {
@@ -153,39 +165,156 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
             <FileText className="h-4 w-4" />
             Documents
           </h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => handleViewDocument(application.profile_photo, 'Profile Photo')}
-              disabled={!application.profile_photo}
-              className="flex items-center gap-1"
-            >
-              <Eye className="h-3 w-3" />
-              Profile
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => handleViewDocument(application.drivers_license, 'Drivers License')}
-              disabled={!application.drivers_license}
-              className="flex items-center gap-1"
-            >
-              <Eye className="h-3 w-3" />
-              License
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => handleViewDocument(application.insurance_policy, 'Insurance Policy')}
-              disabled={!application.insurance_policy}
-              className="flex items-center gap-1"
-            >
-              <Eye className="h-3 w-3" />
-              Insurance
-            </Button>
+          <div className="space-y-3">
+            {/* Identity Documents */}
+            <div>
+              <p className="text-xs text-muted-foreground mb-2 font-medium">Identity Documents</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleViewDocument(application.profile_photo, 'Profile Photo')}
+                  disabled={!application.profile_photo}
+                  className="flex items-center gap-1"
+                >
+                  <Eye className="h-3 w-3" />
+                  Profile
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleViewDocument(application.drivers_license_front, 'Driver License Front')}
+                  disabled={!application.drivers_license_front}
+                  className="flex items-center gap-1"
+                >
+                  <Eye className="h-3 w-3" />
+                  DL Front
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleViewDocument(application.drivers_license_back, 'Driver License Back')}
+                  disabled={!application.drivers_license_back}
+                  className="flex items-center gap-1"
+                >
+                  <Eye className="h-3 w-3" />
+                  DL Back
+                </Button>
+              </div>
+            </div>
+
+            {/* Vehicle Documents */}
+            <div>
+              <p className="text-xs text-muted-foreground mb-2 font-medium">Vehicle Documents</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleViewDocument(application.vehicle_photo_front, 'Vehicle Front')}
+                  disabled={!application.vehicle_photo_front}
+                  className="flex items-center gap-1"
+                >
+                  <Eye className="h-3 w-3" />
+                  Vehicle Front
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleViewDocument(application.vehicle_photo_back, 'Vehicle Back')}
+                  disabled={!application.vehicle_photo_back}
+                  className="flex items-center gap-1"
+                >
+                  <Eye className="h-3 w-3" />
+                  Vehicle Back
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleViewDocument(application.vehicle_photo_left, 'Vehicle Left')}
+                  disabled={!application.vehicle_photo_left}
+                  className="flex items-center gap-1"
+                >
+                  <Eye className="h-3 w-3" />
+                  Vehicle Left
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleViewDocument(application.vehicle_photo_right, 'Vehicle Right')}
+                  disabled={!application.vehicle_photo_right}
+                  className="flex items-center gap-1"
+                >
+                  <Eye className="h-3 w-3" />
+                  Vehicle Right
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleViewDocument(application.vehicle_registration, 'Vehicle Registration')}
+                  disabled={!application.vehicle_registration}
+                  className="flex items-center gap-1"
+                >
+                  <Eye className="h-3 w-3" />
+                  Registration
+                </Button>
+              </div>
+            </div>
+
+            {/* Insurance & Legal */}
+            <div>
+              <p className="text-xs text-muted-foreground mb-2 font-medium">Insurance & Legal Documents</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleViewDocument(application.insurance_document, 'Insurance Document')}
+                  disabled={!application.insurance_document}
+                  className="flex items-center gap-1"
+                >
+                  <Eye className="h-3 w-3" />
+                  Insurance
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleViewDocument(application.w9_document, 'W-9 Form')}
+                  disabled={!application.w9_document}
+                  className="flex items-center gap-1"
+                >
+                  <Eye className="h-3 w-3" />
+                  W-9 Form
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleViewDocument(application.i9_document, 'I-9 Form')}
+                  disabled={!application.i9_document}
+                  className="flex items-center gap-1"
+                >
+                  <Eye className="h-3 w-3" />
+                  I-9 Form
+                </Button>
+
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleViewDocument(application.signature_image_url, 'ICA Signature')}
+                  disabled={!application.signature_image_url}
+                  className="flex items-center gap-1"
+                >
+                  <Eye className="h-3 w-3" />
+                  ICA Signature
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
