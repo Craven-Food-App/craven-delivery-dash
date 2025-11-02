@@ -26,7 +26,8 @@ import {
   DollarOutlined,
   SettingOutlined,
   LogoutOutlined,
-  LockOutlined
+  LockOutlined,
+  FileTextOutlined
 } from '@ant-design/icons';
 import { ConfigProvider } from 'antd';
 import { cravenDriverTheme } from '@/config/antd-theme';
@@ -355,6 +356,14 @@ const MainHub: React.FC = () => {
       icon: BarChartOutlined,
       path: '/cto',
       color: '#eb2f96'
+    },
+    {
+      id: 'hr',
+      name: 'HR Portal',
+      description: 'Human resources and document generation',
+      icon: FileTextOutlined,
+      path: '/hr-portal',
+      color: '#fa8c16'
     }
   ];
 

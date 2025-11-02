@@ -63,6 +63,7 @@ import CEOPortal from "./pages/CEOPortal";
 import COOPortal from "./pages/COOPortal";
 import CTOPortal from "./pages/CTOPortal";
 import MarketingPortal from "./pages/MarketingPortal";
+import HRPortal from "./pages/HRPortal";
 import MainHub from "./pages/MainHub";
 import BusinessAuth from "./pages/BusinessAuth";
 import BusinessAuthWrapper from "./components/BusinessAuthWrapper";
@@ -82,42 +83,6 @@ const RestaurantGuide = lazy(() => import("./pages/RestaurantGuide"));
 const DriverGuide = lazy(() => import("./pages/DriverGuide"));
 
 const queryClient = new QueryClient();
-
-// Redirect component for /hub on main website
-const HubRedirect = () => {
-  useEffect(() => {
-    // Redirect to HQ subdomain
-    window.location.href = 'https://hq.cravenusa.com';
-  }, []);
-  
-  return (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      background: '#000',
-      flexDirection: 'column',
-      gap: '16px'
-    }}>
-      <div style={{ textAlign: 'center', color: '#fff' }}>
-        <p style={{ fontSize: '18px', marginBottom: '8px' }}>Redirecting to business portal...</p>
-        <p style={{ fontSize: '14px', color: '#999', marginBottom: '16px' }}>If you're not redirected automatically, click below:</p>
-        <a 
-          href="https://hq.cravenusa.com" 
-          style={{ 
-            color: '#ff7a45', 
-            fontSize: '16px', 
-            textDecoration: 'underline',
-            fontWeight: 600
-          }}
-        >
-          hq.cravenusa.com →
-        </a>
-      </div>
-    </div>
-  );
-};
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -255,8 +220,9 @@ const App = () => {
                   <Route path="/auth" element={<BusinessAuth />} />
                   <Route path="/hub" element={<MainHub />} />
                   <Route path="/admin" element={<Admin />} />
-                  <Route path="/marketing-portal" element={<MarketingPortal />} />
-                  <Route path="/board" element={<BoardPortal />} />
+                    <Route path="/marketing-portal" element={<MarketingPortal />} />
+                    <Route path="/hr-portal" element={<HRPortal />} />
+                    <Route path="/board" element={<BoardPortal />} />
                   <Route path="/ceo" element={<CEOPortal />} />
                   <Route path="/cfo" element={<CFOPortal />} />
                   <Route path="/coo" element={<COOPortal />} />
@@ -460,7 +426,6 @@ const App = () => {
             
             <Routes>
               <Route path="/auth" element={<BusinessAuthWrapper />} />
-              <Route path="/hub" element={<HubRedirect />} />
               <Route path="/" element={<Index />} />
           <Route path="/restaurants" element={<Restaurants />} />
           <Route path="/crave-more" element={<CraveMore />} />
