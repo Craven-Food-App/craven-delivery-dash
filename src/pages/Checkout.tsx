@@ -2,6 +2,9 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { AddressSelector } from '@/components/checkout/AddressSelector';
+import { PaymentMethodSelector } from '@/components/checkout/PaymentMethodSelector';
+import { PromoCodeInput } from '@/components/checkout/PromoCodeInput';
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <div className="bg-white rounded-xl border border-gray-200 p-5">
@@ -16,6 +19,9 @@ const Checkout: React.FC = () => {
   const [cart, setCart] = useState<any[]>([]);
   const [restaurant, setRestaurant] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<any>(null);
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [appliedPromo, setAppliedPromo] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -31,11 +37,8 @@ const Checkout: React.FC = () => {
     tipPercent: 15,
     deliveryMethod: 'delivery',
     leaveAtDoor: false,
-    schedule: 'ASAP',
-    promoCode: '',
-    selectedPayment: 'Visa •••• 4242'
+    schedule: 'ASAP'
   });
-  const [selectedAddressTab, setSelectedAddressTab] = useState('Home');
 
   // Load cart from localStorage (from restaurant page)
   useEffect(() => {
@@ -50,12 +53,30 @@ const Checkout: React.FC = () => {
   );
 
   const deliveryFee = 300; // $3.00
-  const tax = Math.round((subtotal + deliveryFee) * 0.08); // 8% tax
+  const subtotalAfterPromo = Math.max(0, subtotal - promoDiscount);
+  const tax = Math.round((subtotalAfterPromo + deliveryFee) * 0.08); // 8% tax
   const tipAmount = formData.tipType === 'percentage' 
     ? Math.round(subtotal * (formData.tipPercent / 100))
     : formData.tip;
   
-  const total = subtotal + deliveryFee + tax + tipAmount;
+  const total = subtotalAfterPromo + deliveryFee + tax + tipAmount;
+
+  const handleAddressSelect = (address: any) => {
+    setFormData({
+      ...formData,
+      name: address.name || '',
+      address: address.address || '',
+      aptSuite: address.apt_suite || '',
+      city: address.city || '',
+      state: address.state || '',
+      zip: address.zip || ''
+    });
+  };
+
+  const handlePromoApplied = (discount: number, promo: any) => {
+    setPromoDiscount(discount);
+    setAppliedPromo(promo);
+  };
 
   const handlePlaceOrder = async () => {
     if (!restaurant || cart.length === 0) {
@@ -66,6 +87,11 @@ const Checkout: React.FC = () => {
     // Validate required fields
     if (!formData.name || !formData.phone || !formData.email || !formData.address || !formData.city || !formData.state || !formData.zip) {
       toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
+      return;
+    }
+
+    if (!selectedPaymentMethod) {
+      toast({ title: "Error", description: "Please select a payment method", variant: "destructive" });
       return;
     }
 
@@ -122,7 +148,17 @@ const Checkout: React.FC = () => {
 
       await supabase.from('order_items').insert(orderItems);
 
-      // Create payment session
+      // Record promo code usage if applied
+      if (appliedPromo && user) {
+        await supabase.from('promo_code_usage').insert({
+          promo_code_id: appliedPromo.id,
+          user_id: user.id,
+          order_id: newOrder.id,
+          discount_applied_cents: promoDiscount
+        });
+      }
+
+      // Create payment session with Moov
       const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-payment', {
         body: {
           orderTotal: total,
@@ -132,7 +168,8 @@ const Checkout: React.FC = () => {
             email: formData.email,
             phone: formData.phone
           },
-          paymentProvider: 'moov' // Using Moov.io
+          paymentProvider: 'moov',
+          paymentMethodId: selectedPaymentMethod.token
         }
       });
 
@@ -163,57 +200,7 @@ const Checkout: React.FC = () => {
           {/* Left: Forms */}
           <div className="lg:col-span-2 space-y-6">
             <Section title="Delivery Address">
-              <div className="space-y-3">
-                {/* Saved addresses */}
-                <div className="flex gap-2 overflow-x-auto hide-scrollbar">
-                  {['Home','Work','Recent'].map((label, i) => (
-                    <button 
-                      key={i} 
-                      onClick={() => setSelectedAddressTab(label)}
-                      className={`px-3 py-2 rounded-full border text-sm whitespace-nowrap ${
-                        selectedAddressTab === label ? 'bg-orange-500 text-white border-orange-500' : ''
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <input 
-                    className="border rounded-lg px-3 py-2" 
-                    placeholder="Street address" 
-                    value={formData.address}
-                    onChange={(e) => setFormData({...formData, address: e.target.value})}
-                  />
-                  <input 
-                    className="border rounded-lg px-3 py-2" 
-                    placeholder="Apt, suite (optional)" 
-                    value={formData.aptSuite}
-                    onChange={(e) => setFormData({...formData, aptSuite: e.target.value})}
-                  />
-                  <input 
-                    className="border rounded-lg px-3 py-2" 
-                    placeholder="City" 
-                    value={formData.city}
-                    onChange={(e) => setFormData({...formData, city: e.target.value})}
-                  />
-                  <div className="grid grid-cols-2 gap-3">
-                    <input 
-                      className="border rounded-lg px-3 py-2" 
-                      placeholder="State" 
-                      value={formData.state}
-                      onChange={(e) => setFormData({...formData, state: e.target.value})}
-                    />
-                    <input 
-                      className="border rounded-lg px-3 py-2" 
-                      placeholder="ZIP" 
-                      value={formData.zip}
-                      onChange={(e) => setFormData({...formData, zip: e.target.value})}
-                    />
-                  </div>
-                </div>
-                <div className="text-xs text-gray-500">Address will be validated on map before placing order.</div>
-              </div>
+              <AddressSelector onAddressSelect={handleAddressSelect} initialAddress={formData} />
             </Section>
 
             <Section title="Delivery Options">
@@ -295,22 +282,7 @@ const Checkout: React.FC = () => {
             </Section>
 
             <Section title="Payment">
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  {['Visa •••• 4242','Apple Pay','Add new card'].map((label, i) => (
-                    <label key={i} className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="payment" 
-                        checked={formData.selectedPayment === label}
-                        onChange={() => setFormData({...formData, selectedPayment: label})}
-                      />
-                      <span className="text-sm">{label}</span>
-                    </label>
-                  ))}
-                </div>
-                <div className="text-xs text-gray-500">You won't be charged until the order is accepted.</div>
-              </div>
+              <PaymentMethodSelector onPaymentMethodSelect={setSelectedPaymentMethod} />
             </Section>
           </div>
 
@@ -319,22 +291,15 @@ const Checkout: React.FC = () => {
             <div className="sticky top-6">
               <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
                 <h2 className="text-lg font-semibold">Order Summary</h2>
-                <div className="text-sm text-gray-600">Cart summary will appear here</div>
-                {/* Promo code */}
-                <div className="flex gap-2">
-                  <input 
-                    className="flex-1 border rounded-lg px-3 py-2 text-sm" 
-                    placeholder="Promo code" 
-                    value={formData.promoCode}
-                    onChange={(e) => setFormData({...formData, promoCode: e.target.value})}
-                  />
-                  <button 
-                    className="px-3 py-2 rounded-lg border text-sm hover:bg-gray-50"
-                    onClick={() => toast({ title: "Promo code", description: "Promo code feature coming soon" })}
-                  >
-                    Apply
-                  </button>
+                <div className="space-y-2">
+                  {cart.map((item, i) => (
+                    <div key={i} className="flex justify-between text-sm">
+                      <span>{item.quantity}x {item.name}</span>
+                      <span>${((item.price_cents * item.quantity) / 100).toFixed(2)}</span>
+                    </div>
+                  ))}
                 </div>
+                <PromoCodeInput subtotal={subtotal} onPromoApplied={handlePromoApplied} />
                 {/* Tip selector */}
                 <div>
                   <div className="text-sm font-medium mb-2">Tip your driver</div>
@@ -370,6 +335,12 @@ const Checkout: React.FC = () => {
                 </div>
                 <div className="border-t pt-3 space-y-2 text-sm">
                   <div className="flex justify-between"><span>Subtotal</span><span>${(subtotal / 100).toFixed(2)}</span></div>
+                  {promoDiscount > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Promo discount</span>
+                      <span>-${(promoDiscount / 100).toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between"><span>Delivery fee</span><span>${(deliveryFee / 100).toFixed(2)}</span></div>
                   <div className="flex justify-between"><span>Tax</span><span>${(tax / 100).toFixed(2)}</span></div>
                   <div className="flex justify-between"><span>Tip</span><span>${(tipAmount / 100).toFixed(2)}</span></div>
