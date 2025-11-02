@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Upload, CheckCircle, ArrowRight, FileText, Car, CreditCard, Shield } from 'lucide-react';
+import { ArrowLeft, Save, Upload, CheckCircle, ArrowRight, FileText, Car, CreditCard, Shield, Camera, FileCheck, DollarSign } from 'lucide-react';
 import { message } from 'antd';
 import { generateICAPDF } from '@/utils/generateICAPDF';
 
@@ -32,7 +32,11 @@ const STEPS = [
   { id: 4, name: 'Insurance', icon: Shield },
   { id: 5, name: 'Tax & Payments', icon: CreditCard },
   { id: 6, name: 'Background Check Consent', icon: Shield },
-  { id: 7, name: 'Sign ICA', icon: FileText }
+  { id: 7, name: 'Criminal History', icon: Shield },
+  { id: 8, name: 'Facial Image Consent', icon: Camera },
+  { id: 9, name: 'Electronic 1099 Consent', icon: DollarSign },
+  { id: 10, name: 'W-9 Form', icon: FileCheck },
+  { id: 11, name: 'Sign ICA', icon: FileText }
 ];
 
 export const PostWaitlistOnboarding: React.FC = () => {
@@ -41,6 +45,7 @@ export const PostWaitlistOnboarding: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<any>({});
+  const [uploadingFiles, setUploadingFiles] = useState<Record<string, boolean>>({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -86,8 +91,16 @@ export const PostWaitlistOnboarding: React.FC = () => {
         setCurrentStep(5);
       } else if (!application.background_check_consent) {
         setCurrentStep(6);
-      } else if (!application.contract_signed_at) {
+      } else if (!application.criminal_history_consent) {
         setCurrentStep(7);
+      } else if (!application.facial_image_consent) {
+        setCurrentStep(8);
+      } else if (!application.electronic_1099_consent) {
+        setCurrentStep(9);
+      } else if (!application.w9_signed) {
+        setCurrentStep(10);
+      } else if (!application.contract_signed_at) {
+        setCurrentStep(11);
       } else {
         // All done, go to task dashboard
         navigate('/enhanced-onboarding');
@@ -100,6 +113,8 @@ export const PostWaitlistOnboarding: React.FC = () => {
         driversLicenseNumber: application.drivers_license || '',
         driversLicenseState: application.license_state || application.state || '',
         licenseExpiry: application.license_expiry || '',
+        drivers_license_front: application.drivers_license_front || '',
+        drivers_license_back: application.drivers_license_back || '',
         vehicleType: application.vehicle_type || '',
         vehicleMake: application.vehicle_make || '',
         vehicleModel: application.vehicle_model || '',
@@ -108,6 +123,7 @@ export const PostWaitlistOnboarding: React.FC = () => {
         licensePlate: application.license_plate || '',
         insuranceProvider: application.insurance_provider || '',
         insurancePolicy: application.insurance_policy || '',
+        insurance_document: application.insurance_document || '',
         payoutMethod: application.payout_method || '',
         routingNumber: application.routing_number || '',
         accountNumber: '',
@@ -215,7 +231,31 @@ export const PostWaitlistOnboarding: React.FC = () => {
             background_check_consent_date: new Date().toISOString()
           };
           break;
-        case 7: // ICA Sign
+        case 7: // Criminal History
+          updateData = {
+            criminal_history_consent: true,
+            criminal_history_consent_date: new Date().toISOString()
+          };
+          break;
+        case 8: // Facial Image Consent
+          updateData = {
+            facial_image_consent: true,
+            facial_image_consent_date: new Date().toISOString()
+          };
+          break;
+        case 9: // Electronic 1099 Consent
+          updateData = {
+            electronic_1099_consent: true,
+            electronic_1099_consent_date: new Date().toISOString()
+          };
+          break;
+        case 10: // W-9 Form
+          updateData = {
+            w9_signed: true,
+            w9_signed_date: new Date().toISOString()
+          };
+          break;
+        case 11: // ICA Sign
           // Generate ICA PDF document
           const icaPDF = generateICAPDF({
             driverName: `${applicationData.first_name} ${applicationData.last_name}`,
@@ -333,7 +373,11 @@ export const PostWaitlistOnboarding: React.FC = () => {
       4: 25,  // Insurance
       5: 35,  // Tax & Payment
       6: 50,  // Background Consent
-      7: 50   // ICA
+      7: 25,  // Criminal History
+      8: 20,  // Facial Image Consent
+      9: 20,  // Electronic 1099 Consent
+      10: 30, // W-9 Form
+      11: 50  // ICA
     };
 
     const pointsToAdd = pointsByStep[step] || 0;
@@ -365,6 +409,54 @@ export const PostWaitlistOnboarding: React.FC = () => {
   const handleBack = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleFileUpload = async (file: File, fieldName: string) => {
+    if (!applicationData) return;
+
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      message.error('File size must be less than 10MB');
+      return;
+    }
+
+    setUploadingFiles(prev => ({ ...prev, [fieldName]: true }));
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${applicationData.id}_${fieldName}_${Date.now()}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('craver-documents')
+        .upload(fileName, file, {
+          contentType: file.type,
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('craver-documents')
+        .getPublicUrl(uploadData.path);
+
+      // Update application record
+      const { error: updateError } = await supabase
+        .from('craver_applications')
+        .update({ [fieldName]: urlData.publicUrl })
+        .eq('id', applicationData.id);
+
+      if (updateError) throw updateError;
+
+      // Update form data
+      setFormData((prev: any) => ({ ...prev, [fieldName]: urlData.publicUrl }));
+      
+      message.success(`${fieldName.replace('_', ' ')} uploaded successfully!`);
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      message.error(error.message || 'Failed to upload file');
+    } finally {
+      setUploadingFiles((prev: any) => ({ ...prev, [fieldName]: false }));
     }
   };
 
@@ -588,10 +680,84 @@ export const PostWaitlistOnboarding: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="text-sm text-yellow-800">
-                  Note: You'll need to upload photos of your license front and back in the next phase.
-                </p>
+              <div className="border-t pt-4 mt-4">
+                <Label className="text-base font-semibold mb-3 block">Upload Driver's License Photos</Label>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="driversLicenseFront">License Front (Required)</Label>
+                    <div className="border-2 border-dashed rounded-lg p-4">
+                      <input
+                        type="file"
+                        id="driversLicenseFront"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileUpload(file, 'drivers_license_front');
+                        }}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="driversLicenseFront"
+                        className="flex flex-col items-center justify-center cursor-pointer"
+                      >
+                        {uploadingFiles['drivers_license_front'] ? (
+                          <>
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mb-2"></div>
+                            <span className="text-sm text-gray-500">Uploading...</span>
+                          </>
+                        ) : formData.drivers_license_front ? (
+                          <>
+                            <CheckCircle className="h-8 w-8 text-green-500 mb-2" />
+                            <span className="text-sm text-green-600">Uploaded ✓</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                            <span className="text-sm text-gray-600">Click to upload</span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="driversLicenseBack">License Back (Required)</Label>
+                    <div className="border-2 border-dashed rounded-lg p-4">
+                      <input
+                        type="file"
+                        id="driversLicenseBack"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileUpload(file, 'drivers_license_back');
+                        }}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="driversLicenseBack"
+                        className="flex flex-col items-center justify-center cursor-pointer"
+                      >
+                        {uploadingFiles['drivers_license_back'] ? (
+                          <>
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mb-2"></div>
+                            <span className="text-sm text-gray-500">Uploading...</span>
+                          </>
+                        ) : formData.drivers_license_back ? (
+                          <>
+                            <CheckCircle className="h-8 w-8 text-green-500 mb-2" />
+                            <span className="text-sm text-green-600">Uploaded ✓</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                            <span className="text-sm text-gray-600">Click to upload</span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -738,10 +904,43 @@ export const PostWaitlistOnboarding: React.FC = () => {
                 />
               </div>
 
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="text-sm text-yellow-800">
-                  Note: You'll need to upload your insurance card in the next phase.
-                </p>
+              <div className="border-t pt-4 mt-4">
+                <Label className="text-base font-semibold mb-3 block">Upload Insurance Document</Label>
+                
+                <div className="border-2 border-dashed rounded-lg p-8">
+                  <input
+                    type="file"
+                    id="insuranceDocument"
+                    accept="image/*,.pdf"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileUpload(file, 'insurance_document');
+                    }}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="insuranceDocument"
+                    className="flex flex-col items-center justify-center cursor-pointer"
+                  >
+                    {uploadingFiles['insurance_document'] ? (
+                      <>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mb-2"></div>
+                        <span className="text-sm text-gray-500">Uploading...</span>
+                      </>
+                    ) : formData.insurance_document ? (
+                      <>
+                        <CheckCircle className="h-8 w-8 text-green-500 mb-2" />
+                        <span className="text-sm text-green-600">Uploaded ✓</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                        <span className="text-sm text-gray-600">Click to upload insurance card</span>
+                        <span className="text-xs text-gray-500 mt-1">JPG, PNG, or PDF</span>
+                      </>
+                    )}
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -881,6 +1080,226 @@ export const PostWaitlistOnboarding: React.FC = () => {
         );
 
       case 7:
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <Shield className="h-16 w-16 mx-auto text-orange-500 mb-4" />
+              <h2 className="text-2xl font-bold mb-2">Criminal History Questionnaire</h2>
+              <p className="text-gray-600">Disclose your criminal history</p>
+            </div>
+
+            <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-6 space-y-4">
+              <p className="text-sm text-gray-800 font-medium">
+                Criminal History Disclosure
+              </p>
+              <p className="text-sm text-gray-700">
+                Please honestly disclose any criminal convictions or pending charges. This information will be verified through our background check process.
+              </p>
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="criminalHistory" 
+                    value="none"
+                    className="text-orange-500"
+                  />
+                  <span className="text-sm">I have no criminal convictions or pending charges</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="criminalHistory" 
+                    value="disclosed"
+                    className="text-orange-500"
+                  />
+                  <span className="text-sm">I have criminal convictions or pending charges to disclose</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="border-2 border-orange-300 rounded-lg p-4 bg-orange-50">
+              <p className="text-sm font-bold text-gray-900">
+                Signature: {applicationData.first_name} {applicationData.last_name}
+              </p>
+              <p className="text-xs text-gray-600 mt-1">
+                By proceeding, you certify the above information is true and complete
+              </p>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                <strong>Info:</strong> You will earn <Badge className="ml-1">25 points</Badge> for completing this step!
+              </p>
+            </div>
+          </div>
+        );
+
+      case 8:
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <Camera className="h-16 w-16 mx-auto text-orange-500 mb-4" />
+              <h2 className="text-2xl font-bold mb-2">Facial Image Collection Disclosure & Consent</h2>
+              <p className="text-gray-600">Consent to biometric data collection</p>
+            </div>
+
+            <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-6 space-y-4">
+              <p className="text-sm text-gray-800 font-medium">
+                Facial Recognition and Image Collection Consent
+              </p>
+              <p className="text-sm text-gray-700">
+                Crave'N uses facial recognition technology to verify driver identity and ensure platform security. By agreeing below, you consent to:
+              </p>
+              <ul className="text-sm text-gray-700 list-disc list-inside space-y-2 ml-4">
+                <li>Collection and storage of facial recognition data from your profile photo</li>
+                <li>Biometric verification for identity authentication purposes</li>
+                <li>Use of your image for platform security and fraud prevention</li>
+                <li>Storage of this data in accordance with our Privacy Policy</li>
+              </ul>
+              <div className="mt-4 p-3 bg-white rounded border border-blue-200">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="text-orange-500"
+                  />
+                  <span className="text-sm font-medium">
+                    I consent to the collection and use of my facial biometric data as described above
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div className="border-2 border-orange-300 rounded-lg p-4 bg-orange-50">
+              <p className="text-sm font-bold text-gray-900">
+                Signature: {applicationData.first_name} {applicationData.last_name}
+              </p>
+              <p className="text-xs text-gray-600 mt-1">
+                By proceeding, you electronically sign this consent
+              </p>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                <strong>Info:</strong> You will earn <Badge className="ml-1">20 points</Badge> for completing this step!
+              </p>
+            </div>
+          </div>
+        );
+
+      case 9:
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <DollarSign className="h-16 w-16 mx-auto text-orange-500 mb-4" />
+              <h2 className="text-2xl font-bold mb-2">Electronic 1099 Consent</h2>
+              <p className="text-gray-600">Consent to electronic tax document delivery</p>
+            </div>
+
+            <div className="bg-green-50 border-2 border-green-300 rounded-lg p-6 space-y-4">
+              <p className="text-sm text-gray-800 font-medium">
+                Electronic Delivery of Tax Documents
+              </p>
+              <p className="text-sm text-gray-700">
+                Under federal regulations, Crave'N is required to provide you with Form 1099-NEC for tax reporting purposes. By consenting below, you agree to receive this form electronically:
+              </p>
+              <ul className="text-sm text-gray-700 list-disc list-inside space-y-2 ml-4">
+                <li>You will receive your 1099-NEC electronically via email or the portal</li>
+                <li>You can access and download your tax documents at any time</li>
+                <li>You will be notified when tax documents are available</li>
+                <li>You waive your right to receive paper copies of tax documents</li>
+              </ul>
+              <div className="mt-4 p-3 bg-white rounded border border-green-200">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="text-orange-500"
+                  />
+                  <span className="text-sm font-medium">
+                    I consent to receive my Form 1099-NEC electronically
+                  </span>
+                </label>
+              </div>
+              <p className="text-xs text-gray-600 italic mt-3">
+                *Note: Paper copies are available upon request with 30 days written notice
+              </p>
+            </div>
+
+            <div className="border-2 border-orange-300 rounded-lg p-4 bg-orange-50">
+              <p className="text-sm font-bold text-gray-900">
+                Signature: {applicationData.first_name} {applicationData.last_name}
+              </p>
+              <p className="text-xs text-gray-600 mt-1">
+                By proceeding, you electronically sign this consent
+              </p>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                <strong>Info:</strong> You will earn <Badge className="ml-1">20 points</Badge> for completing this step!
+              </p>
+            </div>
+          </div>
+        );
+
+      case 10:
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <FileCheck className="h-16 w-16 mx-auto text-orange-500 mb-4" />
+              <h2 className="text-2xl font-bold mb-2">W-9 Form & Tax Information</h2>
+              <p className="text-gray-600">Provide your tax identification information</p>
+            </div>
+
+            <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-6 space-y-4">
+              <p className="text-sm text-gray-800 font-medium">
+                W-9 Request for Taxpayer Identification Number and Certification
+              </p>
+              <p className="text-sm text-gray-700">
+                To comply with IRS requirements for 1099 tax reporting, please provide your Social Security Number (SSN).
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="ssn">Social Security Number (SSN)</Label>
+                <Input
+                  id="ssn"
+                  type="text"
+                  placeholder="XXX-XX-XXXX"
+                  maxLength={11}
+                />
+                <p className="text-xs text-gray-600">
+                  Your SSN is encrypted and stored securely. It's required for IRS tax reporting.
+                </p>
+              </div>
+              <div className="mt-4 p-3 bg-white rounded border border-yellow-200">
+                <p className="text-sm font-medium mb-2">Certification:</p>
+                <p className="text-xs text-gray-700">
+                  Under penalties of perjury, I certify that:
+                </p>
+                <ol className="text-xs text-gray-700 list-decimal list-inside space-y-1 mt-2 ml-4">
+                  <li>The number shown on this form is my correct taxpayer identification number</li>
+                  <li>I am not subject to backup withholding</li>
+                  <li>I am a U.S. person</li>
+                </ol>
+              </div>
+            </div>
+
+            <div className="border-2 border-orange-300 rounded-lg p-4 bg-orange-50">
+              <p className="text-sm font-bold text-gray-900">
+                Signature: {applicationData.first_name} {applicationData.last_name}
+              </p>
+              <p className="text-xs text-gray-600 mt-1">
+                By proceeding with your typed name, you certify the above information
+              </p>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                <strong>Info:</strong> You will earn <Badge className="ml-1">30 points</Badge> for completing this step!
+              </p>
+            </div>
+          </div>
+        );
+
+      case 11:
         return (
           <div className="space-y-6">
             <div className="text-center">
