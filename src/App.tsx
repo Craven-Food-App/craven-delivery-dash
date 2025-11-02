@@ -169,6 +169,7 @@ const App = () => {
                     <MobileDriverDashboard />
                   </AccessGuard>
                 } />
+                <Route path="/driver/post-waitlist-onboarding" element={<PostWaitlistOnboarding />} />
                 <Route path="/enhanced-onboarding" element={<EnhancedDriverOnboarding />} />
                 <Route path="/enhanced-onboarding/profile" element={<ProfileCompletionForm />} />
                 <Route path="/enhanced-onboarding/vehicle-photos" element={<VehiclePhotosUpload />} />
@@ -196,6 +197,7 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<FeederHub />} />
                   <Route path="/driver/auth" element={<DriverAuth />} />
+                  <Route path="/driver/post-waitlist-onboarding" element={<PostWaitlistOnboarding />} />
                   <Route path="/enhanced-onboarding" element={<EnhancedDriverOnboarding />} />
                   <Route path="/enhanced-onboarding/profile" element={<ProfileCompletionForm />} />
                   <Route path="/enhanced-onboarding/vehicle-photos" element={<VehiclePhotosUpload />} />

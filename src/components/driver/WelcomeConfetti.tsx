@@ -53,7 +53,7 @@ export const WelcomeConfetti: React.FC<WelcomeConfettiProps> = ({ firstName, onC
 
   const handleContinue = () => {
     onComplete();
-    navigate('/enhanced-onboarding');
+    navigate('/driver/post-waitlist-onboarding');
   };
 
   return (
