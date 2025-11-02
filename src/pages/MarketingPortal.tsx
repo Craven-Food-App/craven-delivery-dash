@@ -5,17 +5,35 @@ import { CustomerManagement } from '@/components/admin/CustomerManagement';
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 import { ReferralProgram } from '@/components/ReferralProgram';
 import { LoyaltyDashboard } from '@/components/loyalty/LoyaltyDashboard';
+import AllCampaignOverview from '@/pages/marketing/AllCampaignOverview';
+import CustomerSegmentation from '@/pages/marketing/CustomerSegmentation';
+import EmailCampaignManager from '@/pages/marketing/EmailCampaignManager';
+import PushNotificationManager from '@/pages/marketing/PushNotificationManager';
+import SMSCampaignManager from '@/pages/marketing/SMSCampaignManager';
+import MerchantPartnerMarketing from '@/pages/marketing/MerchantPartnerMarketing';
+import DriverAmbassadorPromotions from '@/pages/marketing/DriverAmbassadorPromotions';
+import BudgetingSpendTracking from '@/pages/marketing/BudgetingSpendTracking';
+import AssetManagement from '@/pages/marketing/AssetManagement';
+import CampaignAutomation from '@/pages/marketing/CampaignAutomation';
+import ToolsIntegrations from '@/pages/marketing/ToolsIntegrations';
+import AdminRolesPermissions from '@/pages/marketing/AdminRolesPermissions';
+import MarketingSettings from '@/pages/marketing/MarketingSettings';
+import ExperimentalFeatures from '@/pages/marketing/ExperimentalFeatures';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, LayoutDashboard, Tag, Mail, Bell, Users, TrendingUp, BarChart, Gift, UserPlus, Award, Megaphone } from 'lucide-react';
+import { 
+  ArrowLeft, LayoutDashboard, Tag, Mail, Bell, Users, TrendingUp, BarChart, Gift, UserPlus, Award, 
+  Megaphone, MessageSquare, Building2, Truck, DollarSign, FolderOpen, Zap, Plug, Shield, Settings, 
+  Sparkles, Filter, PieChart
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 const MarketingPortal: React.FC = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [expandedSection, setExpandedSection] = useState<string | null>('campaigns');
+  const [activeTab, setActiveTab] = useState('campaign-dashboard');
+  const [expandedSection, setExpandedSection] = useState<string | null>('dashboard');
   const [userId, setUserId] = useState<string | null>(null);
   const [marketingMetrics, setMarketingMetrics] = useState({
     activeCampaigns: 0,
@@ -76,14 +94,30 @@ const MarketingPortal: React.FC = () => {
 
   const navSections = [
     {
+      id: 'dashboard',
+      title: 'Dashboard',
+      icon: LayoutDashboard,
+      items: [
+        { id: 'campaign-dashboard', label: 'Marketing Overview', icon: LayoutDashboard },
+      ]
+    },
+    {
       id: 'campaigns',
       title: 'Campaigns',
       icon: Megaphone,
       items: [
-        { id: 'campaign-dashboard', label: 'All Campaigns', icon: LayoutDashboard },
-        { id: 'promo-codes', label: 'Promo Codes', icon: Tag },
+        { id: 'campaign-builder', label: 'Campaign Builder', icon: Megaphone },
+        { id: 'campaign-automation', label: 'Automation', icon: Zap },
+      ]
+    },
+    {
+      id: 'communications',
+      title: 'Communications',
+      icon: Mail,
+      items: [
         { id: 'email-campaigns', label: 'Email Campaigns', icon: Mail },
         { id: 'push-notifications', label: 'Push Notifications', icon: Bell },
+        { id: 'sms-campaigns', label: 'SMS Campaigns', icon: MessageSquare },
       ]
     },
     {
@@ -92,6 +126,7 @@ const MarketingPortal: React.FC = () => {
       icon: Users,
       items: [
         { id: 'customer-management', label: 'Customer Management', icon: Users },
+        { id: 'customer-segmentation', label: 'Segmentation', icon: Filter },
         { id: 'customer-analytics', label: 'Analytics', icon: TrendingUp },
       ]
     },
@@ -100,8 +135,18 @@ const MarketingPortal: React.FC = () => {
       title: 'Promotions',
       icon: Gift,
       items: [
+        { id: 'promo-codes', label: 'Promo Codes', icon: Tag },
         { id: 'referral-program', label: 'Referral Program', icon: UserPlus },
         { id: 'loyalty-program', label: 'Loyalty Program', icon: Award },
+      ]
+    },
+    {
+      id: 'partners',
+      title: 'Partners',
+      icon: Building2,
+      items: [
+        { id: 'merchant-marketing', label: 'Merchant & Partner', icon: Building2 },
+        { id: 'driver-ambassador', label: 'Driver & Ambassador', icon: Truck },
       ]
     },
     {
@@ -109,70 +154,78 @@ const MarketingPortal: React.FC = () => {
       title: 'Analytics',
       icon: BarChart,
       items: [
-        { id: 'marketing-dashboard', label: 'Marketing Dashboard', icon: LayoutDashboard },
-        { id: 'roi-tracking', label: 'ROI & Spend', icon: TrendingUp },
-        { id: 'conversion-funnel', label: 'Conversion Funnel', icon: TrendingUp },
+        { id: 'roi-tracking', label: 'Budget & Spend', icon: DollarSign },
+        { id: 'conversion-funnel', label: 'Conversion Funnel', icon: PieChart },
+      ]
+    },
+    {
+      id: 'assets',
+      title: 'Assets',
+      icon: FolderOpen,
+      items: [
+        { id: 'asset-management', label: 'Asset Management', icon: FolderOpen },
+      ]
+    },
+    {
+      id: 'tools',
+      title: 'Tools',
+      icon: Plug,
+      items: [
+        { id: 'integrations', label: 'Integrations', icon: Plug },
+        { id: 'settings', label: 'Settings', icon: Settings },
+      ]
+    },
+    {
+      id: 'admin',
+      title: 'Admin',
+      icon: Shield,
+      items: [
+        { id: 'roles-permissions', label: 'Roles & Permissions', icon: Shield },
+      ]
+    },
+    {
+      id: 'experimental',
+      title: 'Experimental',
+      icon: Sparkles,
+      items: [
+        { id: 'experimental-features', label: 'AI & Advanced', icon: Sparkles },
       ]
     }
   ];
 
   const renderContent = () => {
     switch (activeTab) {
+      // Dashboard
       case 'dashboard':
       case 'campaign-dashboard':
       case 'marketing-dashboard':
-        return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Active Campaigns</p>
-                    <p className="text-2xl font-bold">{marketingMetrics.activeCampaigns}</p>
-                  </div>
-                  <Megaphone className="h-8 w-8 text-orange-500" />
-                </div>
-              </Card>
-              <Card className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Total Reach</p>
-                    <p className="text-2xl font-bold">{marketingMetrics.totalReach.toLocaleString()}</p>
-                  </div>
-                  <Users className="h-8 w-8 text-blue-500" />
-                </div>
-              </Card>
-              <Card className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">ROI</p>
-                    <p className="text-2xl font-bold">{marketingMetrics.roi}%</p>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-green-500" />
-                </div>
-              </Card>
-              <Card className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Spend (MTD)</p>
-                    <p className="text-2xl font-bold">${(marketingMetrics.monthlySpend / 100).toLocaleString()}</p>
-                  </div>
-                  <BarChart className="h-8 w-8 text-purple-500" />
-                </div>
-              </Card>
-            </div>
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Marketing Overview</h3>
-              <p className="text-gray-600">Use the navigation menu to access campaign management, customer insights, and analytics.</p>
-            </Card>
-          </div>
-        );
-      case 'promo-codes':
-        return <PromoCodeManager />;
+        return <AllCampaignOverview />;
+
+      // Campaigns
+      case 'campaign-builder':
+        return <AllCampaignOverview />;
+      case 'campaign-automation':
+        return <CampaignAutomation />;
+
+      // Communications
+      case 'email-campaigns':
+        return <EmailCampaignManager />;
+      case 'push-notifications':
+        return <PushNotificationManager />;
+      case 'sms-campaigns':
+        return <SMSCampaignManager />;
+
+      // Customers
       case 'customer-management':
         return <CustomerManagement />;
+      case 'customer-segmentation':
+        return <CustomerSegmentation />;
       case 'customer-analytics':
         return <AnalyticsDashboard />;
+
+      // Promotions
+      case 'promo-codes':
+        return <PromoCodeManager />;
       case 'referral-program':
         return (
           <div className="space-y-6">
@@ -192,34 +245,37 @@ const MarketingPortal: React.FC = () => {
             </Card>
           </div>
         );
-      case 'email-campaigns':
-        return (
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Email Campaigns</h2>
-            <p className="text-gray-600 mb-4">Email campaign functionality is available through Supabase Edge Functions.</p>
-            <div className="space-y-2 text-sm text-gray-500">
-              <p>• Available functions: send-customer-welcome-email, send-approval-email</p>
-              <p>• Email templates can be managed via Supabase dashboard</p>
-              <p>• Integration with Resend email service</p>
-            </div>
-          </Card>
-        );
-      case 'push-notifications':
-        return (
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Push Notifications</h2>
-            <p className="text-gray-600 mb-4">Push notification system is operational via Supabase Edge Function.</p>
-            <div className="space-y-2 text-sm text-gray-500">
-              <p>• Function: send-push-notification</p>
-              <p>• Supports iOS PWA push notifications (iOS 16.4+)</p>
-              <p>• Supports web push notifications</p>
-              <p>• Firebase Cloud Messaging integration</p>
-            </div>
-          </Card>
-        );
+
+      // Partners
+      case 'merchant-marketing':
+        return <MerchantPartnerMarketing />;
+      case 'driver-ambassador':
+        return <DriverAmbassadorPromotions />;
+
+      // Analytics
       case 'roi-tracking':
+        return <BudgetingSpendTracking />;
       case 'conversion-funnel':
         return <AnalyticsDashboard />;
+
+      // Assets
+      case 'asset-management':
+        return <AssetManagement />;
+
+      // Tools
+      case 'integrations':
+        return <ToolsIntegrations />;
+      case 'settings':
+        return <MarketingSettings />;
+
+      // Admin
+      case 'roles-permissions':
+        return <AdminRolesPermissions />;
+
+      // Experimental
+      case 'experimental-features':
+        return <ExperimentalFeatures />;
+
       default:
         return (
           <Card className="p-6">
