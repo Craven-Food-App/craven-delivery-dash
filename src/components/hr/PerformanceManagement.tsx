@@ -54,14 +54,64 @@ const PerformanceManagement: React.FC = () => {
 
   const fetchEmployees = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch regular employees (active only)
+      const { data: regularEmployees, error: employeesError } = await supabase
         .from('employees')
-        .select('id, first_name, last_name, email, position, department_id, departments(name)')
+        .select('id, first_name, last_name, email, position, department_id, departments(name), user_id')
         .eq('employment_status', 'active')
         .order('last_name');
 
-      if (error) throw error;
-      setEmployees(data || []);
+      if (employeesError) throw employeesError;
+
+      // Fetch C-suite executives
+      const { data: executives, error: execError } = await supabase
+        .from('exec_users')
+        .select('id, user_id, role, title, department, name, email')
+        .not('user_id', 'is', null);
+
+      if (execError) {
+        console.error('Error fetching executives:', execError);
+      }
+
+      // Combine both lists
+      const allEmployees: any[] = [];
+
+      // Add regular employees
+      if (regularEmployees) {
+        allEmployees.push(...regularEmployees);
+      }
+
+      // Add C-suite executives that don't already exist as employees
+      if (executives) {
+        for (const exec of executives) {
+          const existsAsEmployee = regularEmployees?.some(
+            (emp: any) => emp.user_id === exec.user_id
+          );
+
+          if (!existsAsEmployee && exec.user_id && exec.name) {
+            const nameParts = exec.name.trim().split(' ');
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+
+            allEmployees.push({
+              id: exec.id,
+              first_name: firstName,
+              last_name: lastName,
+              email: exec.email || '',
+              position: exec.title || exec.role.toUpperCase(),
+              department_id: null,
+              departments: { name: exec.department || 'Executive' },
+              user_id: exec.user_id,
+              is_executive: true,
+            });
+          }
+        }
+      }
+
+      // Sort by last name
+      allEmployees.sort((a, b) => a.last_name.localeCompare(b.last_name));
+
+      setEmployees(allEmployees);
     } catch (error: any) {
       console.error('Error fetching employees:', error);
       message.error('Failed to load employees');
