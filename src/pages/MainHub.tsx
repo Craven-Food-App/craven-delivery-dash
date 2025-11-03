@@ -693,14 +693,7 @@ const MainHub: React.FC = () => {
         }
       }
       
-      const newClockInStatus = {
-        isClockedIn: true,
-        clockInAt: actualClockInAt,
-        hoursToday: 0, // Will be updated by fetchClockStatus
-        weeklyHours: 0, // Will be updated by fetchClockStatus
-        currentEntryId: data || null
-      };
-      // Update state immediately - use functional update to ensure React detects change
+      // Update state immediately - use direct state update for immediate UI feedback
       const updatedStatus = {
         isClockedIn: true,
         clockInAt: actualClockInAt,
