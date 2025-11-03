@@ -18,7 +18,7 @@ const BusinessAuth: React.FC = () => {
   const getRedirectPath = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const redirect = urlParams.get('redirect');
-    return redirect || '/hub';
+    return redirect || '/main-hub';
   };
 
   // Check if user is already signed in
