@@ -109,17 +109,17 @@ const BusinessAuth: React.FC = () => {
 
   if (user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-[#ff7a45]" />
-          <p className="text-gray-400">Redirecting to portal...</p>
+          <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin mx-auto mb-4 text-[#ff7a45]" />
+          <p className="text-sm sm:text-base text-gray-400">Redirecting to portal...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center p-4 bg-gray-900 overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-900 overflow-hidden">
       {/* Background Container - Using static image */}
       <div className="absolute inset-0 w-full h-full">
         <div
@@ -134,9 +134,9 @@ const BusinessAuth: React.FC = () => {
       </div>
 
       {/* Login Form Container (Overlay) */}
-      <div className="relative z-10 w-full max-w-md" style={{ marginLeft: '300px', alignSelf: 'center' }}>
+      <div className="relative z-10 w-full max-w-md mx-auto lg:ml-[300px] lg:mr-auto" style={{ alignSelf: 'center' }}>
         <div 
-          className="p-8 sm:p-10 rounded-xl shadow-2xl border-t-4 border-[#ff7a45]"
+          className="p-6 sm:p-8 md:p-10 rounded-xl shadow-2xl border-t-4 border-[#ff7a45]"
           style={{
             background: 'rgba(0, 0, 0, 0.6)',
             backdropFilter: 'blur(20px) saturate(180%)',
@@ -145,37 +145,37 @@ const BusinessAuth: React.FC = () => {
             boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)',
           }}
         >
-          <div className="text-center mb-8">
-            <div className="inline-block p-3 rounded-full bg-[#ff7a45] shadow-lg mb-4">
-              <LogIn className="h-8 w-8 text-white" />
+          <div className="text-center mb-6 sm:mb-8">
+            <div className="inline-block p-2 sm:p-3 rounded-full bg-[#ff7a45] shadow-lg mb-3 sm:mb-4">
+              <LogIn className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
-            <h1 className="text-3xl font-extrabold text-white">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
               CRAVE'N BUSINESS
             </h1>
-            <p className="text-sm text-gray-300 mt-1">
+            <p className="text-xs sm:text-sm text-gray-300 mt-1">
               Partner Portal Access
             </p>
           </div>
 
           {error && (
             <div 
-              className="mb-4 p-3 rounded-lg border"
+              className="mb-4 p-2.5 sm:p-3 rounded-lg border"
               style={{
                 background: 'rgba(220, 38, 38, 0.2)',
                 borderColor: 'rgba(220, 38, 38, 0.4)',
               }}
             >
-              <p className="text-sm text-red-400">{error}</p>
+              <p className="text-xs sm:text-sm text-red-400">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="sr-only">Email</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <User className="h-5 w-5 text-gray-300" />
+                  <User className="h-4 w-4 sm:h-5 sm:w-5 text-gray-300" />
                 </div>
                 <input
                   id="email"
@@ -186,7 +186,7 @@ const BusinessAuth: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email Address"
-                  className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-[#ff7a45] focus:border-[#ff7a45] transition duration-150 text-white placeholder:text-gray-400"
+                  className="w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-3 text-sm sm:text-base border rounded-lg focus:ring-[#ff7a45] focus:border-[#ff7a45] transition duration-150 text-white placeholder:text-gray-400"
                   style={{
                     background: 'rgba(255, 255, 255, 0.1)',
                     borderColor: 'rgba(255, 255, 255, 0.2)',
@@ -201,7 +201,7 @@ const BusinessAuth: React.FC = () => {
               <label htmlFor="password" className="sr-only">Password</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-300" />
+                  <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-gray-300" />
                 </div>
                 <input
                   id="password"
@@ -212,7 +212,7 @@ const BusinessAuth: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Password"
-                  className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-[#ff7a45] focus:border-[#ff7a45] transition duration-150 text-white placeholder:text-gray-400"
+                  className="w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-3 text-sm sm:text-base border rounded-lg focus:ring-[#ff7a45] focus:border-[#ff7a45] transition duration-150 text-white placeholder:text-gray-400"
                   style={{
                     background: 'rgba(255, 255, 255, 0.1)',
                     borderColor: 'rgba(255, 255, 255, 0.2)',
@@ -226,20 +226,21 @@ const BusinessAuth: React.FC = () => {
             <button
               type="submit"
               disabled={isSubmitting || loading || !!error}
-              className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg text-white font-semibold shadow-lg transition duration-200 ease-in-out
+              className={`w-full flex justify-center items-center py-2.5 sm:py-3 px-4 border border-transparent rounded-lg text-white text-sm sm:text-base font-semibold shadow-lg transition duration-200 ease-in-out
                 ${isSubmitting || loading || !!error
                   ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-[#ff7a45] hover:bg-[#ff5a1f] focus:outline-none focus:ring-4 focus:ring-[#ff7a45] focus:ring-opacity-50 transform hover:scale-[1.01]'
+                  : 'bg-[#ff7a45] hover:bg-[#ff5a1f] focus:outline-none focus:ring-4 focus:ring-[#ff7a45] focus:ring-opacity-50 transform hover:scale-[1.01] active:scale-[0.98]'
                 }`}
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Logging In...
+                  <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 animate-spin" />
+                  <span className="sm:hidden">Logging In...</span>
+                  <span className="hidden sm:inline">Logging In...</span>
                 </>
               ) : (
                 <>
-                  <LogIn className="h-5 w-5 mr-2" />
+                  <LogIn className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                   Sign In
                 </>
               )}
@@ -247,7 +248,7 @@ const BusinessAuth: React.FC = () => {
           </form>
 
           {/* Footer Links */}
-          <div className="mt-6 text-center text-sm">
+          <div className="mt-4 sm:mt-6 text-center text-xs sm:text-sm">
             <a 
               href="#" 
               onClick={(e) => {
@@ -257,11 +258,11 @@ const BusinessAuth: React.FC = () => {
                   description: "Please contact your HR department for password reset assistance.",
                 });
               }}
-              className="font-medium text-[#ff7a45] hover:text-[#ff9c6e] transition duration-150"
+              className="font-medium text-[#ff7a45] hover:text-[#ff9c6e] transition duration-150 block sm:inline"
             >
               Forgot Password?
             </a>
-            <span className="mx-2 text-gray-400">|</span>
+            <span className="mx-2 text-gray-400 hidden sm:inline">|</span>
             <a 
               href="#" 
               onClick={(e) => {
@@ -271,7 +272,7 @@ const BusinessAuth: React.FC = () => {
                   description: "Contact IT support at support@cravenusa.com",
                 });
               }}
-              className="font-medium text-gray-300 hover:text-[#ff7a45] transition duration-150"
+              className="font-medium text-gray-300 hover:text-[#ff7a45] transition duration-150 block sm:inline mt-2 sm:mt-0"
             >
               Need Support?
             </a>
