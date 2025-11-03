@@ -564,6 +564,8 @@ const MainHub: React.FC = () => {
   // Fetch clock status when user is available
   useEffect(() => {
     if (user) {
+      // Fetch immediately on mount and after user is available
+      console.log('User available, fetching clock status...', user.id);
       fetchClockStatus();
       fetchTimeEntries();
       // Poll for updates every 30 seconds
@@ -573,6 +575,14 @@ const MainHub: React.FC = () => {
       return () => clearInterval(interval);
     }
   }, [user]);
+  
+  // Also fetch when component mounts (in case user was already loaded)
+  useEffect(() => {
+    if (user && !loading) {
+      console.log('Component mounted, fetching clock status...');
+      fetchClockStatus();
+    }
+  }, [loading]);
 
   // Company-side portals only
   const portals: Portal[] = [
