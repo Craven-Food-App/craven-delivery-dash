@@ -73,6 +73,12 @@ const MainHub: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentDuration, setCurrentDuration] = useState('00:00:00');
   
+  // SSN verification modal state
+  const [showSSNModal, setShowSSNModal] = useState(false);
+  const [ssnInput, setSsnInput] = useState('');
+  const [ssnVerifying, setSsnVerifying] = useState(false);
+  const [pendingClockAction, setPendingClockAction] = useState<'in' | 'out' | null>(null);
+  
   // Load persisted clock status from localStorage on mount
   useEffect(() => {
     if (user) {
@@ -544,8 +550,105 @@ const MainHub: React.FC = () => {
     }
   };
 
-  // Clock in handler
+  // Verify SSN last 4 digits
+  const verifySSN = async (ssnLast4: string): Promise<boolean> => {
+    if (!user) return false;
+    
+    try {
+      // Check if user is an employee
+      const { data: employee, error: employeeError } = await supabase
+        .from('employees')
+        .select('ssn_last4, id')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (!employeeError && employee && employee.ssn_last4) {
+        return employee.ssn_last4 === ssnLast4;
+      }
+      
+      // If not found in employees, check if user is an executive
+      // Executives might not have SSN stored, so we'll allow them to proceed
+      // or check another table if needed
+      const { data: execUser } = await supabase
+        .from('exec_users')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (execUser) {
+        // For executives, we might need to add SSN storage later
+        // For now, allow CEO with master PIN or skip verification
+        // You can add exec_ssn_last4 field later if needed
+        return true; // Temporarily allow executives
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error verifying SSN:', error);
+      return false;
+    }
+  };
+
+  // Handle SSN verification submission
+  const handleSSNSubmit = async () => {
+    if (!ssnInput || ssnInput.length !== 4) {
+      message.error('Please enter the last 4 digits of your Social Security Number');
+      return;
+    }
+    
+    if (!/^\d{4}$/.test(ssnInput)) {
+      message.error('Please enter only numbers');
+      return;
+    }
+    
+    setSsnVerifying(true);
+    
+    try {
+      const isValid = await verifySSN(ssnInput);
+      
+      if (!isValid) {
+        message.error('Invalid SSN. Please try again.');
+        setSsnInput('');
+        setSsnVerifying(false);
+        return;
+      }
+      
+      // Close modal and proceed with pending action
+      setShowSSNModal(false);
+      setSsnInput('');
+      setSsnVerifying(false);
+      
+      if (pendingClockAction === 'in') {
+        await performClockIn();
+      } else if (pendingClockAction === 'out') {
+        await performClockOut();
+      }
+      
+      setPendingClockAction(null);
+    } catch (error: any) {
+      message.error('Verification failed: ' + error.message);
+      setSsnVerifying(false);
+    }
+  };
+
+  // Show SSN modal before clocking in
   const handleClockIn = async () => {
+    if (!user) return;
+    setPendingClockAction('in');
+    setShowSSNModal(true);
+    setSsnInput('');
+  };
+
+  // Show SSN modal before clocking out
+  const handleClockOut = async () => {
+    if (!user) return;
+    setPendingClockAction('out');
+    setShowSSNModal(true);
+    setSsnInput('');
+  };
+
+  // Actual clock in function (called after SSN verification)
+  const performClockIn = async () => {
     if (!user) return;
     setClockLoading(true);
     
@@ -668,8 +771,8 @@ const MainHub: React.FC = () => {
     }
   };
 
-  // Clock out handler
-  const handleClockOut = async () => {
+  // Actual clock out function (called after SSN verification)
+  const performClockOut = async () => {
     if (!user) return;
     setClockLoading(true);
     
