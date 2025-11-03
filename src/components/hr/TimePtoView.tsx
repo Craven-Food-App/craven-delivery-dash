@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { CalendarClock, Plus } from 'lucide-react';
-import { Card, Table, Tag, Button, Space, message } from 'antd';
+import { CalendarClock, Plus, Clock, Users } from 'lucide-react';
+import { Card, Table, Tag, Button, Space, message, Statistic, Row, Col } from 'antd';
 import { supabase } from '@/integrations/supabase/client';
 
 interface PtoRequest {
@@ -11,6 +11,16 @@ interface PtoRequest {
   type: 'Vacation' | 'Sick Day' | 'Personal';
   status: 'Pending' | 'Approved' | 'Declined';
   days: number;
+}
+
+interface ClockedInEmployee {
+  id: string;
+  user_id: string;
+  clock_in_at: string;
+  employee_name: string;
+  department?: string;
+  position?: string;
+  duration: string;
 }
 
 const mockPtoRequests: PtoRequest[] = [
@@ -30,113 +40,114 @@ const formatTime = (date: Date | string): string => {
   });
 };
 
-const TimePtoView: React.FC = () => {
-  const [clockStatus, setClockStatus] = useState<{
-    status: 'Clocked In' | 'Clocked Out';
-    lastAction: string;
-    weeklyHours: number;
-    hoursToday: number;
-    clockInAt: string | null;
-  }>({
-    status: 'Clocked Out',
-    lastAction: 'N/A',
-    weeklyHours: 0,
-    hoursToday: 0,
-    clockInAt: null,
-  });
-  const [loading, setLoading] = useState(true);
-  const [clockLoading, setClockLoading] = useState(false);
+// Calculate duration
+const calculateDuration = (start: Date | string, end: Date | string): string => {
+  const startDate = typeof start === 'string' ? new Date(start) : start;
+  const endDate = typeof end === 'string' ? new Date(end) : end;
+  const diffMs = endDate.getTime() - startDate.getTime();
+  const seconds = Math.floor(diffMs / 1000);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
+};
 
-  // Fetch clock data
+const TimePtoView: React.FC = () => {
+  const [clockedInEmployees, setClockedInEmployees] = useState<ClockedInEmployee[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch currently clocked in employees
   useEffect(() => {
-    fetchClockData();
+    fetchClockedInEmployees();
     // Poll for updates every 30 seconds
     const interval = setInterval(() => {
-      fetchClockData();
+      fetchClockedInEmployees();
     }, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  const fetchClockData = async () => {
+  const fetchClockedInEmployees = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-      
-      // Use user_id directly (works for both employees and executives)
-      const { data: status, error } = await supabase.rpc('get_employee_clock_status', {
-        p_user_id: user.id
-      });
-      
+      // Get all time entries that are currently clocked in
+      const { data: entries, error } = await supabase
+        .from('time_entries')
+        .select(`
+          id,
+          user_id,
+          clock_in_at,
+          employee_id,
+          exec_user_id,
+          employees:employee_id (
+            first_name,
+            last_name,
+            department,
+            position
+          ),
+          exec_users:exec_user_id (
+            user_id
+          )
+        `)
+        .eq('status', 'clocked_in')
+        .is('clock_out_at', null)
+        .order('clock_in_at', { ascending: false });
+
       if (error) {
-        console.error('Error fetching clock status:', error);
+        console.error('Error fetching clocked in employees:', error);
         setLoading(false);
         return;
       }
-      
-      if (status && status.length > 0) {
-        const s = status[0];
-        setClockStatus({
-          status: s.is_clocked_in ? 'Clocked In' : 'Clocked Out',
-          lastAction: s.clock_in_at 
-            ? `${new Date(s.clock_in_at).toLocaleDateString()} ${formatTime(s.clock_in_at)}`
-            : 'N/A',
-          weeklyHours: parseFloat(s.weekly_hours) || 0,
-          hoursToday: parseFloat(s.total_hours_today) || 0,
-          clockInAt: s.clock_in_at,
-        });
+
+      if (entries) {
+        // Fetch names and build employee list
+        const employeesWithNames = await Promise.all(
+          entries.map(async (entry: any) => {
+            let name = 'Unknown';
+            let department = '';
+            let position = '';
+
+            // If entry has employee data, use it
+            if (entry.employees && entry.employees.first_name) {
+              name = `${entry.employees.first_name} ${entry.employees.last_name}`;
+              department = entry.employees.department || '';
+              position = entry.employees.position || '';
+            } 
+            // If entry has exec_user data, fetch name from user_profiles
+            else if (entry.exec_users && entry.exec_users.user_id) {
+              const { data: profile } = await supabase
+                .from('user_profiles')
+                .select('full_name, email')
+                .eq('user_id', entry.exec_users.user_id)
+                .single();
+              if (profile?.full_name) {
+                name = profile.full_name;
+              } else if (profile?.email) {
+                name = profile.email;
+              }
+            }
+
+            // Calculate duration
+            const duration = calculateDuration(entry.clock_in_at, new Date());
+
+            return {
+              id: entry.id,
+              user_id: entry.user_id,
+              clock_in_at: entry.clock_in_at,
+              employee_name: name,
+              department: department,
+              position: position,
+              duration: duration,
+            };
+          })
+        );
+
+        setClockedInEmployees(employeesWithNames);
       }
-      
+
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching clock data:', error);
+      console.error('Error fetching clocked in employees:', error);
       setLoading(false);
-    }
-  };
-
-  const handleClockAction = async () => {
-    setClockLoading(true);
-    
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setClockLoading(false);
-        return;
-      }
-      
-      if (clockStatus.status === 'Clocked In') {
-        // Clock out - use user_id (works for both employees and executives)
-        const { error } = await supabase.rpc('clock_out', {
-          p_user_id: user.id
-        });
-        
-        if (error) {
-          message.error('Failed to clock out: ' + error.message);
-          setClockLoading(false);
-          return;
-        }
-        message.success('Clocked out successfully');
-      } else {
-        // Clock in - use user_id (works for both employees and executives)
-        const { error } = await supabase.rpc('clock_in', {
-          p_user_id: user.id
-        });
-        
-        if (error) {
-          message.error('Failed to clock in: ' + error.message);
-          setClockLoading(false);
-          return;
-        }
-        message.success('Clocked in successfully');
-      }
-      
-      await fetchClockData();
-      setClockLoading(false);
-    } catch (error: any) {
-      message.error('Failed to perform clock action: ' + error.message);
-      setClockLoading(false);
     }
   };
 
@@ -151,7 +162,55 @@ const TimePtoView: React.FC = () => {
     }
   };
 
-  const columns = [
+  // Columns for currently clocked in employees
+  const clockedInColumns = [
+    {
+      title: 'Employee Name',
+      dataIndex: 'employee_name',
+      key: 'employee_name',
+      render: (text: string, record: ClockedInEmployee) => (
+        <div>
+          <div style={{ fontWeight: 600 }}>{text}</div>
+          {record.position && (
+            <div style={{ fontSize: '12px', color: '#666' }}>{record.position}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      title: 'Department',
+      dataIndex: 'department',
+      key: 'department',
+      render: (text: string) => text || <span style={{ color: '#999' }}>N/A</span>,
+    },
+    {
+      title: 'Clock In Time',
+      dataIndex: 'clock_in_at',
+      key: 'clock_in_at',
+      render: (text: string) => {
+        const date = new Date(text);
+        return (
+          <div>
+            <div>{date.toLocaleDateString()}</div>
+            <div style={{ fontSize: '12px', color: '#666' }}>{formatTime(date)}</div>
+          </div>
+        );
+      },
+    },
+    {
+      title: 'Duration',
+      dataIndex: 'duration',
+      key: 'duration',
+      render: (text: string) => (
+        <Tag color="green" style={{ fontFamily: 'monospace', fontSize: '14px' }}>
+          {text}
+        </Tag>
+      ),
+    },
+  ];
+
+  // Columns for PTO requests
+  const ptoColumns = [
     {
       title: 'Employee',
       dataIndex: 'employee',
@@ -202,104 +261,39 @@ const TimePtoView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-      {/* Employee Self-Service Panel */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-        <Card
-          style={{
-            gridColumn: 'span 2',
-            background: clockStatus.status === 'Clocked In' 
-              ? 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)'
-              : 'linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%)',
-            color: '#fff',
-            border: 'none',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            minHeight: '300px',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-            <CalendarClock style={{ width: '32px', height: '32px' }} />
+      {/* Currently Clocked In Employees */}
+      <Card
+        title={
+          <span style={{ display: 'flex', alignItems: 'center', fontSize: '24px' }}>
+            <Users style={{ width: '24px', height: '24px', marginRight: '8px', color: '#ff7a45' }} />
+            Currently Clocked In ({clockedInEmployees.length})
+          </span>
+        }
+      >
+        <p style={{ fontSize: '14px', color: '#666', marginBottom: '16px' }}>
+          View all employees and executives who are currently clocked in and working.
+        </p>
+
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Clock style={{ width: '32px', height: '32px', marginBottom: '16px', color: '#999' }} />
+            <p style={{ color: '#999' }}>Loading clock data...</p>
           </div>
-          
-          {/* Large Status Indicator */}
-          <div style={{ 
-            flex: 1, 
-            display: 'flex', 
-            flexDirection: 'column', 
-            justifyContent: 'center', 
-            alignItems: 'center',
-            textAlign: 'center',
-            margin: '24px 0',
-          }}>
-            <div style={{
-              fontSize: '72px',
-              fontWeight: 900,
-              letterSpacing: '4px',
-              marginBottom: '16px',
-              textShadow: '0 2px 8px rgba(0,0,0,0.2)',
-              lineHeight: 1,
-            }}>
-              {clockStatus.status.toUpperCase()}
-            </div>
-            <div style={{
-              fontSize: '18px',
-              opacity: 0.95,
-              fontWeight: 500,
-            }}>
-              {clockStatus.status === 'Clocked In' ? 'You are currently working' : 'You are currently off'}
-            </div>
+        ) : clockedInEmployees.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Users style={{ width: '48px', height: '48px', marginBottom: '16px', color: '#d9d9d9' }} />
+            <p style={{ color: '#999', fontSize: '16px' }}>No employees currently clocked in</p>
           </div>
-
-          <div style={{ marginBottom: '16px' }}>
-            <p style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px', textAlign: 'center' }}>
-              Last action: {clockStatus.lastAction}
-            </p>
-          </div>
-
-          <Button
-            type="primary"
-            block
-            size="large"
-            loading={clockLoading}
-            onClick={handleClockAction}
-            disabled={clockLoading || loading}
-            style={{
-              background: '#fff',
-              color: clockStatus.status === 'Clocked In' ? '#ff4d4f' : '#52c41a',
-              border: 'none',
-              fontWeight: 800,
-              fontSize: '24px',
-              height: '64px',
-              padding: '0 24px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              letterSpacing: '1px',
-            }}
-          >
-            {clockStatus.status === 'Clocked In' ? 'CLOCK OUT' : 'CLOCK IN'}
-          </Button>
-        </Card>
-
-        <Card>
-          <h3 style={{ fontSize: '12px', fontWeight: 500, color: '#666', margin: 0, marginBottom: '8px' }}>
-            Hours This Week
-          </h3>
-          <p style={{ fontSize: '28px', fontWeight: 700, color: '#000', margin: 0 }}>
-            {loading ? '...' : clockStatus.weeklyHours.toFixed(1)}
-          </p>
-          <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>Target: 40.0</p>
-        </Card>
-
-        <Card>
-          <h3 style={{ fontSize: '12px', fontWeight: 500, color: '#666', margin: 0, marginBottom: '8px' }}>
-            Hours Today
-          </h3>
-          <p style={{ fontSize: '28px', fontWeight: 700, color: '#1890ff', margin: 0 }}>
-            {loading ? '...' : clockStatus.hoursToday.toFixed(1)}
-          </p>
-          <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>Paid hours</p>
-        </Card>
-      </div>
+        ) : (
+          <Table
+            columns={clockedInColumns}
+            dataSource={clockedInEmployees}
+            rowKey="id"
+            pagination={false}
+            loading={loading}
+          />
+        )}
+      </Card>
 
       {/* Manager Approval Section */}
       <Card
@@ -315,7 +309,7 @@ const TimePtoView: React.FC = () => {
         </p>
 
         <Table
-          columns={columns}
+          columns={ptoColumns}
           dataSource={mockPtoRequests}
           rowKey="id"
           pagination={false}
