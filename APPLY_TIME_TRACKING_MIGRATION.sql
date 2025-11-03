@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS public.time_entries (
 CREATE INDEX IF NOT EXISTS idx_time_entries_employee_id ON public.time_entries(employee_id);
 CREATE INDEX IF NOT EXISTS idx_time_entries_clock_in_at ON public.time_entries(clock_in_at);
 CREATE INDEX IF NOT EXISTS idx_time_entries_status ON public.time_entries(status) WHERE status = 'clocked_in';
-CREATE INDEX IF NOT EXISTS idx_time_entries_date ON public.time_entries((DATE(clock_in_at)));
+-- Use date_trunc instead of DATE() for immutable date extraction
+CREATE INDEX IF NOT EXISTS idx_time_entries_date ON public.time_entries((date_trunc('day', clock_in_at)::date));
 
 -- Function to clock in
 -- Drop all existing versions
