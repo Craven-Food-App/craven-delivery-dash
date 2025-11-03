@@ -331,20 +331,58 @@ const MainHub: React.FC = () => {
     }
   };
 
-  // Fetch time entries history
+  // Fetch time entries history with names
   const fetchTimeEntries = async () => {
     if (!user) return;
     
     try {
       const { data, error } = await supabase
         .from('time_entries')
-        .select('*')
+        .select(`
+          *,
+          employees:employee_id (
+            id,
+            first_name,
+            last_name,
+            email
+          ),
+          exec_users:exec_user_id (
+            id,
+            user_id
+          )
+        `)
         .eq('user_id', user.id)
         .order('clock_in_at', { ascending: false })
         .limit(20);
       
       if (error) throw error;
-      if (data) setTimeEntries(data);
+      if (data) {
+        // Fetch exec user names if needed
+        const entriesWithNames = await Promise.all(
+          data.map(async (entry: any) => {
+            let name = 'Unknown';
+            if (entry.employees) {
+              name = `${entry.employees.first_name} ${entry.employees.last_name}`;
+            } else if (entry.exec_users) {
+              // Fetch exec user name from user_profiles
+              const { data: profile } = await supabase
+                .from('user_profiles')
+                .select('full_name, email')
+                .eq('user_id', entry.exec_users.user_id)
+                .single();
+              if (profile?.full_name) {
+                name = profile.full_name;
+              } else if (profile?.email) {
+                name = profile.email;
+              } else {
+                name = 'Executive User';
+              }
+            }
+            return { ...entry, display_name: name };
+          })
+        );
+        setTimeEntries(entriesWithNames);
+      }
     } catch (error) {
       console.error('Error fetching time entries:', error);
     }
@@ -833,6 +871,14 @@ const MainHub: React.FC = () => {
                         rowKey="id"
                         pagination={{ pageSize: 10 }}
                         columns={[
+                          {
+                            title: 'Name',
+                            dataIndex: 'display_name',
+                            key: 'name',
+                            render: (name: string) => (
+                              <span style={{ fontWeight: 500 }}>{name || 'Unknown'}</span>
+                            ),
+                          },
                           {
                             title: 'Clock In',
                             dataIndex: 'clock_in_at',
