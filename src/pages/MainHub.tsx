@@ -299,7 +299,7 @@ const MainHub: React.FC = () => {
 
   // Fetch clock status
   const fetchClockStatus = async () => {
-    if (!user || !employeeInfo) return;
+    if (!user) return;
     
     try {
       const { data, error } = await supabase.rpc('get_employee_clock_status', {
@@ -325,6 +325,16 @@ const MainHub: React.FC = () => {
         } else {
           setCurrentDuration('00:00:00');
         }
+      } else {
+        // No status found - user is clocked out
+        setClockStatus({
+          isClockedIn: false,
+          clockInAt: null,
+          hoursToday: 0,
+          weeklyHours: 0,
+          currentEntryId: null
+        });
+        setCurrentDuration('00:00:00');
       }
     } catch (error) {
       console.error('Error fetching clock status:', error);
@@ -452,7 +462,7 @@ const MainHub: React.FC = () => {
 
   // Fetch clock status when user is available
   useEffect(() => {
-    if (user && employeeInfo) {
+    if (user) {
       fetchClockStatus();
       fetchTimeEntries();
       // Poll for updates every 30 seconds
@@ -461,7 +471,7 @@ const MainHub: React.FC = () => {
       }, 30000);
       return () => clearInterval(interval);
     }
-  }, [user, employeeInfo]);
+  }, [user]);
 
   // Company-side portals only
   const portals: Portal[] = [
