@@ -350,20 +350,36 @@ const MainHub: React.FC = () => {
         p_user_id: user.id
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('RPC error fetching clock status:', error);
+        throw error;
+      }
       
+      console.log('Clock status response:', data);
+      
+      // The function always returns one row (even if clocked out)
       if (data && data.length > 0) {
         const status = data[0];
-        setClockStatus({
-          isClockedIn: status.is_clocked_in,
+        // Ensure boolean is properly parsed (handle string "true"/"false" or boolean)
+        const isClockedIn = status.is_clocked_in === true || status.is_clocked_in === 'true' || status.is_clocked_in === 1;
+        
+        console.log('Parsed clock status:', {
+          raw: status.is_clocked_in,
+          parsed: isClockedIn,
           clockInAt: status.clock_in_at,
-          hoursToday: parseFloat(status.total_hours_today) || 0,
-          weeklyHours: parseFloat(status.weekly_hours) || 0,
           currentEntryId: status.current_entry_id
         });
         
+        setClockStatus({
+          isClockedIn: isClockedIn,
+          clockInAt: status.clock_in_at || null,
+          hoursToday: parseFloat(status.total_hours_today) || 0,
+          weeklyHours: parseFloat(status.weekly_hours) || 0,
+          currentEntryId: status.current_entry_id || null
+        });
+        
         // Update current duration if clocked in
-        if (status.is_clocked_in && status.clock_in_at) {
+        if (isClockedIn && status.clock_in_at) {
           const duration = calculateDuration(status.clock_in_at, new Date());
           setCurrentDuration(duration);
         } else {
@@ -371,6 +387,7 @@ const MainHub: React.FC = () => {
         }
       } else {
         // No status found - user is clocked out
+        console.log('No clock status data returned, defaulting to clocked out');
         setClockStatus({
           isClockedIn: false,
           clockInAt: null,
@@ -382,6 +399,14 @@ const MainHub: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching clock status:', error);
+      // On error, default to clocked out
+      setClockStatus({
+        isClockedIn: false,
+        clockInAt: null,
+        hoursToday: 0,
+        weeklyHours: 0,
+        currentEntryId: null
+      });
     }
   };
 
