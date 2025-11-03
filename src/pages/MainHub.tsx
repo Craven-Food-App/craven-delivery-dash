@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, Row, Col, Button, Input, Modal, Form, message, Typography, Space, Spin, Avatar, Layout, Table, Tag } from "antd";
+import { Card, Row, Col, Button, Input, Modal, Form, message, Typography, Space, Spin, Avatar, Layout, Table, Tag, Tooltip } from "antd";
 import {
   DashboardOutlined,
   BarChartOutlined,
@@ -21,6 +21,7 @@ import {
 import { ConfigProvider } from "antd";
 import { cravenDriverTheme } from "@/config/antd-theme";
 import cravenLogo from "@/assets/craven-logo.png";
+import { usePermission } from '@/hooks/usePermission';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -921,6 +922,30 @@ const MainHub: React.FC = () => {
     },
   ];
 
+  // Permission flags (used to gray out tiles but keep visible)
+  const canAdmin = usePermission('admin.view');
+  const canMarketing = usePermission('marketing.view');
+  const canBoard = usePermission('board.view');
+  const canCEO = usePermission('ceo.view');
+  const canCFO = usePermission('finance.view');
+  const canCOO = usePermission('coo.view');
+  const canCTO = usePermission('cto.view');
+  const canHR = usePermission('hr.view');
+
+  const isPortalAllowed = (id: string): boolean => {
+    switch (id) {
+      case 'admin': return canAdmin;
+      case 'marketing': return canMarketing;
+      case 'board': return canBoard || canCEO; // CEOs can access board
+      case 'ceo': return canCEO;
+      case 'cfo': return canCFO;
+      case 'coo': return canCOO;
+      case 'cto': return canCTO;
+      case 'hr': return canHR;
+      default: return true;
+    }
+  };
+
   // Permission gates for portal visibility
   // Show all portals (permissions temporarily disabled at hub level)
 
@@ -1347,6 +1372,7 @@ const MainHub: React.FC = () => {
           {/* Portal Grid - Corporate Style */}
           <Row gutter={[32, 32]}>
             {portals.map((portal) => {
+              const allowed = isPortalAllowed(portal.id);
               const Icon = portal.icon;
               return (
                 <Col xs={24} sm={12} lg={8} xl={6} key={portal.id}>
@@ -1355,18 +1381,27 @@ const MainHub: React.FC = () => {
                     style={{
                       height: "100%",
                       borderRadius: 8,
-                      cursor: "pointer",
+                      cursor: allowed ? "pointer" : "not-allowed",
                       transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                       border: "1px solid #e5e7eb",
                       boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                       background: "#ffffff",
+                      opacity: allowed ? 1 : 0.5,
                     }}
-                    onClick={() => navigate(portal.path)}
+                    onClick={() => {
+                      if (allowed) {
+                        navigate(portal.path);
+                      } else {
+                        message.warning('Access denied for this portal');
+                      }
+                    }}
                     bodyStyle={{ padding: 28 }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.borderColor = portal.color;
+                      if (allowed) {
+                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.borderColor = portal.color;
+                      }
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
@@ -1415,33 +1450,42 @@ const MainHub: React.FC = () => {
                         {portal.description}
                       </Text>
                       <div>
-                        <Button
-                          type="primary"
-                          style={{
-                            background: portal.color,
-                            borderColor: portal.color,
-                            width: "100%",
-                            height: 42,
-                            fontWeight: 500,
-                            fontSize: 14,
-                            borderRadius: 6,
-                            boxShadow: `0 2px 4px ${portal.color}30`,
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = portal.color;
-                            e.currentTarget.style.borderColor = portal.color;
-                            e.currentTarget.style.opacity = "0.9";
-                            e.currentTarget.style.transform = "scale(1.02)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = portal.color;
-                            e.currentTarget.style.borderColor = portal.color;
-                            e.currentTarget.style.opacity = "1";
-                            e.currentTarget.style.transform = "scale(1)";
-                          }}
-                        >
-                          Access Portal →
-                        </Button>
+                        <Tooltip title={allowed ? '' : 'No access'}>
+                          <Button
+                            type="primary"
+                            style={{
+                              background: portal.color,
+                              borderColor: portal.color,
+                              width: "100%",
+                              height: 42,
+                              fontWeight: 500,
+                              fontSize: 14,
+                              borderRadius: 6,
+                              boxShadow: `0 2px 4px ${portal.color}30`,
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = portal.color;
+                              e.currentTarget.style.borderColor = portal.color;
+                              if (allowed) {
+                                e.currentTarget.style.opacity = "0.9";
+                                e.currentTarget.style.transform = "scale(1.02)";
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = portal.color;
+                              e.currentTarget.style.borderColor = portal.color;
+                              e.currentTarget.style.opacity = "1";
+                              e.currentTarget.style.transform = "scale(1)";
+                            }}
+                            onClick={(ev) => {
+                              ev.stopPropagation();
+                              if (allowed) navigate(portal.path);
+                            }}
+                            disabled={!allowed}
+                          >
+                            {allowed ? 'Access Portal →' : 'No Access'}
+                          </Button>
+                        </Tooltip>
                       </div>
                     </div>
                   </Card>
