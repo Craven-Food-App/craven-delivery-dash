@@ -27,7 +27,7 @@ export const useExecAuth = (requiredRole?: 'ceo' | 'board_member' | 'cfo' | 'coo
           setUser(null);
           setExecUser(null);
           setIsAuthorized(false);
-          // Redirect to hub login page (never main website)
+          // Redirect to hub login page
           const currentHost = window.location.hostname;
           const isHQ = currentHost === 'hq.cravenusa.com' || 
                        currentHost === 'localhost' || 
@@ -39,11 +39,11 @@ export const useExecAuth = (requiredRole?: 'ceo' | 'board_member' | 'cfo' | 'coo
                        currentHost.includes('cto.cravenusa.com');
           
           if (!isHQ && currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-            // Production: redirect to HQ subdomain auth
-            window.location.href = 'https://hq.cravenusa.com/auth';
+            // Production: redirect to HQ subdomain hub
+            window.location.href = 'https://hq.cravenusa.com/hub';
           } else {
-            // Development or already on HQ: use local routing with hq=true
-            navigate('/auth?hq=true');
+            // Development or already on HQ: use local routing
+            navigate('/hub');
           }
         } else if (event === 'SIGNED_IN' && session?.user) {
           checkAuth();
@@ -62,7 +62,7 @@ export const useExecAuth = (requiredRole?: 'ceo' | 'board_member' | 'cfo' | 'coo
       if (userError || !user) {
         setIsAuthorized(false);
         setLoading(false);
-        // Redirect to hub login page (never main website)
+        // Redirect to hub login page
         const currentHost = window.location.hostname;
         const isHQ = currentHost === 'hq.cravenusa.com' || 
                      currentHost === 'localhost' || 
@@ -74,11 +74,11 @@ export const useExecAuth = (requiredRole?: 'ceo' | 'board_member' | 'cfo' | 'coo
                      currentHost.includes('cto.cravenusa.com');
         
         if (!isHQ && currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-          // Production: redirect to HQ subdomain auth
-          window.location.href = 'https://hq.cravenusa.com/auth';
+          // Production: redirect to HQ subdomain hub
+          window.location.href = 'https://hq.cravenusa.com/hub';
         } else {
-          // Development or already on HQ: use local routing with hq=true
-          navigate('/auth?hq=true');
+          // Development or already on HQ: use local routing
+          navigate('/hub');
         }
         return;
       }
@@ -143,11 +143,11 @@ export const useExecAuth = (requiredRole?: 'ceo' | 'board_member' | 'cfo' | 'coo
                  currentHost.includes('cto.cravenusa.com');
     
     if (!isHQ && currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-      // Production: redirect to HQ subdomain auth
-      window.location.href = 'https://hq.cravenusa.com/auth';
+      // Production: redirect to HQ subdomain hub
+      window.location.href = 'https://hq.cravenusa.com/hub';
     } else {
-      // Development or already on HQ: use local routing with hq=true
-      navigate('/auth?hq=true');
+      // Development or already on HQ: use local routing
+      navigate('/hub');
     }
   };
 

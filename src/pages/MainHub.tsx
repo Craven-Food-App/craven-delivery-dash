@@ -80,13 +80,13 @@ const MainHub: React.FC = () => {
         
         if (currentHost === 'hq.cravenusa.com') {
           // Production HQ subdomain: use direct auth route
-          window.location.href = '/auth?redirect=/hub';
+          window.location.href = '/hub';
         } else if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
           // Development: use local routing with hq=true to trigger BusinessAuth
-          window.location.href = '/auth?hq=true&redirect=/hub';
+          window.location.href = '/hub';
         } else {
           // Production main website: redirect to HQ subdomain
-          window.location.href = 'https://hq.cravenusa.com/auth?redirect=/hub';
+          window.location.href = 'https://hq.cravenusa.com/hub';
         }
         return;
       }
