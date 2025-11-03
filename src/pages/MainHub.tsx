@@ -438,9 +438,18 @@ const MainHub: React.FC = () => {
       if (error) throw error;
       
       message.success('Clocked out successfully');
+      // Force immediate status refresh
       await fetchClockStatus();
       await fetchTimeEntries();
       setCurrentDuration('00:00:00');
+      // Also update state immediately for instant UI feedback
+      setClockStatus(prev => ({
+        isClockedIn: false,
+        clockInAt: null,
+        hoursToday: prev?.hoursToday || 0,
+        weeklyHours: prev?.weeklyHours || 0,
+        currentEntryId: null
+      }));
     } catch (error: any) {
       message.error(error.message || 'Failed to clock out');
     } finally {
@@ -702,8 +711,8 @@ const MainHub: React.FC = () => {
             </Text>
           </div>
 
-          {/* Time Clock Section - Only show when employee is verified */}
-          {employeeInfo && (
+          {/* Time Clock Section - Show when user is logged in */}
+          {user && (
             <Card
               style={{
                 marginBottom: 48,
