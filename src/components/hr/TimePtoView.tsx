@@ -1,7 +1,8 @@
 // @ts-nocheck
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CalendarClock, Plus } from 'lucide-react';
-import { Card, Table, Tag, Button, Space } from 'antd';
+import { Card, Table, Tag, Button, Space, message } from 'antd';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PtoRequest {
   id: number;
@@ -12,20 +13,156 @@ interface PtoRequest {
   days: number;
 }
 
-const mockTimeData = {
-  weeklyHours: 35.5,
-  status: 'Clocked In',
-  lastAction: '2025-11-02 08:00 AM',
-  ptoBalance: 15, // Days
-};
-
 const mockPtoRequests: PtoRequest[] = [
   { id: 1, employee: 'Alice Johnson', dates: '2025-12-24 to 2025-12-26', type: 'Vacation', status: 'Pending', days: 3 },
   { id: 2, employee: 'Bob Smith', dates: '2025-11-15', type: 'Sick Day', status: 'Approved', days: 1 },
   { id: 3, employee: 'Charlie Brown', dates: '2025-12-01', type: 'Personal', status: 'Pending', days: 1 },
 ];
 
+// Format time helper
+const formatTime = (date: Date | string): string => {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  });
+};
+
 const TimePtoView: React.FC = () => {
+  const [clockStatus, setClockStatus] = useState<{
+    status: 'Clocked In' | 'Clocked Out';
+    lastAction: string;
+    weeklyHours: number;
+    hoursToday: number;
+    clockInAt: string | null;
+  }>({
+    status: 'Clocked Out',
+    lastAction: 'N/A',
+    weeklyHours: 0,
+    hoursToday: 0,
+    clockInAt: null,
+  });
+  const [loading, setLoading] = useState(true);
+  const [clockLoading, setClockLoading] = useState(false);
+
+  // Fetch clock data
+  useEffect(() => {
+    fetchClockData();
+    // Poll for updates every 30 seconds
+    const interval = setInterval(() => {
+      fetchClockData();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchClockData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      
+      const { data: employee } = await supabase
+        .from('employees')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+        
+      if (!employee) {
+        setLoading(false);
+        return;
+      }
+      
+      const { data: status, error } = await supabase.rpc('get_employee_clock_status', {
+        p_employee_id: employee.id
+      });
+      
+      if (error) {
+        console.error('Error fetching clock status:', error);
+        setLoading(false);
+        return;
+      }
+      
+      if (status && status.length > 0) {
+        const s = status[0];
+        setClockStatus({
+          status: s.is_clocked_in ? 'Clocked In' : 'Clocked Out',
+          lastAction: s.clock_in_at 
+            ? `${new Date(s.clock_in_at).toLocaleDateString()} ${formatTime(s.clock_in_at)}`
+            : 'N/A',
+          weeklyHours: parseFloat(s.weekly_hours) || 0,
+          hoursToday: parseFloat(s.total_hours_today) || 0,
+          clockInAt: s.clock_in_at,
+        });
+      }
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching clock data:', error);
+      setLoading(false);
+    }
+  };
+
+  const handleClockAction = async () => {
+    setClockLoading(true);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setClockLoading(false);
+        return;
+      }
+      
+      const { data: employee } = await supabase
+        .from('employees')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+        
+      if (!employee) {
+        setClockLoading(false);
+        return;
+      }
+      
+      if (clockStatus.status === 'Clocked In') {
+        // Clock out
+        const { error } = await supabase.rpc('clock_out', {
+          p_employee_id: employee.id,
+          p_break_duration_minutes: 0
+        });
+        
+        if (error) {
+          message.error('Failed to clock out: ' + error.message);
+          setClockLoading(false);
+          return;
+        }
+        message.success('Clocked out successfully');
+      } else {
+        // Clock in
+        const { error } = await supabase.rpc('clock_in', {
+          p_employee_id: employee.id,
+          p_work_location: null
+        });
+        
+        if (error) {
+          message.error('Failed to clock in: ' + error.message);
+          setClockLoading(false);
+          return;
+        }
+        message.success('Clocked in successfully');
+      }
+      
+      await fetchClockData();
+      setClockLoading(false);
+    } catch (error: any) {
+      message.error('Failed to perform clock action: ' + error.message);
+      setClockLoading(false);
+    }
+  };
+
   const pendingRequests = mockPtoRequests.filter(r => r.status === 'Pending');
 
   const getStatusStyle = (status: PtoRequest['status']) => {
@@ -93,7 +230,7 @@ const TimePtoView: React.FC = () => {
         <Card
           style={{
             gridColumn: 'span 2',
-            background: mockTimeData.status === 'Clocked In' 
+            background: clockStatus.status === 'Clocked In' 
               ? 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)'
               : 'linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%)',
             color: '#fff',
@@ -126,20 +263,20 @@ const TimePtoView: React.FC = () => {
               textShadow: '0 2px 8px rgba(0,0,0,0.2)',
               lineHeight: 1,
             }}>
-              {mockTimeData.status.toUpperCase()}
+              {clockStatus.status.toUpperCase()}
             </div>
             <div style={{
               fontSize: '18px',
               opacity: 0.95,
               fontWeight: 500,
             }}>
-              {mockTimeData.status === 'Clocked In' ? 'You are currently working' : 'You are currently off'}
+              {clockStatus.status === 'Clocked In' ? 'You are currently working' : 'You are currently off'}
             </div>
           </div>
 
           <div style={{ marginBottom: '16px' }}>
             <p style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px', textAlign: 'center' }}>
-              Last action: {mockTimeData.lastAction}
+              Last action: {clockStatus.lastAction}
             </p>
           </div>
 
@@ -147,9 +284,12 @@ const TimePtoView: React.FC = () => {
             type="primary"
             block
             size="large"
+            loading={clockLoading}
+            onClick={handleClockAction}
+            disabled={clockLoading || loading}
             style={{
               background: '#fff',
-              color: mockTimeData.status === 'Clocked In' ? '#ff4d4f' : '#52c41a',
+              color: clockStatus.status === 'Clocked In' ? '#ff4d4f' : '#52c41a',
               border: 'none',
               fontWeight: 800,
               fontSize: '24px',
@@ -159,7 +299,7 @@ const TimePtoView: React.FC = () => {
               letterSpacing: '1px',
             }}
           >
-            {mockTimeData.status === 'Clocked In' ? 'CLOCK OUT' : 'CLOCK IN'}
+            {clockStatus.status === 'Clocked In' ? 'CLOCK OUT' : 'CLOCK IN'}
           </Button>
         </Card>
 
@@ -168,26 +308,19 @@ const TimePtoView: React.FC = () => {
             Hours This Week
           </h3>
           <p style={{ fontSize: '28px', fontWeight: 700, color: '#000', margin: 0 }}>
-            {mockTimeData.weeklyHours}
+            {loading ? '...' : clockStatus.weeklyHours.toFixed(1)}
           </p>
           <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>Target: 40.0</p>
         </Card>
 
         <Card>
           <h3 style={{ fontSize: '12px', fontWeight: 500, color: '#666', margin: 0, marginBottom: '8px' }}>
-            PTO Balance
+            Hours Today
           </h3>
           <p style={{ fontSize: '28px', fontWeight: 700, color: '#1890ff', margin: 0 }}>
-            {mockTimeData.ptoBalance} Days
+            {loading ? '...' : clockStatus.hoursToday.toFixed(1)}
           </p>
-          <Button
-            type="link"
-            size="small"
-            icon={<Plus style={{ width: '12px', height: '12px' }} />}
-            style={{ padding: 0, marginTop: '8px', color: '#ff7a45' }}
-          >
-            Request Time Off
-          </Button>
+          <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>Paid hours</p>
         </Card>
       </div>
 

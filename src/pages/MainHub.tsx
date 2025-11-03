@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, Row, Col, Button, Input, Modal, Form, message, Typography, Space, Spin, Avatar, Layout } from "antd";
+import { Card, Row, Col, Button, Input, Modal, Form, message, Typography, Space, Spin, Avatar, Layout, Table, Tag } from "antd";
 import {
   DashboardOutlined,
   BarChartOutlined,
@@ -14,6 +14,9 @@ import {
   LogoutOutlined,
   LockOutlined,
   FileTextOutlined,
+  ClockCircleOutlined,
+  LoginOutlined,
+  HistoryOutlined,
 } from "@ant-design/icons";
 import { ConfigProvider } from "antd";
 import { cravenDriverTheme } from "@/config/antd-theme";
@@ -48,6 +51,20 @@ const MainHub: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [pinModalVisible, setPinModalVisible] = useState(false);
   const [pinLoading, setPinLoading] = useState(false);
+  
+  // Time clock state
+  const [clockStatus, setClockStatus] = useState<{
+    isClockedIn: boolean;
+    clockInAt: string | null;
+    hoursToday: number;
+    weeklyHours: number;
+    currentEntryId: string | null;
+  } | null>(null);
+  const [clockLoading, setClockLoading] = useState(false);
+  const [showClockHistory, setShowClockHistory] = useState(false);
+  const [timeEntries, setTimeEntries] = useState<any[]>([]);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentDuration, setCurrentDuration] = useState('00:00:00');
 
   // CEO Master PIN - Torrance Stroman
   const CEO_MASTER_PIN = "999999";
@@ -246,6 +263,164 @@ const MainHub: React.FC = () => {
     // Always redirect to business auth with hq=true parameter
     window.location.href = '/auth?hq=true';
   };
+
+  // Time clock utility functions
+  const formatTime = (date: Date | string): string => {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
+  };
+
+  const formatDate = (date: Date | string): string => {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const calculateDuration = (start: Date | string, end: Date | string): string => {
+    const startDate = typeof start === 'string' ? new Date(start) : start;
+    const endDate = typeof end === 'string' ? new Date(end) : end;
+    const diffMs = endDate.getTime() - startDate.getTime();
+    const seconds = Math.floor(diffMs / 1000);
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
+  };
+
+  // Fetch clock status
+  const fetchClockStatus = async () => {
+    if (!employeeInfo) return;
+    
+    try {
+      const { data, error } = await supabase.rpc('get_employee_clock_status', {
+        p_employee_id: employeeInfo.id
+      });
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        const status = data[0];
+        setClockStatus({
+          isClockedIn: status.is_clocked_in,
+          clockInAt: status.clock_in_at,
+          hoursToday: parseFloat(status.total_hours_today) || 0,
+          weeklyHours: parseFloat(status.weekly_hours) || 0,
+          currentEntryId: status.current_entry_id
+        });
+        
+        // Update current duration if clocked in
+        if (status.is_clocked_in && status.clock_in_at) {
+          const duration = calculateDuration(status.clock_in_at, new Date());
+          setCurrentDuration(duration);
+        } else {
+          setCurrentDuration('00:00:00');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching clock status:', error);
+    }
+  };
+
+  // Fetch time entries history
+  const fetchTimeEntries = async () => {
+    if (!employeeInfo) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('time_entries')
+        .select('*')
+        .eq('employee_id', employeeInfo.id)
+        .order('clock_in_at', { ascending: false })
+        .limit(20);
+      
+      if (error) throw error;
+      if (data) setTimeEntries(data);
+    } catch (error) {
+      console.error('Error fetching time entries:', error);
+    }
+  };
+
+  // Clock in handler
+  const handleClockIn = async () => {
+    if (!employeeInfo) return;
+    setClockLoading(true);
+    
+    try {
+      const { data, error } = await supabase.rpc('clock_in', {
+        p_employee_id: employeeInfo.id,
+        p_work_location: null
+      });
+      
+      if (error) throw error;
+      
+      message.success('Clocked in successfully');
+      await fetchClockStatus();
+      await fetchTimeEntries();
+    } catch (error: any) {
+      message.error(error.message || 'Failed to clock in');
+    } finally {
+      setClockLoading(false);
+    }
+  };
+
+  // Clock out handler
+  const handleClockOut = async () => {
+    if (!employeeInfo) return;
+    setClockLoading(true);
+    
+    try {
+      const { data, error } = await supabase.rpc('clock_out', {
+        p_employee_id: employeeInfo.id,
+        p_break_duration_minutes: 0
+      });
+      
+      if (error) throw error;
+      
+      message.success('Clocked out successfully');
+      await fetchClockStatus();
+      await fetchTimeEntries();
+      setCurrentDuration('00:00:00');
+    } catch (error: any) {
+      message.error(error.message || 'Failed to clock out');
+    } finally {
+      setClockLoading(false);
+    }
+  };
+
+  // Real-time clock ticker
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+      if (clockStatus?.isClockedIn && clockStatus.clockInAt) {
+        const duration = calculateDuration(clockStatus.clockInAt, new Date());
+        setCurrentDuration(duration);
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [clockStatus]);
+
+  // Fetch clock status when employee info is available
+  useEffect(() => {
+    if (employeeInfo) {
+      fetchClockStatus();
+      fetchTimeEntries();
+      // Poll for updates every 30 seconds
+      const interval = setInterval(() => {
+        fetchClockStatus();
+      }, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [employeeInfo]);
 
   // Company-side portals only
   const portals: Portal[] = [
@@ -475,6 +650,228 @@ const MainHub: React.FC = () => {
               Access your department portal or administrative dashboard
             </Text>
           </div>
+
+          {/* Time Clock Section - Only show when employee is verified */}
+          {employeeInfo && (
+            <Card
+              style={{
+                marginBottom: 48,
+                background: clockStatus?.isClockedIn
+                  ? 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)'
+                  : 'linear-gradient(135deg, #ff7875 0%, #ff4d4f 100%)',
+                border: 'none',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              }}
+              bodyStyle={{ padding: 32 }}
+            >
+              <Row gutter={[24, 24]} align="middle">
+                {/* Clock Display Section */}
+                <Col xs={24} lg={12}>
+                  <div style={{ textAlign: 'center', color: '#fff' }}>
+                    <ClockCircleOutlined style={{ fontSize: 64, marginBottom: 16, opacity: 0.9 }} />
+                    
+                    {/* Current Time */}
+                    <div style={{ fontSize: 56, fontWeight: 900, marginBottom: 8, letterSpacing: 2 }}>
+                      {formatTime(currentTime).split(' ')[0]}
+                      <span style={{ fontSize: 24, fontWeight: 300, marginLeft: 8, opacity: 0.9 }}>
+                        {formatTime(currentTime).split(' ')[1]}
+                      </span>
+                    </div>
+                    
+                    {/* Current Date */}
+                    <div style={{ fontSize: 16, opacity: 0.9, marginBottom: 24 }}>
+                      {formatDate(currentTime)}
+                    </div>
+                    
+                    {/* Status Badge */}
+                    <div style={{
+                      display: 'inline-block',
+                      padding: '8px 24px',
+                      borderRadius: 20,
+                      background: 'rgba(255,255,255,0.25)',
+                      marginBottom: 24,
+                      fontWeight: 700,
+                      fontSize: 14,
+                      letterSpacing: 2,
+                    }}>
+                      {clockStatus?.isClockedIn ? (
+                        <span><LogoutOutlined style={{ marginRight: 8 }} />CLOCKED IN</span>
+                      ) : (
+                        <span><LoginOutlined style={{ marginRight: 8 }} />CLOCKED OUT</span>
+                      )}
+                    </div>
+                    
+                    {/* Active Session Duration */}
+                    {clockStatus?.isClockedIn && clockStatus.clockInAt && (
+                      <div style={{
+                        padding: 16,
+                        background: 'rgba(255,255,255,0.2)',
+                        borderRadius: 12,
+                        marginBottom: 24,
+                      }}>
+                        <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 4 }}>
+                          SESSION DURATION
+                        </div>
+                        <div style={{ fontSize: 32, fontWeight: 700, fontFamily: 'monospace' }}>
+                          {currentDuration}
+                        </div>
+                        <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
+                          Since: {formatTime(clockStatus.clockInAt)}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Clock In/Out Buttons */}
+                    <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                      <Button
+                        type="primary"
+                        size="large"
+                        icon={clockStatus?.isClockedIn ? <LogoutOutlined /> : <LoginOutlined />}
+                        loading={clockLoading}
+                        onClick={clockStatus?.isClockedIn ? handleClockOut : handleClockIn}
+                        disabled={clockLoading}
+                        block
+                        style={{
+                          background: '#fff',
+                          color: clockStatus?.isClockedIn ? '#ff4d4f' : '#52c41a',
+                          border: 'none',
+                          height: 56,
+                          fontSize: 18,
+                          fontWeight: 700,
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                        }}
+                      >
+                        {clockStatus?.isClockedIn ? 'CLOCK OUT' : 'CLOCK IN'}
+                      </Button>
+                      
+                      <Button
+                        type="default"
+                        icon={<HistoryOutlined />}
+                        onClick={() => {
+                          setShowClockHistory(!showClockHistory);
+                          if (!showClockHistory) fetchTimeEntries();
+                        }}
+                        style={{
+                          background: 'rgba(255,255,255,0.2)',
+                          border: '1px solid rgba(255,255,255,0.3)',
+                          color: '#fff',
+                        }}
+                      >
+                        {showClockHistory ? 'Hide' : 'Show'} History ({timeEntries.length})
+                      </Button>
+                    </Space>
+                  </div>
+                </Col>
+                
+                {/* Stats Section */}
+                <Col xs={24} lg={12}>
+                  <Row gutter={[16, 16]}>
+                    <Col span={12}>
+                      <Card 
+                        size="small" 
+                        style={{ 
+                          background: 'rgba(255,255,255,0.2)', 
+                          border: '1px solid rgba(255,255,255,0.3)',
+                          textAlign: 'center'
+                        }}
+                        bodyStyle={{ padding: 20 }}
+                      >
+                        <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 8, color: '#fff' }}>
+                          HOURS TODAY
+                        </div>
+                        <div style={{ fontSize: 36, fontWeight: 700, color: '#fff' }}>
+                          {clockStatus?.hoursToday.toFixed(1) || '0.0'}
+                        </div>
+                      </Card>
+                    </Col>
+                    <Col span={12}>
+                      <Card 
+                        size="small" 
+                        style={{ 
+                          background: 'rgba(255,255,255,0.2)', 
+                          border: '1px solid rgba(255,255,255,0.3)',
+                          textAlign: 'center'
+                        }}
+                        bodyStyle={{ padding: 20 }}
+                      >
+                        <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 8, color: '#fff' }}>
+                          HOURS THIS WEEK
+                        </div>
+                        <div style={{ fontSize: 36, fontWeight: 700, color: '#fff' }}>
+                          {clockStatus?.weeklyHours.toFixed(1) || '0.0'}
+                        </div>
+                      </Card>
+                    </Col>
+                  </Row>
+                </Col>
+              </Row>
+              
+              {/* History Table */}
+              {showClockHistory && (
+                <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+                  <Card
+                    style={{
+                      background: 'rgba(255,255,255,0.95)',
+                      border: 'none',
+                    }}
+                  >
+                    <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Title level={4} style={{ margin: 0, display: 'flex', alignItems: 'center' }}>
+                        <HistoryOutlined style={{ marginRight: 8, color: '#ff7a45' }} />
+                        Recent Time Entries
+                      </Title>
+                    </div>
+                    
+                    {timeEntries.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>
+                        No time entries recorded yet.
+                      </div>
+                    ) : (
+                      <Table
+                        dataSource={timeEntries}
+                        rowKey="id"
+                        pagination={{ pageSize: 10 }}
+                        columns={[
+                          {
+                            title: 'Clock In',
+                            dataIndex: 'clock_in_at',
+                            key: 'clock_in',
+                            render: (date: string) => (
+                              <span>
+                                {formatDate(date)} at {formatTime(date)}
+                              </span>
+                            ),
+                          },
+                          {
+                            title: 'Clock Out',
+                            dataIndex: 'clock_out_at',
+                            key: 'clock_out',
+                            render: (date: string | null) => date ? formatTime(date) : 'N/A',
+                          },
+                          {
+                            title: 'Duration',
+                            dataIndex: 'total_hours',
+                            key: 'duration',
+                            render: (hours: number) => hours ? `${hours.toFixed(2)} hrs` : 'N/A',
+                          },
+                          {
+                            title: 'Status',
+                            dataIndex: 'status',
+                            key: 'status',
+                            render: (status: string) => (
+                              <Tag color={status === 'clocked_out' ? 'green' : status === 'clocked_in' ? 'blue' : 'orange'}>
+                                {status === 'clocked_out' ? 'Completed' : status === 'clocked_in' ? 'Active' : 'On Break'}
+                              </Tag>
+                            ),
+                          },
+                        ]}
+                      />
+                    )}
+                  </Card>
+                </div>
+              )}
+            </Card>
+          )}
 
           {/* Portal Grid - Corporate Style */}
           <Row gutter={[32, 32]}>
