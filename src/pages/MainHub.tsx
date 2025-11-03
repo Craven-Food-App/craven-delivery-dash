@@ -79,6 +79,9 @@ const MainHub: React.FC = () => {
   const [ssnVerifying, setSsnVerifying] = useState(false);
   const [pendingClockAction, setPendingClockAction] = useState<'in' | 'out' | null>(null);
   
+  // Flash effect state
+  const [flashColor, setFlashColor] = useState<string | null>(null);
+  
   // Load persisted clock status from localStorage on mount
   useEffect(() => {
     if (user) {
@@ -618,9 +621,14 @@ const MainHub: React.FC = () => {
       setSsnInput('');
       setSsnVerifying(false);
       
+      // Flash effect
       if (pendingClockAction === 'in') {
+        setFlashColor('green');
+        setTimeout(() => setFlashColor(null), 500);
         await performClockIn();
       } else if (pendingClockAction === 'out') {
+        setFlashColor('red');
+        setTimeout(() => setFlashColor(null), 500);
         await performClockOut();
       }
       
@@ -1091,18 +1099,21 @@ const MainHub: React.FC = () => {
             <Card
               style={{
                 marginBottom: 48,
-                background: clockStatus.isClockedIn
+                background: flashColor === 'green' 
                   ? 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)'
-                  : 'linear-gradient(135deg, #ff7875 0%, #ff4d4f 100%)',
-                border: 'none',
+                  : flashColor === 'red'
+                  ? 'linear-gradient(135deg, #ff7875 0%, #ff4d4f 100%)'
+                  : '#ffffff',
+                border: '1px solid #e5e7eb',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                transition: 'background 0.3s ease',
               }}
               bodyStyle={{ padding: 32 }}
             >
               <Row gutter={[24, 24]} align="middle">
                 {/* Clock Display Section */}
                 <Col xs={24} lg={12}>
-                  <div style={{ textAlign: 'center', color: '#fff' }}>
+                  <div style={{ textAlign: 'center', color: flashColor ? '#fff' : '#111827' }}>
                     <ClockCircleOutlined style={{ fontSize: 64, marginBottom: 16, opacity: 0.9 }} />
                     
                     {/* Current Time */}
@@ -1123,11 +1134,13 @@ const MainHub: React.FC = () => {
                       display: 'inline-block',
                       padding: '8px 24px',
                       borderRadius: 20,
-                      background: 'rgba(255,255,255,0.25)',
+                      background: flashColor ? 'rgba(255,255,255,0.25)' : '#f3f4f6',
                       marginBottom: 24,
                       fontWeight: 700,
                       fontSize: 14,
                       letterSpacing: 2,
+                      color: flashColor ? '#fff' : '#111827',
+                      border: flashColor ? 'none' : '1px solid #e5e7eb',
                     }}>
                       {clockStatus.isClockedIn ? (
                         <span><LogoutOutlined style={{ marginRight: 8 }} />CLOCKED IN</span>
@@ -1140,35 +1153,36 @@ const MainHub: React.FC = () => {
                     {clockStatus.isClockedIn && clockStatus.clockInAt && (
                       <div style={{
                         padding: 16,
-                        background: 'rgba(255,255,255,0.2)',
+                        background: flashColor ? 'rgba(255,255,255,0.2)' : '#f9fafb',
                         borderRadius: 12,
                         marginBottom: 24,
+                        border: flashColor ? 'none' : '1px solid #e5e7eb',
                       }}>
-                        <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 4 }}>
+                        <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 4, color: flashColor ? '#fff' : '#6b7280' }}>
                           SESSION DURATION
                         </div>
-                        <div style={{ fontSize: 32, fontWeight: 700, fontFamily: 'monospace' }}>
+                        <div style={{ fontSize: 32, fontWeight: 700, fontFamily: 'monospace', color: flashColor ? '#fff' : '#111827' }}>
                           {currentDuration}
                         </div>
-                        <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
+                        <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4, color: flashColor ? '#fff' : '#6b7280' }}>
                           Since: {formatTime(clockStatus.clockInAt)}
                         </div>
                       </div>
                     )}
                     
-                    {/* Clock In/Out Buttons */}
+                    {/* Clock In/Out Buttons - Always Show Both */}
                     <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                       <Button
                         type="primary"
                         size="large"
-                        icon={clockStatus.isClockedIn ? <LogoutOutlined /> : <LoginOutlined />}
-                        loading={clockLoading}
-                        onClick={clockStatus.isClockedIn ? handleClockOut : handleClockIn}
-                        disabled={clockLoading}
+                        icon={<LoginOutlined />}
+                        loading={clockLoading && pendingClockAction === 'in'}
+                        onClick={handleClockIn}
+                        disabled={clockLoading || clockStatus.isClockedIn}
                         block
                         style={{
-                          background: '#fff',
-                          color: clockStatus.isClockedIn ? '#ff4d4f' : '#52c41a',
+                          background: clockStatus.isClockedIn ? '#d1d5db' : '#52c41a',
+                          color: '#fff',
                           border: 'none',
                           height: 56,
                           fontSize: 18,
@@ -1176,7 +1190,28 @@ const MainHub: React.FC = () => {
                           boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
                         }}
                       >
-                        {clockStatus.isClockedIn ? 'CLOCK OUT' : 'CLOCK IN'}
+                        CLOCK IN
+                      </Button>
+                      
+                      <Button
+                        type="primary"
+                        size="large"
+                        icon={<LogoutOutlined />}
+                        loading={clockLoading && pendingClockAction === 'out'}
+                        onClick={handleClockOut}
+                        disabled={clockLoading || !clockStatus.isClockedIn}
+                        block
+                        style={{
+                          background: !clockStatus.isClockedIn ? '#d1d5db' : '#ff4d4f',
+                          color: '#fff',
+                          border: 'none',
+                          height: 56,
+                          fontSize: 18,
+                          fontWeight: 700,
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                        }}
+                      >
+                        CLOCK OUT
                       </Button>
                       
                       <Button
@@ -1187,9 +1222,9 @@ const MainHub: React.FC = () => {
                           if (!showClockHistory) fetchTimeEntries();
                         }}
                         style={{
-                          background: 'rgba(255,255,255,0.2)',
-                          border: '1px solid rgba(255,255,255,0.3)',
-                          color: '#fff',
+                          background: flashColor ? 'rgba(255,255,255,0.2)' : '#ffffff',
+                          border: flashColor ? '1px solid rgba(255,255,255,0.3)' : '1px solid #e5e7eb',
+                          color: flashColor ? '#fff' : '#111827',
                         }}
                       >
                         {showClockHistory ? 'Hide' : 'Show'} History ({timeEntries.length})
@@ -1205,16 +1240,16 @@ const MainHub: React.FC = () => {
                       <Card 
                         size="small" 
                         style={{ 
-                          background: 'rgba(255,255,255,0.2)', 
-                          border: '1px solid rgba(255,255,255,0.3)',
+                          background: flashColor ? 'rgba(255,255,255,0.2)' : '#ffffff', 
+                          border: flashColor ? '1px solid rgba(255,255,255,0.3)' : '1px solid #e5e7eb',
                           textAlign: 'center'
                         }}
                         bodyStyle={{ padding: 20 }}
                       >
-                        <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 8, color: '#fff' }}>
+                        <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 8, color: flashColor ? '#fff' : '#6b7280' }}>
                           HOURS TODAY
                         </div>
-                        <div style={{ fontSize: 36, fontWeight: 700, color: '#fff' }}>
+                        <div style={{ fontSize: 36, fontWeight: 700, color: flashColor ? '#fff' : '#111827' }}>
                           {clockStatus.hoursToday.toFixed(1)}
                         </div>
                       </Card>
@@ -1223,16 +1258,16 @@ const MainHub: React.FC = () => {
                       <Card 
                         size="small" 
                         style={{ 
-                          background: 'rgba(255,255,255,0.2)', 
-                          border: '1px solid rgba(255,255,255,0.3)',
+                          background: flashColor ? 'rgba(255,255,255,0.2)' : '#ffffff', 
+                          border: flashColor ? '1px solid rgba(255,255,255,0.3)' : '1px solid #e5e7eb',
                           textAlign: 'center'
                         }}
                         bodyStyle={{ padding: 20 }}
                       >
-                        <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 8, color: '#fff' }}>
+                        <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 8, color: flashColor ? '#fff' : '#6b7280' }}>
                           HOURS THIS WEEK
                         </div>
-                        <div style={{ fontSize: 36, fontWeight: 700, color: '#fff' }}>
+                        <div style={{ fontSize: 36, fontWeight: 700, color: flashColor ? '#fff' : '#111827' }}>
                           {clockStatus.weeklyHours.toFixed(1)}
                         </div>
                       </Card>
