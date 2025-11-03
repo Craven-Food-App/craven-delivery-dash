@@ -357,14 +357,17 @@ const MainHub: React.FC = () => {
       
       if (error) throw error;
       if (data) {
-        // Fetch exec user names if needed
+        // Fetch names for entries
         const entriesWithNames = await Promise.all(
           data.map(async (entry: any) => {
-            let name = 'Unknown';
-            if (entry.employees) {
+            let name = employeeInfo?.full_name || 'Unknown';
+            
+            // If entry has employee data, use it
+            if (entry.employees && entry.employees.first_name) {
               name = `${entry.employees.first_name} ${entry.employees.last_name}`;
-            } else if (entry.exec_users) {
-              // Fetch exec user name from user_profiles
+            } 
+            // If entry has exec_user data, fetch name
+            else if (entry.exec_users) {
               const { data: profile } = await supabase
                 .from('user_profiles')
                 .select('full_name, email')
@@ -374,10 +377,9 @@ const MainHub: React.FC = () => {
                 name = profile.full_name;
               } else if (profile?.email) {
                 name = profile.email;
-              } else {
-                name = 'Executive User';
               }
             }
+            
             return { ...entry, display_name: name };
           })
         );
