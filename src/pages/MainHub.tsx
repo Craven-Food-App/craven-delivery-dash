@@ -263,11 +263,49 @@ const MainHub: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    sessionStorage.removeItem("hub_employee_info");
-    await supabase.auth.signOut();
-    message.success('Signed out successfully');
-    // Always redirect to business auth with hq=true parameter
-    window.location.href = '/auth?hq=true';
+    try {
+      // Clear all local storage related to auth
+      sessionStorage.removeItem("hub_employee_info");
+      localStorage.removeItem("hub_employee_info");
+      
+      // Clear all Supabase auth keys from localStorage
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // Clear from sessionStorage
+      Object.keys(sessionStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      
+      // Sign out from Supabase (global scope to invalidate all sessions)
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      message.success('Signed out successfully');
+      
+      // Force redirect to business auth with hq=true parameter
+      setTimeout(() => {
+        const currentHost = window.location.hostname;
+        if (currentHost === 'hq.cravenusa.com' || currentHost.includes('hq.')) {
+          window.location.href = 'https://hq.cravenusa.com/auth?hq=true';
+        } else {
+          window.location.href = '/auth?hq=true';
+        }
+      }, 500);
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force redirect even if signOut fails
+      const currentHost = window.location.hostname;
+      if (currentHost === 'hq.cravenusa.com' || currentHost.includes('hq.')) {
+        window.location.href = 'https://hq.cravenusa.com/auth?hq=true';
+      } else {
+        window.location.href = '/auth?hq=true';
+      }
+    }
   };
 
   // Time clock utility functions
