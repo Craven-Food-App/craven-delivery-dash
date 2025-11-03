@@ -2,9 +2,13 @@
 -- Run this ENTIRE file in Supabase SQL Editor to create everything at once
 
 -- ============================================
--- STEP 1: Create time_entries table
+-- STEP 1: Drop existing table and recreate with new schema
 -- ============================================
-CREATE TABLE IF NOT EXISTS public.time_entries (
+-- Drop existing table if it exists (this will delete all data!)
+DROP TABLE IF EXISTS public.time_entries CASCADE;
+
+-- Create time_entries table with new schema
+CREATE TABLE public.time_entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   -- Support both employees and executives - use user_id as primary identifier
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
