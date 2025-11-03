@@ -25,13 +25,15 @@ interface ClockedInEmployee {
 
 interface Employee {
   id: string;
-  employee_number: string;
+  employee_number?: string;
   first_name: string;
   last_name: string;
   email: string;
   department?: string;
   position?: string;
   ssn_last4?: string | null;
+  user_id?: string | null;
+  is_executive?: boolean;
 }
 
 const mockPtoRequests: PtoRequest[] = [
@@ -84,19 +86,97 @@ const TimePtoView: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch all employees for SSN management
+  // Fetch all employees for SSN management (includes C-suite)
   const fetchEmployees = async () => {
     setEmployeesLoading(true);
     try {
-      const { data, error } = await supabase
+      // Fetch regular employees
+      const { data: regularEmployees, error: employeesError } = await supabase
         .from('employees')
-        .select('id, employee_number, first_name, last_name, email, department, position, ssn_last4')
+        .select('id, employee_number, first_name, last_name, email, department, position, ssn_last4, user_id')
+        .eq('employment_status', 'active')
         .order('last_name', { ascending: true });
 
-      if (error) throw error;
-      if (data) {
-        setEmployees(data as Employee[]);
+      if (employeesError) throw employeesError;
+
+      // Fetch C-suite executives
+      const { data: executives, error: execError } = await supabase
+        .from('exec_users')
+        .select('id, user_id, role, title, department, name, email')
+        .not('user_id', 'is', null);
+
+      if (execError) {
+        console.error('Error fetching executives:', execError);
+        // Continue with just regular employees if exec fetch fails
       }
+
+      // Combine both lists
+      const allEmployees: Employee[] = [];
+
+      // Add regular employees
+      if (regularEmployees) {
+        regularEmployees.forEach((emp: any) => {
+          allEmployees.push({
+            id: emp.id,
+            employee_number: emp.employee_number,
+            first_name: emp.first_name,
+            last_name: emp.last_name,
+            email: emp.email,
+            department: emp.department,
+            position: emp.position,
+            ssn_last4: emp.ssn_last4,
+            user_id: emp.user_id,
+            is_executive: false,
+          });
+        });
+      }
+
+      // Add C-suite executives
+      if (executives) {
+        // For each executive, check if they have employee record, if not add them
+        for (const exec of executives) {
+          // Check if this executive already exists as an employee
+          const existsAsEmployee = regularEmployees?.some(
+            (emp: any) => emp.user_id === exec.user_id
+          );
+
+          if (!existsAsEmployee && exec.user_id && exec.name) {
+            // Parse name into first and last
+            const nameParts = exec.name.trim().split(' ');
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+
+            // Try to find employee number from employees table by user_id
+            let employeeNumber = '';
+            if (exec.user_id) {
+              const { data: empData } = await supabase
+                .from('employees')
+                .select('employee_number')
+                .eq('user_id', exec.user_id)
+                .single();
+              employeeNumber = empData?.employee_number || '';
+            }
+
+            allEmployees.push({
+              id: exec.id,
+              employee_number: employeeNumber,
+              first_name: firstName,
+              last_name: lastName,
+              email: exec.email || '',
+              department: exec.department || 'Executive',
+              position: exec.title || exec.role.toUpperCase(),
+              ssn_last4: null, // Executives might not have this set initially
+              user_id: exec.user_id,
+              is_executive: true,
+            });
+          }
+        }
+      }
+
+      // Sort by last name
+      allEmployees.sort((a, b) => a.last_name.localeCompare(b.last_name));
+
+      setEmployees(allEmployees);
     } catch (error: any) {
       console.error('Error fetching employees:', error);
       message.error('Failed to load employees');
@@ -118,7 +198,7 @@ const TimePtoView: React.FC = () => {
   };
 
   // Save SSN last 4
-  const handleSaveSsn = async (employeeId: string) => {
+  const handleSaveSsn = async (employee: Employee) => {
     if (!ssnValue || ssnValue.length !== 4) {
       message.error('Please enter exactly 4 digits');
       return;
@@ -131,12 +211,74 @@ const TimePtoView: React.FC = () => {
 
     setSavingSsn(true);
     try {
-      const { error } = await supabase
-        .from('employees')
-        .update({ ssn_last4: ssnValue })
-        .eq('id', employeeId);
+      if (employee.is_executive) {
+        // For executives, we need to find or create their employee record
+        if (!employee.user_id) {
+          message.error('Cannot save SSN for executive without user_id');
+          return;
+        }
 
-      if (error) throw error;
+        // Check if executive has an employee record
+        const { data: existingEmp } = await supabase
+          .from('employees')
+          .select('id')
+          .eq('user_id', employee.user_id)
+          .single();
+
+        if (existingEmp) {
+          // Update existing employee record
+          const { error } = await supabase
+            .from('employees')
+            .update({ ssn_last4: ssnValue })
+            .eq('id', existingEmp.id);
+
+          if (error) throw error;
+        } else {
+          // Create employee record for executive
+          const { data: execData } = await supabase
+            .from('exec_users')
+            .select('name, email, role, title')
+            .eq('id', employee.id)
+            .single();
+
+          if (!execData) {
+            throw new Error('Executive record not found');
+          }
+
+          const nameParts = execData.name?.trim().split(' ') || [];
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+
+          // Generate employee number if needed
+          const employeeNumber = employee.employee_number || `EMP${String(Date.now()).slice(-5)}`;
+
+          const { error } = await supabase
+            .from('employees')
+            .insert({
+              user_id: employee.user_id,
+              employee_number: employeeNumber,
+              first_name: firstName,
+              last_name: lastName,
+              email: execData.email || employee.email,
+              position: execData.title || execData.role.toUpperCase(),
+              department: 'Executive',
+              employment_type: 'full-time',
+              employment_status: 'active',
+              ssn_last4: ssnValue,
+              hire_date: new Date().toISOString().split('T')[0],
+            });
+
+          if (error) throw error;
+        }
+      } else {
+        // Regular employee update
+        const { error } = await supabase
+          .from('employees')
+          .update({ ssn_last4: ssnValue })
+          .eq('id', employee.id);
+
+        if (error) throw error;
+      }
 
       message.success('SSN last 4 digits saved successfully');
       setEditingSsn(null);
@@ -466,7 +608,7 @@ const TimePtoView: React.FC = () => {
                         type="primary"
                         icon={<Save />}
                         size="small"
-                        onClick={() => handleSaveSsn(record.id)}
+                        onClick={() => handleSaveSsn(record)}
                         loading={savingSsn}
                       >
                         Save
