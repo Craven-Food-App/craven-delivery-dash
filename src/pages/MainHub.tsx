@@ -559,14 +559,28 @@ const MainHub: React.FC = () => {
         }
       }
       
-      setClockStatus({
+      const newClockInStatus = {
         isClockedIn: true,
         clockInAt: actualClockInAt,
         hoursToday: 0, // Will be updated by fetchClockStatus
         weeklyHours: 0, // Will be updated by fetchClockStatus
         currentEntryId: data || null
-      });
+      };
+      setClockStatus(newClockInStatus);
+      setStatusLoaded(true);
       setCurrentDuration('00:00:00'); // Reset duration counter
+      
+      // Persist to localStorage immediately
+      if (user) {
+        try {
+          localStorage.setItem(`clock_status_${user.id}`, JSON.stringify({
+            ...newClockInStatus,
+            timestamp: Date.now(),
+          }));
+        } catch (err) {
+          console.log('Could not save clock in to localStorage:', err);
+        }
+      }
       
       // Fetch entries immediately
       await fetchTimeEntries();
@@ -930,8 +944,8 @@ const MainHub: React.FC = () => {
             </Text>
           </div>
 
-          {/* Time Clock Section - Show when user is logged in */}
-          {user && (
+          {/* Time Clock Section - Show when user is logged in and status is loaded */}
+          {user && statusLoaded && (
             <Card
               style={{
                 marginBottom: 48,
