@@ -729,9 +729,10 @@ const MainHub: React.FC = () => {
   // Fetch clock status when user is available
   // CRITICAL: Only fetch status from database, never reset state
   useEffect(() => {
-    if (user) {
-      // Fetch immediately to get accurate database state
-      console.log('User available, fetching clock status from database...', user.id);
+    if (user && statusLoaded) {
+      // Only fetch from database AFTER localStorage has been checked
+      // This ensures we don't override the persisted state
+      console.log('Status loaded, fetching clock status from database for sync...', user.id);
       fetchClockStatus();
       fetchTimeEntries();
       // Poll for updates every 30 seconds (only to sync, never to reset)
@@ -739,8 +740,11 @@ const MainHub: React.FC = () => {
         fetchClockStatus();
       }, 30000);
       return () => clearInterval(interval);
+    } else if (user && !statusLoaded) {
+      // If status not loaded yet, just fetch entries (don't fetch status until localStorage loads)
+      fetchTimeEntries();
     }
-  }, [user]);
+  }, [user, statusLoaded]);
 
   // Company-side portals only
   const portals: Portal[] = [
