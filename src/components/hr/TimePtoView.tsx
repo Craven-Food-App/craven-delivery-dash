@@ -97,38 +97,15 @@ const TimePtoView: React.FC = () => {
         .eq('employment_status', 'active')
         .order('last_name', { ascending: true });
 
-      if (employeesError) throw employeesError;
-
-      // Fetch C-suite executives with user profile data
-      const { data: executives, error: execError } = await supabase
-        .from('exec_users')
-        .select('id, user_id, role, title, department')
-        .not('user_id', 'is', null);
-
-      if (execError) {
-        console.error('Error fetching executives:', execError);
-        // Continue with just regular employees if exec fetch fails
-      }
-
-      // Fetch user profiles for executives to get names and emails
-      const execUserIds = executives?.map(e => e.user_id).filter(Boolean) || [];
-      const { data: userProfiles } = execUserIds.length > 0 ? await supabase
-        .from('user_profiles')
-        .select('user_id, full_name, email')
-        .in('user_id', execUserIds) : { data: null };
-
-      // Create a map of user_id to profile data
-      const profileMap = new Map();
-      if (userProfiles) {
-        userProfiles.forEach((profile: any) => {
-          profileMap.set(profile.user_id, profile);
-        });
+      if (employeesError) {
+        console.error('Error fetching regular employees:', employeesError);
+        throw employeesError;
       }
 
       // Combine both lists
       const allEmployees: Employee[] = [];
 
-      // Add regular employees
+      // Add regular employees first
       if (regularEmployees) {
         regularEmployees.forEach((emp: any) => {
           allEmployees.push({
@@ -146,73 +123,103 @@ const TimePtoView: React.FC = () => {
         });
       }
 
-      // Add C-suite executives
-      if (executives && executives.length > 0) {
-        console.log('Found executives:', executives.length);
-        for (const exec of executives) {
-          if (!exec.user_id) continue;
+      // Try to fetch C-suite executives (if this fails, we still have regular employees)
+      try {
+        // Fetch C-suite executives with user profile data
+        const { data: executives, error: execError } = await supabase
+          .from('exec_users')
+          .select('id, user_id, role, title, department')
+          .not('user_id', 'is', null);
 
-          // Check if this executive already exists as an employee
-          const existsAsEmployee = regularEmployees?.some(
-            (emp: any) => emp.user_id === exec.user_id
-          );
+        if (execError) {
+          console.warn('Error fetching executives (non-critical):', execError);
+        } else if (executives && executives.length > 0) {
+          // Fetch user profiles for executives to get names and emails
+          const execUserIds = executives.map(e => e.user_id).filter(Boolean) as string[];
+          
+          if (execUserIds.length > 0) {
+            const { data: userProfiles, error: profileError } = await supabase
+              .from('user_profiles')
+              .select('user_id, full_name, email')
+              .in('user_id', execUserIds);
 
-          // Get profile data
-          const profile = profileMap.get(exec.user_id);
-          const fullName = profile?.full_name || '';
-          const email = profile?.email || '';
+            if (profileError) {
+              console.warn('Error fetching user profiles (non-critical):', profileError);
+            } else {
+              // Create a map of user_id to profile data
+              const profileMap = new Map();
+              if (userProfiles) {
+                userProfiles.forEach((profile: any) => {
+                  profileMap.set(profile.user_id, profile);
+                });
+              }
 
-          // Only add if they don't exist as employee and we have a name
-          if (!existsAsEmployee && fullName) {
-            // Parse name into first and last
-            const nameParts = fullName.trim().split(' ');
-            const firstName = nameParts[0] || '';
-            const lastName = nameParts.slice(1).join(' ') || '';
+              // Add C-suite executives
+              for (const exec of executives) {
+                if (!exec.user_id) continue;
 
-            // Try to find employee number from employees table by user_id or email
-            let employeeNumber = '';
-            if (exec.user_id) {
-              const { data: empData } = await supabase
-                .from('employees')
-                .select('employee_number')
-                .eq('user_id', exec.user_id)
-                .maybeSingle();
-              employeeNumber = empData?.employee_number || '';
+                // Check if this executive already exists as an employee
+                const existsAsEmployee = regularEmployees?.some(
+                  (emp: any) => emp.user_id === exec.user_id
+                );
+
+                // Get profile data
+                const profile = profileMap.get(exec.user_id);
+                const fullName = profile?.full_name || '';
+                const email = profile?.email || '';
+
+                // Only add if they don't exist as employee and we have a name
+                if (!existsAsEmployee && fullName) {
+                  // Parse name into first and last
+                  const nameParts = fullName.trim().split(' ');
+                  const firstName = nameParts[0] || '';
+                  const lastName = nameParts.slice(1).join(' ') || '';
+
+                  // Try to find employee number from employees table by user_id or email
+                  let employeeNumber = '';
+                  try {
+                    if (exec.user_id) {
+                      const { data: empData } = await supabase
+                        .from('employees')
+                        .select('employee_number')
+                        .eq('user_id', exec.user_id)
+                        .maybeSingle();
+                      employeeNumber = empData?.employee_number || '';
+                    }
+
+                    // If no employee number found, try by email
+                    if (!employeeNumber && email) {
+                      const { data: empDataByEmail } = await supabase
+                        .from('employees')
+                        .select('employee_number')
+                        .eq('email', email)
+                        .maybeSingle();
+                      employeeNumber = empDataByEmail?.employee_number || '';
+                    }
+                  } catch (empNumError) {
+                    console.warn('Error fetching employee number for executive:', empNumError);
+                  }
+
+                  allEmployees.push({
+                    id: exec.id,
+                    employee_number: employeeNumber,
+                    first_name: firstName,
+                    last_name: lastName,
+                    email: email,
+                    department: exec.department || 'Executive',
+                    position: exec.title || exec.role.toUpperCase(),
+                    ssn_last4: null, // Executives might not have this set initially
+                    user_id: exec.user_id,
+                    is_executive: true,
+                  });
+                }
+              }
             }
-
-            // If no employee number found, try by email
-            if (!employeeNumber && email) {
-              const { data: empDataByEmail } = await supabase
-                .from('employees')
-                .select('employee_number')
-                .eq('email', email)
-                .maybeSingle();
-              employeeNumber = empDataByEmail?.employee_number || '';
-            }
-
-            console.log('Adding executive:', { firstName, lastName, email, role: exec.role });
-
-            allEmployees.push({
-              id: exec.id,
-              employee_number: employeeNumber,
-              first_name: firstName,
-              last_name: lastName,
-              email: email,
-              department: exec.department || 'Executive',
-              position: exec.title || exec.role.toUpperCase(),
-              ssn_last4: null, // Executives might not have this set initially
-              user_id: exec.user_id,
-              is_executive: true,
-            });
-          } else if (existsAsEmployee) {
-            console.log('Executive already exists as employee, skipping:', exec.user_id);
           }
+        } catch (execFetchError) {
+          console.warn('Error processing executives (non-critical, continuing with regular employees):', execFetchError);
+          // Continue with just regular employees if executive fetch/processing fails
         }
-      } else {
-        console.log('No executives found or exec_users query failed');
-      }
-
-      console.log('Total employees after combining:', allEmployees.length);
 
       // Sort by last name
       allEmployees.sort((a, b) => a.last_name.localeCompare(b.last_name));
