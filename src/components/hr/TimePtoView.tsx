@@ -90,11 +90,10 @@ const TimePtoView: React.FC = () => {
   const fetchEmployees = async () => {
     setEmployeesLoading(true);
     try {
-      // Fetch regular employees
+      // Fetch ALL employees (no status filter)
       const { data: regularEmployees, error: employeesError } = await supabase
         .from('employees')
-        .select('id, employee_number, first_name, last_name, email, department, position, ssn_last4, user_id')
-        .eq('employment_status', 'active')
+        .select('id, employee_number, first_name, last_name, email, department, position, ssn_last4, user_id, employment_status')
         .order('last_name', { ascending: true });
 
       if (employeesError) {
@@ -125,11 +124,10 @@ const TimePtoView: React.FC = () => {
 
       // Try to fetch C-suite executives (if this fails, we still have regular employees)
       try {
-        // Fetch C-suite executives with user profile data
+        // Fetch ALL C-suite executives (no user_id filter)
         const { data: executives, error: execError } = await supabase
           .from('exec_users')
-          .select('id, user_id, role, title, department')
-          .not('user_id', 'is', null);
+          .select('id, user_id, role, title, department');
 
         if (execError) {
           console.warn('Error fetching executives (non-critical):', execError);
@@ -137,84 +135,91 @@ const TimePtoView: React.FC = () => {
           // Fetch user profiles for executives to get names and emails
           const execUserIds = executives.map(e => e.user_id).filter(Boolean) as string[];
           
+          // Fetch user profiles for executives that have user_id
+          const execUserIds = executives.filter(e => e.user_id).map(e => e.user_id as string);
+          let profileMap = new Map();
+          
           if (execUserIds.length > 0) {
             const { data: userProfiles, error: profileError } = await supabase
               .from('user_profiles')
               .select('user_id, full_name, email')
               .in('user_id', execUserIds);
 
-            if (profileError) {
-              console.warn('Error fetching user profiles (non-critical):', profileError);
-            } else {
-              // Create a map of user_id to profile data
-              const profileMap = new Map();
-              if (userProfiles) {
-                userProfiles.forEach((profile: any) => {
-                  profileMap.set(profile.user_id, profile);
-                });
-              }
-
-              // Add C-suite executives
-              for (const exec of executives) {
-                if (!exec.user_id) continue;
-
-                // Check if this executive already exists as an employee
-                const existsAsEmployee = regularEmployees?.some(
-                  (emp: any) => emp.user_id === exec.user_id
-                );
-
-                // Get profile data
-                const profile = profileMap.get(exec.user_id);
-                const fullName = profile?.full_name || '';
-                const email = profile?.email || '';
-
-                // Only add if they don't exist as employee and we have a name
-                if (!existsAsEmployee && fullName) {
-                  // Parse name into first and last
-                  const nameParts = fullName.trim().split(' ');
-                  const firstName = nameParts[0] || '';
-                  const lastName = nameParts.slice(1).join(' ') || '';
-
-                  // Try to find employee number from employees table by user_id or email
-                  let employeeNumber = '';
-                  try {
-                    if (exec.user_id) {
-                      const { data: empData } = await supabase
-                        .from('employees')
-                        .select('employee_number')
-                        .eq('user_id', exec.user_id)
-                        .maybeSingle();
-                      employeeNumber = empData?.employee_number || '';
-                    }
-
-                    // If no employee number found, try by email
-                    if (!employeeNumber && email) {
-                      const { data: empDataByEmail } = await supabase
-                        .from('employees')
-                        .select('employee_number')
-                        .eq('email', email)
-                        .maybeSingle();
-                      employeeNumber = empDataByEmail?.employee_number || '';
-                    }
-                  } catch (empNumError) {
-                    console.warn('Error fetching employee number for executive:', empNumError);
-                  }
-
-                  allEmployees.push({
-                    id: exec.id,
-                    employee_number: employeeNumber,
-                    first_name: firstName,
-                    last_name: lastName,
-                    email: email,
-                    department: exec.department || 'Executive',
-                    position: exec.title || exec.role.toUpperCase(),
-                    ssn_last4: null, // Executives might not have this set initially
-                    user_id: exec.user_id,
-                    is_executive: true,
-                  });
-                }
-              }
+            if (!profileError && userProfiles) {
+              userProfiles.forEach((profile: any) => {
+                profileMap.set(profile.user_id, profile);
+              });
             }
+          }
+
+          // Add ALL C-suite executives (no restrictions)
+          for (const exec of executives) {
+            // Get profile data if available
+            const profile = exec.user_id ? profileMap.get(exec.user_id) : null;
+            const fullName = profile?.full_name || '';
+            const email = profile?.email || '';
+
+            // Use name from profile, or parse from title/role, or use email
+            let firstName = '';
+            let lastName = '';
+            
+            if (fullName) {
+              const nameParts = fullName.trim().split(' ');
+              firstName = nameParts[0] || '';
+              lastName = nameParts.slice(1).join(' ') || '';
+            } else if (exec.title) {
+              // Try to parse name from title (e.g., "Torrance Stroman" from "CEO")
+              const titleParts = exec.title.trim().split(' ');
+              if (titleParts.length >= 2) {
+                firstName = titleParts[0];
+                lastName = titleParts.slice(1).join(' ');
+              } else {
+                firstName = exec.title;
+                lastName = exec.role.toUpperCase();
+              }
+            } else {
+              firstName = exec.role.toUpperCase();
+              lastName = '';
+            }
+
+            // Try to find employee number
+            let employeeNumber = '';
+            try {
+              if (exec.user_id) {
+                const { data: empData } = await supabase
+                  .from('employees')
+                  .select('employee_number')
+                  .eq('user_id', exec.user_id)
+                  .maybeSingle();
+                employeeNumber = empData?.employee_number || '';
+              }
+
+              // If no employee number found, try by email
+              if (!employeeNumber && email) {
+                const { data: empDataByEmail } = await supabase
+                  .from('employees')
+                  .select('employee_number')
+                  .eq('email', email)
+                  .maybeSingle();
+                employeeNumber = empDataByEmail?.employee_number || '';
+              }
+            } catch (empNumError) {
+              console.warn('Error fetching employee number for executive:', empNumError);
+            }
+
+            // Always add executive (no restrictions)
+            allEmployees.push({
+              id: exec.id,
+              employee_number: employeeNumber,
+              first_name: firstName,
+              last_name: lastName,
+              email: email,
+              department: exec.department || 'Executive',
+              position: exec.title || exec.role.toUpperCase(),
+              ssn_last4: null,
+              user_id: exec.user_id,
+              is_executive: true,
+            });
           }
         }
       } catch (execFetchError) {
