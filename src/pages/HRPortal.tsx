@@ -20,11 +20,9 @@ import {
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { PersonnelManager } from '@/components/ceo/PersonnelManager';
+import PersonnelManagementView from '@/components/hr/PersonnelManagementView';
 import { AuditTrail } from '@/components/ceo/AuditTrail';
-import DocumentGenerator from '@/components/hr/DocumentGenerator';
-import DocumentPreview from '@/components/hr/DocumentPreview';
-import SignaturePad from '@/components/hr/SignaturePad';
+import DocumentGeneratorView from '@/components/hr/DocumentGeneratorView';
 import DocumentDashboard from '@/components/hr/DocumentDashboard';
 import PerformanceManagement from '@/components/hr/PerformanceManagement';
 import CompensationView from '@/components/hr/CompensationView';
@@ -250,7 +248,6 @@ const HRPortal: React.FC = () => {
   const navigate = useNavigate();
   const { loading, user, execUser, isAuthorized, signOut } = useExecAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [generated, setGenerated] = useState<any>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   if (loading) {
@@ -530,22 +527,7 @@ const HRPortal: React.FC = () => {
             }
             key="documents"
           >
-            <DocumentGenerator onGenerated={(payload) => setGenerated(payload)} />
-            {generated && (
-              <>
-                <Divider />
-                <DocumentPreview html={generated.htmlPreview} fileUrl={generated.file_url} />
-                <Divider />
-                <SignaturePad
-                  documentId={generated.document.id}
-                  originalData={generated.data || generated.document}
-                  onSigned={(url) => {
-                    message.success(`Signed PDF saved: ${url}`);
-                    setGenerated((prev: any) => ({ ...prev, signed_file_url: url }));
-                  }}
-                />
-              </>
-            )}
+            <DocumentGeneratorView />
           </TabPane>
 
           <TabPane
@@ -569,7 +551,7 @@ const HRPortal: React.FC = () => {
             }
             key="personnel"
           >
-            <PersonnelManager />
+            <PersonnelManagementView />
           </TabPane>
 
           <TabPane

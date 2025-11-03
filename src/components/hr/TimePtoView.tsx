@@ -93,28 +93,55 @@ const TimePtoView: React.FC = () => {
         <Card
           style={{
             gridColumn: 'span 2',
-            background: 'linear-gradient(135deg, #ff7a45 0%, #ff9d6e 100%)',
+            background: mockTimeData.status === 'Clocked In' 
+              ? 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)'
+              : 'linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%)',
             color: '#fff',
             border: 'none',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
+            minHeight: '300px',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <CalendarClock style={{ width: '32px', height: '32px', marginBottom: '8px' }} />
-            <Tag
-              color={mockTimeData.status === 'Clocked In' ? 'success' : 'error'}
-              style={{ color: '#fff', borderColor: '#fff' }}
-            >
-              {mockTimeData.status}
-            </Tag>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+            <CalendarClock style={{ width: '32px', height: '32px' }} />
           </div>
           
-          <h3 style={{ fontSize: '20px', fontWeight: 700, margin: '8px 0' }}>Time Clock</h3>
-          <p style={{ fontSize: '14px', opacity: 0.9, marginBottom: '16px' }}>
-            Last action: {mockTimeData.lastAction}
-          </p>
+          {/* Large Status Indicator */}
+          <div style={{ 
+            flex: 1, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            textAlign: 'center',
+            margin: '24px 0',
+          }}>
+            <div style={{
+              fontSize: '72px',
+              fontWeight: 900,
+              letterSpacing: '4px',
+              marginBottom: '16px',
+              textShadow: '0 2px 8px rgba(0,0,0,0.2)',
+              lineHeight: 1,
+            }}>
+              {mockTimeData.status.toUpperCase()}
+            </div>
+            <div style={{
+              fontSize: '18px',
+              opacity: 0.95,
+              fontWeight: 500,
+            }}>
+              {mockTimeData.status === 'Clocked In' ? 'You are currently working' : 'You are currently off'}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <p style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px', textAlign: 'center' }}>
+              Last action: {mockTimeData.lastAction}
+            </p>
+          </div>
 
           <Button
             type="primary"
@@ -122,9 +149,14 @@ const TimePtoView: React.FC = () => {
             size="large"
             style={{
               background: '#fff',
-              color: '#ff7a45',
+              color: mockTimeData.status === 'Clocked In' ? '#ff4d4f' : '#52c41a',
               border: 'none',
-              fontWeight: 700,
+              fontWeight: 800,
+              fontSize: '24px',
+              height: '64px',
+              padding: '0 24px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              letterSpacing: '1px',
             }}
           >
             {mockTimeData.status === 'Clocked In' ? 'CLOCK OUT' : 'CLOCK IN'}
