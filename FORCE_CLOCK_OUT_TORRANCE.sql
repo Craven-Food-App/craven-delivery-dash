@@ -61,17 +61,18 @@ SELECT
   te.status,
   CASE 
     WHEN e.id IS NOT NULL THEN e.first_name || ' ' || e.last_name
-    WHEN eu.id IS NOT NULL THEN eu.first_name || ' ' || eu.last_name
+    WHEN up.id IS NOT NULL THEN up.full_name
+    WHEN u.email IS NOT NULL THEN u.email
     ELSE 'Unknown'
   END AS user_name
 FROM public.time_entries te
+LEFT JOIN auth.users u ON te.user_id = u.id
 LEFT JOIN public.employees e ON te.employee_id = e.id
 LEFT JOIN public.exec_users eu ON te.exec_user_id = eu.id
-WHERE te.user_id = (
-  SELECT id FROM auth.users 
-  WHERE email = 'crave@usa.com' 
-     OR email = 'torrance.stroman@cravenusa.com'
-  LIMIT 1
+LEFT JOIN public.user_profiles up ON te.user_id = up.user_id
+WHERE (
+  te.user_id = (SELECT id FROM auth.users WHERE email = 'crave@usa.com' LIMIT 1)
+  OR te.user_id = (SELECT id FROM auth.users WHERE email = 'torrance.stroman@cravenusa.com' LIMIT 1)
 )
 ORDER BY te.clock_in_at DESC
 LIMIT 5;

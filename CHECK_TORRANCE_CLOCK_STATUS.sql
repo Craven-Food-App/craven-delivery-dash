@@ -12,7 +12,8 @@ SELECT
   te.total_hours,
   CASE 
     WHEN e.id IS NOT NULL THEN e.first_name || ' ' || e.last_name || ' (Employee)'
-    WHEN eu.id IS NOT NULL THEN eu.first_name || ' ' || eu.last_name || ' (Executive)'
+    WHEN up.id IS NOT NULL THEN up.full_name || ' (Executive)'
+    WHEN u.email IS NOT NULL THEN u.email || ' (User)'
     ELSE 'Unknown User'
   END AS user_name,
   te.created_at,
@@ -21,11 +22,12 @@ FROM public.time_entries te
 LEFT JOIN auth.users u ON te.user_id = u.id
 LEFT JOIN public.employees e ON te.employee_id = e.id
 LEFT JOIN public.exec_users eu ON te.exec_user_id = eu.id
+LEFT JOIN public.user_profiles up ON te.user_id = up.user_id
 WHERE (
   u.email = 'crave@usa.com'
   OR u.email = 'torrance.stroman@cravenusa.com'
   OR u.email ILIKE '%torrance%stroman%'
-  OR (eu.first_name ILIKE '%Torrance%' AND eu.last_name ILIKE '%Stroman%')
+  OR u.email ILIKE '%crave@usa%'
   OR (e.first_name ILIKE '%Torrance%' AND e.last_name ILIKE '%Stroman%')
 )
 ORDER BY te.clock_in_at DESC

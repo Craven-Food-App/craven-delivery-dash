@@ -11,13 +11,15 @@ SELECT
   te.status,
   CASE 
     WHEN e.id IS NOT NULL THEN e.first_name || ' ' || e.last_name
-    WHEN eu.id IS NOT NULL THEN eu.first_name || ' ' || eu.last_name
+    WHEN up.id IS NOT NULL THEN up.full_name
+    WHEN u.email IS NOT NULL THEN u.email
     ELSE 'Unknown'
   END AS user_name
 FROM public.time_entries te
 LEFT JOIN auth.users u ON te.user_id = u.id
 LEFT JOIN public.employees e ON te.employee_id = e.id
 LEFT JOIN public.exec_users eu ON te.exec_user_id = eu.id
+LEFT JOIN public.user_profiles up ON te.user_id = up.user_id
 WHERE te.status = 'clocked_in'
   AND te.clock_out_at IS NULL
 ORDER BY te.clock_in_at DESC;
@@ -38,7 +40,7 @@ WHERE id IN (
     u.email = 'crave@usa.com'
     OR u.email = 'torrance.stroman@cravenusa.com'
     OR u.email ILIKE '%torrance%stroman%'
-    OR (eu.first_name ILIKE '%Torrance%' AND eu.last_name ILIKE '%Stroman%')
+    OR u.email ILIKE '%crave@usa%'
   )
   AND te.status = 'clocked_in'
   AND te.clock_out_at IS NULL
@@ -54,13 +56,15 @@ SELECT
   te.status,
   CASE 
     WHEN e.id IS NOT NULL THEN e.first_name || ' ' || e.last_name
-    WHEN eu.id IS NOT NULL THEN eu.first_name || ' ' || eu.last_name
+    WHEN up.id IS NOT NULL THEN up.full_name
+    WHEN u.email IS NOT NULL THEN u.email
     ELSE 'Unknown'
   END AS user_name
 FROM public.time_entries te
 LEFT JOIN auth.users u ON te.user_id = u.id
 LEFT JOIN public.employees e ON te.employee_id = e.id
 LEFT JOIN public.exec_users eu ON te.exec_user_id = eu.id
+LEFT JOIN public.user_profiles up ON te.user_id = up.user_id
 WHERE (
   u.email = 'crave@usa.com'
   OR u.email = 'torrance.stroman@cravenusa.com'
