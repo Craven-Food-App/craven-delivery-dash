@@ -341,7 +341,7 @@ const MainHub: React.FC = () => {
     return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
   };
 
-  // Fetch clock status
+  // Fetch clock status - ALWAYS trust the database, never auto-reset
   const fetchClockStatus = async () => {
     if (!user) return;
     
@@ -352,7 +352,9 @@ const MainHub: React.FC = () => {
       
       if (error) {
         console.error('RPC error fetching clock status:', error);
-        throw error;
+        // DON'T reset state on error - keep existing state and retry
+        // Only log the error, don't change state
+        return;
       }
       
       console.log('Clock status response:', data);
@@ -363,13 +365,14 @@ const MainHub: React.FC = () => {
         // Ensure boolean is properly parsed (handle string "true"/"false" or boolean)
         const isClockedIn = status.is_clocked_in === true || status.is_clocked_in === 'true' || status.is_clocked_in === 1;
         
-        console.log('Parsed clock status:', {
+        console.log('Parsed clock status from database:', {
           raw: status.is_clocked_in,
           parsed: isClockedIn,
           clockInAt: status.clock_in_at,
           currentEntryId: status.current_entry_id
         });
         
+        // ALWAYS update with database state - this is the source of truth
         setClockStatus({
           isClockedIn: isClockedIn,
           clockInAt: status.clock_in_at || null,
@@ -377,6 +380,7 @@ const MainHub: React.FC = () => {
           weeklyHours: parseFloat(status.weekly_hours) || 0,
           currentEntryId: status.current_entry_id || null
         });
+        setStatusLoaded(true);
         
         // Update current duration if clocked in
         if (isClockedIn && status.clock_in_at) {
@@ -386,8 +390,8 @@ const MainHub: React.FC = () => {
           setCurrentDuration('00:00:00');
         }
       } else {
-        // No status found - user is clocked out
-        console.log('No clock status data returned, defaulting to clocked out');
+        // No status found - database explicitly says user is clocked out
+        console.log('Database confirms: user is clocked out');
         setClockStatus({
           isClockedIn: false,
           clockInAt: null,
@@ -395,18 +399,14 @@ const MainHub: React.FC = () => {
           weeklyHours: 0,
           currentEntryId: null
         });
+        setStatusLoaded(true);
         setCurrentDuration('00:00:00');
       }
     } catch (error) {
       console.error('Error fetching clock status:', error);
-      // On error, default to clocked out
-      setClockStatus({
-        isClockedIn: false,
-        clockInAt: null,
-        hoursToday: 0,
-        weeklyHours: 0,
-        currentEntryId: null
-      });
+      // CRITICAL: Do NOT change state on error - preserve existing state
+      // The state should only change via explicit clock in/out or confirmed database response
+      console.warn('Preserving existing clock status due to fetch error');
     }
   };
 
@@ -632,27 +632,20 @@ const MainHub: React.FC = () => {
   }, [clockStatus]);
 
   // Fetch clock status when user is available
+  // CRITICAL: Only fetch status from database, never reset state
   useEffect(() => {
     if (user) {
-      // Fetch immediately on mount and after user is available
-      console.log('User available, fetching clock status...', user.id);
+      // Fetch immediately to get accurate database state
+      console.log('User available, fetching clock status from database...', user.id);
       fetchClockStatus();
       fetchTimeEntries();
-      // Poll for updates every 30 seconds
+      // Poll for updates every 30 seconds (only to sync, never to reset)
       const interval = setInterval(() => {
         fetchClockStatus();
       }, 30000);
       return () => clearInterval(interval);
     }
   }, [user]);
-  
-  // Also fetch when component mounts (in case user was already loaded)
-  useEffect(() => {
-    if (user && !loading) {
-      console.log('Component mounted, fetching clock status...');
-      fetchClockStatus();
-    }
-  }, [loading]);
 
   // Company-side portals only
   const portals: Portal[] = [
