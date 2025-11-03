@@ -29,8 +29,15 @@ CREATE INDEX IF NOT EXISTS idx_time_entries_status ON public.time_entries(status
 CREATE INDEX IF NOT EXISTS idx_time_entries_date ON public.time_entries((DATE(clock_in_at)));
 
 -- Function to clock in
+DROP FUNCTION IF EXISTS public.clock_in(UUID, TEXT);
+DROP FUNCTION IF EXISTS public.clock_in(UUID);
+
 CREATE OR REPLACE FUNCTION public.clock_in(p_employee_id UUID, p_work_location TEXT DEFAULT NULL)
-RETURNS UUID AS $$
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
   v_entry_id UUID;
 BEGIN
@@ -51,11 +58,22 @@ BEGIN
 
   RETURN v_entry_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
+
+-- Grant execute permission
+GRANT EXECUTE ON FUNCTION public.clock_in(UUID, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.clock_in(UUID) TO authenticated;
 
 -- Function to clock out
+DROP FUNCTION IF EXISTS public.clock_out(UUID, INTEGER);
+DROP FUNCTION IF EXISTS public.clock_out(UUID);
+
 CREATE OR REPLACE FUNCTION public.clock_out(p_employee_id UUID, p_break_duration_minutes INTEGER DEFAULT 0)
-RETURNS UUID AS $$
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
   v_entry_id UUID;
 BEGIN
@@ -83,9 +101,14 @@ BEGIN
 
   RETURN v_entry_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
+
+-- Grant execute permission for clock_out
+GRANT EXECUTE ON FUNCTION public.clock_out(UUID, INTEGER) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.clock_out(UUID) TO authenticated;
 
 -- Function to get current clock status
+DROP FUNCTION IF EXISTS public.get_employee_clock_status(UUID);
 CREATE OR REPLACE FUNCTION public.get_employee_clock_status(p_employee_id UUID)
 RETURNS TABLE (
   is_clocked_in BOOLEAN,
@@ -128,7 +151,10 @@ BEGIN
       AND clock_out_at IS NOT NULL
     ), 0) AS weekly_hours;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Grant execute permission
+GRANT EXECUTE ON FUNCTION public.get_employee_clock_status(UUID) TO authenticated;
 
 -- Enable RLS
 ALTER TABLE public.time_entries ENABLE ROW LEVEL SECURITY;

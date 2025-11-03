@@ -141,10 +141,9 @@ const TimePtoView: React.FC = () => {
         }
         message.success('Clocked out successfully');
       } else {
-        // Clock in
+        // Clock in - don't pass optional parameter
         const { error } = await supabase.rpc('clock_in', {
-          p_employee_id: employee.id,
-          p_work_location: null
+          p_employee_id: employee.id
         });
         
         if (error) {

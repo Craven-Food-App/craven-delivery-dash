@@ -356,9 +356,9 @@ const MainHub: React.FC = () => {
     setClockLoading(true);
     
     try {
+      // Call without optional parameter if null
       const { data, error } = await supabase.rpc('clock_in', {
-        p_employee_id: employeeInfo.id,
-        p_work_location: null
+        p_employee_id: employeeInfo.id
       });
       
       if (error) throw error;
@@ -367,6 +367,7 @@ const MainHub: React.FC = () => {
       await fetchClockStatus();
       await fetchTimeEntries();
     } catch (error: any) {
+      console.error('Clock in error:', error);
       message.error(error.message || 'Failed to clock in');
     } finally {
       setClockLoading(false);

@@ -698,6 +698,33 @@ export type Database = {
         }
         Relationships: []
       }
+      cfo_documents: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       chat_conversations: {
         Row: {
           admin_id: string | null
@@ -3519,6 +3546,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      executive_documents: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          equity: number | null
+          file_url: string | null
+          id: string
+          officer_name: string
+          role: string
+          signed_file_url: string | null
+          status: string
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          equity?: number | null
+          file_url?: string | null
+          id?: string
+          officer_name: string
+          role: string
+          signed_file_url?: string | null
+          status?: string
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          equity?: number | null
+          file_url?: string | null
+          id?: string
+          officer_name?: string
+          role?: string
+          signed_file_url?: string | null
+          status?: string
+          type?: string
+        }
+        Relationships: []
       }
       executive_signatures: {
         Row: {
@@ -6845,6 +6911,41 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      signatures: {
+        Row: {
+          document_id: string | null
+          id: string
+          ip: string | null
+          signature_data_url: string | null
+          signed_at: string | null
+          signed_by: string | null
+        }
+        Insert: {
+          document_id?: string | null
+          id?: string
+          ip?: string | null
+          signature_data_url?: string | null
+          signed_at?: string | null
+          signed_by?: string | null
+        }
+        Update: {
+          document_id?: string | null
+          id?: string
+          ip?: string | null
+          signature_data_url?: string | null
+          signed_at?: string | null
+          signed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signatures_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "executive_documents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       spatial_ref_sys: {
         Row: {
