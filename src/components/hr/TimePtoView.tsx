@@ -132,9 +132,6 @@ const TimePtoView: React.FC = () => {
         if (execError) {
           console.warn('Error fetching executives (non-critical):', execError);
         } else if (executives && executives.length > 0) {
-          // Fetch user profiles for executives to get names and emails
-          const execUserIds = executives.map(e => e.user_id).filter(Boolean) as string[];
-          
           // Fetch user profiles for executives that have user_id
           const execUserIds = executives.filter(e => e.user_id).map(e => e.user_id as string);
           let profileMap = new Map();
