@@ -92,6 +92,7 @@ const App = () => {
   const isHQSubdomain = typeof window !== 'undefined' && 
     (window.location.hostname === 'hq.cravenusa.com' ||
      window.location.pathname === '/hub' ||
+     window.location.pathname === '/main-hub' ||
      window.location.pathname.startsWith('/hub/') ||
      (window.location.pathname === '/auth' && window.location.search.includes('hq=true')) ||
      (window.location.hostname === 'localhost' && 
@@ -231,7 +232,7 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<BusinessAuth />} />
                   <Route path="/auth" element={<BusinessAuth />} />
-                  <Route path="/hub" element={<BusinessAuth />} />
+                  <Route path="/hub" element={<MainHub />} />
                   <Route path="/main-hub" element={<MainHub />} />
                   <Route path="/admin" element={<Admin />} />
                     <Route path="/marketing-portal" element={<MarketingPortal />} />
