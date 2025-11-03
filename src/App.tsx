@@ -93,6 +93,7 @@ const App = () => {
     (window.location.hostname === 'hq.cravenusa.com' ||
      window.location.pathname === '/hub' ||
      window.location.pathname.startsWith('/hub/') ||
+     (window.location.pathname === '/auth' && window.location.search.includes('hq=true')) ||
      (window.location.hostname === 'localhost' && 
       (window.location.search.includes('hq=true') || 
        window.location.pathname.includes('/admin') ||
