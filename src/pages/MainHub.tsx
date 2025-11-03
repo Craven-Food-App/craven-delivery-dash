@@ -75,19 +75,18 @@ const MainHub: React.FC = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        // Redirect to auth (on HQ subdomain in production, local in dev)
+        // Always redirect to business auth login
         const currentHost = window.location.hostname;
-        const isHQ = currentHost === 'hq.cravenusa.com' || 
-                     currentHost === 'localhost' || 
-                     currentHost === '127.0.0.1' ||
-                     window.location.search.includes('hq=true');
         
-        if (!isHQ && currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-          // Production: redirect to HQ subdomain
-          window.location.href = 'https://hq.cravenusa.com/auth?redirect=/hub';
+        if (currentHost === 'hq.cravenusa.com') {
+          // Production HQ subdomain: use direct auth route
+          window.location.href = '/auth?redirect=/hub';
+        } else if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+          // Development: use local routing with hq=true to trigger BusinessAuth
+          window.location.href = '/auth?hq=true&redirect=/hub';
         } else {
-          // Development or already on HQ: use local routing with hq=true
-          navigate('/auth?hq=true&redirect=/hub');
+          // Production main website: redirect to HQ subdomain
+          window.location.href = 'https://hq.cravenusa.com/auth?redirect=/hub';
         }
         return;
       }
@@ -115,12 +114,16 @@ const MainHub: React.FC = () => {
                    currentHost === '127.0.0.1' ||
                    window.location.search.includes('hq=true');
       
-      if (!isHQ && currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-        // Production: redirect to HQ subdomain
-        window.location.href = 'https://hq.cravenusa.com/auth?redirect=/hub';
+      // Always redirect to business auth login
+      if (currentHost === 'hq.cravenusa.com') {
+        // Production HQ subdomain: use direct auth route
+        window.location.href = '/auth?redirect=/hub';
+      } else if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+        // Development: use local routing with hq=true to trigger BusinessAuth
+        window.location.href = '/auth?hq=true&redirect=/hub';
       } else {
-        // Development or already on HQ: use local routing with hq=true
-        navigate('/auth?hq=true&redirect=/hub');
+        // Production main website: redirect to HQ subdomain
+        window.location.href = 'https://hq.cravenusa.com/auth?redirect=/hub';
       }
     }
   };
