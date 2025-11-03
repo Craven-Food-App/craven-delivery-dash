@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { CalendarClock, Plus, Clock, Users } from 'lucide-react';
-import { Card, Table, Tag, Button, Space, message, Statistic, Row, Col } from 'antd';
+import { CalendarClock, Plus, Clock, Users, Shield, Edit2, Save, X } from 'lucide-react';
+import { Card, Table, Tag, Button, Space, message, Statistic, Row, Col, Input, Modal, Form } from 'antd';
 import { supabase } from '@/integrations/supabase/client';
 
 interface PtoRequest {
@@ -21,6 +21,17 @@ interface ClockedInEmployee {
   department?: string;
   position?: string;
   duration: string;
+}
+
+interface Employee {
+  id: string;
+  employee_number: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  department?: string;
+  position?: string;
+  ssn_last4?: string | null;
 }
 
 const mockPtoRequests: PtoRequest[] = [
@@ -56,16 +67,88 @@ const calculateDuration = (start: Date | string, end: Date | string): string => 
 const TimePtoView: React.FC = () => {
   const [clockedInEmployees, setClockedInEmployees] = useState<ClockedInEmployee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
+  const [editingSsn, setEditingSsn] = useState<string | null>(null);
+  const [ssnValue, setSsnValue] = useState('');
+  const [savingSsn, setSavingSsn] = useState(false);
 
   // Fetch currently clocked in employees
   useEffect(() => {
     fetchClockedInEmployees();
+    fetchEmployees();
     // Poll for updates every 30 seconds
     const interval = setInterval(() => {
       fetchClockedInEmployees();
     }, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Fetch all employees for SSN management
+  const fetchEmployees = async () => {
+    setEmployeesLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('id, employee_number, first_name, last_name, email, department, position, ssn_last4')
+        .order('last_name', { ascending: true });
+
+      if (error) throw error;
+      if (data) {
+        setEmployees(data as Employee[]);
+      }
+    } catch (error: any) {
+      console.error('Error fetching employees:', error);
+      message.error('Failed to load employees');
+    } finally {
+      setEmployeesLoading(false);
+    }
+  };
+
+  // Handle SSN edit
+  const handleEditSsn = (employee: Employee) => {
+    setEditingSsn(employee.id);
+    setSsnValue(employee.ssn_last4 || '');
+  };
+
+  // Cancel SSN edit
+  const handleCancelSsn = () => {
+    setEditingSsn(null);
+    setSsnValue('');
+  };
+
+  // Save SSN last 4
+  const handleSaveSsn = async (employeeId: string) => {
+    if (!ssnValue || ssnValue.length !== 4) {
+      message.error('Please enter exactly 4 digits');
+      return;
+    }
+
+    if (!/^\d{4}$/.test(ssnValue)) {
+      message.error('Please enter only numbers');
+      return;
+    }
+
+    setSavingSsn(true);
+    try {
+      const { error } = await supabase
+        .from('employees')
+        .update({ ssn_last4: ssnValue })
+        .eq('id', employeeId);
+
+      if (error) throw error;
+
+      message.success('SSN last 4 digits saved successfully');
+      setEditingSsn(null);
+      setSsnValue('');
+      await fetchEmployees(); // Refresh list
+    } catch (error: any) {
+      console.error('Error saving SSN:', error);
+      message.error('Failed to save SSN: ' + error.message);
+    } finally {
+      setSavingSsn(false);
+    }
+  };
 
   // Update durations in real-time every second
   useEffect(() => {
@@ -306,6 +389,116 @@ const TimePtoView: React.FC = () => {
             loading={loading}
           />
         )}
+      </Card>
+
+      {/* SSN Management Section */}
+      <Card
+        title={
+          <span style={{ display: 'flex', alignItems: 'center', fontSize: '24px' }}>
+            <Shield style={{ width: '24px', height: '24px', marginRight: '8px', color: '#ff7a45' }} />
+            Employee SSN Last 4 Management
+          </span>
+        }
+      >
+        <p style={{ fontSize: '14px', color: '#666', marginBottom: '16px' }}>
+          Set the last 4 digits of Social Security Number for employees to enable time clock authentication.
+          Employees must enter this code when clocking in or out.
+        </p>
+
+        <Table
+          columns={[
+            {
+              title: 'Employee',
+              key: 'employee',
+              render: (record: Employee) => (
+                <div>
+                  <div style={{ fontWeight: 600 }}>
+                    {record.first_name} {record.last_name}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#666' }}>
+                    {record.email} • {record.employee_number}
+                  </div>
+                  {record.department && (
+                    <div style={{ fontSize: '12px', color: '#999' }}>
+                      {record.department} • {record.position}
+                    </div>
+                  )}
+                </div>
+              ),
+            },
+            {
+              title: 'SSN Last 4',
+              key: 'ssn_last4',
+              render: (record: Employee) => {
+                if (editingSsn === record.id) {
+                  return (
+                    <Input
+                      type="text"
+                      maxLength={4}
+                      value={ssnValue}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        if (value.length <= 4) {
+                          setSsnValue(value);
+                        }
+                      }}
+                      placeholder="0000"
+                      style={{ width: 100, fontFamily: 'monospace' }}
+                      autoFocus
+                    />
+                  );
+                }
+                return (
+                  <Tag color={record.ssn_last4 ? 'green' : 'red'} style={{ fontFamily: 'monospace', fontSize: '14px' }}>
+                    {record.ssn_last4 || 'Not Set'}
+                  </Tag>
+                );
+              },
+            },
+            {
+              title: 'Action',
+              key: 'action',
+              render: (record: Employee) => {
+                if (editingSsn === record.id) {
+                  return (
+                    <Space>
+                      <Button
+                        type="primary"
+                        icon={<Save />}
+                        size="small"
+                        onClick={() => handleSaveSsn(record.id)}
+                        loading={savingSsn}
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        icon={<X />}
+                        size="small"
+                        onClick={handleCancelSsn}
+                        disabled={savingSsn}
+                      >
+                        Cancel
+                      </Button>
+                    </Space>
+                  );
+                }
+                return (
+                  <Button
+                    icon={<Edit2 />}
+                    size="small"
+                    onClick={() => handleEditSsn(record)}
+                  >
+                    {record.ssn_last4 ? 'Edit' : 'Set'}
+                  </Button>
+                );
+              },
+            },
+          ]}
+          dataSource={employees}
+          rowKey="id"
+          loading={employeesLoading}
+          pagination={{ pageSize: 10 }}
+        />
       </Card>
 
       {/* Manager Approval Section */}

@@ -565,27 +565,26 @@ const MainHub: React.FC = () => {
         .eq('user_id', user.id)
         .single();
       
-      if (!employeeError && employee && employee.ssn_last4) {
-        return employee.ssn_last4 === ssnLast4;
+      if (employeeError) {
+        console.error('Error fetching employee:', employeeError);
+        return false;
       }
       
-      // If not found in employees, check if user is an executive
-      // Executives might not have SSN stored, so we'll allow them to proceed
-      // or check another table if needed
-      const { data: execUser } = await supabase
-        .from('exec_users')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-      
-      if (execUser) {
-        // For executives, we might need to add SSN storage later
-        // For now, allow CEO with master PIN or skip verification
-        // You can add exec_ssn_last4 field later if needed
-        return true; // Temporarily allow executives
+      // Employee must have ssn_last4 set in database
+      if (!employee || !employee.ssn_last4) {
+        console.log('Employee does not have SSN last 4 set in database');
+        return false;
       }
       
-      return false;
+      // Verify the SSN matches
+      const isValid = employee.ssn_last4 === ssnLast4;
+      console.log('SSN verification:', { 
+        provided: ssnLast4, 
+        stored: employee.ssn_last4, 
+        match: isValid 
+      });
+      
+      return isValid;
     } catch (error) {
       console.error('Error verifying SSN:', error);
       return false;
