@@ -52,14 +52,20 @@ const MainHub: React.FC = () => {
   const [pinModalVisible, setPinModalVisible] = useState(false);
   const [pinLoading, setPinLoading] = useState(false);
   
-  // Time clock state
+  // Time clock state - initialize with default values
   const [clockStatus, setClockStatus] = useState<{
     isClockedIn: boolean;
     clockInAt: string | null;
     hoursToday: number;
     weeklyHours: number;
     currentEntryId: string | null;
-  } | null>(null);
+  }>({
+    isClockedIn: false,
+    clockInAt: null,
+    hoursToday: 0,
+    weeklyHours: 0,
+    currentEntryId: null,
+  });
   const [clockLoading, setClockLoading] = useState(false);
   const [showClockHistory, setShowClockHistory] = useState(false);
   const [timeEntries, setTimeEntries] = useState<any[]>([]);
@@ -451,18 +457,23 @@ const MainHub: React.FC = () => {
       if (error) throw error;
       
       message.success('Clocked out successfully');
-      // Force immediate status refresh
-      await fetchClockStatus();
-      await fetchTimeEntries();
-      setCurrentDuration('00:00:00');
-      // Also update state immediately for instant UI feedback
+      
+      // Update state immediately for instant UI feedback
+      console.log('Setting clock status to CLOCKED OUT immediately');
       setClockStatus(prev => ({
         isClockedIn: false,
         clockInAt: null,
-        hoursToday: prev?.hoursToday || 0,
-        weeklyHours: prev?.weeklyHours || 0,
+        hoursToday: prev.hoursToday, // Keep existing hours
+        weeklyHours: prev.weeklyHours, // Keep existing hours
         currentEntryId: null
       }));
+      setCurrentDuration('00:00:00');
+      
+      // Small delay to ensure state is updated, then fetch from server
+      setTimeout(async () => {
+        await fetchClockStatus();
+        await fetchTimeEntries();
+      }, 100);
     } catch (error: any) {
       message.error(error.message || 'Failed to clock out');
     } finally {
@@ -474,9 +485,11 @@ const MainHub: React.FC = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-      if (clockStatus?.isClockedIn && clockStatus.clockInAt) {
+      if (clockStatus.isClockedIn && clockStatus.clockInAt) {
         const duration = calculateDuration(clockStatus.clockInAt, new Date());
         setCurrentDuration(duration);
+      } else {
+        setCurrentDuration('00:00:00');
       }
     }, 1000);
     return () => clearInterval(timer);
@@ -729,7 +742,7 @@ const MainHub: React.FC = () => {
             <Card
               style={{
                 marginBottom: 48,
-                background: clockStatus?.isClockedIn
+                background: clockStatus.isClockedIn
                   ? 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)'
                   : 'linear-gradient(135deg, #ff7875 0%, #ff4d4f 100%)',
                 border: 'none',
@@ -767,7 +780,7 @@ const MainHub: React.FC = () => {
                       fontSize: 14,
                       letterSpacing: 2,
                     }}>
-                      {clockStatus?.isClockedIn ? (
+                      {clockStatus.isClockedIn ? (
                         <span><LogoutOutlined style={{ marginRight: 8 }} />CLOCKED IN</span>
                       ) : (
                         <span><LoginOutlined style={{ marginRight: 8 }} />CLOCKED OUT</span>
@@ -775,7 +788,7 @@ const MainHub: React.FC = () => {
                     </div>
                     
                     {/* Active Session Duration */}
-                    {clockStatus?.isClockedIn && clockStatus.clockInAt && (
+                    {clockStatus.isClockedIn && clockStatus.clockInAt && (
                       <div style={{
                         padding: 16,
                         background: 'rgba(255,255,255,0.2)',
@@ -799,14 +812,14 @@ const MainHub: React.FC = () => {
                       <Button
                         type="primary"
                         size="large"
-                        icon={clockStatus?.isClockedIn ? <LogoutOutlined /> : <LoginOutlined />}
+                        icon={clockStatus.isClockedIn ? <LogoutOutlined /> : <LoginOutlined />}
                         loading={clockLoading}
-                        onClick={clockStatus?.isClockedIn ? handleClockOut : handleClockIn}
+                        onClick={clockStatus.isClockedIn ? handleClockOut : handleClockIn}
                         disabled={clockLoading}
                         block
                         style={{
                           background: '#fff',
-                          color: clockStatus?.isClockedIn ? '#ff4d4f' : '#52c41a',
+                          color: clockStatus.isClockedIn ? '#ff4d4f' : '#52c41a',
                           border: 'none',
                           height: 56,
                           fontSize: 18,
@@ -814,7 +827,7 @@ const MainHub: React.FC = () => {
                           boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
                         }}
                       >
-                        {clockStatus?.isClockedIn ? 'CLOCK OUT' : 'CLOCK IN'}
+                        {clockStatus.isClockedIn ? 'CLOCK OUT' : 'CLOCK IN'}
                       </Button>
                       
                       <Button
@@ -853,7 +866,7 @@ const MainHub: React.FC = () => {
                           HOURS TODAY
                         </div>
                         <div style={{ fontSize: 36, fontWeight: 700, color: '#fff' }}>
-                          {clockStatus?.hoursToday.toFixed(1) || '0.0'}
+                          {clockStatus.hoursToday.toFixed(1)}
                         </div>
                       </Card>
                     </Col>
@@ -871,7 +884,7 @@ const MainHub: React.FC = () => {
                           HOURS THIS WEEK
                         </div>
                         <div style={{ fontSize: 36, fontWeight: 700, color: '#fff' }}>
-                          {clockStatus?.weeklyHours.toFixed(1) || '0.0'}
+                          {clockStatus.weeklyHours.toFixed(1)}
                         </div>
                       </Card>
                     </Col>
