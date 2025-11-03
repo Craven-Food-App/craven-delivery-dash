@@ -621,15 +621,17 @@ const MainHub: React.FC = () => {
       setSsnInput('');
       setSsnVerifying(false);
       
-      // Flash effect
+      // Flash effect and clock action
       if (pendingClockAction === 'in') {
         setFlashColor('green');
-        setTimeout(() => setFlashColor(null), 500);
         await performClockIn();
+        // Clear flash after action completes
+        setTimeout(() => setFlashColor(null), 1000);
       } else if (pendingClockAction === 'out') {
         setFlashColor('red');
-        setTimeout(() => setFlashColor(null), 500);
         await performClockOut();
+        // Clear flash after action completes
+        setTimeout(() => setFlashColor(null), 1000);
       }
       
       setPendingClockAction(null);
@@ -698,7 +700,12 @@ const MainHub: React.FC = () => {
         weeklyHours: 0, // Will be updated by fetchClockStatus
         currentEntryId: data || null
       };
-      setClockStatus(newClockInStatus);
+      // Update state immediately - use functional update to ensure React detects change
+      setClockStatus(prev => ({
+        ...prev,
+        ...newClockInStatus,
+        isClockedIn: true // Explicitly set to ensure button becomes active
+      }));
       setStatusLoaded(true);
       setCurrentDuration('00:00:00'); // Reset duration counter
       
