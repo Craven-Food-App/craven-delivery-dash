@@ -80,13 +80,13 @@ const MainHub: React.FC = () => {
         
         if (currentHost === 'hq.cravenusa.com') {
           // Production HQ subdomain: use direct auth route
-          window.location.href = '/hub';
+          window.location.href = '/auth?redirect=/hub';
         } else if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
           // Development: use local routing with hq=true to trigger BusinessAuth
-          window.location.href = '/hub';
+          window.location.href = '/auth?hq=true&redirect=/hub';
         } else {
           // Production main website: redirect to HQ subdomain
-          window.location.href = 'https://hq.cravenusa.com/hub';
+          window.location.href = 'https://hq.cravenusa.com/auth?redirect=/hub';
         }
         return;
       }
@@ -651,8 +651,10 @@ const MainHub: React.FC = () => {
           footer={null}
           closable={false}
           maskClosable={false}
+          maskStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.45)' }}
           style={{ top: 120 }}
           width={480}
+          zIndex={1000}
         >
           <Form
             form={form}

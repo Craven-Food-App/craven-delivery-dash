@@ -89,12 +89,13 @@ const App = () => {
 
   // Check if on HQ/business subdomain (production) or localhost (development)
   // For localhost, also check for ?hq=true or /hub path to enable business mode
+  // Priority: Check pathname first to catch /hub regardless of hostname
   const isHQSubdomain = typeof window !== 'undefined' && 
-    (window.location.hostname === 'hq.cravenusa.com' ||
-     window.location.pathname === '/hub' ||
+    (window.location.pathname === '/hub' ||
      window.location.pathname === '/main-hub' ||
      window.location.pathname.startsWith('/hub/') ||
-     (window.location.pathname === '/auth' && window.location.search.includes('hq=true')) ||
+     window.location.pathname === '/auth' && window.location.search.includes('hq=true') ||
+     window.location.hostname === 'hq.cravenusa.com' ||
      (window.location.hostname === 'localhost' && 
       (window.location.search.includes('hq=true') || 
        window.location.pathname.includes('/admin') ||
