@@ -75,21 +75,8 @@ const MainHub: React.FC = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        // Always redirect to business auth login - stay on current domain
-        const currentHost = window.location.hostname;
-        const isHQDomain = currentHost === 'hq.cravenusa.com';
-        const isLocal = currentHost === 'localhost' || currentHost === '127.0.0.1';
-        
-        if (isHQDomain) {
-          // Production HQ subdomain: stay on HQ subdomain, use direct auth route
-          window.location.href = '/auth?redirect=/hub';
-        } else if (isLocal) {
-          // Development: use local routing with hq=true to trigger BusinessAuth
-          window.location.href = '/auth?hq=true&redirect=/hub';
-        } else {
-          // Production main website: redirect to HQ subdomain (only if not already on hq)
-          window.location.href = 'https://hq.cravenusa.com/auth?redirect=/hub';
-        }
+        // Always redirect to business auth with hq=true parameter
+        window.location.href = '/auth?hq=true&redirect=/hub';
         return;
       }
       
@@ -109,21 +96,8 @@ const MainHub: React.FC = () => {
       setLoading(false);
     } catch (error) {
       console.error('Error checking user:', error);
-      // Always redirect to business auth login - stay on current domain
-      const currentHost = window.location.hostname;
-      const isHQDomain = currentHost === 'hq.cravenusa.com';
-      const isLocal = currentHost === 'localhost' || currentHost === '127.0.0.1';
-      
-      if (isHQDomain) {
-        // Production HQ subdomain: stay on HQ subdomain, use direct auth route
-        window.location.href = '/auth?redirect=/hub';
-      } else if (isLocal) {
-        // Development: use local routing with hq=true to trigger BusinessAuth
-        window.location.href = '/auth?hq=true&redirect=/hub';
-      } else {
-        // Production main website: redirect to HQ subdomain (only if not already on hq)
-        window.location.href = 'https://hq.cravenusa.com/auth?redirect=/hub';
-      }
+      // Always redirect to business auth with hq=true parameter
+      window.location.href = '/auth?hq=true&redirect=/hub';
     }
   };
 
@@ -286,21 +260,8 @@ const MainHub: React.FC = () => {
     sessionStorage.removeItem('hub_employee_info');
     await supabase.auth.signOut();
     message.success('Signed out successfully');
-    // Always redirect to hub login page - stay on current domain
-    const currentHost = window.location.hostname;
-    const isHQDomain = currentHost === 'hq.cravenusa.com';
-    const isLocal = currentHost === 'localhost' || currentHost === '127.0.0.1';
-    
-    if (isHQDomain) {
-      // Production HQ subdomain: stay on HQ subdomain
-      window.location.href = '/auth';
-    } else if (isLocal) {
-      // Development: use local routing with hq=true
-      navigate('/auth?hq=true');
-    } else {
-      // Production main website: redirect to HQ subdomain (only if not already on hq)
-      window.location.href = 'https://hq.cravenusa.com/auth';
-    }
+    // Always redirect to business auth with hq=true parameter
+    window.location.href = '/auth?hq=true';
   };
 
   // Company-side portals only
