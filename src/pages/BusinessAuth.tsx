@@ -90,6 +90,7 @@ const BusinessAuth: React.FC = () => {
           description: "Signing you in...",
         });
         const redirectPath = getRedirectPath();
+        // Use relative path to stay on current domain (important for hq.cravenusa.com)
         setTimeout(() => {
           window.location.href = redirectPath;
         }, 1000);

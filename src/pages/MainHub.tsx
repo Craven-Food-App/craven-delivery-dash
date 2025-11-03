@@ -75,17 +75,19 @@ const MainHub: React.FC = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        // Always redirect to business auth login
+        // Always redirect to business auth login - stay on current domain
         const currentHost = window.location.hostname;
+        const isHQDomain = currentHost === 'hq.cravenusa.com';
+        const isLocal = currentHost === 'localhost' || currentHost === '127.0.0.1';
         
-        if (currentHost === 'hq.cravenusa.com') {
-          // Production HQ subdomain: use direct auth route
+        if (isHQDomain) {
+          // Production HQ subdomain: stay on HQ subdomain, use direct auth route
           window.location.href = '/auth?redirect=/hub';
-        } else if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+        } else if (isLocal) {
           // Development: use local routing with hq=true to trigger BusinessAuth
           window.location.href = '/auth?hq=true&redirect=/hub';
         } else {
-          // Production main website: redirect to HQ subdomain
+          // Production main website: redirect to HQ subdomain (only if not already on hq)
           window.location.href = 'https://hq.cravenusa.com/auth?redirect=/hub';
         }
         return;
@@ -107,22 +109,19 @@ const MainHub: React.FC = () => {
       setLoading(false);
     } catch (error) {
       console.error('Error checking user:', error);
-      // Redirect to auth (on HQ subdomain in production, local in dev)
+      // Always redirect to business auth login - stay on current domain
       const currentHost = window.location.hostname;
-      const isHQ = currentHost === 'hq.cravenusa.com' || 
-                   currentHost === 'localhost' || 
-                   currentHost === '127.0.0.1' ||
-                   window.location.search.includes('hq=true');
+      const isHQDomain = currentHost === 'hq.cravenusa.com';
+      const isLocal = currentHost === 'localhost' || currentHost === '127.0.0.1';
       
-      // Always redirect to business auth login
-      if (currentHost === 'hq.cravenusa.com') {
-        // Production HQ subdomain: use direct auth route
+      if (isHQDomain) {
+        // Production HQ subdomain: stay on HQ subdomain, use direct auth route
         window.location.href = '/auth?redirect=/hub';
-      } else if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+      } else if (isLocal) {
         // Development: use local routing with hq=true to trigger BusinessAuth
         window.location.href = '/auth?hq=true&redirect=/hub';
       } else {
-        // Production main website: redirect to HQ subdomain
+        // Production main website: redirect to HQ subdomain (only if not already on hq)
         window.location.href = 'https://hq.cravenusa.com/auth?redirect=/hub';
       }
     }
@@ -287,18 +286,20 @@ const MainHub: React.FC = () => {
     sessionStorage.removeItem('hub_employee_info');
     await supabase.auth.signOut();
     message.success('Signed out successfully');
-    // Always redirect to hub login page (never main website)
+    // Always redirect to hub login page - stay on current domain
     const currentHost = window.location.hostname;
-    const isHQ = currentHost === 'hq.cravenusa.com' || 
-                 currentHost === 'localhost' || 
-                 currentHost === '127.0.0.1';
+    const isHQDomain = currentHost === 'hq.cravenusa.com';
+    const isLocal = currentHost === 'localhost' || currentHost === '127.0.0.1';
     
-    if (!isHQ && currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-      // Production: redirect to HQ subdomain auth
-      window.location.href = 'https://hq.cravenusa.com/auth';
-    } else {
-      // Development or already on HQ: use local routing with hq=true
+    if (isHQDomain) {
+      // Production HQ subdomain: stay on HQ subdomain
+      window.location.href = '/auth';
+    } else if (isLocal) {
+      // Development: use local routing with hq=true
       navigate('/auth?hq=true');
+    } else {
+      // Production main website: redirect to HQ subdomain (only if not already on hq)
+      window.location.href = 'https://hq.cravenusa.com/auth';
     }
   };
 
