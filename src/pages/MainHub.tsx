@@ -1546,6 +1546,91 @@ const MainHub: React.FC = () => {
             </Form.Item>
           </Form>
         </Modal>
+        
+        {/* SSN Verification Modal */}
+        <Modal
+          title={
+            <div style={{ textAlign: 'center' }}>
+              <LockOutlined style={{ fontSize: 32, color: '#ff7a45', marginBottom: 8 }} />
+              <div style={{ fontSize: 20, fontWeight: 600 }}>
+                {pendingClockAction === 'in' ? 'Clock In Verification' : 'Clock Out Verification'}
+              </div>
+            </div>
+          }
+          open={showSSNModal}
+          onCancel={() => {
+            setShowSSNModal(false);
+            setSsnInput('');
+            setPendingClockAction(null);
+          }}
+          footer={null}
+          centered
+          width={400}
+        >
+          <div style={{ padding: '20px 0' }}>
+            <Text type="secondary" style={{ display: 'block', textAlign: 'center', marginBottom: 24 }}>
+              Please enter the last 4 digits of your Social Security Number to confirm
+            </Text>
+            
+            <Input
+              type="text"
+              maxLength={4}
+              value={ssnInput}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, ''); // Only numbers
+                if (value.length <= 4) {
+                  setSsnInput(value);
+                }
+              }}
+              onPressEnter={handleSSNSubmit}
+              placeholder="Enter last 4 digits"
+              size="large"
+              style={{
+                fontSize: 24,
+                textAlign: 'center',
+                letterSpacing: 8,
+                fontFamily: 'monospace',
+                fontWeight: 600,
+                height: 56,
+              }}
+              autoFocus
+              disabled={ssnVerifying}
+            />
+            
+            <div style={{ marginTop: 24, textAlign: 'center' }}>
+              <Button
+                type="primary"
+                size="large"
+                block
+                onClick={handleSSNSubmit}
+                loading={ssnVerifying}
+                disabled={ssnInput.length !== 4 || ssnVerifying}
+                style={{
+                  background: '#ff7a45',
+                  borderColor: '#ff7a45',
+                  height: 48,
+                  fontSize: 16,
+                  fontWeight: 600,
+                }}
+              >
+                {pendingClockAction === 'in' ? 'Clock In' : 'Clock Out'}
+              </Button>
+              <Button
+                type="text"
+                block
+                onClick={() => {
+                  setShowSSNModal(false);
+                  setSsnInput('');
+                  setPendingClockAction(null);
+                }}
+                disabled={ssnVerifying}
+                style={{ marginTop: 12 }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </Layout>
     </ConfigProvider>
   );
