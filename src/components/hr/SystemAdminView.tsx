@@ -1,7 +1,9 @@
 // @ts-nocheck
 import React from 'react';
 import { Settings, Plus } from 'lucide-react';
-import { Card, Table, Tag, Button } from 'antd';
+import { Card, Table, Tag, Button, Tabs } from 'antd';
+import PositionManagement from './PositionManagement';
+import PermissionsManagement from './PermissionsManagement';
 
 interface Policy {
   name: string;
@@ -107,50 +109,77 @@ const SystemAdminView: React.FC = () => {
     },
   ];
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-      {/* Policy Management */}
-      <Card
-        title={
-          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+  const tabItems = [
+    {
+      key: 'positions',
+      label: 'Positions & Roles',
+      children: <PositionManagement />,
+    },
+    {
+      key: 'permissions',
+      label: 'Permissions',
+      children: <PermissionsManagement />,
+    },
+    {
+      key: 'policies',
+      label: 'Policies',
+      children: (
+        <Card
+          title={
+            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <span style={{ display: 'flex', alignItems: 'center', fontSize: '20px' }}>
+                <Settings style={{ width: '24px', height: '24px', marginRight: '8px', color: '#ff7a45' }} />
+                Policy Management
+              </span>
+              <Button
+                type="link"
+                icon={<Plus style={{ width: '16px', height: '16px' }} />}
+                style={{ color: '#ff7a45' }}
+              >
+                Create Policy
+              </Button>
+            </span>
+          }
+        >
+          <Table
+            columns={policyColumns}
+            dataSource={mockPolicies}
+            rowKey={(record, index) => `${record.name}-${index}`}
+            pagination={false}
+          />
+        </Card>
+      ),
+    },
+    {
+      key: 'departments',
+      label: 'Departments',
+      children: (
+        <Card
+          title={
             <span style={{ display: 'flex', alignItems: 'center', fontSize: '20px' }}>
               <Settings style={{ width: '24px', height: '24px', marginRight: '8px', color: '#ff7a45' }} />
-              Policy Management
+              Department & Cost Center Configuration
             </span>
-            <Button
-              type="link"
-              icon={<Plus style={{ width: '16px', height: '16px' }} />}
-              style={{ color: '#ff7a45' }}
-            >
-              Create Policy
-            </Button>
-          </span>
-        }
-      >
-        <Table
-          columns={policyColumns}
-          dataSource={mockPolicies}
-          rowKey={(record, index) => `${record.name}-${index}`}
-          pagination={false}
-        />
-      </Card>
+          }
+        >
+          <Table
+            columns={departmentColumns}
+            dataSource={mockDepartments}
+            rowKey="name"
+            pagination={false}
+          />
+        </Card>
+      ),
+    },
+  ];
 
-      {/* Department Configuration */}
-      <Card
-        title={
-          <span style={{ display: 'flex', alignItems: 'center', fontSize: '20px' }}>
-            <Settings style={{ width: '24px', height: '24px', marginRight: '8px', color: '#ff7a45' }} />
-            Department & Cost Center Configuration
-          </span>
-        }
-      >
-        <Table
-          columns={departmentColumns}
-          dataSource={mockDepartments}
-          rowKey="name"
-          pagination={false}
-        />
-      </Card>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      <Tabs
+        items={tabItems}
+        defaultActiveKey="positions"
+        style={{ background: '#fff', padding: '24px', borderRadius: '8px' }}
+      />
     </div>
   );
 };

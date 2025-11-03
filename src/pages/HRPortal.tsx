@@ -494,6 +494,23 @@ const HRPortal: React.FC = () => {
               >
                 {!sidebarCollapsed && 'Audit Trail'}
               </Button>
+              <Divider style={{ margin: '8px 0' }} />
+              <Button
+                type={activeTab === 'system_admin' ? 'primary' : 'text'}
+                icon={<SettingOutlined />}
+                block
+                style={{
+                  textAlign: 'left',
+                  height: '40px',
+                  marginBottom: '4px',
+                  background: activeTab === 'system_admin' ? '#ff7a45' : 'transparent',
+                  color: activeTab === 'system_admin' ? '#fff' : '#666',
+                  border: 'none',
+                }}
+                onClick={() => setActiveTab('system_admin')}
+              >
+                {!sidebarCollapsed && 'System Admin (Permissions)'}
+              </Button>
             </div>
           </div>
         </Sider>
@@ -636,6 +653,18 @@ const HRPortal: React.FC = () => {
             key="audit"
           >
             <AuditTrail />
+          </TabPane>
+
+          <TabPane
+            tab={
+              <span>
+                <SettingOutlined />
+                System Admin
+              </span>
+            }
+            key="system_admin"
+          >
+            <SystemAdminView />
           </TabPane>
         </Tabs>
         </Content>

@@ -921,6 +921,9 @@ const MainHub: React.FC = () => {
     },
   ];
 
+  // Permission gates for portal visibility
+  // Show all portals (permissions temporarily disabled at hub level)
+
   if (loading) {
     return (
       <div

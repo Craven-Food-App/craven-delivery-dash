@@ -62,6 +62,7 @@ export const PersonnelManager: React.FC = () => {
   const [isEmailHistoryVisible, setIsEmailHistoryVisible] = useState(false);
   const [emailHistory, setEmailHistory] = useState<any[]>([]);
   const [loadingEmails, setLoadingEmails] = useState(false);
+  const [positions, setPositions] = useState<any[]>([]);
 
   useEffect(() => {
     fetchEmployees();
@@ -179,12 +180,21 @@ export const PersonnelManager: React.FC = () => {
     }
   };
 
-  const onPositionChange = () => {
+  const onPositionChange = (positionCode: string) => {
     const v = form.getFieldsValue();
-    const pos = POSITIONS.find(p => p.label === v.position || p.code === v.position || p.label === v?.position_label);
+    // Try to find in database positions first
+    const dbPos = positions.find(p => p.code === positionCode || p.id === positionCode);
+    // Fallback to hardcoded positions
+    const hardcodedPos = POSITIONS.find(p => p.code === positionCode || p.label === positionCode);
+    const pos = dbPos || hardcodedPos;
+    
     if (pos) {
-      const { named, roleAlias } = buildEmails(v.first_name || '', v.last_name || '', pos.code, 'cravenusa.com');
-      setSuggestedEmails({ named, roleAlias: pos.isExecutive ? roleAlias : undefined });
+      const code = dbPos?.code || hardcodedPos?.code || positionCode;
+      const { named, roleAlias } = buildEmails(v.first_name || '', v.last_name || '', code, 'cravenusa.com');
+      setSuggestedEmails({ 
+        named, 
+        roleAlias: (dbPos?.is_executive || hardcodedPos?.isExecutive) ? roleAlias : undefined 
+      });
     } else {
       setSuggestedEmails({});
     }
@@ -804,6 +814,15 @@ export const PersonnelManager: React.FC = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
+      // Get current position before update
+      const { data: currentEmployee } = await supabase
+        .from('employees')
+        .select('position')
+        .eq('id', selectedEmployee.id)
+        .single();
+
+      const newPosition = values.position === '__CUSTOM__' ? values.custom_position : values.position;
+
       // Update basic fields
       const { error: empErr } = await supabase
         .from('employees')
@@ -811,13 +830,28 @@ export const PersonnelManager: React.FC = () => {
           first_name: values.first_name,
           last_name: values.last_name,
           email: values.email,
-          position: values.position,
+          position: newPosition,
           department_id: values.department_id,
           employment_type: values.employment_type,
           salary: values.salary,
         })
         .eq('id', selectedEmployee.id);
       if (empErr) throw empErr;
+
+      // Track position change in employee_history if position changed
+      if (currentEmployee && newPosition && currentEmployee.position !== newPosition) {
+        await supabase
+          .from('employee_history')
+          .insert({
+            employee_id: selectedEmployee.id,
+            change_type: 'position_change',
+            old_value: currentEmployee.position,
+            new_value: newPosition,
+            changed_by: user?.id || null,
+            effective_date: new Date().toISOString().split('T')[0],
+            notes: `Position changed from "${currentEmployee.position}" to "${newPosition}"`,
+          });
+      }
 
       // Upsert equity if provided
       if (values.equity_percentage || values.shares_total || values.equity_type) {
@@ -1267,7 +1301,28 @@ export const PersonnelManager: React.FC = () => {
 
           <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
             <Form.Item label="Position" name="position" rules={[{ required: true }]}>
-              <Input />
+              <Select 
+                showSearch
+                placeholder="Select position"
+                filterOption={(input, option) =>
+                  (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
+                }
+              >
+                {/* Group executives first */}
+                {positions.filter(p => p.is_executive).map(p => (
+                  <Option key={p.id || p.code} value={p.title || p.label}>
+                    {p.title || p.label}
+                  </Option>
+                ))}
+                {/* Then regular positions */}
+                {positions.filter(p => !p.is_executive).map(p => (
+                  <Option key={p.id || p.code} value={p.title || p.label}>
+                    {p.title || p.label}
+                  </Option>
+                ))}
+                {/* Allow custom entry if not found */}
+                <Option value="__CUSTOM__">+ Enter Custom Position</Option>
+              </Select>
             </Form.Item>
             <Form.Item label="Department" name="department_id">
               <Select allowClear placeholder="Select department">
@@ -1371,9 +1426,27 @@ export const PersonnelManager: React.FC = () => {
             name="position"
             rules={[{ required: true, message: 'Required' }]}
           >
-            <Select placeholder="Select position" onChange={onPositionChange} onSelect={onPositionChange} onBlur={onPositionChange} showSearch>
-              {POSITIONS.map(p => (
-                <Option key={p.code} value={p.code}>{p.label}</Option>
+            <Select 
+              placeholder="Select position" 
+              onChange={onPositionChange} 
+              onSelect={onPositionChange} 
+              onBlur={onPositionChange} 
+              showSearch
+              filterOption={(input, option) =>
+                (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {/* Group executives first */}
+              {positions.filter(p => p.is_executive).map(p => (
+                <Option key={p.id || p.code} value={p.code}>
+                  {p.title || p.label}
+                </Option>
+              ))}
+              {/* Then regular positions */}
+              {positions.filter(p => !p.is_executive).map(p => (
+                <Option key={p.id || p.code} value={p.code}>
+                  {p.title || p.label}
+                </Option>
               ))}
             </Select>
           </Form.Item>

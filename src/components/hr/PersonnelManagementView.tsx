@@ -42,7 +42,6 @@ import {
   CloseCircleOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
-import { POSITIONS } from '@/config/positions';
 import dayjs from 'dayjs';
 import type { MenuProps } from 'antd';
 
@@ -83,13 +82,36 @@ const PersonnelManagementView: React.FC = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+  const [positions, setPositions] = useState<any[]>([]);
   const [form] = Form.useForm();
   const [addForm] = Form.useForm();
 
   useEffect(() => {
     fetchEmployees();
     fetchDepartments();
+    fetchPositions();
   }, []);
+
+  const fetchPositions = async () => {
+    try {
+      const { data: dbPositions, error } = await supabase
+        .from('positions')
+        .select('id, title, code, is_executive')
+        .eq('is_active', true)
+        .order('is_executive', { ascending: false })
+        .order('title', { ascending: true });
+
+      if (!error && dbPositions && dbPositions.length > 0) {
+        setPositions(dbPositions);
+      } else {
+        // Fallback: positions will be empty, allowing custom entry
+        setPositions([]);
+      }
+    } catch (err) {
+      console.error('Error fetching positions:', err);
+      setPositions([]);
+    }
+  };
 
   const fetchEmployees = async () => {
     setLoading(true);
@@ -290,15 +312,43 @@ const PersonnelManagementView: React.FC = () => {
 
   const handleEditSubmit = async (values: any) => {
     try {
+      // Get the current employee data before update
+      const { data: currentEmployee } = await supabase
+        .from('employees')
+        .select('position, department_id')
+        .eq('id', selectedEmployee?.id)
+        .single();
+
+      // Update employee
+      const updateData = {
+        ...values,
+        hire_date: values.hire_date ? values.hire_date.format('YYYY-MM-DD') : null,
+      };
+      
       const { error } = await supabase
         .from('employees')
-        .update({
-          ...values,
-          hire_date: values.hire_date ? values.hire_date.format('YYYY-MM-DD') : null,
-        })
+        .update(updateData)
         .eq('id', selectedEmployee?.id);
 
       if (error) throw error;
+
+      // Track position change in employee_history if position changed
+      if (currentEmployee && values.position && currentEmployee.position !== values.position) {
+        const { data: userData } = await supabase.auth.getUser();
+        
+        await supabase
+          .from('employee_history')
+          .insert({
+            employee_id: selectedEmployee?.id,
+            change_type: 'position_change',
+            old_value: currentEmployee.position,
+            new_value: values.position,
+            changed_by: userData?.user?.id || null,
+            effective_date: new Date().toISOString().split('T')[0],
+            notes: `Position changed from "${currentEmployee.position}" to "${values.position}"`,
+          });
+      }
+
       message.success('Employee updated successfully');
       setIsEditModalVisible(false);
       form.resetFields();
@@ -617,10 +667,27 @@ const PersonnelManagementView: React.FC = () => {
             <Input />
           </Form.Item>
           <Form.Item name="position" label="Position" rules={[{ required: true }]}>
-            <Select showSearch placeholder="Select position">
-              {POSITIONS.map((pos) => (
-                <Option key={pos} value={pos}>{pos}</Option>
+            <Select 
+              showSearch
+              placeholder="Select position"
+              filterOption={(input, option) =>
+                (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {/* Group executives first */}
+              {positions.filter(p => p.is_executive).map(p => (
+                <Option key={p.id || p.code} value={p.title || p.label}>
+                  {p.title || p.label}
+                </Option>
               ))}
+              {/* Then regular positions */}
+              {positions.filter(p => !p.is_executive).map(p => (
+                <Option key={p.id || p.code} value={p.title || p.label}>
+                  {p.title || p.label}
+                </Option>
+              ))}
+              {/* Allow custom entry if not found */}
+              <Option value="__CUSTOM__">+ Enter Custom Position</Option>
             </Select>
           </Form.Item>
           <Row gutter={16}>
@@ -697,10 +764,27 @@ const PersonnelManagementView: React.FC = () => {
             <Input />
           </Form.Item>
           <Form.Item name="position" label="Position" rules={[{ required: true }]}>
-            <Select showSearch placeholder="Select position">
-              {POSITIONS.map((pos) => (
-                <Option key={pos} value={pos}>{pos}</Option>
+            <Select 
+              showSearch
+              placeholder="Select position"
+              filterOption={(input, option) =>
+                (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {/* Group executives first */}
+              {positions.filter(p => p.is_executive).map(p => (
+                <Option key={p.id || p.code} value={p.title || p.label}>
+                  {p.title || p.label}
+                </Option>
               ))}
+              {/* Then regular positions */}
+              {positions.filter(p => !p.is_executive).map(p => (
+                <Option key={p.id || p.code} value={p.title || p.label}>
+                  {p.title || p.label}
+                </Option>
+              ))}
+              {/* Allow custom entry if not found */}
+              <Option value="__CUSTOM__">+ Enter Custom Position</Option>
             </Select>
           </Form.Item>
           <Row gutter={16}>
