@@ -91,16 +91,28 @@ const App = () => {
   // For localhost, also check for ?hq=true or /hub path to enable business mode
   const isHQSubdomain = typeof window !== 'undefined' && 
     (window.location.hostname === 'hq.cravenusa.com' ||
+     window.location.pathname === '/hub' ||
+     window.location.pathname.startsWith('/hub/') ||
      (window.location.hostname === 'localhost' && 
       (window.location.search.includes('hq=true') || 
-       window.location.pathname.includes('/hub') ||
        window.location.pathname.includes('/admin') ||
-       window.location.pathname.includes('/marketing-portal'))) ||
+       window.location.pathname.includes('/marketing-portal') ||
+       window.location.pathname.includes('/hr-portal') ||
+       window.location.pathname.includes('/ceo') ||
+       window.location.pathname.includes('/cfo') ||
+       window.location.pathname.includes('/coo') ||
+       window.location.pathname.includes('/cto') ||
+       window.location.pathname.includes('/board'))) ||
      (window.location.hostname === '127.0.0.1' && 
       (window.location.search.includes('hq=true') || 
-       window.location.pathname.includes('/hub') ||
        window.location.pathname.includes('/admin') ||
-       window.location.pathname.includes('/marketing-portal'))) ||
+       window.location.pathname.includes('/marketing-portal') ||
+       window.location.pathname.includes('/hr-portal') ||
+       window.location.pathname.includes('/ceo') ||
+       window.location.pathname.includes('/cfo') ||
+       window.location.pathname.includes('/coo') ||
+       window.location.pathname.includes('/cto') ||
+       window.location.pathname.includes('/board'))) ||
      window.location.search.includes('hq=true')); // Allow ?hq=true query param for testing
 
   // Check if on feeder subdomain

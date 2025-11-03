@@ -1,5 +1,5 @@
 export const env = {
-  PORT: process.env.PORT ? Number(process.env.PORT) : 5050,
+  PORT: process.env.PORT ? Number(process.env.PORT) : 3001,
   SUPABASE_URL: process.env.SUPABASE_URL!,
   SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY!, // or service role if only server-side
   STORAGE_BUCKET: process.env.STORAGE_BUCKET || "documents",

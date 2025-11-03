@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_DOCS_API_URL || "http://localhost:5050/api";
+const API_URL = import.meta.env.VITE_DOCS_API_URL || "/api";
 
 async function apiRequest(method: string, endpoint: string, data?: any) {
   const url = `${API_URL}${endpoint}`;
