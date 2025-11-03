@@ -701,11 +701,16 @@ const MainHub: React.FC = () => {
         currentEntryId: data || null
       };
       // Update state immediately - use functional update to ensure React detects change
-      setClockStatus(prev => ({
-        ...prev,
-        ...newClockInStatus,
-        isClockedIn: true // Explicitly set to ensure button becomes active
-      }));
+      const updatedStatus = {
+        isClockedIn: true,
+        clockInAt: actualClockInAt,
+        hoursToday: 0, // Will be updated by fetchClockStatus
+        weeklyHours: 0, // Will be updated by fetchClockStatus
+        currentEntryId: data || null
+      };
+      
+      console.log('Setting clock status to CLOCKED IN:', updatedStatus);
+      setClockStatus(updatedStatus);
       setStatusLoaded(true);
       setCurrentDuration('00:00:00'); // Reset duration counter
       
@@ -713,7 +718,7 @@ const MainHub: React.FC = () => {
       if (user) {
         try {
           localStorage.setItem(`clock_status_${user.id}`, JSON.stringify({
-            ...newClockInStatus,
+            ...updatedStatus,
             timestamp: Date.now(),
           }));
         } catch (err) {
@@ -724,13 +729,9 @@ const MainHub: React.FC = () => {
       // Fetch entries immediately
       await fetchTimeEntries();
       
-      // Wait longer for database to be consistent, then verify status
-      // Use retry logic to ensure we get the correct status
-      let retries = 0;
-      const maxRetries = 5;
-      const retryDelay = 500;
-      
-      const verifyStatus = async () => {
+      // Verify status in the background without blocking UI updates
+      // Don't reset state if verification fails - trust the immediate update
+      setTimeout(async () => {
         try {
           const { data: statusData, error: statusError } = await supabase.rpc('get_employee_clock_status', {
             p_user_id: user.id
@@ -741,43 +742,31 @@ const MainHub: React.FC = () => {
             const isClockedIn = status.is_clocked_in === true || status.is_clocked_in === 'true' || status.is_clocked_in === 1;
             
             if (isClockedIn) {
-              // Status is correct, update with server data
-              console.log('Verified clocked in status from server');
-              setClockStatus({
-                isClockedIn: true,
-                clockInAt: status.clock_in_at || actualClockInAt,
-                hoursToday: parseFloat(status.total_hours_today) || 0,
-                weeklyHours: parseFloat(status.weekly_hours) || 0,
-                currentEntryId: status.current_entry_id || data || null
+              // Only update if still clocked in (don't override if user already clocked out)
+              setClockStatus(prev => {
+                if (prev.isClockedIn) {
+                  // Update with server data but preserve isClockedIn = true
+                  return {
+                    isClockedIn: true, // Always keep this true if we're verifying clock in
+                    clockInAt: status.clock_in_at || prev.clockInAt,
+                    hoursToday: parseFloat(status.total_hours_today) || prev.hoursToday,
+                    weeklyHours: parseFloat(status.weekly_hours) || prev.weeklyHours,
+                    currentEntryId: status.current_entry_id || prev.currentEntryId
+                  };
+                }
+                return prev; // Don't change if user already clocked out
               });
-              return true; // Success
-            } else if (retries < maxRetries) {
-              // Not yet consistent, retry
-              console.log(`Status not yet consistent, retrying... (${retries + 1}/${maxRetries})`);
-              retries++;
-              setTimeout(verifyStatus, retryDelay);
-              return false;
+              console.log('Verified clocked in status from server');
+            } else {
+              console.warn('Verification says not clocked in, but keeping local state');
+              // Don't reset - trust the immediate update
             }
-          } else if (retries < maxRetries) {
-            // Error or no data, retry
-            console.log(`Status fetch failed, retrying... (${retries + 1}/${maxRetries})`);
-            retries++;
-            setTimeout(verifyStatus, retryDelay);
-            return false;
           }
         } catch (err) {
-          console.error('Error verifying status:', err);
-          if (retries < maxRetries) {
-            retries++;
-            setTimeout(verifyStatus, retryDelay);
-            return false;
-          }
+          console.error('Error verifying status (non-blocking):', err);
+          // Don't reset state on verification error
         }
-        return false;
-      };
-      
-      // Start verification after a short delay
-      setTimeout(verifyStatus, 300);
+      }, 500);
     } catch (error: any) {
       console.error('Clock in error:', error);
       message.error(error.message || 'Failed to clock in');
@@ -1206,7 +1195,7 @@ const MainHub: React.FC = () => {
                         icon={<LogoutOutlined />}
                         loading={clockLoading && pendingClockAction === 'out'}
                         onClick={handleClockOut}
-                        disabled={clockLoading || !clockStatus.isClockedIn}
+                        disabled={clockLoading || !clockStatus.isClockedIn || pendingClockAction === 'in'}
                         block
                         style={{
                           background: !clockStatus.isClockedIn ? '#d1d5db' : '#ff4d4f',
@@ -1216,6 +1205,8 @@ const MainHub: React.FC = () => {
                           fontSize: 18,
                           fontWeight: 700,
                           boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                          cursor: (!clockLoading && clockStatus.isClockedIn && pendingClockAction !== 'in') ? 'pointer' : 'not-allowed',
+                          opacity: (!clockLoading && clockStatus.isClockedIn && pendingClockAction !== 'in') ? 1 : 0.6,
                         }}
                       >
                         CLOCK OUT
