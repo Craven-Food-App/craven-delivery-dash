@@ -138,3 +138,79 @@ r.post("/email", async (req, res) => {
 
 export default r;
 
+// ============ DRIVER DOCUMENTS ============
+// Minimal driver ICA generation + email route
+// Generates a PDF confirmation/ICA from provided fields, uploads to storage, and emails the driver
+
+import type { Request, Response } from "express";
+
+const DriverICASchema = z.object({
+  driver_name: z.string(),
+  driver_email: z.string().email(),
+  signed_at: z.string().optional(), // ISO string
+  contents_html: z.string().optional(), // optional pre-rendered HTML; if not provided, we render a simple confirmation
+});
+
+function buildDriverICAHtml(input: { driver_name: string; signed_at?: string }) {
+  const when = input.signed_at ? new Date(input.signed_at) : new Date();
+  const dateStr = when.toLocaleString();
+  return `
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Independent Contractor Agreement</title>
+        <style>
+          body { font-family: Arial, sans-serif; color: #111827; padding: 24px; }
+          h1 { color: #ff7a45; margin-bottom: 8px; }
+          .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-top: 16px; }
+          .muted { color: #6b7280; }
+          .section-title { font-weight: 700; margin-top: 16px; }
+          ul { line-height: 1.6; }
+        </style>
+      </head>
+      <body>
+        <h1>Independent Contractor Agreement (Receipt)</h1>
+        <div class="muted">This document confirms your acceptance of the Independent Contractor Agreement with Crave'N.</div>
+        <div class="card">
+          <div><strong>Contractor:</strong> ${input.driver_name}</div>
+          <div><strong>Signed At:</strong> ${dateStr}</div>
+        </div>
+        <div class="section-title">Summary</div>
+        <p class="muted">You agreed to the Crave'N Independent Contractor terms including relationship, compensation, compliance with applicable law, and confidentiality. Keep this receipt for your records.</p>
+      </body>
+    </html>
+  `;
+}
+
+// POST /documents/driver/ica-email
+r.post("/driver/ica-email", async (req: Request, res: Response) => {
+  try {
+    const { driver_name, driver_email, signed_at, contents_html } = DriverICASchema.parse(req.body);
+
+    const html = contents_html && contents_html.trim().length > 0
+      ? contents_html
+      : buildDriverICAHtml({ driver_name, signed_at });
+
+    const pdf = await htmlToPdfBuffer(html);
+
+    // Upload to storage (optional but helpful for audit)
+    const { data: upload, error: upErr } = await supabase.storage
+      .from(env.STORAGE_BUCKET)
+      .upload(`driver_docs/${crypto.randomUUID()}-ica.pdf`, pdf, { contentType: "application/pdf", upsert: false });
+    if (upErr) throw upErr;
+    const file_url = supabase.storage.from(env.STORAGE_BUCKET).getPublicUrl(upload.path).data.publicUrl;
+
+    // Email the driver the attachment and a link
+    await sendDocEmail(
+      driver_email,
+      "Your Crave'N Contractor Agreement Receipt",
+      `Hello ${driver_name},<br/><br/>Attached is your agreement receipt. You can also access it here: <a href="${file_url}">${file_url}</a>.<br/><br/>Welcome to Crave'N!`,
+      { filename: "Craven-ICA.pdf", content: pdf }
+    );
+
+    res.json({ ok: true, file_url });
+  } catch (e: any) {
+    res.status(400).json({ ok: false, error: e.message });
+  }
+});
+
