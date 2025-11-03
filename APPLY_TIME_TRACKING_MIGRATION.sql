@@ -29,10 +29,41 @@ CREATE INDEX IF NOT EXISTS idx_time_entries_status ON public.time_entries(status
 CREATE INDEX IF NOT EXISTS idx_time_entries_date ON public.time_entries((DATE(clock_in_at)));
 
 -- Function to clock in
+-- Drop all existing versions
 DROP FUNCTION IF EXISTS public.clock_in(UUID, TEXT);
 DROP FUNCTION IF EXISTS public.clock_in(UUID);
 
-CREATE OR REPLACE FUNCTION public.clock_in(p_employee_id UUID, p_work_location TEXT DEFAULT NULL)
+-- Create function with 1 parameter (UUID only) - this is what we're calling from the app
+CREATE OR REPLACE FUNCTION public.clock_in(p_employee_id UUID)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_entry_id UUID;
+BEGIN
+  -- Check if employee is already clocked in
+  IF EXISTS (
+    SELECT 1 FROM public.time_entries 
+    WHERE employee_id = p_employee_id 
+    AND status = 'clocked_in'
+    AND clock_out_at IS NULL
+  ) THEN
+    RAISE EXCEPTION 'Employee is already clocked in';
+  END IF;
+
+  -- Create new clock-in entry
+  INSERT INTO public.time_entries (employee_id, clock_in_at, status, work_location)
+  VALUES (p_employee_id, now(), 'clocked_in', NULL)
+  RETURNING id INTO v_entry_id;
+
+  RETURN v_entry_id;
+END;
+$$;
+
+-- Also create function with 2 parameters (for future use if needed)
+CREATE OR REPLACE FUNCTION public.clock_in(p_employee_id UUID, p_work_location TEXT)
 RETURNS UUID
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -61,14 +92,51 @@ END;
 $$;
 
 -- Grant execute permission
-GRANT EXECUTE ON FUNCTION public.clock_in(UUID, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.clock_in(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.clock_in(UUID, TEXT) TO authenticated;
 
 -- Function to clock out
 DROP FUNCTION IF EXISTS public.clock_out(UUID, INTEGER);
 DROP FUNCTION IF EXISTS public.clock_out(UUID);
 
-CREATE OR REPLACE FUNCTION public.clock_out(p_employee_id UUID, p_break_duration_minutes INTEGER DEFAULT 0)
+-- Create function with 1 parameter (UUID only)
+CREATE OR REPLACE FUNCTION public.clock_out(p_employee_id UUID)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_entry_id UUID;
+BEGIN
+  -- Find active clock-in entry
+  SELECT id INTO v_entry_id
+  FROM public.time_entries
+  WHERE employee_id = p_employee_id
+  AND status IN ('clocked_in', 'on_break')
+  AND clock_out_at IS NULL
+  ORDER BY clock_in_at DESC
+  LIMIT 1;
+
+  IF v_entry_id IS NULL THEN
+    RAISE EXCEPTION 'No active clock-in found';
+  END IF;
+
+  -- Update entry with clock-out time
+  UPDATE public.time_entries
+  SET 
+    clock_out_at = now(),
+    status = 'clocked_out',
+    break_duration_minutes = 0,
+    updated_at = now()
+  WHERE id = v_entry_id;
+
+  RETURN v_entry_id;
+END;
+$$;
+
+-- Also create function with 2 parameters (for future use)
+CREATE OR REPLACE FUNCTION public.clock_out(p_employee_id UUID, p_break_duration_minutes INTEGER)
 RETURNS UUID
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -104,8 +172,8 @@ END;
 $$;
 
 -- Grant execute permission for clock_out
-GRANT EXECUTE ON FUNCTION public.clock_out(UUID, INTEGER) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.clock_out(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.clock_out(UUID, INTEGER) TO authenticated;
 
 -- Function to get current clock status
 DROP FUNCTION IF EXISTS public.get_employee_clock_status(UUID);

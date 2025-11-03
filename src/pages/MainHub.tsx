@@ -380,9 +380,9 @@ const MainHub: React.FC = () => {
     setClockLoading(true);
     
     try {
+      // Call without optional parameter
       const { data, error } = await supabase.rpc('clock_out', {
-        p_employee_id: employeeInfo.id,
-        p_break_duration_minutes: 0
+        p_employee_id: employeeInfo.id
       });
       
       if (error) throw error;
