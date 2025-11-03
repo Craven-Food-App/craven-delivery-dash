@@ -98,8 +98,8 @@ BEGIN
 END;
 $$;
 
--- Function with 2 parameters (for future use)
-CREATE OR REPLACE FUNCTION public.clock_in(p_employee_id UUID, p_work_location TEXT)
+-- Function with 2 parameters (for future use if needed)
+CREATE OR REPLACE FUNCTION public.clock_in(p_user_id UUID, p_work_location TEXT)
 RETURNS UUID
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -107,20 +107,41 @@ SET search_path = public
 AS $$
 DECLARE
   v_entry_id UUID;
+  v_employee_id UUID;
+  v_exec_user_id UUID;
 BEGIN
-  -- Check if employee is already clocked in
+  -- Check if user is already clocked in
   IF EXISTS (
     SELECT 1 FROM public.time_entries 
-    WHERE employee_id = p_employee_id 
+    WHERE user_id = p_user_id 
     AND status = 'clocked_in'
     AND clock_out_at IS NULL
   ) THEN
-    RAISE EXCEPTION 'Employee is already clocked in';
+    RAISE EXCEPTION 'User is already clocked in';
+  END IF;
+
+  -- Try to find employee record
+  SELECT id INTO v_employee_id
+  FROM public.employees
+  WHERE user_id = p_user_id
+  LIMIT 1;
+
+  -- Try to find exec_user record if not an employee
+  IF v_employee_id IS NULL THEN
+    SELECT id INTO v_exec_user_id
+    FROM public.exec_users
+    WHERE user_id = p_user_id
+    LIMIT 1;
+  END IF;
+
+  -- Ensure user exists in either employees or exec_users
+  IF v_employee_id IS NULL AND v_exec_user_id IS NULL THEN
+    RAISE EXCEPTION 'User not found in employees or executives table';
   END IF;
 
   -- Create new clock-in entry
-  INSERT INTO public.time_entries (employee_id, clock_in_at, status, work_location)
-  VALUES (p_employee_id, now(), 'clocked_in', p_work_location)
+  INSERT INTO public.time_entries (user_id, employee_id, exec_user_id, clock_in_at, status, work_location)
+  VALUES (p_user_id, v_employee_id, v_exec_user_id, now(), 'clocked_in', p_work_location)
   RETURNING id INTO v_entry_id;
 
   RETURN v_entry_id;
@@ -170,7 +191,7 @@ END;
 $$;
 
 -- Function with 2 parameters (for future use)
-CREATE OR REPLACE FUNCTION public.clock_out(p_employee_id UUID, p_break_duration_minutes INTEGER)
+CREATE OR REPLACE FUNCTION public.clock_out(p_user_id UUID, p_break_duration_minutes INTEGER)
 RETURNS UUID
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -182,7 +203,7 @@ BEGIN
   -- Find active clock-in entry
   SELECT id INTO v_entry_id
   FROM public.time_entries
-  WHERE employee_id = p_employee_id
+  WHERE user_id = p_user_id
   AND status IN ('clocked_in', 'on_break')
   AND clock_out_at IS NULL
   ORDER BY clock_in_at DESC
