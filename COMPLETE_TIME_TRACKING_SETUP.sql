@@ -30,8 +30,8 @@ CREATE TABLE IF NOT EXISTS public.time_entries (
 CREATE INDEX IF NOT EXISTS idx_time_entries_employee_id ON public.time_entries(employee_id);
 CREATE INDEX IF NOT EXISTS idx_time_entries_clock_in_at ON public.time_entries(clock_in_at);
 CREATE INDEX IF NOT EXISTS idx_time_entries_status ON public.time_entries(status) WHERE status = 'clocked_in';
--- Date index using direct cast (immutable)
-CREATE INDEX IF NOT EXISTS idx_time_entries_date ON public.time_entries((clock_in_at::date));
+-- Note: Date queries can use the clock_in_at timestamp index with WHERE DATE(clock_in_at) = ...
+-- No separate date index needed
 
 -- ============================================
 -- STEP 3: Create clock_in functions
