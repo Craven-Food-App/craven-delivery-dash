@@ -91,10 +91,18 @@ const MainHub: React.FC = () => {
             });
             setStatusLoaded(true);
             console.log('Loaded persisted clock status from localStorage');
+          } else {
+            // No valid saved status, mark as loaded so we can fetch from database
+            setStatusLoaded(true);
           }
+        } else {
+          // No saved status, mark as loaded so we can fetch from database
+          setStatusLoaded(true);
         }
       } catch (err) {
         console.log('Could not load persisted status:', err);
+        // On error, mark as loaded so we can fetch from database
+        setStatusLoaded(true);
       }
     }
   }, [user]);
@@ -975,8 +983,8 @@ const MainHub: React.FC = () => {
             </Text>
           </div>
 
-          {/* Time Clock Section - Show when user is logged in and status is loaded */}
-          {user && statusLoaded && (
+          {/* Time Clock Section - Show when user is logged in */}
+          {user && (
             <Card
               style={{
                 marginBottom: 48,
