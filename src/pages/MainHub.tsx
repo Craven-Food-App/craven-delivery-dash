@@ -67,6 +67,7 @@ const MainHub: React.FC = () => {
     currentEntryId: null,
   });
   const [clockLoading, setClockLoading] = useState(false);
+  const [statusLoaded, setStatusLoaded] = useState(false);
   const [showClockHistory, setShowClockHistory] = useState(false);
   const [timeEntries, setTimeEntries] = useState<any[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
