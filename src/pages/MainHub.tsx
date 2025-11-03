@@ -72,6 +72,46 @@ const MainHub: React.FC = () => {
   const [timeEntries, setTimeEntries] = useState<any[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentDuration, setCurrentDuration] = useState('00:00:00');
+  
+  // Load persisted clock status from localStorage on mount
+  useEffect(() => {
+    if (user) {
+      try {
+        const savedStatus = localStorage.getItem(`clock_status_${user.id}`);
+        if (savedStatus) {
+          const parsed = JSON.parse(savedStatus);
+          // Only use saved status if it's recent (within last 24 hours)
+          if (parsed.timestamp && Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
+            setClockStatus({
+              isClockedIn: parsed.isClockedIn,
+              clockInAt: parsed.clockInAt,
+              hoursToday: parsed.hoursToday || 0,
+              weeklyHours: parsed.weeklyHours || 0,
+              currentEntryId: parsed.currentEntryId || null,
+            });
+            setStatusLoaded(true);
+            console.log('Loaded persisted clock status from localStorage');
+          }
+        }
+      } catch (err) {
+        console.log('Could not load persisted status:', err);
+      }
+    }
+  }, [user]);
+  
+  // Save clock status to localStorage whenever it changes
+  useEffect(() => {
+    if (user && statusLoaded) {
+      try {
+        localStorage.setItem(`clock_status_${user.id}`, JSON.stringify({
+          ...clockStatus,
+          timestamp: Date.now(),
+        }));
+      } catch (err) {
+        console.log('Could not save status to localStorage:', err);
+      }
+    }
+  }, [clockStatus, user, statusLoaded]);
 
   // CEO Master PIN - Torrance Stroman
   const CEO_MASTER_PIN = "999999";
@@ -374,14 +414,27 @@ const MainHub: React.FC = () => {
         });
         
         // ALWAYS update with database state - this is the source of truth
-        setClockStatus({
+        const newStatus = {
           isClockedIn: isClockedIn,
           clockInAt: status.clock_in_at || null,
           hoursToday: parseFloat(status.total_hours_today) || 0,
           weeklyHours: parseFloat(status.weekly_hours) || 0,
           currentEntryId: status.current_entry_id || null
-        });
+        };
+        setClockStatus(newStatus);
         setStatusLoaded(true);
+        
+        // Persist to localStorage
+        if (user) {
+          try {
+            localStorage.setItem(`clock_status_${user.id}`, JSON.stringify({
+              ...newStatus,
+              timestamp: Date.now(),
+            }));
+          } catch (err) {
+            console.log('Could not save to localStorage:', err);
+          }
+        }
         
         // Update current duration if clocked in
         if (isClockedIn && status.clock_in_at) {
