@@ -67,6 +67,19 @@ const TimePtoView: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Update durations in real-time every second
+  useEffect(() => {
+    const durationInterval = setInterval(() => {
+      setClockedInEmployees(prev => 
+        prev.map(emp => ({
+          ...emp,
+          duration: calculateDuration(emp.clock_in_at, new Date())
+        }))
+      );
+    }, 1000);
+    return () => clearInterval(durationInterval);
+  }, []);
+
   const fetchClockedInEmployees = async () => {
     try {
       // Get all time entries that are currently clocked in
