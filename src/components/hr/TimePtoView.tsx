@@ -65,19 +65,9 @@ const TimePtoView: React.FC = () => {
         return;
       }
       
-      const { data: employee } = await supabase
-        .from('employees')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-        
-      if (!employee) {
-        setLoading(false);
-        return;
-      }
-      
+      // Use user_id directly (works for both employees and executives)
       const { data: status, error } = await supabase.rpc('get_employee_clock_status', {
-        p_employee_id: employee.id
+        p_user_id: user.id
       });
       
       if (error) {
@@ -116,21 +106,10 @@ const TimePtoView: React.FC = () => {
         return;
       }
       
-      const { data: employee } = await supabase
-        .from('employees')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-        
-      if (!employee) {
-        setClockLoading(false);
-        return;
-      }
-      
       if (clockStatus.status === 'Clocked In') {
-        // Clock out - call without optional parameter
+        // Clock out - use user_id (works for both employees and executives)
         const { error } = await supabase.rpc('clock_out', {
-          p_employee_id: employee.id
+          p_user_id: user.id
         });
         
         if (error) {
@@ -140,9 +119,9 @@ const TimePtoView: React.FC = () => {
         }
         message.success('Clocked out successfully');
       } else {
-        // Clock in - don't pass optional parameter
+        // Clock in - use user_id (works for both employees and executives)
         const { error } = await supabase.rpc('clock_in', {
-          p_employee_id: employee.id
+          p_user_id: user.id
         });
         
         if (error) {

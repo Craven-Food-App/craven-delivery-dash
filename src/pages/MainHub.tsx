@@ -299,11 +299,11 @@ const MainHub: React.FC = () => {
 
   // Fetch clock status
   const fetchClockStatus = async () => {
-    if (!employeeInfo) return;
+    if (!user || !employeeInfo) return;
     
     try {
       const { data, error } = await supabase.rpc('get_employee_clock_status', {
-        p_employee_id: employeeInfo.id
+        p_user_id: user.id
       });
       
       if (error) throw error;
@@ -333,13 +333,13 @@ const MainHub: React.FC = () => {
 
   // Fetch time entries history
   const fetchTimeEntries = async () => {
-    if (!employeeInfo) return;
+    if (!user) return;
     
     try {
       const { data, error } = await supabase
         .from('time_entries')
         .select('*')
-        .eq('employee_id', employeeInfo.id)
+        .eq('user_id', user.id)
         .order('clock_in_at', { ascending: false })
         .limit(20);
       
@@ -352,13 +352,13 @@ const MainHub: React.FC = () => {
 
   // Clock in handler
   const handleClockIn = async () => {
-    if (!employeeInfo) return;
+    if (!user) return;
     setClockLoading(true);
     
     try {
-      // Call without optional parameter if null
+      // Call with user_id (works for both employees and executives)
       const { data, error } = await supabase.rpc('clock_in', {
-        p_employee_id: employeeInfo.id
+        p_user_id: user.id
       });
       
       if (error) throw error;
@@ -376,13 +376,13 @@ const MainHub: React.FC = () => {
 
   // Clock out handler
   const handleClockOut = async () => {
-    if (!employeeInfo) return;
+    if (!user) return;
     setClockLoading(true);
     
     try {
-      // Call without optional parameter
+      // Call with user_id (works for both employees and executives)
       const { data, error } = await supabase.rpc('clock_out', {
-        p_employee_id: employeeInfo.id
+        p_user_id: user.id
       });
       
       if (error) throw error;
@@ -410,9 +410,9 @@ const MainHub: React.FC = () => {
     return () => clearInterval(timer);
   }, [clockStatus]);
 
-  // Fetch clock status when employee info is available
+  // Fetch clock status when user is available
   useEffect(() => {
-    if (employeeInfo) {
+    if (user && employeeInfo) {
       fetchClockStatus();
       fetchTimeEntries();
       // Poll for updates every 30 seconds
@@ -421,7 +421,7 @@ const MainHub: React.FC = () => {
       }, 30000);
       return () => clearInterval(interval);
     }
-  }, [employeeInfo]);
+  }, [user, employeeInfo]);
 
   // Company-side portals only
   const portals: Portal[] = [
