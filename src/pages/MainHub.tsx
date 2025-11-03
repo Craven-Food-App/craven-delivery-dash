@@ -446,15 +446,28 @@ const MainHub: React.FC = () => {
       } else {
         // No status found - database explicitly says user is clocked out
         console.log('Database confirms: user is clocked out');
-        setClockStatus({
+        const newStatus = {
           isClockedIn: false,
           clockInAt: null,
           hoursToday: 0,
           weeklyHours: 0,
           currentEntryId: null
-        });
+        };
+        setClockStatus(newStatus);
         setStatusLoaded(true);
         setCurrentDuration('00:00:00');
+        
+        // Persist to localStorage
+        if (user) {
+          try {
+            localStorage.setItem(`clock_status_${user.id}`, JSON.stringify({
+              ...newStatus,
+              timestamp: Date.now(),
+            }));
+          } catch (err) {
+            console.log('Could not save to localStorage:', err);
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching clock status:', error);
@@ -664,14 +677,28 @@ const MainHub: React.FC = () => {
       
       // Update state immediately for instant UI feedback
       console.log('Setting clock status to CLOCKED OUT immediately');
-      setClockStatus(prev => ({
+      const newClockOutStatus = {
         isClockedIn: false,
         clockInAt: null,
-        hoursToday: prev.hoursToday, // Keep existing hours
-        weeklyHours: prev.weeklyHours, // Keep existing hours
+        hoursToday: 0,
+        weeklyHours: 0,
         currentEntryId: null
-      }));
+      };
+      setClockStatus(newClockOutStatus);
+      setStatusLoaded(true);
       setCurrentDuration('00:00:00');
+      
+      // Persist to localStorage immediately
+      if (user) {
+        try {
+          localStorage.setItem(`clock_status_${user.id}`, JSON.stringify({
+            ...newClockOutStatus,
+            timestamp: Date.now(),
+          }));
+        } catch (err) {
+          console.log('Could not save clock out to localStorage:', err);
+        }
+      }
       
       // Small delay to ensure state is updated, then fetch from server
       setTimeout(async () => {
