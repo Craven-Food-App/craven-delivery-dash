@@ -423,18 +423,21 @@ const MainHub: React.FC = () => {
       
       // Update state immediately for instant UI feedback
       const now = new Date().toISOString();
-      setClockStatus(prev => ({
+      console.log('Setting clock status to CLOCKED IN immediately', { now, data });
+      setClockStatus({
         isClockedIn: true,
         clockInAt: now,
-        hoursToday: prev?.hoursToday || 0,
-        weeklyHours: prev?.weeklyHours || 0,
+        hoursToday: 0, // Will be updated by fetchClockStatus
+        weeklyHours: 0, // Will be updated by fetchClockStatus
         currentEntryId: data || null
-      }));
+      });
       setCurrentDuration('00:00:00'); // Reset duration counter
       
-      // Then fetch updated status from server
-      await fetchClockStatus();
-      await fetchTimeEntries();
+      // Small delay to ensure state is updated, then fetch from server
+      setTimeout(async () => {
+        await fetchClockStatus();
+        await fetchTimeEntries();
+      }, 100);
     } catch (error: any) {
       console.error('Clock in error:', error);
       message.error(error.message || 'Failed to clock in');
