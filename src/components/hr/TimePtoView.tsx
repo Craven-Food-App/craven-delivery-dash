@@ -216,10 +216,11 @@ const TimePtoView: React.FC = () => {
               }
             }
           }
-        } catch (execFetchError) {
-          console.warn('Error processing executives (non-critical, continuing with regular employees):', execFetchError);
-          // Continue with just regular employees if executive fetch/processing fails
         }
+      } catch (execFetchError) {
+        console.warn('Error processing executives (non-critical, continuing with regular employees):', execFetchError);
+        // Continue with just regular employees if executive fetch/processing fails
+      }
 
       // Sort by last name
       allEmployees.sort((a, b) => a.last_name.localeCompare(b.last_name));
