@@ -4,6 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { 
   User, 
   Car, 
@@ -15,7 +26,8 @@ import {
   CheckCircle, 
   XCircle,
   Eye,
-  Send
+  Send,
+  Trash2
 } from 'lucide-react';
 import { formatDate } from 'date-fns';
 
@@ -71,6 +83,7 @@ interface ApplicationCardProps {
   application: Application;
   onApprove: (id: string, notes: string) => void;
   onReject: (id: string, notes: string) => void;
+  onDelete?: (id: string) => void;
   onViewDocument: (documentPath: string, documentName: string) => void;
   onSendApprovalEmail?: (id: string) => void;
 }
@@ -78,7 +91,8 @@ interface ApplicationCardProps {
 const ApplicationCard: React.FC<ApplicationCardProps> = ({ 
   application, 
   onApprove, 
-  onReject, 
+  onReject,
+  onDelete,
   onViewDocument,
   onSendApprovalEmail 
 }) => {
@@ -357,6 +371,41 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
               <Send className="h-4 w-4" />
               Send Approval Email
             </Button>
+          </div>
+        )}
+
+        {/* Delete Button */}
+        {onDelete && (
+          <div className="border-t pt-4">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="destructive"
+                  className="w-full flex items-center gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Application
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Application</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete the application for <strong>{application.first_name} {application.last_name}</strong>? 
+                    This action cannot be undone and will permanently remove the application and all associated data from the system.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => onDelete(application.id)}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         )}
 

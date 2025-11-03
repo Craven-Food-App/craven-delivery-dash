@@ -239,6 +239,37 @@ const ApplicationReview: React.FC = () => {
     }
   };
 
+  const handleDelete = async (applicationId: string) => {
+    try {
+      const application = applications.find(app => app.id === applicationId);
+      if (!application) throw new Error('Application not found');
+
+      const { error } = await supabase
+        .from('craver_applications')
+        .delete()
+        .eq('id', applicationId);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Application Deleted",
+        description: `Application for ${application.first_name} ${application.last_name} has been permanently deleted.`,
+        variant: "default",
+      });
+
+      fetchApplications();
+    } catch (error) {
+      console.error('Error deleting application:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete application",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleViewDocument = (documentPath: string, documentName: string) => {
     setDocumentViewer({
       isOpen: true,
@@ -352,6 +383,7 @@ const ApplicationReview: React.FC = () => {
                     application={application}
                     onApprove={handleApprove}
                     onReject={handleReject}
+                    onDelete={handleDelete}
                     onViewDocument={handleViewDocument}
                     onSendApprovalEmail={handleSendApprovalEmail}
                   />
@@ -375,6 +407,7 @@ const ApplicationReview: React.FC = () => {
                     application={application}
                     onApprove={handleApprove}
                     onReject={handleReject}
+                    onDelete={handleDelete}
                     onViewDocument={handleViewDocument}
                     onSendApprovalEmail={handleSendApprovalEmail}
                   />
@@ -398,6 +431,7 @@ const ApplicationReview: React.FC = () => {
                     application={application}
                     onApprove={handleApprove}
                     onReject={handleReject}
+                    onDelete={handleDelete}
                     onViewDocument={handleViewDocument}
                     onSendApprovalEmail={handleSendApprovalEmail}
                   />
@@ -416,6 +450,7 @@ const ApplicationReview: React.FC = () => {
                   application={application}
                   onApprove={handleApprove}
                   onReject={handleReject}
+                  onDelete={handleDelete}
                   onViewDocument={handleViewDocument}
                   onSendApprovalEmail={handleSendApprovalEmail}
                 />
