@@ -150,20 +150,40 @@ export default function SendCSuiteDocs() {
       const execStatus: DocumentStatus[] = [];
 
       // Check which documents already exist for this executive
-      const { data: existingDocs } = await supabase
+      // Try multiple matching strategies since names might vary
+      const { data: existingDocs, error: docsError } = await supabase
         .from('executive_documents')
-        .select('id, type, status')
-        .eq('officer_name', exec.full_name)
-        .or(`role.eq.${exec.role},role.eq.${exec.title}`);
+        .select('id, type, status, officer_name, role')
+        .or(`officer_name.eq.${exec.full_name},role.eq.${exec.role},role.eq.${exec.title}`);
 
-      const existingTypes = new Set(existingDocs?.map((d: any) => d.type) || []);
+      if (docsError) {
+        console.error(`Error checking documents for ${exec.full_name}:`, docsError);
+      }
+
+      console.log(`Documents found for ${exec.full_name}:`, existingDocs);
+
+      // Match by type and either name or role
+      const existingTypes = new Set(
+        (existingDocs || [])
+          .filter((d: any) => 
+            d.officer_name === exec.full_name || 
+            d.role === exec.role || 
+            d.role === exec.title
+          )
+          .map((d: any) => d.type)
+      );
 
       for (const docType of CSUITE_DOC_TYPES) {
+        const matchingDoc = existingDocs?.find((d: any) => 
+          d.type === docType.id && 
+          (d.officer_name === exec.full_name || d.role === exec.role || d.role === exec.title)
+        );
+
         execStatus.push({
           type: docType.id,
           title: docType.title,
           exists: existingTypes.has(docType.id),
-          documentId: existingDocs?.find((d: any) => d.type === docType.id)?.id,
+          documentId: matchingDoc?.id,
         });
       }
 
@@ -241,16 +261,20 @@ export default function SendCSuiteDocs() {
       for (const exec of executives) {
         const execResults = { exec, success: 0, failed: 0, errors: [] as string[] };
 
+        console.log(`Processing documents for ${exec.full_name} (${exec.role})...`);
+
         for (const docType of CSUITE_DOC_TYPES) {
           try {
             // Check if document already exists
             const status = statusMap[exec.id]?.find(s => s.type === docType.id);
             if (status?.exists && status.documentId) {
               // Document exists, just send it
+              console.log(`Document ${docType.title} already exists for ${exec.full_name}, sending...`);
               await sendExistingDocument(exec, docType, status.documentId);
               execResults.success++;
             } else {
               // Generate new document
+              console.log(`Generating ${docType.title} for ${exec.full_name}...`);
               const data = generateDocumentData(exec, docType.id);
               const html_content = renderHtml(docType.id, data);
 
@@ -264,32 +288,60 @@ export default function SendCSuiteDocs() {
                 html_content,
               });
 
+              console.log(`Document generation response for ${exec.full_name} - ${docType.title}:`, resp);
+
               if (resp?.ok && resp?.document) {
                 // Send document via email
-                await sendDocumentEmail(exec, docType.title, resp.document.file_url);
+                if (exec.email) {
+                  await sendDocumentEmail(exec, docType.title, resp.document.file_url);
+                } else {
+                  console.warn(`No email for ${exec.full_name}, document generated but not sent`);
+                }
                 execResults.success++;
+                console.log(`✓ Successfully generated and sent ${docType.title} for ${exec.full_name}`);
               } else {
-                throw new Error('Document generation failed');
+                throw new Error(`Document generation failed: ${resp?.error || 'Unknown error'}`);
               }
             }
           } catch (error: any) {
-            console.error(`Error processing ${docType.title} for ${exec.full_name}:`, error);
+            console.error(`✗ Error processing ${docType.title} for ${exec.full_name}:`, error);
             execResults.failed++;
-            execResults.errors.push(`${docType.title}: ${error.message}`);
+            execResults.errors.push(`${docType.title}: ${error.message || error}`);
           }
 
           completed++;
           setProgress((completed / totalOperations) * 100);
         }
 
+        // Log summary for this executive
+        if (execResults.failed > 0) {
+          console.error(`${exec.full_name} - ${execResults.success} success, ${execResults.failed} failed:`, execResults.errors);
+        } else {
+          console.log(`${exec.full_name} - All ${execResults.success} documents processed successfully`);
+        }
+
         results.push(execResults);
       }
 
-      // Show results
+      // Show results with detailed breakdown
       const totalSuccess = results.reduce((sum, r) => sum + r.success, 0);
       const totalFailed = results.reduce((sum, r) => sum + r.failed, 0);
 
-      message.success(`Documents sent: ${totalSuccess} successful, ${totalFailed} failed`);
+      // Show detailed results for each executive
+      results.forEach((result) => {
+        if (result.failed > 0) {
+          message.warning(
+            `${result.exec.full_name}: ${result.success} successful, ${result.failed} failed. Check console for details.`,
+            5
+          );
+        }
+      });
+
+      if (totalFailed > 0) {
+        message.error(`Documents sent: ${totalSuccess} successful, ${totalFailed} failed. Check browser console for details.`, 8);
+      } else {
+        message.success(`All documents sent successfully: ${totalSuccess} total`);
+      }
 
       // Refresh document status
       await checkExistingDocuments(executives);
