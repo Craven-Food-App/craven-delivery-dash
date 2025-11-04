@@ -641,8 +641,11 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
   };
 
   const fetchMessages = async () => {
+    console.log('fetchMessages called with selectedContact:', selectedContact);
+    
     if (!selectedContact) {
       // Only clear if no contact is selected
+      console.log('No selectedContact, clearing messages');
       setMessages([]);
       return;
     }
@@ -650,6 +653,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
+        console.log('No user found, waiting for auth');
         // Don't clear messages - user might just be loading
         // Wait for auth to complete
         return;
@@ -663,9 +667,12 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
         .single();
 
       if (!currentExec) {
+        console.log('No currentExec found, waiting');
         // Don't clear messages - exec user might be loading
         return;
       }
+      
+      console.log('Fetching messages for contact:', selectedContact.name, selectedContact.isGroup ? `(Group: ${selectedContact.groupId})` : `(1-on-1: ${selectedContact.exec_id})`);
 
       // Handle group conversations
       if (selectedContact.isGroup && selectedContact.groupId) {
@@ -702,6 +709,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
         }
 
         // Format group messages
+        console.log(`Fetched ${messageData?.length || 0} messages from database for group ${groupId}`);
         const formattedMessages: Message[] = (messageData || [])
           .map((msg: any) => {
             const isSelf = msg.from_exec_id === currentExec.id;
@@ -745,6 +753,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
           ...prev,
           [historyKey]: formattedMessages
         }));
+        console.log(`Setting ${formattedMessages.length} group messages in UI`);
         setMessages(formattedMessages);
         return;
       }
@@ -857,7 +866,8 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
         [historyKey]: formattedMessages
       }));
       
-      // Update displayed messages
+      // Update displayed messages - ALWAYS set messages from database
+      console.log(`Setting ${formattedMessages.length} messages in UI`);
       setMessages(formattedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
