@@ -14,6 +14,7 @@ interface CreateExecutiveUserRequest {
   department: string;
   role: 'ceo' | 'cfo' | 'coo' | 'cto' | 'board_member';
   password?: string; // Optional - will generate if not provided
+  employeeId?: string; // Optional - employee ID to link after creation
 }
 
 serve(async (req: Request) => {
@@ -27,7 +28,8 @@ serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "" // Service role key for admin operations
     );
 
-    const { firstName, lastName, email, position, department, role, password }: CreateExecutiveUserRequest = await req.json();
+    const requestBody: CreateExecutiveUserRequest = await req.json();
+    const { firstName, lastName, email, position, department, role, password, employeeId } = requestBody;
 
     // Generate a temporary password if not provided
     const tempPassword = password || (Math.random().toString(36).slice(2, 10) + 'A1!' + Math.random().toString(36).slice(2, 6).toUpperCase());
@@ -68,6 +70,20 @@ serve(async (req: Request) => {
       // Clean up auth user if exec_users creation fails
       await supabaseClient.auth.admin.deleteUser(authData.user.id);
       throw execError;
+    }
+
+    // Link employee record if employee_id is provided
+    // This allows the function to be used for existing employees
+    if (employeeId) {
+      const { error: linkError } = await supabaseClient
+        .from('employees')
+        .update({ user_id: authData.user.id })
+        .eq('id', requestBody.employeeId);
+      
+      if (linkError) {
+        console.error('Error linking employee:', linkError);
+        // Don't fail - employee can be linked manually
+      }
     }
 
     console.log("Executive user created successfully:", execUser);

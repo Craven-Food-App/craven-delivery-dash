@@ -100,19 +100,23 @@ export const CreateAuthAccounts: React.FC = () => {
           department: department,
           role: execRole,
           password: tempPassword, // Pass the generated password to edge function
+          employeeId: employee.employee_id, // Pass employee ID so edge function can link it
         }
       });
 
       if (error) throw error;
 
       if (data?.userId) {
-        // Update employee with user_id
+        // Edge function should have linked it, but ensure it's linked
         const { error: updateError } = await supabase
           .from('employees')
           .update({ user_id: data.userId })
           .eq('id', employee.employee_id);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.warn('Employee already linked or link failed:', updateError);
+          // Don't fail - might already be linked by trigger
+        }
 
         // Show password in modal (use password from response if available, otherwise use generated one)
         setPasswordModal({
