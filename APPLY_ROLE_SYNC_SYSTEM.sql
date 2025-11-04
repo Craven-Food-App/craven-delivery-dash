@@ -16,6 +16,22 @@ ALTER TABLE public.user_roles
 ADD CONSTRAINT user_roles_role_check 
 CHECK (role IN ('admin', 'moderator', 'user', 'employee', 'executive', 'customer', 'driver'));
 
+-- Step 0.5: Ensure is_admin function exists
+CREATE OR REPLACE FUNCTION public.is_admin(user_uuid UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM public.user_roles 
+        WHERE user_id = user_uuid AND role = 'admin'
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE SET search_path = public;
+
+-- Step 0.6: Update exec_users constraint to allow 'executive' role
+ALTER TABLE public.exec_users DROP CONSTRAINT IF EXISTS exec_users_role_check;
+ALTER TABLE public.exec_users ADD CONSTRAINT exec_users_role_check 
+CHECK (role IN ('ceo', 'cfo', 'coo', 'cto', 'cxo', 'cmo', 'cro', 'cpo', 'cdo', 'chro', 'clo', 'cso', 'board_member', 'advisor', 'executive'));
+
 -- ============================================================================
 -- MIGRATION 1: Sync existing C-level employees to exec_users
 -- ============================================================================
