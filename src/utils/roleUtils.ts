@@ -25,13 +25,13 @@ export const isCLevelPosition = (position?: string | null): boolean => {
 
 /**
  * Normalizes a position string to an exec_users role
- * Returns: 'ceo', 'cfo', 'coo', 'cto', or 'board_member'
+ * Returns: 'ceo', 'cfo', 'coo', 'cto', 'executive', or 'board_member'
  * Returns null if not a C-level position
  * 
  * @param position - The position/title string to normalize
  * @returns The normalized exec role or null
  */
-export const getExecRoleFromPosition = (position?: string | null): 'ceo' | 'cfo' | 'coo' | 'cto' | 'board_member' | null => {
+export const getExecRoleFromPosition = (position?: string | null): 'ceo' | 'cfo' | 'coo' | 'cto' | 'executive' | 'board_member' | null => {
   if (!position) return null;
   
   const pos = String(position).toLowerCase();
@@ -47,7 +47,7 @@ export const getExecRoleFromPosition = (position?: string | null): 'ceo' | 'cfo'
   if (pos.includes('chro') || pos.includes('chief human')) return 'board_member';
   if (pos.includes('clo') || pos.includes('chief legal')) return 'board_member';
   if (pos.includes('cso') || pos.includes('chief security')) return 'board_member';
-  if (pos.includes('cxo')) return 'board_member';
+  if (pos.includes('cxo')) return 'executive';
   if (pos.includes('president')) return 'board_member';
   if (pos.includes('board member') || pos.includes('advisor')) return 'board_member';
   

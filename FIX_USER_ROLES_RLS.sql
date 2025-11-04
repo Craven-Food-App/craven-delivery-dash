@@ -4,6 +4,17 @@
 -- This fixes the RLS error when clicking "Sync Now"
 -- ============================================================================
 
+-- Step 0: Ensure is_admin function exists
+CREATE OR REPLACE FUNCTION public.is_admin(user_uuid UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM public.user_roles 
+        WHERE user_id = user_uuid AND role = 'admin'
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE SET search_path = public;
+
 -- Step 1: Drop existing policies
 DROP POLICY IF EXISTS "Admins can manage roles" ON public.user_roles;
 DROP POLICY IF EXISTS "Executives can manage roles" ON public.user_roles;
@@ -78,12 +89,20 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Step 5: Grant execute permission
 GRANT EXECUTE ON FUNCTION public.sync_user_roles_for_employee TO authenticated;
 
+-- Step 6: Update exec_users constraint to allow 'executive' role
+ALTER TABLE public.exec_users DROP CONSTRAINT IF EXISTS exec_users_role_check;
+ALTER TABLE public.exec_users ADD CONSTRAINT exec_users_role_check 
+CHECK (role IN ('ceo', 'cfo', 'coo', 'cto', 'cxo', 'cmo', 'cro', 'cpo', 'cdo', 'chro', 'clo', 'cso', 'board_member', 'advisor', 'executive'));
+
 -- Verify
 DO $$
 BEGIN
   RAISE NOTICE '✅ RLS policies and function created successfully!';
+  RAISE NOTICE '   - is_admin function created';
   RAISE NOTICE '   - Executives can now manage user_roles';
   RAISE NOTICE '   - SECURITY DEFINER function bypasses RLS';
+  RAISE NOTICE '   - exec_users now allows executive role';
+  RAISE NOTICE '   - CXO now maps to executive role';
   RAISE NOTICE '   - "Sync Now" button should now work!';
 END $$;
 

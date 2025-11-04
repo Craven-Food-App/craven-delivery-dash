@@ -50,7 +50,7 @@ BEGIN
     WHEN pos_lower LIKE '%cso%' OR pos_lower LIKE '%chief security%' THEN 
       RETURN 'board_member';
     WHEN pos_lower LIKE '%cxo%' THEN 
-      RETURN 'board_member';
+      RETURN 'executive';
     WHEN pos_lower LIKE '%president%' THEN 
       RETURN 'board_member';
     WHEN pos_lower LIKE '%board member%' OR pos_lower LIKE '%advisor%' THEN 
@@ -81,6 +81,6 @@ $$ LANGUAGE plpgsql STABLE;
 
 -- Add comments for documentation
 COMMENT ON FUNCTION public.is_c_level_position IS 'Determines if a position string represents a C-level executive role';
-COMMENT ON FUNCTION public.position_to_exec_role IS 'Normalizes a position string to an exec_users role (ceo, cfo, coo, cto, or board_member)';
+COMMENT ON FUNCTION public.position_to_exec_role IS 'Normalizes a position string to an exec_users role (ceo, cfo, coo, cto, executive, or board_member)';
 COMMENT ON FUNCTION public.get_department_name IS 'Gets department name from department_id, defaults to Executive';
 
