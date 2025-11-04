@@ -244,9 +244,9 @@ export default function SendCSuiteDocs() {
     }
   };
 
-  const sendDocumentsToExecutives = async () => {
-    if (executives.length === 0) {
-      message.warning('No executives found');
+  const sendDocumentsToExecutive = async (exec: Executive) => {
+    if (!exec) {
+      message.warning('No executive selected');
       return;
     }
 
@@ -254,101 +254,80 @@ export default function SendCSuiteDocs() {
     setProgress(0);
 
     try {
-      const totalOperations = executives.length * CSUITE_DOC_TYPES.length;
+      const totalOperations = CSUITE_DOC_TYPES.length;
       let completed = 0;
-      const results: { exec: Executive; success: number; failed: number; errors: string[] }[] = [];
+      const execResults = { exec, success: 0, failed: 0, errors: [] as string[] };
 
-      for (const exec of executives) {
-        const execResults = { exec, success: 0, failed: 0, errors: [] as string[] };
+      console.log(`Processing documents for ${exec.full_name} (${exec.role})...`);
 
-        console.log(`Processing documents for ${exec.full_name} (${exec.role})...`);
+      for (const docType of CSUITE_DOC_TYPES) {
+        try {
+          // Check if document already exists
+          const status = statusMap[exec.id]?.find(s => s.type === docType.id);
+          if (status?.exists && status.documentId) {
+            // Document exists, just send it
+            console.log(`Document ${docType.title} already exists for ${exec.full_name}, sending...`);
+            await sendExistingDocument(exec, docType, status.documentId);
+            execResults.success++;
+          } else {
+            // Generate new document
+            console.log(`Generating ${docType.title} for ${exec.full_name}...`);
+            const data = generateDocumentData(exec, docType.id);
+            const html_content = renderHtml(docType.id, data);
 
-        for (const docType of CSUITE_DOC_TYPES) {
-          try {
-            // Check if document already exists
-            const status = statusMap[exec.id]?.find(s => s.type === docType.id);
-            if (status?.exists && status.documentId) {
-              // Document exists, just send it
-              console.log(`Document ${docType.title} already exists for ${exec.full_name}, sending...`);
-              await sendExistingDocument(exec, docType, status.documentId);
+            // Generate document via API
+            const resp = await docsAPI.post('/documents/generate', {
+              template_id: docType.id,
+              officer_name: exec.full_name,
+              role: exec.role === 'cxo' ? 'Chief Experience Officer' : exec.title || exec.role.toUpperCase(),
+              equity: docType.id.includes('equity') ? parseFloat(data.equity_percentage) : undefined,
+              data,
+              html_content,
+            });
+
+            console.log(`Document generation response for ${exec.full_name} - ${docType.title}:`, resp);
+
+            if (resp?.ok && resp?.document) {
+              // Send document via email
+              if (exec.email) {
+                try {
+                  await sendDocumentEmail(exec, docType.title, resp.document.file_url);
+                  console.log(`✓ Successfully generated and sent ${docType.title} for ${exec.full_name}`);
+                } catch (emailError: any) {
+                  // Document was generated but email failed
+                  console.error(`⚠ Document generated but email failed for ${exec.full_name} - ${docType.title}:`, emailError);
+                  execResults.errors.push(`Email failed: ${emailError.message || 'Could not send email'}`);
+                  // Note: Still count as success since document was created, just email failed
+                }
+              } else {
+                console.warn(`No email for ${exec.full_name}, document generated but not sent`);
+              }
+              // Count as success since document was created (email may have failed but that's separate)
               execResults.success++;
             } else {
-              // Generate new document
-              console.log(`Generating ${docType.title} for ${exec.full_name}...`);
-              const data = generateDocumentData(exec, docType.id);
-              const html_content = renderHtml(docType.id, data);
-
-              // Generate document via API
-              const resp = await docsAPI.post('/documents/generate', {
-                template_id: docType.id,
-                officer_name: exec.full_name,
-                role: exec.role === 'cxo' ? 'Chief Experience Officer' : exec.title || exec.role.toUpperCase(),
-                equity: docType.id.includes('equity') ? parseFloat(data.equity_percentage) : undefined,
-                data,
-                html_content,
-              });
-
-              console.log(`Document generation response for ${exec.full_name} - ${docType.title}:`, resp);
-
-              if (resp?.ok && resp?.document) {
-                // Send document via email
-                if (exec.email) {
-                  try {
-                    await sendDocumentEmail(exec, docType.title, resp.document.file_url);
-                    console.log(`✓ Successfully generated and sent ${docType.title} for ${exec.full_name}`);
-                  } catch (emailError: any) {
-                    // Document was generated but email failed
-                    console.error(`⚠ Document generated but email failed for ${exec.full_name} - ${docType.title}:`, emailError);
-                    execResults.errors.push(`Email failed: ${emailError.message || 'Could not send email'}`);
-                    // Note: Still count as success since document was created, just email failed
-                  }
-                } else {
-                  console.warn(`No email for ${exec.full_name}, document generated but not sent`);
-                }
-                // Count as success since document was created (email may have failed but that's separate)
-                execResults.success++;
-              } else {
-                throw new Error(`Document generation failed: ${resp?.error || 'Unknown error'}`);
-              }
+              throw new Error(`Document generation failed: ${resp?.error || 'Unknown error'}`);
             }
-          } catch (error: any) {
-            console.error(`✗ Error processing ${docType.title} for ${exec.full_name}:`, error);
-            execResults.failed++;
-            execResults.errors.push(`${docType.title}: ${error.message || error}`);
           }
-
-          completed++;
-          setProgress((completed / totalOperations) * 100);
+        } catch (error: any) {
+          console.error(`✗ Error processing ${docType.title} for ${exec.full_name}:`, error);
+          execResults.failed++;
+          execResults.errors.push(`${docType.title}: ${error.message || error}`);
         }
 
-        // Log summary for this executive
-        if (execResults.failed > 0) {
-          console.error(`${exec.full_name} - ${execResults.success} success, ${execResults.failed} failed:`, execResults.errors);
-        } else {
-          console.log(`${exec.full_name} - All ${execResults.success} documents processed successfully`);
-        }
-
-        results.push(execResults);
+        completed++;
+        setProgress((completed / totalOperations) * 100);
       }
 
-      // Show results with detailed breakdown
-      const totalSuccess = results.reduce((sum, r) => sum + r.success, 0);
-      const totalFailed = results.reduce((sum, r) => sum + r.failed, 0);
-
-      // Show detailed results for each executive
-      results.forEach((result) => {
-        if (result.failed > 0) {
-          message.warning(
-            `${result.exec.full_name}: ${result.success} successful, ${result.failed} failed. Check console for details.`,
-            5
-          );
-        }
-      });
-
-      if (totalFailed > 0) {
-        message.error(`Documents sent: ${totalSuccess} successful, ${totalFailed} failed. Check browser console for details.`, 8);
+      // Log summary for this executive
+      if (execResults.failed > 0) {
+        console.error(`${exec.full_name} - ${execResults.success} success, ${execResults.failed} failed:`, execResults.errors);
+        message.warning(
+          `${exec.full_name}: ${execResults.success} successful, ${execResults.failed} failed. Check console for details.`,
+          5
+        );
       } else {
-        message.success(`All documents sent successfully: ${totalSuccess} total`);
+        console.log(`${exec.full_name} - All ${execResults.success} documents processed successfully`);
+        message.success(`All ${execResults.success} documents sent successfully to ${exec.full_name}`);
       }
 
       // Refresh document status
@@ -419,21 +398,10 @@ export default function SendCSuiteDocs() {
           <Title level={4} style={{ margin: 0 }}>Send C-Suite Documents</Title>
         </Space>
       }
-      extra={
-        <Button
-          type="primary"
-          icon={<SendOutlined />}
-          onClick={sendDocumentsToExecutives}
-          loading={sending}
-          disabled={executives.length === 0}
-        >
-          Send C-Suite Docs
-        </Button>
-      }
     >
       <Alert
         message="C-Suite Document Distribution"
-        description="This will generate and send all required C-Suite documents to each executive. If documents already exist, they will be sent without regeneration."
+        description="Send all required C-Suite documents to each executive individually. If documents already exist, they will be sent without regeneration."
         type="info"
         showIcon
         style={{ marginBottom: 16 }}
@@ -455,7 +423,20 @@ export default function SendCSuiteDocs() {
           const totalCount = CSUITE_DOC_TYPES.length;
 
           return (
-            <List.Item>
+            <List.Item
+              actions={[
+                <Button
+                  type="primary"
+                  icon={<SendOutlined />}
+                  onClick={() => sendDocumentsToExecutive(exec)}
+                  loading={sending}
+                  disabled={!exec.email}
+                  size="small"
+                >
+                  Send Docs
+                </Button>
+              ]}
+            >
               <List.Item.Meta
                 title={
                   <Space>
@@ -463,14 +444,14 @@ export default function SendCSuiteDocs() {
                     <Tag color={exec.role === 'ceo' ? 'red' : exec.role === 'cfo' ? 'blue' : 'green'}>
                       {exec.role.toUpperCase()}
                     </Tag>
-                    <Text type="secondary">{exec.email}</Text>
+                    <Text type="secondary">{exec.email || 'No email'}</Text>
                   </Space>
                 }
                 description={
                   <Space direction="vertical" size="small" style={{ width: '100%' }}>
                     {!exec.email && (
                       <Tag color="red" style={{ marginBottom: 4 }}>
-                        ⚠ No email address - documents will be generated but not sent
+                        ⚠ No email address - cannot send documents
                       </Tag>
                     )}
                     <Text>
