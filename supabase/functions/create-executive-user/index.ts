@@ -78,7 +78,7 @@ serve(async (req: Request) => {
       const { error: linkError } = await supabaseClient
         .from('employees')
         .update({ user_id: authData.user.id })
-        .eq('id', requestBody.employeeId);
+        .eq('id', employeeId);
       
       if (linkError) {
         console.error('Error linking employee:', linkError);
