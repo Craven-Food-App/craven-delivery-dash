@@ -38,6 +38,8 @@ async function convertHtmlToPdf(htmlContent: string): Promise<Uint8Array> {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
         html: fullHtml,
@@ -50,7 +52,16 @@ async function convertHtmlToPdf(htmlContent: string): Promise<Uint8Array> {
       throw new Error(`PDF conversion failed: ${response.status} - ${errorText}`);
     }
 
-    const pdfBuffer = await response.arrayBuffer();
+    const json = await response.json();
+    if (!json?.file) {
+      throw new Error(`aPDF.io did not return a file URL: ${JSON.stringify(json)}`);
+    }
+    const fileResp = await fetch(json.file);
+    if (!fileResp.ok) {
+      const t = await fileResp.text();
+      throw new Error(`Failed to download generated PDF: ${fileResp.status} - ${t}`);
+    }
+    const pdfBuffer = await fileResp.arrayBuffer();
     console.log('PDF generated successfully using aPDF.io, size:', pdfBuffer.byteLength, 'bytes');
     return new Uint8Array(pdfBuffer);
   } catch (error) {
