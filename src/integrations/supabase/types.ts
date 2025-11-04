@@ -88,7 +88,15 @@ export type Database = {
           entity_type?: string
           id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "admin_audit_logs_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       admin_settings: {
         Row: {
@@ -115,7 +123,15 @@ export type Database = {
           updated_at?: string | null
           updated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "admin_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       audit_logs: {
         Row: {
@@ -145,7 +161,15 @@ export type Database = {
           timestamp?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       background_check_reports: {
         Row: {
@@ -316,7 +340,15 @@ export type Database = {
           total_duration_seconds?: number | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "batched_deliveries_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       board_meetings: {
         Row: {
@@ -429,6 +461,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "board_resolutions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "board_resolutions_document_id_fkey"
             columns: ["document_id"]
             isOneToOne: false
@@ -448,6 +487,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "payroll_summary"
             referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "board_resolutions_executed_by_fkey"
+            columns: ["executed_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -518,7 +564,15 @@ export type Database = {
           target_name?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ceo_action_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       ceo_financial_approvals: {
         Row: {
@@ -567,6 +621,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "departments"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ceo_financial_approvals_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -663,6 +724,13 @@ export type Database = {
             referencedRelation: "departments"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ceo_objectives_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       ceo_system_settings: {
@@ -723,7 +791,15 @@ export type Database = {
           title?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cfo_documents_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       chat_conversations: {
         Row: {
@@ -769,6 +845,27 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "chat_conversations_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "chat_conversations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "chat_conversations_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "chat_conversations_order_id_fkey"
             columns: ["order_id"]
@@ -819,6 +916,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "chat_conversations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -919,7 +1023,15 @@ export type Database = {
           id?: string
           settings_snapshot?: Json
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "commission_settings_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       commission_tiers: {
         Row: {
@@ -1058,6 +1170,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "departments"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_tracking_responsible_person_id_fkey"
+            columns: ["responsible_person_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1337,6 +1456,20 @@ export type Database = {
             referencedRelation: "regions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "craver_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "craver_applications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       craver_locations: {
@@ -1364,7 +1497,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "craver_locations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       customer_acquisition: {
         Row: {
@@ -1420,6 +1561,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "marketing_campaigns"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_acquisition_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1749,7 +1897,15 @@ export type Database = {
           updated_at?: string
           zip_code?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "delivery_zones_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       departments: {
         Row: {
@@ -1872,6 +2028,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disputes_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2158,6 +2321,13 @@ export type Database = {
             referencedRelation: "unified_driver_applications"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "driver_onboarding_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       driver_payment_methods: {
@@ -2191,7 +2361,15 @@ export type Database = {
           payment_type?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "driver_payment_methods_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       driver_payout_settings: {
         Row: {
@@ -2269,6 +2447,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "driver_payouts_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "driver_payouts_payment_method_id_fkey"
             columns: ["payment_method_id"]
             isOneToOne: false
@@ -2320,7 +2505,15 @@ export type Database = {
           updated_at?: string
           voice_navigation?: boolean | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "driver_preferences_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: true
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       driver_profiles: {
         Row: {
@@ -2454,6 +2647,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "driver_promotion_participation_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "driver_promotion_participation_promotion_id_fkey"
             columns: ["promotion_id"]
             isOneToOne: false
@@ -2529,7 +2729,15 @@ export type Database = {
           id?: string
           p256dh_key?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "driver_push_subscriptions_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       driver_referrals: {
         Row: {
@@ -2795,7 +3003,22 @@ export type Database = {
           subject?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "driver_support_chats_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "driver_support_chats_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       driver_support_messages: {
         Row: {
@@ -2847,6 +3070,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "driver_support_chats"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_support_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2988,6 +3218,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "drivers_auth_user_id_fkey"
+            columns: ["auth_user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "drivers_zone_id_fkey"
             columns: ["zone_id"]
             isOneToOne: false
@@ -3095,6 +3332,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "employee_documents_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "employee_documents_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
@@ -3157,6 +3401,13 @@ export type Database = {
           vesting_start_date?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "employee_equity_authorized_by_fkey"
+            columns: ["authorized_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "employee_equity_employee_id_fkey"
             columns: ["employee_id"]
@@ -3245,6 +3496,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "employee_history_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "employee_history_previous_department_id_fkey"
             columns: ["previous_department_id"]
             isOneToOne: false
@@ -3280,9 +3538,11 @@ export type Database = {
           portal_pin: string | null
           portal_pin_issued_at: string | null
           position: string
+          position_id: string | null
           remote_allowed: boolean | null
           salary: number | null
           salary_status: string | null
+          ssn_last4: string | null
           start_date: string
           terminated_by: string | null
           termination_date: string | null
@@ -3316,9 +3576,11 @@ export type Database = {
           portal_pin?: string | null
           portal_pin_issued_at?: string | null
           position: string
+          position_id?: string | null
           remote_allowed?: boolean | null
           salary?: number | null
           salary_status?: string | null
+          ssn_last4?: string | null
           start_date?: string
           terminated_by?: string | null
           termination_date?: string | null
@@ -3352,9 +3614,11 @@ export type Database = {
           portal_pin?: string | null
           portal_pin_issued_at?: string | null
           position?: string
+          position_id?: string | null
           remote_allowed?: boolean | null
           salary?: number | null
           salary_status?: string | null
+          ssn_last4?: string | null
           start_date?: string
           terminated_by?: string | null
           termination_date?: string | null
@@ -3371,6 +3635,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "employees_hired_by_fkey"
+            columns: ["hired_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "employees_manager_id_fkey"
             columns: ["manager_id"]
             isOneToOne: false
@@ -3383,6 +3654,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "payroll_summary"
             referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "employees_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "positions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employees_terminated_by_fkey"
+            columns: ["terminated_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "employees_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -3545,6 +3837,13 @@ export type Database = {
             referencedRelation: "exec_users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "exec_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       executive_documents: {
@@ -3662,7 +3961,15 @@ export type Database = {
           restaurant_id?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "favorite_restaurants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       fleet_vehicles: {
         Row: {
@@ -3698,7 +4005,15 @@ export type Database = {
           status?: string | null
           vehicle_type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fleet_vehicles_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       it_assets: {
         Row: {
@@ -3746,7 +4061,15 @@ export type Database = {
           status?: string | null
           warranty_expiry?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "it_assets_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       it_incidents: {
         Row: {
@@ -3791,7 +4114,22 @@ export type Database = {
           status?: string | null
           title?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "it_incidents_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "it_incidents_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       it_infrastructure: {
         Row: {
@@ -3890,7 +4228,15 @@ export type Database = {
           title?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "legal_documents_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       legal_reviews: {
         Row: {
@@ -3945,6 +4291,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "legal_documents"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legal_reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -4006,7 +4359,22 @@ export type Database = {
           target_audience?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "marketing_campaigns_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "marketing_campaigns_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       marketing_metrics: {
         Row: {
@@ -4131,6 +4499,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "payroll_summary"
             referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "marketing_portal_access_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "marketing_portal_access_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "marketing_portal_access_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -4434,7 +4823,15 @@ export type Database = {
           title?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notification_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       notification_settings: {
         Row: {
@@ -4585,6 +4982,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "order_assignments_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "order_assignments_order_id_fkey"
             columns: ["order_id"]
@@ -4877,6 +5281,27 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "orders_assigned_craver_id_fkey"
+            columns: ["assigned_craver_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "orders_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "orders_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
@@ -5122,6 +5547,110 @@ export type Database = {
             referencedRelation: "payroll_summary"
             referencedColumns: ["employee_id"]
           },
+          {
+            foreignKeyName: "performance_reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      permissions: {
+        Row: {
+          description: string | null
+          key: string
+          label: string
+          module: string
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          label: string
+          module: string
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          label?: string
+          module?: string
+        }
+        Relationships: []
+      }
+      positions: {
+        Row: {
+          code: string
+          created_at: string | null
+          created_by: string | null
+          department_id: string | null
+          description: string | null
+          education_level: string | null
+          id: string
+          is_active: boolean | null
+          is_executive: boolean | null
+          reports_to_position_id: string | null
+          requirements: string | null
+          salary_range_max: number | null
+          salary_range_min: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          created_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          education_level?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_executive?: boolean | null
+          reports_to_position_id?: string | null
+          requirements?: string | null
+          salary_range_max?: number | null
+          salary_range_min?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          created_by?: string | null
+          department_id?: string | null
+          description?: string | null
+          education_level?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_executive?: boolean | null
+          reports_to_position_id?: string | null
+          requirements?: string | null
+          salary_range_max?: number | null
+          salary_range_min?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "positions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "positions_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "positions_reports_to_position_id_fkey"
+            columns: ["reports_to_position_id"]
+            isOneToOne: false
+            referencedRelation: "positions"
+            referencedColumns: ["id"]
+          },
         ]
       }
       pricing_plans: {
@@ -5265,11 +5794,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "procurement_requisitions_current_approver_id_fkey"
+            columns: ["current_approver_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "procurement_requisitions_department_id_fkey"
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "procurement_requisitions_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -5312,6 +5855,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "promo_codes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_code_usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -5382,7 +5932,15 @@ export type Database = {
           valid_from?: string
           valid_until?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "promo_codes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       purchase_orders: {
         Row: {
@@ -5441,11 +5999,25 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "purchase_orders_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "purchase_orders_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "procurement_categories"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "purchase_orders_vendor_id_fkey"
@@ -5534,6 +6106,13 @@ export type Database = {
             referencedRelation: "referrals"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "referral_bonuses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       referral_codes: {
@@ -5561,7 +6140,15 @@ export type Database = {
           user_id?: string
           user_type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "referral_codes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       referral_settings: {
         Row: {
@@ -5648,7 +6235,22 @@ export type Database = {
           requirements_met?: boolean | null
           status?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "referrals_referred_id_fkey"
+            columns: ["referred_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "referrals_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       refund_requests: {
         Row: {
@@ -5698,11 +6300,25 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "refund_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "refund_requests_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_processed_by_fkey"
+            columns: ["processed_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -5777,6 +6393,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "restaurant_commission_overrides_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "restaurant_commission_overrides_restaurant_id_fkey"
             columns: ["restaurant_id"]
@@ -5946,7 +6569,15 @@ export type Database = {
           owner_id?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_groups_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       restaurant_hours: {
         Row: {
@@ -6118,6 +6749,13 @@ export type Database = {
           restaurant_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "restaurant_onboarding_activity_log_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "restaurant_onboarding_activity_log_restaurant_id_fkey"
             columns: ["restaurant_id"]
@@ -6413,6 +7051,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "restaurant_reports_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "restaurant_reports_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
@@ -6523,11 +7168,25 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "restaurant_users_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "restaurant_users_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -6570,6 +7229,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "restaurant_verification_tasks_assigned_admin_id_fkey"
+            columns: ["assigned_admin_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "restaurant_verification_tasks_restaurant_id_fkey"
             columns: ["restaurant_id"]
@@ -6844,7 +7510,58 @@ export type Database = {
           status?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "risk_assessments_responsible_person_id_fkey"
+            columns: ["responsible_person_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          allowed: boolean
+          id: string
+          permission_key: string
+          position_id: string
+        }
+        Insert: {
+          allowed?: boolean
+          id?: string
+          permission_key: string
+          position_id: string
+        }
+        Update: {
+          allowed?: boolean
+          id?: string
+          permission_key?: string
+          position_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_permission_key_fkey"
+            columns: ["permission_key"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["permission_key"]
+          },
+          {
+            foreignKeyName: "role_permissions_permission_key_fkey"
+            columns: ["permission_key"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "role_permissions_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "positions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       security_audits: {
         Row: {
@@ -6883,7 +7600,15 @@ export type Database = {
           severity?: string | null
           status?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "security_audits_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       sensitive_data_access_log: {
         Row: {
@@ -6910,7 +7635,15 @@ export type Database = {
           table_name?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sensitive_data_access_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       signatures: {
         Row: {
@@ -7009,6 +7742,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "store_locations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_employees_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -7291,7 +8031,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "support_agents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       support_tickets: {
         Row: {
@@ -7336,7 +8084,22 @@ export type Database = {
           ticket_number?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "support_tickets_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       tablet_inventory: {
         Row: {
@@ -7469,6 +8232,83 @@ export type Database = {
           },
         ]
       }
+      time_entries: {
+        Row: {
+          break_duration_minutes: number | null
+          clock_in_at: string
+          clock_out_at: string | null
+          created_at: string | null
+          employee_id: string | null
+          exec_user_id: string | null
+          id: string
+          notes: string | null
+          status: string
+          total_hours: number | null
+          updated_at: string | null
+          user_id: string
+          work_location: string | null
+        }
+        Insert: {
+          break_duration_minutes?: number | null
+          clock_in_at: string
+          clock_out_at?: string | null
+          created_at?: string | null
+          employee_id?: string | null
+          exec_user_id?: string | null
+          id?: string
+          notes?: string | null
+          status?: string
+          total_hours?: number | null
+          updated_at?: string | null
+          user_id: string
+          work_location?: string | null
+        }
+        Update: {
+          break_duration_minutes?: number | null
+          clock_in_at?: string
+          clock_out_at?: string | null
+          created_at?: string | null
+          employee_id?: string | null
+          exec_user_id?: string | null
+          id?: string
+          notes?: string | null
+          status?: string
+          total_hours?: number | null
+          updated_at?: string | null
+          user_id?: string
+          work_location?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entries_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_summary"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "time_entries_exec_user_id_fkey"
+            columns: ["exec_user_id"]
+            isOneToOne: false
+            referencedRelation: "exec_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       user_notification_preferences: {
         Row: {
           created_at: string
@@ -7501,6 +8341,49 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "notification_settings"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_permission_overrides: {
+        Row: {
+          allowed: boolean
+          id: string
+          permission_key: string
+          user_id: string
+        }
+        Insert: {
+          allowed: boolean
+          id?: string
+          permission_key: string
+          user_id: string
+        }
+        Update: {
+          allowed?: boolean
+          id?: string
+          permission_key?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permission_overrides_permission_key_fkey"
+            columns: ["permission_key"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["permission_key"]
+          },
+          {
+            foreignKeyName: "user_permission_overrides_permission_key_fkey"
+            columns: ["permission_key"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "user_permission_overrides_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -7559,7 +8442,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -7628,7 +8519,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       users: {
         Row: {
@@ -7714,6 +8613,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "vendor_contracts_signed_by_fkey"
+            columns: ["signed_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "vendor_contracts_vendor_id_fkey"
             columns: ["vendor_id"]
             isOneToOne: false
@@ -7780,6 +8686,14 @@ export type Database = {
           total_conversions: number | null
           total_impressions: number | null
           total_revenue: number | null
+        }
+        Relationships: []
+      }
+      effective_permissions: {
+        Row: {
+          allowed: boolean | null
+          permission_key: string | null
+          user_id: string | null
         }
         Relationships: []
       }
@@ -7876,6 +8790,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "regions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "craver_applications_user_id_fkey"
+            columns: ["auth_user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -8051,6 +8972,18 @@ export type Database = {
           zone_name: string
         }[]
       }
+      clock_in:
+        | {
+            Args: { p_user_id: string; p_work_location: string }
+            Returns: string
+          }
+        | { Args: { p_user_id: string }; Returns: string }
+      clock_out:
+        | {
+            Args: { p_break_duration_minutes: number; p_user_id: string }
+            Returns: string
+          }
+        | { Args: { p_user_id: string }; Returns: string }
       create_budget_approval: {
         Args: { budget_uuid: string; request_description?: string }
         Returns: string
@@ -8288,6 +9221,16 @@ export type Database = {
           status: string
         }[]
       }
+      get_employee_clock_status: {
+        Args: { p_user_id: string }
+        Returns: {
+          clock_in_at: string
+          current_entry_id: string
+          is_clocked_in: boolean
+          total_hours_today: number
+          weekly_hours: number
+        }[]
+      }
       get_employee_documents: {
         Args: { emp_id: string }
         Returns: {
@@ -8312,6 +9255,10 @@ export type Database = {
       }
       gettransactionid: { Args: never; Returns: unknown }
       has_active_subscription: { Args: { p_user_id: string }; Returns: boolean }
+      has_permission: {
+        Args: { p_permission: string; p_user_id: string }
+        Returns: boolean
+      }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_admin_user: { Args: never; Returns: boolean }
       is_ceo: { Args: { user_uuid: string }; Returns: boolean }
@@ -8378,6 +9325,7 @@ export type Database = {
       }
       postgis_version: { Args: never; Returns: string }
       postgis_wagyu_version: { Args: never; Returns: string }
+      refresh_effective_permissions: { Args: never; Returns: undefined }
       soundex: { Args: { "": string }; Returns: string }
       st_3dclosestpoint: {
         Args: { geom1: unknown; geom2: unknown }

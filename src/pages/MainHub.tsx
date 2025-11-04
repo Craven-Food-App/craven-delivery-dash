@@ -421,8 +421,7 @@ const MainHub: React.FC = () => {
       // The function always returns one row (even if clocked out)
       if (data && data.length > 0) {
         const status = data[0];
-        // Ensure boolean is properly parsed (handle string "true"/"false" or boolean)
-        const isClockedIn = status.is_clocked_in === true || status.is_clocked_in === 'true' || status.is_clocked_in === 1;
+        const isClockedIn = Boolean(status.is_clocked_in);
         
         console.log('Parsed clock status from database:', {
           raw: status.is_clocked_in,
@@ -435,8 +434,8 @@ const MainHub: React.FC = () => {
         const newStatus = {
           isClockedIn: isClockedIn,
           clockInAt: status.clock_in_at || null,
-          hoursToday: parseFloat(status.total_hours_today) || 0,
-          weeklyHours: parseFloat(status.weekly_hours) || 0,
+          hoursToday: Number(status.total_hours_today) || 0,
+          weeklyHours: Number(status.weekly_hours) || 0,
           currentEntryId: status.current_entry_id || null
         };
         setClockStatus(newStatus);
@@ -732,7 +731,7 @@ const MainHub: React.FC = () => {
           
           if (!statusError && statusData && statusData.length > 0) {
             const status = statusData[0];
-            const isClockedIn = status.is_clocked_in === true || status.is_clocked_in === 'true' || status.is_clocked_in === 1;
+            const isClockedIn = Boolean(status.is_clocked_in);
             
             if (isClockedIn) {
               // Only update if still clocked in (don't override if user already clocked out)
@@ -742,8 +741,8 @@ const MainHub: React.FC = () => {
                   return {
                     isClockedIn: true, // Always keep this true if we're verifying clock in
                     clockInAt: status.clock_in_at || prev.clockInAt,
-                    hoursToday: parseFloat(status.total_hours_today) || prev.hoursToday,
-                    weeklyHours: parseFloat(status.weekly_hours) || prev.weeklyHours,
+                    hoursToday: Number(status.total_hours_today) || prev.hoursToday,
+                    weeklyHours: Number(status.weekly_hours) || prev.weeklyHours,
                     currentEntryId: status.current_entry_id || prev.currentEntryId
                   };
                 }
