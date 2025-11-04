@@ -163,10 +163,10 @@ export async function getRoleSyncSummary() {
  */
 export async function syncEmployeeManually(employeeId: string) {
   try {
-    // Get employee
+    // Get employee with department info
     const { data: employee, error: empError } = await supabase
       .from('employees')
-      .select('*')
+      .select('*, departments(name)')
       .eq('id', employeeId)
       .single();
 
@@ -180,32 +180,57 @@ export async function syncEmployeeManually(employeeId: string) {
       throw new Error('Employee does not have a user_id (auth account)');
     }
 
-    // Call the database function to sync
-    const { data, error } = await supabase.rpc('sync_employee_to_exec_users', {
-      p_employee_id: employeeId
-    });
+    // Get exec role from position
+    const { getExecRoleFromPosition } = await import('./roleUtils');
+    const execRole = getExecRoleFromPosition(employee.position) || 'board_member';
+    const departmentName = employee.departments?.name || 'Executive';
 
-    if (error) {
-      // If function doesn't exist, try direct insert/update
-      const execRole = await import('./roleUtils').then(m => 
-        m.getExecRoleFromPosition(employee.position)
-      );
+    // Step 1: Create/update exec_users record
+    const { error: execError } = await supabase
+      .from('exec_users')
+      .upsert({
+        user_id: employee.user_id,
+        role: execRole,
+        department: departmentName,
+        title: employee.position,
+        access_level: 1,
+      }, {
+        onConflict: 'user_id'
+      });
 
-      if (execRole) {
-        const { error: syncError } = await supabase
-          .from('exec_users')
-          .upsert({
-            user_id: employee.user_id,
-            role: execRole,
-            department: employee.departments?.name || 'Executive',
-            title: employee.position,
-            access_level: 1,
-          }, {
-            onConflict: 'user_id'
-          });
+    if (execError) {
+      console.error('Error creating exec_users:', execError);
+      throw execError;
+    }
 
-        if (syncError) throw syncError;
-      }
+    // Step 2: Add 'employee' role to user_roles (if not exists)
+    const { error: employeeRoleError } = await supabase
+      .from('user_roles')
+      .upsert({
+        user_id: employee.user_id,
+        role: 'employee',
+      }, {
+        onConflict: 'user_id,role'
+      });
+
+    if (employeeRoleError) {
+      console.error('Error adding employee role:', employeeRoleError);
+      // Don't throw - this might already exist
+    }
+
+    // Step 3: Add 'executive' role to user_roles (if not exists)
+    const { error: executiveRoleError } = await supabase
+      .from('user_roles')
+      .upsert({
+        user_id: employee.user_id,
+        role: 'executive',
+      }, {
+        onConflict: 'user_id,role'
+      });
+
+    if (executiveRoleError) {
+      console.error('Error adding executive role:', executiveRoleError);
+      throw executiveRoleError;
     }
 
     return { success: true };
