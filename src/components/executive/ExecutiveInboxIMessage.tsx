@@ -246,6 +246,7 @@ const MessageBubble: React.FC<{
 
 export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ role = 'ceo', deviceId }) => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [conversationHistory, setConversationHistory] = useState<Record<string, Message[]>>({}); // Store messages per conversation
   const [inputContent, setInputContent] = useState('');
   const [isSendingAttachment, setIsSendingAttachment] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -662,6 +663,14 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
         }
         return 0;
       });
+      
+      // Update conversation history
+      const historyKey = `${conversationId}`;
+      setConversationHistory(prev => ({
+        ...prev,
+        [historyKey]: sortedMessages
+      }));
+      
       setMessages(sortedMessages);
       setInputContent('');
       setIsSendingAttachment(false);
