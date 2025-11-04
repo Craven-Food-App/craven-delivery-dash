@@ -260,15 +260,28 @@ export default function SendCSuiteDocs() {
 
       console.log(`Processing documents for ${exec.full_name} (${exec.role})...`);
 
+      // Collect all documents (existing or newly generated) to send in ONE email
+      const docsForEmail: Array<{ title: string; url: string }> = [];
+
       for (const docType of CSUITE_DOC_TYPES) {
         try {
           // Check if document already exists
           const status = statusMap[exec.id]?.find(s => s.type === docType.id);
           if (status?.exists && status.documentId) {
-            // Document exists, just send it
-            console.log(`Document ${docType.title} already exists for ${exec.full_name}, sending...`);
-            await sendExistingDocument(exec, docType, status.documentId);
-            execResults.success++;
+            // Fetch existing document URL and collect
+            console.log(`Document ${docType.title} already exists for ${exec.full_name}, collecting link...`);
+            const { data: doc, error: fetchErr } = await supabase
+              .from('executive_documents')
+              .select('file_url')
+              .eq('id', status.documentId)
+              .single();
+            if (fetchErr) throw fetchErr;
+            if (doc?.file_url) {
+              docsForEmail.push({ title: docType.title, url: doc.file_url });
+              execResults.success++;
+            } else {
+              throw new Error('Existing document URL not found');
+            }
           } else {
             // Generate new document
             console.log(`Generating ${docType.title} for ${exec.full_name}...`);
@@ -288,21 +301,10 @@ export default function SendCSuiteDocs() {
             console.log(`Document generation response for ${exec.full_name} - ${docType.title}:`, resp);
 
             if (resp?.ok && resp?.document) {
-              // Send document via email
-              if (exec.email) {
-                try {
-                  await sendDocumentEmail(exec, docType.title, resp.document.file_url);
-                  console.log(`✓ Successfully generated and sent ${docType.title} for ${exec.full_name}`);
-                } catch (emailError: any) {
-                  // Document was generated but email failed
-                  console.error(`⚠ Document generated but email failed for ${exec.full_name} - ${docType.title}:`, emailError);
-                  execResults.errors.push(`Email failed: ${emailError.message || 'Could not send email'}`);
-                  // Note: Still count as success since document was created, just email failed
-                }
-              } else {
-                console.warn(`No email for ${exec.full_name}, document generated but not sent`);
+              // Collect generated document URL for single combined email
+              if (resp.document.file_url) {
+                docsForEmail.push({ title: docType.title, url: resp.document.file_url });
               }
-              // Count as success since document was created (email may have failed but that's separate)
               execResults.success++;
             } else {
               throw new Error(`Document generation failed: ${resp?.error || 'Unknown error'}`);
@@ -318,16 +320,39 @@ export default function SendCSuiteDocs() {
         setProgress((completed / totalOperations) * 100);
       }
 
+      // After processing all docs, send ONE email with links + PDF attachments
+      if (exec.email && docsForEmail.length > 0) {
+        try {
+          const { data, error } = await supabase.functions.invoke('send-executive-document-email', {
+            body: {
+              to: exec.email,
+              executiveName: exec.full_name,
+              documentTitle: 'C-Suite Executive Documents',
+              documents: docsForEmail,
+            },
+          });
+          if (error) throw error;
+          if (data?.success) {
+            console.log(`✓ One combined email sent to ${exec.email} with ${docsForEmail.length} documents`);
+          } else {
+            throw new Error(data?.error || 'Unknown error from email function');
+          }
+        } catch (emailErr: any) {
+          console.error(`⚠ Combined email failed for ${exec.full_name}:`, emailErr);
+          execResults.errors.push(`Combined email failed: ${emailErr.message || emailErr}`);
+        }
+      }
+
       // Log summary for this executive
       if (execResults.failed > 0) {
         console.error(`${exec.full_name} - ${execResults.success} success, ${execResults.failed} failed:`, execResults.errors);
         message.warning(
-          `${exec.full_name}: ${execResults.success} successful, ${execResults.failed} failed. Check console for details.`,
+          `${exec.full_name}: ${execResults.success} successful, ${execResults.failed} failed. One email prepared with available documents.`,
           5
         );
       } else {
         console.log(`${exec.full_name} - All ${execResults.success} documents processed successfully`);
-        message.success(`All ${execResults.success} documents sent successfully to ${exec.full_name}`);
+        message.success(`Sent 1 email to ${exec.full_name} with ${docsForEmail.length} documents`);
       }
 
       // Refresh document status

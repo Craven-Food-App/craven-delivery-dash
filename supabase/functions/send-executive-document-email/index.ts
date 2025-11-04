@@ -17,6 +17,7 @@ interface ExecutiveDocumentEmailRequest {
   documentUrl?: string;
   pdfBase64?: string;
   htmlContent?: string;
+  documents?: Array<{ title: string; url: string }>; // multiple docs support
 }
 
 serve(async (req: Request) => {
@@ -25,7 +26,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { to, executiveName, documentTitle, documentUrl, pdfBase64, htmlContent }: ExecutiveDocumentEmailRequest = await req.json();
+    const { to, executiveName, documentTitle, documentUrl, pdfBase64, htmlContent, documents }: ExecutiveDocumentEmailRequest = await req.json();
 
     if (!to || !executiveName || !documentTitle) {
       return new Response(
@@ -41,10 +42,55 @@ serve(async (req: Request) => {
 
     const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Crave'N HR <hr@craven.com>";
 
-    // Prepare attachment if PDF is provided
+    // Prepare attachments and links
     let attachments: any[] = [];
-    
-    if (pdfBase64) {
+    let linksHtml = '';
+
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    if (documents && documents.length > 0) {
+      console.log(`Preparing ${documents.length} documents for email...`);
+      const itemsHtml: string[] = [];
+
+      for (const doc of documents) {
+        try {
+          itemsHtml.push(`<li style=\"margin: 6px 0;\"><a href=\"${doc.url}\" style=\"color: #ff7a45; text-decoration: none;\">${doc.title}</a></li>`);
+
+          // Parse storage URL to bucket/path
+          const urlParts = doc.url.split('/storage/v1/object/public/');
+          if (urlParts.length === 2) {
+            const pathParts = urlParts[1].split('/');
+            const bucket = pathParts[0];
+            const path = pathParts.slice(1).join('/');
+
+            const { data: fileData, error: downloadError } = await supabaseClient.storage
+              .from(bucket)
+              .download(path);
+            if (downloadError) throw downloadError;
+
+            const arrayBuffer = await fileData.arrayBuffer();
+            const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+            attachments.push({
+              filename: `${doc.title.replace(/[^a-z0-9]/gi, '_')}.pdf`,
+              content: base64,
+            });
+          }
+        } catch (err) {
+          console.error('Failed to attach document:', doc.title, err);
+          // continue without attachment, link will still be present
+        }
+      }
+
+      linksHtml = `
+        <div style=\"background-color: #f9f9f9; padding: 16px; border-radius: 6px; margin: 20px 0;\">
+          <h3 style=\"margin: 0 0 10px 0; color: #1a1a1a; font-size: 16px;\">Included Documents</h3>
+          <ul style=\"margin: 0; padding-left: 18px; color: #4a4a4a; font-size: 14px; line-height: 1.6;\">${itemsHtml.join('')}</ul>
+        </div>
+      `;
+    } else if (pdfBase64) {
       // If we have a base64 PDF, attach it
       attachments = [{
         filename: `${documentTitle.replace(/[^a-z0-9]/gi, '_')}.pdf`,
@@ -55,39 +101,21 @@ serve(async (req: Request) => {
       // Try to fetch PDF from Supabase storage
       try {
         console.log(`Fetching PDF from storage URL: ${documentUrl}`);
-        
         // Extract the path from the public URL
-        // URL format: https://{project_ref}.supabase.co/storage/v1/object/public/documents/{path}
         const urlParts = documentUrl.split('/storage/v1/object/public/');
         if (urlParts.length === 2) {
-          const [bucketAndPath] = urlParts[1].split('/');
           const pathParts = urlParts[1].split('/');
           const bucket = pathParts[0];
           const path = pathParts.slice(1).join('/');
-          
-          console.log(`Downloading from bucket: ${bucket}, path: ${path}`);
-          
-          // Create Supabase client with service role key for storage access
-          const supabaseClient = createClient(
-            Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-          );
-          
           // Download the file from storage
           const { data: fileData, error: downloadError } = await supabaseClient.storage
             .from(bucket)
             .download(path);
-          
-          if (downloadError) {
-            console.error('Storage download error:', downloadError);
-            throw downloadError;
-          }
-          
+          if (downloadError) throw downloadError;
           if (fileData) {
             // Convert Blob to ArrayBuffer to base64
             const arrayBuffer = await fileData.arrayBuffer();
             const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-            
             attachments = [{
               filename: `${documentTitle.replace(/[^a-z0-9]/gi, '_')}.pdf`,
               content: base64,
@@ -144,6 +172,15 @@ serve(async (req: Request) => {
                           </ul>
                         </div>
                         
+                        ${documents && documents.length > 0 ? `
+                        ${linksHtml}
+                        ${attachments.length > 0 ? `
+                        <div style="background-color: #e8f5e9; padding: 20px; border-radius: 6px; margin: 20px 0; text-align: center;">
+                          <p style="margin: 0; color: #2e7d32; font-size: 16px; font-weight: bold;">✅ PDF Attachments Included</p>
+                          <p style="margin: 8px 0 0 0; color: #4a4a4a; font-size: 14px;">All documents are attached as PDFs.</p>
+                        </div>
+                        ` : ''}
+                        ` : `
                         ${attachments.length > 0 ? `
                         <div style="background-color: #e8f5e9; padding: 20px; border-radius: 6px; margin: 30px 0; text-align: center;">
                           <p style="margin: 0; color: #2e7d32; font-size: 16px; font-weight: bold;">
@@ -161,6 +198,7 @@ serve(async (req: Request) => {
                           </a>
                         </div>
                         ` : ''}
+                        `
                         
                         <div style="background-color: #f9f9f9; padding: 20px; border-radius: 6px; margin: 30px 0;">
                           <h3 style="margin: 0 0 10px 0; color: #1a1a1a; font-size: 16px;">📝 Important Notes:</h3>
