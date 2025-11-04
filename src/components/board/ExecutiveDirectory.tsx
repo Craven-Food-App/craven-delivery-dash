@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Avatar, Tag, Input, Row, Col, message, Button } from 'antd';
 import { UserOutlined, MailOutlined, PhoneOutlined, SearchOutlined, MessageOutlined } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
+import { isCLevelPosition, getExecRoleFromPosition } from '@/utils/roleUtils';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
@@ -59,53 +60,20 @@ export const ExecutiveDirectory: React.FC = () => {
 
       if (empError) throw empError;
 
-      // Helper function to check if position is C-level
-      const isCLevelPosition = (position: string): boolean => {
-        const pos = String(position || '').toLowerCase();
-        return (
-          pos.includes('ceo') ||
-          pos.includes('cfo') ||
-          pos.includes('coo') ||
-          pos.includes('cto') ||
-          pos.includes('cmo') ||
-          pos.includes('cro') ||
-          pos.includes('cpo') ||
-          pos.includes('cdo') ||
-          pos.includes('chro') ||
-          pos.includes('clo') ||
-          pos.includes('cso') ||
-          pos.includes('cxo') ||
-          pos.includes('chief') ||
-          pos.includes('president') ||
-          pos.includes('board member') ||
-          pos.includes('advisor') ||
-          pos === 'cxo'
-        );
-      };
-
-      // Filter to only C-level positions and map to Executive interface
+      // Filter to only C-level positions and map to Executive interface (using centralized utilities)
       const executives: Executive[] = ((employeesData as any) || [])
         .filter((emp: any) => isCLevelPosition(emp.position))
         .map((emp: any) => {
           const position = String(emp.position || '').toLowerCase();
-          let role = position;
           
-          // Normalize position to role
+          // Normalize position to role (using centralized utility)
+          const execRole = getExecRoleFromPosition(emp.position);
+          let role = execRole || position;
+          
+          // Handle special cases
           if (position.includes('board member')) role = 'board_member';
           else if (position.includes('advisor')) role = 'advisor';
-          else if (position.includes('ceo') || position.includes('chief executive')) role = 'ceo';
-          else if (position.includes('cfo') || position.includes('chief financial')) role = 'cfo';
-          else if (position.includes('coo') || position.includes('chief operating')) role = 'coo';
-          else if (position.includes('cto') || position.includes('chief technology')) role = 'cto';
-          else if (position.includes('cmo') || position.includes('chief marketing')) role = 'cmo';
-          else if (position.includes('cro') || position.includes('chief revenue')) role = 'cro';
-          else if (position.includes('cpo') || position.includes('chief product')) role = 'cpo';
-          else if (position.includes('cdo') || position.includes('chief data')) role = 'cdo';
-          else if (position.includes('chro') || position.includes('chief human')) role = 'chro';
-          else if (position.includes('clo') || position.includes('chief legal')) role = 'clo';
-          else if (position.includes('cso') || position.includes('chief security')) role = 'cso';
-          else if (position.includes('cxo')) role = 'cxo';
-          else if (position.includes('president')) role = 'president';
+          else if (!execRole) role = position;
           
           return {
             id: emp.id,

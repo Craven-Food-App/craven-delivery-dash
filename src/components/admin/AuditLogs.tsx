@@ -12,14 +12,23 @@ import { format } from 'date-fns';
 
 interface AuditLog {
   id: string;
-  admin_id: string;
-  action: string;
-  entity_type: string;
-  entity_id: string;
-  details: any;
+  user_id: string;
+  user_role: string;
+  user_email: string;
+  user_name: string;
+  action_type: string;
+  action_category: string;
+  action_description: string;
+  target_resource_type: string;
+  target_resource_id: string;
+  target_resource_name: string;
+  severity: string;
+  requires_review: boolean;
+  compliance_tag: string;
+  old_values: any;
+  new_values: any;
+  metadata: any;
   created_at: string;
-  admin_email?: string;
-  admin_name?: string;
 }
 
 export const AuditLogs: React.FC = () => {
@@ -41,7 +50,7 @@ export const AuditLogs: React.FC = () => {
       startDate.setDate(startDate.getDate() - parseInt(dateRange));
 
       const { data, error } = await supabase
-        .from('admin_audit_logs')
+        .from('unified_audit_trail')
         .select('*')
         .gte('created_at', startDate.toISOString())
         .order('created_at', { ascending: false })
@@ -49,24 +58,35 @@ export const AuditLogs: React.FC = () => {
 
       if (error) throw error;
 
-      // Fetch admin names separately
-      const formattedLogs = await Promise.all(
-        (data || []).map(async (log: any) => {
-          const { data: admin } = await supabase
-            .from('user_profiles')
-            .select('full_name')
-            .eq('user_id', log.admin_id)
-            .single();
-          
-          const { data: authUser } = await supabase.auth.admin.getUserById(log.admin_id);
-          
-          return {
-            ...log,
-            admin_email: authUser?.user?.email,
-            admin_name: admin?.full_name || 'Admin'
-          };
-        })
-      );
+      // Map to expected format (already has user info)
+      const formattedLogs = (data || []).map((log: any) => ({
+        id: log.id,
+        user_id: log.user_id,
+        user_role: log.user_role,
+        user_email: log.user_email,
+        user_name: log.user_name,
+        action_type: log.action_type,
+        action_category: log.action_category,
+        action_description: log.action_description,
+        target_resource_type: log.target_resource_type,
+        target_resource_id: log.target_resource_id,
+        target_resource_name: log.target_resource_name,
+        severity: log.severity,
+        requires_review: log.requires_review,
+        compliance_tag: log.compliance_tag,
+        old_values: log.old_values,
+        new_values: log.new_values,
+        metadata: log.metadata,
+        created_at: log.created_at,
+        // Legacy fields for compatibility
+        admin_id: log.user_id,
+        admin_email: log.user_email,
+        admin_name: log.user_name,
+        action: log.action_type,
+        entity_type: log.target_resource_type,
+        entity_id: log.target_resource_id,
+        details: log.metadata,
+      }));
 
       setLogs(formattedLogs);
     } catch (error) {
@@ -84,16 +104,21 @@ export const AuditLogs: React.FC = () => {
   const handleExport = async () => {
     try {
       const csv = [
-        ['Timestamp', 'Admin', 'Action', 'Entity Type', 'Entity ID', 'Details'],
+        ['Timestamp', 'User', 'Role', 'Action Type', 'Category', 'Description', 'Target Type', 'Target ID', 'Severity', 'Requires Review', 'Compliance'],
         ...filteredLogs.map(log => [
           format(new Date(log.created_at), 'yyyy-MM-dd HH:mm:ss'),
-          log.admin_name || log.admin_email || 'Unknown',
-          log.action,
-          log.entity_type,
-          log.entity_id,
-          JSON.stringify(log.details || {})
+          log.user_name || log.user_email || 'Unknown',
+          log.user_role || 'N/A',
+          log.action_type,
+          log.action_category,
+          log.action_description,
+          log.target_resource_type || 'N/A',
+          log.target_resource_id || 'N/A',
+          log.severity || 'normal',
+          log.requires_review ? 'Yes' : 'No',
+          log.compliance_tag || 'N/A'
         ])
-      ].map(row => row.join(',')).join('\n');
+      ].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
 
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
@@ -126,11 +151,16 @@ export const AuditLogs: React.FC = () => {
       suspend: 'bg-yellow-100 text-yellow-800',
       ban: 'bg-red-100 text-red-800',
       reinstate: 'bg-green-100 text-green-800',
-      refund: 'bg-orange-100 text-orange-800'
+      refund: 'bg-orange-100 text-orange-800',
+      view: 'bg-gray-100 text-gray-800',
+      export: 'bg-purple-100 text-purple-800',
+      import: 'bg-indigo-100 text-indigo-800',
+      sign: 'bg-teal-100 text-teal-800',
+      access: 'bg-cyan-100 text-cyan-800',
     };
 
-    const actionKey = action.split('_')[0];
-    const colorClass = colors[actionKey] || 'bg-gray-100 text-gray-800';
+    const actionKey = action.toLowerCase();
+    const colorClass = colors[actionKey] || colors[actionKey.split('_')[0]] || 'bg-gray-100 text-gray-800';
 
     return (
       <Badge className={colorClass}>
@@ -158,19 +188,20 @@ export const AuditLogs: React.FC = () => {
 
   const filteredLogs = logs.filter(log => {
     const matchesSearch = searchTerm === '' ||
-      log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.admin_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.entity_id.toLowerCase().includes(searchTerm.toLowerCase());
+      log.action_description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.target_resource_id?.toString().includes(searchTerm.toLowerCase());
 
-    const matchesAction = filterAction === 'all' || log.action.includes(filterAction);
-    const matchesEntity = filterEntity === 'all' || log.entity_type === filterEntity;
+    const matchesAction = filterAction === 'all' || log.action_type.includes(filterAction);
+    const matchesEntity = filterEntity === 'all' || log.target_resource_type === filterEntity;
 
     return matchesSearch && matchesAction && matchesEntity;
   });
 
   // Get unique actions and entity types for filters
-  const uniqueActions = [...new Set(logs.map(log => log.action.split('_')[0]))];
-  const uniqueEntities = [...new Set(logs.map(log => log.entity_type))];
+  const uniqueActions = [...new Set(logs.map(log => log.action_type))];
+  const uniqueEntities = [...new Set(logs.map(log => log.target_resource_type).filter(Boolean))];
 
   return (
     <div className="space-y-6">
@@ -330,33 +361,87 @@ export const AuditLogs: React.FC = () => {
                 >
                   <div className="flex items-start justify-between">
                     <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-3">
-                        {getActionBadge(log.action)}
-                        {getEntityBadge(log.entity_type)}
-                        <span className="text-sm text-muted-foreground font-mono">
-                          ID: {log.entity_id.substring(0, 8)}...
-                        </span>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        {getActionBadge(log.action_type)}
+                        {log.target_resource_type && getEntityBadge(log.target_resource_type)}
+                        {log.severity && (
+                          <Badge className={
+                            log.severity === 'critical' ? 'bg-red-100 text-red-800' :
+                            log.severity === 'high' ? 'bg-orange-100 text-orange-800' :
+                            log.severity === 'normal' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
+                          }>
+                            {log.severity.toUpperCase()}
+                          </Badge>
+                        )}
+                        {log.requires_review && (
+                          <Badge className="bg-yellow-100 text-yellow-800">
+                            Requires Review
+                          </Badge>
+                        )}
+                        {log.compliance_tag && (
+                          <Badge className="bg-purple-100 text-purple-800">
+                            {log.compliance_tag.toUpperCase()}
+                          </Badge>
+                        )}
+                        {log.target_resource_id && (
+                          <span className="text-sm text-muted-foreground font-mono">
+                            ID: {log.target_resource_id.toString().substring(0, 8)}...
+                          </span>
+                        )}
                       </div>
 
-                      <div className="flex items-center gap-4 text-sm">
+                      <div className="flex items-center gap-4 text-sm flex-wrap">
                         <div className="flex items-center gap-1">
                           <User className="h-3 w-3 text-muted-foreground" />
-                          <span className="font-medium">{log.admin_name || 'Admin'}</span>
-                          <span className="text-muted-foreground">({log.admin_email})</span>
+                          <span className="font-medium">{log.user_name || 'Admin'}</span>
+                          <span className="text-muted-foreground">({log.user_email})</span>
+                          {log.user_role && (
+                            <Badge variant="outline" className="ml-2">
+                              {log.user_role.toUpperCase()}
+                            </Badge>
+                          )}
                         </div>
                         <div className="text-muted-foreground">
                           {format(new Date(log.created_at), 'MMM dd, yyyy HH:mm:ss')}
                         </div>
                       </div>
 
-                      {log.details && Object.keys(log.details).length > 0 && (
+                      <div className="text-sm text-foreground">
+                        {log.action_description}
+                      </div>
+
+                      {(log.metadata || log.old_values || log.new_values) && (
                         <details className="text-sm">
                           <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
                             View details
                           </summary>
-                          <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-x-auto">
-                            {JSON.stringify(log.details, null, 2)}
-                          </pre>
+                          <div className="mt-2 space-y-2">
+                            {log.old_values && Object.keys(log.old_values).length > 0 && (
+                              <div>
+                                <div className="font-semibold text-xs mb-1">Old Values:</div>
+                                <pre className="p-2 bg-muted rounded text-xs overflow-x-auto">
+                                  {JSON.stringify(log.old_values, null, 2)}
+                                </pre>
+                              </div>
+                            )}
+                            {log.new_values && Object.keys(log.new_values).length > 0 && (
+                              <div>
+                                <div className="font-semibold text-xs mb-1">New Values:</div>
+                                <pre className="p-2 bg-muted rounded text-xs overflow-x-auto">
+                                  {JSON.stringify(log.new_values, null, 2)}
+                                </pre>
+                              </div>
+                            )}
+                            {log.metadata && Object.keys(log.metadata).length > 0 && (
+                              <div>
+                                <div className="font-semibold text-xs mb-1">Metadata:</div>
+                                <pre className="p-2 bg-muted rounded text-xs overflow-x-auto">
+                                  {JSON.stringify(log.metadata, null, 2)}
+                                </pre>
+                              </div>
+                            )}
+                          </div>
                         </details>
                       )}
                     </div>

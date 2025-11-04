@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Users, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { logApplicationAction } from '@/utils/auditLogger';
 
 interface Application {
   id: string;
@@ -252,6 +253,18 @@ const ApplicationReview: React.FC = () => {
       if (error) {
         throw error;
       }
+
+      // Log audit trail
+      await logApplicationAction(
+        'delete',
+        applicationId,
+        `${application.first_name} ${application.last_name}`,
+        {
+          email: application.email,
+          status: application.status,
+          vehicle_type: application.vehicle_type,
+        }
+      );
 
       toast({
         title: "Application Deleted",

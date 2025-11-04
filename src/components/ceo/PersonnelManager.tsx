@@ -12,6 +12,8 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { POSITIONS, buildEmails } from '@/config/positions';
 import { DEFAULT_EMPLOYEE_PACKET } from '@/config/hiringPacket';
+import { isCLevelPosition, getExecRoleFromPosition, isCFOPosition, getPortalsForPosition } from '@/utils/roleUtils';
+import { logPersonnelAction } from '@/utils/auditLogger';
 import dayjs from 'dayjs';
 
 const { Search } = Input;
@@ -93,12 +95,12 @@ export const PersonnelManager: React.FC = () => {
   };
 
   // --- Document preview helpers ---
-  const isExecutivePosition = (position?: string) => /chief|ceo|cfo|cto|coo|president|vp|vice president|executive/i.test(position || '');
+  const isExecutivePosition = (position?: string) => isCLevelPosition(position);
 
   const buildOfferLetterHtml = (v: any) => {
     const salaryFormatted = v?.salary ? `$${Number(v.salary).toLocaleString()}/year` : 'Equity-only role';
     const equityLine = v?.equity ? `<li>Equity Stake: <strong>${v.equity}%</strong>${v?.equity_type ? ` (${(v.equity_type || '').toString().replace('_',' ')})` : ''}</li>` : '';
-    const isCfo = /chief\s*financial\s*officer|\bcfo\b/i.test(v?.position || '');
+    const isCfo = isCFOPosition(v?.position);
     const cfoResp = isCfo ? `
       <div style="margin: 20px 0;">
         <h3 style="margin: 0 0 8px 0; color: #1a1a1a; font-size: 16px;">Primary Responsibilities (CFO)</h3>
@@ -500,53 +502,48 @@ export const PersonnelManager: React.FC = () => {
         }
       ]);
 
-      // Provision portal access based on role
-      const posLower = (values.position || '').toLowerCase();
-      const portals: Array<'board'|'ceo'|'admin'> = [];
+      // Provision portal access based on role (using centralized utilities)
+      const portals = getPortalsForPosition(values.position);
       let tempPassword: string | undefined;
       let userId: string | undefined;
       
-      if (/chief|ceo|cfo|cto|coo|president/i.test(values.position || '')) {
-        portals.push('board');
+      // Note: Database triggers will automatically create exec_users when employee is inserted
+      // But we still need to create the auth user if it doesn't exist
+      if (isCLevelPosition(values.position)) {
+        const execRole = getExecRoleFromPosition(values.position);
         
-        // Create REAL auth user for C-level executives using edge function
-        const execRole = posLower.includes('ceo') ? 'ceo' : posLower.includes('cfo') ? 'cfo' : posLower.includes('cto') ? 'cto' : posLower.includes('coo') ? 'coo' : 'board_member';
-        
-        try {
-          const { data: execAuthData, error: execAuthError } = await supabase.functions.invoke('create-executive-user', {
-            body: {
-              firstName: values.first_name,
-              lastName: values.last_name,
-              email: values.email,
-              position: values.position,
-              department: dept?.name || 'Executive',
-              role: execRole
-            }
-          });
+        if (execRole) {
+          try {
+            const { data: execAuthData, error: execAuthError } = await supabase.functions.invoke('create-executive-user', {
+              body: {
+                firstName: values.first_name,
+                lastName: values.last_name,
+                email: values.email,
+                position: values.position,
+                department: dept?.name || 'Executive',
+                role: execRole
+              }
+            });
 
-          if (execAuthError || !execAuthData) {
-            console.error('Failed to create executive user:', execAuthError);
-          } else {
-            userId = execAuthData.userId;
-            tempPassword = execAuthData.tempPassword;
-            
-            // Update employee record with user_id from auth
-            await supabase.from('employees').update({ user_id: userId }).eq('id', data[0].id);
+            if (execAuthError || !execAuthData) {
+              console.error('Failed to create executive user:', execAuthError);
+            } else {
+              userId = execAuthData.userId;
+              tempPassword = execAuthData.tempPassword;
+              
+              // Update employee record with user_id from auth
+              // Database triggers will automatically sync to exec_users
+              await supabase.from('employees').update({ user_id: userId }).eq('id', data[0].id);
+            }
+          } catch (err) {
+            console.error('Error creating executive user:', err);
           }
-        } catch (err) {
-          console.error('Error creating executive user:', err);
         }
         
-        if (posLower.includes('ceo')) {
-          portals.push('ceo');
-          // Grant CEO email access credentials
+        // Grant CEO email access credentials if CEO
+        if (execRole === 'ceo') {
           await supabase.from('ceo_access_credentials').insert([{ user_email: values.email }]).select();
         }
-        if (posLower.includes('cfo')) {
-          portals.push('cfo');
-        }
-      } else {
-        portals.push('admin');
       }
 
       // Generate and store PDF documents
@@ -894,6 +891,11 @@ export const PersonnelManager: React.FC = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
+      const oldValues = {
+        employment_status: employee.employment_status,
+        termination_date: employee.termination_date,
+      };
+
       const { error } = await supabase
         .from('employees')
         .update({
@@ -905,7 +907,7 @@ export const PersonnelManager: React.FC = () => {
 
       if (error) throw error;
 
-      // Log termination
+      // Log termination to employee_history
       await supabase.from('employee_history').insert([
         {
           employee_id: employee.id,
@@ -914,6 +916,22 @@ export const PersonnelManager: React.FC = () => {
           performed_by: user?.id,
         }
       ]);
+
+      // Log audit trail (trigger will also log, but this adds explicit context)
+      await logPersonnelAction(
+        'terminate',
+        employee.id,
+        `${employee.first_name} ${employee.last_name}`,
+        {
+          position: employee.position,
+          department_id: employee.department_id,
+        },
+        oldValues,
+        {
+          employment_status: 'terminated',
+          termination_date: new Date().toISOString(),
+        }
+      );
 
       message.success(`${employee.first_name} ${employee.last_name} has been terminated`);
       fetchEmployees();

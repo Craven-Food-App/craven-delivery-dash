@@ -27,7 +27,7 @@ import { StrategicMindMap } from '@/components/ceo/StrategicMindMap';
 import { AuditTrail } from '@/components/ceo/AuditTrail';
 import { QuickActions } from '@/components/ceo/QuickActions';
 import { EquityDashboard } from '@/components/ceo/EquityDashboard';
-import { ExecutiveNotifications } from '@/components/executive/ExecutiveNotifications';
+import { ExecutiveInboxIMessage } from '@/components/executive/ExecutiveInboxIMessage';
 import { useExecAuth } from '@/hooks/useExecAuth';
 // No Card components: full-page Ant layout
 
@@ -387,9 +387,9 @@ const CEOPortal: React.FC = () => {
         </Row>
         <Divider style={{ margin: '16px 0' }} />
         
-        {/* Executive Notifications Inbox */}
+        {/* Executive Inbox - iMessage Style */}
         <div className="mb-6">
-          <ExecutiveNotifications role="ceo" />
+          <ExecutiveInboxIMessage role="ceo" />
         </div>
         
         <Divider style={{ margin: '16px 0' }} />

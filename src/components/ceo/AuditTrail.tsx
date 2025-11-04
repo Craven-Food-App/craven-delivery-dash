@@ -12,11 +12,18 @@ const { RangePicker } = DatePicker;
 interface ActionLog {
   id: string;
   user_id: string;
+  user_role: string;
+  user_email: string;
+  user_name: string;
   action_type: string;
   action_category: string;
-  target_name: string;
+  target_resource_name: string;
   action_description: string;
+  target_resource_type: string;
+  target_resource_id: string;
   severity: string;
+  requires_review: boolean;
+  compliance_tag: string;
   created_at: string;
 }
 
@@ -49,14 +56,34 @@ export const AuditTrail: React.FC = () => {
     setLoading(true);
     try {
       const { data, error} = await supabase
-        .from('ceo_action_logs')
+        .from('unified_audit_trail')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(500);
 
       if (error) throw error;
-      setLogs(data || []);
-      setFilteredLogs(data || []);
+      
+      // Map to the expected format
+      const formattedLogs = (data || []).map((log: any) => ({
+        id: log.id,
+        user_id: log.user_id,
+        user_role: log.user_role,
+        user_email: log.user_email,
+        user_name: log.user_name,
+        action_type: log.action_type,
+        action_category: log.action_category,
+        target_name: log.target_resource_name,
+        action_description: log.action_description,
+        target_resource_type: log.target_resource_type,
+        target_resource_id: log.target_resource_id,
+        severity: log.severity,
+        requires_review: log.requires_review,
+        compliance_tag: log.compliance_tag,
+        created_at: log.created_at,
+      }));
+      
+      setLogs(formattedLogs);
+      setFilteredLogs(formattedLogs);
     } catch (error) {
       console.error('Error fetching logs:', error);
     } finally {
@@ -70,7 +97,9 @@ export const AuditTrail: React.FC = () => {
     if (searchText) {
       filtered = filtered.filter(log =>
         log.action_description.toLowerCase().includes(searchText.toLowerCase()) ||
-        log.target_name?.toLowerCase().includes(searchText.toLowerCase())
+        log.target_name?.toLowerCase().includes(searchText.toLowerCase()) ||
+        log.user_name?.toLowerCase().includes(searchText.toLowerCase()) ||
+        log.user_email?.toLowerCase().includes(searchText.toLowerCase())
       );
     }
 
