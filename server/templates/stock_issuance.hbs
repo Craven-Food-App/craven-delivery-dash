@@ -1,8 +1,274 @@
-<h1>Stock Subscription / Issuance Agreement</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Stock Subscription / Issuance Agreement</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    @page { size: A4; margin: 24mm 18mm; }
+    :root {
+      --text:#111; --muted:#666; --border:#d9d9d9;
+      --small:12px; --base:14px; --h1:20px; --h2:16px;
+    }
+    body { font-family: "Inter","Helvetica Neue",Arial,sans-serif; color:var(--text); font-size:var(--base); line-height:1.5; }
+    .doc { max-width:800px; margin:0 auto; }
+    h1 { text-align:center; font-size:var(--h1); text-transform:uppercase; margin-bottom:6px; }
+    h2 { font-size:var(--h2); margin:18px 0 8px; }
+    h3 { font-size:14px; margin:12px 0 6px; }
+    p { margin:6px 0 10px; }
+    ul { margin:6px 0 10px 20px; }
+    table { border-collapse: collapse; width:100%; margin:8px 0 16px; }
+    th, td { border:1px solid var(--border); padding:8px 10px; vertical-align:top; }
+    th { background:#fafafa; text-align:left; font-weight:600; }
+    .small { font-size:var(--small); color:var(--muted); }
+    .muted { color:var(--muted); }
+    .sig-table { width:100%; border-collapse:separate; border-spacing:0 18px; }
+    .line { display:block; border-bottom:1px solid #333; height:24px; margin-bottom:4px; }
+    .page-break { page-break-before: always; }
+  </style>
+</head>
+<body>
+  <div class="doc">
+    <h1>STOCK SUBSCRIPTION / ISSUANCE AGREEMENT</h1>
+    <p style="text-align:center;">
+      <strong>{{company_name}}</strong> (a {{state_of_incorporation}} corporation)<br/>
+      Effective Date: {{effective_date}}
+    </p>
+    <hr/>
 
-<p>{{company_name}} issues to {{full_name}} ({{role}}): {{share_count}} {{class_name}} shares at par value {{par_value}} per share in exchange for {{consideration}} and subject to {{vesting_schedule}}.</p>
+    <p>
+      This Stock Subscription / Issuance Agreement (this "Agreement") is entered into by and between
+      <strong>{{company_name}}</strong>, a {{state_of_incorporation}} corporation (the "Company"), and
+      <strong>{{subscriber_name}}</strong> (the "Subscriber").
+    </p>
 
-<p>All shares subject to Company's equity plan and repurchase rights.</p>
+    <h2>1. Subscription and Purchase</h2>
+    <p>
+      Subject to the terms and conditions herein, the Subscriber hereby irrevocably subscribes for and agrees to purchase
+      from the Company, and the Company agrees to issue and sell to the Subscriber, the following securities (the "Shares"):
+    </p>
+    <table>
+      <tr><th>Share Class</th><td>{{share_class}} (e.g., Common / Preferred Series {{series_label}})</td></tr>
+      <tr><th>Number of Shares</th><td>{{share_count}}</td></tr>
+      <tr><th>Price per Share</th><td>{{price_per_share}} {{currency}}</td></tr>
+      <tr><th>Total Purchase Price</th><td>{{total_purchase_price}} {{currency}}</td></tr>
+      <tr><th>Consideration</th><td>{{consideration_type}} (e.g., Cash / Services / IP Assignment)</td></tr>
+      <tr><th>Vesting (if applicable)</th><td>{{vesting_terms}} (e.g., 4 years, 1-year cliff, monthly thereafter)</td></tr>
+      <tr><th>Certificate/Book-Entry</th><td>{{certificate_form}} (e.g., Book-entry; no paper certificate)</td></tr>
+    </table>
 
-<div class="sig-block"><div class="sig"><div style="height:80px">{{{signature_company_html}}}</div><div class="label">{{company_name}}</div></div><div class="sig"><div style="height:80px">{{{signature_holder_html}}}</div><div class="label">{{full_name}}</div></div></div>
+    <h2>2. Closing; Delivery</h2>
+    <p>
+      The closing of the purchase and sale of the Shares (the "Closing") shall occur on {{closing_date}} or such other date as
+      the Company and Subscriber may mutually agree. At Closing, (a) the Subscriber shall deliver the Total Purchase Price by
+      {{payment_method}} (see Exhibit B), and (b) the Company shall issue the Shares to the Subscriber and update its stock ledger.
+    </p>
+
+    <h2>3. Subscriber Representations and Warranties</h2>
+    <p>The Subscriber represents and warrants to the Company as of the Effective Date and the Closing that:</p>
+    <ul>
+      <li><strong>Authority.</strong> Subscriber has full power and authority to enter into this Agreement and perform its obligations.</li>
+      <li><strong>Accredited / Sophistication.</strong> Subscriber is {{accredited_status}} (e.g., an "accredited investor") or otherwise has such knowledge and experience in financial and business matters to evaluate the merits and risks of the investment.</li>
+      <li><strong>Investment Intent.</strong> The Shares are being acquired for investment for Subscriber's own account, not with a view to distribution.</li>
+      <li><strong>Information.</strong> Subscriber has had access to all information it deems necessary to make an informed investment decision.</li>
+      <li><strong>Compliance.</strong> Subscriber acknowledges the Shares have not been registered under the Securities Act of 1933, as amended (the "Securities Act"), or any state securities laws, and are being offered and sold pursuant to exemptions therefrom.</li>
+      <li><strong>Legends/Transfer Restrictions.</strong> Subscriber understands the Shares may bear restrictive legends and are subject to transfer restrictions under applicable law and Company agreements (including any shareholders' agreement or ROFR/co-sale provisions).</li>
+    </ul>
+
+    <h2>4. Company Representations and Warranties</h2>
+    <ul>
+      <li><strong>Organization; Authority.</strong> The Company is duly organized, validly existing, and in good standing under the laws of {{state_of_incorporation}}, and has the requisite corporate power to execute and deliver this Agreement and issue the Shares.</li>
+      <li><strong>Authorization.</strong> All corporate actions required for the authorization, execution, delivery, and performance of this Agreement, and for the issuance and delivery of the Shares, have been duly taken (see Board Resolution reference: {{board_resolution_date}}).</li>
+      <li><strong>Valid Issuance.</strong> Upon issuance and payment therefor, the Shares will be duly authorized, validly issued, fully paid, and non-assessable, subject to restrictions under applicable securities laws and Company agreements.</li>
+    </ul>
+
+    <h2>5. Securities Law Compliance; Legends</h2>
+    <p>
+      The Shares are being offered and sold in reliance upon an exemption from registration, including
+      {{securities_exemption}} (e.g., Regulation D Rule 506(b) / intrastate exemption). The certificates or book-entry statements
+      evidencing the Shares shall bear (or be deemed to include) a customary restrictive legend substantially as follows:
+    </p>
+    <p class="small">
+      "THE SECURITIES REPRESENTED HEREBY HAVE NOT BEEN REGISTERED UNDER THE SECURITIES ACT OF 1933, AS AMENDED, OR APPLICABLE
+      STATE SECURITIES LAWS, AND MAY NOT BE SOLD, TRANSFERRED, ASSIGNED, PLEDGED, OR OTHERWISE DISPOSED OF IN THE ABSENCE OF
+      (A) AN EFFECTIVE REGISTRATION STATEMENT UNDER THE SECURITIES ACT AND SUCH LAWS OR (B) AN OPINION OF COUNSEL SATISFACTORY
+      TO THE COMPANY THAT SUCH REGISTRATION IS NOT REQUIRED."
+    </p>
+
+    <h2>6. Transfer Restrictions; Company Agreements</h2>
+    <p>
+      The Shares are subject to the Company's organizational documents and any agreements to which Subscriber becomes a party,
+      including a shareholders'/founders' agreement, right of first refusal and co-sale (ROFR/Co-Sale), and market-standard
+      drag-along/tag-along provisions (each, as applicable). Any attempted transfer in violation of the foregoing shall be void.
+    </p>
+
+    <h2>7. Vesting; Company Repurchase (if applicable)</h2>
+    <p>
+      If vesting applies, unvested Shares are subject to repurchase by the Company upon termination of service at the lower of
+      (i) cost or (ii) fair market value, unless otherwise provided in {{related_agreement_name}} (e.g., Founders' Agreement or
+      Equity Incentive Plan). The Company may assign its repurchase right.
+    </p>
+
+    <h2>8. 83(b) Election (if applicable)</h2>
+    <p>
+      Subscriber acknowledges responsibility for any tax filings, including a potential Section 83(b) election within 30 days of
+      the date the Shares are transferred for federal tax purposes. The Company has not provided tax or legal advice.
+    </p>
+
+    <h2>9. Notices</h2>
+    <table>
+      <tr>
+        <th>Company</th>
+        <td>
+          {{company_name}}<br/>
+          {{company_address}}<br/>
+          Attn: {{notice_contact_name}}, {{notice_contact_title}}<br/>
+          Email: {{notice_contact_email}}
+        </td>
+      </tr>
+      <tr>
+        <th>Subscriber</th>
+        <td>
+          {{subscriber_name}}<br/>
+          {{subscriber_address}}<br/>
+          Email: {{subscriber_email}}
+        </td>
+      </tr>
+    </table>
+
+    <h2>10. Miscellaneous</h2>
+    <ul>
+      <li><strong>Governing Law.</strong> This Agreement shall be governed by the laws of the State of {{governing_law_state}}, without regard to conflict-of-laws principles.</li>
+      <li><strong>Entire Agreement.</strong> This Agreement (together with the exhibits hereto) constitutes the entire understanding and supersedes prior agreements with respect to the subject matter.</li>
+      <li><strong>Amendments; Waivers.</strong> Any amendment or waiver must be in writing and signed by both parties.</li>
+      <li><strong>Counterparts; E-Signatures.</strong> This Agreement may be executed in counterparts and by electronic signatures, each deemed an original and collectively one instrument.</li>
+      <li><strong>Severability.</strong> If any provision is held invalid, the remaining provisions shall remain in full force and effect.</li>
+    </ul>
+
+    <h2>11. Company Cap Table Acknowledgement</h2>
+    <p>
+      The parties acknowledge that, after giving effect to the issuance of the Shares hereunder, the Company's capitalization is
+      reflected in the cap table attached as <strong>Exhibit A</strong>, which the Company will maintain and update in its official ledger.
+    </p>
+
+    <div class="page-break"></div>
+
+    <h2>Signatures</h2>
+    <table class="sig-table">
+      <tr>
+        <td style="width:60%">
+          <div class="line"></div>
+          <div class="small">Subscriber Signature: {{subscriber_name}}</div>
+        </td>
+        <td style="width:5%"></td>
+        <td>
+          <div class="line"></div>
+          <div class="small">Date</div>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="3" class="small"><strong>Address:</strong> {{subscriber_address}} &nbsp; | &nbsp; <strong>Email:</strong> {{subscriber_email}}</td>
+      </tr>
+    </table>
+
+    <table class="sig-table">
+      <tr>
+        <td style="width:60%">
+          <div class="line"></div>
+          <div class="small">Company Signature: {{signatory_name}}, {{signatory_title}}</div>
+        </td>
+        <td style="width:5%"></td>
+        <td>
+          <div class="line"></div>
+          <div class="small">Date</div>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="3" class="small"><strong>Company:</strong> {{company_name}} &nbsp; | &nbsp; <strong>Address:</strong> {{company_address}}</td>
+      </tr>
+    </table>
+
+    <hr/>
+
+    <p class="small muted">
+      Developer Notes / Placeholders:
+      {{company_name}}, {{state_of_incorporation}}, {{effective_date}}, {{subscriber_name}},
+      {{share_class}}, {{series_label}}, {{share_count}}, {{price_per_share}},
+      {{total_purchase_price}}, {{currency}}, {{consideration_type}}, {{vesting_terms}},
+      {{certificate_form}}, {{closing_date}}, {{payment_method}}, {{board_resolution_date}},
+      {{securities_exemption}}, {{related_agreement_name}}, {{company_address}},
+      {{notice_contact_name}}, {{notice_contact_title}}, {{notice_contact_email}},
+      {{subscriber_address}}, {{subscriber_email}}, {{governing_law_state}},
+      {{signatory_name}}, {{signatory_title}}.
+    </p>
+
+    <div class="page-break"></div>
+
+    <h2>Exhibit A — Post-Closing Capitalization</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Holder</th>
+          <th>Class / Series</th>
+          <th>Shares</th>
+          <th>% Ownership (FD)</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{{founder_1_name}}</td>
+          <td>{{founder_1_class}}</td>
+          <td>{{founder_1_shares}}</td>
+          <td>{{founder_1_percent}}%</td>
+          <td>{{founder_1_notes}}</td>
+        </tr>
+        <tr>
+          <td>{{founder_2_name}}</td>
+          <td>{{founder_2_class}}</td>
+          <td>{{founder_2_shares}}</td>
+          <td>{{founder_2_percent}}%</td>
+          <td>{{founder_2_notes}}</td>
+        </tr>
+        <tr>
+          <td>{{subscriber_name}}</td>
+          <td>{{share_class}}</td>
+          <td>{{share_count}}</td>
+          <td>{{subscriber_percent_post}}%</td>
+          <td>Subject to this Agreement.</td>
+        </tr>
+        <tr>
+          <td>Option Pool</td>
+          <td>Options (Unissued)</td>
+          <td>{{option_pool_shares}}</td>
+          <td>{{option_pool_percent}}%</td>
+          <td>{{option_pool_notes}}</td>
+        </tr>
+        <tr>
+          <td><strong>Total (Fully Diluted)</strong></td>
+          <td></td>
+          <td><strong>{{total_fd_shares}}</strong></td>
+          <td><strong>100%</strong></td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    <h2>Exhibit B — Payment Instructions</h2>
+    <h3>Wire / ACH</h3>
+    <table>
+      <tr><th>Bank Name</th><td>{{bank_name}}</td></tr>
+      <tr><th>Routing (ABA)</th><td>{{routing_number}}</td></tr>
+      <tr><th>Account Number</th><td>{{account_number}}</td></tr>
+      <tr><th>Account Name</th><td>{{account_name}}</td></tr>
+      <tr><th>Swift/BIC (if wire)</th><td>{{swift_bic}}</td></tr>
+      <tr><th>Reference / Memo</th><td>{{payment_reference}}</td></tr>
+    </table>
+    <p class="small muted">If paying by services/IP contribution, attach the applicable Services or IP Assignment Agreement and describe value basis as {{consideration_valuation_basis}}.</p>
+
+  </div>
+</body>
+</html>
 
