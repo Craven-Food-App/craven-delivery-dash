@@ -151,8 +151,14 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
       )
       .subscribe();
     
+    // Refresh contacts every 30 seconds to update active status
+    const intervalId = setInterval(() => {
+      fetchContacts();
+    }, 30000); // 30 seconds
+    
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(intervalId);
     };
   }, [role, currentUserId]);
 
