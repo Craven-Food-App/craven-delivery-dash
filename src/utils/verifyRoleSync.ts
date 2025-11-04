@@ -205,7 +205,7 @@ export async function syncEmployeeManually(employeeId: string) {
 
     // Step 2 & 3: Add roles using database function (bypasses RLS)
     const { data: roleSyncResult, error: roleSyncError } = await supabase.rpc(
-      'sync_user_roles_for_employee',
+      'sync_user_roles_for_employee' as any,
       {
         p_employee_id: employeeId,
         p_user_id: employee.user_id,
@@ -239,9 +239,9 @@ export async function syncEmployeeManually(employeeId: string) {
         console.error('Error adding executive role:', executiveRoleError);
         throw executiveRoleError;
       }
-    } else if (roleSyncResult && !roleSyncResult.success) {
+    } else if (roleSyncResult && typeof roleSyncResult === 'object' && (roleSyncResult as any).success === false) {
       // Function returned errors
-      const errors = roleSyncResult.errors || [];
+      const errors = (roleSyncResult as any).errors || [];
       if (errors.length > 0) {
         throw new Error(`Failed to sync roles: ${errors.join(', ')}`);
       }

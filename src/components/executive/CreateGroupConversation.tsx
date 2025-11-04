@@ -159,7 +159,7 @@ export const CreateGroupConversation: React.FC<CreateGroupConversationProps> = (
 
       const participantIds = Array.from(selectedContacts);
 
-      const { data: groupId, error } = await supabase.rpc('create_group_conversation', {
+      const { data: groupId, error } = await supabase.rpc('create_group_conversation' as any, {
         p_name: groupName.trim(),
         p_created_by_exec_id: currentExec.id,
         p_portal_context: role || 'ceo',
@@ -174,7 +174,7 @@ export const CreateGroupConversation: React.FC<CreateGroupConversationProps> = (
         description: `Group conversation "${groupName}" created successfully`,
       });
 
-      onGroupCreated(groupId, groupName.trim());
+      onGroupCreated(String(groupId), groupName.trim());
       setGroupName('');
       setSelectedContacts(new Set());
       onClose();

@@ -41,7 +41,7 @@ export async function logAuditTrail(params: AuditLogParams): Promise<string | nu
     const ipAddress = (window as any).clientIP || null;
     const userAgent = navigator.userAgent;
 
-    const { data, error } = await supabase.rpc('log_audit_trail', {
+    const { data, error } = await supabase.rpc('log_audit_trail' as any, {
       p_action_type: params.actionType,
       p_action_category: params.actionCategory,
       p_action_description: params.actionDescription,
@@ -65,7 +65,7 @@ export async function logAuditTrail(params: AuditLogParams): Promise<string | nu
       return null;
     }
 
-    return data || null;
+    return String(data) || null;
   } catch (error) {
     console.error('[AuditLogger] Exception in logAuditTrail:', error);
     // Silent fail - audit logging should not break the main flow
