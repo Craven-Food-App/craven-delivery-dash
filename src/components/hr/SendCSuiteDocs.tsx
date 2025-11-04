@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Button, Card, message, Space, Typography, List, Tag, Progress, Modal, Alert } from 'antd';
-import { SendOutlined, FileTextOutlined, CheckCircleOutlined, LoadingOutlined } from '@ant-design/icons';
+import { SendOutlined, FileTextOutlined, CheckCircleOutlined, LoadingOutlined, ReloadOutlined } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { docsAPI } from './api';
 import { renderHtml } from '@/lib/templates';
@@ -43,6 +43,7 @@ export default function SendCSuiteDocs() {
   const [progress, setProgress] = useState(0);
   const [statusMap, setStatusMap] = useState<Record<string, DocumentStatus[]>>({});
   const [showPreview, setShowPreview] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   useEffect(() => {
     fetchExecutives();
@@ -415,6 +416,89 @@ export default function SendCSuiteDocs() {
     }
   };
 
+  const regenerateDocuments = async (exec: Executive) => {
+    if (!exec) {
+      message.warning('No executive selected');
+      return;
+    }
+
+    setRegenerating(true);
+    setProgress(0);
+
+    try {
+      const totalOperations = CSUITE_DOC_TYPES.length;
+      let completed = 0;
+      const execResults = { exec, success: 0, failed: 0, errors: [] as string[] };
+
+      console.log(`Regenerating all documents for ${exec.full_name} (${exec.role})...`);
+
+      // Delete all existing documents for this executive
+      const { error: deleteError } = await supabase
+        .from('executive_documents')
+        .delete()
+        .or(`officer_name.eq.${exec.full_name},role.eq.${exec.role},role.eq.${exec.title}`);
+
+      if (deleteError) {
+        console.error('Error deleting existing documents:', deleteError);
+      }
+
+      // Generate all documents fresh
+      for (const docType of CSUITE_DOC_TYPES) {
+        try {
+          console.log(`Generating ${docType.title} for ${exec.full_name}...`);
+          const data = generateDocumentData(exec, docType.id);
+          const html_content = renderHtml(docType.id, data);
+
+          // Generate document via API
+          const resp = await docsAPI.post('/documents/generate', {
+            template_id: docType.id,
+            officer_name: exec.full_name,
+            role: exec.role === 'cxo' ? 'Chief Experience Officer' : exec.title || exec.role.toUpperCase(),
+            equity: docType.id.includes('equity') ? parseFloat(data.equity_percentage) : undefined,
+            data,
+            html_content,
+          });
+
+          console.log(`Document generation response for ${exec.full_name} - ${docType.title}:`, resp);
+
+          if (resp?.ok && resp?.document) {
+            execResults.success++;
+          } else {
+            throw new Error(`Document generation failed: ${resp?.error || 'Unknown error'}`);
+          }
+        } catch (error: any) {
+          console.error(`✗ Error regenerating ${docType.title} for ${exec.full_name}:`, error);
+          execResults.failed++;
+          execResults.errors.push(`${docType.title}: ${error.message || error}`);
+        }
+
+        completed++;
+        setProgress((completed / totalOperations) * 100);
+      }
+
+      // Log summary for this executive
+      if (execResults.failed > 0) {
+        console.error(`${exec.full_name} - ${execResults.success} success, ${execResults.failed} failed:`, execResults.errors);
+        message.warning(
+          `${exec.full_name}: ${execResults.success} regenerated successfully, ${execResults.failed} failed.`,
+          5
+        );
+      } else {
+        console.log(`${exec.full_name} - All ${execResults.success} documents regenerated successfully`);
+        message.success(`Regenerated all ${execResults.success} documents for ${exec.full_name}`);
+      }
+
+      // Refresh document status
+      await checkExistingDocuments(executives);
+    } catch (error: any) {
+      console.error('Error regenerating documents:', error);
+      message.error(`Failed to regenerate documents: ${error.message}`);
+    } finally {
+      setRegenerating(false);
+      setProgress(0);
+    }
+  };
+
   return (
     <Card
       title={
@@ -432,10 +516,10 @@ export default function SendCSuiteDocs() {
         style={{ marginBottom: 16 }}
       />
 
-      {sending && (
+      {(sending || regenerating) && (
         <div style={{ marginBottom: 16 }}>
           <Progress percent={Math.round(progress)} status="active" />
-          <Text type="secondary">Processing documents...</Text>
+          <Text type="secondary">{sending ? 'Sending documents...' : 'Regenerating documents...'}</Text>
         </div>
       )}
 
@@ -455,10 +539,19 @@ export default function SendCSuiteDocs() {
                   icon={<SendOutlined />}
                   onClick={() => sendDocumentsToExecutive(exec)}
                   loading={sending}
-                  disabled={!exec.email}
+                  disabled={!exec.email || regenerating}
                   size="small"
                 >
                   Send Docs
+                </Button>,
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={() => regenerateDocuments(exec)}
+                  loading={regenerating}
+                  disabled={sending}
+                  size="small"
+                >
+                  Regenerate
                 </Button>
               ]}
             >
