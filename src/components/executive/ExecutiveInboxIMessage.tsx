@@ -574,7 +574,9 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
               name: msg.attachment_name || 'Attachment',
               url: msg.attachment_url,
               size: msg.attachment_size || '0 KB'
-            } : undefined
+            } : undefined,
+            messageId: msg.id, // Store database message ID for deletion
+            conversationId: conversationId as string, // Store conversation ID
           };
         });
         setMessages(formattedMessages);
