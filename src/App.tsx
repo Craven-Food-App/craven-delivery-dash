@@ -67,6 +67,7 @@ import HRPortal from "./pages/HRPortal";
 import MainHub from "./pages/MainHub";
 import BusinessAuth from "./pages/BusinessAuth";
 import BusinessAuthWrapper from "./components/BusinessAuthWrapper";
+import BusinessAuthGuard from "./components/BusinessAuthGuard";
 import { DriverSignup } from "./pages/driverOnboarding/Signup";
 import { LegalConsent } from "./pages/driverOnboarding/LegalConsent";
 import { IdentityForm } from "./pages/driverOnboarding/IdentityForm";
@@ -256,16 +257,16 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<BusinessAuth />} />
                   <Route path="/auth" element={<BusinessAuth />} />
-                  <Route path="/hub" element={<MainHub />} />
-                  <Route path="/main-hub" element={<MainHub />} />
+                  <Route path="/hub" element={<BusinessAuthGuard><MainHub /></BusinessAuthGuard>} />
+                  <Route path="/main-hub" element={<BusinessAuthGuard><MainHub /></BusinessAuthGuard>} />
                   <Route path="/admin" element={<Admin />} />
                     <Route path="/marketing-portal" element={<MarketingPortal />} />
-                    <Route path="/hr-portal" element={<HRPortal />} />
+                    <Route path="/hr-portal" element={<BusinessAuthGuard><HRPortal /></BusinessAuthGuard>} />
                     <Route path="/board" element={<BoardPortal />} />
-                  <Route path="/ceo" element={<CEOPortal />} />
-                  <Route path="/cfo" element={<CFOPortal />} />
-                  <Route path="/coo" element={<COOPortal />} />
-                  <Route path="/cto" element={<CTOPortal />} />
+                  <Route path="/ceo" element={<BusinessAuthGuard><CEOPortal /></BusinessAuthGuard>} />
+                  <Route path="/cfo" element={<BusinessAuthGuard><CFOPortal /></BusinessAuthGuard>} />
+                  <Route path="/coo" element={<BusinessAuthGuard><COOPortal /></BusinessAuthGuard>} />
+                  <Route path="/cto" element={<BusinessAuthGuard><CTOPortal /></BusinessAuthGuard>} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </BrowserRouter>
