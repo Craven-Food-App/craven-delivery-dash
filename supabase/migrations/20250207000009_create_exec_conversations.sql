@@ -29,9 +29,7 @@ CREATE TABLE IF NOT EXISTS public.exec_conversation_messages (
   attachment_url TEXT,
   attachment_name TEXT,
   attachment_size TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  -- Index for efficient querying
-  INDEX idx_conv_messages_conversation (conversation_id, created_at DESC)
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
 -- Enable RLS
