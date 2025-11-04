@@ -34,26 +34,13 @@ async function convertHtmlToPdf(htmlContent: string): Promise<Uint8Array> {
 <body>${htmlContent}</body>
 </html>`;
     
-    const response = await fetch('https://api.apdf.io/v1/pdf', {
+    const response = await fetch('https://apdf.io/api/pdf/file/create', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': apiKey,
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         html: fullHtml,
-        format: 'Letter',
-        margin: {
-          top: '0.5in',
-          right: '0.5in',
-          bottom: '0.5in',
-          left: '0.5in',
-        },
-        printBackground: true,
-        waitFor: 1000, // Wait 1 second for content to render
-        inlineStyles: true, // Ensure all styles are inlined
-        displayHeaderFooter: false,
-        scale: 1,
       }),
     });
 
