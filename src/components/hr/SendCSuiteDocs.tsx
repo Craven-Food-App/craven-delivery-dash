@@ -293,12 +293,21 @@ export default function SendCSuiteDocs() {
               if (resp?.ok && resp?.document) {
                 // Send document via email
                 if (exec.email) {
-                  await sendDocumentEmail(exec, docType.title, resp.document.file_url);
+                  try {
+                    await sendDocumentEmail(exec, docType.title, resp.document.file_url);
+                    console.log(`✓ Successfully generated and sent ${docType.title} for ${exec.full_name}`);
+                  } catch (emailError: any) {
+                    // Document was generated but email failed
+                    console.error(`⚠ Document generated but email failed for ${exec.full_name} - ${docType.title}:`, emailError);
+                    // Still count as success since document was created
+                    execResults.success++;
+                    execResults.errors.push(`Email failed: ${emailError.message || 'Could not send email'}`);
+                    continue; // Move to next document
+                  }
                 } else {
                   console.warn(`No email for ${exec.full_name}, document generated but not sent`);
                 }
                 execResults.success++;
-                console.log(`✓ Successfully generated and sent ${docType.title} for ${exec.full_name}`);
               } else {
                 throw new Error(`Document generation failed: ${resp?.error || 'Unknown error'}`);
               }
@@ -368,7 +377,14 @@ export default function SendCSuiteDocs() {
   };
 
   const sendDocumentEmail = async (exec: Executive, docTitle: string, docUrl: string) => {
+    if (!exec.email) {
+      console.warn(`No email address for ${exec.full_name}, skipping email send`);
+      return;
+    }
+
     try {
+      console.log(`Sending email for ${docTitle} to ${exec.email}...`);
+      
       // Use Supabase edge function to send email
       const { data, error } = await supabase.functions.invoke('send-executive-document-email', {
         body: {
@@ -380,14 +396,19 @@ export default function SendCSuiteDocs() {
       });
 
       if (error) {
-        console.error('Error sending email:', error);
-        // Fallback: Log to console if email service unavailable
-        console.log(`Would send ${docTitle} to ${exec.email} at ${docUrl}`);
+        console.error(`✗ Email error for ${exec.full_name} - ${docTitle}:`, error);
+        throw new Error(`Email failed: ${error.message || 'Unknown error'}`);
       }
-    } catch (error) {
-      console.error('Error sending email:', error);
-      // Fallback: Log to console if email service unavailable
-      console.log(`Would send ${docTitle} to ${exec.email} at ${docUrl}`);
+
+      if (data?.success) {
+        console.log(`✓ Email sent successfully to ${exec.email} for ${docTitle}`);
+      } else {
+        console.error(`✗ Email send failed for ${exec.full_name} - ${docTitle}:`, data);
+        throw new Error(`Email failed: ${data?.error || 'Unknown error'}`);
+      }
+    } catch (error: any) {
+      console.error(`✗ Error sending email to ${exec.email} for ${docTitle}:`, error);
+      throw error; // Re-throw so it's caught by the calling function
     }
   };
 
