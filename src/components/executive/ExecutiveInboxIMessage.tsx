@@ -269,7 +269,13 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
   }, []);
 
   useEffect(() => {
-    fetchContacts();
+    const loadContacts = async () => {
+      await fetchContacts();
+      // After contacts are loaded, if we had a selected contact, restore it and fetch messages
+      // This ensures conversations persist when returning to the portal
+    };
+    
+    loadContacts();
     
     // Set up real-time subscription for exec_users updates
     const channel = supabase
@@ -549,7 +555,24 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
       console.log('Fetched contacts:', formattedContacts);
       console.log('Fetched groups:', groupConversations);
       setContacts(allContacts);
-      if (allContacts.length > 0 && !selectedContact) {
+      
+      // Preserve selectedContact if it still exists in the contacts list
+      // This prevents losing the selected conversation when returning to the portal
+      if (selectedContact) {
+        const stillExists = allContacts.find(c => 
+          (selectedContact.isGroup && c.isGroup && c.groupId === selectedContact.groupId) ||
+          (!selectedContact.isGroup && !c.isGroup && c.exec_id === selectedContact.exec_id)
+        );
+        if (stillExists) {
+          // Contact still exists, keep it selected and fetch messages
+          setSelectedContact(stillExists);
+          // fetchMessages will be called by the useEffect that watches selectedContact
+        } else if (allContacts.length > 0) {
+          // Previous contact no longer exists, select first available
+          setSelectedContact(allContacts[0]);
+        }
+      } else if (allContacts.length > 0) {
+        // No previous selection, select first contact
         setSelectedContact(allContacts[0]);
       }
     } catch (error) {
@@ -568,8 +591,8 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        // Clear messages if no user
-        setMessages([]);
+        // Don't clear messages - user might just be loading
+        // Wait for auth to complete
         return;
       }
 
@@ -581,7 +604,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
         .single();
 
       if (!currentExec) {
-        setMessages([]);
+        // Don't clear messages - exec user might be loading
         return;
       }
 
@@ -669,7 +692,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
 
       // Handle 1-on-1 conversations
       if (!selectedContact.exec_id && !selectedContact.isGroup) {
-        setMessages([]);
+        // Invalid contact - don't clear existing messages, just return
         return;
       }
 
@@ -687,7 +710,8 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
 
       if (convError || !conversationId) {
         console.error('Error getting conversation:', convError);
-        setMessages([]);
+        // Don't clear messages - they exist in the database
+        // Just log the error and return
         return;
       }
 
