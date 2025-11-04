@@ -299,14 +299,13 @@ export default function SendCSuiteDocs() {
                   } catch (emailError: any) {
                     // Document was generated but email failed
                     console.error(`⚠ Document generated but email failed for ${exec.full_name} - ${docType.title}:`, emailError);
-                    // Still count as success since document was created
-                    execResults.success++;
                     execResults.errors.push(`Email failed: ${emailError.message || 'Could not send email'}`);
-                    continue; // Move to next document
+                    // Note: Still count as success since document was created, just email failed
                   }
                 } else {
                   console.warn(`No email for ${exec.full_name}, document generated but not sent`);
                 }
+                // Count as success since document was created (email may have failed but that's separate)
                 execResults.success++;
               } else {
                 throw new Error(`Document generation failed: ${resp?.error || 'Unknown error'}`);
