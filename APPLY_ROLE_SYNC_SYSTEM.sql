@@ -6,6 +6,17 @@
 -- ============================================================================
 
 -- ============================================================================
+-- STEP 0: FIX USER_ROLES CONSTRAINT
+-- ============================================================================
+-- Must be done first to allow 'employee' and 'executive' roles
+ALTER TABLE public.user_roles 
+DROP CONSTRAINT IF EXISTS user_roles_role_check;
+
+ALTER TABLE public.user_roles 
+ADD CONSTRAINT user_roles_role_check 
+CHECK (role IN ('admin', 'moderator', 'user', 'employee', 'executive', 'customer', 'driver'));
+
+-- ============================================================================
 -- MIGRATION 1: Sync existing C-level employees to exec_users
 -- ============================================================================
 INSERT INTO public.exec_users (user_id, role, department, title, access_level)

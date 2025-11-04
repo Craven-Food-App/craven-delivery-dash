@@ -7,6 +7,17 @@
 -- ============================================================================
 
 -- ============================================================================
+-- STEP 0: ENSURE USER_ROLES CONSTRAINT ALLOWS EMPLOYEE AND EXECUTIVE
+-- ============================================================================
+-- Fix constraint first to prevent errors during sync
+ALTER TABLE public.user_roles 
+DROP CONSTRAINT IF EXISTS user_roles_role_check;
+
+ALTER TABLE public.user_roles 
+ADD CONSTRAINT user_roles_role_check 
+CHECK (role IN ('admin', 'moderator', 'user', 'employee', 'executive', 'customer', 'driver'));
+
+-- ============================================================================
 -- STEP 1: CHECK IF FUNCTIONS EXIST
 -- ============================================================================
 DO $$
@@ -88,7 +99,10 @@ END $$;
 -- ============================================================================
 -- STEP 3: IDENTIFY C-LEVEL EMPLOYEES AND THEIR STATUS
 -- ============================================================================
-RAISE NOTICE '=== C-Level Employee Status Report ===';
+DO $$
+BEGIN
+  RAISE NOTICE '=== C-Level Employee Status Report ===';
+END $$;
 
 -- Create a comprehensive report
 SELECT 
@@ -200,7 +214,10 @@ WHERE eu.user_id = e.user_id
 -- ============================================================================
 -- STEP 5: FINAL STATUS REPORT
 -- ============================================================================
-RAISE NOTICE '=== Final Status After Fixes ===';
+DO $$
+BEGIN
+  RAISE NOTICE '=== Final Status After Fixes ===';
+END $$;
 
 SELECT 
   'Total C-Level Employees' as metric,
@@ -263,7 +280,10 @@ WHERE public.is_c_level_position(e.position) AND e.user_id IS NOT NULL AND eu.id
 -- ============================================================================
 -- STEP 6: LIST ALL RECOGNIZED C-LEVEL EMPLOYEES
 -- ============================================================================
-RAISE NOTICE '=== All Recognized C-Level Executives ===';
+DO $$
+BEGIN
+  RAISE NOTICE '=== All Recognized C-Level Executives ===';
+END $$;
 
 SELECT 
   eu.role,
