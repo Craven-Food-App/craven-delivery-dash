@@ -5,7 +5,6 @@ import { SendOutlined, FileTextOutlined, CheckCircleOutlined, LoadingOutlined } 
 import { supabase } from '@/integrations/supabase/client';
 import { docsAPI } from './api';
 import { renderHtml } from '@/lib/templates';
-import { Resend } from 'https://esm.sh/resend@4.0.0';
 
 const { Title, Text } = Typography;
 
@@ -272,24 +271,24 @@ export default function SendCSuiteDocs() {
   };
 
   const sendDocumentEmail = async (exec: Executive, docTitle: string, docUrl: string) => {
-    // Use Resend API to send email
-    // Note: This requires Resend API key in environment
     try {
-      const resend = new Resend(import.meta.env.VITE_RESEND_API_KEY || '');
-      
-      await resend.emails.send({
-        from: 'Crave\'n HR <hr@craven.com>',
-        to: [exec.email],
-        subject: `Your ${docTitle} - Crave'n, Inc.`,
-        html: `
-          <h1>${docTitle}</h1>
-          <p>Dear ${exec.full_name},</p>
-          <p>Please find your ${docTitle} attached below.</p>
-          <p><a href="${docUrl}" style="background-color: #ff7a45; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">View Document</a></p>
-          <p>Best regards,<br/>Crave'n HR Team</p>
-        `,
+      // Use Supabase edge function to send email
+      const { data, error } = await supabase.functions.invoke('send-executive-document-email', {
+        body: {
+          to: exec.email,
+          executiveName: exec.full_name,
+          documentTitle: docTitle,
+          documentUrl: docUrl,
+        },
       });
+
+      if (error) {
+        console.error('Error sending email:', error);
+        // Fallback: Log to console if email service unavailable
+        console.log(`Would send ${docTitle} to ${exec.email} at ${docUrl}`);
+      }
     } catch (error) {
+      console.error('Error sending email:', error);
       // Fallback: Log to console if email service unavailable
       console.log(`Would send ${docTitle} to ${exec.email} at ${docUrl}`);
     }
