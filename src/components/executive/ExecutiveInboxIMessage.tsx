@@ -300,55 +300,13 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
 
   useEffect(() => {
     // When contact changes, clear current messages first to prevent cross-conversation leakage
-    if (!selectedContact?.exec_id || !currentUserId) {
+    if (!selectedContact) {
       setMessages([]);
       return;
     }
     
-    // Then load from cache for instant display
-    const loadFromCache = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setMessages([]);
-        return;
-      }
-
-      const { data: currentExec } = await supabase
-        .from('exec_users')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-      
-      if (!currentExec) {
-        setMessages([]);
-        return;
-      }
-
-      const portalContext = role || 'ceo';
-      const { data: conversationId } = await supabase.rpc(
-        'get_or_create_conversation',
-        {
-          p_participant1_exec_id: currentExec.id,
-          p_participant2_exec_id: selectedContact.exec_id,
-          p_portal_context: portalContext,
-          p_device_id: deviceId || null
-        }
-      );
-
-      if (conversationId) {
-        // Load from cache for THIS specific conversation only
-        const historyKey = `${conversationId}`;
-        const cachedMessages = conversationHistory[historyKey] || [];
-        setMessages(cachedMessages); // Always set, even if empty, to clear previous conversation
-      } else {
-        // No conversation found, clear messages
-        setMessages([]);
-      }
-    };
-
-    loadFromCache();
-    
-    // Then fetch fresh messages from database for this conversation
+    // ALWAYS fetch from database first - never rely on cache alone
+    // Messages are stored permanently in the database and should ALWAYS be available
     fetchMessages();
     
     // Set up real-time subscription for messages in current conversation
@@ -626,9 +584,14 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
 
         if (msgError) {
           console.error('Error fetching group messages:', msgError);
+          // On error, try cache as fallback
           const historyKey = `group-${groupId}`;
           const cachedMessages = conversationHistory[historyKey] || [];
-          setMessages(cachedMessages);
+          if (cachedMessages.length > 0) {
+            setMessages(cachedMessages);
+          } else {
+            setMessages([]);
+          }
           return;
         }
 
@@ -681,7 +644,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
       }
 
       // Handle 1-on-1 conversations
-      if (!selectedContact.exec_id) {
+      if (!selectedContact.exec_id && !selectedContact.isGroup) {
         setMessages([]);
         return;
       }
@@ -724,10 +687,15 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
 
       if (msgError) {
         console.error('Error fetching messages:', msgError);
-        // Load from cache for THIS conversation only
+        // On error, try cache as fallback, but log the error
         const historyKey = `${conversationId}`;
         const cachedMessages = conversationHistory[historyKey] || [];
-        setMessages(cachedMessages); // Always set, even if empty, to ensure correct conversation
+        if (cachedMessages.length > 0) {
+          setMessages(cachedMessages);
+        } else {
+          // If no cache and DB error, show empty but don't clear - user might have messages
+          setMessages([]);
+        }
         return;
       }
 
@@ -784,40 +752,12 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
       setMessages(formattedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
-      // Try to load from cache for THIS conversation only
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user && selectedContact?.exec_id) {
-        const { data: currentExec } = await supabase
-          .from('exec_users')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (currentExec) {
-          const portalContext = role || 'ceo';
-          const { data: conversationId } = await supabase.rpc(
-            'get_or_create_conversation',
-            {
-              p_participant1_exec_id: currentExec.id,
-              p_participant2_exec_id: selectedContact.exec_id,
-              p_portal_context: portalContext,
-              p_device_id: deviceId || null
-            }
-          );
-          
-          if (conversationId) {
-            const historyKey = `${conversationId}`;
-            const cachedMessages = conversationHistory[historyKey] || [];
-            setMessages(cachedMessages); // Always set, even if empty, to ensure correct conversation
-          } else {
-            setMessages([]); // Clear if no conversation ID
-          }
-        } else {
-          setMessages([]); // Clear if no exec user
-        }
-      } else {
-        setMessages([]); // Clear if no user or contact
-      }
+      // On error, try to reload from database - messages should ALWAYS be available
+      // Don't clear messages - they exist in the database and should be shown
+      // Retry once after a short delay
+      setTimeout(() => {
+        fetchMessages();
+      }, 1000);
     }
   };
 
