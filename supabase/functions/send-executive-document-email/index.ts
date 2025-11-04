@@ -222,6 +222,8 @@ serve(async (req: Request) => {
       `;
     }
 
+    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
     const emailResponse = await resend.emails.send({
       from: fromEmail,
       to: [to],
@@ -260,7 +262,7 @@ serve(async (req: Request) => {
                           <ul style="margin: 0; padding-left: 20px; color: #4a4a4a; font-size: 15px; line-height: 1.8;">
                             <li><strong>Document:</strong> ${documentTitle}</li>
                             <li><strong>Recipient:</strong> ${executiveName}</li>
-                            <li><strong>Date:</strong> ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</li>
+                            <li><strong>Date:</strong> ${dateStr}</li>
                           </ul>
                         </div>
                         
