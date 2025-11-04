@@ -139,27 +139,27 @@ const Header = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-48">
-                    <DropdownMenuItem onClick={() => window.location.href = '/hub'}>
-                      Hub
+                    <DropdownMenuItem asChild>
+                      <Link to="/hub" className="w-full cursor-pointer">Hub</Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => window.location.href = '/hr-portal'}>
-                      HR Portal
+                    <DropdownMenuItem asChild>
+                      <Link to="/hr-portal" className="w-full cursor-pointer">HR Portal</Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => window.location.href = '/board'}>
-                      Board Portal
+                    <DropdownMenuItem asChild>
+                      <Link to="/board" className="w-full cursor-pointer">Board Portal</Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => window.location.href = '/ceo'}>
-                      CEO Portal
+                    <DropdownMenuItem asChild>
+                      <Link to="/ceo" className="w-full cursor-pointer">CEO Portal</Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => window.location.href = '/cfo'}>
-                      CFO Portal
+                    <DropdownMenuItem asChild>
+                      <Link to="/cfo" className="w-full cursor-pointer">CFO Portal</Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => window.location.href = '/coo'}>
-                      COO Portal
+                    <DropdownMenuItem asChild>
+                      <Link to="/coo" className="w-full cursor-pointer">COO Portal</Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => window.location.href = '/cto'}>
-                      CTO Portal
+                    <DropdownMenuItem asChild>
+                      <Link to="/cto" className="w-full cursor-pointer">CTO Portal</Link>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -208,9 +208,9 @@ const Header = () => {
                   variant="ghost" 
                   size="sm" 
                   className="text-primary hover:text-primary hover:bg-primary/10"
-                  onClick={() => window.location.href = '/admin'}
+                  asChild
                 >
-                  Admin
+                  <Link to="/admin">Admin</Link>
                 </Button>
               )}
               
@@ -218,9 +218,9 @@ const Header = () => {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => window.location.href = '/auth'}
+                  asChild
                 >
-                  Sign In
+                  <Link to="/auth">Sign In</Link>
                 </Button>
               )}
               
@@ -245,20 +245,26 @@ const Header = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuItem onClick={() => window.location.href = '/customer-dashboard'}>
-                      <User className="mr-2 h-4 w-4" />
-                      <span>My Orders</span>
+                    <DropdownMenuItem asChild>
+                      <Link to="/customer-dashboard" className="flex items-center cursor-pointer">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>My Orders</span>
+                      </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => window.location.href = '/customer-dashboard?tab=rewards'}>
-                      <Gift className="mr-2 h-4 w-4" />
-                      <span>Rewards</span>
+                    <DropdownMenuItem asChild>
+                      <Link to="/customer-dashboard?tab=rewards" className="flex items-center cursor-pointer">
+                        <Gift className="mr-2 h-4 w-4" />
+                        <span>Rewards</span>
+                      </Link>
                     </DropdownMenuItem>
                     {isMerchant && !merchantLoading && (
                       <>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => window.location.href = '/merchant-portal'}>
-                          <Store className="mr-2 h-4 w-4" />
-                          <span>Merchant Portal</span>
+                        <DropdownMenuItem asChild>
+                          <Link to="/merchant-portal" className="flex items-center cursor-pointer">
+                            <Store className="mr-2 h-4 w-4" />
+                            <span>Merchant Portal</span>
+                          </Link>
                         </DropdownMenuItem>
                       </>
                     )}
@@ -432,25 +438,23 @@ const Header = () => {
                     <Button 
                       variant="outline" 
                       className="w-full justify-start text-lg h-12"
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        window.location.href = '/customer-dashboard';
-                      }}
+                      asChild
                     >
-                      <User className="mr-3 h-5 w-5" />
-                      My Orders
+                      <Link to="/customer-dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                        <User className="mr-3 h-5 w-5" />
+                        My Orders
+                      </Link>
                     </Button>
                     {isMerchant && !merchantLoading && (
                       <Button 
                         variant="outline" 
                         className="w-full justify-start text-lg h-12"
-                        onClick={() => {
-                          setIsMobileMenuOpen(false);
-                          window.location.href = '/merchant-portal';
-                        }}
+                        asChild
                       >
-                        <Store className="mr-3 h-5 w-5" />
-                        Merchant Portal
+                        <Link to="/merchant-portal" onClick={() => setIsMobileMenuOpen(false)}>
+                          <Store className="mr-3 h-5 w-5" />
+                          Merchant Portal
+                        </Link>
                       </Button>
                     )}
                     <Button 
