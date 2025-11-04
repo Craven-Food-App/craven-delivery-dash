@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useState, useRef } from "react";
-import { Layout, Typography, Row, Col, Statistic, Tabs, Table, DatePicker, Space, Button, Divider, Alert, Modal, InputNumber, Form, message, Select, Input } from "antd";
+import { Layout, Typography, Row, Col, Statistic, Tabs, Table, DatePicker, Space, Button, Divider, Alert, Modal, InputNumber, Form, message, Select, Input, Tooltip, Popover } from "antd";
 import {
   DollarOutlined,
   BarChartOutlined,
@@ -35,6 +35,7 @@ import {
   OrderedListOutlined,
   BgColorsOutlined,
   FontSizeOutlined,
+  InfoCircleOutlined,
 } from "@ant-design/icons";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -47,7 +48,44 @@ const { Header, Content } = Layout;
 const { RangePicker } = DatePicker;
 const { TabPane } = Tabs;
 
-function BigNavButton({ color, hover, title, subtitle, onClick }: { color: string; hover: string; title: string; subtitle: string; onClick: () => void }) {
+// Reusable InfoIcon component with Popover
+function InfoIcon({ content, title }: { content: string; title?: string }) {
+  const [open, setOpen] = useState(false);
+  
+  const popoverContent = (
+    <div style={{ maxWidth: '300px' }}>
+      {title && <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>{title}</div>}
+      <div style={{ fontSize: '13px', lineHeight: '1.5' }}>{content}</div>
+    </div>
+  );
+
+  return (
+    <Popover
+      content={popoverContent}
+      title={title || "Information"}
+      trigger="click"
+      open={open}
+      onOpenChange={setOpen}
+    >
+      <InfoCircleOutlined
+        style={{
+          fontSize: '14px',
+          color: '#1890ff',
+          cursor: 'pointer',
+          position: 'absolute',
+          top: '8px',
+          right: '8px',
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(!open);
+        }}
+      />
+    </Popover>
+  );
+}
+
+function BigNavButton({ color, hover, title, subtitle, onClick, infoContent }: { color: string; hover: string; title: string; subtitle: string; onClick: () => void; infoContent?: string }) {
   const [isMobile, setIsMobile] = useState(false);
   
   useEffect(() => {
@@ -58,24 +96,28 @@ function BigNavButton({ color, hover, title, subtitle, onClick }: { color: strin
   }, []);
 
   return (
-    <button
-      onClick={onClick}
-      style={{
-        background: color,
-        color: '#fff',
-        borderRadius: 12,
-        padding: isMobile ? '12px 14px' : '16px 18px',
-        textAlign: 'left',
-        border: 'none',
-        cursor: 'pointer',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
-      }}
-      onMouseOver={(e)=> (e.currentTarget.style.background = hover)}
-      onMouseOut={(e)=> (e.currentTarget.style.background = color)}
-    >
-      <div style={{ fontSize: isMobile ? 14 : 16, fontWeight: 700, lineHeight: 1.2 }}>{title}</div>
-      <div style={{ opacity: 0.9, fontSize: isMobile ? 12 : 14 }}>{subtitle}</div>
-    </button>
+    <div style={{ position: 'relative' }}>
+      {infoContent && <InfoIcon content={infoContent} title={title} />}
+      <button
+        onClick={onClick}
+        style={{
+          background: color,
+          color: '#fff',
+          borderRadius: 12,
+          padding: isMobile ? '12px 14px' : '16px 18px',
+          textAlign: 'left',
+          border: 'none',
+          cursor: 'pointer',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+          width: '100%'
+        }}
+        onMouseOver={(e)=> (e.currentTarget.style.background = hover)}
+        onMouseOut={(e)=> (e.currentTarget.style.background = color)}
+      >
+        <div style={{ fontSize: isMobile ? 14 : 16, fontWeight: 700, lineHeight: 1.2 }}>{title}</div>
+        <div style={{ opacity: 0.9, fontSize: isMobile ? 12 : 14 }}>{subtitle}</div>
+      </button>
+    </div>
   );
 }
 
@@ -95,8 +137,20 @@ const MetricCard: React.FC<KpiData> = ({ title, value, change, changeUnit, icon:
   const changeColor = isPositive ? 'text-green-500' : 'text-red-500';
   const ChangeIcon = isPositive ? TrendingUp : TrendingDown;
 
+  const getInfoContent = () => {
+    const infoMap: Record<string, string> = {
+      'Monthly Revenue': 'Total revenue generated from all orders in the current month. This includes all transactions completed during the period.',
+      'Gross Margin %': 'The percentage of revenue remaining after subtracting the cost of goods sold (COGS). Higher is better.',
+      'Net Cash Flow (Burn $)': 'The net cash flow or cash burn rate for the month. Positive values indicate cash generation, negative indicates cash burn.',
+      'COGS': 'Cost of Goods Sold - Direct costs associated with producing and delivering orders, including driver payouts and platform fees.',
+      'Operating Expenses': 'All operational costs excluding COGS, including salaries, rent, marketing, and other overhead expenses.',
+    };
+    return infoMap[title] || `Information about ${title}`;
+  };
+
   return (
-    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 transition duration-300 hover:shadow-xl">
+    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 transition duration-300 hover:shadow-xl relative">
+      <InfoIcon content={getInfoContent()} title={title} />
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm font-medium text-gray-500 uppercase">{title}</p>
         <Icon className={`w-6 h-6 ${color}`} />
@@ -135,7 +189,8 @@ const RevenueProfitChart: React.FC<{ data: any[] }> = ({ data }) => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 h-96">
+    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 h-96 relative">
+      <InfoIcon content="This chart shows the monthly revenue and net cash flow trends over the last 6 months. Revenue represents total order value, while Net Cash Flow shows the profit or burn rate after all expenses." title="Financial Trend Chart" />
       <h2 className="text-xl font-semibold text-gray-800 mb-4">Financial Trend (K)</h2>
       <ResponsiveContainer width="100%" height="85%">
         <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
@@ -168,7 +223,8 @@ const ExpensesPieChart: React.FC<{ data: any[] }> = ({ data }) => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 h-96">
+    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 h-96 relative">
+      <InfoIcon content="This pie chart displays how operating expenses are distributed across different categories. Use this to identify where the majority of your operational costs are allocated." title="Expense Breakdown" />
       <h2 className="text-xl font-semibold text-gray-800 mb-4">Expense Breakdown</h2>
       <ResponsiveContainer width="100%" height="85%">
         <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
@@ -216,7 +272,8 @@ const KeyRatiosTable: React.FC<{ data: RatioData[] }> = ({ data }) => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 relative">
+      <InfoIcon content="Key financial ratios help assess the company's financial health. Current Ratio measures liquidity, Debt-to-Equity shows leverage, Gross Margin indicates profitability, Quick Ratio tests short-term solvency, and Inventory Turnover measures efficiency." title="Key Financial Ratios" />
       <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
         <Scale className="w-5 h-5 text-blue-600 mr-2" />
         Key Financial Ratios
@@ -566,16 +623,16 @@ export default function CFOPortal() {
 
           {/* High-Priority Quick Access - Responsive Grid */}
           <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(1, minmax(0,1fr))' : 'repeat(4, minmax(0,1fr))', gap:12, marginBottom: 16 }}>
-            <BigNavButton color="#2563eb" hover="#1d4ed8" title="Manager Console" subtitle="Team & KPIs" onClick={()=> setActiveTab('manager')} />
-            <BigNavButton color="#16a34a" hover="#15803d" title="Accounts Payable" subtitle="Invoices & Runs" onClick={()=> setActiveTab('ap')} />
-            <BigNavButton color="#f97316" hover="#ea580c" title="Accounts Receivable" subtitle="Aging & Collections" onClick={()=> setActiveTab('ar')} />
-            <BigNavButton color="#dc2626" hover="#b91c1c" title="Approvals" subtitle="Spend Reviews" onClick={()=> setActiveTab('approvals')} />
+            <BigNavButton color="#2563eb" hover="#1d4ed8" title="Manager Console" subtitle="Team & KPIs" onClick={()=> setActiveTab('manager')} infoContent="Access team management tools, view team KPIs, assign roles, and manage team performance metrics." />
+            <BigNavButton color="#16a34a" hover="#15803d" title="Accounts Payable" subtitle="Invoices & Runs" onClick={()=> setActiveTab('ap')} infoContent="Manage vendor invoices, create payment runs, approve expenses, and track accounts payable aging." />
+            <BigNavButton color="#f97316" hover="#ea580c" title="Accounts Receivable" subtitle="Aging & Collections" onClick={()=> setActiveTab('ar')} infoContent="View customer invoices, track receivables aging, manage collections, and monitor payment status." />
+            <BigNavButton color="#dc2626" hover="#b91c1c" title="Approvals" subtitle="Spend Reviews" onClick={()=> setActiveTab('approvals')} infoContent="Review and approve pending financial transactions, expense requests, and spending authorizations." />
           </div>
           <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(1, minmax(0,1fr))' : 'repeat(4, minmax(0,1fr))', gap:12, marginBottom: 16 }}>
-            <BigNavButton color="#0ea5e9" hover="#0284c7" title="Forecast" subtitle="Cash Flow" onClick={()=> setActiveTab('forecast')} />
-            <BigNavButton color="#7c3aed" hover="#6d28d9" title="Budget vs Actuals" subtitle="Variance" onClick={()=> setActiveTab('bva')} />
-            <BigNavButton color="#9333ea" hover="#7e22ce" title="Close" subtitle="Checklist & Recs" onClick={()=> setActiveTab('close')} />
-            <BigNavButton color="#0891b2" hover="#0e7490" title="Treasury" subtitle="Bank Balances" onClick={()=> setActiveTab('treasury')} />
+            <BigNavButton color="#0ea5e9" hover="#0284c7" title="Forecast" subtitle="Cash Flow" onClick={()=> setActiveTab('forecast')} infoContent="View cash flow projections, financial forecasts, and predictive analytics for future planning." />
+            <BigNavButton color="#7c3aed" hover="#6d28d9" title="Budget vs Actuals" subtitle="Variance" onClick={()=> setActiveTab('bva')} infoContent="Compare budgeted amounts against actual expenses and revenue to identify variances and trends." />
+            <BigNavButton color="#9333ea" hover="#7e22ce" title="Close" subtitle="Checklist & Recs" onClick={()=> setActiveTab('close')} infoContent="Monthly and quarterly closing checklist, journal entries, reconciliations, and closing procedures." />
+            <BigNavButton color="#0891b2" hover="#0e7490" title="Treasury" subtitle="Bank Balances" onClick={()=> setActiveTab('treasury')} infoContent="Monitor bank account balances, cash positions, and treasury management operations." />
           </div>
 
           <Tabs
@@ -586,9 +643,11 @@ export default function CFOPortal() {
           >
             <TabPane
               tab={
-                <span>
-                  <BarChartOutlined /> Overview
-                </span>
+                <Tooltip title="View comprehensive financial dashboard with KPIs, charts, and key metrics">
+                  <span>
+                    <BarChartOutlined /> Overview
+                  </span>
+                </Tooltip>
               }
               key="overview"
             >
@@ -596,9 +655,11 @@ export default function CFOPortal() {
             </TabPane>
             <TabPane
               tab={
-                <span>
-                  <FileSearchOutlined /> Transactions
-                </span>
+                <Tooltip title="Browse all financial transactions, orders, and payment records">
+                  <span>
+                    <FileSearchOutlined /> Transactions
+                  </span>
+                </Tooltip>
               }
               key="transactions"
             >
@@ -619,9 +680,11 @@ export default function CFOPortal() {
             </TabPane>
             <TabPane
               tab={
-                <span>
-                  <BankOutlined /> Payouts
-                </span>
+                <Tooltip title="View driver and vendor payout records, payment history, and payout status">
+                  <span>
+                    <BankOutlined /> Payouts
+                  </span>
+                </Tooltip>
               }
               key="payouts"
             >
@@ -644,9 +707,11 @@ export default function CFOPortal() {
             </TabPane>
             <TabPane
               tab={
-                <span>
-                  <TeamOutlined /> Manager Console
-                </span>
+                <Tooltip title="Manage team assignments, view team KPIs, and assign roles to team members">
+                  <span>
+                    <TeamOutlined /> Manager Console
+                  </span>
+                </Tooltip>
               }
               key="manager"
             >
@@ -654,9 +719,11 @@ export default function CFOPortal() {
             </TabPane>
             <TabPane
               tab={
-                <span>
-                  <FileTextOutlined /> Accounts Payable
-                </span>
+                <Tooltip title="Manage vendor invoices, create payment runs, and track accounts payable">
+                  <span>
+                    <FileTextOutlined /> Accounts Payable
+                  </span>
+                </Tooltip>
               }
               key="ap"
             >
@@ -664,9 +731,11 @@ export default function CFOPortal() {
             </TabPane>
             <TabPane
               tab={
-                <span>
-                  <AccountBookOutlined /> Accounts Receivable
-                </span>
+                <Tooltip title="Track customer invoices, receivables aging, and collections management">
+                  <span>
+                    <AccountBookOutlined /> Accounts Receivable
+                  </span>
+                </Tooltip>
               }
               key="ar"
             >
@@ -674,9 +743,11 @@ export default function CFOPortal() {
             </TabPane>
             <TabPane
               tab={
-                <span>
-                  <CheckCircleTwoTone /> Approvals
-                </span>
+                <Tooltip title="Review and approve pending financial transactions and expense requests">
+                  <span>
+                    <CheckCircleTwoTone /> Approvals
+                  </span>
+                </Tooltip>
               }
               key="approvals"
             >
@@ -684,9 +755,11 @@ export default function CFOPortal() {
             </TabPane>
             <TabPane
               tab={
-                <span>
-                  <LineChartOutlined /> Forecast
-                </span>
+                <Tooltip title="View cash flow forecasts, financial projections, and predictive analytics">
+                  <span>
+                    <LineChartOutlined /> Forecast
+                  </span>
+                </Tooltip>
               }
               key="forecast"
             >
@@ -694,9 +767,11 @@ export default function CFOPortal() {
             </TabPane>
             <TabPane
               tab={
-                <span>
-                  <CalculatorOutlined /> Budget vs Actuals
-                </span>
+                <Tooltip title="Compare budgeted amounts against actual expenses and revenue to analyze variances">
+                  <span>
+                    <CalculatorOutlined /> Budget vs Actuals
+                  </span>
+                </Tooltip>
               }
               key="bva"
             >
@@ -704,9 +779,11 @@ export default function CFOPortal() {
             </TabPane>
             <TabPane
               tab={
-                <span>
-                  <CheckSquareOutlined /> Close
-                </span>
+                <Tooltip title="Monthly and quarterly closing procedures, checklists, and reconciliation tasks">
+                  <span>
+                    <CheckSquareOutlined /> Close
+                  </span>
+                </Tooltip>
               }
               key="close"
             >
@@ -714,22 +791,33 @@ export default function CFOPortal() {
             </TabPane>
             <TabPane
               tab={
-                <span>
-                  <WalletOutlined /> Treasury
-                </span>
+                <Tooltip title="Monitor bank account balances, cash positions, and treasury operations">
+                  <span>
+                    <WalletOutlined /> Treasury
+                  </span>
+                </Tooltip>
               }
               key="treasury"
             >
               <TreasuryView />
             </TabPane>
-            <TabPane tab={<span>Message Center</span>} key="messages">
+            <TabPane 
+              tab={
+                <Tooltip title="Communicate with team members and view message history">
+                  <span>Message Center</span>
+                </Tooltip>
+              } 
+              key="messages"
+            >
               <MessageCenter />
             </TabPane>
             <TabPane
               tab={
-                <span>
-                  <EditOutlined /> Word Processor
-                </span>
+                <Tooltip title="Create and edit financial documents, reports, and memos">
+                  <span>
+                    <EditOutlined /> Word Processor
+                  </span>
+                </Tooltip>
               }
               key="wordprocessor"
             >
@@ -780,7 +868,8 @@ function ManagerConsole() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
+      <InfoIcon content="The Manager Console provides an overview of team KPIs, workload distribution, and financial metrics. Use this to monitor AP/AR status, assign team roles, and track team performance." title="Manager Console" />
       {(metrics.apOverdue > 0 || metrics.arPastDue > 0 || metrics.closeOpen > 5) && (
         <Alert
           type="warning"
@@ -1104,7 +1193,8 @@ function ApprovalsPanel() {
     return () => window.removeEventListener('resize', checkMobile);
   }, [status]);
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
+      <InfoIcon content="Review and approve pending financial transactions, expense requests, and spending authorizations. Filter by status to view pending, approved, or rejected items." title="Financial Approvals" />
       <Space direction={isMobile ? 'vertical' : 'horizontal'} style={{ marginBottom: 12, width: isMobile ? '100%' : 'auto' }}>
         <Typography.Text>Filter:</Typography.Text>
         <Button type={status==='pending'? 'primary':'default'} onClick={() => setStatus('pending')} block={isMobile}>Pending</Button>
@@ -1174,8 +1264,11 @@ function AccountsPayable() {
     <div>
       <Row gutter={[16,16]} style={{ marginBottom: 12 }}>
         <Col xs={24} md={12}>
-          <Typography.Text strong>AP Aging (by Due Date)</Typography.Text>
-          <div style={{ height: 220, background:'#fff' }}>
+          <div style={{ position: 'relative' }}>
+            <InfoIcon content="This chart shows accounts payable aging by due date. It categorizes invoices into buckets (Current, 0-30 days, 31-60 days, etc.) to help identify which payments are overdue or coming due." title="AP Aging Chart" />
+            <Typography.Text strong>AP Aging (by Due Date)</Typography.Text>
+          </div>
+          <div style={{ height: 220, background:'#fff', position: 'relative' }}>
             <ChartContainer config={{ current:{label:'Current', color:'#94a3b8'}, b30:{label:'0-30', color:'#22c55e'}, b60:{label:'31-60', color:'#eab308'}, b90:{label:'61-90', color:'#f97316'}, b90p:{label:'90+', color:'#ef4444'} }}>
               <BarChart data={[(() => {
                 const now = Date.now();
@@ -1202,8 +1295,11 @@ function AccountsPayable() {
           </div>
         </Col>
         <Col xs={24} md={12}>
-          <Typography.Text strong>Upcoming Cash Needs (Approved/Pending)</Typography.Text>
-          <div style={{ height: 220, background:'#fff' }}>
+          <div style={{ position: 'relative' }}>
+            <InfoIcon content="This chart forecasts upcoming cash needs based on approved and pending invoices. Use this to plan cash flow and ensure sufficient funds are available for upcoming payments." title="Upcoming Cash Needs" />
+            <Typography.Text strong>Upcoming Cash Needs (Approved/Pending)</Typography.Text>
+          </div>
+          <div style={{ height: 220, background:'#fff', position: 'relative' }}>
             <ChartContainer config={{ pending:{label:'Pending', color:'#60a5fa'}, approved:{label:'Approved', color:'#34d399'} }}>
               <LineChart data={[1,2,3,4,5,6].map(m => {
                 const d = new Date(); d.setMonth(d.getMonth()+m-1); const ym = d.toISOString().slice(0,7);
@@ -1420,8 +1516,11 @@ function AccountsReceivable() {
     <div>
       <Row gutter={[16,16]} style={{ marginBottom: 12 }}>
         <Col xs={24} md={12}>
-          <Typography.Text strong>AR Aging Buckets</Typography.Text>
-          <div style={{ height: 220, background:'#fff' }}>
+          <div style={{ position: 'relative' }}>
+            <InfoIcon content="This chart displays accounts receivable aging buckets, categorizing outstanding invoices by how long they've been overdue. Use this to prioritize collection efforts." title="AR Aging Buckets" />
+            <Typography.Text strong>AR Aging Buckets</Typography.Text>
+          </div>
+          <div style={{ height: 220, background:'#fff', position: 'relative' }}>
             <ChartContainer config={{ current:{label:'Current', color:'#94a3b8'}, b30:{label:'0-30', color:'#22c55e'}, b60:{label:'31-60', color:'#eab308'}, b90:{label:'61-90', color:'#f97316'}, b90p:{label:'90+', color:'#ef4444'} }}>
               <BarChart data={[(() => {
                 const buckets = { current:0, b30:0, b60:0, b90:0, b90p:0 } as any;
@@ -1446,8 +1545,11 @@ function AccountsReceivable() {
           </div>
         </Col>
         <Col xs={24} md={12}>
-          <Typography.Text strong>Collections Trend (last 6 months)</Typography.Text>
-          <div style={{ height: 220, background:'#fff' }}>
+          <div style={{ position: 'relative' }}>
+            <InfoIcon content="This chart shows the collections trend over the last 6 months, helping you track payment collection patterns and identify trends in receivables management." title="Collections Trend" />
+            <Typography.Text strong>Collections Trend (last 6 months)</Typography.Text>
+          </div>
+          <div style={{ height: 220, background:'#fff', position: 'relative' }}>
             <ChartContainer config={{ collected:{label:'Collected', color:'#16a34a'} }}>
               <LineChart data={[...Array(6)].map((_,i) => {
                 const d = new Date(); d.setMonth(d.getMonth()- (5-i));
