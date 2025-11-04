@@ -85,7 +85,7 @@ serve(async (req: Request) => {
 
       for (const doc of documents) {
         try {
-          itemsHtml.push(`<li style=\"margin: 6px 0;\"><a href=\"${doc.url}\" style=\"color: #ff7a45; text-decoration: none;\">${doc.title}</a></li>`);
+          itemsHtml.push(`<li style="margin: 6px 0;"><a href="${doc.url}" style="color: #ff7a45; text-decoration: none;">${doc.title}</a></li>`);
 
           // Parse storage URL to bucket/path (supports public and signed URLs)
           const parts = doc.url.split('/storage/v1/object/');
@@ -142,9 +142,9 @@ serve(async (req: Request) => {
       }
 
       linksHtml = `
-        <div style=\"background-color: #f9f9f9; padding: 16px; border-radius: 6px; margin: 20px 0;\">
-          <h3 style=\"margin: 0 0 10px 0; color: #1a1a1a; font-size: 16px;\">Included Documents</h3>
-          <ul style=\"margin: 0; padding-left: 18px; color: #4a4a4a; font-size: 14px; line-height: 1.6;\">${itemsHtml.join('')}</ul>
+        <div style="background-color: #f9f9f9; padding: 16px; border-radius: 6px; margin: 20px 0;">
+          <h3 style="margin: 0 0 10px 0; color: #1a1a1a; font-size: 16px;">Included Documents</h3>
+          <ul style="margin: 0; padding-left: 18px; color: #4a4a4a; font-size: 14px; line-height: 1.6;">${itemsHtml.join('')}</ul>
         </div>
       `;
     } else if (pdfBase64) {
@@ -185,6 +185,41 @@ serve(async (req: Request) => {
       } catch (fetchError) {
         console.error("Failed to fetch PDF from storage:", fetchError);
       }
+    }
+
+    // Build dynamic content sections
+    let dynamicContent = '';
+    
+    if (documents && documents.length > 0) {
+      dynamicContent += linksHtml;
+      if (attachments.length > 0) {
+        dynamicContent += `
+        <div style="background-color: #e8f5e9; padding: 20px; border-radius: 6px; margin: 20px 0; text-align: center;">
+          <p style="margin: 0; color: #2e7d32; font-size: 16px; font-weight: bold;">✅ PDF Attachments Included</p>
+          <p style="margin: 8px 0 0 0; color: #4a4a4a; font-size: 14px;">All documents are attached as PDFs.</p>
+        </div>
+        `;
+      }
+    } else if (attachments.length > 0) {
+      dynamicContent = `
+        <div style="background-color: #e8f5e9; padding: 20px; border-radius: 6px; margin: 30px 0; text-align: center;">
+          <p style="margin: 0; color: #2e7d32; font-size: 16px; font-weight: bold;">
+            ✅ PDF Document Attached
+          </p>
+          <p style="margin: 10px 0 0 0; color: #4a4a4a; font-size: 14px;">
+            Please see the attached PDF file
+          </p>
+        </div>
+      `;
+    } else if (documentUrl) {
+      dynamicContent = `
+        <div style="text-align: center; margin: 40px 0 30px 0;">
+          <a href="${documentUrl}" 
+             style="display: inline-block; background: linear-gradient(135deg, #ff7a45 0%, #ff8c00 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 6px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 12px rgba(255, 122, 69, 0.3);">
+            View Document
+          </a>
+        </div>
+      `;
     }
 
     const emailResponse = await resend.emails.send({
@@ -229,33 +264,7 @@ serve(async (req: Request) => {
                           </ul>
                         </div>
                         
-                        ${documents && documents.length > 0 ? `
-                        ${linksHtml}
-                        ${attachments.length > 0 ? `
-                        <div style="background-color: #e8f5e9; padding: 20px; border-radius: 6px; margin: 20px 0; text-align: center;">
-                          <p style="margin: 0; color: #2e7d32; font-size: 16px; font-weight: bold;">✅ PDF Attachments Included</p>
-                          <p style="margin: 8px 0 0 0; color: #4a4a4a; font-size: 14px;">All documents are attached as PDFs.</p>
-                        </div>
-                        ` : ''}
-                        ` : `
-                        ${attachments.length > 0 ? `
-                        <div style="background-color: #e8f5e9; padding: 20px; border-radius: 6px; margin: 30px 0; text-align: center;">
-                          <p style="margin: 0; color: #2e7d32; font-size: 16px; font-weight: bold;">
-                            ✅ PDF Document Attached
-                          </p>
-                          <p style="margin: 10px 0 0 0; color: #4a4a4a; font-size: 14px;">
-                            Please see the attached PDF file
-                          </p>
-                        </div>
-                        ` : documentUrl ? `
-                        <div style="text-align: center; margin: 40px 0 30px 0;">
-                          <a href="${documentUrl}" 
-                             style="display: inline-block; background: linear-gradient(135deg, #ff7a45 0%, #ff8c00 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 6px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 12px rgba(255, 122, 69, 0.3);">
-                            View Document
-                          </a>
-                        </div>
-                        ` : ''}
-                        `
+                        ${dynamicContent}
                         
                         <div style="background-color: #f9f9f9; padding: 20px; border-radius: 6px; margin: 30px 0;">
                           <h3 style="margin: 0 0 10px 0; color: #1a1a1a; font-size: 16px;">📝 Important Notes:</h3>
