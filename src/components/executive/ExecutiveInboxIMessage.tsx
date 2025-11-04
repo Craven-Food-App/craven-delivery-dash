@@ -78,8 +78,8 @@ const AttachmentRenderer: React.FC<{ attachment: FileAttachment }> = ({ attachme
       >
         <FileText className="w-6 h-6 text-indigo-500 mr-3 flex-shrink-0" />
         <div className="flex flex-col min-w-0">
-          <span className="text-sm font-semibold truncate text-gray-800 dark:text-white">{attachment.name}</span>
-          <span className="text-xs text-gray-500 dark:text-gray-400">{attachment.size} • Click to Download</span>
+          <span className="text-sm font-semibold truncate text-gray-800">{attachment.name}</span>
+          <span className="text-xs text-gray-500">{attachment.size} • Click to Download</span>
         </div>
         <Download className="w-4 h-4 ml-4 text-gray-400 flex-shrink-0" />
       </a>
