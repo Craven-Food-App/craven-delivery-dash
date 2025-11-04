@@ -1121,7 +1121,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
               contacts.map((contact) => (
                 <div
                   key={contact.id}
-                  onClick={() => {
+                  onClick={async () => {
                     setSelectedContact(contact);
                     // Save selection to localStorage for persistence
                     const { data: { user } } = await supabase.auth.getUser();
