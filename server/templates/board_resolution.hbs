@@ -1,31 +1,238 @@
-<h1>Board Resolution – Appointment of Officers</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Board Resolution – Appointment of Officers</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    @page {
+      size: A4;
+      margin: 24mm 18mm 24mm 18mm;
+    }
+    :root {
+      --text: #111;
+      --muted: #555;
+      --border: #d9d9d9;
+      --accent: #222;
+      --small: 12px;
+      --base: 14px;
+      --h1: 20px;
+      --h2: 16px;
+    }
+    html, body {
+      font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+      color: var(--text);
+      line-height: 1.45;
+      font-size: var(--base);
+    }
+    .doc {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .company-name {
+      font-weight: 700;
+      font-size: var(--h2);
+      letter-spacing: .3px;
+    }
+    .doc-title {
+      font-weight: 800;
+      font-size: var(--h1);
+      margin-top: 6px;
+      text-transform: uppercase;
+    }
+    .meta {
+      text-align: center;
+      font-size: var(--small);
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+    hr.rule {
+      border: 0;
+      border-top: 1px solid var(--border);
+      margin: 12px 0 18px;
+    }
+    h3 {
+      font-size: var(--h2);
+      margin: 16px 0 6px;
+      color: var(--accent);
+    }
+    p {
+      margin: 6px 0 10px;
+    }
+    .whereas p { margin: 6px 0; }
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 14px;
+      font-size: var(--base);
+    }
+    .table th, .table td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      vertical-align: top;
+    }
+    .table th {
+      text-align: left;
+      background: #fafafa;
+      font-weight: 600;
+    }
+    .sig-grid {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 22px;
+      margin-top: 8px;
+    }
+    .sig {
+      width: 100%;
+    }
+    .sig .line {
+      display: block;
+      border-bottom: 1px solid #333;
+      height: 24px;
+      margin-bottom: 4px;
+    }
+    .sig .label {
+      font-size: var(--small);
+      color: var(--muted);
+    }
+    .muted { color: var(--muted); }
+    .small { font-size: var(--small); }
+    .page-break { page-break-before: always; }
+  </style>
+</head>
+<body>
+  <div class="doc">
+    <div class="header">
+      <div class="company-name">{{company_name}}</div>
+      <div class="doc-title">Board Resolution – Appointment of Officers</div>
+      <div class="meta">Adopted on {{adoption_date}}</div>
+    </div>
 
-<p>Date: {{date}}</p>
+    <hr class="rule" />
 
-<p>The undersigned, being all the Directors of {{company_name}} ("Company"), hereby adopt the following resolutions:</p>
+    <p>
+      The undersigned, being all of the members of the Board of Directors (the "Board") of
+      <strong>{{company_name}}</strong>, a <strong>{{state_of_incorporation}}</strong> corporation (the "Company"),
+      hereby adopts the following resolutions by unanimous written consent pursuant to the laws of the State of
+      <strong>{{state_of_incorporation}}</strong> and the Company's Bylaws.
+    </p>
 
-<ol>
-  <li>Appointment of Officers:
+    <h3>Whereas</h3>
+    <div class="whereas">
+      <p>1. The Company has been duly formed and organized under the laws of the State of {{state_of_incorporation}}; and</p>
+      <p>2. The Board deems it in the best interest of the Company to appoint officers to manage and oversee its operations, and to define their roles and powers as set forth herein.</p>
+    </div>
+
+    <h3>Now, therefore, be it resolved that:</h3>
+
+    <p><strong>1. Appointment of Officers.</strong> The following individuals are hereby appointed to serve as officers of the Company effective as of <strong>{{effective_date}}</strong>, to hold their respective offices until their successors are duly appointed or until their earlier resignation or removal:</p>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Title</th>
+          <th>Term</th>
+          <th>Signature (acknowledgment)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{{ceo_name}}</td>
+          <td>Chief Executive Officer (CEO)</td>
+          <td>Indefinite</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td>{{cfo_name}}</td>
+          <td>Chief Financial Officer (CFO)</td>
+          <td>Indefinite</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td>{{cxo_name}}</td>
+          <td>Chief Experience Officer (CXO)</td>
+          <td>Indefinite</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td>{{secretary_name}}</td>
+          <td>Corporate Secretary</td>
+          <td>Indefinite</td>
+          <td>&nbsp;</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p><strong>2. Duties and Responsibilities.</strong> Each officer shall have the powers and perform the duties customarily associated with their office and as provided in the Company's Bylaws, including but not limited to the following:
+      <span class="small muted">(summary)</span>
+    </p>
     <ul>
-      <li>Chief Executive Officer (CEO): {{ceo_name}}</li>
-      <li>Chief Financial Officer (CFO): {{cfo_name}}</li>
-      <li>Chief Experience Officer (CXO): {{cxo_name}}</li>
+      <li><strong>Chief Executive Officer:</strong> general supervision and control over all business and affairs of the Company.</li>
+      <li><strong>Chief Financial Officer:</strong> oversight of financial policies, books and records, reporting, and regulatory compliance.</li>
+      <li><strong>Chief Experience Officer:</strong> strategy and oversight for customer/merchant/driver experience and brand execution.</li>
+      <li><strong>Corporate Secretary:</strong> custody of corporate records and minutes; preparation and filing of required notices and consents.</li>
     </ul>
-  </li>
-  <li>Equity Grants (subject to applicable stock agreements):
-    <ul>
-      <li>CEO: {{equity_ceo}}%</li>
-      <li>CFO: {{equity_cfo}}%</li>
-      <li>CXO: {{equity_cxo}}%</li>
-    </ul>
-  </li>
-  <li>Compensation Deferral: Base salaries for the above Officers are deferred until the Company secures at least ${{funding_trigger}} in funding or revenue.</li>
-</ol>
 
-<p>These resolutions are effective immediately.</p>
+    <p><strong>3. Authority to Act.</strong> Each officer named above is authorized and empowered to execute, acknowledge, and deliver any and all contracts, documents, or instruments on behalf of the Company consistent with the ordinary course of business.</p>
 
-<div class="sig-block">
-  <div class="sig"><div style="height:80px">{{{signature_director1_html}}}</div><div class="label">Director</div></div>
-  <div class="sig"><div style="height:80px">{{{signature_director2_html}}}</div><div class="label">Director</div></div>
-</div>
+    <p><strong>4. Ratification.</strong> All prior acts taken by these officers in connection with the Company's formation and organization are hereby ratified, confirmed, and approved.</p>
+
+    <p><strong>5. Filing and Maintenance.</strong> A copy of this resolution shall be filed in the corporate record book of the Company, maintained by the Corporate Secretary.</p>
+
+    <h3>In Witness Whereof</h3>
+    <p>
+      The undersigned have executed this Resolution as of <strong>{{execution_date}}</strong>.
+    </p>
+
+    <h3>Board of Directors</h3>
+    <table class="sig-grid">
+      <tr>
+        <td>
+          <div class="sig">
+            <span class="line"></span>
+            <div class="label">Signature</div>
+          </div>
+        </td>
+        <td style="width: 40px;"></td>
+        <td>
+          <div class="sig">
+            <span class="line"></span>
+            <div class="label">Date</div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="3" class="small"><strong>Name:</strong> {{board_member_1}} &nbsp; | &nbsp; <strong>Title:</strong> Director</td>
+      </tr>
+    </table>
+
+    <table class="sig-grid">
+      <tr>
+        <td>
+          <div class="sig">
+            <span class="line"></span>
+            <div class="label">Signature</div>
+          </div>
+        </td>
+        <td style="width: 40px;"></td>
+        <td>
+          <div class="sig">
+            <span class="line"></span>
+            <div class="label">Date</div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="3" class="small"><strong>Name:</strong> {{board_member_2}} &nbsp; | &nbsp; <strong>Title:</strong> Director</td>
+      </tr>
+    </table>
+
+  </div>
+</body>
+</html>
 
