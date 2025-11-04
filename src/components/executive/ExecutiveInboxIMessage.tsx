@@ -516,10 +516,57 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
           };
         });
 
+      // Fetch group conversations
+      const portalContext = role || 'ceo';
+      const { data: currentExec } = await supabase
+        .from('exec_users')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      let groupConversations: Contact[] = [];
+      if (currentExec) {
+        const { data: groups, error: groupsError } = await supabase
+          .from('exec_group_conversations')
+          .select('id, name, portal_context')
+          .eq('portal_context', portalContext)
+          .order('last_message_at', { ascending: false });
+
+        if (!groupsError && groups) {
+          // Filter groups where current user is a participant
+          for (const group of groups) {
+            const { data: participants } = await supabase
+              .from('exec_group_conversation_participants')
+              .select('exec_user_id')
+              .eq('group_conversation_id', group.id);
+
+            const isParticipant = participants?.some((p: any) => p.exec_user_id === currentExec.id);
+            if (isParticipant) {
+              const participantCount = participants?.length || 0;
+              groupConversations.push({
+                id: `group-${group.id}`,
+                exec_id: '', // Not applicable for groups
+                user_id: null,
+                name: group.name,
+                role: 'GROUP',
+                hasExecUser: true,
+                isGroup: true,
+                groupId: group.id,
+                participantCount,
+              });
+            }
+          }
+        }
+      }
+
+      // Combine individual contacts and group conversations
+      const allContacts = [...formattedContacts, ...groupConversations];
+      
       console.log('Fetched contacts:', formattedContacts);
-      setContacts(formattedContacts);
-      if (formattedContacts.length > 0 && !selectedContact) {
-        setSelectedContact(formattedContacts[0]);
+      console.log('Fetched groups:', groupConversations);
+      setContacts(allContacts);
+      if (allContacts.length > 0 && !selectedContact) {
+        setSelectedContact(allContacts[0]);
       }
     } catch (error) {
       console.error('Error fetching executive contacts:', error);
@@ -787,8 +834,77 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
         .eq('user_id', user.id)
         .single();
 
-      if (!currentExec || !selectedContact.exec_id) {
-        console.error('Missing exec_user records');
+      if (!currentExec) {
+        console.error('Missing exec_user record');
+        return;
+      }
+
+      // Handle group conversation messages
+      if (selectedContact.isGroup && selectedContact.groupId) {
+        const groupId = selectedContact.groupId;
+
+        const { data: newMessage, error: msgError } = await supabase
+          .from('exec_group_conversation_messages')
+          .insert({
+            group_conversation_id: groupId,
+            from_exec_id: currentExec.id,
+            message_text: inputContent.trim(),
+            attachment_type: attachment?.type || null,
+            attachment_url: attachment?.url || null,
+            attachment_name: attachment?.name || null,
+            attachment_size: attachment?.size || null,
+          })
+          .select()
+          .single();
+
+        if (msgError) {
+          console.error('Error saving group message:', msgError);
+          return;
+        }
+
+        // Add message to local state
+        const newMsg: Message = {
+          id: parseInt(newMessage.id.slice(0, 8), 16) || Date.now(),
+          sender: 'self',
+          senderName: 'You',
+          content: inputContent.trim(),
+          timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+          attachment: attachment,
+          messageId: newMessage.id,
+          conversationId: groupId,
+          senderRole: 'self',
+          createdAt: newMessage.created_at || new Date().toISOString(),
+        };
+
+        const allMessages = [...messages, newMsg];
+        const sortedMessages = allMessages.sort((a, b) => {
+          if (a.createdAt && b.createdAt) {
+            return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          }
+          return 0;
+        });
+
+        const historyKey = `group-${groupId}`;
+        setConversationHistory(prev => ({
+          ...prev,
+          [historyKey]: sortedMessages
+        }));
+        setMessages(sortedMessages);
+        setInputContent('');
+        setIsSendingAttachment(false);
+
+        // Update group conversation last_message_at
+        await supabase
+          .from('exec_group_conversations')
+          .update({ last_message_at: new Date().toISOString() })
+          .eq('id', groupId);
+
+        return;
+      }
+
+      // Handle 1-on-1 conversations
+      if (!selectedContact.exec_id) {
+        console.error('Missing contact exec_id');
         return;
       }
 
@@ -901,8 +1017,25 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
     </div>
   );
 
+  const handleGroupCreated = (groupId: string, groupName: string) => {
+    // Refresh contacts to include the new group
+    fetchContacts();
+    toast({
+      title: "Group created",
+      description: `Group "${groupName}" has been created`,
+    });
+  };
+
   return (
     <div className="w-full" style={{ height: '600px', minHeight: '600px' }}>
+      <CreateGroupConversation
+        isOpen={showCreateGroup}
+        onClose={() => setShowCreateGroup(false)}
+        onGroupCreated={handleGroupCreated}
+        role={role}
+        deviceId={deviceId}
+        currentUserId={currentUserId}
+      />
       <div className="flex w-full h-full bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
 
         {/* Sidebar */}
