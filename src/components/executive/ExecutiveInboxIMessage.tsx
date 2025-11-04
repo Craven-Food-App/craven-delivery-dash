@@ -305,14 +305,19 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
   }, [role, currentUserId]);
 
   useEffect(() => {
-    // When contact changes, clear current messages first to prevent cross-conversation leakage
+    // When contact changes, fetch messages from database
+    // DO NOT clear messages here - let fetchMessages handle it
+    // This ensures conversations persist when returning to the portal
     if (!selectedContact) {
+      // Only clear if truly no contact selected
       setMessages([]);
       return;
     }
     
     // ALWAYS fetch from database first - never rely on cache alone
     // Messages are stored permanently in the database and should ALWAYS be available
+    // This ensures conversations persist even after leaving and returning to the portal
+    // Don't clear messages before fetching - they exist in the database
     fetchMessages();
     
     // Set up real-time subscription for messages in current conversation
