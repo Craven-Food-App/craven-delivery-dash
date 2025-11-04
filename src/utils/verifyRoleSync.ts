@@ -203,34 +203,48 @@ export async function syncEmployeeManually(employeeId: string) {
       throw execError;
     }
 
-    // Step 2: Add 'employee' role to user_roles (if not exists)
-    const { error: employeeRoleError } = await supabase
-      .from('user_roles')
-      .upsert({
-        user_id: employee.user_id,
-        role: 'employee',
-      }, {
-        onConflict: 'user_id,role'
-      });
+    // Step 2 & 3: Add roles using database function (bypasses RLS)
+    const { data: roleSyncResult, error: roleSyncError } = await supabase.rpc(
+      'sync_user_roles_for_employee',
+      {
+        p_employee_id: employeeId,
+        p_user_id: employee.user_id,
+        p_employee_role: 'employee',
+        p_executive_role: 'executive'
+      }
+    );
 
-    if (employeeRoleError) {
-      console.error('Error adding employee role:', employeeRoleError);
-      // Don't throw - this might already exist
-    }
+    if (roleSyncError) {
+      console.error('Error syncing roles via function:', roleSyncError);
+      // Fallback to direct insert (might fail due to RLS, but try anyway)
+      const { error: employeeRoleError } = await supabase
+        .from('user_roles')
+        .upsert({
+          user_id: employee.user_id,
+          role: 'employee',
+        }, {
+          onConflict: 'user_id,role'
+        });
 
-    // Step 3: Add 'executive' role to user_roles (if not exists)
-    const { error: executiveRoleError } = await supabase
-      .from('user_roles')
-      .upsert({
-        user_id: employee.user_id,
-        role: 'executive',
-      }, {
-        onConflict: 'user_id,role'
-      });
+      const { error: executiveRoleError } = await supabase
+        .from('user_roles')
+        .upsert({
+          user_id: employee.user_id,
+          role: 'executive',
+        }, {
+          onConflict: 'user_id,role'
+        });
 
-    if (executiveRoleError) {
-      console.error('Error adding executive role:', executiveRoleError);
-      throw executiveRoleError;
+      if (executiveRoleError) {
+        console.error('Error adding executive role:', executiveRoleError);
+        throw executiveRoleError;
+      }
+    } else if (roleSyncResult && !roleSyncResult.success) {
+      // Function returned errors
+      const errors = roleSyncResult.errors || [];
+      if (errors.length > 0) {
+        throw new Error(`Failed to sync roles: ${errors.join(', ')}`);
+      }
     }
 
     return { success: true };
