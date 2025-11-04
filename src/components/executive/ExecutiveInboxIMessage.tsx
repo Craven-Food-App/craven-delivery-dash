@@ -1347,8 +1347,11 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
                 />
 
                 <button
-                  onClick={() => handleSend()}
-                  disabled={(!inputContent.trim() && !isSendingAttachment) || !selectedContact.hasExecUser}
+                  onClick={async () => {
+                    console.log('Send button clicked');
+                    await handleSend();
+                  }}
+                  disabled={(!inputContent.trim() && !isSendingAttachment) || !selectedContact?.hasExecUser}
                   className={`p-3 rounded-full transition-all duration-300 ease-in-out ${
                     inputContent.trim() && selectedContact.hasExecUser
                       ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-md'
