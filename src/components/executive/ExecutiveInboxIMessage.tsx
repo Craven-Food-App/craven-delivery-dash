@@ -57,7 +57,7 @@ interface Contact {
 const AttachmentRenderer: React.FC<{ attachment: FileAttachment }> = ({ attachment }) => {
   if (attachment.type === 'image') {
     return (
-      <div className="flex flex-col items-start space-y-2 p-2 rounded-lg bg-white/50 dark:bg-gray-800/50">
+      <div className="flex flex-col items-start space-y-2 p-2 rounded-lg bg-white/50">
         <img
           src={attachment.url}
           alt={attachment.name}
@@ -74,7 +74,7 @@ const AttachmentRenderer: React.FC<{ attachment: FileAttachment }> = ({ attachme
         href={attachment.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center p-3 rounded-xl bg-white shadow-md transition-all duration-200 hover:bg-gray-50 border border-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700"
+        className="flex items-center p-3 rounded-xl bg-white shadow-md transition-all duration-200 hover:bg-gray-50 border border-gray-200"
       >
         <FileText className="w-6 h-6 text-indigo-500 mr-3 flex-shrink-0" />
         <div className="flex flex-col min-w-0">
@@ -739,11 +739,11 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
 
   return (
     <div className="w-full" style={{ height: '600px', minHeight: '600px' }}>
-      <div className="flex w-full h-full bg-white shadow-xl rounded-2xl overflow-hidden dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+      <div className="flex w-full h-full bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
 
         {/* Sidebar */}
-        <div className="hidden md:flex flex-col w-1/4 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="hidden md:flex flex-col w-1/4 border-r border-gray-200 bg-gray-50">
+          <div className="p-4 border-b border-gray-200">
             <h1 className="text-xl font-bold text-gray-800">Executive Chat</h1>
             <div className="relative mt-3">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -797,7 +797,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 shadow-sm bg-white z-10">
             <div className="flex items-center">
-              <ChevronLeft className="w-5 h-5 mr-3 md:hidden text-gray-600 dark:text-gray-300 cursor-pointer" />
+              <ChevronLeft className="w-5 h-5 mr-3 md:hidden text-gray-600 cursor-pointer" />
               {selectedContact ? (
                 <div className="flex flex-col">
                   <h2 className="text-lg font-semibold text-gray-800">{selectedContact.name}</h2>
