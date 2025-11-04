@@ -313,7 +313,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
     let msgChannel: any = null;
     
     const setupMessageSubscription = async () => {
-      if (!selectedContact?.exec_id || !currentUserId) return;
+      if (!selectedContact || !currentUserId) return;
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -326,6 +326,30 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
       
       if (!currentExec) return;
 
+      // Handle group conversations
+      if (selectedContact.isGroup && selectedContact.groupId) {
+        const groupId = selectedContact.groupId;
+        msgChannel = supabase
+          .channel(`exec-group-conversation-${groupId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'exec_group_conversation_messages',
+              filter: `group_conversation_id=eq.${groupId}`,
+            },
+            () => {
+              fetchMessages(); // Refresh messages when new message is added
+            }
+          )
+          .subscribe();
+        return;
+      }
+      
+      // Handle 1-on-1 conversations
+      if (!selectedContact.exec_id) return;
+      
       const portalContext = role || 'ceo';
       const { data: conversationId } = await supabase.rpc(
         'get_or_create_conversation',
