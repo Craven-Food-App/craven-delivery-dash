@@ -13,6 +13,7 @@ interface CreateExecutiveUserRequest {
   position: string;
   department: string;
   role: 'ceo' | 'cfo' | 'coo' | 'cto' | 'board_member';
+  password?: string; // Optional - will generate if not provided
 }
 
 serve(async (req: Request) => {
@@ -26,10 +27,10 @@ serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "" // Service role key for admin operations
     );
 
-    const { firstName, lastName, email, position, department, role }: CreateExecutiveUserRequest = await req.json();
+    const { firstName, lastName, email, position, department, role, password }: CreateExecutiveUserRequest = await req.json();
 
-    // Generate a temporary password
-    const tempPassword = Math.random().toString(36).slice(2, 10) + 'A1!';
+    // Generate a temporary password if not provided
+    const tempPassword = password || (Math.random().toString(36).slice(2, 10) + 'A1!' + Math.random().toString(36).slice(2, 6).toUpperCase());
 
     // Create auth user
     const { data: authData, error: authError } = await supabaseClient.auth.admin.createUser({

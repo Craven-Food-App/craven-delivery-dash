@@ -4,6 +4,7 @@ import { Card, Table, Tag, Button, Space, Alert, Statistic, Row, Col, Spin, mess
 import { CheckCircleOutlined, CloseCircleOutlined, WarningOutlined, ReloadOutlined } from '@ant-design/icons';
 import { verifyCLevelEmployees, getRoleSyncSummary, syncEmployeeManually } from '@/utils/verifyRoleSync';
 import type { CLevelEmployeeStatus } from '@/utils/verifyRoleSync';
+import { CreateAuthAccounts } from './CreateAuthAccounts';
 
 export const RoleSyncVerification: React.FC = () => {
   const [statuses, setStatuses] = useState<CLevelEmployeeStatus[]>([]);
@@ -218,6 +219,13 @@ export const RoleSyncVerification: React.FC = () => {
           pagination={{ pageSize: 10 }}
         />
       </Card>
+
+      {/* Create Auth Accounts Section */}
+      {needsAttention > 0 && statuses.some(s => s.sync_status === 'missing_user_id') && (
+        <div className="mb-4">
+          <CreateAuthAccounts />
+        </div>
+      )}
 
       <Card>
         <h3 className="text-lg font-semibold mb-4">What to do if employees are not synced:</h3>

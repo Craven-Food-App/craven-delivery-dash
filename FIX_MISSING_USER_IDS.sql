@@ -97,6 +97,15 @@ BEGIN
     RAISE NOTICE '✅ Employees have been linked! Triggers will now sync them automatically.';
   ELSE
     RAISE NOTICE '⚠️ No matching auth accounts found. You need to create auth accounts first.';
+    RAISE NOTICE '';
+    RAISE NOTICE 'To create auth accounts:';
+    RAISE NOTICE '1. Go to Supabase Dashboard → Authentication → Users';
+    RAISE NOTICE '2. Click "Add User" → "Create new user"';
+    RAISE NOTICE '3. For each employee listed above, enter their email';
+    RAISE NOTICE '4. Generate a secure password or send invite';
+    RAISE NOTICE '5. Set "Email Confirmed" to true (for C-level executives)';
+    RAISE NOTICE '6. Click "Create user"';
+    RAISE NOTICE '7. Run this script again to auto-link them';
   END IF;
 END $$;
 
@@ -161,16 +170,37 @@ WHERE public.is_c_level_position(position) AND user_id IS NULL;
 -- COMPLETION MESSAGE
 -- ============================================================================
 DO $$
+DECLARE
+  missing_count INTEGER;
 BEGIN
+  SELECT COUNT(*) INTO missing_count
+  FROM public.employees
+  WHERE public.is_c_level_position(position) AND user_id IS NULL;
+  
   RAISE NOTICE '';
-  RAISE NOTICE '=== Next Steps ===';
-  RAISE NOTICE '1. Review the employees missing user_id above';
-  RAISE NOTICE '2. For employees with existing auth accounts: They have been auto-linked';
-  RAISE NOTICE '3. For employees without auth accounts:';
-  RAISE NOTICE '   - Create auth accounts via Supabase Auth UI or API';
-  RAISE NOTICE '   - Then run this script again to auto-link them';
-  RAISE NOTICE '   - Or manually update: UPDATE employees SET user_id = ''USER_ID'' WHERE id = ''EMPLOYEE_ID''';
-  RAISE NOTICE '4. Once linked, triggers will automatically create exec_users and user_roles';
-  RAISE NOTICE '5. Run VERIFY_ROLE_SYNC_SYSTEM.sql again to confirm all are synced';
+  RAISE NOTICE '=== Summary ===';
+  
+  IF missing_count = 0 THEN
+    RAISE NOTICE '✅ All C-level employees have user_id values!';
+    RAISE NOTICE 'Triggers will automatically sync them to exec_users and user_roles.';
+    RAISE NOTICE 'Run VERIFY_ROLE_SYNC_SYSTEM.sql to verify everything is synced.';
+  ELSE
+    RAISE NOTICE '⚠️ % employee(s) still need auth accounts created', missing_count;
+    RAISE NOTICE '';
+    RAISE NOTICE '=== Next Steps ===';
+    RAISE NOTICE '1. Review the employees listed above that need auth accounts';
+    RAISE NOTICE '2. Create auth accounts via Supabase Dashboard:';
+    RAISE NOTICE '   - Go to: Authentication → Users → Add User';
+    RAISE NOTICE '   - Enter employee email from the query above';
+    RAISE NOTICE '   - Generate password or send invite';
+    RAISE NOTICE '   - Set "Email Confirmed" = true';
+    RAISE NOTICE '   - Click "Create user"';
+    RAISE NOTICE '3. Run this script again - it will auto-link the accounts';
+    RAISE NOTICE '4. Once linked, triggers will automatically:';
+    RAISE NOTICE '   - Create exec_users records';
+    RAISE NOTICE '   - Add executive role to user_roles';
+    RAISE NOTICE '   - Add employee role to user_roles';
+    RAISE NOTICE '5. Run VERIFY_ROLE_SYNC_SYSTEM.sql to confirm all are synced';
+  END IF;
 END $$;
 
