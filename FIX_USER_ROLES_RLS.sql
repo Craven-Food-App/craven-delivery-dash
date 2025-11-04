@@ -90,9 +90,14 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION public.sync_user_roles_for_employee TO authenticated;
 
 -- Step 6: Update exec_users constraint to allow 'executive' role
-ALTER TABLE public.exec_users DROP CONSTRAINT IF EXISTS exec_users_role_check;
-ALTER TABLE public.exec_users ADD CONSTRAINT exec_users_role_check 
-CHECK (role IN ('ceo', 'cfo', 'coo', 'cto', 'cxo', 'cmo', 'cro', 'cpo', 'cdo', 'chro', 'clo', 'cso', 'board_member', 'advisor', 'executive'));
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'exec_users') THEN
+    ALTER TABLE public.exec_users DROP CONSTRAINT IF EXISTS exec_users_role_check;
+    ALTER TABLE public.exec_users ADD CONSTRAINT exec_users_role_check 
+    CHECK (role IN ('ceo', 'cfo', 'coo', 'cto', 'cxo', 'cmo', 'cro', 'cpo', 'cdo', 'chro', 'clo', 'cso', 'board_member', 'advisor', 'executive'));
+  END IF;
+END $$;
 
 -- Step 7: Update position_to_exec_role function to map CXO to executive
 CREATE OR REPLACE FUNCTION public.position_to_exec_role(position_text TEXT)
@@ -142,18 +147,24 @@ END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 -- Step 8: Update existing CXO records to executive role
-UPDATE public.exec_users eu
-SET role = 'executive'
-FROM public.employees e
-WHERE eu.user_id = e.user_id
-  AND LOWER(e.position) LIKE '%cxo%'
-  AND eu.role = 'board_member';
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'exec_users') THEN
+    -- Update exec_users with CXO position from employees
+    UPDATE public.exec_users eu
+    SET role = 'executive'
+    FROM public.employees e
+    WHERE eu.user_id = e.user_id
+      AND LOWER(e.position) LIKE '%cxo%'
+      AND eu.role = 'board_member';
 
--- Also update any exec_users with CXO in title
-UPDATE public.exec_users
-SET role = 'executive'
-WHERE LOWER(title) LIKE '%cxo%'
-  AND role = 'board_member';
+    -- Also update any exec_users with CXO in title
+    UPDATE public.exec_users
+    SET role = 'executive'
+    WHERE LOWER(title) LIKE '%cxo%'
+      AND role = 'board_member';
+  END IF;
+END $$;
 
 -- Verify
 DO $$
