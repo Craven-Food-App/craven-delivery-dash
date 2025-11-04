@@ -116,13 +116,13 @@ const MessageBubble: React.FC<{
     bubbleColorClass = 'bg-orange-500';
     textColorClass = 'text-white';
   } else if (isCEO) {
-    // CEO receiving: Burnt orange/reddish
-    bubbleColorClass = 'bg-amber-700';
+    // CEO receiving: Burnt orange/reddish (amber-800 for darker burnt orange-red)
+    bubbleColorClass = 'bg-amber-800';
     textColorClass = 'text-white';
   } else {
     // Other receiving: Grey
-    bubbleColorClass = 'bg-gray-300 dark:bg-gray-600';
-    textColorClass = 'text-gray-900 dark:text-gray-100';
+    bubbleColorClass = 'bg-gray-300';
+    textColorClass = 'text-gray-900';
   }
 
   const bubbleClasses = `
@@ -509,7 +509,10 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
 
       if (convError || !conversationId) {
         console.error('Error getting conversation:', convError);
-        setMessages([]);
+        // Try to load from cache using contact ID as fallback
+        const historyKey = `${selectedContact.exec_id}-${portalContext}`;
+        const cachedMessages = conversationHistory[historyKey] || [];
+        setMessages(cachedMessages);
         return;
       }
 
@@ -575,13 +578,35 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
             }
             return 0;
           });
+        
+        // Store messages in conversation history (key by conversation ID)
+        const historyKey = `${conversationId}`;
+        setConversationHistory(prev => ({
+          ...prev,
+          [historyKey]: formattedMessages
+        }));
+        
         setMessages(formattedMessages);
       } else {
-        setMessages([]);
+        // Check if we have cached history for this conversation
+        const historyKey = `${conversationId}`;
+        const cachedMessages = conversationHistory[historyKey] || [];
+        if (cachedMessages.length > 0) {
+          setMessages(cachedMessages);
+        } else {
+          setMessages([]);
+        }
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
-      setMessages([]);
+      // Try to load from cache if available
+      const historyKey = `${conversationId}`;
+      const cachedMessages = conversationHistory[historyKey] || [];
+      if (cachedMessages.length > 0) {
+        setMessages(cachedMessages);
+      } else {
+        setMessages([]);
+      }
     }
   };
 
@@ -693,18 +718,18 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
   };
 
   const AttachmentSelector = () => (
-    <div className="absolute bottom-16 left-0 w-64 bg-white dark:bg-gray-800 p-3 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 z-10">
-      <h3 className="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-200">Select Attachment Type</h3>
+    <div className="absolute bottom-16 left-0 w-64 bg-white p-3 rounded-xl shadow-2xl border border-gray-100 z-10">
+      <h3 className="text-sm font-semibold mb-2 text-gray-700">Select Attachment Type</h3>
       <div className="flex flex-col space-y-2">
         <button
           onClick={() => handleSend({ type: 'image', name: 'New_Screenshot.jpg', url: 'https://placehold.co/400x250/3b82f6/ffffff?text=Sent+Image', size: '300 KB' })}
-          className="flex items-center p-2 rounded-lg text-left text-gray-700 hover:bg-blue-50 dark:text-gray-200 dark:hover:bg-gray-700"
+          className="flex items-center p-2 rounded-lg text-left text-gray-700 hover:bg-blue-50"
         >
           <Image className="w-5 h-5 text-red-500 mr-3" /> Send Image
         </button>
         <button
           onClick={() => handleSend({ type: 'file', name: 'Annual_Report_v3.pdf', url: '#', size: '2.1 MB' })}
-          className="flex items-center p-2 rounded-lg text-left text-gray-700 hover:bg-blue-50 dark:text-gray-200 dark:hover:bg-gray-700"
+          className="flex items-center p-2 rounded-lg text-left text-gray-700 hover:bg-blue-50"
         >
           <FileText className="w-5 h-5 text-indigo-500 mr-3" /> Send Document
         </button>
@@ -719,35 +744,35 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
         {/* Sidebar */}
         <div className="hidden md:flex flex-col w-1/4 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <h1 className="text-xl font-bold text-gray-800 dark:text-white">Executive Chat</h1>
+            <h1 className="text-xl font-bold text-gray-800">Executive Chat</h1>
             <div className="relative mt-3">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search executives..."
-                className="w-full p-2 pl-10 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                className="w-full p-2 pl-10 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
               />
             </div>
           </div>
 
           <div className="overflow-y-auto flex-grow">
             {contacts.length === 0 ? (
-              <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-                No C-level executives found
+              <div className="p-4 text-center text-gray-500 text-sm">
+                No executives found
               </div>
             ) : (
               contacts.map((contact) => (
                 <div
                   key={contact.id}
                   onClick={() => setSelectedContact(contact)}
-                  className={`p-4 flex items-center border-b border-gray-100 dark:border-gray-800 cursor-pointer transition-colors ${
-                    selectedContact?.id === contact.id ? 'bg-blue-50 dark:bg-blue-900/50' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                  className={`p-4 flex items-center border-b border-gray-100 cursor-pointer transition-colors ${
+                    selectedContact?.id === contact.id ? 'bg-blue-50' : 'hover:bg-gray-100'
                   } ${!contact.hasExecUser ? 'opacity-75' : ''}`}
                 >
                   <User className={`w-5 h-5 mr-3 ${selectedContact?.id === contact.id ? 'text-blue-600' : 'text-gray-400'}`} />
                   <div className="flex flex-col flex-grow min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className={`font-semibold truncate ${selectedContact?.id === contact.id ? 'text-blue-700 dark:text-blue-300' : 'text-gray-800 dark:text-gray-200'}`}>
+                      <span className={`font-semibold truncate ${selectedContact?.id === contact.id ? 'text-blue-700' : 'text-gray-800'}`}>
                         {contact.name}
                       </span>
                       {!contact.hasExecUser && (
@@ -756,7 +781,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 truncate">{contact.role}</span>
+                    <span className="text-xs text-gray-500 truncate">{contact.role}</span>
                     {!contact.hasExecUser && (
                       <span className="text-xs text-orange-500">Setup required</span>
                     )}
@@ -775,7 +800,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
               <ChevronLeft className="w-5 h-5 mr-3 md:hidden text-gray-600 dark:text-gray-300 cursor-pointer" />
               {selectedContact ? (
                 <div className="flex flex-col">
-                  <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{selectedContact.name}</h2>
+                  <h2 className="text-lg font-semibold text-gray-800">{selectedContact.name}</h2>
                   {selectedContact.isActive ? (
                     <p className="text-xs text-green-500">Active now</p>
                   ) : selectedContact.lastLogin ? (
@@ -788,11 +813,11 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
                 </div>
               ) : (
                 <div className="flex flex-col">
-                  <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Select a contact</h2>
+                  <h2 className="text-lg font-semibold text-gray-800">Select a contact</h2>
                 </div>
               )}
             </div>
-            <button className="text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400">
+            <button className="text-gray-500 hover:text-blue-500">
               <Users className="w-5 h-5" />
             </button>
           </div>
@@ -820,8 +845,8 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
           {selectedContact && (
             <div className="relative p-4 border-t border-gray-200 bg-white">
               {!selectedContact.hasExecUser && (
-                <div className="mb-2 p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
-                  <p className="text-xs text-orange-700 dark:text-orange-300">
+                <div className="mb-2 p-2 bg-orange-50 border border-orange-200 rounded-lg">
+                  <p className="text-xs text-orange-700">
                     Messaging unavailable for this contact. Exec user record setup required.
                   </p>
                 </div>
@@ -844,7 +869,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
                   placeholder={selectedContact.hasExecUser ? "iMessage Style: Send a message..." : "Messaging unavailable - setup required"}
                   rows={1}
                   disabled={!selectedContact.hasExecUser}
-                  className="flex-grow resize-none p-3 text-gray-800 dark:text-white bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-grow resize-none p-3 text-gray-800 bg-gray-100 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ maxHeight: '150px' }}
                 />
 
@@ -853,8 +878,8 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
                   disabled={(!inputContent.trim() && !isSendingAttachment) || !selectedContact.hasExecUser}
                   className={`p-3 rounded-full transition-all duration-300 ease-in-out ${
                     inputContent.trim() && selectedContact.hasExecUser
-                      ? 'bg-blue-500 text-white hover:bg-blue-600 shadow-md'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-600 dark:text-gray-400'
+                      ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-md'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                   title={selectedContact.hasExecUser ? "Send" : "Messaging unavailable"}
                 >
