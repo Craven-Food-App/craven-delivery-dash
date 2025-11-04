@@ -17,11 +17,11 @@ const Auth: React.FC = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Get redirect parameter from URL
+    // Get redirect parameter from URL (for customer auth, NOT business portals)
     const getRedirectPath = () => {
       const urlParams = new URLSearchParams(window.location.search);
       const redirect = urlParams.get('redirect');
-      return redirect || '/hub';
+      return redirect || '/customer-dashboard';
     };
 
     // Check if user is already signed in
@@ -29,7 +29,7 @@ const Auth: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUser(user);
-        // Redirect to hub or specified redirect path
+        // Redirect to customer dashboard or specified redirect path
         const redirectPath = getRedirectPath();
         window.location.href = redirectPath;
       }
@@ -46,7 +46,7 @@ const Auth: React.FC = () => {
             title: "Welcome!",
             description: "You've been signed in successfully.",
           });
-          // Redirect to hub or specified redirect path
+          // Redirect to customer dashboard or specified redirect path
           const redirectPath = getRedirectPath();
           setTimeout(() => {
             window.location.href = redirectPath;

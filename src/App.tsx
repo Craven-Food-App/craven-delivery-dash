@@ -505,11 +505,14 @@ const App = () => {
           <Route path="/restaurant/solutions" element={<SolutionsCenter />} />
           <Route path="/restaurant/most-loved" element={<MostLovedProgram />} />
           <Route path="/admin" element={<Admin />} />
-          <Route path="/board" element={<BoardPortal />} />
-          <Route path="/cfo" element={<CFOPortal />} />
-          <Route path="/ceo" element={<CEOPortal />} />
-          <Route path="/coo" element={<COOPortal />} />
-          <Route path="/cto" element={<CTOPortal />} />
+          <Route path="/hub" element={<BusinessAuthGuard><MainHub /></BusinessAuthGuard>} />
+          <Route path="/main-hub" element={<BusinessAuthGuard><MainHub /></BusinessAuthGuard>} />
+          <Route path="/hr-portal" element={<BusinessAuthGuard><HRPortal /></BusinessAuthGuard>} />
+          <Route path="/board" element={<BusinessAuthGuard><BoardPortal /></BusinessAuthGuard>} />
+          <Route path="/cfo" element={<BusinessAuthGuard><CFOPortal /></BusinessAuthGuard>} />
+          <Route path="/ceo" element={<BusinessAuthGuard><CEOPortal /></BusinessAuthGuard>} />
+          <Route path="/coo" element={<BusinessAuthGuard><COOPortal /></BusinessAuthGuard>} />
+          <Route path="/cto" element={<BusinessAuthGuard><CTOPortal /></BusinessAuthGuard>} />
           <Route path="/marketing-portal" element={<MarketingPortal />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/checkout" element={<Checkout />} />
