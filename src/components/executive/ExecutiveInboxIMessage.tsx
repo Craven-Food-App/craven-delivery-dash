@@ -640,6 +640,23 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
     }
   };
 
+  // Helper function to save messages to localStorage (backup cache)
+  const saveMessagesToLocalStorage = (messages: Message[], conversationId: string, isGroup: boolean) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
+    const storageKey = isGroup
+      ? `exec-chat-messages-${role}-${user.id}-group-${conversationId}`
+      : `exec-chat-messages-${role}-${user.id}-${conversationId}`;
+    
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(messages));
+      console.log(`Saved ${messages.length} messages to localStorage backup`);
+    } catch (e) {
+      console.error('Error saving messages to localStorage:', e);
+    }
+  };
+
   const fetchMessages = async () => {
     console.log('fetchMessages called with selectedContact:', selectedContact);
     
@@ -753,6 +770,10 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
           ...prev,
           [historyKey]: formattedMessages
         }));
+        
+        // Save to localStorage as backup (like iMessage local cache)
+        saveMessagesToLocalStorage(formattedMessages, groupId, true);
+        
         console.log(`Setting ${formattedMessages.length} group messages in UI`);
         setMessages(formattedMessages);
         return;
@@ -865,6 +886,9 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
         ...prev,
         [historyKey]: formattedMessages
       }));
+      
+      // Save to localStorage as backup (like iMessage local cache)
+      saveMessagesToLocalStorage(formattedMessages, conversationId, false);
       
       // Update displayed messages - ALWAYS set messages from database
       console.log(`Setting ${formattedMessages.length} messages in UI`);
