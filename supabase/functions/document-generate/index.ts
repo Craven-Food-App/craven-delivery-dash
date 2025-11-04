@@ -6,26 +6,23 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Convert HTML to PDF using PDFShift API (reliable service)
+// Convert HTML to PDF using aPDF.io (free service)
 async function convertHtmlToPdf(htmlContent: string): Promise<Uint8Array> {
-  const apiKey = Deno.env.get('PDFSHIFT_API_KEY');
+  // Get API key from environment variable or use provided key
+  // TODO: Set APDF_API_KEY in Supabase Edge Function secrets for better security
+  const apiKey = Deno.env.get('APDF_API_KEY') || 'EwDJIB9LVtAFGT3H8EjQ3Staannc3mxfmJLu49I6c01ec5d0';
   
-  if (!apiKey) {
-    console.error('CRITICAL: PDFSHIFT_API_KEY not configured. PDF generation will fail.');
-    throw new Error('PDF service not configured. Please set PDFSHIFT_API_KEY in Supabase secrets.');
-  }
-
   try {
-    console.log('Converting HTML to PDF using PDFShift...');
+    console.log('Converting HTML to PDF using aPDF.io...');
     
-    const response = await fetch('https://api.pdfshift.io/v3/convert/pdf', {
+    const response = await fetch('https://api.apdf.io/v1/pdf', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Basic ${btoa(`api:${apiKey}`)}`,
+        'X-API-Key': apiKey,
       },
       body: JSON.stringify({
-        source: htmlContent,
+        html: htmlContent,
         format: 'Letter',
         margin: {
           top: '0.5in',
@@ -33,19 +30,18 @@ async function convertHtmlToPdf(htmlContent: string): Promise<Uint8Array> {
           bottom: '0.5in',
           left: '0.5in',
         },
-        print_background: true,
-        image_quality: 100,
+        printBackground: true,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('PDFShift error:', response.status, errorText);
+      console.error('aPDF.io error:', response.status, errorText);
       throw new Error(`PDF conversion failed: ${response.status} - ${errorText}`);
     }
 
     const pdfBuffer = await response.arrayBuffer();
-    console.log('PDF generated successfully, size:', pdfBuffer.byteLength, 'bytes');
+    console.log('PDF generated successfully using aPDF.io, size:', pdfBuffer.byteLength, 'bytes');
     return new Uint8Array(pdfBuffer);
   } catch (error) {
     console.error('Error in convertHtmlToPdf:', error);
