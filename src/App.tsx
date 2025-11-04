@@ -86,37 +86,60 @@ const queryClient = new QueryClient();
 
 const App = () => {
   const [user, setUser] = useState(null);
+  const [isHQSubdomain, setIsHQSubdomain] = useState(false);
 
-  // Check if on HQ/business subdomain (production) or localhost (development)
-  // For localhost, also check for ?hq=true or /hub path to enable business mode
-  // Priority: Check pathname first to catch /hub regardless of hostname
-  const isHQSubdomain = typeof window !== 'undefined' && 
-    (window.location.pathname === '/hub' ||
-     window.location.pathname === '/main-hub' ||
-     window.location.pathname.startsWith('/hub/') ||
-     window.location.pathname === '/auth' && window.location.search.includes('hq=true') ||
-     window.location.hostname === 'hq.cravenusa.com' ||
-     (window.location.hostname === 'localhost' && 
-      (window.location.search.includes('hq=true') || 
-       window.location.pathname.includes('/admin') ||
-       window.location.pathname.includes('/marketing-portal') ||
-       window.location.pathname.includes('/hr-portal') ||
-       window.location.pathname.includes('/ceo') ||
-       window.location.pathname.includes('/cfo') ||
-       window.location.pathname.includes('/coo') ||
-       window.location.pathname.includes('/cto') ||
-       window.location.pathname.includes('/board'))) ||
-     (window.location.hostname === '127.0.0.1' && 
-      (window.location.search.includes('hq=true') || 
-       window.location.pathname.includes('/admin') ||
-       window.location.pathname.includes('/marketing-portal') ||
-       window.location.pathname.includes('/hr-portal') ||
-       window.location.pathname.includes('/ceo') ||
-       window.location.pathname.includes('/cfo') ||
-       window.location.pathname.includes('/coo') ||
-       window.location.pathname.includes('/cto') ||
-       window.location.pathname.includes('/board'))) ||
-     window.location.search.includes('hq=true')); // Allow ?hq=true query param for testing
+  // Check and update subdomain status on every URL change
+  useEffect(() => {
+    const checkSubdomain = () => {
+      if (typeof window === 'undefined') return false;
+      
+      const pathname = window.location.pathname;
+      const hostname = window.location.hostname;
+      const search = window.location.search;
+      
+      return (
+        pathname === '/hub' ||
+        pathname === '/main-hub' ||
+        pathname.startsWith('/hub/') ||
+        (pathname === '/auth' && search.includes('hq=true')) ||
+        hostname === 'hq.cravenusa.com' ||
+        (hostname === 'localhost' && 
+          (search.includes('hq=true') || 
+           pathname.includes('/admin') ||
+           pathname.includes('/marketing-portal') ||
+           pathname.includes('/hr-portal') ||
+           pathname.includes('/ceo') ||
+           pathname.includes('/cfo') ||
+           pathname.includes('/coo') ||
+           pathname.includes('/cto') ||
+           pathname.includes('/board'))) ||
+        (hostname === '127.0.0.1' && 
+          (search.includes('hq=true') || 
+           pathname.includes('/admin') ||
+           pathname.includes('/marketing-portal') ||
+           pathname.includes('/hr-portal') ||
+           pathname.includes('/ceo') ||
+           pathname.includes('/cfo') ||
+           pathname.includes('/coo') ||
+           pathname.includes('/cto') ||
+           pathname.includes('/board'))) ||
+        search.includes('hq=true')
+      );
+    };
+    
+    // Initial check
+    setIsHQSubdomain(checkSubdomain());
+    
+    // Monitor URL changes via interval (covers all navigation types)
+    const intervalId = setInterval(() => {
+      const newValue = checkSubdomain();
+      setIsHQSubdomain(prev => prev !== newValue ? newValue : prev);
+    }, 100);
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, []);
 
   // Check if on feeder subdomain
   const isFeederSubdomain = typeof window !== 'undefined' && 
