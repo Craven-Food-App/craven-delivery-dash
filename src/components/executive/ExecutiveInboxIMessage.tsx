@@ -28,8 +28,11 @@ interface Message {
   timestamp: string;
   attachment?: FileAttachment;
   senderName: string;
-  messageId?: string; // Database message ID for deletion
-  conversationId?: string; // Conversation ID for deletion
+  messageId?: string; // Database message ID
+  conversationId?: string; // Conversation ID
+  senderRole?: string; // Sender's role (ceo, cfo, etc.) for color coding
+  senderEmail?: string; // Sender's email to detect CEO
+  createdAt?: string; // Full timestamp for chronological ordering
 }
 
 interface ExecutiveInboxIMessageProps {
@@ -88,20 +91,44 @@ const AttachmentRenderer: React.FC<{ attachment: FileAttachment }> = ({ attachme
 
 const MessageBubble: React.FC<{ 
   message: Message; 
-  onDelete?: (messageId: string) => void;
   onShare?: (message: Message) => void;
   onCopy?: (message: Message) => void;
   onSave?: (message: Message) => void;
-}> = ({ message, onDelete, onShare, onCopy, onSave }) => {
+}> = ({ message, onShare, onCopy, onSave }) => {
   const isSelf = message.sender === 'self';
   const { toast } = useToast();
 
+  // Check if sender is CEO (Torrance Stroman)
+  const isCEO = message.senderRole === 'ceo' || 
+                message.senderEmail === 'craven@usa.com' ||
+                message.senderName.toLowerCase().includes('torrance') ||
+                message.senderName.toLowerCase().includes('stroman');
+
+  // Color scheme: 
+  // - Self (sending): Orange
+  // - Other (receiving): Grey
+  // - CEO (receiving): Burnt orange/reddish
+  let bubbleColorClass = '';
+  let textColorClass = '';
+  
+  if (isSelf) {
+    // Sending: Orange
+    bubbleColorClass = 'bg-orange-500';
+    textColorClass = 'text-white';
+  } else if (isCEO) {
+    // CEO receiving: Burnt orange/reddish
+    bubbleColorClass = 'bg-amber-700';
+    textColorClass = 'text-white';
+  } else {
+    // Other receiving: Grey
+    bubbleColorClass = 'bg-gray-300 dark:bg-gray-600';
+    textColorClass = 'text-gray-900 dark:text-gray-100';
+  }
+
   const bubbleClasses = `
     max-w-[75%] md:max-w-[60%] lg:max-w-[45%] p-3 rounded-xl shadow-md transition-all duration-300
-    ${isSelf
-      ? 'bg-blue-500 text-white rounded-br-sm self-end ml-auto'
-      : 'bg-gray-200 text-gray-800 rounded-tl-sm self-start mr-auto dark:bg-gray-700 dark:text-gray-100'
-    }
+    ${bubbleColorClass} ${textColorClass}
+    ${isSelf ? 'rounded-br-sm self-end ml-auto' : 'rounded-tl-sm self-start mr-auto'}
   `;
 
   const contentClasses = `
@@ -165,13 +192,6 @@ const MessageBubble: React.FC<{
     }
   };
 
-  const handleDelete = () => {
-    if (message.messageId && onDelete) {
-      if (confirm('Are you sure you want to delete this message? This action cannot be undone.')) {
-        onDelete(message.messageId);
-      }
-    }
-  };
 
   return (
     <div className={`flex flex-col w-full ${isSelf ? 'items-end' : 'items-start'} mb-3 group relative`}>
@@ -216,15 +236,6 @@ const MessageBubble: React.FC<{
                 <Save className="mr-2 h-4 w-4" />
                 Save to local files
               </DropdownMenuItem>
-              {message.messageId && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleDelete} className="text-red-600 focus:text-red-600">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </>
-              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -343,40 +354,8 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Handle message deletion
-  const handleDeleteMessage = async (messageId: string) => {
-    try {
-      const { error } = await supabase
-        .from('exec_conversation_messages')
-        .delete()
-        .eq('id', messageId);
-
-      if (error) {
-        console.error('Error deleting message:', error);
-        toast({
-          title: "Error",
-          description: "Failed to delete message",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Remove from local state
-      setMessages(messages.filter(msg => msg.messageId !== messageId));
-      
-      toast({
-        title: "Message deleted",
-        description: "The message has been removed from the conversation",
-      });
-    } catch (error) {
-      console.error('Error deleting message:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete message",
-        variant: "destructive",
-      });
-    }
-  };
+  // Note: Messages are never deleted - they remain in the conversation thread permanently
+  // This ensures full conversation history is always retained
 
   // Helper function to format last seen time
   const formatLastSeen = (lastLogin: Date): string => {
@@ -533,7 +512,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
         return;
       }
 
-      // Fetch messages from this conversation
+      // Fetch messages from this conversation (always fetch all, never delete)
       const { data: messageData, error: msgError } = await supabase
         .from('exec_conversation_messages')
         .select(`
@@ -541,8 +520,9 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
           from_exec:exec_users!exec_conversation_messages_from_exec_id_fkey(
             id,
             user_id,
-            user_profiles(full_name),
-            employees:user_id(first_name, last_name)
+            role,
+            user_profiles(full_name, email),
+            employees:user_id(first_name, last_name, email)
           )
         `)
         .eq('conversation_id', conversationId)
@@ -646,7 +626,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
         return;
       }
 
-      // Add message to local state
+      // Add message to local state (maintain chronological order)
       const newMsg: Message = {
         id: parseInt(newMessage.id.slice(0, 8), 16) || Date.now(),
         sender: 'self',
@@ -656,9 +636,18 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
         attachment: attachment,
         messageId: newMessage.id, // Store database message ID
         conversationId: conversationId as string, // Store conversation ID
+        senderRole: 'self', // Current user's role
+        createdAt: newMessage.created_at || new Date().toISOString(), // Full timestamp
       };
 
-      setMessages([...messages, newMsg]);
+      // Insert in chronological order
+      const sortedMessages = [...messages, newMsg].sort((a, b) => {
+        if (a.createdAt && b.createdAt) {
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        }
+        return 0;
+      });
+      setMessages(sortedMessages);
       setInputContent('');
       setIsSendingAttachment(false);
 
@@ -790,9 +779,8 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
               <>
                 {messages.map((msg) => (
                   <MessageBubble 
-                    key={msg.id} 
+                    key={msg.messageId || msg.id} 
                     message={msg}
-                    onDelete={handleDeleteMessage}
                   />
                 ))}
                 <div ref={chatEndRef} />
