@@ -99,7 +99,7 @@ BEGIN
   END IF;
 END $$;
 
--- Step 7: Update position_to_exec_role function to map CXO to executive
+-- Step 7: Update position_to_exec_role function to map CXO (Chief Experience Officer) to cxo
 CREATE OR REPLACE FUNCTION public.position_to_exec_role(position_text TEXT)
 RETURNS TEXT AS $$
 DECLARE
@@ -120,8 +120,8 @@ BEGIN
       RETURN 'coo';
     WHEN pos_lower LIKE '%cto%' OR pos_lower LIKE '%chief technology%' THEN 
       RETURN 'cto';
-    WHEN pos_lower LIKE '%cxo%' THEN 
-      RETURN 'executive';
+    WHEN pos_lower LIKE '%cxo%' OR pos_lower LIKE '%chief experience%' THEN 
+      RETURN 'cxo';
     WHEN pos_lower LIKE '%cmo%' OR pos_lower LIKE '%chief marketing%' THEN 
       RETURN 'board_member';
     WHEN pos_lower LIKE '%cro%' OR pos_lower LIKE '%chief revenue%' THEN 
@@ -146,13 +146,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
--- Step 8: Update existing CXO records to executive role
+-- Step 8: Update existing CXO records to cxo role
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'exec_users') THEN
     -- Update exec_users with CXO position from employees
     UPDATE public.exec_users eu
-    SET role = 'executive'
+    SET role = 'cxo'
     FROM public.employees e
     WHERE eu.user_id = e.user_id
       AND LOWER(e.position) LIKE '%cxo%'
@@ -160,7 +160,7 @@ BEGIN
 
     -- Also update any exec_users with CXO in title
     UPDATE public.exec_users
-    SET role = 'executive'
+    SET role = 'cxo'
     WHERE LOWER(title) LIKE '%cxo%'
       AND role = 'board_member';
   END IF;
@@ -173,9 +173,9 @@ BEGIN
   RAISE NOTICE '   - is_admin function created';
   RAISE NOTICE '   - Executives can now manage user_roles';
   RAISE NOTICE '   - SECURITY DEFINER function bypasses RLS';
-  RAISE NOTICE '   - exec_users now allows executive role';
-  RAISE NOTICE '   - CXO now maps to executive role (not board_member)';
-  RAISE NOTICE '   - Existing CXO records updated to executive role';
+  RAISE NOTICE '   - exec_users now allows cxo role';
+  RAISE NOTICE '   - CXO (Chief Experience Officer) now maps to cxo role (not board_member)';
+  RAISE NOTICE '   - Existing CXO records updated to cxo role';
   RAISE NOTICE '   - "Sync Now" button should now work!';
 END $$;
 
