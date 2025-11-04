@@ -264,7 +264,21 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
   useEffect(() => {
     // Get current user ID
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setCurrentUserId(user.id);
+      if (user) {
+        setCurrentUserId(user.id);
+        // Restore selected contact from localStorage if available
+        const storageKey = `exec-chat-selected-${role}-${user.id}`;
+        const savedContact = localStorage.getItem(storageKey);
+        if (savedContact) {
+          try {
+            const parsed = JSON.parse(savedContact);
+            // Contact will be restored when fetchContacts runs
+            // We'll match it by exec_id or groupId
+          } catch (e) {
+            console.error('Error parsing saved contact:', e);
+          }
+        }
+      }
     });
   }, []);
 
@@ -562,23 +576,63 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
       setContacts(allContacts);
       
       // Preserve selectedContact if it still exists in the contacts list
-      // This prevents losing the selected conversation when returning to the portal
-      if (selectedContact) {
+      // Also check localStorage for persisted selection
+      const storageKey = `exec-chat-selected-${role}-${user.id}`;
+      let contactToSelect = selectedContact;
+      
+      // Try to restore from localStorage if no current selection
+      if (!contactToSelect) {
+        const savedContactStr = localStorage.getItem(storageKey);
+        if (savedContactStr) {
+          try {
+            const savedContact = JSON.parse(savedContactStr);
+            // Find matching contact in the loaded contacts
+            const matched = allContacts.find(c => 
+              (savedContact.isGroup && c.isGroup && c.groupId === savedContact.groupId) ||
+              (!savedContact.isGroup && !c.isGroup && c.exec_id === savedContact.exec_id)
+            );
+            if (matched) {
+              contactToSelect = matched;
+            }
+          } catch (e) {
+            console.error('Error parsing saved contact:', e);
+          }
+        }
+      }
+      
+      // Check if current or restored contact still exists
+      if (contactToSelect) {
         const stillExists = allContacts.find(c => 
-          (selectedContact.isGroup && c.isGroup && c.groupId === selectedContact.groupId) ||
-          (!selectedContact.isGroup && !c.isGroup && c.exec_id === selectedContact.exec_id)
+          (contactToSelect.isGroup && c.isGroup && c.groupId === contactToSelect.groupId) ||
+          (!contactToSelect.isGroup && !c.isGroup && c.exec_id === contactToSelect.exec_id)
         );
         if (stillExists) {
-          // Contact still exists, keep it selected and fetch messages
+          // Contact still exists, keep it selected
           setSelectedContact(stillExists);
+          // Save to localStorage for persistence
+          localStorage.setItem(storageKey, JSON.stringify({
+            exec_id: stillExists.exec_id,
+            groupId: stillExists.groupId,
+            isGroup: stillExists.isGroup
+          }));
           // fetchMessages will be called by the useEffect that watches selectedContact
         } else if (allContacts.length > 0) {
           // Previous contact no longer exists, select first available
           setSelectedContact(allContacts[0]);
+          localStorage.setItem(storageKey, JSON.stringify({
+            exec_id: allContacts[0].exec_id,
+            groupId: allContacts[0].groupId,
+            isGroup: allContacts[0].isGroup
+          }));
         }
       } else if (allContacts.length > 0) {
         // No previous selection, select first contact
         setSelectedContact(allContacts[0]);
+        localStorage.setItem(storageKey, JSON.stringify({
+          exec_id: allContacts[0].exec_id,
+          groupId: allContacts[0].groupId,
+          isGroup: allContacts[0].isGroup
+        }));
       }
     } catch (error) {
       console.error('Error fetching executive contacts:', error);
@@ -740,15 +794,17 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
 
       if (msgError) {
         console.error('Error fetching messages:', msgError);
-        // On error, try cache as fallback, but log the error
+        // On error, try cache as fallback, but DON'T clear messages
+        // Messages exist in the database - retry after a short delay
         const historyKey = `${conversationId}`;
         const cachedMessages = conversationHistory[historyKey] || [];
         if (cachedMessages.length > 0) {
           setMessages(cachedMessages);
-        } else {
-          // If no cache and DB error, show empty but don't clear - user might have messages
-          setMessages([]);
         }
+        // Retry fetching from database
+        setTimeout(() => {
+          fetchMessages();
+        }, 2000);
         return;
       }
 
@@ -1065,7 +1121,19 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
               contacts.map((contact) => (
                 <div
                   key={contact.id}
-                  onClick={() => setSelectedContact(contact)}
+                  onClick={() => {
+                    setSelectedContact(contact);
+                    // Save selection to localStorage for persistence
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) {
+                      const storageKey = `exec-chat-selected-${role}-${user.id}`;
+                      localStorage.setItem(storageKey, JSON.stringify({
+                        exec_id: contact.exec_id,
+                        groupId: contact.groupId,
+                        isGroup: contact.isGroup
+                      }));
+                    }
+                  }}
                   className={`p-4 flex items-center border-b border-gray-100 cursor-pointer transition-colors ${
                     selectedContact?.id === contact.id ? 'bg-blue-50' : 'hover:bg-gray-100'
                   } ${!contact.hasExecUser ? 'opacity-75' : ''}`}
