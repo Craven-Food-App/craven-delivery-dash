@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -13,7 +14,9 @@ interface ExecutiveDocumentEmailRequest {
   to: string;
   executiveName: string;
   documentTitle: string;
-  documentUrl: string;
+  documentUrl?: string;
+  pdfBase64?: string;
+  htmlContent?: string;
 }
 
 serve(async (req: Request) => {
@@ -22,11 +25,11 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { to, executiveName, documentTitle, documentUrl }: ExecutiveDocumentEmailRequest = await req.json();
+    const { to, executiveName, documentTitle, documentUrl, pdfBase64, htmlContent }: ExecutiveDocumentEmailRequest = await req.json();
 
-    if (!to || !executiveName || !documentTitle || !documentUrl) {
+    if (!to || !executiveName || !documentTitle) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields: to, executiveName, documentTitle, documentUrl" }),
+        JSON.stringify({ error: "Missing required fields: to, executiveName, documentTitle" }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -38,10 +41,72 @@ serve(async (req: Request) => {
 
     const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Crave'N HR <hr@craven.com>";
 
+    // Prepare attachment if PDF is provided
+    let attachments: any[] = [];
+    
+    if (pdfBase64) {
+      // If we have a base64 PDF, attach it
+      attachments = [{
+        filename: `${documentTitle.replace(/[^a-z0-9]/gi, '_')}.pdf`,
+        content: pdfBase64,
+      }];
+      console.log(`Attaching PDF: ${documentTitle}`);
+    } else if (documentUrl) {
+      // Try to fetch PDF from Supabase storage
+      try {
+        console.log(`Fetching PDF from storage URL: ${documentUrl}`);
+        
+        // Extract the path from the public URL
+        // URL format: https://{project_ref}.supabase.co/storage/v1/object/public/documents/{path}
+        const urlParts = documentUrl.split('/storage/v1/object/public/');
+        if (urlParts.length === 2) {
+          const [bucketAndPath] = urlParts[1].split('/');
+          const pathParts = urlParts[1].split('/');
+          const bucket = pathParts[0];
+          const path = pathParts.slice(1).join('/');
+          
+          console.log(`Downloading from bucket: ${bucket}, path: ${path}`);
+          
+          // Create Supabase client with service role key for storage access
+          const supabaseClient = createClient(
+            Deno.env.get('SUPABASE_URL') ?? '',
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+          );
+          
+          // Download the file from storage
+          const { data: fileData, error: downloadError } = await supabaseClient.storage
+            .from(bucket)
+            .download(path);
+          
+          if (downloadError) {
+            console.error('Storage download error:', downloadError);
+            throw downloadError;
+          }
+          
+          if (fileData) {
+            // Convert Blob to ArrayBuffer to base64
+            const arrayBuffer = await fileData.arrayBuffer();
+            const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+            
+            attachments = [{
+              filename: `${documentTitle.replace(/[^a-z0-9]/gi, '_')}.pdf`,
+              content: base64,
+            }];
+            console.log(`Successfully downloaded PDF from storage, size: ${arrayBuffer.byteLength} bytes`);
+          }
+        } else {
+          console.error('Could not parse storage URL:', documentUrl);
+        }
+      } catch (fetchError) {
+        console.error("Failed to fetch PDF from storage:", fetchError);
+      }
+    }
+
     const emailResponse = await resend.emails.send({
       from: fromEmail,
       to: [to],
       subject: `Your ${documentTitle} - Crave'n, Inc.`,
+      attachments: attachments.length > 0 ? attachments : undefined,
       html: `
         <!DOCTYPE html>
         <html>
@@ -79,12 +144,23 @@ serve(async (req: Request) => {
                           </ul>
                         </div>
                         
+                        ${attachments.length > 0 ? `
+                        <div style="background-color: #e8f5e9; padding: 20px; border-radius: 6px; margin: 30px 0; text-align: center;">
+                          <p style="margin: 0; color: #2e7d32; font-size: 16px; font-weight: bold;">
+                            ✅ PDF Document Attached
+                          </p>
+                          <p style="margin: 10px 0 0 0; color: #4a4a4a; font-size: 14px;">
+                            Please see the attached PDF file
+                          </p>
+                        </div>
+                        ` : documentUrl ? `
                         <div style="text-align: center; margin: 40px 0 30px 0;">
                           <a href="${documentUrl}" 
                              style="display: inline-block; background: linear-gradient(135deg, #ff7a45 0%, #ff8c00 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 6px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 12px rgba(255, 122, 69, 0.3);">
                             View Document
                           </a>
                         </div>
+                        ` : ''}
                         
                         <div style="background-color: #f9f9f9; padding: 20px; border-radius: 6px; margin: 30px 0;">
                           <h3 style="margin: 0 0 10px 0; color: #1a1a1a; font-size: 16px;">📝 Important Notes:</h3>
