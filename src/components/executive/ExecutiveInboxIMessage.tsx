@@ -196,7 +196,7 @@ const MessageBubble: React.FC<{
   return (
     <div className={`flex flex-col w-full ${isSelf ? 'items-end' : 'items-start'} mb-3 group relative`}>
       {!isSelf && (
-        <span className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 pl-2">
+        <span className="text-xs font-medium text-gray-600 mb-1 pl-2">
           {message.senderName}
         </span>
       )}
@@ -535,30 +535,45 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
       }
 
       if (messageData && messageData.length > 0) {
-        const formattedMessages: Message[] = messageData.map((msg: any) => {
-          const isSelf = msg.from_exec_id === currentExec.id;
-          const senderName = isSelf 
-            ? 'You'
-            : (msg.from_exec?.user_profiles?.full_name || 
-               `${msg.from_exec?.employees?.first_name || ''} ${msg.from_exec?.employees?.last_name || ''}`.trim() ||
-               selectedContact.name);
+        const formattedMessages: Message[] = messageData
+          .map((msg: any) => {
+            const isSelf = msg.from_exec_id === currentExec.id;
+            const senderName = isSelf 
+              ? 'You'
+              : (msg.from_exec?.user_profiles?.full_name || 
+                 `${msg.from_exec?.employees?.first_name || ''} ${msg.from_exec?.employees?.last_name || ''}`.trim() ||
+                 selectedContact.name);
 
-          return {
-            id: parseInt(msg.id.slice(0, 8), 16) || Date.now(),
-            sender: isSelf ? 'self' : 'other',
-            senderName,
-            content: msg.message_text || '',
-            timestamp: new Date(msg.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-            attachment: msg.attachment_url ? {
-              type: msg.attachment_type || 'file',
-              name: msg.attachment_name || 'Attachment',
-              url: msg.attachment_url,
-              size: msg.attachment_size || '0 KB'
-            } : undefined,
-            messageId: msg.id, // Store database message ID for deletion
-            conversationId: conversationId as string, // Store conversation ID
-          };
-        });
+            // Get sender role and email for CEO detection and color coding
+            const senderRole = msg.from_exec?.role || '';
+            const senderEmail = msg.from_exec?.user_profiles?.email || msg.from_exec?.employees?.email || '';
+
+            return {
+              id: parseInt(msg.id.slice(0, 8), 16) || Date.now(),
+              sender: isSelf ? 'self' : 'other',
+              senderName,
+              content: msg.message_text || '',
+              timestamp: new Date(msg.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+              attachment: msg.attachment_url ? {
+                type: msg.attachment_type || 'file',
+                name: msg.attachment_name || 'Attachment',
+                url: msg.attachment_url,
+                size: msg.attachment_size || '0 KB'
+              } : undefined,
+              messageId: msg.id, // Store database message ID
+              conversationId: conversationId as string, // Store conversation ID
+              senderRole, // Store sender role for color coding
+              senderEmail, // Store sender email for CEO detection
+              createdAt: msg.created_at, // Full timestamp for chronological ordering
+            };
+          })
+          .sort((a, b) => {
+            // Sort by createdAt to ensure chronological order
+            if (a.createdAt && b.createdAt) {
+              return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+            }
+            return 0;
+          });
         setMessages(formattedMessages);
       } else {
         setMessages([]);
@@ -744,9 +759,9 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
         </div>
 
         {/* Chat Area */}
-        <div className="flex flex-col flex-grow">
+        <div className="flex flex-col flex-grow bg-white">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-800 z-10">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 shadow-sm bg-white z-10">
             <div className="flex items-center">
               <ChevronLeft className="w-5 h-5 mr-3 md:hidden text-gray-600 dark:text-gray-300 cursor-pointer" />
               {selectedContact ? (
@@ -774,7 +789,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
           </div>
 
           {/* Message List Area */}
-          <div className="flex-grow p-4 overflow-y-auto space-y-4">
+          <div className="flex-grow p-4 overflow-y-auto space-y-4 bg-white">
             {selectedContact ? (
               <>
                 {messages.map((msg) => (
@@ -794,7 +809,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
 
           {/* Input Area */}
           {selectedContact && (
-            <div className="relative p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <div className="relative p-4 border-t border-gray-200 bg-white">
               {!selectedContact.hasExecUser && (
                 <div className="mb-2 p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
                   <p className="text-xs text-orange-700 dark:text-orange-300">
