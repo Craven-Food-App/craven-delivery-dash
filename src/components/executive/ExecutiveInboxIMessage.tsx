@@ -207,32 +207,71 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
 
   const fetchContacts = async () => {
     try {
+      // Get current user first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('No authenticated user');
+        return;
+      }
+
       // Fetch ALL exec_users directly (these are the contacts)
       const { data: execUsersData, error: execError } = await supabase
         .from('exec_users')
-        .select(`
-          id,
-          user_id,
-          role,
-          title,
-          department,
-          user_profiles:user_id(full_name, email),
-          employees:user_id(first_name, last_name, email, position)
-        `)
+        .select('id, user_id, role, title, department')
         .order('role');
 
-      if (execError) throw execError;
+      if (execError) {
+        console.error('Error fetching exec_users:', execError);
+        throw execError;
+      }
 
-      // Get current user's exec_user record
-      const { data: { user } } = await supabase.auth.getUser();
-      const currentUserExecId = user ? (execUsersData || []).find((eu: any) => eu.user_id === user?.id)?.id : null;
+      if (!execUsersData || execUsersData.length === 0) {
+        console.warn('No exec_users found');
+        setContacts([]);
+        return;
+      }
+
+      // Fetch user_profiles for all exec_users
+      const userIds = execUsersData.map((eu: any) => eu.user_id).filter(Boolean);
+      let userProfilesMap: Record<string, any> = {};
+      
+      if (userIds.length > 0) {
+        const { data: userProfiles, error: profilesError } = await supabase
+          .from('user_profiles')
+          .select('id, full_name, email')
+          .in('id', userIds);
+        
+        if (!profilesError && userProfiles) {
+          userProfiles.forEach((profile: any) => {
+            userProfilesMap[profile.id] = profile;
+          });
+        }
+      }
+
+      // Fetch employees for all exec_users  
+      let employeesMap: Record<string, any> = {};
+      if (userIds.length > 0) {
+        const { data: employees, error: empError } = await supabase
+          .from('employees')
+          .select('user_id, first_name, last_name, email, position')
+          .in('user_id', userIds);
+        
+        if (!empError && employees) {
+          employees.forEach((emp: any) => {
+            employeesMap[emp.user_id] = emp;
+          });
+        }
+      }
 
       // Map to contact format
-      const formattedContacts = (execUsersData || [])
-        .filter((execUser: any) => execUser.user_id !== user?.id) // Filter out current user
+      const formattedContacts = execUsersData
+        .filter((execUser: any) => execUser.user_id !== user.id) // Filter out current user
         .map((execUser: any) => {
-          const fullName = execUser.user_profiles?.full_name || 
-                          `${execUser.employees?.first_name || ''} ${execUser.employees?.last_name || ''}`.trim() ||
+          const userProfile = execUser.user_id ? userProfilesMap[execUser.user_id] : null;
+          const employee = execUser.user_id ? employeesMap[execUser.user_id] : null;
+
+          const fullName = userProfile?.full_name || 
+                          (employee ? `${employee.first_name || ''} ${employee.last_name || ''}`.trim() : '') ||
                           execUser.title ||
                           'Unknown Executive';
 
@@ -242,19 +281,21 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
             user_id: execUser.user_id,
             name: fullName,
             role: (execUser.role || 'EXECUTIVE').toUpperCase(),
-            email: execUser.user_profiles?.email || execUser.employees?.email,
-            position: execUser.title || execUser.employees?.position,
+            email: userProfile?.email || employee?.email,
+            position: execUser.title || employee?.position,
             department: execUser.department,
             hasExecUser: true, // All exec_users have messaging capability
           };
         });
 
+      console.log('Fetched contacts:', formattedContacts);
       setContacts(formattedContacts);
       if (formattedContacts.length > 0 && !selectedContact) {
         setSelectedContact(formattedContacts[0]);
       }
     } catch (error) {
       console.error('Error fetching executive contacts:', error);
+      setContacts([]);
     }
   };
 
