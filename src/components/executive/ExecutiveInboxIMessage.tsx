@@ -789,7 +789,11 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
             {selectedContact ? (
               <>
                 {messages.map((msg) => (
-                  <MessageBubble key={msg.id} message={msg} />
+                  <MessageBubble 
+                    key={msg.id} 
+                    message={msg}
+                    onDelete={handleDeleteMessage}
+                  />
                 ))}
                 <div ref={chatEndRef} />
               </>
