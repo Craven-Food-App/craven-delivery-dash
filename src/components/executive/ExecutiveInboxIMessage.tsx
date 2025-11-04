@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Paperclip, Image, Download, FileText, User, Users, ChevronLeft, Search, MoreVertical, Share2, Copy, Save, Trash2 } from 'lucide-react';
+import { Send, Paperclip, Image, Download, FileText, User, Users, ChevronLeft, Search, MoreVertical, Share2, Copy, Save, Trash2, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { isCLevelPosition, getExecRoleFromPosition } from '@/utils/roleUtils';
 import {
@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
+import { CreateGroupConversation } from './CreateGroupConversation';
 
 type AttachmentType = 'image' | 'file';
 
@@ -52,6 +53,9 @@ interface Contact {
   hasExecUser: boolean;
   isActive?: boolean;
   lastLogin?: Date | null;
+  isGroup?: boolean; // True if this is a group conversation
+  groupId?: string; // Group conversation ID if isGroup is true
+  participantCount?: number; // Number of participants in group
 }
 
 const AttachmentRenderer: React.FC<{ attachment: FileAttachment }> = ({ attachment }) => {
@@ -545,8 +549,90 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
         .eq('user_id', user.id)
         .single();
 
-      if (!currentExec || !selectedContact.exec_id) {
-        // Clear messages if no exec user or contact
+      if (!currentExec) {
+        setMessages([]);
+        return;
+      }
+
+      // Handle group conversations
+      if (selectedContact.isGroup && selectedContact.groupId) {
+        const groupId = selectedContact.groupId;
+        setCurrentConversationId(groupId);
+
+        // Fetch messages from group conversation
+        const { data: messageData, error: msgError } = await supabase
+          .from('exec_group_conversation_messages')
+          .select(`
+            *,
+            from_exec:exec_users!exec_group_conversation_messages_from_exec_id_fkey(
+              id,
+              user_id,
+              role,
+              user_profiles(full_name, email),
+              employees:user_id(first_name, last_name, email)
+            )
+          `)
+          .eq('group_conversation_id', groupId)
+          .order('created_at', { ascending: true });
+
+        if (msgError) {
+          console.error('Error fetching group messages:', msgError);
+          const historyKey = `group-${groupId}`;
+          const cachedMessages = conversationHistory[historyKey] || [];
+          setMessages(cachedMessages);
+          return;
+        }
+
+        // Format group messages
+        const formattedMessages: Message[] = (messageData || [])
+          .map((msg: any) => {
+            const isSelf = msg.from_exec_id === currentExec.id;
+            const senderName = isSelf 
+              ? 'You'
+              : (msg.from_exec?.user_profiles?.full_name || 
+                 `${msg.from_exec?.employees?.first_name || ''} ${msg.from_exec?.employees?.last_name || ''}`.trim() ||
+                 'Unknown');
+
+            const senderRole = msg.from_exec?.role || '';
+            const senderEmail = msg.from_exec?.user_profiles?.email || msg.from_exec?.employees?.email || '';
+
+            return {
+              id: parseInt(msg.id.slice(0, 8), 16) || Date.now(),
+              sender: isSelf ? 'self' : 'other',
+              senderName,
+              content: msg.message_text || '',
+              timestamp: new Date(msg.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+              attachment: msg.attachment_url ? {
+                type: msg.attachment_type || 'file',
+                name: msg.attachment_name || 'Attachment',
+                url: msg.attachment_url,
+                size: msg.attachment_size || '0 KB'
+              } : undefined,
+              messageId: msg.id,
+              conversationId: groupId,
+              senderRole,
+              senderEmail,
+              createdAt: msg.created_at,
+            };
+          })
+          .sort((a, b) => {
+            if (a.createdAt && b.createdAt) {
+              return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+            }
+            return 0;
+          });
+
+        const historyKey = `group-${groupId}`;
+        setConversationHistory(prev => ({
+          ...prev,
+          [historyKey]: formattedMessages
+        }));
+        setMessages(formattedMessages);
+        return;
+      }
+
+      // Handle 1-on-1 conversations
+      if (!selectedContact.exec_id) {
         setMessages([]);
         return;
       }
@@ -565,10 +651,11 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
 
       if (convError || !conversationId) {
         console.error('Error getting conversation:', convError);
-        // Clear messages if we can't get conversation ID - prevents showing wrong conversation
         setMessages([]);
         return;
       }
+
+      setCurrentConversationId(conversationId);
 
       // Fetch messages from this conversation (always fetch all, never delete)
       const { data: messageData, error: msgError } = await supabase
@@ -821,7 +908,16 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
         {/* Sidebar */}
         <div className="hidden md:flex flex-col w-1/4 border-r border-gray-200 bg-gray-50">
           <div className="p-4 border-b border-gray-200">
-            <h1 className="text-xl font-bold text-gray-800">Executive Chat</h1>
+            <div className="flex items-center justify-between mb-3">
+              <h1 className="text-xl font-bold text-gray-800">Executive Chat</h1>
+              <button
+                onClick={() => setShowCreateGroup(true)}
+                className="p-2 hover:bg-orange-50 rounded-lg transition-colors"
+                title="Create Group Conversation"
+              >
+                <UserPlus className="w-5 h-5 text-orange-500" />
+              </button>
+            </div>
             <div className="relative mt-3">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -846,11 +942,18 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
                     selectedContact?.id === contact.id ? 'bg-blue-50' : 'hover:bg-gray-100'
                   } ${!contact.hasExecUser ? 'opacity-75' : ''}`}
                 >
-                  <User className={`w-5 h-5 mr-3 ${selectedContact?.id === contact.id ? 'text-blue-600' : 'text-gray-400'}`} />
+                  {contact.isGroup ? (
+                    <Users className={`w-5 h-5 mr-3 ${selectedContact?.id === contact.id ? 'text-orange-600' : 'text-gray-400'}`} />
+                  ) : (
+                    <User className={`w-5 h-5 mr-3 ${selectedContact?.id === contact.id ? 'text-blue-600' : 'text-gray-400'}`} />
+                  )}
                   <div className="flex flex-col flex-grow min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className={`font-semibold truncate ${selectedContact?.id === contact.id ? 'text-blue-700' : 'text-gray-800'}`}>
+                      <span className={`font-semibold truncate ${selectedContact?.id === contact.id ? (contact.isGroup ? 'text-orange-700' : 'text-blue-700') : 'text-gray-800'}`}>
                         {contact.name}
+                        {contact.isGroup && contact.participantCount && (
+                          <span className="ml-2 text-xs text-gray-500">({contact.participantCount})</span>
+                        )}
                       </span>
                       {!contact.hasExecUser && (
                         <span className="text-xs text-orange-500 ml-2 flex-shrink-0" title="Messaging will be available after setup">
