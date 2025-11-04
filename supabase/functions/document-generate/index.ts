@@ -62,6 +62,17 @@ serve(async (req) => {
     
     console.log('Generating document:', { template_id, officer_name, role });
 
+    if (!html_content || String(html_content).trim().length < 20) {
+      console.error('Received empty or too short html_content');
+      return new Response(
+        JSON.stringify({ ok: false, error: 'Generated HTML content is empty. Cannot create PDF.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+    
+    console.log('html_content length:', String(html_content).length);
+    console.log('html_content preview:', String(html_content).slice(0, 200));
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
