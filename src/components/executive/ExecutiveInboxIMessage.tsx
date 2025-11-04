@@ -518,9 +518,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
   const fetchMessages = async () => {
     if (!selectedContact) {
       // Only clear if no contact is selected
-      if (!selectedContact) {
-        setMessages([]);
-      }
+      setMessages([]);
       return;
     }
     
