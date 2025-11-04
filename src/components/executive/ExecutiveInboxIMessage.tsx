@@ -641,15 +641,15 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
   };
 
   // Helper function to save messages to localStorage (backup cache)
-  const saveMessagesToLocalStorage = (messages: Message[], conversationId: string, isGroup: boolean) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    
-    const storageKey = isGroup
-      ? `exec-chat-messages-${role}-${user.id}-group-${conversationId}`
-      : `exec-chat-messages-${role}-${user.id}-${conversationId}`;
-    
+  const saveMessagesToLocalStorage = async (messages: Message[], conversationId: string, isGroup: boolean) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      const storageKey = isGroup
+        ? `exec-chat-messages-${role}-${user.id}-group-${conversationId}`
+        : `exec-chat-messages-${role}-${user.id}-${conversationId}`;
+      
       localStorage.setItem(storageKey, JSON.stringify(messages));
       console.log(`Saved ${messages.length} messages to localStorage backup`);
     } catch (e) {
@@ -974,6 +974,10 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
           ...prev,
           [historyKey]: sortedMessages
         }));
+        
+        // Save to localStorage immediately after sending
+        saveMessagesToLocalStorage(sortedMessages, groupId, true);
+        
         setMessages(sortedMessages);
         setInputContent('');
         setIsSendingAttachment(false);
@@ -1059,6 +1063,9 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
         ...prev,
         [historyKey]: sortedMessages
       }));
+      
+      // Save to localStorage immediately after sending
+      saveMessagesToLocalStorage(sortedMessages, conversationId, false);
       
       // Then update displayed messages
       setMessages(sortedMessages);
