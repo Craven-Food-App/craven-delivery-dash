@@ -42,6 +42,7 @@ import { useNavigate } from "react-router-dom";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar, ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend } from "recharts";
 import { MessageCenter } from "@/components/messaging/MessageCenter";
+import { ExecutiveInboxIMessage } from '@/components/executive/ExecutiveInboxIMessage';
 import { Aperture, DollarSign, TrendingUp, TrendingDown, Clock, Scale, Sigma } from 'lucide-react';
 
 const { Header, Content } = Layout;
@@ -620,6 +621,12 @@ export default function CFOPortal() {
             }
             style={{ marginBottom: 16, background: "rgba(16,185,129,0.1)", borderColor: "rgba(16,185,129,0.25)" }}
           />
+
+          {/* Executive Chat - Isolated per portal */}
+          <div style={{ marginBottom: 24 }}>
+            <ExecutiveInboxIMessage role="cfo" deviceId={`cfo-portal-${window.location.hostname}`} />
+          </div>
+          <Divider style={{ margin: '16px 0' }} />
 
           {/* High-Priority Quick Access - Responsive Grid */}
           <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(1, minmax(0,1fr))' : 'repeat(4, minmax(0,1fr))', gap:12, marginBottom: 16 }}>

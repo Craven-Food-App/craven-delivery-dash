@@ -387,9 +387,9 @@ const CEOPortal: React.FC = () => {
         </Row>
         <Divider style={{ margin: '16px 0' }} />
         
-        {/* Executive Inbox - iMessage Style */}
+        {/* Executive Inbox - iMessage Style - Isolated per portal */}
         <div className="mb-6">
-          <ExecutiveInboxIMessage role="ceo" />
+          <ExecutiveInboxIMessage role="ceo" deviceId={`ceo-portal-${window.location.hostname}`} />
         </div>
         
         <Divider style={{ margin: '16px 0' }} />

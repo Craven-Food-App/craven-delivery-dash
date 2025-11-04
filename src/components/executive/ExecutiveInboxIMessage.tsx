@@ -24,6 +24,7 @@ interface Message {
 
 interface ExecutiveInboxIMessageProps {
   role?: 'ceo' | 'cfo' | 'coo' | 'cto' | 'board';
+  deviceId?: string; // Optional device/component ID for isolation
 }
 
 const AttachmentRenderer: React.FC<{ attachment: FileAttachment }> = ({ attachment }) => {
@@ -101,7 +102,7 @@ const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
   );
 };
 
-export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ role = 'ceo' }) => {
+export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ role = 'ceo', deviceId }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputContent, setInputContent] = useState('');
   const [isSendingAttachment, setIsSendingAttachment] = useState(false);
@@ -120,7 +121,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
   useEffect(() => {
     fetchContacts();
     
-    // Set up real-time subscription for employee updates
+    // Set up real-time subscription for exec_users updates
     const channel = supabase
       .channel('executive-contacts-updates')
       .on(
@@ -128,10 +129,10 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
         {
           event: '*',
           schema: 'public',
-          table: 'employees',
+          table: 'exec_users',
         },
         () => {
-          fetchContacts(); // Refresh when employees change
+          fetchContacts(); // Refresh when exec_users change
         }
       )
       .subscribe();
@@ -143,7 +144,62 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
 
   useEffect(() => {
     fetchMessages();
-  }, [selectedContact, currentUserId]);
+    
+    // Set up real-time subscription for messages in current conversation
+    let msgChannel: any = null;
+    
+    const setupMessageSubscription = async () => {
+      if (!selectedContact?.exec_id || !currentUserId) return;
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: currentExec } = await supabase
+        .from('exec_users')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (!currentExec) return;
+
+      const portalContext = role || 'ceo';
+      const { data: conversationId } = await supabase.rpc(
+        'get_or_create_conversation',
+        {
+          p_participant1_exec_id: currentExec.id,
+          p_participant2_exec_id: selectedContact.exec_id,
+          p_portal_context: portalContext,
+          p_device_id: deviceId || null
+        }
+      );
+
+      if (conversationId) {
+        msgChannel = supabase
+          .channel(`exec-conversation-${conversationId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'exec_conversation_messages',
+              filter: `conversation_id=eq.${conversationId}`,
+            },
+            () => {
+              fetchMessages(); // Refresh messages when new message is added
+            }
+          )
+          .subscribe();
+      }
+    };
+
+    setupMessageSubscription();
+    
+    return () => {
+      if (msgChannel) {
+        supabase.removeChannel(msgChannel);
+      }
+    };
+  }, [selectedContact, currentUserId, role, deviceId]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -151,99 +207,51 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
 
   const fetchContacts = async () => {
     try {
-      // Fetch employees and filter for C-level executives (CEO, CFO, COO, CTO, CXO, etc.)
-      const { data: employeesData, error: empError } = await supabase
-        .from('employees')
-        .select('id, user_id, position, first_name, last_name, email, department_id, departments(name), user_profiles(full_name, email)')
-        .order('position');
+      // Fetch ALL exec_users directly (these are the contacts)
+      const { data: execUsersData, error: execError } = await supabase
+        .from('exec_users')
+        .select(`
+          id,
+          user_id,
+          role,
+          title,
+          department,
+          user_profiles:user_id(full_name, email),
+          employees:user_id(first_name, last_name, email, position)
+        `)
+        .order('role');
 
-      if (empError) throw empError;
+      if (execError) throw execError;
 
-      // Filter to only C-level positions (using centralized utility)
-      const executives = (employeesData || []).filter((emp: any) => 
-        isCLevelPosition(emp.position)
-      );
+      // Get current user's exec_user record
+      const { data: { user } } = await supabase.auth.getUser();
+      const currentUserExecId = user ? (execUsersData || []).find((eu: any) => eu.user_id === user?.id)?.id : null;
 
-      // Map to contact format and fetch exec_users records
-      const formattedContactsPromises = executives.map(async (emp: any) => {
-        const position = String(emp.position || '').toLowerCase();
-        let role = position;
-        
-        // Normalize position to role (using centralized utility)
-        const execRole = getExecRoleFromPosition(emp.position);
-        role = execRole || position;
+      // Map to contact format
+      const formattedContacts = (execUsersData || [])
+        .filter((execUser: any) => execUser.user_id !== user?.id) // Filter out current user
+        .map((execUser: any) => {
+          const fullName = execUser.user_profiles?.full_name || 
+                          `${execUser.employees?.first_name || ''} ${execUser.employees?.last_name || ''}`.trim() ||
+                          execUser.title ||
+                          'Unknown Executive';
 
-        const fullName = emp.user_profiles?.full_name || 
-                        `${emp.first_name || ''} ${emp.last_name || ''}`.trim() ||
-                        emp.position ||
-                        'Unknown';
+          return {
+            id: execUser.id, // exec_users.id
+            exec_id: execUser.id, // Keep for reference
+            user_id: execUser.user_id,
+            name: fullName,
+            role: (execUser.role || 'EXECUTIVE').toUpperCase(),
+            email: execUser.user_profiles?.email || execUser.employees?.email,
+            position: execUser.title || execUser.employees?.position,
+            department: execUser.department,
+            hasExecUser: true, // All exec_users have messaging capability
+          };
+        });
 
-        // Get exec_users record for this employee, or create it if missing
-        let execUserId = null;
-        let hasExecUser = false;
-        
-        if (emp.user_id) {
-          // Check if exec_user exists
-          const { data: execUser } = await supabase
-            .from('exec_users')
-            .select('id')
-            .eq('user_id', emp.user_id)
-            .single();
-          
-          if (execUser) {
-            execUserId = execUser.id;
-            hasExecUser = true;
-          } else {
-            // Auto-create exec_user for C-level employee (using centralized utility)
-            try {
-              // Determine exec role from position
-              const execRole = getExecRoleFromPosition(emp.position) || 'board_member';
-              
-              const { data: newExecUser, error: createError } = await supabase
-                .from('exec_users')
-                .insert({
-                  user_id: emp.user_id,
-                  role: execRole,
-                  department: emp.departments?.name || 'Executive',
-                  title: emp.position,
-                  access_level: 1,
-                })
-                .select('id')
-                .single();
-              
-              if (!createError && newExecUser) {
-                execUserId = newExecUser.id;
-                hasExecUser = true;
-              }
-            } catch (createErr) {
-              console.error(`Failed to auto-create exec_user for ${fullName}:`, createErr);
-            }
-          }
-        }
-
-        return {
-          id: execUserId || emp.user_id || emp.id, // Use exec_users.id if available, fallback to user_id
-          user_id: emp.user_id, // Keep original user_id for reference
-          name: fullName,
-          role: role.toUpperCase(),
-          email: emp.user_profiles?.email || emp.email,
-          position: emp.position,
-          hasExecUser, // Flag to indicate if messaging is available
-        };
-      });
-
-      const formattedContacts = await Promise.all(formattedContactsPromises);
-
-      // Filter out current user from contacts
-      const filteredContacts = formattedContacts.filter(contact => 
-        contact.user_id !== currentUserId
-      );
-
-      setContacts(filteredContacts);
-      if (filteredContacts.length > 0 && !selectedContact) {
-        // Prefer selecting a contact with exec_user if available
-        const contactWithExec = filteredContacts.find(c => c.hasExecUser);
-        setSelectedContact(contactWithExec || filteredContacts[0]);
+      setContacts(formattedContacts);
+      if (formattedContacts.length > 0 && !selectedContact) {
+        setSelectedContact(formattedContacts[0]);
       }
     } catch (error) {
       console.error('Error fetching executive contacts:', error);
@@ -260,105 +268,87 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get exec_users.id for current user and selected contact
+      // Get exec_users.id for current user
       const { data: currentExec } = await supabase
         .from('exec_users')
         .select('id')
         .eq('user_id', user.id)
         .single();
 
-      const { data: contactExec } = await supabase
-        .from('exec_users')
-        .select('id')
-        .eq('user_id', selectedContact.user_id)
-        .single();
-
-      if (!currentExec || !contactExec) {
-        // No exec_users records, use mock data
-        const mockMessages: Message[] = [
-          {
-            id: 1,
-            sender: 'other',
-            senderName: `${selectedContact.name} (${selectedContact.role})`,
-            content: 'Hi, the Q4 projections are finalized and need review before the meeting. Are you free to discuss this afternoon?',
-            timestamp: '1:01 PM',
-          },
-          {
-            id: 2,
-            sender: 'self',
-            senderName: 'You',
-            content: 'Sounds good. I\'ll clear my calendar.',
-            timestamp: '1:03 PM',
-          },
-        ];
-        setMessages(mockMessages);
+      if (!currentExec || !selectedContact.exec_id) {
+        setMessages([]);
         return;
       }
 
-      // Try to fetch from exec_messages table using exec_users.id
-      const { data: messageData } = await supabase
-        .from('exec_messages')
-        .select('*, from_user:exec_users!exec_messages_from_user_id_fkey(id, role, user_id, user_profiles(full_name))')
-        .or(`from_user_id.eq.${currentExec.id},${contactExec.id}=ANY(to_user_ids)`)
-        .order('created_at', { ascending: true });
-
-      if (messageData && messageData.length > 0) {
-        // Filter messages to current conversation
-        const conversationMessages = messageData.filter((msg: any) => {
-          return (
-            (msg.from_user_id === currentExec.id && Array.isArray(msg.to_user_ids) && msg.to_user_ids.includes(contactExec.id)) ||
-            (msg.from_user_id === contactExec.id && Array.isArray(msg.to_user_ids) && msg.to_user_ids.includes(currentExec.id))
-          );
-        });
-
-        if (conversationMessages.length > 0) {
-          const formattedMessages: Message[] = conversationMessages.map((msg: any) => {
-            return {
-              id: parseInt(msg.id.slice(0, 8), 16),
-              sender: msg.from_user_id === currentExec.id ? 'self' : 'other',
-              senderName: msg.from_user_id === currentExec.id 
-                ? 'You'
-                : `${msg.from_user?.user_profiles?.full_name || selectedContact.name} (${selectedContact.role})`,
-              content: msg.message || msg.subject || '',
-              timestamp: new Date(msg.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-            };
-          });
-          setMessages(formattedMessages);
-          return;
+      // Get or create conversation for this portal context
+      const portalContext = role || 'ceo';
+      const { data: conversationId, error: convError } = await supabase.rpc(
+        'get_or_create_conversation',
+        {
+          p_participant1_exec_id: currentExec.id,
+          p_participant2_exec_id: selectedContact.exec_id,
+          p_portal_context: portalContext,
+          p_device_id: deviceId || null
         }
+      );
+
+      if (convError || !conversationId) {
+        console.error('Error getting conversation:', convError);
+        setMessages([]);
+        return;
       }
 
-      // Fallback to mock data if no messages found
-      const mockMessages: Message[] = [
-        {
-          id: 1,
-          sender: 'other',
-          senderName: `${selectedContact.name} (${selectedContact.role})`,
-          content: 'Hi, the Q4 projections are finalized and need review before the meeting. Are you free to discuss this afternoon?',
-          timestamp: '1:01 PM',
-        },
-        {
-          id: 2,
-          sender: 'self',
-          senderName: 'You',
-          content: 'Sounds good. I\'ll clear my calendar.',
-          timestamp: '1:03 PM',
-        },
-      ];
-      setMessages(mockMessages);
+      // Fetch messages from this conversation
+      const { data: messageData, error: msgError } = await supabase
+        .from('exec_conversation_messages')
+        .select(`
+          *,
+          from_exec:exec_users!exec_conversation_messages_from_exec_id_fkey(
+            id,
+            user_id,
+            user_profiles(full_name),
+            employees:user_id(first_name, last_name)
+          )
+        `)
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (msgError) {
+        console.error('Error fetching messages:', msgError);
+        setMessages([]);
+        return;
+      }
+
+      if (messageData && messageData.length > 0) {
+        const formattedMessages: Message[] = messageData.map((msg: any) => {
+          const isSelf = msg.from_exec_id === currentExec.id;
+          const senderName = isSelf 
+            ? 'You'
+            : (msg.from_exec?.user_profiles?.full_name || 
+               `${msg.from_exec?.employees?.first_name || ''} ${msg.from_exec?.employees?.last_name || ''}`.trim() ||
+               selectedContact.name);
+
+          return {
+            id: parseInt(msg.id.slice(0, 8), 16) || Date.now(),
+            sender: isSelf ? 'self' : 'other',
+            senderName,
+            content: msg.message_text || '',
+            timestamp: new Date(msg.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            attachment: msg.attachment_url ? {
+              type: msg.attachment_type || 'file',
+              name: msg.attachment_name || 'Attachment',
+              url: msg.attachment_url,
+              size: msg.attachment_size || '0 KB'
+            } : undefined
+          };
+        });
+        setMessages(formattedMessages);
+      } else {
+        setMessages([]);
+      }
     } catch (error) {
       console.error('Error fetching messages:', error);
-      // Fallback to mock data on error
-      const mockMessages: Message[] = [
-        {
-          id: 1,
-          sender: 'other',
-          senderName: `${selectedContact?.name || 'CFO'} (${selectedContact?.role || 'CFO'})`,
-          content: 'Hi, the Q4 projections are finalized and need review.',
-          timestamp: '1:01 PM',
-        },
-      ];
-      setMessages(mockMessages);
+      setMessages([]);
     }
   };
 
@@ -377,40 +367,51 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
         .eq('user_id', user.id)
         .single();
 
-      // Use selectedContact.id which should be exec_users.id if available
-      // Otherwise try to look it up
-      let contactExecId = selectedContact.id;
-      if (!contactExecId || !selectedContact.user_id) {
-        const { data: contactExec } = await supabase
-          .from('exec_users')
-          .select('id')
-          .eq('user_id', selectedContact.user_id)
-          .single();
-        contactExecId = contactExec?.id;
+      if (!currentExec || !selectedContact.exec_id) {
+        console.error('Missing exec_user records');
+        return;
       }
 
-      // Try to insert into exec_messages table if exec_users exist
-      if (currentExec && contactExecId) {
-        const { data: newMessage, error } = await supabase
-          .from('exec_messages')
-          .insert({
-            from_user_id: currentExec.id,
-            to_user_ids: [contactExecId],
-            subject: 'Executive Chat',
-            message: inputContent.trim(),
-            priority: 'normal',
-            is_confidential: true,
-          })
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error saving to database, using local state:', error);
+      // Get or create conversation for this portal context
+      const portalContext = role || 'ceo';
+      const { data: conversationId, error: convError } = await supabase.rpc(
+        'get_or_create_conversation',
+        {
+          p_participant1_exec_id: currentExec.id,
+          p_participant2_exec_id: selectedContact.exec_id,
+          p_portal_context: portalContext,
+          p_device_id: deviceId || null
         }
+      );
+
+      if (convError || !conversationId) {
+        console.error('Error getting conversation:', convError);
+        return;
       }
 
+      // Insert message into conversation
+      const { data: newMessage, error: msgError } = await supabase
+        .from('exec_conversation_messages')
+        .insert({
+          conversation_id: conversationId,
+          from_exec_id: currentExec.id,
+          message_text: inputContent.trim(),
+          attachment_type: attachment?.type || null,
+          attachment_url: attachment?.url || null,
+          attachment_name: attachment?.name || null,
+          attachment_size: attachment?.size || null,
+        })
+        .select()
+        .single();
+
+      if (msgError) {
+        console.error('Error saving message:', msgError);
+        return;
+      }
+
+      // Add message to local state
       const newMsg: Message = {
-        id: Date.now(),
+        id: parseInt(newMessage.id.slice(0, 8), 16) || Date.now(),
         sender: 'self',
         senderName: 'You',
         content: inputContent.trim(),
@@ -421,6 +422,12 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
       setMessages([...messages, newMsg]);
       setInputContent('');
       setIsSendingAttachment(false);
+
+      // Update conversation last_message_at
+      await supabase
+        .from('exec_conversations')
+        .update({ last_message_at: new Date().toISOString() })
+        .eq('id', conversationId);
     } catch (error) {
       console.error('Error sending message:', error);
     }

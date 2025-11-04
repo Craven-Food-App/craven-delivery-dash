@@ -5,6 +5,7 @@ import { CloudOutlined, BugOutlined, LockOutlined, DatabaseOutlined, DashboardOu
 import { useExecAuth } from '@/hooks/useExecAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { ExecutiveInboxIMessage } from '@/components/executive/ExecutiveInboxIMessage';
 
 const { Header, Content } = Layout;
 const { TabPane } = Tabs;
@@ -69,6 +70,12 @@ export default function CTOPortal() {
       </Header>
       
       <Content className="p-6 bg-gray-50">
+        {/* Executive Chat - Isolated per portal */}
+        <div className="mb-6">
+          <ExecutiveInboxIMessage role="cto" deviceId={`cto-portal-${window.location.hostname}`} />
+        </div>
+        <Divider style={{ margin: '16px 0' }} />
+
         <Row gutter={16} className="mb-6">
           <Col xs={12} md={6}>
             <Card>
