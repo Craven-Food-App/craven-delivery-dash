@@ -293,6 +293,48 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
   }, [role, currentUserId]);
 
   useEffect(() => {
+    // When contact changes, immediately load from cache for instant display
+    const loadFromCache = async () => {
+      if (!selectedContact?.exec_id || !currentUserId) {
+        setMessages([]);
+        return;
+      }
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: currentExec } = await supabase
+        .from('exec_users')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (!currentExec) return;
+
+      const portalContext = role || 'ceo';
+      const { data: conversationId } = await supabase.rpc(
+        'get_or_create_conversation',
+        {
+          p_participant1_exec_id: currentExec.id,
+          p_participant2_exec_id: selectedContact.exec_id,
+          p_portal_context: portalContext,
+          p_device_id: deviceId || null
+        }
+      );
+
+      if (conversationId) {
+        // Load from cache immediately
+        const historyKey = `${conversationId}`;
+        const cachedMessages = conversationHistory[historyKey] || [];
+        if (cachedMessages.length > 0) {
+          setMessages(cachedMessages);
+        }
+      }
+    };
+
+    loadFromCache();
+    
+    // Then fetch fresh messages from database
     fetchMessages();
     
     // Set up real-time subscription for messages in current conversation
@@ -475,13 +517,19 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
 
   const fetchMessages = async () => {
     if (!selectedContact) {
-      setMessages([]);
+      // Only clear if no contact is selected
+      if (!selectedContact) {
+        setMessages([]);
+      }
       return;
     }
     
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        // Don't clear if we have cached messages
+        return;
+      }
 
       // Get exec_users.id for current user
       const { data: currentExec } = await supabase
@@ -491,7 +539,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
         .single();
 
       if (!currentExec || !selectedContact.exec_id) {
-        setMessages([]);
+        // Don't clear - keep existing messages
         return;
       }
 
@@ -509,10 +557,12 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
 
       if (convError || !conversationId) {
         console.error('Error getting conversation:', convError);
-        // Try to load from cache using contact ID as fallback
+        // Try to load from cache using conversation ID as fallback
         const historyKey = `${selectedContact.exec_id}-${portalContext}`;
         const cachedMessages = conversationHistory[historyKey] || [];
-        setMessages(cachedMessages);
+        if (cachedMessages.length > 0) {
+          setMessages(cachedMessages);
+        }
         return;
       }
 
@@ -534,78 +584,98 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
 
       if (msgError) {
         console.error('Error fetching messages:', msgError);
-        setMessages([]);
-        return;
-      }
-
-      if (messageData && messageData.length > 0) {
-        const formattedMessages: Message[] = messageData
-          .map((msg: any) => {
-            const isSelf = msg.from_exec_id === currentExec.id;
-            const senderName = isSelf 
-              ? 'You'
-              : (msg.from_exec?.user_profiles?.full_name || 
-                 `${msg.from_exec?.employees?.first_name || ''} ${msg.from_exec?.employees?.last_name || ''}`.trim() ||
-                 selectedContact.name);
-
-            // Get sender role and email for CEO detection and color coding
-            const senderRole = msg.from_exec?.role || '';
-            const senderEmail = msg.from_exec?.user_profiles?.email || msg.from_exec?.employees?.email || '';
-
-            return {
-              id: parseInt(msg.id.slice(0, 8), 16) || Date.now(),
-              sender: isSelf ? 'self' : 'other',
-              senderName,
-              content: msg.message_text || '',
-              timestamp: new Date(msg.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-              attachment: msg.attachment_url ? {
-                type: msg.attachment_type || 'file',
-                name: msg.attachment_name || 'Attachment',
-                url: msg.attachment_url,
-                size: msg.attachment_size || '0 KB'
-              } : undefined,
-              messageId: msg.id, // Store database message ID
-              conversationId: conversationId as string, // Store conversation ID
-              senderRole, // Store sender role for color coding
-              senderEmail, // Store sender email for CEO detection
-              createdAt: msg.created_at, // Full timestamp for chronological ordering
-            };
-          })
-          .sort((a, b) => {
-            // Sort by createdAt to ensure chronological order
-            if (a.createdAt && b.createdAt) {
-              return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-            }
-            return 0;
-          });
-        
-        // Store messages in conversation history (key by conversation ID)
-        const historyKey = `${conversationId}`;
-        setConversationHistory(prev => ({
-          ...prev,
-          [historyKey]: formattedMessages
-        }));
-        
-        setMessages(formattedMessages);
-      } else {
-        // Check if we have cached history for this conversation
+        // Don't clear - keep existing messages from cache
         const historyKey = `${conversationId}`;
         const cachedMessages = conversationHistory[historyKey] || [];
         if (cachedMessages.length > 0) {
           setMessages(cachedMessages);
-        } else {
-          setMessages([]);
         }
+        return;
       }
+
+      // Always format messages even if empty array
+      const formattedMessages: Message[] = (messageData || [])
+        .map((msg: any) => {
+          const isSelf = msg.from_exec_id === currentExec.id;
+          const senderName = isSelf 
+            ? 'You'
+            : (msg.from_exec?.user_profiles?.full_name || 
+               `${msg.from_exec?.employees?.first_name || ''} ${msg.from_exec?.employees?.last_name || ''}`.trim() ||
+               selectedContact.name);
+
+          // Get sender role and email for CEO detection and color coding
+          const senderRole = msg.from_exec?.role || '';
+          const senderEmail = msg.from_exec?.user_profiles?.email || msg.from_exec?.employees?.email || '';
+
+          return {
+            id: parseInt(msg.id.slice(0, 8), 16) || Date.now(),
+            sender: isSelf ? 'self' : 'other',
+            senderName,
+            content: msg.message_text || '',
+            timestamp: new Date(msg.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            attachment: msg.attachment_url ? {
+              type: msg.attachment_type || 'file',
+              name: msg.attachment_name || 'Attachment',
+              url: msg.attachment_url,
+              size: msg.attachment_size || '0 KB'
+            } : undefined,
+            messageId: msg.id, // Store database message ID
+            conversationId: conversationId as string, // Store conversation ID
+            senderRole, // Store sender role for color coding
+            senderEmail, // Store sender email for CEO detection
+            createdAt: msg.created_at, // Full timestamp for chronological ordering
+          };
+        })
+        .sort((a, b) => {
+          // Sort by createdAt to ensure chronological order
+          if (a.createdAt && b.createdAt) {
+            return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          }
+          return 0;
+        });
+      
+      // Store messages in conversation history (key by conversation ID)
+      // This ensures messages are always preserved
+      const historyKey = `${conversationId}`;
+      setConversationHistory(prev => ({
+        ...prev,
+        [historyKey]: formattedMessages
+      }));
+      
+      // Update displayed messages
+      setMessages(formattedMessages);
     } catch (error) {
       console.error('Error fetching messages:', error);
-      // Try to load from cache if available
-      const historyKey = `${conversationId}`;
-      const cachedMessages = conversationHistory[historyKey] || [];
-      if (cachedMessages.length > 0) {
-        setMessages(cachedMessages);
-      } else {
-        setMessages([]);
+      // Try to load from cache if available - never clear messages
+      // Get conversationId from current state if available
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && selectedContact?.exec_id) {
+        const { data: currentExec } = await supabase
+          .from('exec_users')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (currentExec) {
+          const portalContext = role || 'ceo';
+          const { data: conversationId } = await supabase.rpc(
+            'get_or_create_conversation',
+            {
+              p_participant1_exec_id: currentExec.id,
+              p_participant2_exec_id: selectedContact.exec_id,
+              p_portal_context: portalContext,
+              p_device_id: deviceId || null
+            }
+          );
+          
+          if (conversationId) {
+            const historyKey = `${conversationId}`;
+            const cachedMessages = conversationHistory[historyKey] || [];
+            if (cachedMessages.length > 0) {
+              setMessages(cachedMessages);
+            }
+          }
+        }
       }
     }
   };
@@ -681,21 +751,23 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
         createdAt: newMessage.created_at || new Date().toISOString(), // Full timestamp
       };
 
-      // Insert in chronological order
-      const sortedMessages = [...messages, newMsg].sort((a, b) => {
+      // Insert in chronological order - merge with existing messages
+      const allMessages = [...messages, newMsg];
+      const sortedMessages = allMessages.sort((a, b) => {
         if (a.createdAt && b.createdAt) {
           return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         }
         return 0;
       });
       
-      // Update conversation history
+      // Update conversation history FIRST to ensure persistence
       const historyKey = `${conversationId}`;
       setConversationHistory(prev => ({
         ...prev,
         [historyKey]: sortedMessages
       }));
       
+      // Then update displayed messages
       setMessages(sortedMessages);
       setInputContent('');
       setIsSendingAttachment(false);
