@@ -146,10 +146,24 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION public.get_or_create_conversation TO authenticated;
 
 -- Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_exec_conv_participants ON public.exec_conversations(participant1_exec_id, participant2_exec_id);
-CREATE INDEX IF NOT EXISTS idx_exec_conv_portal ON public.exec_conversations(portal_context);
-CREATE INDEX IF NOT EXISTS idx_exec_conv_device ON public.exec_conversations(device_id);
-CREATE INDEX IF NOT EXISTS idx_exec_conv_messages_conv ON public.exec_conversation_messages(conversation_id, created_at DESC);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_exec_conv_participants') THEN
+    CREATE INDEX idx_exec_conv_participants ON public.exec_conversations(participant1_exec_id, participant2_exec_id);
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_exec_conv_portal') THEN
+    CREATE INDEX idx_exec_conv_portal ON public.exec_conversations(portal_context);
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_exec_conv_device') THEN
+    CREATE INDEX idx_exec_conv_device ON public.exec_conversations(device_id);
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_exec_conv_messages_conv') THEN
+    CREATE INDEX idx_exec_conv_messages_conv ON public.exec_conversation_messages(conversation_id, created_at DESC);
+  END IF;
+END $$;
 
 -- Add comments
 COMMENT ON TABLE public.exec_conversations IS '1-on-1 executive conversations isolated by portal context';
