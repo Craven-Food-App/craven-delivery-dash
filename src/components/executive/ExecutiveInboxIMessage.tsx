@@ -1,8 +1,16 @@
 // @ts-nocheck
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Paperclip, Image, Download, FileText, User, Users, ChevronLeft, Search } from 'lucide-react';
+import { Send, Paperclip, Image, Download, FileText, User, Users, ChevronLeft, Search, MoreVertical, Share2, Copy, Save, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { isCLevelPosition, getExecRoleFromPosition } from '@/utils/roleUtils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
 
 type AttachmentType = 'image' | 'file';
 
@@ -20,6 +28,8 @@ interface Message {
   timestamp: string;
   attachment?: FileAttachment;
   senderName: string;
+  messageId?: string; // Database message ID for deletion
+  conversationId?: string; // Conversation ID for deletion
 }
 
 interface ExecutiveInboxIMessageProps {
@@ -76,8 +86,15 @@ const AttachmentRenderer: React.FC<{ attachment: FileAttachment }> = ({ attachme
   return null;
 };
 
-const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
+const MessageBubble: React.FC<{ 
+  message: Message; 
+  onDelete?: (messageId: string) => void;
+  onShare?: (message: Message) => void;
+  onCopy?: (message: Message) => void;
+  onSave?: (message: Message) => void;
+}> = ({ message, onDelete, onShare, onCopy, onSave }) => {
   const isSelf = message.sender === 'self';
+  const { toast } = useToast();
 
   const bubbleClasses = `
     max-w-[75%] md:max-w-[60%] lg:max-w-[45%] p-3 rounded-xl shadow-md transition-all duration-300
@@ -91,15 +108,80 @@ const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
     ${message.attachment ? 'text-sm mb-2' : 'text-base'}
   `;
 
+  const handleShare = () => {
+    if (onShare) {
+      onShare(message);
+    } else {
+      if (navigator.share) {
+        navigator.share({
+          title: `Message from ${message.senderName}`,
+          text: message.content,
+          url: window.location.href,
+        }).catch(() => {
+          // Fallback to copy if share fails
+          handleCopy();
+        });
+      } else {
+        handleCopy();
+        toast({
+          title: "Copied to clipboard",
+          description: "Message copied. Share it manually.",
+        });
+      }
+    }
+  };
+
+  const handleCopy = () => {
+    const textToCopy = message.content + (message.attachment ? `\nAttachment: ${message.attachment.name}` : '');
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      toast({
+        title: "Copied",
+        description: "Message copied to clipboard",
+      });
+    });
+    if (onCopy) onCopy(message);
+  };
+
+  const handleSave = async () => {
+    if (onSave) {
+      onSave(message);
+    } else {
+      // Create a downloadable text file
+      const content = `Message from ${message.senderName}\nDate: ${message.timestamp}\n\n${message.content}${message.attachment ? `\n\nAttachment: ${message.attachment.name}\nURL: ${message.attachment.url}` : ''}`;
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `message-${message.id}-${Date.now()}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Saved",
+        description: "Message saved to local files",
+      });
+    }
+  };
+
+  const handleDelete = () => {
+    if (message.messageId && onDelete) {
+      if (confirm('Are you sure you want to delete this message? This action cannot be undone.')) {
+        onDelete(message.messageId);
+      }
+    }
+  };
+
   return (
-    <div className={`flex flex-col w-full ${isSelf ? 'items-end' : 'items-start'} mb-3`}>
+    <div className={`flex flex-col w-full ${isSelf ? 'items-end' : 'items-start'} mb-3 group relative`}>
       {!isSelf && (
         <span className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 pl-2">
           {message.senderName}
         </span>
       )}
 
-      <div className={bubbleClasses}>
+      <div className={`${bubbleClasses} relative`}>
         {message.attachment && (
           <div className="mb-2">
             <AttachmentRenderer attachment={message.attachment} />
@@ -108,8 +190,43 @@ const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
         {message.content && (
           <p className={contentClasses}>{message.content}</p>
         )}
-        <div className={`text-[10px] opacity-70 mt-1 ${isSelf ? 'text-right' : 'text-left'}`}>
-          {message.timestamp}
+        <div className={`flex items-center justify-between mt-1 ${isSelf ? 'flex-row-reverse' : 'flex-row'}`}>
+          <div className={`text-[10px] opacity-70 ${isSelf ? 'text-right' : 'text-left'}`}>
+            {message.timestamp}
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={`opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 ${isSelf ? 'text-white' : 'text-gray-600 dark:text-gray-400'}`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVertical className="h-3 w-3" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align={isSelf ? 'end' : 'start'} className="w-48">
+              <DropdownMenuItem onClick={handleShare}>
+                <Share2 className="mr-2 h-4 w-4" />
+                Share
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleCopy}>
+                <Copy className="mr-2 h-4 w-4" />
+                Copy
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSave}>
+                <Save className="mr-2 h-4 w-4" />
+                Save to local files
+              </DropdownMenuItem>
+              {message.messageId && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleDelete} className="text-red-600 focus:text-red-600">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>
@@ -124,6 +241,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Get current user ID
@@ -224,6 +342,41 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Handle message deletion
+  const handleDeleteMessage = async (messageId: string) => {
+    try {
+      const { error } = await supabase
+        .from('exec_conversation_messages')
+        .delete()
+        .eq('id', messageId);
+
+      if (error) {
+        console.error('Error deleting message:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete message",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Remove from local state
+      setMessages(messages.filter(msg => msg.messageId !== messageId));
+      
+      toast({
+        title: "Message deleted",
+        description: "The message has been removed from the conversation",
+      });
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete message",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Helper function to format last seen time
   const formatLastSeen = (lastLogin: Date): string => {
@@ -499,6 +652,8 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
         content: inputContent.trim(),
         timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
         attachment: attachment,
+        messageId: newMessage.id, // Store database message ID
+        conversationId: conversationId as string, // Store conversation ID
       };
 
       setMessages([...messages, newMsg]);
