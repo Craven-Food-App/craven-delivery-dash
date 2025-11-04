@@ -256,6 +256,8 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null); // Track current conversation/group ID
   const chatEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
