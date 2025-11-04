@@ -1,30 +1,183 @@
-<h1>Founders' / Shareholders' Agreement</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Founders' / Shareholders' Agreement</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    @page {
+      size: A4;
+      margin: 24mm 18mm 24mm 18mm;
+    }
+    body {
+      font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #111;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1, h2, h3 {
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    h1 { text-align: center; font-size: 20px; text-transform: uppercase; }
+    h2 { font-size: 16px; margin-top: 18px; }
+    h3 { font-size: 14px; margin-top: 12px; }
+    p { margin: 6px 0 10px; }
+    ul { margin: 6px 0 10px 20px; }
+    table { border-collapse: collapse; width: 100%; margin: 10px 0 18px; }
+    th, td { border: 1px solid #d9d9d9; padding: 8px 10px; }
+    th { background: #f8f8f8; text-align: left; font-weight: 600; }
+    .signature { margin-top: 28px; }
+    .sig-line {
+      border-bottom: 1px solid #333;
+      height: 24px;
+      width: 100%;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .sig-label { font-size: 12px; color: #666; }
+    .page-break { page-break-before: always; }
+  </style>
+</head>
+<body>
 
-<p>Company: {{company_name}}</p>
+  <h1>FOUNDERS' / SHAREHOLDERS' AGREEMENT</h1>
+  <p style="text-align:center;"><strong>{{company_name}}</strong><br>
+  Effective Date: {{effective_date}}</p>
+  <hr>
 
-<h3>1. Equity & Founders</h3>
+  <p>This Founders' / Shareholders' Agreement (the "Agreement") is entered into on {{effective_date}} by and among the undersigned founders and shareholders of <strong>{{company_name}}</strong>, a {{state_of_incorporation}} corporation (the "Company").</p>
 
-{{{founders_table_html}}}
+  <h2>1. Purpose</h2>
+  <p>This Agreement sets forth the mutual understanding of the Founders regarding their rights, obligations, and ownership interests in the Company, as well as the management and operation of the Company and protection of its intellectual property.</p>
 
-<h3>2. Vesting</h3>
+  <h2>2. Parties</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Title/Role</th>
+        <th>Equity %</th>
+        <th>Shares</th>
+        <th>Vesting</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{{founder_1_name}}</td>
+        <td>{{founder_1_role}}</td>
+        <td>{{founder_1_percent}}%</td>
+        <td>{{founder_1_shares}}</td>
+        <td>{{founder_1_vesting}}</td>
+      </tr>
+      <tr>
+        <td>{{founder_2_name}}</td>
+        <td>{{founder_2_role}}</td>
+        <td>{{founder_2_percent}}%</td>
+        <td>{{founder_2_shares}}</td>
+        <td>{{founder_2_vesting}}</td>
+      </tr>
+      <tr>
+        <td>{{founder_3_name}}</td>
+        <td>{{founder_3_role}}</td>
+        <td>{{founder_3_percent}}%</td>
+        <td>{{founder_3_shares}}</td>
+        <td>{{founder_3_vesting}}</td>
+      </tr>
+    </tbody>
+  </table>
 
-<p>Vesting shall be {{vesting_years}} years with a {{cliff_months}}-month cliff; monthly thereafter.</p>
+  <h2>3. Capital Structure</h2>
+  <p>The Company's authorized capital stock shall consist of {{authorized_shares}} shares of common stock, par value {{par_value}} per share. The distribution of shares among the Founders is detailed above.</p>
 
-<h3>3. Transfers & ROFR</h3>
+  <h2>4. Vesting</h2>
+  <p>To ensure long-term commitment, each Founder's shares shall be subject to a vesting schedule of four (4) years, with a one (1) year cliff, unless otherwise agreed in writing. If a Founder ceases to be employed by or involved with the Company before full vesting, all unvested shares shall be forfeited or subject to repurchase by the Company at cost.</p>
 
-<p>No transfer without Board approval; Company and remaining founders shall have a right of first refusal.</p>
+  <h2>5. Roles and Responsibilities</h2>
+  <ul>
+    <li><strong>Chief Executive Officer ({{founder_1_name}}):</strong> Overall leadership, strategy, and operations.</li>
+    <li><strong>Chief Financial Officer ({{founder_2_name}}):</strong> Oversees finances, accounting, and investment relations.</li>
+    <li><strong>Chief Experience Officer ({{founder_3_name}}):</strong> Directs user experience, branding, and engagement.</li>
+  </ul>
 
-<h3>4. Governance</h3>
+  <h2>6. Decision-Making and Voting</h2>
+  <p>All major company decisions shall require the approval of the majority of shares outstanding. For critical matters such as mergers, acquisitions, or dissolution, unanimous consent of the Founders is required.</p>
 
-<p>Board governs major actions; day-to-day by CEO.</p>
+  <h2>7. Transfer of Shares</h2>
+  <p>No Founder shall transfer or sell any shares without first offering such shares to the Company and then to the remaining Founders, in that order, at fair market value. Any transfer not in accordance with this section shall be void.</p>
 
-<h3>5. Departures</h3>
+  <h2>8. Intellectual Property Assignment</h2>
+  <p>Each Founder hereby assigns and transfers to the Company all rights, title, and interest in and to any inventions, works, software, designs, trade secrets, or other intellectual property developed in connection with the Company's business, whether developed before or after the date of this Agreement.</p>
 
-<p>Unvested equity forfeited. Company has repurchase rights for vested equity at FMV on certain exits.</p>
+  <h2>9. Confidentiality</h2>
+  <p>All information related to the Company's products, strategy, finances, or clients shall be treated as confidential. No Founder shall disclose any confidential information without prior written consent from the Board of Directors.</p>
 
-<h3>6. Disputes</h3>
+  <h2>10. Founder Departure or Termination</h2>
+  <p>If a Founder voluntarily leaves or is removed for cause, the Company retains the right to repurchase all or part of that Founder's shares at the original issue price or fair market value, whichever is lower, subject to vesting status.</p>
 
-<p>Resolved under the laws of {{governing_law}}.</p>
+  <h2>11. Dispute Resolution</h2>
+  <p>Any dispute arising under this Agreement shall first be attempted to be resolved through mediation. If unresolved, it shall be submitted to binding arbitration in {{state_of_incorporation}} under the rules of the American Arbitration Association.</p>
 
-<div class="sig-block"><div class="sig"><div style="height:80px">{{{signature_f1_html}}}</div><div class="label">Founder</div></div><div class="sig"><div style="height:80px">{{{signature_f2_html}}}</div><div class="label">Founder</div></div></div>
+  <h2>12. Governing Law</h2>
+  <p>This Agreement shall be governed by and construed in accordance with the laws of the State of {{state_of_incorporation}}, without regard to conflict of laws principles.</p>
+
+  <h2>13. Entire Agreement</h2>
+  <p>This document constitutes the entire understanding among the Founders and supersedes all prior oral or written agreements. Amendments must be in writing and signed by all Founders.</p>
+
+  <div class="page-break"></div>
+
+  <h2>IN WITNESS WHEREOF</h2>
+  <p>The undersigned Founders have executed this Agreement as of the date first written above.</p>
+
+  <table class="signature">
+    <tr>
+      <td>
+        <span class="sig-line"></span>
+        <div class="sig-label">Signature of {{founder_1_name}}</div>
+      </td>
+      <td style="width:40px;"></td>
+      <td>
+        <span class="sig-line"></span>
+        <div class="sig-label">Date</div>
+      </td>
+    </tr>
+  </table>
+
+  <table class="signature">
+    <tr>
+      <td>
+        <span class="sig-line"></span>
+        <div class="sig-label">Signature of {{founder_2_name}}</div>
+      </td>
+      <td style="width:40px;"></td>
+      <td>
+        <span class="sig-line"></span>
+        <div class="sig-label">Date</div>
+      </td>
+    </tr>
+  </table>
+
+  <table class="signature">
+    <tr>
+      <td>
+        <span class="sig-line"></span>
+        <div class="sig-label">Signature of {{founder_3_name}}</div>
+      </td>
+      <td style="width:40px;"></td>
+      <td>
+        <span class="sig-line"></span>
+        <div class="sig-label">Date</div>
+      </td>
+    </tr>
+  </table>
+
+  <hr>
+  <p style="font-size:12px;color:#777;">
+    Developer Note: Replace placeholders {{company_name}}, {{state_of_incorporation}}, {{effective_date}}, {{founder_X_name}}, etc. using your automated data injection system. Store signed PDF in the corporate document registry for recordkeeping.
+  </p>
+
+</body>
+</html>
 
