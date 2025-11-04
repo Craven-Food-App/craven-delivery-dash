@@ -8,9 +8,12 @@ const corsHeaders = {
 
 // Convert HTML to PDF using aPDF.io (free service)
 async function convertHtmlToPdf(htmlContent: string): Promise<Uint8Array> {
-  // Get API key from environment variable or use provided key
-  // TODO: Set APDF_API_KEY in Supabase Edge Function secrets for better security
-  const apiKey = Deno.env.get('APDF_API_KEY') || 'EwDJIB9LVtAFGT3H8EjQ3Staannc3mxfmJLu49I6c01ec5d0';
+  // Get API key from environment variable (set in Supabase Edge Function secrets)
+  const apiKey = Deno.env.get('APDF_API_KEY');
+  
+  if (!apiKey) {
+    throw new Error('APDF_API_KEY not configured. Please set it in Supabase Edge Function secrets.');
+  }
   
   try {
     console.log('Converting HTML to PDF using aPDF.io...');
