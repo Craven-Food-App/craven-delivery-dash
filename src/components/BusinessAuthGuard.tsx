@@ -23,7 +23,7 @@ const BusinessAuthGuard: React.FC<BusinessAuthGuardProps> = ({ children }) => {
       (event, session) => {
         if (event === 'SIGNED_OUT' || !session) {
           setIsAuthenticated(false);
-          navigate('/auth');
+          navigate('/auth?hq=true');
         } else if (event === 'SIGNED_IN' && session?.user) {
           setIsAuthenticated(true);
         }
@@ -39,14 +39,14 @@ const BusinessAuthGuard: React.FC<BusinessAuthGuardProps> = ({ children }) => {
       
       if (error || !user) {
         setIsAuthenticated(false);
-        navigate('/auth');
+        navigate('/auth?hq=true');
       } else {
         setIsAuthenticated(true);
       }
     } catch (error) {
       console.error('Auth check error:', error);
       setIsAuthenticated(false);
-      navigate('/auth');
+      navigate('/auth?hq=true');
     } finally {
       setLoading(false);
     }
