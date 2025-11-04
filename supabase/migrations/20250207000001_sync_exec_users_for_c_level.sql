@@ -17,7 +17,7 @@ SELECT
     WHEN LOWER(e.position) LIKE '%chro%' OR LOWER(e.position) LIKE '%chief human%' THEN 'board_member'
     WHEN LOWER(e.position) LIKE '%clo%' OR LOWER(e.position) LIKE '%chief legal%' THEN 'board_member'
     WHEN LOWER(e.position) LIKE '%cso%' OR LOWER(e.position) LIKE '%chief security%' THEN 'board_member'
-    WHEN LOWER(e.position) LIKE '%cxo%' THEN 'board_member'
+    WHEN LOWER(e.position) LIKE '%cxo%' THEN 'executive'
     WHEN LOWER(e.position) LIKE '%president%' THEN 'board_member'
     ELSE 'board_member'
   END as role,

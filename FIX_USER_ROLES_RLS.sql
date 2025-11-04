@@ -94,6 +94,67 @@ ALTER TABLE public.exec_users DROP CONSTRAINT IF EXISTS exec_users_role_check;
 ALTER TABLE public.exec_users ADD CONSTRAINT exec_users_role_check 
 CHECK (role IN ('ceo', 'cfo', 'coo', 'cto', 'cxo', 'cmo', 'cro', 'cpo', 'cdo', 'chro', 'clo', 'cso', 'board_member', 'advisor', 'executive'));
 
+-- Step 7: Update position_to_exec_role function to map CXO to executive
+CREATE OR REPLACE FUNCTION public.position_to_exec_role(position_text TEXT)
+RETURNS TEXT AS $$
+DECLARE
+  pos_lower TEXT;
+BEGIN
+  IF position_text IS NULL OR position_text = '' THEN
+    RETURN NULL;
+  END IF;
+  
+  pos_lower := LOWER(position_text);
+  
+  CASE
+    WHEN pos_lower LIKE '%ceo%' OR pos_lower LIKE '%chief executive%' THEN 
+      RETURN 'ceo';
+    WHEN pos_lower LIKE '%cfo%' OR pos_lower LIKE '%chief financial%' THEN 
+      RETURN 'cfo';
+    WHEN pos_lower LIKE '%coo%' OR pos_lower LIKE '%chief operating%' THEN 
+      RETURN 'coo';
+    WHEN pos_lower LIKE '%cto%' OR pos_lower LIKE '%chief technology%' THEN 
+      RETURN 'cto';
+    WHEN pos_lower LIKE '%cxo%' THEN 
+      RETURN 'executive';
+    WHEN pos_lower LIKE '%cmo%' OR pos_lower LIKE '%chief marketing%' THEN 
+      RETURN 'board_member';
+    WHEN pos_lower LIKE '%cro%' OR pos_lower LIKE '%chief revenue%' THEN 
+      RETURN 'board_member';
+    WHEN pos_lower LIKE '%cpo%' OR pos_lower LIKE '%chief product%' THEN 
+      RETURN 'board_member';
+    WHEN pos_lower LIKE '%cdo%' OR pos_lower LIKE '%chief data%' THEN 
+      RETURN 'board_member';
+    WHEN pos_lower LIKE '%chro%' OR pos_lower LIKE '%chief human%' THEN 
+      RETURN 'board_member';
+    WHEN pos_lower LIKE '%clo%' OR pos_lower LIKE '%chief legal%' THEN 
+      RETURN 'board_member';
+    WHEN pos_lower LIKE '%cso%' OR pos_lower LIKE '%chief security%' THEN 
+      RETURN 'board_member';
+    WHEN pos_lower LIKE '%president%' THEN 
+      RETURN 'board_member';
+    WHEN pos_lower LIKE '%board member%' OR pos_lower LIKE '%advisor%' THEN 
+      RETURN 'board_member';
+    ELSE 
+      RETURN NULL;
+  END CASE;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+-- Step 8: Update existing CXO records to executive role
+UPDATE public.exec_users eu
+SET role = 'executive'
+FROM public.employees e
+WHERE eu.user_id = e.user_id
+  AND LOWER(e.position) LIKE '%cxo%'
+  AND eu.role = 'board_member';
+
+-- Also update any exec_users with CXO in title
+UPDATE public.exec_users
+SET role = 'executive'
+WHERE LOWER(title) LIKE '%cxo%'
+  AND role = 'board_member';
+
 -- Verify
 DO $$
 BEGIN
@@ -102,7 +163,8 @@ BEGIN
   RAISE NOTICE '   - Executives can now manage user_roles';
   RAISE NOTICE '   - SECURITY DEFINER function bypasses RLS';
   RAISE NOTICE '   - exec_users now allows executive role';
-  RAISE NOTICE '   - CXO now maps to executive role';
+  RAISE NOTICE '   - CXO now maps to executive role (not board_member)';
+  RAISE NOTICE '   - Existing CXO records updated to executive role';
   RAISE NOTICE '   - "Sync Now" button should now work!';
 END $$;
 
