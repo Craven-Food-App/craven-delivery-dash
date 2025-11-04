@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@4.0.0";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { encode as base64Encode } from "https://deno.land/std@0.190.0/encoding/base64.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -18,6 +19,33 @@ interface ExecutiveDocumentEmailRequest {
   pdfBase64?: string;
   htmlContent?: string;
   documents?: Array<{ title: string; url: string }>; // multiple docs support
+}
+
+// Convert HTML to PDF using aPDF.io for legacy .html documents
+async function convertHtmlToPdf(htmlContent: string): Promise<Uint8Array> {
+  const apiKey = Deno.env.get('APDF_API_KEY');
+  if (!apiKey) throw new Error('APDF_API_KEY not configured.');
+
+  const resp = await fetch('https://api.apdf.io/v1/pdf', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': apiKey,
+    },
+    body: JSON.stringify({
+      html: htmlContent,
+      format: 'Letter',
+      margin: { top: '0.5in', right: '0.5in', bottom: '0.5in', left: '0.5in' },
+      printBackground: true,
+    }),
+  });
+
+  if (!resp.ok) {
+    const errorText = await resp.text();
+    throw new Error(`aPDF convert failed: ${resp.status} ${errorText}`);
+  }
+  const buf = await resp.arrayBuffer();
+  return new Uint8Array(buf);
 }
 
 serve(async (req: Request) => {
@@ -59,24 +87,53 @@ serve(async (req: Request) => {
         try {
           itemsHtml.push(`<li style=\"margin: 6px 0;\"><a href=\"${doc.url}\" style=\"color: #ff7a45; text-decoration: none;\">${doc.title}</a></li>`);
 
-          // Parse storage URL to bucket/path
-          const urlParts = doc.url.split('/storage/v1/object/public/');
-          if (urlParts.length === 2) {
-            const pathParts = urlParts[1].split('/');
-            const bucket = pathParts[0];
-            const path = pathParts.slice(1).join('/');
+          // Parse storage URL to bucket/path (supports public and signed URLs)
+          const parts = doc.url.split('/storage/v1/object/');
+          if (parts.length === 2) {
+            const rest = parts[1]; // e.g. "public/bucket/path" or "sign/bucket/path?..."
+            const restParts = rest.split('/');
+            // restParts[0] is 'public' or 'sign'
+            const bucket = restParts[1];
+            const pathWithQuery = restParts.slice(2).join('/');
+            const path = pathWithQuery.split('?')[0];
 
             const { data: fileData, error: downloadError } = await supabaseClient.storage
               .from(bucket)
               .download(path);
             if (downloadError) throw downloadError;
 
-            const arrayBuffer = await fileData.arrayBuffer();
-            const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-            attachments.push({
-              filename: `${doc.title.replace(/[^a-z0-9]/gi, '_')}.pdf`,
-              content: base64,
-            });
+            const lowerPath = path.toLowerCase();
+            let pdfBytes: Uint8Array | null = null;
+
+            if (lowerPath.endsWith('.html') || lowerPath.endsWith('.htm')) {
+              // Legacy HTML document: convert to PDF on the fly
+              const html = await fileData.text();
+              try {
+                pdfBytes = await convertHtmlToPdf(html);
+              } catch (convErr) {
+                console.error('HTML->PDF conversion failed for', path, convErr);
+                pdfBytes = null;
+              }
+            } else if (lowerPath.endsWith('.pdf')) {
+              const arrayBuffer = await fileData.arrayBuffer();
+              pdfBytes = new Uint8Array(arrayBuffer);
+            } else {
+              // Unknown type, attempt to attach as-is but label as PDF
+              const arrayBuffer = await fileData.arrayBuffer();
+              pdfBytes = new Uint8Array(arrayBuffer);
+            }
+
+            if (pdfBytes && pdfBytes.length > 0) {
+              const base64 = base64Encode(pdfBytes);
+              attachments.push({
+                filename: `${doc.title.replace(/[^a-z0-9]/gi, '_')}.pdf`,
+                content: base64,
+              });
+            } else {
+              console.warn('Skipping attachment due to empty bytes for', doc.title);
+            }
+          } else {
+            console.warn('Unrecognized storage URL format, skipping attachment for', doc.url);
           }
         } catch (err) {
           console.error('Failed to attach document:', doc.title, err);
