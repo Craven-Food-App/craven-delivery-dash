@@ -14,6 +14,7 @@ import { POSITIONS, buildEmails } from '@/config/positions';
 import { DEFAULT_EMPLOYEE_PACKET } from '@/config/hiringPacket';
 import { isCLevelPosition, getExecRoleFromPosition, isCFOPosition, getPortalsForPosition } from '@/utils/roleUtils';
 import { logPersonnelAction } from '@/utils/auditLogger';
+import { RoleSyncVerification } from './RoleSyncVerification';
 import dayjs from 'dayjs';
 
 const { Search } = Input;
@@ -1270,6 +1271,9 @@ export const PersonnelManager: React.FC = () => {
           />
         </Card>
       </div>
+
+      {/* Role Sync Verification */}
+      <RoleSyncVerification />
 
       {/* Table - Mobile Optimized */}
       <div className="overflow-hidden">
