@@ -27,6 +27,20 @@ interface ExecutiveInboxIMessageProps {
   deviceId?: string; // Optional device/component ID for isolation
 }
 
+interface Contact {
+  id: string;
+  exec_id: string;
+  user_id: string | null;
+  name: string;
+  role: string;
+  email?: string;
+  position?: string;
+  department?: string;
+  hasExecUser: boolean;
+  isActive?: boolean;
+  lastLogin?: Date | null;
+}
+
 const AttachmentRenderer: React.FC<{ attachment: FileAttachment }> = ({ attachment }) => {
   if (attachment.type === 'image') {
     return (
@@ -106,8 +120,8 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputContent, setInputContent] = useState('');
   const [isSendingAttachment, setIsSendingAttachment] = useState(false);
-  const [contacts, setContacts] = useState<any[]>([]);
-  const [selectedContact, setSelectedContact] = useState<any>(null);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -205,6 +219,21 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Helper function to format last seen time
+  const formatLastSeen = (lastLogin: Date): string => {
+    const now = new Date();
+    const diffMs = now.getTime() - lastLogin.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return lastLogin.toLocaleDateString();
+  };
+
   const fetchContacts = async () => {
     try {
       // Get current user first
@@ -217,7 +246,7 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
       // Fetch ALL exec_users directly (these are the contacts)
       const { data: execUsersData, error: execError } = await supabase
         .from('exec_users')
-        .select('id, user_id, role, title, department')
+        .select('id, user_id, role, title, department, last_login')
         .order('role');
 
       if (execError) {
@@ -275,6 +304,10 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
                           execUser.title ||
                           'Unknown Executive';
 
+          // Check if user is active (logged in within last 5 minutes)
+          const lastLogin = execUser.last_login ? new Date(execUser.last_login) : null;
+          const isActive = lastLogin && (Date.now() - lastLogin.getTime()) < 5 * 60 * 1000; // 5 minutes
+          
           return {
             id: execUser.id, // exec_users.id
             exec_id: execUser.id, // Keep for reference
@@ -285,6 +318,8 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
             position: execUser.title || employee?.position,
             department: execUser.department,
             hasExecUser: true, // All exec_users have messaging capability
+            isActive, // Track if user is currently active
+            lastLogin, // Store last login timestamp
           };
         });
 
@@ -565,7 +600,15 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
               {selectedContact ? (
                 <div className="flex flex-col">
                   <h2 className="text-lg font-semibold text-gray-800 dark:text-white">{selectedContact.name}</h2>
-                  <p className="text-xs text-green-500">Active now</p>
+                  {selectedContact.isActive ? (
+                    <p className="text-xs text-green-500">Active now</p>
+                  ) : selectedContact.lastLogin ? (
+                    <p className="text-xs text-gray-500">
+                      Last seen {formatLastSeen(selectedContact.lastLogin)}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-500">Offline</p>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col">
