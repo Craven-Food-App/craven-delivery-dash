@@ -928,12 +928,24 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
   };
 
   const handleSend = async (attachment?: FileAttachment) => {
-    if (!inputContent.trim() && !attachment) return;
-    if (!selectedContact) return;
+    console.log('handleSend called', { inputContent, hasAttachment: !!attachment, selectedContact });
+    
+    if (!inputContent.trim() && !attachment) {
+      console.log('No content to send');
+      return;
+    }
+    
+    if (!selectedContact) {
+      console.log('No selected contact');
+      return;
+    }
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.log('No authenticated user');
+        return;
+      }
 
       // Get exec_user id for current user
       const { data: currentExec } = await supabase
@@ -944,8 +956,15 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
 
       if (!currentExec) {
         console.error('Missing exec_user record');
+        toast({
+          title: 'Error',
+          description: 'Missing executive user record. Please contact support.',
+          variant: 'destructive',
+        });
         return;
       }
+      
+      console.log('Sending message...', { currentExecId: currentExec.id, contactId: selectedContact.exec_id, isGroup: selectedContact.isGroup });
 
       // Handle group conversation messages
       if (selectedContact.isGroup && selectedContact.groupId) {
@@ -967,8 +986,15 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
 
         if (msgError) {
           console.error('Error saving group message:', msgError);
+          toast({
+            title: 'Error',
+            description: `Failed to send message: ${msgError.message}`,
+            variant: 'destructive',
+          });
           return;
         }
+        
+        console.log('Group message sent successfully:', newMessage);
 
         // Add message to local state
         const newMsg: Message = {
@@ -1054,8 +1080,15 @@ export const ExecutiveInboxIMessage: React.FC<ExecutiveInboxIMessageProps> = ({ 
 
       if (msgError) {
         console.error('Error saving message:', msgError);
+        toast({
+          title: 'Error',
+          description: `Failed to send message: ${msgError.message}`,
+          variant: 'destructive',
+        });
         return;
       }
+      
+      console.log('Message sent successfully:', newMessage);
 
       // Add message to local state (maintain chronological order)
       const newMsg: Message = {
