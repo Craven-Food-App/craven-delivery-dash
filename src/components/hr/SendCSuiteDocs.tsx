@@ -52,47 +52,92 @@ export default function SendCSuiteDocs() {
     try {
       setLoading(true);
       
-      // Fetch all C-Suite executives from exec_users
+      // Fetch all C-Suite executives from exec_users (direct query, no joins)
       const { data: execUsers, error: execError } = await supabase
         .from('exec_users')
-        .select(`
-          id,
-          user_id,
-          role,
-          title,
-          user_profiles(full_name, email),
-          employees:user_id(first_name, last_name, email)
-        `)
+        .select('id, user_id, role, title, department')
         .in('role', ['ceo', 'cfo', 'coo', 'cto', 'cxo', 'executive']);
 
-      if (execError) throw execError;
+      if (execError) {
+        console.error('Error fetching exec_users:', execError);
+        throw execError;
+      }
+
+      if (!execUsers || execUsers.length === 0) {
+        console.warn('No exec_users found');
+        message.warning('No C-Suite executives found in exec_users table');
+        setExecutives([]);
+        return;
+      }
+
+      console.log('Found exec_users:', execUsers);
+
+      // Fetch user_profiles for all user_ids
+      const userIds = execUsers.map((eu: any) => eu.user_id).filter(Boolean);
+      let userProfilesMap: Record<string, any> = {};
+      
+      if (userIds.length > 0) {
+        const { data: userProfiles, error: profilesError } = await supabase
+          .from('user_profiles')
+          .select('id, full_name, email')
+          .in('id', userIds);
+        
+        if (!profilesError && userProfiles) {
+          userProfiles.forEach((profile: any) => {
+            userProfilesMap[profile.id] = profile;
+          });
+        }
+        console.log('User profiles:', userProfiles);
+      }
+
+      // Fetch employees for all user_ids
+      let employeesMap: Record<string, any> = {};
+      if (userIds.length > 0) {
+        const { data: employees, error: empError } = await supabase
+          .from('employees')
+          .select('user_id, first_name, last_name, email')
+          .in('user_id', userIds);
+        
+        if (!empError && employees) {
+          employees.forEach((emp: any) => {
+            employeesMap[emp.user_id] = emp;
+          });
+        }
+        console.log('Employees:', employees);
+      }
 
       // Format executives with name and email
       const formatted: Executive[] = (execUsers || []).map((eu: any) => {
-        const fullName = eu.user_profiles?.full_name || 
-                        (eu.employees ? `${eu.employees.first_name || ''} ${eu.employees.last_name || ''}`.trim() : '') ||
+        const userProfile = eu.user_id ? userProfilesMap[eu.user_id] : null;
+        const employee = eu.user_id ? employeesMap[eu.user_id] : null;
+
+        const fullName = userProfile?.full_name || 
+                        (employee ? `${employee.first_name || ''} ${employee.last_name || ''}`.trim() : '') ||
                         eu.title ||
-                        'Unknown Executive';
+                        `Executive (${eu.role})`;
         
-        const email = eu.user_profiles?.email || eu.employees?.email || '';
+        const email = userProfile?.email || employee?.email || '';
 
         return {
           id: eu.id,
           user_id: eu.user_id,
           role: eu.role,
-          title: eu.title,
+          title: eu.title || eu.role.toUpperCase(),
           full_name: fullName,
           email: email,
         };
-      }).filter((e: Executive) => e.email); // Only include executives with emails
+      });
 
+      console.log('Formatted executives:', formatted);
+
+      // Include all executives, even if they don't have emails (will show warning)
       setExecutives(formatted);
 
       // Check existing documents for each executive
       await checkExistingDocuments(formatted);
     } catch (error: any) {
       console.error('Error fetching executives:', error);
-      message.error('Failed to load executives');
+      message.error(`Failed to load executives: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -351,6 +396,11 @@ export default function SendCSuiteDocs() {
                 }
                 description={
                   <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                    {!exec.email && (
+                      <Tag color="red" style={{ marginBottom: 4 }}>
+                        ⚠ No email address - documents will be generated but not sent
+                      </Tag>
+                    )}
                     <Text>
                       Documents: {existingCount} of {totalCount} generated
                     </Text>
