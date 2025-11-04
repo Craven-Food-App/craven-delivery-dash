@@ -26,6 +26,24 @@ async function convertHtmlToPdf(htmlContent: string): Promise<Uint8Array> {
   const apiKey = Deno.env.get('APDF_API_KEY');
   if (!apiKey) throw new Error('APDF_API_KEY not configured.');
 
+  console.log('Converting HTML to PDF using aPDF.io...');
+  console.log('HTML content length:', htmlContent.length);
+  
+  // Ensure HTML has proper structure with inline styles
+  const fullHtml = htmlContent.includes('<!DOCTYPE html>') 
+    ? htmlContent 
+    : `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+  </style>
+</head>
+<body>${htmlContent}</body>
+</html>`;
+
   const resp = await fetch('https://api.apdf.io/v1/pdf', {
     method: 'POST',
     headers: {
@@ -33,10 +51,14 @@ async function convertHtmlToPdf(htmlContent: string): Promise<Uint8Array> {
       'X-API-Key': apiKey,
     },
     body: JSON.stringify({
-      html: htmlContent,
+      html: fullHtml,
       format: 'Letter',
       margin: { top: '0.5in', right: '0.5in', bottom: '0.5in', left: '0.5in' },
       printBackground: true,
+      waitFor: 1000, // Wait 1 second for content to render
+      inlineStyles: true, // Ensure all styles are inlined
+      displayHeaderFooter: false,
+      scale: 1,
     }),
   });
 
