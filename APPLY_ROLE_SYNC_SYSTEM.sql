@@ -438,6 +438,82 @@ WHERE ur.role = 'executive'
   );
 
 -- ============================================================================
+-- STEP 6: FIX USER_ROLES RLS POLICIES
+-- ============================================================================
+-- Allow executives to manage roles for role sync
+DROP POLICY IF EXISTS "Admins can manage roles" ON public.user_roles;
+DROP POLICY IF EXISTS "Executives can manage roles" ON public.user_roles;
+DROP POLICY IF EXISTS "C-level can manage roles" ON public.user_roles;
+
+CREATE POLICY "Admins can manage roles"
+ON public.user_roles
+FOR ALL
+USING (public.is_admin(auth.uid()));
+
+CREATE POLICY "Executives can manage roles"
+ON public.user_roles
+FOR ALL
+USING (
+  EXISTS (
+    SELECT 1 FROM public.exec_users eu
+    WHERE eu.user_id = auth.uid()
+  )
+  OR EXISTS (
+    SELECT 1 FROM public.employees e
+    WHERE e.user_id = auth.uid()
+    AND public.is_c_level_position(e.position)
+  )
+);
+
+-- ============================================================================
+-- STEP 7: CREATE SECURITY DEFINER FUNCTION FOR ROLE SYNC
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.sync_user_roles_for_employee(
+  p_employee_id UUID,
+  p_user_id UUID,
+  p_employee_role TEXT DEFAULT 'employee',
+  p_executive_role TEXT DEFAULT NULL
+)
+RETURNS JSONB AS $$
+DECLARE
+  v_result JSONB := '{"success": false, "errors": []}'::jsonb;
+  v_error TEXT;
+BEGIN
+  IF p_employee_role IS NOT NULL THEN
+    BEGIN
+      INSERT INTO public.user_roles (user_id, role)
+      VALUES (p_user_id, p_employee_role)
+      ON CONFLICT (user_id, role) DO NOTHING;
+    EXCEPTION WHEN OTHERS THEN
+      v_error := SQLERRM;
+      v_result := jsonb_set(v_result, '{errors}', 
+        COALESCE(v_result->'errors', '[]'::jsonb) || jsonb_build_array(v_error));
+    END;
+  END IF;
+
+  IF p_executive_role IS NOT NULL THEN
+    BEGIN
+      INSERT INTO public.user_roles (user_id, role)
+      VALUES (p_user_id, p_executive_role)
+      ON CONFLICT (user_id, role) DO NOTHING;
+    EXCEPTION WHEN OTHERS THEN
+      v_error := SQLERRM;
+      v_result := jsonb_set(v_result, '{errors}', 
+        COALESCE(v_result->'errors', '[]'::jsonb) || jsonb_build_array(v_error));
+    END;
+  END IF;
+
+  IF jsonb_array_length(COALESCE(v_result->'errors', '[]'::jsonb)) = 0 THEN
+    v_result := jsonb_set(v_result, '{success}', 'true'::jsonb);
+  END IF;
+
+  RETURN v_result;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION public.sync_user_roles_for_employee TO authenticated;
+
+-- ============================================================================
 -- COMPLETE - All migrations applied successfully!
 -- ============================================================================
 -- The role synchronization system is now active:
@@ -445,5 +521,6 @@ WHERE ur.role = 'executive'
 -- - All employees automatically sync to user_roles
 -- - Position changes automatically update roles
 -- - System-wide consistency ensured
+-- - Executives can manage roles for role sync
 -- ============================================================================
 
