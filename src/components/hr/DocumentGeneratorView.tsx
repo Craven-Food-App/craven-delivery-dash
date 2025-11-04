@@ -12,6 +12,7 @@ import {
 import { docsAPI } from "./api";
 import DocumentPreview from "./DocumentPreview";
 import SignaturePad from "./SignaturePad";
+import SendCSuiteDocs from "./SendCSuiteDocs";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -217,6 +218,13 @@ export default function DocumentGeneratorView({ onGenerated }: DocumentGenerator
           size="small"
         />
       </Card>
+
+      {/* Send C-Suite Docs Section */}
+      <div style={{ marginBottom: 24 }}>
+        <SendCSuiteDocs />
+      </div>
+
+      <Divider />
 
       {/* Document Generation Form */}
       {currentStep === 0 && (
