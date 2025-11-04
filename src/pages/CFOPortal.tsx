@@ -40,7 +40,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar, ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar, ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend } from "recharts";
 import { MessageCenter } from "@/components/messaging/MessageCenter";
 import { Aperture, DollarSign, TrendingUp, TrendingDown, Clock, Scale, Sigma } from 'lucide-react';
 
@@ -197,7 +197,7 @@ const RevenueProfitChart: React.FC<{ data: any[] }> = ({ data }) => {
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis dataKey="month" stroke="#777" />
           <YAxis stroke="#777" tickFormatter={(value) => `$${value}K`} />
-          <Tooltip content={<CustomTooltip />} />
+          <RechartsTooltip content={<CustomTooltip />} />
           <Legend wrapperStyle={{ paddingTop: '10px' }} />
           <Line type="monotone" dataKey="Revenue" stroke="#1890ff" strokeWidth={2} dot={false} />
           <Line type="monotone" dataKey="Profit" name="Net Cash Flow (Burn $)" stroke="#2ecc71" strokeWidth={2} dot={false} />
@@ -243,7 +243,7 @@ const ExpensesPieChart: React.FC<{ data: any[] }> = ({ data }) => {
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
           </Pie>
-          <Tooltip />
+          <RechartsTooltip />
         </PieChart>
       </ResponsiveContainer>
     </div>
