@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Form, Input, InputNumber, Select, Button, Card, Row, Col, message } from "antd";
 import { docsAPI } from "./api";
+import { renderHtml } from "@/lib/templates";
 
 type Template = { id: string; title: string; placeholders: string[] };
 
@@ -64,7 +65,7 @@ export default function DocumentGenerator({ onGenerated }: DocumentGeneratorProp
   const [form] = Form.useForm();
 
   useEffect(() => {
-    // Try to fetch from server first
+    // Fetch templates from edge function
     docsAPI
       .get("/documents/templates")
       .then((res) => {
@@ -73,16 +74,14 @@ export default function DocumentGenerator({ onGenerated }: DocumentGeneratorProp
         if (templatesList.length > 0) {
           setTemplates(templatesList);
         } else {
-          // Fallback if server returns empty array
           console.warn("Server returned empty templates, using fallback");
           setTemplates(FALLBACK_TEMPLATES);
         }
       })
       .catch((err) => {
-        console.error("Error fetching templates from server, using fallback:", err);
-        // Use fallback templates if server is not available
+        console.error("Error fetching templates, using fallback:", err);
         setTemplates(FALLBACK_TEMPLATES);
-        message.warning("Document server not available. Templates shown but document generation requires the Express server to be running.");
+        message.error("Failed to load templates. Please try again.");
       });
   }, []);
 
@@ -116,12 +115,16 @@ export default function DocumentGenerator({ onGenerated }: DocumentGeneratorProp
         data.full_name = values.officer_name;
       }
 
+      // Generate HTML on the client side
+      const html_content = renderHtml(values.template_id, data);
+
       const resp = await docsAPI.post("/documents/generate", {
         template_id: values.template_id,
         officer_name: values.officer_name || data.full_name || "",
         role: values.role || data.role || "",
         equity: values.equity_percentage ? Number(values.equity_percentage) : undefined,
         data,
+        html_content,
       });
 
       onGenerated(resp);
