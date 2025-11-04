@@ -39,7 +39,7 @@ async function convertHtmlToPdf(htmlContent: string): Promise<Uint8Array> {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
+      body: new URLSearchParams({
         html: fullHtml,
       }),
     });
