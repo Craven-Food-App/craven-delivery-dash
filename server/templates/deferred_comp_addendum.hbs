@@ -1,10 +1,218 @@
-<h1>Deferred Compensation Addendum</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Deferred Compensation Addendum</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    @page { size: A4; margin: 24mm 18mm; }
+    :root {
+      --text:#111; --muted:#666; --border:#d9d9d9;
+      --small:12px; --base:14px; --h1:20px; --h2:16px;
+    }
+    body { font-family:"Inter","Helvetica Neue",Arial,sans-serif; color:var(--text); font-size:var(--base); line-height:1.52; }
+    .doc { max-width:800px; margin:0 auto; }
+    h1 { text-align:center; font-size:var(--h1); text-transform:uppercase; margin-bottom:6px; }
+    h2 { font-size:var(--h2); margin:18px 0 8px; }
+    h3 { font-size:14px; margin:12px 0 6px; }
+    p { margin:6px 0 10px; }
+    ul { margin:6px 0 10px 20px; }
+    table { border-collapse:collapse; width:100%; margin:8px 0 16px; }
+    th, td { border:1px solid var(--border); padding:8px 10px; vertical-align:top; }
+    th { background:#fafafa; text-align:left; font-weight:600; }
+    .muted { color:var(--muted); }
+    .small { font-size:var(--small); color:var(--muted); }
+    .sig-grid { width:100%; border-collapse:separate; border-spacing:0 18px; }
+    .line { display:block; border-bottom:1px solid #333; height:24px; margin-bottom:4px; }
+    .page-break { page-break-before:always; }
+    .note { background:#fffbea; border:1px solid #f3e29e; padding:8px 10px; font-size:13px; }
+    .callout { background:#f7faff; border:1px solid #cfe3ff; padding:8px 10px; }
+  </style>
+</head>
+<body>
+  <div class="doc">
+    <h1>DEFERRED COMPENSATION ADDENDUM</h1>
+    <p style="text-align:center;">
+      Addendum to: <strong>{{base_agreement_title}}</strong><br/>
+      Company: <strong>{{company_name}}</strong>, a {{state_of_incorporation}} corporation (the "Company")<br/>
+      Executive: <strong>{{executive_name}}</strong> (the "Executive")<br/>
+      Effective Date: {{effective_date}}
+    </p>
+    <hr/>
 
-<p>Company: {{company_name}} — Executive: {{full_name}} ({{role}}) — Effective: {{effective_date}}</p>
+    <div class="note small">
+      Developer note: Attach this to an Executive Employment Agreement / Offer Letter. Use this addendum to defer cash salary until a funding or revenue trigger occurs.
+    </div>
 
-<p>Base salary and bonuses are deferred until Company secures at least ${{funding_trigger}} in funding or revenue. Accrued salary becomes payable within thirty (30) days thereafter unless amended in writing.</p>
+    <h2>1. Purpose; Incorporation</h2>
+    <p>
+      This Deferred Compensation Addendum (the "Addendum") modifies and is incorporated into the {{base_agreement_title}} between the Company and the Executive dated {{base_agreement_date}} (the "Base Agreement"). Except as expressly modified herein, the Base Agreement remains in full force and effect.
+    </p>
 
-<p>Governing law: {{governing_law}}.</p>
+    <h2>2. Covered Compensation</h2>
+    <table>
+      <tr><th>Role / Title</th><td>{{position_title}}</td></tr>
+      <tr><th>Annual Base Salary (Gross)</th><td>{{annual_base_salary}} {{currency}} (the "Base Salary")</td></tr>
+      <tr><th>Deferral Start Date</th><td>{{deferral_start_date}}</td></tr>
+      <tr><th>Deferral Percentage</th><td>{{deferral_percentage}}% of Base Salary (default 100% unless specified)</td></tr>
+      <tr><th>Non-Deferred Portion</th><td>{{non_deferred_portion}} {{currency}} per pay period (if any)</td></tr>
+      <tr><th>Accrual of Benefits</th><td>{{benefit_accrual_terms}} (e.g., benefits continue; PTO accrues as normal)</td></tr>
+    </table>
 
-<div class="sig-block"><div class="sig"><div style="height:80px">{{{signature_company_html}}}</div><div class="label">{{company_name}}</div></div><div class="sig"><div style="height:80px">{{{signature_exec_html}}}</div><div class="label">{{full_name}}, {{role}}</div></div></div>
+    <h2>3. Deferral Mechanics; Accrual</h2>
+    <ul>
+      <li><strong>Deferral.</strong> During the Deferral Period (Section 4), the Deferred Portion of Base Salary shall accrue but not be paid in cash.</li>
+      <li><strong>Ledger.</strong> The Company shall maintain a deferred compensation ledger for the Executive (see Schedule A) itemizing gross amounts, statutory deductions, and net balances.</li>
+      <li><strong>Interest (Optional).</strong> Deferred amounts shall accrue interest at <strong>{{interest_rate}}%</strong> simple annual rate, <span class="muted">or</span> <strong>{{interest_basis}}</strong> (e.g., WSJ Prime – 2%), compounded {{interest_compounding}}. If no rate is provided, interest accrual is 0%.</li>
+      <li><strong>Tax Withholding.</strong> Amounts paid when due shall be subject to applicable withholding and payroll taxes at the time of payment, unless otherwise required by law.</li>
+    </ul>
+
+    <h2>4. Deferral Period; Payment Triggers</h2>
+    <p>The "Deferral Period" begins on {{deferral_start_date}} and ends upon the earliest to occur of the following triggers (each, a "Payment Trigger"):</p>
+    <ol>
+      <li><strong>Funding Trigger:</strong> The Company receives aggregate new funding or cash from operations of at least <strong>{{funding_trigger_amount}} {{currency}}</strong> after the Effective Date; or</li>
+      <li><strong>Board Trigger:</strong> The Board authorizes payment of all or a portion of deferred amounts on {{board_authorization_date}} or later; or</li>
+      <li><strong>Exit Trigger:</strong> A Change in Control, asset sale, or similar liquidity event closing on {{exit_trigger_date}} or later; or</li>
+      <li><strong>Termination Trigger:</strong> Termination of Executive's service for any reason (see Section 6).</li>
+    </ol>
+
+    <h2>5. Payment Timing; Priority; Method</h2>
+    <ul>
+      <li><strong>Timing.</strong> Upon a Payment Trigger, the Company shall pay accrued deferred amounts (plus any applicable interest) within <strong>{{payment_deadline_days}}</strong> days, unless a compliant payment schedule is adopted under Section 409A (if applicable).</li>
+      <li><strong>Priority.</strong> Payments under this Addendum rank as unsecured general obligations of the Company. If the Company implements a priority schedule for multiple executives or employees, it shall apply a good-faith, nondiscriminatory methodology approved by the Board.</li>
+      <li><strong>Method.</strong> Payments shall be made via the Company's payroll system by ACH/wire to the Executive's designated payroll account.</li>
+    </ul>
+
+    <h2>6. Termination of Service</h2>
+    <ul>
+      <li><strong>Without Cause / Resignation for Good Reason.</strong> Accrued deferred amounts (plus applicable interest) become due per Section 5. Any severance terms in the Base Agreement apply in addition.</li>
+      <li><strong>For Cause / Voluntary Resignation (no Good Reason).</strong> Accrued deferred amounts through the termination date remain payable per Section 5; no additional severance unless specified in the Base Agreement.</li>
+      <li><strong>Death or Disability.</strong> Accrued deferred amounts become payable to the Executive (or estate) in accordance with Section 5, subject to lawful verification and processing.</li>
+    </ul>
+
+    <h2>7. Optional Equity Conversion (If Approved by Board)</h2>
+    <p>
+      With Board approval and Executive consent, all or a portion of the deferred balance may be converted into equity at a valuation and instrument approved by the Board and, if required, the Company's shareholders (e.g., common stock issuance, RSU grant, or SAFE conversion). Any such conversion shall be documented in a separate written agreement (e.g., Subscription Agreement) and may reduce or extinguish the corresponding cash obligation.
+    </p>
+
+    <h2>8. Section 409A Compliance (If Applicable)</h2>
+    <div class="callout small">
+      The parties intend that this Addendum either (i) be exempt from, or (ii) comply with, Section 409A of the Internal Revenue Code and related regulations ("Section 409A"). The Company may, in good faith, modify the timing or form of payment to the minimum extent necessary to preserve the intended tax treatment, provided that (A) the economic value is not materially diminished, and (B) the change complies with Section 409A. The Company does not guarantee any particular tax outcome. The Executive is advised to consult independent tax advisors.
+    </div>
+
+    <h2>9. No Trust; Non-Assignability</h2>
+    <p>Deferred amounts are unfunded and unsecured obligations of the Company. No trust, escrow, or segregation of assets is required. The Executive may not assign this Addendum except by will or by laws of descent and distribution.</p>
+
+    <h2>10. No Waiver of At-Will / Base Agreement Terms</h2>
+    <p>Nothing in this Addendum alters the at-will nature of employment (if applicable) or any termination rights under the Base Agreement.</p>
+
+    <h2>11. Governing Law; Dispute Resolution</h2>
+    <p>This Addendum shall be governed by the laws of {{governing_law_state}}, without regard to conflicts rules. Disputes shall be resolved by {{dispute_forum}} seated in {{dispute_venue_city}}, except that either party may seek temporary or injunctive relief in a court of competent jurisdiction.</p>
+
+    <h2>12. Miscellaneous</h2>
+    <ul>
+      <li><strong>Entire Agreement.</strong> This Addendum and the Base Agreement comprise the complete agreement on deferral of compensation.</li>
+      <li><strong>Amendments.</strong> Must be in a written instrument signed by both parties.</li>
+      <li><strong>Counterparts; E-Signatures.</strong> This Addendum may be executed in counterparts and via electronic signature; each counterpart is deemed an original.</li>
+      <li><strong>Severability.</strong> If any provision is found invalid, the remainder continues in effect.</li>
+    </ul>
+
+    <h2>Signatures</h2>
+    <table class="sig-grid">
+      <tr>
+        <td style="width:60%">
+          <div class="line"></div>
+          <div class="small">Executive: {{executive_name}}</div>
+        </td>
+        <td style="width:5%"></td>
+        <td>
+          <div class="line"></div>
+          <div class="small">Date</div>
+        </td>
+      </tr>
+    </table>
+    <table class="sig-grid">
+      <tr>
+        <td style="width:60%">
+          <div class="line"></div>
+          <div class="small">For the Company: {{signatory_name}}, {{signatory_title}}, {{company_name}}</div>
+        </td>
+        <td style="width:5%"></td>
+        <td>
+          <div class="line"></div>
+          <div class="small">Date</div>
+        </td>
+      </tr>
+    </table>
+
+    <hr/>
+    <p class="small muted">
+      Placeholders include: {{company_name}}, {{state_of_incorporation}}, {{executive_name}}, {{position_title}},
+      {{effective_date}}, {{base_agreement_title}}, {{base_agreement_date}}, {{annual_base_salary}},
+      {{currency}}, {{deferral_start_date}}, {{deferral_percentage}}, {{non_deferred_portion}},
+      {{benefit_accrual_terms}}, {{interest_rate}}, {{interest_basis}}, {{interest_compounding}},
+      {{funding_trigger_amount}}, {{board_authorization_date}}, {{exit_trigger_date}},
+      {{payment_deadline_days}}, {{governing_law_state}}, {{dispute_forum}}, {{dispute_venue_city}},
+      {{signatory_name}}, {{signatory_title}}.
+    </p>
+
+    <div class="page-break"></div>
+
+    <h2>Schedule A — Deferred Compensation Ledger</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Pay Period</th>
+          <th>Gross Deferred</th>
+          <th>Withholding Accruals (Est.)</th>
+          <th>Interest Accrued</th>
+          <th>Cumulative Balance</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{{pp_1_date_range}}</td>
+          <td>{{pp_1_gross}}</td>
+          <td>{{pp_1_withholding}}</td>
+          <td>{{pp_1_interest}}</td>
+          <td>{{pp_1_cumulative}}</td>
+          <td>{{pp_1_notes}}</td>
+        </tr>
+        <tr>
+          <td>{{pp_2_date_range}}</td>
+          <td>{{pp_2_gross}}</td>
+          <td>{{pp_2_withholding}}</td>
+          <td>{{pp_2_interest}}</td>
+          <td>{{pp_2_cumulative}}</td>
+          <td>{{pp_2_notes}}</td>
+        </tr>
+        <tr>
+          <td>{{pp_3_date_range}}</td>
+          <td>{{pp_3_gross}}</td>
+          <td>{{pp_3_withholding}}</td>
+          <td>{{pp_3_interest}}</td>
+          <td>{{pp_3_cumulative}}</td>
+          <td>{{pp_3_notes}}</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="small muted">Populate from payroll runs; update interest at the cadence you select.</p>
+
+    <div class="page-break"></div>
+
+    <h2>Schedule B — Payment Trigger Certificate</h2>
+    <p>To be completed by the Company CFO or Board Secretary when a Payment Trigger occurs.</p>
+    <table>
+      <tr><th>Trigger Type</th><td>{{trigger_type}} (Funding / Board / Exit / Termination)</td></tr>
+      <tr><th>Trigger Date</th><td>{{trigger_date}}</td></tr>
+      <tr><th>Validation Docs</th><td>{{validation_documents}}</td></tr>
+      <tr><th>Approved Payout Amount</th><td>{{approved_payout_amount}} {{currency}}</td></tr>
+      <tr><th>Payout Date</th><td>{{payout_date}}</td></tr>
+      <tr><th>Officer/Director Signature</th><td>{{approver_name}}, {{approver_title}}</td></tr>
+    </table>
+
+  </div>
+</body>
+</html>
 
