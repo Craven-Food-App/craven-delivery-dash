@@ -100,45 +100,840 @@ export function renderHtml(templateId: string, data: Record<string, any>): strin
   switch (templateId) {
     case "employment_agreement":
       body = `
-        <h1>Executive Employment Agreement</h1>
-        <div class="muted">Between ${data.company_name || "Company"} and ${data.full_name || "Executive"}</div>
-        
-        <div class="section">
-          <p><strong>Effective Date:</strong> ${data.effective_date || "TBD"}</p>
-          <p><strong>Position:</strong> ${data.role || "Executive"}</p>
-          <p><strong>Equity:</strong> ${data.equity_percentage || "0"}%</p>
-        </div>
+<h1>Executive Employment Agreement</h1>
 
-        <div class="section">
-          <h2>1. Employment Terms</h2>
-          <p>${data.company_name || "The Company"} hereby employs ${data.full_name || "Executive"} as ${data.role || "an executive officer"}, and ${data.full_name || "Executive"} accepts such employment, subject to the terms and conditions set forth in this Agreement.</p>
-        </div>
+<p class="muted">${data.company_name || "Company"}</p>
 
-        <div class="section">
-          <h2>2. Compensation</h2>
-          <p>The Executive shall receive equity compensation of ${data.equity_percentage || "0"}% of the company, subject to vesting schedules and funding triggers as described in separate documentation.</p>
-          <p><strong>Funding Trigger:</strong> ${data.funding_trigger || "Upon Series A funding or significant investment event"}</p>
-        </div>
+<p>This Executive Employment Agreement ("Agreement") is entered into as of ${data.effective_date || "TBD"} by and between ${data.company_name || "Company"} ("Company") and ${data.full_name || "Executive"} ("Executive"), who will serve as ${data.role || "Executive"}.</p>
 
-        <div class="section">
-          <h2>3. Governing Law</h2>
-          <p>This Agreement shall be governed by the laws of ${data.governing_law || "the State of Delaware"}.</p>
-        </div>
+<h3>1. Duties</h3>
 
-        <div class="sig-block">
-          <div class="sig">
-            ${data.signature_company_html || ""}
-            <div class="label">Company Representative</div>
-            <div class="label">${data.company_name || "Company Name"}</div>
-          </div>
-          <div class="sig">
-            ${data.signature_executive_html || ""}
-            <div class="label">${data.full_name || "Executive Name"}</div>
-            <div class="label">${data.role || "Title"}</div>
-          </div>
-        </div>
+<p>Executive shall devote professional efforts to the duties customary of a ${data.role || "Executive"} and as directed by the Board.</p>
+
+<h3>2. Equity</h3>
+
+<p>As additional consideration, Executive is granted ${data.equity_percentage || "0"}% equity in the Company, subject to any applicable vesting terms and the Company's equity plan and stock agreements executed concurrently.</p>
+
+<h3>3. Compensation (Deferred)</h3>
+
+<p>Base salary shall be <strong>deferred</strong> until the Company secures at least <strong>${data.funding_trigger || "Series A funding"}</strong> in funding (equity, debt, or grants) or net revenue, as determined by the Board. Upon such event, accrued base salary shall become payable within thirty (30) days unless otherwise agreed in writing. Prior to such event, no cash salary shall be due.</p>
+
+<h3>4. Confidentiality & IP Assignment</h3>
+
+<p>Executive agrees to be bound by the Company's Confidentiality & Intellectual Property Assignment Agreement executed concurrently with this Agreement.</p>
+
+<h3>5. At-Will Employment</h3>
+
+<p>Employment is at-will and may be terminated by either party at any time, with or without cause or notice, subject to any equity and accrued obligations herein.</p>
+
+<h3>6. Restrictive Covenants</h3>
+
+<p>During employment and for 12 months after termination, Executive shall not solicit employees or contractors of the Company. Non-compete obligations, if any, are as allowed by applicable law.</p>
+
+<h3>7. Dispute Resolution</h3>
+
+<p>Any dispute shall be resolved in the courts of the State of ${data.governing_law || "Delaware"} unless the parties later agree to arbitration.</p>
+
+<div class="sig-block">
+  <div class="sig">
+    <div style="height:80px">${data.signature_company_html || ""}</div>
+    <div class="label">${data.company_name || "Company"}</div>
+  </div>
+  <div class="sig">
+    <div style="height:80px">${data.signature_executive_html || ""}</div>
+    <div class="label">${data.full_name || "Executive"}, ${data.role || "Title"}</div>
+  </div>
+</div>
       `;
       break;
+
+    case "board_resolution":
+      return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Board Resolution – Appointment of Officers</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    @page {
+      size: A4;
+      margin: 24mm 18mm 24mm 18mm;
+    }
+    :root {
+      --text: #111;
+      --muted: #555;
+      --border: #d9d9d9;
+      --accent: #222;
+      --small: 12px;
+      --base: 14px;
+      --h1: 20px;
+      --h2: 16px;
+    }
+    html, body {
+      font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+      color: var(--text);
+      line-height: 1.45;
+      font-size: var(--base);
+    }
+    .doc {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .company-name {
+      font-weight: 700;
+      font-size: var(--h2);
+      letter-spacing: .3px;
+    }
+    .doc-title {
+      font-weight: 800;
+      font-size: var(--h1);
+      margin-top: 6px;
+      text-transform: uppercase;
+    }
+    .meta {
+      text-align: center;
+      font-size: var(--small);
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+    hr.rule {
+      border: 0;
+      border-top: 1px solid var(--border);
+      margin: 12px 0 18px;
+    }
+    h3 {
+      font-size: var(--h2);
+      margin: 16px 0 6px;
+      color: var(--accent);
+    }
+    p {
+      margin: 6px 0 10px;
+    }
+    .whereas p { margin: 6px 0; }
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 14px;
+      font-size: var(--base);
+    }
+    .table th, .table td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      vertical-align: top;
+    }
+    .table th {
+      text-align: left;
+      background: #fafafa;
+      font-weight: 600;
+    }
+    .sig-grid {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 22px;
+      margin-top: 8px;
+    }
+    .sig {
+      width: 100%;
+    }
+    .sig .line {
+      display: block;
+      border-bottom: 1px solid #333;
+      height: 24px;
+      margin-bottom: 4px;
+    }
+    .sig .label {
+      font-size: var(--small);
+      color: var(--muted);
+    }
+    .muted { color: var(--muted); }
+    .small { font-size: var(--small); }
+    .page-break { page-break-before: always; }
+    ul { margin: 6px 0 10px 20px; }
+  </style>
+</head>
+<body>
+  <div class="doc">
+    <div class="header">
+      <div class="company-name">${data.company_name || 'Company'}</div>
+      <div class="doc-title">Board Resolution – Appointment of Officers</div>
+      <div class="meta">Adopted on ${data.adoption_date || data.date || ''}</div>
+    </div>
+
+    <hr class="rule" />
+
+    <p>
+      The undersigned, being all of the members of the Board of Directors (the "Board") of
+      <strong>${data.company_name || 'Company'}</strong>, a <strong>${data.state_of_incorporation || 'Delaware'}</strong> corporation (the "Company"),
+      hereby adopts the following resolutions by unanimous written consent pursuant to the laws of the State of
+      <strong>${data.state_of_incorporation || 'Delaware'}</strong> and the Company's Bylaws.
+    </p>
+
+    <h3>Whereas</h3>
+    <div class="whereas">
+      <p>1. The Company has been duly formed and organized under the laws of the State of ${data.state_of_incorporation || 'Delaware'}; and</p>
+      <p>2. The Board deems it in the best interest of the Company to appoint officers to manage and oversee its operations, and to define their roles and powers as set forth herein.</p>
+    </div>
+
+    <h3>Now, therefore, be it resolved that:</h3>
+
+    <p><strong>1. Appointment of Officers.</strong> The following individuals are hereby appointed to serve as officers of the Company effective as of <strong>${data.effective_date || data.date || ''}</strong>, to hold their respective offices until their successors are duly appointed or until their earlier resignation or removal:</p>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Title</th>
+          <th>Term</th>
+          <th>Signature (acknowledgment)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>${data.ceo_name || ''}</td>
+          <td>Chief Executive Officer (CEO)</td>
+          <td>Indefinite</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td>${data.cfo_name || ''}</td>
+          <td>Chief Financial Officer (CFO)</td>
+          <td>Indefinite</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td>${data.cxo_name || ''}</td>
+          <td>Chief Experience Officer (CXO)</td>
+          <td>Indefinite</td>
+          <td>&nbsp;</td>
+        </tr>
+        <tr>
+          <td>${data.secretary_name || ''}</td>
+          <td>Corporate Secretary</td>
+          <td>Indefinite</td>
+          <td>&nbsp;</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p><strong>2. Duties and Responsibilities.</strong> Each officer shall have the powers and perform the duties customarily associated with their office and as provided in the Company's Bylaws, including but not limited to the following:
+      <span class="small muted">(summary)</span>
+    </p>
+    <ul>
+      <li><strong>Chief Executive Officer:</strong> general supervision and control over all business and affairs of the Company.</li>
+      <li><strong>Chief Financial Officer:</strong> oversight of financial policies, books and records, reporting, and regulatory compliance.</li>
+      <li><strong>Chief Experience Officer:</strong> strategy and oversight for customer/merchant/driver experience and brand execution.</li>
+      <li><strong>Corporate Secretary:</strong> custody of corporate records and minutes; preparation and filing of required notices and consents.</li>
+    </ul>
+
+    <p><strong>3. Authority to Act.</strong> Each officer named above is authorized and empowered to execute, acknowledge, and deliver any and all contracts, documents, or instruments on behalf of the Company consistent with the ordinary course of business.</p>
+
+    <p><strong>4. Ratification.</strong> All prior acts taken by these officers in connection with the Company's formation and organization are hereby ratified, confirmed, and approved.</p>
+
+    <p><strong>5. Filing and Maintenance.</strong> A copy of this resolution shall be filed in the corporate record book of the Company, maintained by the Corporate Secretary.</p>
+
+    <h3>In Witness Whereof</h3>
+    <p>
+      The undersigned have executed this Resolution as of <strong>${data.execution_date || data.date || ''}</strong>.
+    </p>
+
+    <h3>Board of Directors</h3>
+    <table class="sig-grid">
+      <tr>
+        <td>
+          <div class="sig">
+            <span class="line"></span>
+            <div class="label">Signature</div>
+          </div>
+        </td>
+        <td style="width: 40px;"></td>
+        <td>
+          <div class="sig">
+            <span class="line"></span>
+            <div class="label">Date</div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="3" class="small"><strong>Name:</strong> ${data.board_member_1 || data.directors || ''} &nbsp; | &nbsp; <strong>Title:</strong> Director</td>
+      </tr>
+    </table>
+
+    <table class="sig-grid">
+      <tr>
+        <td>
+          <div class="sig">
+            <span class="line"></span>
+            <div class="label">Signature</div>
+          </div>
+        </td>
+        <td style="width: 40px;"></td>
+        <td>
+          <div class="sig">
+            <span class="line"></span>
+            <div class="label">Date</div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="3" class="small"><strong>Name:</strong> ${data.board_member_2 || ''} &nbsp; | &nbsp; <strong>Title:</strong> Director</td>
+      </tr>
+    </table>
+
+  </div>
+</body>
+</html>`;
+
+    case "founders_agreement":
+      return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Founders' / Shareholders' Agreement</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    @page {
+      size: A4;
+      margin: 24mm 18mm 24mm 18mm;
+    }
+    body {
+      font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #111;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1, h2, h3 {
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    h1 { text-align: center; font-size: 20px; text-transform: uppercase; }
+    h2 { font-size: 16px; margin-top: 18px; }
+    h3 { font-size: 14px; margin-top: 12px; }
+    p { margin: 6px 0 10px; }
+    ul { margin: 6px 0 10px 20px; }
+    ol { margin: 6px 0 10px 20px; }
+    table { border-collapse: collapse; width: 100%; margin: 10px 0 18px; }
+    th, td { border: 1px solid #d9d9d9; padding: 8px 10px; }
+    th { background: #f8f8f8; text-align: left; font-weight: 600; }
+    .signature { margin-top: 28px; }
+    .sig-line {
+      border-bottom: 1px solid #333;
+      height: 24px;
+      width: 100%;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .sig-label { font-size: 12px; color: #666; }
+    .page-break { page-break-before: always; }
+  </style>
+</head>
+<body>
+
+  <h1>FOUNDERS' / SHAREHOLDERS' AGREEMENT</h1>
+  <p style="text-align:center;"><strong>${data.company_name || 'Company'}</strong><br>
+  Effective Date: ${data.effective_date || ''}</p>
+  <hr>
+
+  <p>This Founders' / Shareholders' Agreement (the "Agreement") is entered into on ${data.effective_date || ''} by and among the undersigned founders and shareholders of <strong>${data.company_name || 'Company'}</strong>, a ${data.state_of_incorporation || 'Delaware'} corporation (the "Company").</p>
+
+  <h2>1. Purpose</h2>
+  <p>This Agreement sets forth the mutual understanding of the Founders regarding their rights, obligations, and ownership interests in the Company, as well as the management and operation of the Company and protection of its intellectual property.</p>
+
+  <h2>2. Parties</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Title/Role</th>
+        <th>Equity %</th>
+        <th>Shares</th>
+        <th>Vesting</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>${data.founder_1_name || ''}</td>
+        <td>${data.founder_1_role || ''}</td>
+        <td>${data.founder_1_percent || ''}%</td>
+        <td>${data.founder_1_shares || ''}</td>
+        <td>${data.founder_1_vesting || data.vesting_years + ' years'}</td>
+      </tr>
+      <tr>
+        <td>${data.founder_2_name || ''}</td>
+        <td>${data.founder_2_role || ''}</td>
+        <td>${data.founder_2_percent || ''}%</td>
+        <td>${data.founder_2_shares || ''}</td>
+        <td>${data.founder_2_vesting || data.vesting_years + ' years'}</td>
+      </tr>
+      <tr>
+        <td>${data.founder_3_name || ''}</td>
+        <td>${data.founder_3_role || ''}</td>
+        <td>${data.founder_3_percent || ''}%</td>
+        <td>${data.founder_3_shares || ''}</td>
+        <td>${data.founder_3_vesting || data.vesting_years + ' years'}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>3. Capital Structure</h2>
+  <p>The Company's authorized capital stock shall consist of ${data.authorized_shares || ''} shares of common stock, par value ${data.par_value || '$0.0001'} per share. The distribution of shares among the Founders is detailed above.</p>
+
+  <h2>4. Vesting</h2>
+  <p>To ensure long-term commitment, each Founder's shares shall be subject to a vesting schedule of four (4) years, with a one (1) year cliff, unless otherwise agreed in writing. If a Founder ceases to be employed by or involved with the Company before full vesting, all unvested shares shall be forfeited or subject to repurchase by the Company at cost.</p>
+
+  <h2>5. Roles and Responsibilities</h2>
+  <ul>
+    <li><strong>Chief Executive Officer (${data.founder_1_name || ''}):</strong> Overall leadership, strategy, and operations.</li>
+    <li><strong>Chief Financial Officer (${data.founder_2_name || ''}):</strong> Oversees finances, accounting, and investment relations.</li>
+    <li><strong>Chief Experience Officer (${data.founder_3_name || ''}):</strong> Directs user experience, branding, and engagement.</li>
+  </ul>
+
+  <h2>6. Decision-Making and Voting</h2>
+  <p>All major company decisions shall require the approval of the majority of shares outstanding. For critical matters such as mergers, acquisitions, or dissolution, unanimous consent of the Founders is required.</p>
+
+  <h2>7. Transfer of Shares</h2>
+  <p>No Founder shall transfer or sell any shares without first offering such shares to the Company and then to the remaining Founders, in that order, at fair market value. Any transfer not in accordance with this section shall be void.</p>
+
+  <h2>8. Intellectual Property Assignment</h2>
+  <p>Each Founder hereby assigns and transfers to the Company all rights, title, and interest in and to any inventions, works, software, designs, trade secrets, or other intellectual property developed in connection with the Company's business, whether developed before or after the date of this Agreement.</p>
+
+  <h2>9. Confidentiality</h2>
+  <p>All information related to the Company's products, strategy, finances, or clients shall be treated as confidential. No Founder shall disclose any confidential information without prior written consent from the Board of Directors.</p>
+
+  <h2>10. Founder Departure or Termination</h2>
+  <p>If a Founder voluntarily leaves or is removed for cause, the Company retains the right to repurchase all or part of that Founder's shares at the original issue price or fair market value, whichever is lower, subject to vesting status.</p>
+
+  <h2>11. Dispute Resolution</h2>
+  <p>Any dispute arising under this Agreement shall first be attempted to be resolved through mediation. If unresolved, it shall be submitted to binding arbitration in ${data.state_of_incorporation || data.governing_law || 'Delaware'} under the rules of the American Arbitration Association.</p>
+
+  <h2>12. Governing Law</h2>
+  <p>This Agreement shall be governed by and construed in accordance with the laws of the State of ${data.state_of_incorporation || data.governing_law || 'Delaware'}, without regard to conflict of laws principles.</p>
+
+  <h2>13. Entire Agreement</h2>
+  <p>This document constitutes the entire understanding among the Founders and supersedes all prior oral or written agreements. Amendments must be in writing and signed by all Founders.</p>
+
+  <div class="page-break"></div>
+
+  <h2>IN WITNESS WHEREOF</h2>
+  <p>The undersigned Founders have executed this Agreement as of the date first written above.</p>
+
+  <table class="signature">
+    <tr>
+      <td>
+        <span class="sig-line"></span>
+        <div class="sig-label">Signature of ${data.founder_1_name || 'Founder 1'}</div>
+      </td>
+      <td style="width:40px;"></td>
+      <td>
+        <span class="sig-line"></span>
+        <div class="sig-label">Date</div>
+      </td>
+    </tr>
+  </table>
+
+  <table class="signature">
+    <tr>
+      <td>
+        <span class="sig-line"></span>
+        <div class="sig-label">Signature of ${data.founder_2_name || 'Founder 2'}</div>
+      </td>
+      <td style="width:40px;"></td>
+      <td>
+        <span class="sig-line"></span>
+        <div class="sig-label">Date</div>
+      </td>
+    </tr>
+  </table>
+
+  <table class="signature">
+    <tr>
+      <td>
+        <span class="sig-line"></span>
+        <div class="sig-label">Signature of ${data.founder_3_name || 'Founder 3'}</div>
+      </td>
+      <td style="width:40px;"></td>
+      <td>
+        <span class="sig-line"></span>
+        <div class="sig-label">Date</div>
+      </td>
+    </tr>
+  </table>
+
+  <hr>
+  <p style="font-size:12px;color:#777;">
+    Developer Note: Replace placeholders using your automated data injection system. Store signed PDF in the corporate document registry for recordkeeping.
+  </p>
+
+</body>
+</html>`;
+
+    case "stock_issuance":
+      return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Stock Subscription / Issuance Agreement</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    @page { size: A4; margin: 24mm 18mm; }
+    :root {
+      --text:#111; --muted:#666; --border:#d9d9d9;
+      --small:12px; --base:14px; --h1:20px; --h2:16px;
+    }
+    body { font-family: "Inter","Helvetica Neue",Arial,sans-serif; color:var(--text); font-size:var(--base); line-height:1.5; }
+    .doc { max-width:800px; margin:0 auto; }
+    h1 { text-align:center; font-size:var(--h1); text-transform:uppercase; margin-bottom:6px; }
+    h2 { font-size:var(--h2); margin:18px 0 8px; }
+    h3 { font-size:14px; margin:12px 0 6px; }
+    p { margin:6px 0 10px; }
+    ul { margin:6px 0 10px 20px; }
+    ol { margin:6px 0 10px 20px; }
+    table { border-collapse: collapse; width:100%; margin:8px 0 16px; }
+    th, td { border:1px solid var(--border); padding:8px 10px; vertical-align:top; }
+    th { background:#fafafa; text-align:left; font-weight:600; }
+    .small { font-size:var(--small); color:var(--muted); }
+    .muted { color:var(--muted); }
+    .sig-table { width:100%; border-collapse:separate; border-spacing:0 18px; }
+    .line { display:block; border-bottom:1px solid #333; height:24px; margin-bottom:4px; }
+    .page-break { page-break-before: always; }
+  </style>
+</head>
+<body>
+  <div class="doc">
+    <h1>STOCK SUBSCRIPTION / ISSUANCE AGREEMENT</h1>
+    <p style="text-align:center;">
+      <strong>${data.company_name || 'Company'}</strong> (a ${data.state_of_incorporation || 'Delaware'} corporation)<br/>
+      Effective Date: ${data.effective_date || ''}
+    </p>
+    <hr/>
+
+    <p>
+      This Stock Subscription / Issuance Agreement (this "Agreement") is entered into by and between
+      <strong>${data.company_name || 'Company'}</strong>, a ${data.state_of_incorporation || 'Delaware'} corporation (the "Company"), and
+      <strong>${data.subscriber_name || data.full_name || ''}</strong> (the "Subscriber").
+    </p>
+
+    <h2>1. Subscription and Purchase</h2>
+    <p>
+      Subject to the terms and conditions herein, the Subscriber hereby irrevocably subscribes for and agrees to purchase
+      from the Company, and the Company agrees to issue and sell to the Subscriber, the following securities (the "Shares"):
+    </p>
+    <table>
+      <tr><th>Share Class</th><td>${data.share_class || data.class_name || 'Common'} ${data.series_label || ''}</td></tr>
+      <tr><th>Number of Shares</th><td>${data.share_count || ''}</td></tr>
+      <tr><th>Price per Share</th><td>${data.price_per_share || data.par_value || ''} ${data.currency || 'USD'}</td></tr>
+      <tr><th>Total Purchase Price</th><td>${data.total_purchase_price || ''} ${data.currency || 'USD'}</td></tr>
+      <tr><th>Consideration</th><td>${data.consideration_type || data.consideration || 'Services'}</td></tr>
+      <tr><th>Vesting (if applicable)</th><td>${data.vesting_terms || data.vesting_schedule || '4 years, 1-year cliff'}</td></tr>
+      <tr><th>Certificate/Book-Entry</th><td>${data.certificate_form || 'Book-entry'}</td></tr>
+    </table>
+
+    <h2>2. Closing; Delivery</h2>
+    <p>
+      The closing of the purchase and sale of the Shares (the "Closing") shall occur on ${data.closing_date || data.effective_date || ''} or such other date as
+      the Company and Subscriber may mutually agree. At Closing, (a) the Subscriber shall deliver the Total Purchase Price by
+      ${data.payment_method || 'wire transfer'}, and (b) the Company shall issue the Shares to the Subscriber and update its stock ledger.
+    </p>
+
+    <h2>3. Subscriber Representations and Warranties</h2>
+    <p>The Subscriber represents and warrants to the Company as of the Effective Date and the Closing that:</p>
+    <ul>
+      <li><strong>Authority.</strong> Subscriber has full power and authority to enter into this Agreement and perform its obligations.</li>
+      <li><strong>Accredited / Sophistication.</strong> Subscriber is ${data.accredited_status || 'an accredited investor'} or otherwise has such knowledge and experience in financial and business matters to evaluate the merits and risks of the investment.</li>
+      <li><strong>Investment Intent.</strong> The Shares are being acquired for investment for Subscriber's own account, not with a view to distribution.</li>
+      <li><strong>Information.</strong> Subscriber has had access to all information it deems necessary to make an informed investment decision.</li>
+      <li><strong>Compliance.</strong> Subscriber acknowledges the Shares have not been registered under the Securities Act of 1933, as amended (the "Securities Act"), or any state securities laws, and are being offered and sold pursuant to exemptions therefrom.</li>
+      <li><strong>Legends/Transfer Restrictions.</strong> Subscriber understands the Shares may bear restrictive legends and are subject to transfer restrictions under applicable law and Company agreements (including any shareholders' agreement or ROFR/co-sale provisions).</li>
+    </ul>
+
+    <h2>4. Company Representations and Warranties</h2>
+    <ul>
+      <li><strong>Organization; Authority.</strong> The Company is duly organized, validly existing, and in good standing under the laws of ${data.state_of_incorporation || 'Delaware'}, and has the requisite corporate power to execute and deliver this Agreement and issue the Shares.</li>
+      <li><strong>Authorization.</strong> All corporate actions required for the authorization, execution, delivery, and performance of this Agreement, and for the issuance and delivery of the Shares, have been duly taken (see Board Resolution reference: ${data.board_resolution_date || ''}).</li>
+      <li><strong>Valid Issuance.</strong> Upon issuance and payment therefor, the Shares will be duly authorized, validly issued, fully paid, and non-assessable, subject to restrictions under applicable securities laws and Company agreements.</li>
+    </ul>
+
+    <h2>5. Transfer Restrictions; Company Agreements</h2>
+    <p>
+      The Shares are subject to the Company's organizational documents and any agreements to which Subscriber becomes a party,
+      including a shareholders'/founders' agreement, right of first refusal and co-sale (ROFR/Co-Sale), and market-standard
+      drag-along/tag-along provisions (each, as applicable). Any attempted transfer in violation of the foregoing shall be void.
+    </p>
+
+    <h2>6. Governing Law</h2>
+    <p>This Agreement shall be governed by the laws of the State of ${data.governing_law_state || data.governing_law || 'Delaware'}, without regard to conflict-of-laws principles.</p>
+
+    <h2>Signatures</h2>
+    <table class="sig-table">
+      <tr>
+        <td style="width:60%">
+          <div class="line"></div>
+          <div class="small">Subscriber Signature: ${data.subscriber_name || data.full_name || ''}</div>
+        </td>
+        <td style="width:5%"></td>
+        <td>
+          <div class="line"></div>
+          <div class="small">Date</div>
+        </td>
+      </tr>
+    </table>
+
+    <table class="sig-table">
+      <tr>
+        <td style="width:60%">
+          <div class="line"></div>
+          <div class="small">Company Signature: ${data.signatory_name || ''}, ${data.signatory_title || ''}</div>
+        </td>
+        <td style="width:5%"></td>
+        <td>
+          <div class="line"></div>
+          <div class="small">Date</div>
+        </td>
+      </tr>
+    </table>
+
+  </div>
+</body>
+</html>`;
+
+    case "confidentiality_ip":
+      return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Confidentiality & IP Assignment Agreement</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    @page { size: A4; margin: 24mm 18mm; }
+    :root {
+      --text:#111; --muted:#666; --border:#d9d9d9;
+      --small:12px; --base:14px; --h1:20px; --h2:16px;
+    }
+    body { font-family:"Inter","Helvetica Neue",Arial,sans-serif; color:var(--text); font-size:var(--base); line-height:1.52; }
+    .doc { max-width:800px; margin:0 auto; }
+    h1 { text-align:center; font-size:var(--h1); text-transform:uppercase; margin-bottom:6px; }
+    h2 { font-size:var(--h2); margin:18px 0 8px; }
+    h3 { font-size:14px; margin:12px 0 6px; }
+    p { margin:6px 0 10px; }
+    ul { margin:6px 0 10px 20px; }
+    table { border-collapse:collapse; width:100%; margin:8px 0 16px; }
+    th, td { border:1px solid var(--border); padding:8px 10px; vertical-align:top; }
+    th { background:#fafafa; text-align:left; font-weight:600; }
+    .muted { color:var(--muted); }
+    .small { font-size:var(--small); color:var(--muted); }
+    .sig-grid { width:100%; border-collapse:separate; border-spacing:0 18px; }
+    .line { display:block; border-bottom:1px solid #333; height:24px; margin-bottom:4px; }
+    .page-break { page-break-before:always; }
+    .note { background:#fffbea; border:1px solid #f3e29e; padding:8px 10px; font-size:13px; }
+  </style>
+</head>
+<body>
+  <div class="doc">
+    <h1>CONFIDENTIALITY & IP ASSIGNMENT AGREEMENT</h1>
+    <p style="text-align:center;">
+      <strong>${data.company_name || 'Company'}</strong>, a ${data.state_of_incorporation || 'Delaware'} corporation (the "Company")<br/>
+      Counterparty: <strong>${data.counterparty_name || data.full_name || ''}</strong> (the "Contributor")<br/>
+      Effective Date: ${data.effective_date || ''}
+    </p>
+    <hr/>
+
+    <div class="note small">
+      Developer note: This agreement is used for employees, founders, executives, contractors, and advisors.
+    </div>
+
+    <h2>1. Definitions</h2>
+    <p><strong>"Confidential Information"</strong> means any non-public information disclosed by or on behalf of the Company, whether oral, visual, written, electronic, or otherwise, including without limitation product plans, designs, software, source code, data, customer lists, pricing, financials, strategies, roadmaps, know-how, trade secrets, and third-party information held in confidence by the Company. Confidential Information includes the existence and terms of this Agreement.</p>
+    <p><strong>"Inventions"</strong> means any and all discoveries, developments, works of authorship, designs, methods, processes, formulas, compositions, techniques, databases, mask works, trademarks, trade dress, copyrights, trade secrets, and patentable or unpatentable ideas, whether or not reduced to practice.</p>
+
+    <h2>2. Confidentiality Obligations</h2>
+    <ul>
+      <li><strong>Non-use / Non-disclosure.</strong> Contributor shall hold Confidential Information in strict confidence and not use it for any purpose other than performing services or duties for the Company.</li>
+      <li><strong>Standard of care.</strong> At least the care Contributor uses to protect its own similar information, and no less than reasonable care.</li>
+      <li><strong>Access limitation.</strong> Disclose only to persons who have a need to know for Company purposes and who are bound by obligations at least as protective as this Agreement.</li>
+    </ul>
+
+    <h2>3. Exclusions</h2>
+    <p>Obligations in Section 2 do not apply to information that: (a) is or becomes generally available without breach; (b) was known to Contributor without restriction before disclosure as evidenced by written records; (c) is independently developed without use of Confidential Information; or (d) is rightfully received from a third party without duty of confidentiality.</p>
+
+    <h2>4. Return / Deletion</h2>
+    <p>Upon the earlier of the Company's request or termination of engagement, Contributor shall promptly cease use of, and return or securely delete, all Confidential Information and Company Property.</p>
+
+    <h2>5. Inventions; Assignment</h2>
+    <ul>
+      <li><strong>Disclosure.</strong> Contributor will promptly disclose to the Company all Inventions that Contributor conceives, reduces to practice, or develops, alone or jointly, in connection with services to the Company, or that relate to the Company's business, R&D, or anticipated products ("<strong>Company Inventions</strong>").</li>
+      <li><strong>Work-Made-for-Hire.</strong> To the maximum extent permitted by law, Company Inventions are "works made for hire." To the extent not so deemed, Contributor hereby irrevocably assigns to the Company all right, title, and interest worldwide in and to all Company Inventions and all associated IP rights.</li>
+      <li><strong>Moral Rights.</strong> Contributor irrevocably waives and agrees not to assert any moral rights (or similar) in Company Inventions, to the extent permitted.</li>
+      <li><strong>Further Assurances.</strong> Contributor will execute documents and take actions reasonably requested to perfect, record, or enforce the Company's rights.</li>
+    </ul>
+
+    <h2>6. Non-Solicitation</h2>
+    <p>Contributor will not directly solicit for employment or engagement any Company employee or contractor with whom Contributor worked, for 12 months post-termination, except via public, non-targeted advertisements.</p>
+
+    <h2>7. Governing Law</h2>
+    <p>This Agreement is governed by the laws of ${data.governing_law_state || data.governing_law || 'Delaware'}, without regard to conflicts principles.</p>
+
+    <h2>Signatures</h2>
+    <table class="sig-grid">
+      <tr>
+        <td style="width:60%">
+          <div class="line"></div>
+          <div class="small">Contributor: ${data.counterparty_name || data.full_name || ''}</div>
+        </td>
+        <td style="width:5%"></td>
+        <td>
+          <div class="line"></div>
+          <div class="small">Date</div>
+        </td>
+      </tr>
+    </table>
+    <table class="sig-grid">
+      <tr>
+        <td style="width:60%">
+          <div class="line"></div>
+          <div class="small">Company: ${data.signatory_name || ''}, ${data.signatory_title || ''}, ${data.company_name || 'Company'}</div>
+        </td>
+        <td style="width:5%"></td>
+        <td>
+          <div class="line"></div>
+          <div class="small">Date</div>
+        </td>
+      </tr>
+    </table>
+
+  </div>
+</body>
+</html>`;
+
+    case "deferred_comp_addendum":
+      return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Deferred Compensation Addendum</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    @page { size: A4; margin: 24mm 18mm; }
+    :root {
+      --text:#111; --muted:#666; --border:#d9d9d9;
+      --small:12px; --base:14px; --h1:20px; --h2:16px;
+    }
+    body { font-family:"Inter","Helvetica Neue",Arial,sans-serif; color:var(--text); font-size:var(--base); line-height:1.52; }
+    .doc { max-width:800px; margin:0 auto; }
+    h1 { text-align:center; font-size:var(--h1); text-transform:uppercase; margin-bottom:6px; }
+    h2 { font-size:var(--h2); margin:18px 0 8px; }
+    h3 { font-size:14px; margin:12px 0 6px; }
+    p { margin:6px 0 10px; }
+    ul { margin:6px 0 10px 20px; }
+    ol { margin:6px 0 10px 20px; }
+    table { border-collapse:collapse; width:100%; margin:8px 0 16px; }
+    th, td { border:1px solid var(--border); padding:8px 10px; vertical-align:top; }
+    th { background:#fafafa; text-align:left; font-weight:600; }
+    .muted { color:var(--muted); }
+    .small { font-size:var(--small); color:var(--muted); }
+    .sig-grid { width:100%; border-collapse:separate; border-spacing:0 18px; }
+    .line { display:block; border-bottom:1px solid #333; height:24px; margin-bottom:4px; }
+    .page-break { page-break-before:always; }
+    .note { background:#fffbea; border:1px solid #f3e29e; padding:8px 10px; font-size:13px; }
+    .callout { background:#f7faff; border:1px solid #cfe3ff; padding:8px 10px; }
+  </style>
+</head>
+<body>
+  <div class="doc">
+    <h1>DEFERRED COMPENSATION ADDENDUM</h1>
+    <p style="text-align:center;">
+      Addendum to: <strong>${data.base_agreement_title || 'Executive Employment Agreement'}</strong><br/>
+      Company: <strong>${data.company_name || 'Company'}</strong>, a ${data.state_of_incorporation || 'Delaware'} corporation (the "Company")<br/>
+      Executive: <strong>${data.executive_name || data.full_name || ''}</strong> (the "Executive")<br/>
+      Effective Date: ${data.effective_date || ''}
+    </p>
+    <hr/>
+
+    <div class="note small">
+      Developer note: Attach this to an Executive Employment Agreement / Offer Letter. Use this addendum to defer cash salary until a funding or revenue trigger occurs.
+    </div>
+
+    <h2>1. Purpose; Incorporation</h2>
+    <p>
+      This Deferred Compensation Addendum (the "Addendum") modifies and is incorporated into the ${data.base_agreement_title || 'Executive Employment Agreement'} between the Company and the Executive dated ${data.base_agreement_date || data.effective_date || ''} (the "Base Agreement"). Except as expressly modified herein, the Base Agreement remains in full force and effect.
+    </p>
+
+    <h2>2. Covered Compensation</h2>
+    <table>
+      <tr><th>Role / Title</th><td>${data.position_title || data.role || ''}</td></tr>
+      <tr><th>Annual Base Salary (Gross)</th><td>${data.annual_base_salary || ''} ${data.currency || 'USD'} (the "Base Salary")</td></tr>
+      <tr><th>Deferral Start Date</th><td>${data.deferral_start_date || data.effective_date || ''}</td></tr>
+      <tr><th>Deferral Percentage</th><td>${data.deferral_percentage || '100'}% of Base Salary</td></tr>
+    </table>
+
+    <h2>3. Deferral Mechanics; Accrual</h2>
+    <ul>
+      <li><strong>Deferral.</strong> During the Deferral Period (Section 4), the Deferred Portion of Base Salary shall accrue but not be paid in cash.</li>
+      <li><strong>Ledger.</strong> The Company shall maintain a deferred compensation ledger for the Executive itemizing gross amounts, statutory deductions, and net balances.</li>
+      <li><strong>Tax Withholding.</strong> Amounts paid when due shall be subject to applicable withholding and payroll taxes at the time of payment, unless otherwise required by law.</li>
+    </ul>
+
+    <h2>4. Deferral Period; Payment Triggers</h2>
+    <p>The "Deferral Period" begins on ${data.deferral_start_date || data.effective_date || ''} and ends upon the earliest to occur of the following triggers (each, a "Payment Trigger"):</p>
+    <ol>
+      <li><strong>Funding Trigger:</strong> The Company receives aggregate new funding or cash from operations of at least <strong>${data.funding_trigger_amount || data.funding_trigger || 'Series A funding'} ${data.currency || 'USD'}</strong> after the Effective Date; or</li>
+      <li><strong>Board Trigger:</strong> The Board authorizes payment of all or a portion of deferred amounts; or</li>
+      <li><strong>Exit Trigger:</strong> A Change in Control, asset sale, or similar liquidity event; or</li>
+      <li><strong>Termination Trigger:</strong> Termination of Executive's service for any reason (see Section 6).</li>
+    </ol>
+
+    <h2>5. Payment Timing; Priority; Method</h2>
+    <ul>
+      <li><strong>Timing.</strong> Upon a Payment Trigger, the Company shall pay accrued deferred amounts (plus any applicable interest) within <strong>${data.payment_deadline_days || '30'}</strong> days.</li>
+      <li><strong>Priority.</strong> Payments under this Addendum rank as unsecured general obligations of the Company.</li>
+      <li><strong>Method.</strong> Payments shall be made via the Company's payroll system by ACH/wire to the Executive's designated payroll account.</li>
+    </ul>
+
+    <h2>6. Termination of Service</h2>
+    <ul>
+      <li><strong>Without Cause / Resignation for Good Reason.</strong> Accrued deferred amounts (plus applicable interest) become due per Section 5.</li>
+      <li><strong>For Cause / Voluntary Resignation.</strong> Accrued deferred amounts through the termination date remain payable per Section 5.</li>
+      <li><strong>Death or Disability.</strong> Accrued deferred amounts become payable to the Executive (or estate) in accordance with Section 5.</li>
+    </ul>
+
+    <h2>7. Governing Law; Dispute Resolution</h2>
+    <p>This Addendum shall be governed by the laws of ${data.governing_law_state || data.governing_law || 'Delaware'}, without regard to conflicts rules.</p>
+
+    <h2>Signatures</h2>
+    <table class="sig-grid">
+      <tr>
+        <td style="width:60%">
+          <div class="line"></div>
+          <div class="small">Executive: ${data.executive_name || data.full_name || ''}</div>
+        </td>
+        <td style="width:5%"></td>
+        <td>
+          <div class="line"></div>
+          <div class="small">Date</div>
+        </td>
+      </tr>
+    </table>
+    <table class="sig-grid">
+      <tr>
+        <td style="width:60%">
+          <div class="line"></div>
+          <div class="small">For the Company: ${data.signatory_name || ''}, ${data.signatory_title || ''}, ${data.company_name || 'Company'}</div>
+        </td>
+        <td style="width:5%"></td>
+        <td>
+          <div class="line"></div>
+          <div class="small">Date</div>
+        </td>
+      </tr>
+    </table>
+
+  </div>
+</body>
+</html>`;
 
     case "offer_letter":
       return `<!DOCTYPE html>
