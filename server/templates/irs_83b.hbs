@@ -1,16 +1,218 @@
-<h1>IRS Form 83(b) – Information Sheet</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>IRS Form 83(b) Election – Information Sheet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    @page { size: A4; margin: 24mm 18mm; }
+    body {
+      font-family: "Inter","Helvetica Neue",Arial,sans-serif;
+      font-size: 14px;
+      line-height: 1.55;
+      color: #111;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 16px 0 6px;
+    }
+    h3 { font-size: 14px; margin: 12px 0 6px; font-weight: 600; }
+    p { margin: 6px 0 10px; }
+    ul, ol { margin: 6px 0 10px 22px; }
+    table { border-collapse: collapse; width: 100%; margin: 10px 0 18px; }
+    th, td { border: 1px solid #d9d9d9; padding: 8px 10px; vertical-align: top; }
+    th { background: #fafafa; text-align: left; font-weight: 600; }
+    .muted { color: #666; font-size: 13px; }
+    .small { font-size: 12px; color: #666; }
+    .note { background: #fffbea; border: 1px solid #f3e29e; padding: 8px 10px; font-size: 13px; }
+    .page-break { page-break-before: always; }
+    .sig-grid { width: 100%; border-collapse: separate; border-spacing: 0 18px; }
+    .line { display: block; border-bottom: 1px solid #333; height: 24px; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
 
-<p>Taxpayer: {{taxpayer_name}}</p>
+  <h1>IRS FORM 83(b) ELECTION – INFORMATION & INSTRUCTIONS</h1>
 
-<p>Address: {{taxpayer_address}}</p>
+  <p style="text-align:center;">
+    Company: <strong>{{company_name}}</strong><br/>
+    Recipient: <strong>{{recipient_name}}</strong><br/>
+    Equity Grant Date: {{grant_date}}<br/>
+    Share Class: {{share_class}} ({{share_type}})<br/>
+    Number of Shares: {{share_count}}<br/>
+    Price per Share: {{price_per_share}} {{currency}}
+  </p>
+  <hr/>
 
-<p>Company: {{company_name}}</p>
+  <div class="note small">
+    This document provides general information for filing an IRS Section 83(b) election in connection with a restricted stock grant.
+    It is not legal or tax advice. The recipient should consult a qualified tax professional before filing.
+  </div>
 
-<p>Date of transfer: {{date_of_transfer}}</p>
+  <h2>1. What is an 83(b) Election?</h2>
+  <p>
+    Under U.S. tax law (Section 83(b) of the Internal Revenue Code), when a person receives stock subject to vesting or other restrictions,
+    the IRS generally treats the value of those shares as taxable income only when they vest.
+    However, by filing an "83(b) election," the taxpayer elects to be taxed immediately on the value of the shares
+    at the time of purchase/grant, rather than later as they vest.
+  </p>
 
-<p>Class/No. of shares: {{stock_class}} / {{number_of_shares}}</p>
+  <p>
+    For early-stage founders and employees, this often results in significant tax advantages — since the stock value
+    at grant is usually very low, future appreciation can then qualify as long-term capital gains instead of ordinary income.
+  </p>
 
-<p>FMV: {{fair_market_value}} | Amount paid: {{amount_paid}}</p>
+  <h2>2. When to File</h2>
+  <ul>
+    <li>You must file your 83(b) election with the IRS <strong>within 30 calendar days</strong> of the date the stock was transferred (your grant date).</li>
+    <li>This 30-day deadline is absolute — there are no extensions.</li>
+  </ul>
 
-<p>Print and mail to your IRS Service Center within 30 days of the grant. Attach a copy to your tax return.</p>
+  <h2>3. How to File</h2>
+  <p>Follow these steps carefully:</p>
+  <ol>
+    <li>Complete and sign the <strong>83(b) Election Letter</strong> (see attached template below).</li>
+    <li>Mail or deliver the signed letter to your local IRS office <strong>within 30 days</strong> of {{grant_date}}. Use certified mail with return receipt requested or a courier with tracking.</li>
+    <li>Include a copy of the letter with your federal income tax return for the year of the grant.</li>
+    <li>Provide one copy to {{company_name}} for its records (typically to the CFO or HR department).</li>
+  </ol>
+
+  <h2>4. Where to Send It</h2>
+  <p>
+    Mail the election to the IRS office that handles your tax return (based on your home address). The IRS maintains a
+    <a href="https://www.irs.gov/filing/where-to-file-paper-tax-returns-with-or-without-a-payment" target="_blank">list of regional filing addresses</a>.
+  </p>
+
+  <h2>5. Example Calculation</h2>
+  <p>
+    Suppose you receive {{share_count}} shares at ${{price_per_share}} per share on {{grant_date}}. The total value is
+    {{total_grant_value}} {{currency}}. You pay {{total_payment}} {{currency}} for the shares. If you file the 83(b) election, you pay
+    income tax on the difference (typically zero for par-value shares), and future appreciation is taxed as capital gain.
+  </p>
+
+  <h2>6. Common Mistakes to Avoid</h2>
+  <ul>
+    <li>Missing the 30-day filing deadline (cannot be fixed later).</li>
+    <li>Failing to include a copy with your tax return or to notify the company.</li>
+    <li>Listing incorrect share counts, grant dates, or values.</li>
+    <li>Assuming this applies to options — 83(b) elections apply only to stock that has been purchased or issued, not unexercised options.</li>
+  </ul>
+
+  <h2>7. Company Contact for 83(b) Filings</h2>
+  <table>
+    <tr>
+      <th>Contact Person</th><td>{{cfo_name}}, Chief Financial Officer</td>
+    </tr>
+    <tr>
+      <th>Email</th><td>{{cfo_email}}</td>
+    </tr>
+    <tr>
+      <th>Mailing Address</th><td>{{company_address}}</td>
+    </tr>
+  </table>
+
+  <h2>8. Acknowledgment</h2>
+  <p>
+    I, {{recipient_name}}, acknowledge receipt of this 83(b) information sheet and understand that it is my sole responsibility
+    to timely file the 83(b) election with the IRS within 30 days of my stock grant date.
+  </p>
+
+  <table class="sig-grid">
+    <tr>
+      <td style="width:60%">
+        <div class="line"></div>
+        <div class="small">Signature: {{recipient_name}}</div>
+      </td>
+      <td style="width:5%"></td>
+      <td>
+        <div class="line"></div>
+        <div class="small">Date</div>
+      </td>
+    </tr>
+  </table>
+
+  <hr/>
+  <p class="muted">
+    Developer placeholders: {{company_name}}, {{recipient_name}}, {{grant_date}}, {{share_count}},
+    {{price_per_share}}, {{currency}}, {{total_grant_value}}, {{total_payment}},
+    {{share_class}}, {{share_type}}, {{cfo_name}}, {{cfo_email}}, {{company_address}}.
+  </p>
+
+  <div class="page-break"></div>
+
+  <h1>ATTACHMENT: SAMPLE 83(b) ELECTION LETTER</h1>
+  <p>(Print on plain paper and sign before mailing to IRS)</p>
+
+  <p>To: Internal Revenue Service<br/>
+  [Appropriate IRS Office Address]</p>
+
+  <p><strong>Re: Section 83(b) Election</strong></p>
+
+  <p>
+    Pursuant to Section 83(b) of the Internal Revenue Code, I hereby elect to include in my gross income for the current
+    taxable year the fair market value of the property described below that was transferred to me in connection with the performance
+    of services.
+  </p>
+
+  <h3>Taxpayer Information</h3>
+  <table>
+    <tr><th>Name:</th><td>{{recipient_name}}</td></tr>
+    <tr><th>Address:</th><td>{{recipient_address}}</td></tr>
+    <tr><th>Social Security No.:</th><td>{{recipient_ssn}}</td></tr>
+    <tr><th>Tax Year:</th><td>{{tax_year}}</td></tr>
+  </table>
+
+  <h3>Description of Property</h3>
+  <table>
+    <tr><th>Type of Property:</th><td>{{share_class}} Stock ({{share_type}})</td></tr>
+    <tr><th>Date of Transfer:</th><td>{{grant_date}}</td></tr>
+    <tr><th>Number of Shares:</th><td>{{share_count}}</td></tr>
+    <tr><th>Fair Market Value per Share:</th><td>{{price_per_share}} {{currency}}</td></tr>
+    <tr><th>Total Fair Market Value:</th><td>{{total_grant_value}} {{currency}}</td></tr>
+    <tr><th>Amount Paid for Shares:</th><td>{{total_payment}} {{currency}}</td></tr>
+    <tr><th>Amount to Include in Income:</th><td>{{taxable_difference}} {{currency}}</td></tr>
+  </table>
+
+  <h3>Statement</h3>
+  <p>
+    These shares are subject to vesting over {{vesting_schedule}}, and may be forfeited if my service terminates before full vesting.
+    I will notify the Company if the shares are forfeited and will not seek a refund of taxes paid under this election.
+  </p>
+
+  <p>
+    Copies of this election have been furnished to the Company and will be attached to my federal income tax return for
+    the year {{tax_year}}.
+  </p>
+
+  <table class="sig-grid">
+    <tr>
+      <td style="width:60%">
+        <div class="line"></div>
+        <div class="small">Signature: {{recipient_name}}</div>
+      </td>
+      <td style="width:5%"></td>
+      <td>
+        <div class="line"></div>
+        <div class="small">Date: {{grant_date}}</div>
+      </td>
+    </tr>
+  </table>
+
+  <hr/>
+  <p class="small muted">
+    Reminder: Mail this election within 30 days of {{grant_date}}. Send one copy to the IRS, one to {{company_name}}, and retain one for your records.
+  </p>
+
+</body>
+</html>
 
