@@ -221,6 +221,112 @@ export default function SendCSuiteDocs() {
           company_mission_statement: 'deliver delightful food experiences to every neighborhood',
         };
       }
+      case 'board_resolution':
+        return {
+          ...baseData,
+          date: baseData.effective_date,
+          directors: "Board of Directors",
+          officer_name: exec.full_name,
+          officer_title: baseData.role,
+          officer_salary: annualSalary.toLocaleString(),
+          officer_equity: `${equityPercent}% (${sharesIssued.toLocaleString()} shares)`,
+          ceo_name: exec.role === 'ceo' ? exec.full_name : '',
+          cfo_name: exec.role === 'cfo' ? exec.full_name : '',
+          cxo_name: exec.role === 'cxo' ? exec.full_name : '',
+          equity_ceo: exec.role === 'ceo' ? equityPercent.toString() : '0',
+          equity_cfo: exec.role === 'cfo' ? equityPercent.toString() : '0',
+          equity_cxo: exec.role === 'cxo' ? equityPercent.toString() : '0',
+        };
+      case 'stock_issuance':
+        return {
+          company_name: "Crave'n, Inc.",
+          state_of_incorporation: "Ohio",
+          company_address: "123 Main St, Cleveland, OH 44101",
+          notice_contact_name: "Torrance Stroman",
+          notice_contact_title: "CEO",
+          notice_contact_email: "craven@usa.com",
+          subscriber_name: exec.full_name,
+          subscriber_address: "TBD",
+          subscriber_email: exec.email,
+          accredited_status: "an accredited investor",
+          share_class: "Common Stock",
+          series_label: "N/A",
+          share_count: sharesIssued.toLocaleString(),
+          price_per_share: strikePrice.toFixed(4),
+          total_purchase_price: purchasePrice.toFixed(2),
+          currency: "USD",
+          vesting_terms: baseData.vesting_schedule,
+          consideration_type: annualSalary > 0 ? "Services Rendered" : "Founder Contribution",
+          consideration_valuation_basis: "Fair market value of services",
+          certificate_form: "Book-entry (no physical certificate)",
+          closing_date: baseData.effective_date,
+          effective_date: baseData.effective_date,
+          payment_method: annualSalary > 0 ? "Services / Sweat Equity" : "Founder Sweat Equity",
+          securities_exemption: "Section 4(a)(2) private placement",
+          related_agreement_name: "Founders' Agreement",
+          governing_law_state: "Ohio",
+          board_resolution_date: baseData.effective_date,
+          signatory_name: "Torrance Stroman",
+          signatory_title: "CEO",
+          founder_1_name: "Torrance Stroman",
+          founder_1_class: "Common Stock",
+          founder_1_shares: "7,700,000",
+          founder_1_percent: "77",
+          founder_1_notes: "Founder shares, immediate vesting",
+          founder_2_name: "Justin Sweet",
+          founder_2_class: "Common Stock",
+          founder_2_shares: "1,000,000",
+          founder_2_percent: "10",
+          founder_2_notes: "4 year vesting, 1 year cliff",
+          subscriber_percent_post: equityPercent.toString(),
+          option_pool_shares: "0",
+          option_pool_percent: "0",
+          option_pool_notes: "To be established",
+          total_fd_shares: "10,000,000",
+          bank_name: "Chase Bank",
+          routing_number: "021000021",
+          account_number: "1234567890",
+          account_name: "Crave'n, Inc.",
+          swift_bic: "CHASUS33",
+          payment_reference: `Stock Purchase - ${exec.full_name}`,
+          notes: exec.notes || '',
+        };
+      case 'founders_agreement':
+        return {
+          ...baseData,
+          founders_table_html: `<table><tr><td>${exec.full_name}</td><td>${equityPercent}%</td><td>${sharesIssued.toLocaleString()} shares</td></tr></table>`,
+          vesting_years: '4',
+          cliff_months: '12',
+          founder_1_name: exec.full_name,
+          founder_1_role: baseData.role,
+          founder_1_percent: equityPercent.toString(),
+          founder_1_shares: sharesIssued.toLocaleString(),
+          founder_1_vesting: baseData.vesting_schedule,
+        };
+      case 'deferred_comp_addendum':
+        return {
+          ...baseData,
+          deferred_salary: annualSalary.toLocaleString(),
+          total_annual_comp: annualSalary.toLocaleString(),
+          deferral_trigger: exec.funding_trigger ? `$${parseInt(exec.funding_trigger).toLocaleString()}` : "Series A funding",
+          payment_terms: "Paid within 30 days of funding event",
+        };
+      case 'confidentiality_ip':
+        return {
+          ...baseData,
+          employee_name: exec.full_name,
+          position: baseData.role,
+        };
+      case 'bylaws_officers_excerpt':
+        return {
+          ...baseData,
+          officer_roles_html: `<ul><li>${baseData.role}: ${exec.full_name}</li></ul>`,
+        };
+      default:
+        return baseData;
+    }
+  };
+
   const validateExecutive = (exec: Executive, docType?: string): string[] => {
     const issues: string[] = [];
     if (!exec.full_name) issues.push('Missing full name');
