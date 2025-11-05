@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Card, message, Space, Typography, List, Tag, Progress, Modal, Alert } from 'antd';
 import { SendOutlined, FileTextOutlined, CheckCircleOutlined, LoadingOutlined, ReloadOutlined } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
-import { docsAPI } from './api';
+import { docsAPI } from '../hr/api';
 import { renderHtml } from '@/lib/templates';
 import { getExecutiveData, formatExecutiveForDocuments } from '@/utils/getExecutiveData';
 
