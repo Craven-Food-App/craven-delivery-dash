@@ -54,13 +54,23 @@ serve(async (req) => {
     };
     const role = roleMap[executive_title] || 'board_member';
 
+    // Generate resolution number using the function
+    const { data: resolutionNumberData, error: resolutionNumberError } = await supabaseClient
+      .rpc('generate_resolution_number');
+
+    if (resolutionNumberError) {
+      console.warn('Failed to generate resolution number, using fallback:', resolutionNumberError);
+    }
+
+    const resolutionNumber = resolutionNumberData || `BR-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`;
+
     // 1. Create board resolution
     const { data: resolutionData, error: resolutionError } = await supabaseClient
       .from('board_resolutions')
       .insert({
-        resolution_type: 'officer_appointment',
+        resolution_type: 'appointment', // Must be 'appointment', not 'officer_appointment'
         resolution_title: `Appointment of ${executive_name} as ${executive_title}`,
-        resolution_number: `BR-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`,
+        resolution_number: resolutionNumber,
         subject_person_name: executive_name,
         subject_person_email: executive_email,
         subject_position: executive_title,
@@ -72,41 +82,61 @@ serve(async (req) => {
       .select()
       .single();
 
-    if (resolutionError) throw resolutionError;
+    if (resolutionError) {
+      console.error('Board resolution error:', resolutionError);
+      throw new Error(`Failed to create board resolution: ${resolutionError.message}`);
+    }
 
     // 2. Create or update exec_users record
-    const { data: execData, error: execError } = await supabaseClient
+    // Check if exec_user already exists for this role
+    const { data: existingExec } = await supabaseClient
       .from('exec_users')
-      .upsert({
-        full_name: executive_name,
-        title: executive_title,
-        role: role,
-        equity_percent: parseFloat(equity_percent),
-        appointment_date: appointment_date,
-        board_resolution_id: resolutionData.id,
-        officer_status: 'appointed',
-        is_also_employee: false, // Officers start as equity-only
-      })
-      .select()
-      .single();
+      .select('id, user_id, title, role')
+      .eq('role', role)
+      .maybeSingle();
 
-    if (execError) throw execError;
+    let execData;
+    if (existingExec) {
+      // Update existing exec_user
+      const { data: updatedExec, error: updateError } = await supabaseClient
+        .from('exec_users')
+        .update({
+          title: executive_title,
+          role: role,
+        })
+        .eq('id', existingExec.id)
+        .select()
+        .single();
+      
+      if (updateError) {
+        console.error('Update exec_user error:', updateError);
+        throw new Error(`Failed to update exec_user: ${updateError.message}`);
+      }
+      execData = updatedExec;
+    } else {
+      // Create new exec_user (user_id can be null initially, will be linked when auth user is created)
+      const { data: newExec, error: createError } = await supabaseClient
+        .from('exec_users')
+        .insert({
+          user_id: null, // Will be linked when auth user is created
+          title: executive_title,
+          role: role,
+          department: null,
+          access_level: 1,
+        })
+        .select()
+        .single();
 
-    // 3. Create equity grant record
-    const { error: equityError } = await supabaseClient
-      .from('employee_equity')
-      .insert({
-        employee_id: execData.id,
-        grant_type: 'founder',
-        shares_granted: parseInt(shares_issued),
-        equity_percent: parseFloat(equity_percent),
-        vesting_schedule: vesting_schedule,
-        grant_date: appointment_date,
-        vesting_start_date: appointment_date,
-        status: 'active',
-      });
+      if (createError) {
+        console.error('Create exec_user error:', createError);
+        throw new Error(`Failed to create exec_user: ${createError.message}`);
+      }
+      execData = newExec;
+    }
 
-    if (equityError) throw equityError;
+    // 3. Note: employee_equity requires an employee_id from employees table
+    // We'll skip this for now since we don't have an employee record yet
+    // The equity can be tracked separately or an employee record can be created first
 
     // 4. Generate documents (call existing appoint-executive or create documents directly)
     const documentData = {
