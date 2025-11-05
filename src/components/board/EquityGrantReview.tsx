@@ -43,9 +43,9 @@ export function EquityGrantReview({ refreshTrigger }: { refreshTrigger?: number 
         .from('equity_grants')
         .select(`
           *,
-          exec_users!equity_grants_executive_id_fkey (
+          executive:exec_users!equity_grants_executive_id_fkey (
             title,
-            employees (
+            employee:employees (
               first_name,
               last_name
             )
@@ -57,8 +57,10 @@ export function EquityGrantReview({ refreshTrigger }: { refreshTrigger?: number 
 
       const formatted = data?.map((grant: any) => ({
         ...grant,
-        executive_name: `${grant.exec_users?.employees[0]?.first_name} ${grant.exec_users?.employees[0]?.last_name}`,
-        executive_title: grant.exec_users?.title,
+        executive_name: grant.executive?.employee 
+          ? `${grant.executive.employee.first_name} ${grant.executive.employee.last_name}`
+          : 'Unknown',
+        executive_title: grant.executive?.title || 'N/A',
       })) || [];
 
       setGrants(formatted);
