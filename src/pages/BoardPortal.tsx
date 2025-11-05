@@ -366,26 +366,26 @@ const BoardPortal: React.FC = () => {
                   key: 'equity',
                   label: (
                     <span className="flex items-center gap-1 sm:gap-2">
-                      <TrophyOutlined />
-                      <span className="text-xs sm:text-base">Equity Ownership</span>
-                    </span>
-                  ),
-                  children: <EquityDashboard />,
-                },
-                {
-                  key: 'equity_management',
-                  label: (
-                    <span className="flex items-center gap-1 sm:gap-2">
                       <PieChartOutlined />
-                      <span className="text-xs sm:text-base">Equity Management</span>
+                      <span className="text-xs sm:text-base">Equity & Governance</span>
                     </span>
                   ),
                   children: (
                     <div className="space-y-6">
                       <Tabs
-                        defaultActiveKey="grants"
+                        defaultActiveKey="overview"
                         size="small"
                         items={[
+                          {
+                            key: 'overview',
+                            label: 'Cap Table & Overview',
+                            children: (
+                              <div className="space-y-6">
+                                <CapTableView />
+                                <EquityDashboard />
+                              </div>
+                            ),
+                          },
                           {
                             key: 'grants',
                             label: 'Grant Equity',
@@ -395,11 +395,6 @@ const BoardPortal: React.FC = () => {
                             key: 'review',
                             label: 'Review Grants',
                             children: <EquityGrantReview refreshTrigger={grantRefreshTrigger} />,
-                          },
-                          {
-                            key: 'captable',
-                            label: 'Cap Table',
-                            children: <CapTableView />,
                           },
                         ]}
                       />
