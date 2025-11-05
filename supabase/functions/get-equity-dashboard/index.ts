@@ -19,7 +19,7 @@ serve(async (req: Request) => {
 
     const { data: equityRows, error } = await supabase
       .from('employee_equity')
-      .select('id, employee_id, shares_percentage, shares_total, equity_type, grant_date');
+      .select('id, employee_id, shares_percentage, shares_total, equity_type, grant_date, strike_price, vesting_schedule');
 
     if (error) throw error;
 
@@ -29,7 +29,7 @@ serve(async (req: Request) => {
     if (employeeIds.length > 0) {
       const { data: employees, error: empErr } = await supabase
         .from('employees')
-        .select('id, first_name, last_name, position, email')
+        .select('id, first_name, last_name, position, email, salary, salary_status, funding_trigger')
         .in('id', employeeIds);
       if (empErr) throw empErr;
       employeesById = (employees || []).reduce((acc: any, e: any) => { acc[e.id] = e; return acc; }, {});
@@ -41,33 +41,24 @@ serve(async (req: Request) => {
       last_name: employeesById[eq.employee_id]?.last_name || '',
       position: employeesById[eq.employee_id]?.position || '',
       email: employeesById[eq.employee_id]?.email || '',
+      salary: employeesById[eq.employee_id]?.salary || null,
+      salary_status: employeesById[eq.employee_id]?.salary_status || null,
+      funding_trigger: employeesById[eq.employee_id]?.funding_trigger || null,
       employee_equity: [{
         id: eq.id,
         shares_percentage: eq.shares_percentage,
         shares_total: eq.shares_total,
         equity_type: eq.equity_type,
         grant_date: eq.grant_date,
+        strike_price: eq.strike_price,
+        vesting_schedule: eq.vesting_schedule,
       }]
-    }));
-
-    // Format for response - include both employee_equity and executives_equity (for backwards compatibility)
-    const formattedExecutives = shareholders.map((sh: any) => ({
-      id: sh.id,
-      name: `${sh.first_name} ${sh.last_name}`.trim(),
-      position: sh.position,
-      equity_percent: sh.employee_equity[0]?.shares_percentage || 0,
-      shares_issued: sh.employee_equity[0]?.shares_total || 0,
-      strike_price: 0.0001,
-      vesting_schedule: '4 years with 1 year cliff',
-      grant_date: sh.employee_equity[0]?.grant_date,
-      status: 'active',
     }));
 
     return new Response(JSON.stringify({ 
       ok: true, 
       shareholders,
-      employee_equity: (equityRows || []),
-      executives_equity: formattedExecutives,
+      employee_equity: (equityRows || [])
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,

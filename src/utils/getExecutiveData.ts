@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export interface ExecutiveData {
-  id: string;
+  id: string; // exec_users.id
   user_id: string;
   role: string;
   title: string;
@@ -10,6 +10,7 @@ export interface ExecutiveData {
   full_name: string;
   email: string;
   position?: string;
+  employee_id?: string;
   salary?: number;
   salary_status?: string;
   funding_trigger?: number;
@@ -98,6 +99,7 @@ export async function getExecutiveData(userId?: string): Promise<ExecutiveData[]
         full_name: fullName,
         email: email,
         position: employee?.position,
+        employee_id: employee?.id,
         salary: employee?.salary,
         salary_status: employee?.salary_status,
         funding_trigger: employee?.funding_trigger,

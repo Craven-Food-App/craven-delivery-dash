@@ -457,25 +457,25 @@ export function renderHtml(templateId: string, data: Record<string, any>): strin
     </thead>
     <tbody>
       <tr>
-        <td>${data.founder_1_name || ''}</td>
-        <td>${data.founder_1_role || ''}</td>
-        <td>${data.founder_1_percent || ''}%</td>
-        <td>${data.founder_1_shares || ''}</td>
-        <td>${data.founder_1_vesting || data.vesting_years + ' years'}</td>
+        <td>${data.founder_1_name || data.full_name || ''}</td>
+        <td>${data.founder_1_role || data.role || ''}</td>
+        <td>${data.founder_1_percent || data.ownership_percent || ''}%</td>
+        <td>${data.founder_1_shares || data.share_count || ''}</td>
+        <td>${data.founder_1_vesting || (data.vesting_years ? data.vesting_years + ' years' : '')}</td>
       </tr>
-      <tr>
+      <tr ${data.founder_2_name ? '' : 'style="display:none"'}>
         <td>${data.founder_2_name || ''}</td>
         <td>${data.founder_2_role || ''}</td>
         <td>${data.founder_2_percent || ''}%</td>
         <td>${data.founder_2_shares || ''}</td>
-        <td>${data.founder_2_vesting || data.vesting_years + ' years'}</td>
+        <td>${data.founder_2_vesting || (data.vesting_years ? data.vesting_years + ' years' : '')}</td>
       </tr>
-      <tr>
+      <tr ${data.founder_3_name ? '' : 'style="display:none"'}>
         <td>${data.founder_3_name || ''}</td>
         <td>${data.founder_3_role || ''}</td>
         <td>${data.founder_3_percent || ''}%</td>
         <td>${data.founder_3_shares || ''}</td>
-        <td>${data.founder_3_vesting || data.vesting_years + ' years'}</td>
+        <td>${data.founder_3_vesting || (data.vesting_years ? data.vesting_years + ' years' : '')}</td>
       </tr>
     </tbody>
   </table>

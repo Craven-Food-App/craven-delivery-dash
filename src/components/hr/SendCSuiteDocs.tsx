@@ -194,6 +194,11 @@ export default function SendCSuiteDocs() {
           founders_table_html: `<table><tr><td>${exec.full_name}</td><td>${baseData.equity_percentage}%</td></tr></table>`,
           vesting_years: '4',
           cliff_months: '12',
+          founder_1_name: exec.full_name,
+          founder_1_role: baseData.role,
+          founder_1_percent: baseData.equity_percentage,
+          founder_1_shares: baseData.shares_issued,
+          founder_1_vesting: baseData.vesting_schedule,
         };
       case 'bylaws_officers_excerpt':
         return {
@@ -205,7 +210,23 @@ export default function SendCSuiteDocs() {
     }
   };
 
-  const sendDocumentsToExecutive = async (exec: Executive, isPartOfBatch = false) => {
+  const validateExecutive = (exec: Executive, docType?: string): string[] => {
+    const issues: string[] = [];
+    if (!exec.full_name) issues.push('Missing full name');
+    if (!exec.email) issues.push('Missing email');
+    if (docType === 'stock_issuance') {
+      if (!exec.shares_issued) issues.push('Missing shares issued');
+      if (!exec.strike_price) issues.push('Missing strike price');
+      if (!exec.vesting_schedule) issues.push('Missing vesting schedule');
+    }
+    if (docType === 'employment_agreement' || docType === 'offer_letter') {
+      if (!exec.equity_percent) issues.push('Missing equity percentage');
+    }
+    if (docType === 'deferred_comp_addendum') {
+      if (!exec.funding_trigger) issues.push('Missing funding trigger');
+    }
+    return issues;
+  };
     if (!exec) {
       message.warning('No executive selected');
       return;
@@ -228,6 +249,16 @@ export default function SendCSuiteDocs() {
 
       for (const docType of CSUITE_DOC_TYPES) {
         try {
+          // Validate required fields for this document type
+          const issues = validateExecutive(exec, docType.id);
+          if (issues.length > 0) {
+            const msg = `${docType.title}: ${issues.join(', ')}`;
+            console.warn(`Validation failed for ${exec.full_name}:`, msg);
+            execResults.failed++;
+            execResults.errors.push(msg);
+            continue;
+          }
+
           // Check if document already exists
           const status = statusMap[exec.id]?.find(s => s.type === docType.id);
           if (status?.exists && status.documentId) {

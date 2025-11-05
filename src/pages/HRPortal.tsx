@@ -646,6 +646,19 @@ const HRPortal: React.FC = () => {
           <TabPane
             tab={
               <span>
+                <TrophyOutlined />
+                Equity Management
+              </span>
+            }
+            key="equity"
+          >
+            {/** Minimal equity editor to keep data in sync */}
+            {React.createElement(require('@/components/hr/EquityManagement').default)}
+          </TabPane>
+
+          <TabPane
+            tab={
+              <span>
                 <FileSearchOutlined />
                 Audit Trail
               </span>
