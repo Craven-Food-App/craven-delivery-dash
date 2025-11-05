@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, Steps, Form, Input, Select, DatePicker, InputNumber, Button, message } from 'antd';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
 
 const { Step } = Steps;
 const { TextArea } = Input;
@@ -222,8 +223,13 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
 
       case 3:
         const values = form.getFieldsValue() as OfficerFormData;
-        const appointmentDateFormatted = values.appointment_date 
-          ? (typeof values.appointment_date === 'string' ? values.appointment_date : (values.appointment_date as any).format('MMMM D, YYYY'))
+        // Format appointment date if it's a dayjs object
+        const appointmentDate = values.appointment_date 
+          ? (dayjs.isDayjs(values.appointment_date) 
+              ? dayjs(values.appointment_date).format('MMMM D, YYYY')
+              : typeof values.appointment_date === 'string'
+              ? dayjs(values.appointment_date).format('MMMM D, YYYY')
+              : (values.appointment_date as any)?.format?.('MMMM D, YYYY') || String(values.appointment_date))
           : 'TBD';
         
         return (
@@ -232,12 +238,12 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
             <p><strong>Officer:</strong> {values.full_name || '(not provided)'}</p>
             <p><strong>Title:</strong> {values.position_title || '(not provided)'}</p>
             <p><strong>Email:</strong> {values.email || '(not provided)'}</p>
-            <p><strong>Appointment Date:</strong> {appointmentDateFormatted}</p>
+            <p><strong>Appointment Date:</strong> {appointmentDate}</p>
             <p><strong>Equity:</strong> {values.equity_percent || 0}% ({values.share_count?.toLocaleString() || 0} shares)</p>
             <p><strong>Vesting:</strong> {values.vesting_schedule || '(not provided)'}</p>
-            <p><strong>Annual Salary:</strong> ${values.annual_salary?.toLocaleString() || '0'}</p>
+            <p><strong>Annual Salary:</strong> ${values.annual_salary ? values.annual_salary.toLocaleString() : '0'}</p>
             <p><strong>Salary Status:</strong> {values.defer_salary ? 'Deferred until funding' : 'Active immediately'}</p>
-            {values.defer_salary && (
+            {values.defer_salary && values.funding_trigger && (
               <p><strong>Activation Trigger:</strong> {values.funding_trigger}</p>
             )}
             <div style={{ marginTop: '24px', padding: '16px', background: '#fff', borderRadius: '4px', border: '1px solid #d9d9d9' }}>
@@ -267,7 +273,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
         ))}
       </Steps>
 
-      <Form form={form} layout="vertical">
+      <Form form={form} layout="vertical" preserve={true}>
         {renderStepContent()}
       </Form>
 
