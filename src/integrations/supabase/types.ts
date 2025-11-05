@@ -4221,14 +4221,19 @@ export type Database = {
       exec_users: {
         Row: {
           access_level: number
+          appointment_date: string | null
           approved_at: string | null
           approved_by: string | null
+          board_resolution_id: string | null
           created_at: string | null
           department: string | null
           id: string
           ip_whitelist: Json | null
+          is_also_employee: boolean | null
           last_login: string | null
+          linked_employee_id: string | null
           mfa_enabled: boolean | null
+          officer_status: string | null
           role: string
           title: string | null
           updated_at: string | null
@@ -4236,14 +4241,19 @@ export type Database = {
         }
         Insert: {
           access_level?: number
+          appointment_date?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          board_resolution_id?: string | null
           created_at?: string | null
           department?: string | null
           id?: string
           ip_whitelist?: Json | null
+          is_also_employee?: boolean | null
           last_login?: string | null
+          linked_employee_id?: string | null
           mfa_enabled?: boolean | null
+          officer_status?: string | null
           role: string
           title?: string | null
           updated_at?: string | null
@@ -4251,14 +4261,19 @@ export type Database = {
         }
         Update: {
           access_level?: number
+          appointment_date?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          board_resolution_id?: string | null
           created_at?: string | null
           department?: string | null
           id?: string
           ip_whitelist?: Json | null
+          is_also_employee?: boolean | null
           last_login?: string | null
+          linked_employee_id?: string | null
           mfa_enabled?: boolean | null
+          officer_status?: string | null
           role?: string
           title?: string | null
           updated_at?: string | null
@@ -4271,6 +4286,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "exec_users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exec_users_board_resolution_id_fkey"
+            columns: ["board_resolution_id"]
+            isOneToOne: false
+            referencedRelation: "board_resolutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exec_users_linked_employee_id_fkey"
+            columns: ["linked_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exec_users_linked_employee_id_fkey"
+            columns: ["linked_employee_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_summary"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "exec_users_user_id_fkey"

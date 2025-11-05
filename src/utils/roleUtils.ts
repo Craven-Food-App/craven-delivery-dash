@@ -151,3 +151,81 @@ export const getPortalsForPosition = (position?: string | null): Array<'board' |
   return portals;
 };
 
+/**
+ * Checks if a user is a corporate officer (appointed by board)
+ * This is different from being an employee
+ */
+export const isOfficer = async (userId?: string | null): Promise<boolean> => {
+  if (!userId) return false;
+  
+  const { supabase } = await import('@/integrations/supabase/client');
+  const { data } = await supabase
+    .from('exec_users')
+    .select('id')
+    .eq('user_id', userId)
+    .in('officer_status', ['appointed', 'active'])
+    .single();
+  
+  return !!data;
+};
+
+/**
+ * Checks if a user is an employee (has active employment)
+ */
+export const isEmployee = async (userId?: string | null): Promise<boolean> => {
+  if (!userId) return false;
+  
+  const { supabase } = await import('@/integrations/supabase/client');
+  const { data } = await supabase
+    .from('employees')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('employment_status', 'active')
+    .single();
+  
+  return !!data;
+};
+
+/**
+ * Checks if a user is both an officer and an employee
+ */
+export const isOfficerAndEmployee = async (userId?: string | null): Promise<boolean> => {
+  if (!userId) return false;
+  
+  const { supabase } = await import('@/integrations/supabase/client');
+  const { data } = await supabase
+    .from('exec_users')
+    .select('is_also_employee')
+    .eq('user_id', userId)
+    .in('officer_status', ['appointed', 'active'])
+    .single();
+  
+  return data?.is_also_employee || false;
+};
+
+/**
+ * Gets officer appointment date
+ */
+export const getOfficerAppointmentDate = async (userId?: string | null): Promise<string | null> => {
+  if (!userId) return null;
+  
+  const { supabase } = await import('@/integrations/supabase/client');
+  const { data } = await supabase
+    .from('exec_users')
+    .select('appointment_date')
+    .eq('user_id', userId)
+    .single();
+  
+  return data?.appointment_date || null;
+};
+
+/**
+ * Checks if officer has active salary
+ */
+export const hasActiveSalary = async (userId?: string | null): Promise<boolean> => {
+  if (!userId) return false;
+  
+  const isOfficerEmployee = await isOfficerAndEmployee(userId);
+  return isOfficerEmployee;
+};
+
