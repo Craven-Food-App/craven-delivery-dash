@@ -50,28 +50,25 @@ serve(async (req: Request) => {
       }]
     }));
 
-    // Also include executives_equity (name-only records from executive appointments)
-    try {
-      const { data: execs } = await supabase.from('executives_equity').select('*');
-      (execs || []).forEach((row: any) => {
-        shareholders.push({
-          id: row.id,
-          first_name: (row.name || '').split(' ')[0] || row.name,
-          last_name: (row.name || '').split(' ').slice(1).join(' '),
-          position: row.title || 'Executive',
-          email: '',
-          employee_equity: [{
-            id: row.id,
-            shares_percentage: row.shares_percentage,
-            shares_total: row.shares_total,
-            equity_type: row.equity_type,
-            grant_date: row.created_at,
-          }]
-        });
-      });
-    } catch (_) {}
+    // Format for response - include both employee_equity and executives_equity (for backwards compatibility)
+    const formattedExecutives = shareholders.map((sh: any) => ({
+      id: sh.id,
+      name: `${sh.first_name} ${sh.last_name}`.trim(),
+      position: sh.position,
+      equity_percent: sh.employee_equity[0]?.shares_percentage || 0,
+      shares_issued: sh.employee_equity[0]?.shares_total || 0,
+      strike_price: 0.0001,
+      vesting_schedule: '4 years with 1 year cliff',
+      grant_date: sh.employee_equity[0]?.grant_date,
+      status: 'active',
+    }));
 
-    return new Response(JSON.stringify({ ok: true, shareholders }), {
+    return new Response(JSON.stringify({ 
+      ok: true, 
+      shareholders,
+      employee_equity: (equityRows || []),
+      executives_equity: formattedExecutives,
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });

@@ -5,6 +5,7 @@ import { SendOutlined, FileTextOutlined, CheckCircleOutlined, LoadingOutlined, R
 import { supabase } from '@/integrations/supabase/client';
 import { docsAPI } from './api';
 import { renderHtml } from '@/lib/templates';
+import { getExecutiveData, formatExecutiveForDocuments } from '@/utils/getExecutiveData';
 
 const { Title, Text } = Typography;
 
@@ -60,102 +61,26 @@ export default function SendCSuiteDocs() {
     try {
       setLoading(true);
       
-      // Fetch all C-Suite executives from exec_users (direct query, no joins)
-      const { data: execUsers, error: execError } = await supabase
-        .from('exec_users')
-        .select('id, user_id, role, title, department')
-        .in('role', ['ceo', 'cfo', 'coo', 'cto', 'cxo', 'executive']);
-
-      if (execError) {
-        console.error('Error fetching exec_users:', execError);
-        throw execError;
-      }
-
-      if (!execUsers || execUsers.length === 0) {
-        console.warn('No exec_users found');
-        message.warning('No C-Suite executives found in exec_users table');
-        setExecutives([]);
-        return;
-      }
-
-      console.log('Found exec_users:', execUsers);
-
-      // Fetch user_profiles for all user_ids
-      const userIds = execUsers.map((eu: any) => eu.user_id).filter(Boolean);
-      let userProfilesMap: Record<string, any> = {};
+      // Use the unified data access layer
+      const executivesData = await getExecutiveData();
       
-      if (userIds.length > 0) {
-        const { data: userProfiles, error: profilesError } = await supabase
-          .from('user_profiles')
-          .select('id, full_name, email')
-          .in('id', userIds);
+      const formatted: Executive[] = executivesData.map((exec) => {
+        const formattedExec = formatExecutiveForDocuments(exec);
         
-        if (!profilesError && userProfiles) {
-          userProfiles.forEach((profile: any) => {
-            userProfilesMap[profile.id] = profile;
-          });
-        }
-      console.log('User profiles:', userProfiles);
-      }
-
-      // Fetch employees for all user_ids
-      let employeesMap: Record<string, any> = {};
-      if (userIds.length > 0) {
-        const { data: employees, error: empError } = await supabase
-          .from('employees')
-          .select('user_id, first_name, last_name, email')
-          .in('user_id', userIds);
-        
-        if (!empError && employees) {
-          employees.forEach((emp: any) => {
-            employeesMap[emp.user_id] = emp;
-          });
-        }
-        console.log('Employees:', employees);
-      }
-
-      // Fetch executives table data (equity, compensation, etc.)
-      const { data: executivesData, error: execDataError } = await supabase
-        .from('executives')
-        .select('name, title, equity_percent, shares_issued, annual_salary, funding_trigger, vesting_schedule, strike_price, salary_status');
-      
-      const executivesDataMap: Record<string, any> = {};
-      if (!execDataError && executivesData) {
-        executivesData.forEach((exec: any) => {
-          executivesDataMap[exec.name.toLowerCase().trim()] = exec;
-        });
-        console.log('Executives data:', executivesData);
-      }
-
-      // Format executives with name and email
-      const formatted: Executive[] = (execUsers || []).map((eu: any) => {
-        const userProfile = eu.user_id ? userProfilesMap[eu.user_id] : null;
-        const employee = eu.user_id ? employeesMap[eu.user_id] : null;
-
-        const fullName = userProfile?.full_name || 
-                        (employee ? `${employee.first_name || ''} ${employee.last_name || ''}`.trim() : '') ||
-                        eu.title ||
-                        `Executive (${eu.role})`;
-        
-        const email = userProfile?.email || employee?.email || '';
-        
-        // Merge in executives table data if available
-        const execData = executivesDataMap[fullName.toLowerCase().trim()] || {};
-
         return {
-          id: eu.id,
-          user_id: eu.user_id,
-          role: eu.role,
-          title: eu.title || eu.role.toUpperCase(),
-          full_name: fullName,
-          email: email,
-          equity_percent: execData.equity_percent || undefined,
-          shares_issued: execData.shares_issued || undefined,
-          annual_salary: execData.annual_salary || undefined,
-          funding_trigger: execData.funding_trigger || undefined,
-          vesting_schedule: execData.vesting_schedule || undefined,
-          strike_price: execData.strike_price || undefined,
-          salary_status: execData.salary_status || undefined,
+          id: exec.id,
+          user_id: exec.user_id,
+          role: exec.role,
+          title: formattedExec.title,
+          full_name: exec.full_name,
+          email: exec.email,
+          equity_percent: formattedExec.equity_percent,
+          shares_issued: formattedExec.shares_issued,
+          annual_salary: formattedExec.annual_salary,
+          funding_trigger: formattedExec.funding_trigger,
+          vesting_schedule: formattedExec.vesting_schedule,
+          strike_price: formattedExec.strike_price,
+          salary_status: formattedExec.salary_status,
         };
       });
 
@@ -230,13 +155,14 @@ export default function SendCSuiteDocs() {
       full_name: exec.full_name,
       role: exec.role === 'cxo' ? 'Chief Experience Officer' : exec.title || exec.role.toUpperCase(),
       effective_date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-      funding_trigger: exec.funding_trigger || "Upon Series A funding or significant investment event",
+      funding_trigger: exec.funding_trigger ? `$${parseInt(exec.funding_trigger).toLocaleString()}` : "Upon Series A funding or significant investment event",
       governing_law: "State of Delaware",
-      equity_percentage: exec.equity_percent || (exec.role === 'ceo' ? '15' : exec.role === 'cfo' ? '10' : exec.role === 'coo' ? '10' : exec.role === 'cto' ? '10' : '5'),
+      equity_percentage: exec.equity_percent || '5',
       annual_salary: exec.annual_salary || '90000',
       vesting_schedule: exec.vesting_schedule || '4 years with 1 year cliff',
-      strike_price: exec.strike_price || '$0.0001',
+      strike_price: exec.strike_price || '0.0001',
       shares_issued: exec.shares_issued || '100000',
+      salary_status: exec.salary_status || 'active',
     };
 
     // Add template-specific data
