@@ -1098,16 +1098,7 @@ export function renderHtml(templateId: string, data: Record<string, any>): strin
     </tr>
   </table>
 
-  <hr/>
-  <p class="muted">
-    Developer placeholders: {{'{{company_name}}'}}, {{'{{executive_name}}'}}, {{'{{executive_first_name}}'}},
-    {{'{{position_title}}'}}, {{'{{reporting_to_title}}'}}, {{'{{work_location}}'}}, {{'{{annual_base_salary}}'}},
-    {{'{{currency}}'}}, {{'{{funding_trigger_amount}}'}}, {{'{{share_count}}'}}, {{'{{share_class}}'}},
-    {{'{{ownership_percent}}'}}, {{'{{vesting_period}}'}}, {{'{{vesting_cliff}}'}}, {{'{{bonus_structure}}'}},
-    {{'{{employment_country}}'}}, {{'{{governing_law_state}}'}}, {{'{{signatory_name}}'}}, {{'{{signatory_title}}'}},
-    {{'{{offer_date}}'}}, {{'{{executive_address}}'}}, {{'{{executive_email}}'}}, {{'{{start_date}}'}},
-    {{'{{company_mission_statement}}'}}.
-  </p>
+  <!-- Developer placeholders removed from output to avoid confusion -->
 
 </body>
 </html>`;
