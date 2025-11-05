@@ -27,6 +27,13 @@ interface Executive {
   title: string;
   full_name: string;
   email: string;
+  equity_percent?: string;
+  shares_issued?: string;
+  annual_salary?: string;
+  funding_trigger?: string;
+  vesting_schedule?: string;
+  strike_price?: string;
+  salary_status?: string;
 }
 
 interface DocumentStatus {
@@ -88,7 +95,7 @@ export default function SendCSuiteDocs() {
             userProfilesMap[profile.id] = profile;
           });
         }
-        console.log('User profiles:', userProfiles);
+      console.log('User profiles:', userProfiles);
       }
 
       // Fetch employees for all user_ids
@@ -107,6 +114,19 @@ export default function SendCSuiteDocs() {
         console.log('Employees:', employees);
       }
 
+      // Fetch executives table data (equity, compensation, etc.)
+      const { data: executivesData, error: execDataError } = await supabase
+        .from('executives')
+        .select('name, title, equity_percent, shares_issued, annual_salary, funding_trigger, vesting_schedule, strike_price, salary_status');
+      
+      const executivesDataMap: Record<string, any> = {};
+      if (!execDataError && executivesData) {
+        executivesData.forEach((exec: any) => {
+          executivesDataMap[exec.name.toLowerCase().trim()] = exec;
+        });
+        console.log('Executives data:', executivesData);
+      }
+
       // Format executives with name and email
       const formatted: Executive[] = (execUsers || []).map((eu: any) => {
         const userProfile = eu.user_id ? userProfilesMap[eu.user_id] : null;
@@ -118,6 +138,9 @@ export default function SendCSuiteDocs() {
                         `Executive (${eu.role})`;
         
         const email = userProfile?.email || employee?.email || '';
+        
+        // Merge in executives table data if available
+        const execData = executivesDataMap[fullName.toLowerCase().trim()] || {};
 
         return {
           id: eu.id,
@@ -126,6 +149,13 @@ export default function SendCSuiteDocs() {
           title: eu.title || eu.role.toUpperCase(),
           full_name: fullName,
           email: email,
+          equity_percent: execData.equity_percent || undefined,
+          shares_issued: execData.shares_issued || undefined,
+          annual_salary: execData.annual_salary || undefined,
+          funding_trigger: execData.funding_trigger || undefined,
+          vesting_schedule: execData.vesting_schedule || undefined,
+          strike_price: execData.strike_price || undefined,
+          salary_status: execData.salary_status || undefined,
         };
       });
 
@@ -200,9 +230,13 @@ export default function SendCSuiteDocs() {
       full_name: exec.full_name,
       role: exec.role === 'cxo' ? 'Chief Experience Officer' : exec.title || exec.role.toUpperCase(),
       effective_date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-      funding_trigger: "Upon Series A funding or significant investment event",
+      funding_trigger: exec.funding_trigger || "Upon Series A funding or significant investment event",
       governing_law: "State of Delaware",
-      equity_percentage: exec.role === 'ceo' ? '15' : exec.role === 'cfo' ? '10' : exec.role === 'coo' ? '10' : exec.role === 'cto' ? '10' : '5',
+      equity_percentage: exec.equity_percent || (exec.role === 'ceo' ? '15' : exec.role === 'cfo' ? '10' : exec.role === 'coo' ? '10' : exec.role === 'cto' ? '10' : '5'),
+      annual_salary: exec.annual_salary || '90000',
+      vesting_schedule: exec.vesting_schedule || '4 years with 1 year cliff',
+      strike_price: exec.strike_price || '$0.0001',
+      shares_issued: exec.shares_issued || '100000',
     };
 
     // Add template-specific data
@@ -222,11 +256,11 @@ export default function SendCSuiteDocs() {
       case 'stock_issuance':
         return {
           ...baseData,
-          share_count: '100,000',
+          share_count: baseData.shares_issued,
           class_name: 'Common Stock',
-          par_value: '$0.0001',
+          par_value: baseData.strike_price,
           consideration: 'Services rendered',
-          vesting_schedule: '4 years with 1 year cliff',
+          vesting_schedule: baseData.vesting_schedule,
         };
       case 'founders_agreement':
         return {
