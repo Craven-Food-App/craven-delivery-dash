@@ -17,6 +17,7 @@ import {
   BarChartOutlined,
   SafetyOutlined,
   SettingOutlined,
+  TrophyOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
