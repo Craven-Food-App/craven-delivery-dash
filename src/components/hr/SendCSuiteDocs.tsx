@@ -245,14 +245,16 @@ export default function SendCSuiteDocs() {
     }
   };
 
-  const sendDocumentsToExecutive = async (exec: Executive) => {
+  const sendDocumentsToExecutive = async (exec: Executive, isPartOfBatch = false) => {
     if (!exec) {
       message.warning('No executive selected');
       return;
     }
 
-    setSending(true);
-    setProgress(0);
+    if (!isPartOfBatch) {
+      setSending(true);
+      setProgress(0);
+    }
 
     try {
       const totalOperations = CSUITE_DOC_TYPES.length;
@@ -318,7 +320,9 @@ export default function SendCSuiteDocs() {
         }
 
         completed++;
-        setProgress((completed / totalOperations) * 100);
+        if (!isPartOfBatch) {
+          setProgress((completed / totalOperations) * 100);
+        }
       }
 
       // After processing all docs, send ONE email with links + PDF attachments
@@ -347,20 +351,90 @@ export default function SendCSuiteDocs() {
       // Log summary for this executive
       if (execResults.failed > 0) {
         console.error(`${exec.full_name} - ${execResults.success} success, ${execResults.failed} failed:`, execResults.errors);
-        message.warning(
-          `${exec.full_name}: ${execResults.success} successful, ${execResults.failed} failed. One email prepared with available documents.`,
-          5
-        );
+        if (!isPartOfBatch) {
+          message.warning(
+            `${exec.full_name}: ${execResults.success} successful, ${execResults.failed} failed. One email prepared with available documents.`,
+            5
+          );
+        }
       } else {
         console.log(`${exec.full_name} - All ${execResults.success} documents processed successfully`);
-        message.success(`Sent 1 email to ${exec.full_name} with ${docsForEmail.length} documents`);
+        if (!isPartOfBatch) {
+          message.success(`Sent 1 email to ${exec.full_name} with ${docsForEmail.length} documents`);
+        }
       }
 
-      // Refresh document status
-      await checkExistingDocuments(executives);
+      // Refresh document status only if not part of batch
+      if (!isPartOfBatch) {
+        await checkExistingDocuments(executives);
+      }
+
+      return execResults;
     } catch (error: any) {
       console.error('Error sending documents:', error);
-      message.error(`Failed to send documents: ${error.message}`);
+      if (!isPartOfBatch) {
+        message.error(`Failed to send documents: ${error.message}`);
+      }
+      return { exec, success: 0, failed: CSUITE_DOC_TYPES.length, errors: [error.message] };
+    } finally {
+      if (!isPartOfBatch) {
+        setSending(false);
+        setProgress(0);
+      }
+    }
+  };
+
+  const sendDocumentsToAll = async () => {
+    if (executives.length === 0) {
+      message.warning('No executives found');
+      return;
+    }
+
+    const execsWithEmail = executives.filter(e => e.email);
+    if (execsWithEmail.length === 0) {
+      message.error('No executives have email addresses');
+      return;
+    }
+
+    setSending(true);
+    setProgress(0);
+
+    try {
+      const totalExecs = execsWithEmail.length;
+      let completed = 0;
+      const allResults: any[] = [];
+
+      message.info(`Sending documents to ${totalExecs} executives...`);
+
+      for (const exec of execsWithEmail) {
+        console.log(`\n=== Sending to ${exec.full_name} (${completed + 1}/${totalExecs}) ===`);
+        const result = await sendDocumentsToExecutive(exec, true);
+        allResults.push(result);
+        completed++;
+        setProgress((completed / totalExecs) * 100);
+      }
+
+      // Refresh document status after all are done
+      await checkExistingDocuments(executives);
+
+      // Show summary
+      const totalSuccess = allResults.reduce((sum, r) => sum + r.success, 0);
+      const totalFailed = allResults.reduce((sum, r) => sum + r.failed, 0);
+
+      if (totalFailed > 0) {
+        message.warning(
+          `Completed: ${totalSuccess} documents sent successfully, ${totalFailed} failed across ${totalExecs} executives`,
+          6
+        );
+      } else {
+        message.success(
+          `Successfully sent all documents to ${totalExecs} executives!`,
+          4
+        );
+      }
+    } catch (error: any) {
+      console.error('Error in batch send:', error);
+      message.error(`Batch send failed: ${error.message}`);
     } finally {
       setSending(false);
       setProgress(0);
@@ -507,10 +581,22 @@ export default function SendCSuiteDocs() {
           <Title level={4} style={{ margin: 0 }}>Send C-Suite Documents</Title>
         </Space>
       }
+      extra={
+        <Button
+          type="primary"
+          icon={<SendOutlined />}
+          onClick={sendDocumentsToAll}
+          loading={sending}
+          disabled={executives.filter(e => e.email).length === 0 || regenerating}
+          style={{ background: 'linear-gradient(135deg, #ff7a45 0%, #ff8c00 100%)', border: 'none' }}
+        >
+          Send to All ({executives.filter(e => e.email).length})
+        </Button>
+      }
     >
       <Alert
         message="C-Suite Document Distribution"
-        description="Send all required C-Suite documents to each executive individually. If documents already exist, they will be sent without regeneration."
+        description="Send documents to all executives at once using the 'Send to All' button, or send to individual executives using the 'Send Docs' button next to their name."
         type="info"
         showIcon
         style={{ marginBottom: 16 }}
