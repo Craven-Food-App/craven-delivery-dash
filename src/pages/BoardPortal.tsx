@@ -24,6 +24,9 @@ import { DocumentVault } from '@/components/board/DocumentVault';
 import { EquityGrantForm } from '@/components/board/EquityGrantForm';
 import { EquityGrantReview } from '@/components/board/EquityGrantReview';
 import { CapTableView } from '@/components/board/CapTableView';
+import { OfficerAppointmentWorkflow } from '@/components/board/OfficerAppointmentWorkflow';
+import { OfficerToEmployeeConverter } from '@/components/board/OfficerToEmployeeConverter';
+import GenerateOfficerDocuments from '@/components/board/GenerateOfficerDocuments';
 import { executiveTheme } from '@/config/antd-theme';
 import { useExecAuth } from '@/hooks/useExecAuth';
 
@@ -341,6 +344,38 @@ const BoardPortal: React.FC = () => {
                     </span>
                   ),
                   children: <ExecutiveDirectory />,
+                },
+                {
+                  key: 'officers',
+                  label: (
+                    <span className="flex items-center gap-1 sm:gap-2">
+                      <TrophyOutlined />
+                      <span className="text-xs sm:text-base">Officer Management</span>
+                    </span>
+                  ),
+                  children: (
+                    <Tabs
+                      defaultActiveKey="appoint"
+                      size="small"
+                      items={[
+                        {
+                          key: 'appoint',
+                          label: 'Appoint Officer',
+                          children: <OfficerAppointmentWorkflow />,
+                        },
+                        {
+                          key: 'convert',
+                          label: 'Convert to Employee',
+                          children: <OfficerToEmployeeConverter />,
+                        },
+                        {
+                          key: 'documents',
+                          label: 'Officer Documents',
+                          children: <GenerateOfficerDocuments />,
+                        },
+                      ]}
+                    />
+                  ),
                 },
                 {
                   key: 'personnel',

@@ -52,16 +52,29 @@ export const ExecutiveDirectory: React.FC = () => {
   const fetchExecutives = async () => {
     setLoading(true);
     try {
-      // Fetch from employees table - get ALL employees, filter C-level in code
-      const { data: employeesData, error: empError } = await supabase
-        .from('employees' as any)
-        .select('*')
-        .order('position');
+      // Fetch from exec_users (officers) and employees (C-level employees)
+      const [execUsersRes, employeesRes] = await Promise.all([
+        supabase.from('exec_users').select('*').order('created_at', { ascending: false }),
+        supabase.from('employees' as any).select('*').order('position')
+      ]);
 
-      if (empError) throw empError;
+      if (execUsersRes.error) throw execUsersRes.error;
 
-      // Filter to only C-level positions and map to Executive interface (using centralized utilities)
-      const executives: Executive[] = ((employeesData as any) || [])
+      const executivesFromOfficers: Executive[] = (execUsersRes.data || []).map((officer: any) => ({
+        id: officer.id,
+        user_id: officer.user_id,
+        role: officer.role || 'executive',
+        title: officer.title || officer.role?.toUpperCase(),
+        department: officer.department || 'Executive',
+        last_login: officer.last_login,
+        created_at: officer.created_at,
+        name: officer.title || officer.role?.toUpperCase(),
+        email: undefined,
+        source: 'exec_users' as const,
+      }));
+
+      // Filter to only C-level positions from employees and map to Executive interface
+      const executivesFromEmployees: Executive[] = ((employeesRes.data as any) || [])
         .filter((emp: any) => isCLevelPosition(emp.position))
         .map((emp: any) => {
           const position = String(emp.position || '').toLowerCase();
@@ -89,8 +102,17 @@ export const ExecutiveDirectory: React.FC = () => {
           };
         });
 
-      setExecutives(executives);
-      setFilteredExecutives(executives);
+      // Combine and deduplicate (prefer exec_users data if user_id matches)
+      const combined = [...executivesFromOfficers];
+      executivesFromEmployees.forEach(empExec => {
+        const exists = combined.find(ex => ex.user_id && empExec.user_id && ex.user_id === empExec.user_id);
+        if (!exists) {
+          combined.push(empExec);
+        }
+      });
+
+      setExecutives(combined);
+      setFilteredExecutives(combined);
     } catch (error) {
       console.error('Error fetching executives:', error);
       message.error('Failed to load executives');
@@ -260,8 +282,11 @@ export const ExecutiveDirectory: React.FC = () => {
                     </div>
                   )}
 
-                  {exec.source === 'employees' && (
-                    <Tag color="blue" className="text-xs">From Personnel</Tag>
+                  {exec.source === 'exec_users' && (
+                    <Tag color="gold" className="text-xs">CORPORATE OFFICER</Tag>
+                  )}
+                  {exec.source === 'employees' && !exec.email && (
+                    <Tag color="blue" className="text-xs">Employee</Tag>
                   )}
                 </div>
 

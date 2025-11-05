@@ -66,6 +66,7 @@ export const PersonnelManager: React.FC = () => {
   const [emailHistory, setEmailHistory] = useState<any[]>([]);
   const [loadingEmails, setLoadingEmails] = useState(false);
   const [positions, setPositions] = useState<any[]>([]);
+  const [viewFilter, setViewFilter] = useState<'all' | 'officers' | 'employees'>('all');
 
   useEffect(() => {
     fetchEmployees();
@@ -942,13 +943,22 @@ export const PersonnelManager: React.FC = () => {
     }
   };
 
-  const filteredEmployees = employees.filter(emp => 
-    searchText === '' || 
-    emp.first_name.toLowerCase().includes(searchText.toLowerCase()) ||
-    emp.last_name.toLowerCase().includes(searchText.toLowerCase()) ||
-    emp.email.toLowerCase().includes(searchText.toLowerCase()) ||
-    emp.position.toLowerCase().includes(searchText.toLowerCase())
-  );
+  const filteredEmployees = employees.filter(emp => {
+    // First apply search filter
+    const matchesSearch = searchText === '' || 
+      emp.first_name.toLowerCase().includes(searchText.toLowerCase()) ||
+      emp.last_name.toLowerCase().includes(searchText.toLowerCase()) ||
+      emp.email.toLowerCase().includes(searchText.toLowerCase()) ||
+      emp.position.toLowerCase().includes(searchText.toLowerCase());
+    
+    if (!matchesSearch) return false;
+    
+    // Then apply view filter
+    const isCLevel = isCLevelPosition(emp.position);
+    if (viewFilter === 'officers') return isCLevel;
+    if (viewFilter === 'employees') return !isCLevel;
+    return true; // 'all'
+  });
 
   // Mobile columns - simplified view
   const mobileColumns = [
@@ -1025,7 +1035,14 @@ export const PersonnelManager: React.FC = () => {
     {
       title: 'Name',
       key: 'name',
-      render: (_: any, record: Employee) => `${record.first_name} ${record.last_name}`,
+      render: (_: any, record: Employee) => (
+        <div className="flex items-center gap-2">
+          <span>{`${record.first_name} ${record.last_name}`}</span>
+          {isCLevelPosition(record.position) && (
+            <Tag color="gold" className="text-xs">OFFICER</Tag>
+          )}
+        </div>
+      ),
       sorter: (a: Employee, b: Employee) => a.first_name.localeCompare(b.first_name),
     },
     {
@@ -1217,7 +1234,23 @@ export const PersonnelManager: React.FC = () => {
           <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1 sm:mb-2">Personnel Management</h2>
           <p className="text-sm sm:text-base text-slate-600">Hire, manage, and monitor all employees</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-0">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Select
+            value={viewFilter}
+            onChange={setViewFilter}
+            style={{ width: isMobile ? '100%' : 180 }}
+            size="large"
+          >
+            <Option value="all">
+              <TeamOutlined /> All Personnel
+            </Option>
+            <Option value="officers">
+              <TrophyOutlined /> Officers Only
+            </Option>
+            <Option value="employees">
+              <UserOutlined /> Employees Only
+            </Option>
+          </Select>
           <Search
             placeholder="Search personnel..."
             allowClear

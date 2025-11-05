@@ -1,12 +1,18 @@
 import React from 'react';
-import { ExecutiveAppointmentForm } from '@/components/admin/ExecutiveAppointmentForm';
+import { OfficerAppointmentWorkflow } from '@/components/board/OfficerAppointmentWorkflow';
+import { Card } from 'antd';
 
 const AdminExecutiveAppointment: React.FC = () => {
   return (
     <div style={{ padding: 24 }}>
-      <h1 style={{ marginTop: 0 }}>C-Suite Appointment</h1>
-      <p style={{ color: '#6b7280' }}>Create required documents, sync Supabase, and generate PDFs.</p>
-      <ExecutiveAppointmentForm />
+      <Card>
+        <h1 style={{ marginTop: 0 }}>Corporate Officer Appointment</h1>
+        <p style={{ color: '#6b7280' }}>
+          Appoint corporate officers through proper board governance. Officers are appointed by the board,
+          not hired like regular employees. This workflow generates board resolutions and legal documents.
+        </p>
+        <OfficerAppointmentWorkflow />
+      </Card>
     </div>
   );
 };
