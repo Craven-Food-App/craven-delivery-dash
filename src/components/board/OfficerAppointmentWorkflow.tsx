@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import { UploadOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
 import { renderHtml } from '@/lib/templates';
+import { renderDocumentHtml } from '@/utils/templateUtils';
 import { docsAPI } from '../hr/api';
 
 const { Step } = Steps;
@@ -91,8 +92,8 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
             annualSalary
           );
 
-          // Generate HTML using template
-          const html_content = renderHtml(docType.id, docData);
+          // Generate HTML using template from database (or fallback to hardcoded)
+          const html_content = await renderDocumentHtml(docType.id, docData, docType.id);
 
           // Call document-generate edge function
           const resp = await docsAPI.post('/documents/generate', {

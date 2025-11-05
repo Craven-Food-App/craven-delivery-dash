@@ -5,6 +5,7 @@ import { SendOutlined, FileTextOutlined, CheckCircleOutlined, LoadingOutlined, R
 import { supabase } from '@/integrations/supabase/client';
 import { docsAPI } from '../hr/api';
 import { renderHtml } from '@/lib/templates';
+import { renderDocumentHtml } from '@/utils/templateUtils';
 import { getExecutiveData, formatExecutiveForDocuments } from '@/utils/getExecutiveData';
 
 const { Title, Text } = Typography;
@@ -424,10 +425,10 @@ export default function SendCSuiteDocs() {
               throw new Error('Existing document has no file URL');
             }
           } else {
-            // Document doesn't exist, generate it using templates from src/lib/templates.ts
+            // Document doesn't exist, generate it using templates from database (or fallback to hardcoded)
             console.log(`Generating ${docType.title} for ${exec.full_name} using proper templates...`);
             const data = generateDocumentData(exec, docType.id);
-            const html_content = renderHtml(docType.id, data);
+            const html_content = await renderDocumentHtml(docType.id, data, docType.id);
 
             // Generate document via API
             const resp = await docsAPI.post('/documents/generate', {
@@ -670,7 +671,7 @@ export default function SendCSuiteDocs() {
         try {
           console.log(`Generating ${docType.title} for ${exec.full_name}...`);
           const data = generateDocumentData(exec, docType.id);
-          const html_content = renderHtml(docType.id, data);
+          const html_content = await renderDocumentHtml(docType.id, data, docType.id);
 
           // Generate document via API
           const resp = await docsAPI.post('/documents/generate', {
