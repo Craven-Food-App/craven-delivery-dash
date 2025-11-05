@@ -1,10 +1,176 @@
-<h1>Offer Letter</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Executive Offer Letter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    @page { size: A4; margin: 24mm 18mm; }
+    body {
+      font-family: "Inter","Helvetica Neue",Arial,sans-serif;
+      font-size: 14px;
+      line-height: 1.55;
+      color: #111;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    h2 { font-size: 16px; margin: 16px 0 6px; font-weight: 600; }
+    p { margin: 6px 0 10px; }
+    ul { margin: 6px 0 10px 22px; }
+    table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; }
+    th, td { border: 1px solid #d9d9d9; padding: 8px 10px; vertical-align: top; }
+    th { background: #fafafa; text-align: left; font-weight: 600; }
+    .muted { color: #666; font-size: 13px; }
+    .sig-grid { width: 100%; border-collapse: separate; border-spacing: 0 18px; }
+    .line { display: block; border-bottom: 1px solid #333; height: 24px; margin-bottom: 4px; }
+    .small { font-size: 12px; color: #666; }
+    .note { background: #fffbea; border: 1px solid #f3e29e; padding: 8px 10px; font-size: 13px; }
+  </style>
+</head>
+<body>
 
-<p>Dear {{full_name}},</p>
+  <h1>EXECUTIVE OFFER LETTER</h1>
 
-<p>We're excited to offer you the role of {{role}} at {{company_name}} effective {{effective_date}}. Equity: {{equity_percentage}}%. Base salary is deferred until the Company reaches ${{funding_trigger}}.</p>
+  <p>Date: {{offer_date}}</p>
 
-<p>Welcome aboard!</p>
+  <p>
+    <strong>{{executive_name}}</strong><br/>
+    {{executive_address}}<br/>
+    {{executive_email}}
+  </p>
 
-<div class="sig-block"><div class="sig"><div style="height:80px">{{{signature_company_html}}}</div><div class="label">{{company_name}}</div></div><div class="sig"><div style="height:80px">{{{signature_exec_html}}}</div><div class="label">{{full_name}}, {{role}}</div></div></div>
+  <p>Dear {{executive_first_name}},</p>
+
+  <p>
+    On behalf of <strong>{{company_name}}</strong> (the "Company"), we are pleased to extend this formal offer of employment
+    for the position of <strong>{{position_title}}</strong>. We are confident that your skills and experience will make a
+    significant contribution to our leadership team and our mission to {{company_mission_statement}}.
+  </p>
+
+  <h2>1. Position and Reporting</h2>
+  <p>
+    You will serve as <strong>{{position_title}}</strong> of the Company, reporting directly to {{reporting_to_title}}.
+    You will be expected to perform all duties consistent with such position and as assigned from time to time by the Board of Directors.
+    Your primary work location will be {{work_location}}; remote and hybrid work arrangements may be approved by the Board.
+  </p>
+
+  <h2>2. Start Date</h2>
+  <p>Your expected start date is <strong>{{start_date}}</strong>.</p>
+
+  <h2>3. Compensation</h2>
+  <table>
+    <tr>
+      <th>Base Salary</th>
+      <td>{{annual_base_salary}} {{currency}} per year, paid in accordance with standard Company payroll practices.</td>
+    </tr>
+    <tr>
+      <th>Deferred Compensation</th>
+      <td>
+        As part of the Company's early-stage policy, your salary will be deferred until funding reaches
+        <strong>{{funding_trigger_amount}} {{currency}}</strong>, as described in the
+        <strong>Deferred Compensation Addendum</strong>.
+      </td>
+    </tr>
+    <tr>
+      <th>Equity</th>
+      <td>
+        You will be granted <strong>{{share_count}}</strong> shares of {{share_class}} stock (representing approximately
+        {{ownership_percent}}% ownership), subject to the terms of the <strong>Founders'/Shareholders' Agreement</strong> and the
+        <strong>Stock Subscription Agreement</strong>. These shares will vest over <strong>{{vesting_period}}</strong> years
+        with a <strong>{{vesting_cliff}}</strong> cliff.
+      </td>
+    </tr>
+    <tr>
+      <th>Bonuses</th>
+      <td>{{bonus_structure}} (if applicable).</td>
+    </tr>
+  </table>
+
+  <h2>4. Benefits</h2>
+  <ul>
+    <li>Eligibility for Company benefits in accordance with standard policies (health, PTO, etc.) as they become available.</li>
+    <li>Reimbursement for reasonable business expenses incurred in the course of performing your duties.</li>
+    <li>Access to Company devices, software, and systems necessary to perform your role.</li>
+  </ul>
+
+  <h2>5. At-Will Employment</h2>
+  <p>
+    Employment with the Company is "at will," meaning that either you or the Company may terminate employment at any time,
+    with or without cause or notice. No statement in this Offer Letter or any other document alters this at-will relationship.
+  </p>
+
+  <h2>6. Confidentiality and IP Assignment</h2>
+  <p>
+    As a condition of employment, you are required to sign and comply with the Company's
+    <strong>Confidentiality & IP Assignment Agreement</strong>.
+  </p>
+
+  <h2>7. Other Terms</h2>
+  <ul>
+    <li>This offer is contingent on verification of your eligibility to work in {{employment_country}}.</li>
+    <li>You agree to comply with all Company policies, including ethics, data security, and non-solicitation requirements.</li>
+    <li>You represent that you are not bound by any restriction that would prevent you from performing your duties here.</li>
+  </ul>
+
+  <h2>8. Governing Law</h2>
+  <p>
+    This Offer Letter shall be governed by the laws of {{governing_law_state}}, without regard to its conflict-of-law provisions.
+  </p>
+
+  <h2>9. Acceptance of Offer</h2>
+  <p>
+    To indicate your acceptance of this offer, please sign and date this letter in the space provided below. Your signature confirms
+    that you have read, understood, and agree to the terms and conditions of employment with {{company_name}}.
+  </p>
+
+  <h2>Sincerely,</h2>
+  <table class="sig-grid">
+    <tr>
+      <td style="width:60%">
+        <div class="line"></div>
+        <div class="small">For the Company: {{signatory_name}}, {{signatory_title}}, {{company_name}}</div>
+      </td>
+      <td style="width:5%"></td>
+      <td>
+        <div class="line"></div>
+        <div class="small">Date</div>
+      </td>
+    </tr>
+  </table>
+
+  <h2>Accepted and Agreed:</h2>
+  <table class="sig-grid">
+    <tr>
+      <td style="width:60%">
+        <div class="line"></div>
+        <div class="small">Executive: {{executive_name}}</div>
+      </td>
+      <td style="width:5%"></td>
+      <td>
+        <div class="line"></div>
+        <div class="small">Date</div>
+      </td>
+    </tr>
+  </table>
+
+  <hr/>
+  <p class="muted">
+    Developer placeholders: {{company_name}}, {{executive_name}}, {{executive_first_name}},
+    {{position_title}}, {{reporting_to_title}}, {{work_location}}, {{annual_base_salary}},
+    {{currency}}, {{funding_trigger_amount}}, {{share_count}}, {{share_class}},
+    {{ownership_percent}}, {{vesting_period}}, {{vesting_cliff}}, {{bonus_structure}},
+    {{employment_country}}, {{governing_law_state}}, {{signatory_name}}, {{signatory_title}},
+    {{offer_date}}, {{executive_address}}, {{executive_email}}, {{start_date}},
+    {{company_mission_statement}}.
+  </p>
+
+</body>
+</html>
 
