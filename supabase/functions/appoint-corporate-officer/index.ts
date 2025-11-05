@@ -138,9 +138,43 @@ serve(async (req) => {
       execData = newExec;
     }
 
-    // 3. Note: employee_equity requires an employee_id from employees table
-    // We'll skip this for now since we don't have an employee record yet
-    // The equity can be tracked separately or an employee record can be created first
+    // 3. Create equity grant for the officer (separate from employees)
+    // Officers get equity via equity_grants table, linked to exec_users
+    const vestingJson = (vesting_schedule && typeof vesting_schedule === 'string')
+      ? { type: vesting_schedule, duration_months: 0 }
+      : { type: 'none', duration_months: 0 };
+
+    // Default strike price for founder/officer grants (adjust if you have pricing rules)
+    const strikePrice = 0.0001;
+
+    let equityGrantId: string | null = null;
+    const { data: equityGrant, error: equityError } = await supabaseClient
+      .from('equity_grants')
+      .insert({
+        executive_id: execData.id,          // Link to exec_users
+        employee_id: null,                  // Officers are separate from employees
+        granted_by: execData.id,            // Granted via appointment/board action
+        grant_date: appointment_date,
+        shares_total: parseInt(shares_issued, 10),
+        shares_percentage: parseFloat(equity_percent),
+        share_class: 'Common Stock',
+        strike_price: strikePrice,
+        vesting_schedule: vestingJson,
+        consideration_type: 'Founder/Officer Appointment',
+        consideration_value: 0,
+        status: 'approved',                 // Auto-approved as part of board resolution
+        board_resolution_id: resolutionData.id,
+        notes: `Officer appointment equity grant for ${executive_name} as ${executive_title}`,
+      })
+      .select()
+      .single();
+
+    if (equityError) {
+      console.error('Equity grant error:', equityError);
+      // Do not throw to avoid breaking appointment flow; return without equity_grant_id
+    } else {
+      equityGrantId = equityGrant?.id || null;
+    }
 
     // 4. Generate documents (call existing appoint-executive or create documents directly)
     const documentData = {
@@ -171,6 +205,7 @@ serve(async (req) => {
         success: true,
         officer_id: execData.id,
         resolution_id: resolutionData.id,
+        equity_grant_id: equityGrantId,
         message: `${executive_name} successfully appointed as ${executive_title}`,
         documents_generated: [
           'Board Resolution',
