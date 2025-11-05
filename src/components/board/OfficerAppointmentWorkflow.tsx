@@ -99,6 +99,20 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
         : (values.appointment_date as any).format('YYYY-MM-DD');
 
       // Call edge function to appoint officer
+      console.log('Calling appoint-corporate-officer edge function with payload:', {
+        executive_name: values.full_name,
+        executive_email: values.email,
+        executive_title: values.position_title,
+        appointment_date: appointmentDateStr,
+        equity_percent: values.equity_percent.toString(),
+        shares_issued: values.share_count.toString(),
+        vesting_schedule: values.vesting_schedule,
+        annual_salary: values.annual_salary?.toString(),
+        defer_salary: values.defer_salary,
+        funding_trigger: values.funding_trigger,
+        photo_url: uploadedPhotoUrl,
+      });
+
       const { data, error } = await supabase.functions.invoke('appoint-corporate-officer', {
         body: {
           executive_name: values.full_name,
@@ -115,8 +129,17 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error details:', {
+          error,
+          message: error.message,
+          context: error.context,
+          status: error.status,
+        });
+        throw error;
+      }
 
+      console.log('Edge function response:', data);
       message.success('Officer appointed successfully! Documents generated.');
       form.resetFields();
       setPhotoFile(null);
@@ -125,7 +148,30 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
       navigate('/board-portal');
     } catch (error: any) {
       console.error('Error appointing officer:', error);
-      message.error(error.message || 'Failed to appoint officer');
+      
+      // Provide more helpful error messages
+      let errorMessage = 'Failed to appoint officer';
+      
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.context?.message) {
+        errorMessage = error.context.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      // Check for common edge function errors
+      if (errorMessage.includes('Failed to send a request') || 
+          errorMessage.includes('Edge Function') ||
+          error?.status === 404) {
+        errorMessage = 'Edge function not found or not deployed. Please deploy the appoint-corporate-officer function to Supabase.';
+      } else if (error?.status === 500) {
+        errorMessage = 'Server error in edge function. Check Supabase logs for details.';
+      } else if (error?.status === 401 || error?.status === 403) {
+        errorMessage = 'Authentication error. Please check your permissions.';
+      }
+      
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
