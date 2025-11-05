@@ -40,17 +40,29 @@ const templates = [
   { 
     id: "offer_letter", 
     title: "Executive Offer Letter", 
-    placeholders: ["company_name", "full_name", "role", "equity_percentage", "effective_date", "funding_trigger"]
+    placeholders: [
+      "company_name","offer_date","executive_name","executive_first_name","executive_address","executive_email",
+      "position_title","reporting_to_title","work_location","start_date",
+      "annual_base_salary","currency","funding_trigger_amount",
+      "share_count","share_class","ownership_percent","vesting_period","vesting_cliff","bonus_structure",
+      "employment_country","governing_law_state","signatory_name","signatory_title","company_mission_statement"
+    ]
   },
   { 
     id: "bylaws_officers_excerpt", 
     title: "Bylaws – Officers (Excerpt)", 
-    placeholders: ["company_name", "funding_trigger", "officer_roles_html", "governing_law"]
+    placeholders: [
+      "company_name","state_of_incorporation","adoption_date","effective_date","execution_date","secretary_name"
+    ]
   },
   { 
     id: "irs_83b", 
     title: "IRS Form 83(b) – Info Sheet", 
-    placeholders: ["taxpayer_name", "taxpayer_address", "company_name", "date_of_transfer", "stock_class", "number_of_shares", "fair_market_value", "amount_paid"]
+    placeholders: [
+      "company_name","recipient_name","grant_date","share_class","share_type","share_count","price_per_share","currency",
+      "total_grant_value","total_payment","cfo_name","cfo_email","company_address",
+      "recipient_address","recipient_ssn","tax_year","taxable_difference","vesting_schedule"
+    ]
   }
 ];
 
