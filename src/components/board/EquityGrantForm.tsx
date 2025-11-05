@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
@@ -37,7 +38,7 @@ export function EquityGrantForm({ onGrantCreated }: { onGrantCreated?: () => voi
   const [vestingType, setVestingType] = useState<string>('standard');
   const [cliffMonths, setCliffMonths] = useState<string>('12');
   const [durationMonths, setDurationMonths] = useState<string>('48');
-  const [considerationType, setConsiderationType] = useState<string>('Services Rendered');
+  const [considerationTypes, setConsiderationTypes] = useState<string[]>(['Services Rendered and to be rendered']);
   const [notes, setNotes] = useState<string>('');
   const [currentCapTableTotal, setCurrentCapTableTotal] = useState<number>(0);
   const [remainingEquity, setRemainingEquity] = useState<number>(100);
@@ -171,7 +172,7 @@ export function EquityGrantForm({ onGrantCreated }: { onGrantCreated?: () => voi
           share_class: shareClass,
           strike_price: parseFloat(strikePrice),
           vesting_schedule: vestingSchedule,
-          consideration_type: considerationType,
+          consideration_type: considerationTypes.join(', '),
           notes,
         },
       });
@@ -339,17 +340,31 @@ export function EquityGrantForm({ onGrantCreated }: { onGrantCreated?: () => voi
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="consideration">Consideration Type</Label>
-            <Select value={considerationType} onValueChange={setConsiderationType}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Services Rendered">Services Rendered</SelectItem>
-                <SelectItem value="Cash">Cash</SelectItem>
-                <SelectItem value="IP Assignment">IP Assignment</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label>Consideration Type (Select all that apply)</Label>
+            <div className="space-y-3 p-4 border rounded-md">
+              {[
+                'Services Rendered and to be rendered',
+                'Cash',
+                'IP Assignment'
+              ].map((type) => (
+                <div key={type} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={type}
+                    checked={considerationTypes.includes(type)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setConsiderationTypes([...considerationTypes, type]);
+                      } else {
+                        setConsiderationTypes(considerationTypes.filter(t => t !== type));
+                      }
+                    }}
+                  />
+                  <Label htmlFor={type} className="font-normal cursor-pointer">
+                    {type}
+                  </Label>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="space-y-2">
