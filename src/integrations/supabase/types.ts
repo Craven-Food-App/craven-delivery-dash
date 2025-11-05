@@ -631,6 +631,74 @@ export type Database = {
           },
         ]
       }
+      ceo_meetings: {
+        Row: {
+          agenda: Json | null
+          attendees: Json | null
+          created_at: string | null
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          location: string | null
+          meeting_password: string | null
+          meeting_type: string
+          meeting_url: string | null
+          notes: string | null
+          organizer_id: string | null
+          organizer_name: string | null
+          scheduled_at: string
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          agenda?: Json | null
+          attendees?: Json | null
+          created_at?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          location?: string | null
+          meeting_password?: string | null
+          meeting_type: string
+          meeting_url?: string | null
+          notes?: string | null
+          organizer_id?: string | null
+          organizer_name?: string | null
+          scheduled_at: string
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          agenda?: Json | null
+          attendees?: Json | null
+          created_at?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          location?: string | null
+          meeting_password?: string | null
+          meeting_type?: string
+          meeting_url?: string | null
+          notes?: string | null
+          organizer_id?: string | null
+          organizer_name?: string | null
+          scheduled_at?: string
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ceo_meetings_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       ceo_mindmaps: {
         Row: {
           created_at: string | null
@@ -3678,6 +3746,245 @@ export type Database = {
           },
         ]
       }
+      equity_grant_history: {
+        Row: {
+          change_type: string
+          changed_by: string | null
+          grant_id: string | null
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          reason: string | null
+          timestamp: string | null
+        }
+        Insert: {
+          change_type: string
+          changed_by?: string | null
+          grant_id?: string | null
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          reason?: string | null
+          timestamp?: string | null
+        }
+        Update: {
+          change_type?: string
+          changed_by?: string | null
+          grant_id?: string | null
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          reason?: string | null
+          timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equity_grant_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "exec_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equity_grant_history_grant_id_fkey"
+            columns: ["grant_id"]
+            isOneToOne: false
+            referencedRelation: "equity_grants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equity_grants: {
+        Row: {
+          approved_at: string | null
+          board_resolution_id: string | null
+          consideration_type: string | null
+          consideration_value: number | null
+          created_at: string | null
+          employee_id: string | null
+          executive_id: string | null
+          grant_date: string
+          granted_by: string | null
+          id: string
+          notes: string | null
+          share_class: string | null
+          shares_percentage: number
+          shares_total: number
+          status: string | null
+          stock_issuance_doc_id: string | null
+          strike_price: number
+          vesting_schedule: Json
+        }
+        Insert: {
+          approved_at?: string | null
+          board_resolution_id?: string | null
+          consideration_type?: string | null
+          consideration_value?: number | null
+          created_at?: string | null
+          employee_id?: string | null
+          executive_id?: string | null
+          grant_date: string
+          granted_by?: string | null
+          id?: string
+          notes?: string | null
+          share_class?: string | null
+          shares_percentage: number
+          shares_total: number
+          status?: string | null
+          stock_issuance_doc_id?: string | null
+          strike_price: number
+          vesting_schedule: Json
+        }
+        Update: {
+          approved_at?: string | null
+          board_resolution_id?: string | null
+          consideration_type?: string | null
+          consideration_value?: number | null
+          created_at?: string | null
+          employee_id?: string | null
+          executive_id?: string | null
+          grant_date?: string
+          granted_by?: string | null
+          id?: string
+          notes?: string | null
+          share_class?: string | null
+          shares_percentage?: number
+          shares_total?: number
+          status?: string | null
+          stock_issuance_doc_id?: string | null
+          strike_price?: number
+          vesting_schedule?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equity_grants_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equity_grants_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_summary"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "equity_grants_executive_id_fkey"
+            columns: ["executive_id"]
+            isOneToOne: false
+            referencedRelation: "exec_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equity_grants_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "exec_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exec_conversation_messages: {
+        Row: {
+          attachment_name: string | null
+          attachment_size: string | null
+          attachment_type: string | null
+          attachment_url: string | null
+          conversation_id: string
+          created_at: string | null
+          from_exec_id: string
+          id: string
+          message_text: string
+        }
+        Insert: {
+          attachment_name?: string | null
+          attachment_size?: string | null
+          attachment_type?: string | null
+          attachment_url?: string | null
+          conversation_id: string
+          created_at?: string | null
+          from_exec_id: string
+          id?: string
+          message_text: string
+        }
+        Update: {
+          attachment_name?: string | null
+          attachment_size?: string | null
+          attachment_type?: string | null
+          attachment_url?: string | null
+          conversation_id?: string
+          created_at?: string | null
+          from_exec_id?: string
+          id?: string
+          message_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exec_conversation_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "exec_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exec_conversation_messages_from_exec_id_fkey"
+            columns: ["from_exec_id"]
+            isOneToOne: false
+            referencedRelation: "exec_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exec_conversations: {
+        Row: {
+          created_at: string | null
+          device_id: string | null
+          id: string
+          last_message_at: string | null
+          participant1_exec_id: string
+          participant2_exec_id: string
+          portal_context: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_id?: string | null
+          id?: string
+          last_message_at?: string | null
+          participant1_exec_id: string
+          participant2_exec_id: string
+          portal_context: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          device_id?: string | null
+          id?: string
+          last_message_at?: string | null
+          participant1_exec_id?: string
+          participant2_exec_id?: string
+          portal_context?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exec_conversations_participant1_exec_id_fkey"
+            columns: ["participant1_exec_id"]
+            isOneToOne: false
+            referencedRelation: "exec_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exec_conversations_participant2_exec_id_fkey"
+            columns: ["participant2_exec_id"]
+            isOneToOne: false
+            referencedRelation: "exec_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exec_documents: {
         Row: {
           access_level: number | null
@@ -3733,6 +4040,134 @@ export type Database = {
           {
             foreignKeyName: "exec_documents_uploaded_by_fkey"
             columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "exec_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exec_group_conversation_messages: {
+        Row: {
+          attachment_name: string | null
+          attachment_size: string | null
+          attachment_type: string | null
+          attachment_url: string | null
+          created_at: string | null
+          from_exec_id: string
+          group_conversation_id: string
+          id: string
+          message_text: string
+        }
+        Insert: {
+          attachment_name?: string | null
+          attachment_size?: string | null
+          attachment_type?: string | null
+          attachment_url?: string | null
+          created_at?: string | null
+          from_exec_id: string
+          group_conversation_id: string
+          id?: string
+          message_text: string
+        }
+        Update: {
+          attachment_name?: string | null
+          attachment_size?: string | null
+          attachment_type?: string | null
+          attachment_url?: string | null
+          created_at?: string | null
+          from_exec_id?: string
+          group_conversation_id?: string
+          id?: string
+          message_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exec_group_conversation_messages_from_exec_id_fkey"
+            columns: ["from_exec_id"]
+            isOneToOne: false
+            referencedRelation: "exec_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exec_group_conversation_messages_group_conversation_id_fkey"
+            columns: ["group_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "exec_group_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exec_group_conversation_participants: {
+        Row: {
+          exec_user_id: string
+          group_conversation_id: string
+          id: string
+          joined_at: string | null
+        }
+        Insert: {
+          exec_user_id: string
+          group_conversation_id: string
+          id?: string
+          joined_at?: string | null
+        }
+        Update: {
+          exec_user_id?: string
+          group_conversation_id?: string
+          id?: string
+          joined_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exec_group_conversation_participants_exec_user_id_fkey"
+            columns: ["exec_user_id"]
+            isOneToOne: false
+            referencedRelation: "exec_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exec_group_conversation_participants_group_conversation_id_fkey"
+            columns: ["group_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "exec_group_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exec_group_conversations: {
+        Row: {
+          created_at: string | null
+          created_by_exec_id: string
+          device_id: string | null
+          id: string
+          last_message_at: string | null
+          name: string
+          portal_context: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by_exec_id: string
+          device_id?: string | null
+          id?: string
+          last_message_at?: string | null
+          name: string
+          portal_context: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by_exec_id?: string
+          device_id?: string | null
+          id?: string
+          last_message_at?: string | null
+          name?: string
+          portal_context?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exec_group_conversations_created_by_exec_id_fkey"
+            columns: ["created_by_exec_id"]
             isOneToOne: false
             referencedRelation: "exec_users"
             referencedColumns: ["id"]
@@ -8309,6 +8744,86 @@ export type Database = {
           },
         ]
       }
+      unified_audit_trail: {
+        Row: {
+          action_category: string
+          action_description: string
+          action_type: string
+          compliance_tag: string | null
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          new_values: Json | null
+          old_values: Json | null
+          requires_review: boolean | null
+          session_id: string | null
+          severity: string | null
+          target_resource_id: string | null
+          target_resource_name: string | null
+          target_resource_type: string | null
+          user_agent: string | null
+          user_email: string | null
+          user_id: string
+          user_name: string | null
+          user_role: string | null
+        }
+        Insert: {
+          action_category: string
+          action_description: string
+          action_type: string
+          compliance_tag?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          requires_review?: boolean | null
+          session_id?: string | null
+          severity?: string | null
+          target_resource_id?: string | null
+          target_resource_name?: string | null
+          target_resource_type?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id: string
+          user_name?: string | null
+          user_role?: string | null
+        }
+        Update: {
+          action_category?: string
+          action_description?: string
+          action_type?: string
+          compliance_tag?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          requires_review?: boolean | null
+          session_id?: string | null
+          severity?: string | null
+          target_resource_id?: string | null
+          target_resource_name?: string | null
+          target_resource_type?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string
+          user_name?: string | null
+          user_role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unified_audit_trail_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       user_notification_preferences: {
         Row: {
           created_at: string
@@ -9023,6 +9538,16 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: boolean
       }
+      create_group_conversation: {
+        Args: {
+          p_created_by_exec_id: string
+          p_device_id?: string
+          p_name: string
+          p_participant_exec_ids: string[]
+          p_portal_context: string
+        }
+        Returns: string
+      }
       daitch_mokotoff: { Args: { "": string }; Returns: string[] }
       decrypt_driver_identity: {
         Args: { p_driver_id: string; p_encryption_key: string }
@@ -9191,6 +9716,7 @@ export type Database = {
         Returns: boolean
       }
       geomfromewkt: { Args: { "": string }; Returns: unknown }
+      get_department_name: { Args: { dept_id: string }; Returns: string }
       get_document_statistics: {
         Args: never
         Returns: {
@@ -9243,6 +9769,15 @@ export type Database = {
           storage_path: string
         }[]
       }
+      get_or_create_conversation: {
+        Args: {
+          p_device_id?: string
+          p_participant1_exec_id: string
+          p_participant2_exec_id: string
+          p_portal_context: string
+        }
+        Returns: string
+      }
       get_region_capacity_status: {
         Args: { region_id_param: number }
         Returns: {
@@ -9253,6 +9788,17 @@ export type Database = {
           waitlist_count: number
         }[]
       }
+      get_user_audit_info: {
+        Args: { p_user_id: string }
+        Returns: {
+          is_admin: boolean
+          is_c_level: boolean
+          is_executive: boolean
+          user_email: string
+          user_name: string
+          user_role: string
+        }[]
+      }
       gettransactionid: { Args: never; Returns: unknown }
       has_active_subscription: { Args: { p_user_id: string }; Returns: boolean }
       has_permission: {
@@ -9260,13 +9806,35 @@ export type Database = {
         Returns: boolean
       }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
+      is_admin: { Args: { user_uuid: string }; Returns: boolean }
       is_admin_user: { Args: never; Returns: boolean }
+      is_c_level_position: { Args: { position_text: string }; Returns: boolean }
       is_ceo: { Args: { user_uuid: string }; Returns: boolean }
       is_ceo_email: { Args: { p_email: string }; Returns: boolean }
       is_executive: { Args: { user_uuid: string }; Returns: boolean }
       link_document_to_resolution: {
         Args: { doc_id: string; resolution_id: string }
         Returns: undefined
+      }
+      log_audit_trail: {
+        Args: {
+          p_action_category: string
+          p_action_description: string
+          p_action_type: string
+          p_compliance_tag?: string
+          p_ip_address?: string
+          p_metadata?: Json
+          p_new_values?: Json
+          p_old_values?: Json
+          p_requires_review?: boolean
+          p_severity?: string
+          p_target_resource_id?: string
+          p_target_resource_name?: string
+          p_target_resource_type?: string
+          p_user_agent?: string
+          p_user_id?: string
+        }
+        Returns: string
       }
       log_ceo_action: {
         Args: {
@@ -9288,6 +9856,10 @@ export type Database = {
       populate_geometry_columns:
         | { Args: { use_typmod?: boolean }; Returns: string }
         | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }
+      position_to_exec_role: {
+        Args: { position_text: string }
+        Returns: string
+      }
       postgis_constraint_dims: {
         Args: { geomcolumn: string; geomschema: string; geomtable: string }
         Returns: number
@@ -9907,6 +10479,15 @@ export type Database = {
       st_wrapx: {
         Args: { geom: unknown; move: number; wrap: number }
         Returns: unknown
+      }
+      sync_user_roles_for_employee: {
+        Args: {
+          p_employee_id: string
+          p_employee_role?: string
+          p_executive_role?: string
+          p_user_id: string
+        }
+        Returns: Json
       }
       text_soundex: { Args: { "": string }; Returns: string }
       unlockrows: { Args: { "": string }; Returns: number }

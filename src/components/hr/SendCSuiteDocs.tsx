@@ -180,13 +180,80 @@ export default function SendCSuiteDocs() {
           equity_cxo: '5',
         };
       case 'stock_issuance':
+        // Complete field mapping for stock issuance agreement
+        const purchasePrice = parseFloat(baseData.strike_price) * parseInt(baseData.shares_issued);
         return {
-          ...baseData,
+          // Company info
+          company_name: "Crave'n, Inc.",
+          state_of_incorporation: "Delaware",
+          company_address: "123 Main St, Cleveland, OH 44101",
+          notice_contact_name: "Torrance Stroman",
+          notice_contact_title: "CEO",
+          notice_contact_email: "craven@usa.com",
+          
+          // Subscriber (Executive) info
+          subscriber_name: exec.full_name,
+          subscriber_address: "TBD",
+          subscriber_email: exec.email,
+          accredited_status: "an accredited investor",
+          
+          // Share details
+          share_class: "Common Stock",
+          series_label: "N/A",
           share_count: baseData.shares_issued,
-          class_name: 'Common Stock',
-          par_value: baseData.strike_price,
-          consideration: 'Services rendered',
-          vesting_schedule: baseData.vesting_schedule,
+          price_per_share: baseData.strike_price,
+          total_purchase_price: purchasePrice.toFixed(2),
+          currency: "USD",
+          
+          // Vesting
+          vesting_terms: baseData.vesting_schedule,
+          
+          // Transaction details
+          consideration_type: "Services Rendered",
+          consideration_valuation_basis: "Fair market value of services",
+          certificate_form: "Book-entry (no physical certificate)",
+          closing_date: baseData.effective_date,
+          effective_date: baseData.effective_date,
+          payment_method: "Services / Sweat Equity",
+          
+          // Legal
+          securities_exemption: "Section 4(a)(2) private placement",
+          related_agreement_name: "Founders' Agreement",
+          governing_law_state: "Delaware",
+          board_resolution_date: baseData.effective_date,
+          
+          // Signatures
+          signatory_name: "Torrance Stroman",
+          signatory_title: "CEO",
+          
+          // Cap table (Exhibit A)
+          founder_1_name: "Torrance Stroman",
+          founder_1_class: "Common Stock",
+          founder_1_shares: "7,700,000",
+          founder_1_percent: "77",
+          founder_1_notes: "Founder shares, immediate vesting",
+          
+          founder_2_name: "Justin Sweet",
+          founder_2_class: "Common Stock",
+          founder_2_shares: "1,000,000",
+          founder_2_percent: "10",
+          founder_2_notes: "4 year vesting, 1 year cliff",
+          
+          subscriber_percent_post: baseData.equity_percentage,
+          
+          option_pool_shares: "0",
+          option_pool_percent: "0",
+          option_pool_notes: "To be established",
+          
+          total_fd_shares: "10,000,000",
+          
+          // Payment (Exhibit B)
+          bank_name: "Chase Bank",
+          routing_number: "021000021",
+          account_number: "1234567890",
+          account_name: "Crave'n, Inc.",
+          swift_bic: "CHASUS33",
+          payment_reference: `Stock Purchase - ${exec.full_name}`,
         };
       case 'founders_agreement':
         return {
