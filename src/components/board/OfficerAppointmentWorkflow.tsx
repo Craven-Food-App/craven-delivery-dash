@@ -50,13 +50,18 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
       setLoading(true);
       const values = form.getFieldsValue() as OfficerFormData;
 
+      // Format appointment_date for submission
+      const appointmentDateStr = typeof values.appointment_date === 'string' 
+        ? values.appointment_date 
+        : (values.appointment_date as any).format('YYYY-MM-DD');
+
       // Call edge function to appoint officer
       const { data, error } = await supabase.functions.invoke('appoint-corporate-officer', {
         body: {
           executive_name: values.full_name,
           executive_email: values.email,
           executive_title: values.position_title,
-          appointment_date: values.appointment_date,
+          appointment_date: appointmentDateStr,
           equity_percent: values.equity_percent.toString(),
           shares_issued: values.share_count.toString(),
           vesting_schedule: values.vesting_schedule,
@@ -217,16 +222,20 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
 
       case 3:
         const values = form.getFieldsValue() as OfficerFormData;
+        const appointmentDateFormatted = values.appointment_date 
+          ? (typeof values.appointment_date === 'string' ? values.appointment_date : (values.appointment_date as any).format('MMMM D, YYYY'))
+          : 'TBD';
+        
         return (
           <div style={{ padding: '24px', background: '#fafafa', borderRadius: '8px' }}>
             <h3 style={{ marginTop: 0 }}>Review Officer Appointment</h3>
-            <p><strong>Officer:</strong> {String(values.full_name || '')}</p>
-            <p><strong>Title:</strong> {String(values.position_title || '')}</p>
-            <p><strong>Email:</strong> {String(values.email || '')}</p>
-            <p><strong>Appointment Date:</strong> {String(values.appointment_date || 'TBD')}</p>
-            <p><strong>Equity:</strong> {values.equity_percent}% ({values.share_count?.toLocaleString()} shares)</p>
-            <p><strong>Vesting:</strong> {values.vesting_schedule}</p>
-            <p><strong>Annual Salary:</strong> ${values.annual_salary?.toLocaleString()}</p>
+            <p><strong>Officer:</strong> {values.full_name || '(not provided)'}</p>
+            <p><strong>Title:</strong> {values.position_title || '(not provided)'}</p>
+            <p><strong>Email:</strong> {values.email || '(not provided)'}</p>
+            <p><strong>Appointment Date:</strong> {appointmentDateFormatted}</p>
+            <p><strong>Equity:</strong> {values.equity_percent || 0}% ({values.share_count?.toLocaleString() || 0} shares)</p>
+            <p><strong>Vesting:</strong> {values.vesting_schedule || '(not provided)'}</p>
+            <p><strong>Annual Salary:</strong> ${values.annual_salary?.toLocaleString() || '0'}</p>
             <p><strong>Salary Status:</strong> {values.defer_salary ? 'Deferred until funding' : 'Active immediately'}</p>
             {values.defer_salary && (
               <p><strong>Activation Trigger:</strong> {values.funding_trigger}</p>
