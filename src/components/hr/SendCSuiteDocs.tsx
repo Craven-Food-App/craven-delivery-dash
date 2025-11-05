@@ -227,6 +227,8 @@ export default function SendCSuiteDocs() {
     }
     return issues;
   };
+
+  const sendDocumentsToExecutive = async (exec: Executive, isPartOfBatch = false) => {
     if (!exec) {
       message.warning('No executive selected');
       return;
