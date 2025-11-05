@@ -11,6 +11,7 @@ import {
   TrophyOutlined,
   FileOutlined,
   ArrowLeftOutlined,
+  PieChartOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -20,6 +21,9 @@ import { PersonnelManager } from '@/components/ceo/PersonnelManager';
 import { EquityDashboard } from '@/components/ceo/EquityDashboard';
 import { FinancialApprovals } from '@/components/ceo/FinancialApprovals';
 import { DocumentVault } from '@/components/board/DocumentVault';
+import { EquityGrantForm } from '@/components/board/EquityGrantForm';
+import { EquityGrantReview } from '@/components/board/EquityGrantReview';
+import { CapTableView } from '@/components/board/CapTableView';
 import { executiveTheme } from '@/config/antd-theme';
 import { useExecAuth } from '@/hooks/useExecAuth';
 
@@ -42,6 +46,7 @@ const BoardPortal: React.FC = () => {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [activeTab, setActiveTab] = useState('directory');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [grantRefreshTrigger, setGrantRefreshTrigger] = useState(0);
 
   useEffect(() => {
     if (isAuthorized) {
@@ -366,6 +371,40 @@ const BoardPortal: React.FC = () => {
                     </span>
                   ),
                   children: <EquityDashboard />,
+                },
+                {
+                  key: 'equity_management',
+                  label: (
+                    <span className="flex items-center gap-1 sm:gap-2">
+                      <PieChartOutlined />
+                      <span className="text-xs sm:text-base">Equity Management</span>
+                    </span>
+                  ),
+                  children: (
+                    <div className="space-y-6">
+                      <Tabs
+                        defaultActiveKey="grants"
+                        size="small"
+                        items={[
+                          {
+                            key: 'grants',
+                            label: 'Grant Equity',
+                            children: <EquityGrantForm onGrantCreated={() => setGrantRefreshTrigger(prev => prev + 1)} />,
+                          },
+                          {
+                            key: 'review',
+                            label: 'Review Grants',
+                            children: <EquityGrantReview refreshTrigger={grantRefreshTrigger} />,
+                          },
+                          {
+                            key: 'captable',
+                            label: 'Cap Table',
+                            children: <CapTableView />,
+                          },
+                        ]}
+                      />
+                    </div>
+                  ),
                 },
                 {
                   key: 'financial',

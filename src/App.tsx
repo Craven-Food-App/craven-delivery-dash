@@ -68,7 +68,6 @@ import MainHub from "./pages/MainHub";
 import BusinessAuth from "./pages/BusinessAuth";
 import BusinessAuthWrapper from "./components/BusinessAuthWrapper";
 import BusinessAuthGuard from "./components/BusinessAuthGuard";
-import BoardEquityPortal from "./pages/BoardEquityPortal";
 import { DriverSignup } from "./pages/driverOnboarding/Signup";
 import { LegalConsent } from "./pages/driverOnboarding/LegalConsent";
 import { IdentityForm } from "./pages/driverOnboarding/IdentityForm";
@@ -264,7 +263,6 @@ const App = () => {
                     <Route path="/marketing-portal" element={<MarketingPortal />} />
                     <Route path="/hr-portal" element={<BusinessAuthGuard><HRPortal /></BusinessAuthGuard>} />
                     <Route path="/board" element={<BoardPortal />} />
-                    <Route path="/board-equity" element={<BusinessAuthGuard><BoardEquityPortal /></BusinessAuthGuard>} />
                   <Route path="/ceo" element={<BusinessAuthGuard><CEOPortal /></BusinessAuthGuard>} />
                   <Route path="/cfo" element={<BusinessAuthGuard><CFOPortal /></BusinessAuthGuard>} />
                   <Route path="/coo" element={<BusinessAuthGuard><COOPortal /></BusinessAuthGuard>} />
