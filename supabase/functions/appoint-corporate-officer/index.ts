@@ -224,6 +224,7 @@ serve(async (req) => {
           equity: parseFloat(equity_percent),
           data: documentData,
           html_content: stockIssuanceHtml,
+          executive_id: execData.id, // Link document to executive for signature portal
         }),
       });
 

@@ -293,11 +293,28 @@ serve(async (req: Request) => {
                         
                         ${dynamicContent}
                         
+                        <div style="background-color: #e3f2fd; border-left: 4px solid #2196f3; padding: 20px; border-radius: 6px; margin: 30px 0;">
+                          <h3 style="margin: 0 0 15px 0; color: #1976d2; font-size: 18px;">✍️ Digital Signature Portal</h3>
+                          <p style="margin: 0 0 15px 0; color: #4a4a4a; font-size: 15px; line-height: 1.6;">
+                            To sign these documents digitally, please log in to your secure Executive Document Portal. You'll be able to review and sign all pending documents in one place.
+                          </p>
+                          <div style="text-align: center; margin: 20px 0 0 0;">
+                            <a href="${Deno.env.get('SUPABASE_URL')?.replace('https://xaxbucnjlrfkccsfiddq.supabase.co', 'https://44d88461-c1ea-4d22-93fe-ebc1a7d81db9.lovableproject.com') || 'https://44d88461-c1ea-4d22-93fe-ebc1a7d81db9.lovableproject.com'}/executive-portal/documents" 
+                               style="display: inline-block; background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);">
+                              Access Document Portal
+                            </a>
+                          </div>
+                          <p style="margin: 15px 0 0 0; color: #666; font-size: 13px; line-height: 1.5; text-align: center;">
+                            Use your executive credentials to log in. If you don't have access, contact HR at hr@craven.com
+                          </p>
+                        </div>
+                        
                         <div style="background-color: #f9f9f9; padding: 20px; border-radius: 6px; margin: 30px 0;">
                           <h3 style="margin: 0 0 10px 0; color: #1a1a1a; font-size: 16px;">📝 Important Notes:</h3>
                           <ul style="margin: 0; padding-left: 20px; color: #4a4a4a; font-size: 14px; line-height: 1.6;">
                             <li>Please review this document carefully</li>
-                            <li>Keep this document for your records</li>
+                            <li>Documents requiring signature can be signed in the secure portal above</li>
+                            <li>Keep signed documents for your records</li>
                             <li>If you have any questions, contact HR at hr@craven.com</li>
                           </ul>
                         </div>

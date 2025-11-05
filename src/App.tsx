@@ -43,6 +43,7 @@ import TermsOfService from "./pages/TermsOfService";
 import CookiePolicy from "./pages/CookiePolicy";
 import CraveMore from "./pages/CraveMore";
 import ExecutiveSignature from "./pages/ExecutiveSignature";
+import { ExecutiveDocumentPortal } from "./pages/ExecutiveDocumentPortal";
 import ThankYou from "./pages/ThankYou";
 import ChatButton from "./components/chat/ChatButton";
 import { ThemeProvider } from "./components/ThemeProvider";
@@ -520,6 +521,7 @@ const App = () => {
           <Route path="/payment-canceled" element={<PaymentCanceled />} />
           {/* Executive signature route */}
           <Route path="/executive-sign" element={<ExecutiveSignature />} />
+          <Route path="/executive-portal/documents" element={<ExecutiveDocumentPortal />} />
           <Route path="/thank-you" element={<ThankYou />} />
 
           {/* Footer pages */}

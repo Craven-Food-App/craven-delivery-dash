@@ -409,6 +409,7 @@ export default function SendCSuiteDocs() {
               equity: docType.id.includes('equity') ? parseFloat(data.equity_percentage) : undefined,
               data,
               html_content,
+              executive_id: exec.id, // Link document to executive for signature portal
             });
 
             console.log(`Document generation response for ${exec.full_name} - ${docType.title}:`, resp);
@@ -641,6 +642,7 @@ export default function SendCSuiteDocs() {
             equity: docType.id.includes('equity') ? parseFloat(data.equity_percentage) : undefined,
             data,
             html_content,
+            executive_id: exec.id, // Link document to executive for signature portal
           });
 
           console.log(`Document generation response for ${exec.full_name} - ${docType.title}:`, resp);

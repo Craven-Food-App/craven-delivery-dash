@@ -76,9 +76,9 @@ serve(async (req) => {
   }
 
   try {
-    const { template_id, data, officer_name, role, equity, html_content } = await req.json();
+    const { template_id, data, officer_name, role, equity, html_content, executive_id } = await req.json();
     
-    console.log('Generating document:', { template_id, officer_name, role });
+    console.log('Generating document:', { template_id, officer_name, role, executive_id });
 
     if (!html_content || String(html_content).trim().length < 20) {
       console.error('Received empty or too short html_content');
@@ -118,6 +118,19 @@ serve(async (req) => {
       .from('documents')
       .getPublicUrl(filename);
 
+    // Generate signature token if executive_id is provided (for documents requiring signature)
+    const requiresSignature = ['employment_agreement', 'offer_letter', 'stock_issuance', 'founders_agreement', 'confidentiality_ip'].includes(template_id);
+    let signatureToken: string | null = null;
+    let tokenExpiresAt: Date | null = null;
+    
+    if (executive_id && requiresSignature) {
+      // Generate unique token (32 chars)
+      signatureToken = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '').slice(0, 16);
+      // Token expires in 30 days
+      tokenExpiresAt = new Date();
+      tokenExpiresAt.setDate(tokenExpiresAt.getDate() + 30);
+    }
+
     // Save document record
     const { data: document, error: dbError } = await supabaseClient
       .from('executive_documents')
@@ -127,7 +140,11 @@ serve(async (req) => {
         role: role || data.role || '',
         equity: equity,
         status: 'generated',
-        file_url: publicUrl
+        file_url: publicUrl,
+        executive_id: executive_id || null,
+        signature_token: signatureToken,
+        signature_token_expires_at: tokenExpiresAt ? tokenExpiresAt.toISOString() : null,
+        signature_status: requiresSignature && executive_id ? 'pending' : null,
       })
       .select()
       .single();
