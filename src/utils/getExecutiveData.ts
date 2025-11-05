@@ -63,7 +63,17 @@ export async function getExecutiveData(userId?: string): Promise<ExecutiveData[]
       console.error('Error fetching employees:', empError);
     }
 
-    // Step 3: Get equity data for these employees
+    // Step 2b: Also get user_profiles for executives without employee records
+    const { data: userProfiles, error: profilesError } = await supabase
+      .from('user_profiles')
+      .select('user_id, full_name, email')
+      .in('user_id', userIds);
+    
+    if (profilesError) {
+      console.error('Error fetching user_profiles:', profilesError);
+    }
+
+    // Step 3: Get equity data for these employees (from employee_equity)
     const employeeIds = (employees || []).map(e => e.id).filter(Boolean);
     
     const { data: equityData, error: equityError } = await supabase
@@ -75,19 +85,40 @@ export async function getExecutiveData(userId?: string): Promise<ExecutiveData[]
       console.error('Error fetching employee_equity:', equityError);
     }
 
+    // Step 3b: Also get equity grants for executives (from equity_grants - linked to exec_users)
+    const execUserIds = execUsers.map(eu => eu.id).filter(Boolean);
+    
+    const { data: equityGrantsData, error: equityGrantsError } = await supabase
+      .from('equity_grants')
+      .select('executive_id, shares_percentage, shares_total, strike_price, vesting_schedule, grant_date')
+      .in('executive_id', execUserIds);
+    
+    if (equityGrantsError) {
+      console.error('Error fetching equity_grants:', equityGrantsError);
+    }
+
     // Step 4: Merge all data
     const employeesMap = new Map((employees || []).map(e => [e.user_id, e]));
+    const profilesMap = new Map((userProfiles || []).map(p => [p.user_id, p]));
     const equityMap = new Map((equityData || []).map(eq => [eq.employee_id, eq]));
+    const equityGrantsMap = new Map((equityGrantsData || []).map(eg => [eg.executive_id, eg]));
 
     const mergedData: ExecutiveData[] = execUsers.map(execUser => {
       const employee = employeesMap.get(execUser.user_id);
+      const profile = profilesMap.get(execUser.user_id);
       const equity = employee ? equityMap.get(employee.id) : null;
+      // For officers, check equity_grants first (linked to exec_users.id)
+      const equityGrant = equityGrantsMap.get(execUser.id);
 
+      // Prefer employee data, fallback to user_profiles, then to 'Executive'
       const fullName = employee 
         ? `${employee.first_name} ${employee.last_name}`.trim()
-        : 'Executive';
+        : (profile?.full_name || 'Executive');
       
-      const email = employee?.email || '';
+      const email = employee?.email || profile?.email || '';
+
+      // Prefer equity_grants data for executives (officers), fallback to employee_equity
+      const finalEquity = equityGrant || equity;
 
       return {
         id: execUser.id,
@@ -103,12 +134,12 @@ export async function getExecutiveData(userId?: string): Promise<ExecutiveData[]
         salary: employee?.salary,
         salary_status: employee?.salary_status,
         funding_trigger: employee?.funding_trigger,
-        equity_percent: equity?.shares_percentage,
-        shares_issued: equity?.shares_total,
-        strike_price: equity?.strike_price,
-        vesting_schedule: equity?.vesting_schedule,
-        grant_date: equity?.grant_date,
-        equity_type: equity?.equity_type,
+        equity_percent: finalEquity?.shares_percentage,
+        shares_issued: finalEquity?.shares_total,
+        strike_price: finalEquity?.strike_price,
+        vesting_schedule: finalEquity?.vesting_schedule,
+        grant_date: finalEquity?.grant_date,
+        equity_type: finalEquity?.equity_type,
       };
     });
 

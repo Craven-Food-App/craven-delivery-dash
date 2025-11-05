@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Steps, Form, Input, Select, DatePicker, InputNumber, Button, message, Upload } from 'antd';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { UploadOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
@@ -17,6 +16,7 @@ interface OfficerFormData {
   equity_percent: number;
   share_count: number;
   vesting_schedule: string;
+  strike_price?: number;
   annual_salary?: number;
   defer_salary: boolean;
   funding_trigger?: string;
@@ -26,7 +26,6 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
   const [photoFile, setPhotoFile] = useState<UploadFile | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string>('');
 
@@ -44,7 +43,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
         currentStep === 0 
           ? ['full_name', 'email', 'position_title', 'appointment_date']
           : currentStep === 1
-          ? ['equity_percent', 'share_count', 'vesting_schedule']
+          ? ['equity_percent', 'share_count', 'vesting_schedule', 'strike_price']
           : currentStep === 2
           ? ['defer_salary', 'annual_salary', ...(form.getFieldValue('defer_salary') ? ['funding_trigger'] : [])]
           : [];
@@ -107,6 +106,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
         equity_percent: values.equity_percent.toString(),
         shares_issued: values.share_count.toString(),
         vesting_schedule: values.vesting_schedule,
+        strike_price: values.strike_price?.toString() || '0.0001',
         annual_salary: values.annual_salary?.toString(),
         defer_salary: values.defer_salary,
         funding_trigger: values.funding_trigger,
@@ -122,6 +122,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
           equity_percent: values.equity_percent.toString(),
           shares_issued: values.share_count.toString(),
           vesting_schedule: values.vesting_schedule,
+          strike_price: values.strike_price?.toString() || '0.0001',
           annual_salary: values.annual_salary?.toString(),
           defer_salary: values.defer_salary,
           funding_trigger: values.funding_trigger,
@@ -140,12 +141,18 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
       }
 
       console.log('Edge function response:', data);
-      message.success('Officer appointed successfully! Documents generated.');
+      
+      // Show success message with details
+      message.success({
+        content: `${values.full_name} has been successfully appointed as ${values.position_title}. Documents have been generated. Price per Share: $${data.price_per_share || '0.0000'}, Total Purchase Price: $${data.total_purchase_price || '0.00'}`,
+        duration: 6,
+      });
+      
+      // Reset form and return to first step instead of navigating away
       form.resetFields();
       setPhotoFile(null);
       setPhotoUrl('');
       setCurrentStep(0);
-      navigate('/board-portal');
     } catch (error: any) {
       console.error('Error appointing officer:', error);
       
@@ -300,6 +307,21 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
               <Select.Option value="Immediate">Immediate (No vesting)</Select.Option>
             </Select>
           </Form.Item>
+          <Form.Item
+            name="strike_price"
+            label="Price per Share (Strike Price)"
+            rules={[{ required: true, message: 'Please enter price per share' }]}
+            tooltip="The price per share for the equity grant. Typically $0.0001 for founder/officer grants."
+          >
+            <InputNumber
+              min={0}
+              precision={4}
+              style={{ width: '100%' }}
+              placeholder="0.0001"
+              formatter={value => `$ ${value}`}
+              parser={value => Number(value!.replace(/\$\s?/g, '')) as any}
+            />
+          </Form.Item>
         </div>
 
         {/* Step 2: Compensation - Always rendered but hidden when not current step */}
@@ -388,6 +410,8 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
                   <p><strong>Email:</strong> {reviewValues.email || '(not provided)'}</p>
                   <p><strong>Appointment Date:</strong> {appointmentDate}</p>
                   <p><strong>Equity:</strong> {reviewValues.equity_percent || 0}% ({reviewValues.share_count?.toLocaleString() || 0} shares)</p>
+                  <p><strong>Price per Share:</strong> ${reviewValues.strike_price ? reviewValues.strike_price.toFixed(4) : '0.0001'}</p>
+                  <p><strong>Total Purchase Price:</strong> ${reviewValues.strike_price && reviewValues.share_count ? (reviewValues.strike_price * reviewValues.share_count).toFixed(2) : '0.00'}</p>
                   <p><strong>Vesting:</strong> {reviewValues.vesting_schedule || '(not provided)'}</p>
                   <p><strong>Annual Salary:</strong> ${reviewValues.annual_salary ? reviewValues.annual_salary.toLocaleString() : '0'}</p>
                   <p><strong>Salary Status:</strong> {reviewValues.defer_salary ? 'Deferred until funding' : 'Active immediately'}</p>

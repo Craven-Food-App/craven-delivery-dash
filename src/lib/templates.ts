@@ -24,7 +24,7 @@ export const templates: TemplateMeta[] = [
   { 
     id: "stock_issuance", 
     title: "Stock Subscription / Issuance Agreement", 
-    placeholders: ["company_name", "full_name", "role", "share_count", "class_name", "par_value", "consideration", "vesting_schedule"]
+    placeholders: ["company_name", "full_name", "role", "share_count", "price_per_share", "total_purchase_price", "share_class", "consideration_type", "vesting_schedule", "currency"]
   },
   { 
     id: "confidentiality_ip", 
@@ -481,7 +481,7 @@ export function renderHtml(templateId: string, data: Record<string, any>): strin
   </table>
 
   <h2>3. Capital Structure</h2>
-  <p>The Company's authorized capital stock shall consist of ${data.authorized_shares || ''} shares of common stock, par value ${data.par_value || '$0.0001'} per share. The distribution of shares among the Founders is detailed above.</p>
+  <p>The Company's authorized capital stock shall consist of ${data.authorized_shares || ''} shares of common stock${data.par_value ? `, par value ${data.par_value} per share` : ''}. The distribution of shares among the Founders is detailed above.</p>
 
   <h2>4. Vesting</h2>
   <p>To ensure long-term commitment, each Founder's shares shall be subject to a vesting schedule of four (4) years, with a one (1) year cliff, unless otherwise agreed in writing. If a Founder ceases to be employed by or involved with the Company before full vesting, all unvested shares shall be forfeited or subject to repurchase by the Company at cost.</p>
@@ -564,10 +564,6 @@ export function renderHtml(templateId: string, data: Record<string, any>): strin
     </tr>
   </table>
 
-  <hr>
-  <p style="font-size:12px;color:#777;">
-    Developer Note: Replace placeholders using your automated data injection system. Store signed PDF in the corporate document registry for recordkeeping.
-  </p>
 
 </body>
 </html>`;
@@ -626,10 +622,10 @@ export function renderHtml(templateId: string, data: Record<string, any>): strin
     <table>
       <tr><th>Share Class</th><td>${data.share_class || data.class_name || 'Common'} ${data.series_label || ''}</td></tr>
       <tr><th>Number of Shares</th><td>${data.share_count || ''}</td></tr>
-      <tr><th>Price per Share</th><td>${data.price_per_share || data.par_value || ''} ${data.currency || 'USD'}</td></tr>
-      <tr><th>Total Purchase Price</th><td>${data.total_purchase_price || ''} ${data.currency || 'USD'}</td></tr>
+      <tr><th><strong>Price per Share</strong></th><td><strong>$${data.price_per_share || ''}</strong> ${data.currency || 'USD'}</td></tr>
+      <tr><th><strong>Total Purchase Price</strong></th><td><strong>$${data.total_purchase_price || ''}</strong> ${data.currency || 'USD'}</td></tr>
       <tr><th>Consideration</th><td>${data.consideration_type || data.consideration || 'Services'}</td></tr>
-      <tr><th>Vesting (if applicable)</th><td>${data.vesting_terms || data.vesting_schedule || '4 years, 1-year cliff'}</td></tr>
+      <tr><th>Vesting (if applicable)</th><td>${data.vesting_terms || data.vesting_schedule || ''}</td></tr>
       <tr><th>Certificate/Book-Entry</th><td>${data.certificate_form || 'Book-entry'}</td></tr>
     </table>
 
@@ -742,10 +738,6 @@ export function renderHtml(templateId: string, data: Record<string, any>): strin
     </p>
     <hr/>
 
-    <div class="note small">
-      Developer note: This agreement is used for employees, founders, executives, contractors, and advisors.
-    </div>
-
     <h2>1. Definitions</h2>
     <p><strong>"Confidential Information"</strong> means any non-public information disclosed by or on behalf of the Company, whether oral, visual, written, electronic, or otherwise, including without limitation product plans, designs, software, source code, data, customer lists, pricing, financials, strategies, roadmaps, know-how, trade secrets, and third-party information held in confidence by the Company. Confidential Information includes the existence and terms of this Agreement.</p>
     <p><strong>"Inventions"</strong> means any and all discoveries, developments, works of authorship, designs, methods, processes, formulas, compositions, techniques, databases, mask works, trademarks, trade dress, copyrights, trade secrets, and patentable or unpatentable ideas, whether or not reduced to practice.</p>
@@ -852,10 +844,6 @@ export function renderHtml(templateId: string, data: Record<string, any>): strin
       Effective Date: ${data.effective_date || ''}
     </p>
     <hr/>
-
-    <div class="note small">
-      Developer note: Attach this to an Executive Employment Agreement / Offer Letter. Use this addendum to defer cash salary until a funding or revenue trigger occurs.
-    </div>
 
     <h2>1. Purpose; Incorporation</h2>
     <p>
@@ -1098,8 +1086,6 @@ export function renderHtml(templateId: string, data: Record<string, any>): strin
     </tr>
   </table>
 
-  <!-- Developer placeholders removed from output to avoid confusion -->
-
 </body>
 </html>`;
 
@@ -1273,12 +1259,6 @@ export function renderHtml(templateId: string, data: Record<string, any>): strin
     </tr>
   </table>
 
-  <hr/>
-  <p class="muted">
-    Developer placeholders: {{'{{company_name}}'}}, {{'{{state_of_incorporation}}'}}, {{'{{adoption_date}}'}},
-    {{'{{effective_date}}'}}, {{'{{execution_date}}'}}, {{'{{secretary_name}}'}}.
-  </p>
-
 </body>
 </html>`;
 
@@ -1425,13 +1405,6 @@ export function renderHtml(templateId: string, data: Record<string, any>): strin
       </td>
     </tr>
   </table>
-
-  <hr/>
-  <p class="muted">
-    Developer placeholders: {{'{{company_name}}'}}, {{'{{recipient_name}}'}}, {{'{{grant_date}}'}}, {{'{{share_count}}'}},
-    {{'{{price_per_share}}'}}, {{'{{currency}}'}}, {{'{{total_grant_value}}'}}, {{'{{total_payment}}'}},
-    {{'{{share_class}}'}}, {{'{{share_type}}'}}, {{'{{cfo_name}}'}}, {{'{{cfo_email}}'}}, {{'{{company_address}}'}}.
-  </p>
 
   <div class="page-break"></div>
 

@@ -14,6 +14,7 @@ interface OfficerAppointmentRequest {
   equity_percent: string;
   shares_issued: string;
   vesting_schedule?: string;
+  strike_price?: string;
   annual_salary?: string;
   defer_salary: boolean;
   funding_trigger?: string;
@@ -40,6 +41,7 @@ serve(async (req) => {
       equity_percent,
       shares_issued,
       vesting_schedule = '4 years, 1 year cliff',
+      strike_price = '0.0001',
       annual_salary = '120000',
       defer_salary,
       funding_trigger,
@@ -144,8 +146,10 @@ serve(async (req) => {
       ? { type: vesting_schedule, duration_months: 0 }
       : { type: 'none', duration_months: 0 };
 
-    // Default strike price for founder/officer grants (adjust if you have pricing rules)
-    const strikePrice = 0.0001;
+    // Use provided strike_price or default to 0.0001
+    const strikePrice = parseFloat(strike_price || '0.0001');
+    const sharesIssued = parseInt(shares_issued, 10);
+    const totalPurchasePrice = strikePrice * sharesIssued;
 
     let equityGrantId: string | null = null;
     const { data: equityGrant, error: equityError } = await supabaseClient
@@ -176,23 +180,67 @@ serve(async (req) => {
       equityGrantId = equityGrant?.id || null;
     }
 
-    // 4. Generate documents (call existing appoint-executive or create documents directly)
+    // 4. Generate documents using document-generate API
     const documentData = {
-      company_name: 'Crave\'N',
-      executive_name,
-      executive_first_name: executive_name.split(' ')[0],
+      company_name: "Crave'n, Inc.",
+      state_of_incorporation: "Ohio",
+      company_address: "123 Main St, Cleveland, OH 44101",
+      full_name: executive_name,
+      role: executive_title === 'CXO' ? 'Chief Experience Officer' : executive_title,
+      effective_date: formatDate(appointment_date),
+      appointment_date: appointment_date,
+      equity_percentage: equity_percent,
+      shares_issued: sharesIssued.toLocaleString(),
+      strike_price: strikePrice.toFixed(4),
+      price_per_share: strikePrice.toFixed(4),
+      total_purchase_price: totalPurchasePrice.toFixed(2),
+      share_count: sharesIssued.toLocaleString(),
+      vesting_schedule: vesting_schedule || '4 years with 1 year cliff',
+      annual_salary: parseInt(annual_salary || '0', 10).toLocaleString(),
+      funding_trigger: funding_trigger || "Upon Series A funding or significant investment event",
+      governing_law_state: "Ohio",
       executive_email,
+      executive_first_name: executive_name.split(' ')[0],
       position_title: executive_title,
-      appointment_date,
-      equity_percent,
-      share_count: shares_issued,
-      vesting_schedule,
-      annual_base_salary: annual_salary,
-      defer_salary,
-      funding_trigger_amount: funding_trigger,
-      governing_law_state: 'Ohio',
-      state_of_incorporation: 'Ohio',
+      defer_salary: defer_salary,
     };
+
+    // Generate Stock Issuance Agreement document with price fields
+    const stockIssuanceHtml = generateStockIssuanceHtml(documentData);
+    
+    // Call document-generate API for Stock Issuance Agreement
+    let stockIssuanceDocId: string | null = null;
+    try {
+      const docGenerateResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/document-generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        },
+        body: JSON.stringify({
+          template_id: 'stock_issuance',
+          officer_name: executive_name,
+          role: executive_title === 'CXO' ? 'Chief Experience Officer' : executive_title,
+          equity: parseFloat(equity_percent),
+          data: documentData,
+          html_content: stockIssuanceHtml,
+        }),
+      });
+
+      if (docGenerateResponse.ok) {
+        const docResult = await docGenerateResponse.json();
+        if (docResult?.ok && docResult?.document?.id) {
+          stockIssuanceDocId = docResult.document.id;
+          console.log('Stock Issuance Agreement generated successfully:', stockIssuanceDocId);
+        }
+      } else {
+        const errorText = await docGenerateResponse.text();
+        console.error('Document generation error:', docGenerateResponse.status, errorText);
+      }
+    } catch (docError) {
+      console.error('Error calling document-generate:', docError);
+      // Don't throw - document generation is nice to have but shouldn't break appointment
+    }
 
     // Generate board resolution document
     const boardResolutionHtml = generateBoardResolutionHtml(documentData);
@@ -214,6 +262,9 @@ serve(async (req) => {
           'Confidentiality & IP Agreement',
           defer_salary ? 'Deferred Compensation Addendum' : null,
         ].filter(Boolean),
+        stock_issuance_document_id: stockIssuanceDocId,
+        price_per_share: strikePrice.toFixed(4),
+        total_purchase_price: totalPurchasePrice.toFixed(2),
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -232,6 +283,14 @@ serve(async (req) => {
     );
   }
 });
+
+// Helper function to format date
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+    'July', 'August', 'September', 'October', 'November', 'December'];
+  return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+}
 
 // Helper function to generate board resolution HTML
 function generateBoardResolutionHtml(data: any): string {
@@ -258,11 +317,116 @@ function generateOfferLetterHtml(data: any): string {
 <body>
 <h1>Officer Appointment Letter</h1>
 <p>Dear ${data.executive_first_name},</p>
-<p>On behalf of ${data.company_name}, we are pleased to appoint you as ${data.position_title}, effective ${data.appointment_date}.</p>
-<p><strong>Equity:</strong> ${data.equity_percent}% (${data.share_count} shares)</p>
-<p><strong>Vesting:</strong> ${data.vesting_schedule}</p>
-<p><strong>Annual Salary:</strong> $${data.annual_base_salary}</p>
-${data.defer_salary ? `<p><strong>Salary Status:</strong> Deferred until ${data.funding_trigger_amount}</p>` : ''}
+    <p>On behalf of ${data.company_name}, we are pleased to appoint you as ${data.position_title}, effective ${data.effective_date}.</p>
+    <p><strong>Equity:</strong> ${data.equity_percentage}% (${data.share_count} shares)</p>
+    <p><strong>Vesting:</strong> ${data.vesting_schedule}</p>
+    <p><strong>Annual Salary:</strong> $${data.annual_salary}</p>
+    ${data.defer_salary ? `<p><strong>Salary Status:</strong> Deferred until ${data.funding_trigger}</p>` : ''}
+</body>
+</html>`;
+}
+
+// Helper function to generate Stock Issuance Agreement HTML with price fields
+function generateStockIssuanceHtml(data: any): string {
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Stock Subscription / Issuance Agreement</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+    h1 { color: #333; border-bottom: 2px solid #333; padding-bottom: 10px; }
+    h2 { color: #666; margin-top: 30px; }
+    .section { margin: 20px 0; }
+    .field { margin: 10px 0; }
+    .label { font-weight: bold; display: inline-block; width: 200px; }
+    .value { display: inline-block; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+    th { background-color: #f4f4f4; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>STOCK SUBSCRIPTION / ISSUANCE AGREEMENT</h1>
+  
+  <div class="section">
+    <h2>Company Information</h2>
+    <div class="field"><span class="label">Company Name:</span><span class="value">${data.company_name}</span></div>
+    <div class="field"><span class="label">State of Incorporation:</span><span class="value">${data.state_of_incorporation}</span></div>
+    <div class="field"><span class="label">Company Address:</span><span class="value">${data.company_address}</span></div>
+  </div>
+
+  <div class="section">
+    <h2>Subscriber Information</h2>
+    <div class="field"><span class="label">Subscriber Name:</span><span class="value">${data.full_name}</span></div>
+    <div class="field"><span class="label">Subscriber Email:</span><span class="value">${data.executive_email}</span></div>
+    <div class="field"><span class="label">Position:</span><span class="value">${data.role}</span></div>
+  </div>
+
+  <div class="section">
+    <h2>Stock Issuance Details</h2>
+    <table>
+      <tr>
+        <th>Item</th>
+        <th>Details</th>
+      </tr>
+      <tr>
+        <td>Share Class</td>
+        <td>Common Stock</td>
+      </tr>
+      <tr>
+        <td>Number of Shares</td>
+        <td>${data.share_count}</td>
+      </tr>
+      <tr>
+        <td><strong>Price per Share</strong></td>
+        <td><strong>$${data.price_per_share}</strong></td>
+      </tr>
+      <tr>
+        <td><strong>Total Purchase Price</strong></td>
+        <td><strong>$${data.total_purchase_price}</strong></td>
+      </tr>
+      <tr>
+        <td>Equity Percentage</td>
+        <td>${data.equity_percentage}%</td>
+      </tr>
+      <tr>
+        <td>Vesting Schedule</td>
+        <td>${data.vesting_schedule}</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Terms and Conditions</h2>
+    <p>This agreement is subject to the terms and conditions set forth in the Company's Bylaws and Board Resolutions.</p>
+    <p>The shares issued hereunder are subject to the vesting schedule: <strong>${data.vesting_schedule}</strong></p>
+    <p>Payment for the shares shall be made through services rendered and to be rendered to the Company.</p>
+  </div>
+
+  <div class="section">
+    <h2>Effective Date</h2>
+    <p>This agreement is effective as of <strong>${data.effective_date}</strong>.</p>
+  </div>
+
+  <div style="margin-top: 60px;">
+    <div style="margin-top: 40px;">
+      <div style="border-top: 1px solid #333; width: 300px; padding-top: 10px; margin-top: 40px;">
+        <div class="label">Subscriber Signature:</div>
+        <div style="margin-top: 40px;">___________________________</div>
+        <div style="margin-top: 5px;">${data.full_name}</div>
+        <div style="margin-top: 5px;">Date: _______________</div>
+      </div>
+    </div>
+    <div style="margin-top: 40px;">
+      <div style="border-top: 1px solid #333; width: 300px; padding-top: 10px;">
+        <div class="label">Company Signature:</div>
+        <div style="margin-top: 40px;">___________________________</div>
+        <div style="margin-top: 5px;">Torrance Stroman, CEO</div>
+        <div style="margin-top: 5px;">Date: _______________</div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>`;
 }
