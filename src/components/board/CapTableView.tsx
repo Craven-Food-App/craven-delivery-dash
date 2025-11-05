@@ -24,6 +24,27 @@ export function CapTableView() {
 
   useEffect(() => {
     fetchCapTable();
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('employee_equity_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'employee_equity'
+        },
+        (payload) => {
+          console.log('Cap table change detected:', payload);
+          fetchCapTable();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchCapTable = async () => {

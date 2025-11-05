@@ -45,6 +45,27 @@ export function EquityGrantForm({ onGrantCreated }: { onGrantCreated?: () => voi
   useEffect(() => {
     fetchExecutives();
     fetchCurrentCapTable();
+
+    // Set up real-time subscription for cap table updates
+    const channel = supabase
+      .channel('equity_cap_table_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'employee_equity'
+        },
+        (payload) => {
+          console.log('Equity change detected, refreshing cap table:', payload);
+          fetchCurrentCapTable();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchCurrentCapTable = async () => {
