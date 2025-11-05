@@ -9,6 +9,7 @@ import {
   TeamOutlined,
   MailOutlined,
   TrophyOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { POSITIONS, buildEmails } from '@/config/positions';
