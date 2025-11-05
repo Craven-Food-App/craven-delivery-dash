@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import dayjs from 'dayjs';
 import { UploadOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
+import { renderHtml } from '@/lib/templates';
+import { docsAPI } from '../hr/api';
 
 const { Step } = Steps;
 const { TextArea } = Input;
@@ -35,6 +37,202 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
     { title: 'Compensation', description: 'Salary structure' },
     { title: 'Review & Appoint', description: 'Generate documents' },
   ];
+
+  // Document types to generate during appointment
+  const CSUITE_DOC_TYPES = [
+    { id: 'employment_agreement', title: 'Executive Employment Agreement' },
+    { id: 'board_resolution', title: 'Board Resolution – Appointment of Officers' },
+    { id: 'founders_agreement', title: "Founders' / Shareholders' Agreement" },
+    { id: 'stock_issuance', title: 'Stock Subscription / Issuance Agreement' },
+    { id: 'confidentiality_ip', title: 'Confidentiality & IP Assignment Agreement' },
+    { id: 'deferred_comp_addendum', title: 'Deferred Compensation Addendum' },
+    { id: 'offer_letter', title: 'Executive Offer Letter' },
+    { id: 'bylaws_officers_excerpt', title: 'Bylaws – Officers (Excerpt)' },
+  ];
+
+  const generateDocumentsForOfficer = async (
+    formValues: OfficerFormData,
+    executiveId: string,
+    equityGrantId?: string
+  ) => {
+    try {
+      const appointmentDate = formValues.appointment_date 
+        ? (dayjs.isDayjs(formValues.appointment_date) 
+            ? formValues.appointment_date.format('MMMM D, YYYY')
+            : typeof formValues.appointment_date === 'string'
+            ? dayjs(formValues.appointment_date).format('MMMM D, YYYY')
+            : String(formValues.appointment_date))
+        : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+      const strikePrice = formValues.strike_price || 0.0001;
+      const sharesIssued = formValues.share_count || 0;
+      const totalPurchasePrice = strikePrice * sharesIssued;
+      const equityPercent = formValues.equity_percent || 0;
+      const annualSalary = formValues.annual_salary || 0;
+
+      // Generate each document
+      for (const docType of CSUITE_DOC_TYPES) {
+        try {
+          // Skip deferred_comp_addendum if salary is not deferred
+          if (docType.id === 'deferred_comp_addendum' && !formValues.defer_salary) {
+            console.log(`Skipping ${docType.title} - salary is not deferred`);
+            continue;
+          }
+
+          // Prepare document data based on template type
+          const docData = prepareDocumentData(
+            formValues,
+            docType.id,
+            appointmentDate,
+            strikePrice,
+            sharesIssued,
+            totalPurchasePrice,
+            equityPercent,
+            annualSalary
+          );
+
+          // Generate HTML using template
+          const html_content = renderHtml(docType.id, docData);
+
+          // Call document-generate edge function
+          const resp = await docsAPI.post('/documents/generate', {
+            template_id: docType.id,
+            officer_name: formValues.full_name,
+            role: formValues.position_title === 'CXO' ? 'Chief Experience Officer' : formValues.position_title,
+            equity: docType.id.includes('equity') || docType.id === 'stock_issuance' ? equityPercent : undefined,
+            data: docData,
+            html_content,
+            executive_id: executiveId, // Link document to executive for signature portal
+          });
+
+          if (!resp?.ok || !resp?.document) {
+            console.warn(`Failed to generate ${docType.title}:`, resp?.error);
+          } else {
+            console.log(`✓ Generated ${docType.title}`);
+          }
+        } catch (error: any) {
+          console.error(`Error generating ${docType.title}:`, error);
+          // Continue with other documents even if one fails
+        }
+      }
+    } catch (error: any) {
+      console.error('Error generating documents:', error);
+      message.warning('Officer appointed but some documents may not have been generated. You can regenerate them from the document dashboard.');
+    }
+  };
+
+  const prepareDocumentData = (
+    formValues: OfficerFormData,
+    docType: string,
+    appointmentDate: string,
+    strikePrice: number,
+    sharesIssued: number,
+    totalPurchasePrice: number,
+    equityPercent: number,
+    annualSalary: number
+  ) => {
+    const baseData: Record<string, any> = {
+      company_name: "Crave'n, Inc.",
+      state_of_incorporation: "Ohio",
+      full_name: formValues.full_name,
+      role: formValues.position_title === 'CXO' ? 'Chief Experience Officer' : formValues.position_title,
+      effective_date: appointmentDate,
+      date: appointmentDate,
+      adoption_date: appointmentDate,
+      funding_trigger: formValues.funding_trigger || "Upon Series A funding or significant investment event",
+      governing_law: "State of Ohio",
+      governing_law_state: "Ohio",
+      equity_percentage: equityPercent.toString(),
+      annual_salary: annualSalary.toLocaleString(),
+      vesting_schedule: formValues.vesting_schedule || '4 years with 1 year cliff',
+      strike_price: strikePrice.toFixed(4),
+      price_per_share: strikePrice.toFixed(4),
+      share_count: sharesIssued.toLocaleString(),
+      shares_issued: sharesIssued.toLocaleString(),
+      total_purchase_price: totalPurchasePrice.toFixed(2),
+      company_address: "123 Main St, Cleveland, OH 44101",
+    };
+
+    // Template-specific data
+    switch (docType) {
+      case 'board_resolution':
+        return {
+          ...baseData,
+          directors: "Board of Directors",
+          officer_name: formValues.full_name,
+          officer_title: baseData.role,
+          ceo_name: formValues.position_title === 'CEO' ? formValues.full_name : '',
+          cfo_name: formValues.position_title === 'CFO' ? formValues.full_name : '',
+          cxo_name: formValues.position_title === 'CXO' ? formValues.full_name : '',
+          equity_ceo: formValues.position_title === 'CEO' ? equityPercent.toString() : '0',
+          equity_cfo: formValues.position_title === 'CFO' ? equityPercent.toString() : '0',
+          equity_cxo: formValues.position_title === 'CXO' ? equityPercent.toString() : '0',
+        };
+      case 'stock_issuance':
+        return {
+          ...baseData,
+          subscriber_name: formValues.full_name,
+          subscriber_address: "TBD",
+          subscriber_email: formValues.email,
+          share_class: 'Common Stock',
+          consideration_type: 'Founder/Officer Appointment',
+          currency: 'USD',
+        };
+      case 'offer_letter': {
+        const firstName = formValues.full_name?.split(' ')[0] || '';
+        const sched = baseData.vesting_schedule || '';
+        const yearsMatch = sched.match(/(\d+)\s*year/);
+        const cliffMatch = sched.match(/(\d+)\s*(month|year)s?\s*cliff/i);
+        const vesting_period = yearsMatch ? yearsMatch[1] : '4';
+        const vesting_cliff = cliffMatch ? `${cliffMatch[1]} ${cliffMatch[2]}${cliffMatch[1] === '1' ? '' : 's'}` : '1 year';
+        return {
+          ...baseData,
+          offer_date: appointmentDate,
+          executive_name: formValues.full_name,
+          executive_first_name: firstName,
+          executive_address: '',
+          executive_email: formValues.email,
+          position_title: baseData.role,
+          reporting_to_title: 'Board of Directors',
+          work_location: 'Cleveland, Ohio',
+          start_date: appointmentDate,
+          annual_base_salary: annualSalary.toLocaleString(),
+          currency: 'USD',
+          funding_trigger_amount: formValues.funding_trigger ? formValues.funding_trigger.replace(/\D/g, '') : '0',
+          share_count: sharesIssued.toLocaleString(),
+          share_class: 'Common Stock',
+          ownership_percent: equityPercent.toString(),
+          vesting_period,
+          vesting_cliff,
+          bonus_structure: 'Discretionary performance bonus as determined by the Board',
+          employment_country: 'United States',
+          signatory_name: 'Torrance Stroman',
+          signatory_title: 'CEO',
+          company_mission_statement: 'deliver delightful food experiences to every neighborhood',
+        };
+      }
+      case 'founders_agreement':
+        return {
+          ...baseData,
+          founders_table_html: `<tr><td>${formValues.full_name}</td><td>${baseData.role}</td><td>${equityPercent}%</td></tr>`,
+          vesting_years: '4',
+          cliff_months: '12',
+        };
+      case 'deferred_comp_addendum':
+        return {
+          ...baseData,
+          defer_until: baseData.funding_trigger,
+        };
+      case 'bylaws_officers_excerpt':
+        return {
+          ...baseData,
+          execution_date: appointmentDate,
+          secretary_name: 'Torrance Stroman',
+        };
+      default:
+        return baseData;
+    }
+  };
 
   const handleNext = async () => {
     try {
@@ -141,6 +339,12 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
       }
 
       console.log('Edge function response:', data);
+      
+      // Generate documents using templates from src/lib/templates.ts
+      if (data.officer_id) {
+        message.info('Generating documents...', 2);
+        await generateDocumentsForOfficer(values, data.officer_id, data.equity_grant_id);
+      }
       
       // Show success message with details
       message.success({

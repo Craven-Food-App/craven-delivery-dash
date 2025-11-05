@@ -1,9 +1,13 @@
 // @ts-nocheck
 import React, { useEffect, useState } from "react";
-import { Table, Button, Tag, Space, Modal, Input, message, Select } from "antd";
-import { EyeOutlined, MailOutlined, DownloadOutlined, ReloadOutlined, DeleteOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
+import { Table, Button, Tag, Space, Modal, Input, message, Select, Card, Collapse, Typography } from "antd";
+import { EyeOutlined, MailOutlined, DownloadOutlined, ReloadOutlined, DeleteOutlined, ExclamationCircleOutlined, FolderOutlined, FileTextOutlined, ClockCircleOutlined } from "@ant-design/icons";
 import { supabase } from "@/integrations/supabase/client";
 import { docsAPI } from "./api";
+import dayjs from "dayjs";
+
+const { Panel } = Collapse;
+const { Text } = Typography;
 
 export default function DocumentDashboard() {
   const [documents, setDocuments] = useState<any[]>([]);
@@ -61,6 +65,37 @@ export default function DocumentDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Group documents by executive name
+  const groupDocumentsByExecutive = () => {
+    const grouped: Record<string, any[]> = {};
+    
+    documents.forEach((doc) => {
+      const executiveName = doc.officer_name || "Unknown Executive";
+      if (!grouped[executiveName]) {
+        grouped[executiveName] = [];
+      }
+      grouped[executiveName].push(doc);
+    });
+
+    // Sort documents within each group by created_at (newest first)
+    Object.keys(grouped).forEach((name) => {
+      grouped[name].sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+    });
+
+    return grouped;
+  };
+
+  const formatDateTime = (dateString: string) => {
+    const date = dayjs(dateString);
+    return {
+      date: date.format("MMMM D, YYYY"),
+      time: date.format("h:mm A"),
+      full: date.format("MMMM D, YYYY [at] h:mm A"),
+    };
   };
 
   const handleEmail = async (doc: any) => {
@@ -139,78 +174,20 @@ export default function DocumentDashboard() {
     }
   };
 
-  const columns = [
-    {
-      title: "Type",
-      dataIndex: "type",
-      key: "type",
-      render: (text: string) => (
-        <span style={{ textTransform: "capitalize" }}>{text.replace(/_/g, " ")}</span>
-      ),
-    },
-    {
-      title: "Officer",
-      dataIndex: "officer_name",
-      key: "officer_name",
-    },
-    {
-      title: "Role",
-      dataIndex: "role",
-      key: "role",
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (status: string) => (
-        <Tag color={getStatusColor(status)}>{status.toUpperCase()}</Tag>
-      ),
-    },
-    {
-      title: "Created",
-      dataIndex: "created_at",
-      key: "created_at",
-      render: (date: string) => new Date(date).toLocaleDateString(),
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_: any, record: any) => (
-        <Space>
-          {record.file_url && (
-            <Button
-              icon={<EyeOutlined />}
-              size="small"
-              href={record.file_url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              View
-            </Button>
-          )}
-          {record.signed_file_url && (
-            <Button
-              icon={<DownloadOutlined />}
-              size="small"
-              href={record.signed_file_url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Signed PDF
-            </Button>
-          )}
-          <Button icon={<MailOutlined />} size="small" onClick={() => handleEmail(record)}>
-            Email
-          </Button>
-        </Space>
-      ),
-    },
-  ];
+  const groupedDocs = groupDocumentsByExecutive();
+  const executiveNames = Object.keys(groupedDocs).sort();
 
   return (
     <>
       <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h3>Document Library {documents.length > 0 && `(${documents.length} documents)`}</h3>
+        <h3>
+          Document Library 
+          {documents.length > 0 && (
+            <span style={{ fontWeight: "normal", fontSize: "14px", color: "#666", marginLeft: "8px" }}>
+              ({documents.length} document{documents.length !== 1 ? "s" : ""} across {executiveNames.length} executive{executiveNames.length !== 1 ? "s" : ""})
+            </span>
+          )}
+        </h3>
         <Space>
           {isCEO && (
             <Button 
@@ -228,13 +205,125 @@ export default function DocumentDashboard() {
           </Button>
         </Space>
       </div>
-      <Table
-        dataSource={documents}
-        columns={columns}
-        rowKey="id"
-        loading={loading}
-        pagination={{ pageSize: 10 }}
-      />
+
+      {loading ? (
+        <div style={{ textAlign: "center", padding: "40px" }}>
+          <ReloadOutlined spin style={{ fontSize: "24px" }} />
+        </div>
+      ) : documents.length === 0 ? (
+        <Card>
+          <div style={{ textAlign: "center", padding: "40px", color: "#999" }}>
+            <FileTextOutlined style={{ fontSize: "48px", marginBottom: "16px" }} />
+            <p>No documents found</p>
+          </div>
+        </Card>
+      ) : (
+        <Collapse
+          defaultActiveKey={executiveNames}
+          style={{ background: "#fff" }}
+          expandIcon={({ isActive }) => (
+            <FolderOutlined style={{ color: isActive ? "#1890ff" : "#666" }} />
+          )}
+        >
+          {executiveNames.map((executiveName) => {
+            const execDocs = groupedDocs[executiveName];
+            const docCount = execDocs.length;
+            
+            return (
+              <Panel
+                key={executiveName}
+                header={
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <FolderOutlined style={{ fontSize: "18px", color: "#1890ff" }} />
+                    <Text strong style={{ fontSize: "16px" }}>{executiveName}</Text>
+                    <Tag color="blue">{docCount} document{docCount !== 1 ? "s" : ""}</Tag>
+                  </div>
+                }
+                style={{ marginBottom: "8px" }}
+              >
+                <div style={{ padding: "8px 0" }}>
+                  {execDocs.map((doc) => {
+                    const dateTime = formatDateTime(doc.created_at);
+                    
+                    return (
+                      <Card
+                        key={doc.id}
+                        size="small"
+                        style={{ 
+                          marginBottom: "8px",
+                          border: "1px solid #e8e8e8",
+                          borderRadius: "4px"
+                        }}
+                        bodyStyle={{ padding: "12px 16px" }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: "1", minWidth: "300px" }}>
+                            <FileTextOutlined style={{ fontSize: "20px", color: "#1890ff" }} />
+                            <div style={{ flex: "1" }}>
+                              <div style={{ fontWeight: "500", marginBottom: "4px" }}>
+                                {doc.type ? doc.type.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) : "Document"}
+                              </div>
+                              <div style={{ fontSize: "12px", color: "#999", display: "flex", alignItems: "center", gap: "8px" }}>
+                                <ClockCircleOutlined />
+                                <span>{dateTime.date}</span>
+                                <span>•</span>
+                                <span>{dateTime.time}</span>
+                                {doc.role && (
+                                  <>
+                                    <span>•</span>
+                                    <Tag size="small" color="purple">{doc.role.toUpperCase()}</Tag>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <Tag color={getStatusColor(doc.status)} style={{ margin: 0 }}>
+                              {doc.status?.toUpperCase() || "GENERATED"}
+                            </Tag>
+                            <Space>
+                              {doc.file_url && (
+                                <Button
+                                  icon={<EyeOutlined />}
+                                  size="small"
+                                  href={doc.file_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  View
+                                </Button>
+                              )}
+                              {doc.signed_file_url && (
+                                <Button
+                                  icon={<DownloadOutlined />}
+                                  size="small"
+                                  href={doc.signed_file_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  Signed PDF
+                                </Button>
+                              )}
+                              <Button 
+                                icon={<MailOutlined />} 
+                                size="small" 
+                                onClick={() => handleEmail(doc)}
+                              >
+                                Email
+                              </Button>
+                            </Space>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </Panel>
+            );
+          })}
+        </Collapse>
+      )}
 
       <Modal
         title="Send Document via Email"

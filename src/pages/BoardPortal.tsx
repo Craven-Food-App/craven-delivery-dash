@@ -12,6 +12,7 @@ import {
   FileOutlined,
   ArrowLeftOutlined,
   PieChartOutlined,
+  CodeOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -27,6 +28,7 @@ import { CapTableView } from '@/components/board/CapTableView';
 import { OfficerAppointmentWorkflow } from '@/components/board/OfficerAppointmentWorkflow';
 import { OfficerToEmployeeConverter } from '@/components/board/OfficerToEmployeeConverter';
 import GenerateOfficerDocuments from '@/components/board/GenerateOfficerDocuments';
+import { TemplateManager } from '@/components/board/TemplateManager';
 import { executiveTheme } from '@/config/antd-theme';
 import { useExecAuth } from '@/hooks/useExecAuth';
 
@@ -448,6 +450,16 @@ const BoardPortal: React.FC = () => {
                     </span>
                   ),
                   children: <FinancialApprovals />,
+                },
+                {
+                  key: 'templates',
+                  label: (
+                    <span className="flex items-center gap-1 sm:gap-2">
+                      <CodeOutlined />
+                      <span className="text-xs sm:text-base">Template Manager</span>
+                    </span>
+                  ),
+                  children: <TemplateManager />,
                 },
               ]}
             />

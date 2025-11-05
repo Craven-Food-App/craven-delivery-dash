@@ -106,11 +106,11 @@ export default function SendCSuiteDocs() {
       const execStatus: DocumentStatus[] = [];
 
       // Check which documents already exist for this executive
-      // Try multiple matching strategies since names might vary
+      // Prioritize executive_id matching for accuracy, then fall back to name/role
       const { data: existingDocs, error: docsError } = await supabase
         .from('executive_documents')
-        .select('id, type, status, officer_name, role')
-        .or(`officer_name.eq.${exec.full_name},role.eq.${exec.role},role.eq.${exec.title}`);
+        .select('id, type, status, officer_name, role, executive_id')
+        .or(`executive_id.eq.${exec.id},officer_name.eq.${exec.full_name}`);
 
       if (docsError) {
         console.error(`Error checking documents for ${exec.full_name}:`, docsError);
@@ -118,13 +118,12 @@ export default function SendCSuiteDocs() {
 
       console.log(`Documents found for ${exec.full_name}:`, existingDocs);
 
-      // Match by type and either name or role
+      // Match by type and executive_id (most accurate), then fall back to name
       const existingTypes = new Set(
         (existingDocs || [])
           .filter((d: any) => 
-            d.officer_name === exec.full_name || 
-            d.role === exec.role || 
-            d.role === exec.title
+            d.executive_id === exec.id || 
+            d.officer_name === exec.full_name
           )
           .map((d: any) => d.type)
       );
@@ -132,7 +131,7 @@ export default function SendCSuiteDocs() {
       for (const docType of CSUITE_DOC_TYPES) {
         const matchingDoc = existingDocs?.find((d: any) => 
           d.type === docType.id && 
-          (d.officer_name === exec.full_name || d.role === exec.role || d.role === exec.title)
+          (d.executive_id === exec.id || d.officer_name === exec.full_name)
         );
 
         execStatus.push({
@@ -351,6 +350,12 @@ export default function SendCSuiteDocs() {
       return;
     }
 
+    // Prevent multiple simultaneous sends
+    if (sending && !isPartOfBatch) {
+      message.warning('Please wait for the current send operation to complete');
+      return;
+    }
+
     if (!isPartOfBatch) {
       setSending(true);
       setProgress(0);
@@ -361,9 +366,10 @@ export default function SendCSuiteDocs() {
       let completed = 0;
       const execResults = { exec, success: 0, failed: 0, errors: [] as string[] };
 
-      console.log(`Processing documents for ${exec.full_name} (${exec.role})...`);
+      console.log(`\n=== Sending documents ONLY for ${exec.full_name} (${exec.role}) - ID: ${exec.id} ===`);
 
       // Collect all documents (existing or newly generated) to send in ONE email
+      // ONLY for this specific executive
       const docsForEmail: Array<{ title: string; url: string }> = [];
 
       for (const docType of CSUITE_DOC_TYPES) {
@@ -378,26 +384,48 @@ export default function SendCSuiteDocs() {
             continue;
           }
 
-          // Check if document already exists
-          const status = statusMap[exec.id]?.find(s => s.type === docType.id);
-          if (status?.exists && status.documentId) {
-            // Fetch existing document URL and collect
-            console.log(`Document ${docType.title} already exists for ${exec.full_name}, collecting link...`);
-            const { data: doc, error: fetchErr } = await supabase
+          // Check if document already exists (from appointment flow)
+          const statuses = statusMap[exec.id] || [];
+          const existingDoc = statuses.find(s => s.type === docType.id && s.exists && s.documentId);
+          
+          if (existingDoc?.documentId) {
+            // Use existing document from appointment flow
+            console.log(`✓ Found existing ${docType.title} for ${exec.full_name} (doc ID: ${existingDoc.documentId})`);
+            
+            // Fetch document URL
+            const { data: doc, error: docError } = await supabase
               .from('executive_documents')
-              .select('file_url')
-              .eq('id', status.documentId)
+              .select('file_url, executive_id, officer_name')
+              .eq('id', existingDoc.documentId)
               .single();
-            if (fetchErr) throw fetchErr;
-            if (doc?.file_url) {
+
+            if (docError) {
+              console.error(`✗ Error fetching existing document:`, docError);
+              throw new Error(`Failed to fetch existing document: ${docError.message}`);
+            }
+
+            // CRITICAL: Verify document belongs to THIS executive only
+            if (doc.executive_id && doc.executive_id !== exec.id) {
+              console.error(`✗ SECURITY: Document ${existingDoc.documentId} belongs to executive_id ${doc.executive_id}, not ${exec.id} (${exec.full_name})`);
+              throw new Error(`Document ownership mismatch: document belongs to different executive`);
+            }
+            
+            if (doc.officer_name && doc.officer_name !== exec.full_name) {
+              console.error(`✗ SECURITY: Document ${existingDoc.documentId} belongs to ${doc.officer_name}, not ${exec.full_name}`);
+              throw new Error(`Document ownership mismatch: document belongs to different executive`);
+            }
+
+            console.log(`✓ Verified document ${existingDoc.documentId} belongs to ${exec.full_name}`);
+            
+            if (doc.file_url) {
               docsForEmail.push({ title: docType.title, url: doc.file_url });
               execResults.success++;
             } else {
-              throw new Error('Existing document URL not found');
+              throw new Error('Existing document has no file URL');
             }
           } else {
-            // Generate new document
-            console.log(`Generating ${docType.title} for ${exec.full_name}...`);
+            // Document doesn't exist, generate it using templates from src/lib/templates.ts
+            console.log(`Generating ${docType.title} for ${exec.full_name} using proper templates...`);
             const data = generateDocumentData(exec, docType.id);
             const html_content = renderHtml(docType.id, data);
 
@@ -437,26 +465,36 @@ export default function SendCSuiteDocs() {
       }
 
       // After processing all docs, send ONE email with links + PDF attachments
+      // ONLY for this specific executive
       if (exec.email && docsForEmail.length > 0) {
+        console.log(`\n📧 Sending email to ${exec.full_name} (${exec.email}) with ${docsForEmail.length} documents:`);
+        docsForEmail.forEach((doc, idx) => {
+          console.log(`  ${idx + 1}. ${doc.title}`);
+        });
+        
         try {
           const { data, error } = await supabase.functions.invoke('send-executive-document-email', {
             body: {
               to: exec.email,
               executiveName: exec.full_name,
               documentTitle: 'C-Suite Executive Documents',
-              documents: docsForEmail,
+              documents: docsForEmail, // ONLY documents for this executive
             },
           });
           if (error) throw error;
           if (data?.success) {
-            console.log(`✓ One combined email sent to ${exec.email} with ${docsForEmail.length} documents`);
+            console.log(`✓ Email sent successfully to ${exec.full_name} (${exec.email}) with ${docsForEmail.length} documents`);
           } else {
             throw new Error(data?.error || 'Unknown error from email function');
           }
         } catch (emailErr: any) {
-          console.error(`⚠ Combined email failed for ${exec.full_name}:`, emailErr);
-          execResults.errors.push(`Combined email failed: ${emailErr.message || emailErr}`);
+          console.error(`⚠ Email failed for ${exec.full_name}:`, emailErr);
+          execResults.errors.push(`Email failed: ${emailErr.message || emailErr}`);
         }
+      } else if (!exec.email) {
+        console.warn(`⚠ No email address for ${exec.full_name}, skipping email send`);
+      } else if (docsForEmail.length === 0) {
+        console.warn(`⚠ No documents to send for ${exec.full_name}`);
       }
 
       // Log summary for this executive

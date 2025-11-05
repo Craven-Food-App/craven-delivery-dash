@@ -268,6 +268,7 @@ const App = () => {
                   <Route path="/cfo" element={<BusinessAuthGuard><CFOPortal /></BusinessAuthGuard>} />
                   <Route path="/coo" element={<BusinessAuthGuard><COOPortal /></BusinessAuthGuard>} />
                   <Route path="/cto" element={<BusinessAuthGuard><CTOPortal /></BusinessAuthGuard>} />
+                  <Route path="/executive-portal/documents" element={<ExecutiveDocumentPortal />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </BrowserRouter>
@@ -351,6 +352,7 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<BoardPortal />} />
                   <Route path="/auth" element={<BusinessAuth />} />
+                  <Route path="/executive-portal/documents" element={<ExecutiveDocumentPortal />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </BrowserRouter>
@@ -374,6 +376,7 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<CFOPortal />} />
                   <Route path="/auth" element={<BusinessAuth />} />
+                  <Route path="/executive-portal/documents" element={<ExecutiveDocumentPortal />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </BrowserRouter>
@@ -397,6 +400,7 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<CEOPortal />} />
                   <Route path="/auth" element={<BusinessAuth />} />
+                  <Route path="/executive-portal/documents" element={<ExecutiveDocumentPortal />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </BrowserRouter>
@@ -420,6 +424,7 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<COOPortal />} />
                   <Route path="/auth" element={<BusinessAuth />} />
+                  <Route path="/executive-portal/documents" element={<ExecutiveDocumentPortal />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </BrowserRouter>
@@ -443,6 +448,7 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<CTOPortal />} />
                   <Route path="/auth" element={<BusinessAuth />} />
+                  <Route path="/executive-portal/documents" element={<ExecutiveDocumentPortal />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </BrowserRouter>
