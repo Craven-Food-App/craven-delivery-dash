@@ -130,7 +130,15 @@ export function formatExecutiveForDocuments(exec: ExecutiveData) {
       vestingScheduleText = exec.vesting_schedule;
     } else if (typeof exec.vesting_schedule === 'object') {
       const vs = exec.vesting_schedule;
-      vestingScheduleText = `${vs.total_years || 4} years${vs.cliff_years ? ` with ${vs.cliff_years} year cliff` : ''}`;
+      if (vs.type === 'immediate') {
+        vestingScheduleText = 'Immediate vesting';
+      } else if (vs.duration_months && vs.cliff_months) {
+        const years = Math.floor(vs.duration_months / 12);
+        const cliffYears = Math.floor(vs.cliff_months / 12);
+        vestingScheduleText = cliffYears > 0 
+          ? `${years} years with ${cliffYears} year cliff`
+          : `${years} years`;
+      }
     }
   }
 
@@ -141,12 +149,13 @@ export function formatExecutiveForDocuments(exec: ExecutiveData) {
     title: exec.title || exec.role.toUpperCase(),
     full_name: exec.full_name,
     email: exec.email,
-    equity_percent: exec.equity_percent?.toString() || (exec.role === 'ceo' ? '15' : exec.role === 'cfo' ? '10' : exec.role === 'coo' ? '10' : exec.role === 'cto' ? '10' : '5'),
-    shares_issued: exec.shares_issued?.toString() || '100000',
-    annual_salary: exec.salary?.toString() || '90000',
-    funding_trigger: exec.funding_trigger?.toString() || '500000',
+    // Use actual database values - only fallback if truly null/undefined
+    equity_percent: exec.equity_percent != null ? exec.equity_percent.toString() : '0',
+    shares_issued: exec.shares_issued != null ? Math.floor(exec.shares_issued).toString() : '0',
+    annual_salary: exec.salary != null ? exec.salary.toString() : '0',
+    funding_trigger: exec.funding_trigger != null ? exec.funding_trigger.toString() : '0',
     vesting_schedule: vestingScheduleText,
-    strike_price: exec.strike_price?.toString() || '0.0001',
-    salary_status: exec.salary_status || 'active',
+    strike_price: exec.strike_price != null ? exec.strike_price.toString() : '0.00',
+    salary_status: exec.salary_status || 'deferred',
   };
 }
