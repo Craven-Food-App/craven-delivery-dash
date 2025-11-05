@@ -12,7 +12,7 @@ import {
 import { docsAPI } from "./api";
 import DocumentPreview from "./DocumentPreview";
 import SignaturePad from "./SignaturePad";
-import SendCSuiteDocs from "./SendCSuiteDocs";
+import SendCSuiteDocs from "../board/GenerateOfficerDocuments";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
