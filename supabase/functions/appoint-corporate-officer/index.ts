@@ -17,6 +17,7 @@ interface OfficerAppointmentRequest {
   annual_salary?: string;
   defer_salary: boolean;
   funding_trigger?: string;
+  photo_url?: string;
 }
 
 serve(async (req) => {
@@ -42,6 +43,7 @@ serve(async (req) => {
       annual_salary = '120000',
       defer_salary,
       funding_trigger,
+      photo_url,
     } = payload;
 
     // Map title to role
@@ -103,6 +105,7 @@ serve(async (req) => {
         .update({
           title: executive_title,
           role: role,
+          photo_url: photo_url,
         })
         .eq('id', existingExec.id)
         .select()
@@ -123,6 +126,7 @@ serve(async (req) => {
           role: role,
           department: null,
           access_level: 1,
+          photo_url: photo_url,
         })
         .select()
         .single();

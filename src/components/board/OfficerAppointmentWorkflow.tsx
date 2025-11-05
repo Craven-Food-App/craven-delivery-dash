@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { Card, Steps, Form, Input, Select, DatePicker, InputNumber, Button, message } from 'antd';
+import { Card, Steps, Form, Input, Select, DatePicker, InputNumber, Button, message, Upload } from 'antd';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
+import { UploadOutlined } from '@ant-design/icons';
+import type { UploadFile } from 'antd/es/upload/interface';
 
 const { Step } = Steps;
 const { TextArea } = Input;
@@ -25,6 +27,8 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [photoFile, setPhotoFile] = useState<UploadFile | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string>('');
 
   const steps = [
     { title: 'Officer Details', description: 'Name, title, email' },
@@ -67,6 +71,28 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
       setLoading(true);
       const values = form.getFieldsValue() as OfficerFormData;
 
+      // Upload photo if provided
+      let uploadedPhotoUrl = photoUrl;
+      if (photoFile && photoFile.originFileObj) {
+        const fileExt = photoFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('executive-photos')
+          .upload(filePath, photoFile.originFileObj);
+
+        if (uploadError) {
+          throw new Error(`Photo upload failed: ${uploadError.message}`);
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('executive-photos')
+          .getPublicUrl(filePath);
+
+        uploadedPhotoUrl = publicUrl;
+      }
+
       // Format appointment_date for submission
       const appointmentDateStr = typeof values.appointment_date === 'string' 
         ? values.appointment_date 
@@ -85,12 +111,17 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
           annual_salary: values.annual_salary?.toString(),
           defer_salary: values.defer_salary,
           funding_trigger: values.funding_trigger,
+          photo_url: uploadedPhotoUrl,
         },
       });
 
       if (error) throw error;
 
       message.success('Officer appointed successfully! Documents generated.');
+      form.resetFields();
+      setPhotoFile(null);
+      setPhotoUrl('');
+      setCurrentStep(0);
       navigate('/board-portal');
     } catch (error: any) {
       console.error('Error appointing officer:', error);
@@ -144,6 +175,43 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
             rules={[{ required: true, message: 'Please select appointment date' }]}
           >
             <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item
+            name="photo"
+            label="Executive Photo (Optional)"
+          >
+            <Upload
+              maxCount={1}
+              beforeUpload={(file) => {
+                const isImage = file.type.startsWith('image/');
+                if (!isImage) {
+                  message.error('You can only upload image files!');
+                  return false;
+                }
+                const isLt5M = file.size / 1024 / 1024 < 5;
+                if (!isLt5M) {
+                  message.error('Image must be smaller than 5MB!');
+                  return false;
+                }
+                setPhotoFile(file as any);
+                
+                // Create preview URL
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  setPhotoUrl(e.target?.result as string);
+                };
+                reader.readAsDataURL(file);
+                
+                return false; // Prevent auto upload
+              }}
+              onRemove={() => {
+                setPhotoFile(null);
+                setPhotoUrl('');
+              }}
+              listType="picture"
+            >
+              <Button icon={<UploadOutlined />}>Upload Photo</Button>
+            </Upload>
           </Form.Item>
         </div>
 
@@ -253,6 +321,22 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
               return (
                 <div style={{ padding: '24px', background: '#fafafa', borderRadius: '8px' }}>
                   <h3 style={{ marginTop: 0 }}>Review Officer Appointment</h3>
+                  {photoUrl && (
+                    <div style={{ marginBottom: '16px', textAlign: 'center' }}>
+                      <img 
+                        src={photoUrl} 
+                        alt={reviewValues.full_name} 
+                        style={{ 
+                          width: '128px', 
+                          height: '128px', 
+                          borderRadius: '50%', 
+                          objectFit: 'cover',
+                          border: '4px solid white',
+                          boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                        }}
+                      />
+                    </div>
+                  )}
                   <p><strong>Officer:</strong> {reviewValues.full_name || '(not provided)'}</p>
                   <p><strong>Title:</strong> {reviewValues.position_title || '(not provided)'}</p>
                   <p><strong>Email:</strong> {reviewValues.email || '(not provided)'}</p>

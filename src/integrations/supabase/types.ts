@@ -4234,6 +4234,7 @@ export type Database = {
           linked_employee_id: string | null
           mfa_enabled: boolean | null
           officer_status: string | null
+          photo_url: string | null
           role: string
           title: string | null
           updated_at: string | null
@@ -4254,6 +4255,7 @@ export type Database = {
           linked_employee_id?: string | null
           mfa_enabled?: boolean | null
           officer_status?: string | null
+          photo_url?: string | null
           role: string
           title?: string | null
           updated_at?: string | null
@@ -4274,6 +4276,7 @@ export type Database = {
           linked_employee_id?: string | null
           mfa_enabled?: boolean | null
           officer_status?: string | null
+          photo_url?: string | null
           role?: string
           title?: string | null
           updated_at?: string | null

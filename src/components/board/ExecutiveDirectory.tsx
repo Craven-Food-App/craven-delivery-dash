@@ -21,6 +21,7 @@ interface Executive {
   name?: string; // For employees
   email?: string; // For employees
   source: 'exec_users' | 'employees'; // Track where the data came from
+  photo_url?: string;
 }
 
 export const ExecutiveDirectory: React.FC = () => {
@@ -54,7 +55,7 @@ export const ExecutiveDirectory: React.FC = () => {
     try {
       // Fetch from exec_users (officers) and employees (C-level employees)
       const [execUsersRes, employeesRes] = await Promise.all([
-        supabase.from('exec_users').select('*').order('created_at', { ascending: false }),
+        supabase.from('exec_users').select('id, user_id, role, title, department, last_login, created_at, photo_url').order('created_at', { ascending: false }),
         supabase.from('employees' as any).select('*').order('position')
       ]);
 
@@ -71,6 +72,7 @@ export const ExecutiveDirectory: React.FC = () => {
         name: officer.title || officer.role?.toUpperCase(),
         email: undefined,
         source: 'exec_users' as const,
+        photo_url: officer.photo_url,
       }));
 
       // Filter to only C-level positions from employees and map to Executive interface
@@ -246,8 +248,9 @@ export const ExecutiveDirectory: React.FC = () => {
                 <div className="relative mb-3">
                   <Avatar 
                     size={window.innerWidth < 640 ? 60 : 80} 
-                    icon={<UserOutlined />} 
-                    className="bg-gradient-to-br from-blue-500 to-purple-500" 
+                    icon={!exec.photo_url ? <UserOutlined /> : undefined}
+                    src={exec.photo_url}
+                    className={!exec.photo_url ? "bg-gradient-to-br from-blue-500 to-purple-500" : ""}
                   />
                   <div className="absolute -bottom-2 -right-2 text-2xl sm:text-3xl">
                     {getRoleIcon(exec.role)}
