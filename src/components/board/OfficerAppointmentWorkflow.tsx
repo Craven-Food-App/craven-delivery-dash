@@ -35,10 +35,26 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
 
   const handleNext = async () => {
     try {
-      await form.validateFields();
+      // Validate only fields in the current step
+      const fieldNames = 
+        currentStep === 0 
+          ? ['full_name', 'email', 'position_title', 'appointment_date']
+          : currentStep === 1
+          ? ['equity_percent', 'share_count', 'vesting_schedule']
+          : currentStep === 2
+          ? ['defer_salary', 'annual_salary', ...(form.getFieldValue('defer_salary') ? ['funding_trigger'] : [])]
+          : [];
+      
+      await form.validateFields(fieldNames);
       setCurrentStep(currentStep + 1);
     } catch (error) {
       console.error('Validation failed:', error);
+      // Show validation errors to user
+      const errorInfo = error as any;
+      if (errorInfo?.errorFields?.length > 0) {
+        const firstError = errorInfo.errorFields[0];
+        message.error(firstError.errors[0] || 'Please fill in all required fields');
+      }
     }
   };
 
