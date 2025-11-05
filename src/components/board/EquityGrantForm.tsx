@@ -45,39 +45,49 @@ export function EquityGrantForm({ onGrantCreated }: { onGrantCreated?: () => voi
   }, []);
 
   const fetchExecutives = async () => {
-    const { data, error } = await supabase
-      .from('exec_users')
-      .select(`
-        id,
-        user_id,
-        role,
-        access_level,
-        title,
-        employees (
-          id,
-          first_name,
-          last_name,
-          email
-        )
-      `);
+    try {
+      // First get all exec_users
+      const { data: execData, error: execError } = await supabase
+        .from('exec_users')
+        .select('id, user_id, role, access_level, title');
 
-    if (error) {
+      if (execError) throw execError;
+
+      // Then get corresponding employee data
+      const userIds = execData?.map(e => e.user_id) || [];
+      
+      const { data: empData, error: empError } = await supabase
+        .from('employees')
+        .select('id, user_id, first_name, last_name, email')
+        .in('user_id', userIds);
+
+      if (empError) throw empError;
+
+      // Merge the data
+      const formatted = execData?.map((exec: any) => {
+        const employee = empData?.find(emp => emp.user_id === exec.user_id);
+        return {
+          id: exec.id,
+          user_id: exec.user_id,
+          role: exec.role,
+          access_level: exec.access_level,
+          title: exec.title,
+          employee_id: employee?.id,
+          full_name: employee ? `${employee.first_name} ${employee.last_name}` : 'Unknown',
+          email: employee?.email || '',
+        };
+      }) || [];
+
+      console.log('Fetched executives:', formatted);
+      setExecutives(formatted);
+    } catch (error) {
       console.error('Error fetching executives:', error);
-      return;
+      toast({
+        title: 'Error',
+        description: 'Failed to load executives',
+        variant: 'destructive',
+      });
     }
-
-    const formatted = data?.map((exec: any) => ({
-      id: exec.id,
-      user_id: exec.user_id,
-      role: exec.role,
-      access_level: exec.access_level,
-      title: exec.title,
-      employee_id: exec.employees[0]?.id,
-      full_name: `${exec.employees[0]?.first_name} ${exec.employees[0]?.last_name}`,
-      email: exec.employees[0]?.email,
-    })) || [];
-
-    setExecutives(formatted);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
