@@ -150,44 +150,70 @@ export default function SendCSuiteDocs() {
   };
 
   const generateDocumentData = (exec: Executive, docType: string) => {
+    // Calculate actual values from executive data
+    const sharesIssued = parseInt(exec.shares_issued || '0');
+    const strikePrice = parseFloat(exec.strike_price || '0.0001');
+    const purchasePrice = strikePrice * sharesIssued;
+    const annualSalary = parseInt(exec.annual_salary || '0');
+    const equityPercent = parseFloat(exec.equity_percent || '0');
+    
     const baseData = {
       company_name: "Crave'n, Inc.",
+      state_of_incorporation: "Ohio",
       full_name: exec.full_name,
       role: exec.role === 'cxo' ? 'Chief Experience Officer' : exec.title || exec.role.toUpperCase(),
       effective_date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
       funding_trigger: exec.funding_trigger ? `$${parseInt(exec.funding_trigger).toLocaleString()}` : "Upon Series A funding or significant investment event",
-      governing_law: "State of Delaware",
-      equity_percentage: exec.equity_percent || '5',
-      annual_salary: exec.annual_salary || '90000',
+      governing_law: "State of Ohio",
+      governing_law_state: "Ohio",
+      equity_percentage: exec.equity_percent || '0',
+      annual_salary: annualSalary.toLocaleString(),
       vesting_schedule: exec.vesting_schedule || '4 years with 1 year cliff',
-      strike_price: exec.strike_price || '0.0001',
-      shares_issued: exec.shares_issued || '100000',
-      salary_status: exec.salary_status || 'active',
+      strike_price: strikePrice.toFixed(4),
+      shares_issued: sharesIssued.toLocaleString(),
+      salary_status: exec.salary_status || 'deferred',
+      company_address: "123 Main St, Cleveland, OH 44101",
     };
 
     // Add template-specific data
     switch (docType) {
+      case 'employment_agreement':
+        return {
+          ...baseData,
+          base_salary: annualSalary.toLocaleString(),
+          equity_grant: `${equityPercent}% (${sharesIssued.toLocaleString()} shares)`,
+          start_date: baseData.effective_date,
+          benefits: "Health insurance upon funding, 15 days PTO",
+        };
+      case 'offer_letter':
+        return {
+          ...baseData,
+          position: baseData.role,
+          salary: annualSalary.toLocaleString(),
+          equity: `${equityPercent}% equity (${sharesIssued.toLocaleString()} shares at $${strikePrice.toFixed(4)}/share)`,
+          start_date: baseData.effective_date,
+        };
       case 'board_resolution':
         return {
           ...baseData,
           date: baseData.effective_date,
           directors: "Board of Directors",
+          officer_name: exec.full_name,
+          officer_title: baseData.role,
+          officer_salary: annualSalary.toLocaleString(),
+          officer_equity: `${equityPercent}% (${sharesIssued.toLocaleString()} shares)`,
           ceo_name: exec.role === 'ceo' ? exec.full_name : '',
           cfo_name: exec.role === 'cfo' ? exec.full_name : '',
           cxo_name: exec.role === 'cxo' ? exec.full_name : '',
-          equity_ceo: '15',
-          equity_cfo: '10',
-          equity_cxo: '5',
+          equity_ceo: exec.role === 'ceo' ? equityPercent.toString() : '0',
+          equity_cfo: exec.role === 'cfo' ? equityPercent.toString() : '0',
+          equity_cxo: exec.role === 'cxo' ? equityPercent.toString() : '0',
         };
       case 'stock_issuance':
-        // Complete field mapping for stock issuance agreement
-        const sharesIssued = parseInt(baseData.shares_issued || '0');
-        const strikePrice = parseFloat(baseData.strike_price || '0');
-        const purchasePrice = strikePrice * sharesIssued;
         return {
           // Company info
           company_name: "Crave'n, Inc.",
-          state_of_incorporation: "Delaware",
+          state_of_incorporation: "Ohio",
           company_address: "123 Main St, Cleveland, OH 44101",
           notice_contact_name: "Torrance Stroman",
           notice_contact_title: "CEO",
@@ -199,7 +225,7 @@ export default function SendCSuiteDocs() {
           subscriber_email: exec.email,
           accredited_status: "an accredited investor",
           
-          // Share details - PULL FROM ACTUAL EQUITY GRANT DATA
+          // Share details - ACTUAL VALUES
           share_class: "Common Stock",
           series_label: "N/A",
           share_count: sharesIssued.toLocaleString(),
@@ -211,17 +237,17 @@ export default function SendCSuiteDocs() {
           vesting_terms: baseData.vesting_schedule,
           
           // Transaction details
-          consideration_type: "Services Rendered",
+          consideration_type: annualSalary > 0 ? "Services Rendered" : "Founder Contribution",
           consideration_valuation_basis: "Fair market value of services",
           certificate_form: "Book-entry (no physical certificate)",
           closing_date: baseData.effective_date,
           effective_date: baseData.effective_date,
-          payment_method: "Services / Sweat Equity",
+          payment_method: annualSalary > 0 ? "Services / Sweat Equity" : "Founder Sweat Equity",
           
           // Legal
           securities_exemption: "Section 4(a)(2) private placement",
           related_agreement_name: "Founders' Agreement",
-          governing_law_state: "Delaware",
+          governing_law_state: "Ohio",
           board_resolution_date: baseData.effective_date,
           
           // Signatures
@@ -241,7 +267,7 @@ export default function SendCSuiteDocs() {
           founder_2_percent: "10",
           founder_2_notes: "4 year vesting, 1 year cliff",
           
-          subscriber_percent_post: baseData.equity_percentage,
+          subscriber_percent_post: equityPercent.toString(),
           
           option_pool_shares: "0",
           option_pool_percent: "0",
@@ -263,19 +289,33 @@ export default function SendCSuiteDocs() {
       case 'founders_agreement':
         return {
           ...baseData,
-          founders_table_html: `<table><tr><td>${exec.full_name}</td><td>${baseData.equity_percentage}%</td></tr></table>`,
+          founders_table_html: `<table><tr><td>${exec.full_name}</td><td>${equityPercent}%</td><td>${sharesIssued.toLocaleString()} shares</td></tr></table>`,
           vesting_years: '4',
           cliff_months: '12',
           founder_1_name: exec.full_name,
           founder_1_role: baseData.role,
-          founder_1_percent: baseData.equity_percentage,
-          founder_1_shares: baseData.shares_issued,
+          founder_1_percent: equityPercent.toString(),
+          founder_1_shares: sharesIssued.toLocaleString(),
           founder_1_vesting: baseData.vesting_schedule,
+        };
+      case 'deferred_comp_addendum':
+        return {
+          ...baseData,
+          deferred_salary: annualSalary.toLocaleString(),
+          total_annual_comp: annualSalary.toLocaleString(),
+          deferral_trigger: exec.funding_trigger ? `$${parseInt(exec.funding_trigger).toLocaleString()}` : "Series A funding",
+          payment_terms: "Paid within 30 days of funding event",
+        };
+      case 'confidentiality_ip':
+        return {
+          ...baseData,
+          employee_name: exec.full_name,
+          position: baseData.role,
         };
       case 'bylaws_officers_excerpt':
         return {
           ...baseData,
-          officer_roles_html: `<ul><li>CEO: ${exec.role === 'ceo' ? exec.full_name : 'TBD'}</li><li>CFO: ${exec.role === 'cfo' ? exec.full_name : 'TBD'}</li></ul>`,
+          officer_roles_html: `<ul><li>${baseData.role}: ${exec.full_name}</li></ul>`,
         };
       default:
         return baseData;
