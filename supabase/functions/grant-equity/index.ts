@@ -28,7 +28,7 @@ serve(async (req) => {
     // Check if user has board member or CEO role
     const { data: execUser, error: execError } = await supabase
       .from('exec_users')
-      .select('role')
+      .select('id, role')
       .eq('user_id', user.id)
       .single();
 
@@ -72,7 +72,7 @@ serve(async (req) => {
       .insert({
         executive_id,
         employee_id,
-        granted_by: user.id,
+        granted_by: execUser.id,
         grant_date: grant_date || new Date().toISOString().split('T')[0],
         shares_total,
         shares_percentage,
@@ -95,7 +95,7 @@ serve(async (req) => {
     // Create audit trail
     await supabase.from('equity_grant_history').insert({
       grant_id: grant.id,
-      changed_by: user.id,
+      changed_by: execUser.id,
       change_type: 'created',
       new_values: grant,
       reason: 'Initial grant creation',
