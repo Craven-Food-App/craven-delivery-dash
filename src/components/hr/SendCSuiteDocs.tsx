@@ -181,7 +181,9 @@ export default function SendCSuiteDocs() {
         };
       case 'stock_issuance':
         // Complete field mapping for stock issuance agreement
-        const purchasePrice = parseFloat(baseData.strike_price) * parseInt(baseData.shares_issued);
+        const sharesIssued = parseInt(baseData.shares_issued || '0');
+        const strikePrice = parseFloat(baseData.strike_price || '0');
+        const purchasePrice = strikePrice * sharesIssued;
         return {
           // Company info
           company_name: "Crave'n, Inc.",
@@ -197,11 +199,11 @@ export default function SendCSuiteDocs() {
           subscriber_email: exec.email,
           accredited_status: "an accredited investor",
           
-          // Share details
+          // Share details - PULL FROM ACTUAL EQUITY GRANT DATA
           share_class: "Common Stock",
           series_label: "N/A",
-          share_count: baseData.shares_issued,
-          price_per_share: baseData.strike_price,
+          share_count: sharesIssued.toLocaleString(),
+          price_per_share: strikePrice.toFixed(4),
           total_purchase_price: purchasePrice.toFixed(2),
           currency: "USD",
           
@@ -254,6 +256,9 @@ export default function SendCSuiteDocs() {
           account_name: "Crave'n, Inc.",
           swift_bic: "CHASUS33",
           payment_reference: `Stock Purchase - ${exec.full_name}`,
+          
+          // Optional notes section
+          notes: exec.notes || '',
         };
       case 'founders_agreement':
         return {

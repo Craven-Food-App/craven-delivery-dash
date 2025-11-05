@@ -48,14 +48,19 @@
       from the Company, and the Company agrees to issue and sell to the Subscriber, the following securities (the "Shares"):
     </p>
     <table>
-      <tr><th>Share Class</th><td>{{share_class}} (e.g., Common / Preferred Series {{series_label}})</td></tr>
+      <tr><th>Share Class</th><td>{{share_class}}</td></tr>
       <tr><th>Number of Shares</th><td>{{share_count}}</td></tr>
-      <tr><th>Price per Share</th><td>{{price_per_share}} {{currency}}</td></tr>
-      <tr><th>Total Purchase Price</th><td>{{total_purchase_price}} {{currency}}</td></tr>
-      <tr><th>Consideration</th><td>{{consideration_type}} (e.g., Cash / Services / IP Assignment)</td></tr>
-      <tr><th>Vesting (if applicable)</th><td>{{vesting_terms}} (e.g., 4 years, 1-year cliff, monthly thereafter)</td></tr>
-      <tr><th>Certificate/Book-Entry</th><td>{{certificate_form}} (e.g., Book-entry; no paper certificate)</td></tr>
+      <tr><th>Price per Share</th><td>${{price_per_share}} {{currency}}</td></tr>
+      <tr><th>Total Purchase Price</th><td>${{total_purchase_price}} {{currency}}</td></tr>
+      <tr><th>Consideration</th><td>{{consideration_type}}</td></tr>
+      <tr><th>Vesting (if applicable)</th><td>{{vesting_terms}}</td></tr>
+      <tr><th>Certificate/Book-Entry</th><td>{{certificate_form}}</td></tr>
     </table>
+
+    {{#if notes}}
+    <h3>Additional Notes</h3>
+    <p>{{notes}}</p>
+    {{/if}}
 
     <h2>2. Closing; Delivery</h2>
     <p>
