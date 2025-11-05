@@ -32,6 +32,7 @@ import AnalyticsView from '@/components/hr/AnalyticsView';
 import ComplianceView from '@/components/hr/ComplianceView';
 import EmployeeRelationsView from '@/components/hr/EmployeeRelationsView';
 import SystemAdminView from '@/components/hr/SystemAdminView';
+import EquityManagement from '@/components/hr/EquityManagement';
 import { useExecAuth } from '@/hooks/useExecAuth';
 
 const { Header, Content, Sider } = Layout;
@@ -654,7 +655,7 @@ const HRPortal: React.FC = () => {
             key="equity"
           >
             {/** Minimal equity editor to keep data in sync */}
-            {React.createElement(require('@/components/hr/EquityManagement').default)}
+            <EquityManagement />
           </TabPane>
 
           <TabPane
