@@ -205,7 +205,7 @@ const BoardPortal: React.FC = () => {
 
   return (
     <ConfigProvider theme={executiveTheme}>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      <div className="min-h-screen bg-white">
         {/* Header */}
         <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-sm">
           <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
