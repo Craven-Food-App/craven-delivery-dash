@@ -39,10 +39,29 @@ export function EquityGrantForm({ onGrantCreated }: { onGrantCreated?: () => voi
   const [durationMonths, setDurationMonths] = useState<string>('48');
   const [considerationType, setConsiderationType] = useState<string>('Services Rendered');
   const [notes, setNotes] = useState<string>('');
+  const [currentCapTableTotal, setCurrentCapTableTotal] = useState<number>(0);
+  const [remainingEquity, setRemainingEquity] = useState<number>(100);
 
   useEffect(() => {
     fetchExecutives();
+    fetchCurrentCapTable();
   }, []);
+
+  const fetchCurrentCapTable = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('employee_equity')
+        .select('shares_percentage');
+
+      if (error) throw error;
+
+      const total = data?.reduce((sum, eq) => sum + (eq.shares_percentage || 0), 0) || 0;
+      setCurrentCapTableTotal(total);
+      setRemainingEquity(100 - total);
+    } catch (error) {
+      console.error('Error fetching cap table:', error);
+    }
+  };
 
   const fetchExecutives = async () => {
     try {
@@ -98,6 +117,11 @@ export function EquityGrantForm({ onGrantCreated }: { onGrantCreated?: () => voi
       const executive = executives.find(e => e.id === selectedExecutive);
       if (!executive) {
         throw new Error('Please select an executive');
+      }
+
+      const proposedPercentage = parseFloat(sharesPercentage);
+      if (proposedPercentage > remainingEquity) {
+        throw new Error(`Cannot grant ${proposedPercentage}%. Only ${remainingEquity.toFixed(2)}% remaining in cap table.`);
       }
 
       let vestingSchedule: VestingSchedule;
@@ -166,6 +190,16 @@ export function EquityGrantForm({ onGrantCreated }: { onGrantCreated?: () => voi
         <CardDescription>
           Create a new equity grant. This will be saved as a draft until approved by the board.
         </CardDescription>
+        <div className="mt-4 p-4 rounded-lg bg-muted">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Current Cap Table:</span>
+            <span className="font-semibold">{currentCapTableTotal.toFixed(2)}%</span>
+          </div>
+          <div className="flex justify-between text-sm mt-2">
+            <span className="text-muted-foreground">Remaining Available:</span>
+            <span className="font-semibold text-primary">{remainingEquity.toFixed(2)}%</span>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -204,11 +238,17 @@ export function EquityGrantForm({ onGrantCreated }: { onGrantCreated?: () => voi
                 id="percentage"
                 type="number"
                 step="0.01"
+                max={remainingEquity}
                 value={sharesPercentage}
                 onChange={(e) => setSharesPercentage(e.target.value)}
                 placeholder="10.00"
                 required
               />
+              {sharesPercentage && parseFloat(sharesPercentage) > remainingEquity && (
+                <p className="text-sm text-destructive">
+                  Exceeds remaining equity by {(parseFloat(sharesPercentage) - remainingEquity).toFixed(2)}%
+                </p>
+              )}
             </div>
           </div>
 
