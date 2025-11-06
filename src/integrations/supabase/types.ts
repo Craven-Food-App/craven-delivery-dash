@@ -497,6 +497,81 @@ export type Database = {
           },
         ]
       }
+      business_documents: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          document_type: string
+          file_url: string
+          id: string
+          is_latest_version: boolean
+          metadata: Json | null
+          parent_document_id: string | null
+          requires_signature: boolean
+          signature_deadline: string | null
+          signed_at: string | null
+          status: string
+          title: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          document_type: string
+          file_url: string
+          id?: string
+          is_latest_version?: boolean
+          metadata?: Json | null
+          parent_document_id?: string | null
+          requires_signature?: boolean
+          signature_deadline?: string | null
+          signed_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          document_type?: string
+          file_url?: string
+          id?: string
+          is_latest_version?: boolean
+          metadata?: Json | null
+          parent_document_id?: string | null
+          requires_signature?: boolean
+          signature_deadline?: string | null
+          signed_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_documents_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "business_documents_parent_document_id_fkey"
+            columns: ["parent_document_id"]
+            isOneToOne: false
+            referencedRelation: "business_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ceo_access_credentials: {
         Row: {
           access_count: number | null
@@ -1136,6 +1211,41 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      company_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          setting_key: string
+          setting_value: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          setting_key: string
+          setting_value: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       compliance_records: {
         Row: {
@@ -2103,6 +2213,175 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "effective_permissions"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      document_signers: {
+        Row: {
+          created_at: string
+          document_id: string
+          id: string
+          ip_address: string | null
+          signature_data_url: string | null
+          signature_svg: string | null
+          signature_token: string | null
+          signature_token_expires_at: string | null
+          signed_at: string | null
+          signer_email: string
+          signer_name: string
+          signer_role: string | null
+          signer_type: string
+          signing_order: number | null
+          status: string
+          typed_name: string | null
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          id?: string
+          ip_address?: string | null
+          signature_data_url?: string | null
+          signature_svg?: string | null
+          signature_token?: string | null
+          signature_token_expires_at?: string | null
+          signed_at?: string | null
+          signer_email: string
+          signer_name: string
+          signer_role?: string | null
+          signer_type: string
+          signing_order?: number | null
+          status?: string
+          typed_name?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          id?: string
+          ip_address?: string | null
+          signature_data_url?: string | null
+          signature_svg?: string | null
+          signature_token?: string | null
+          signature_token_expires_at?: string | null
+          signed_at?: string | null
+          signer_email?: string
+          signer_name?: string
+          signer_role?: string | null
+          signer_type?: string
+          signing_order?: number | null
+          status?: string
+          typed_name?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_signers_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "business_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_templates: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          html_content: string
+          id: string
+          is_active: boolean
+          name: string
+          placeholders: Json
+          template_key: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          html_content: string
+          id?: string
+          is_active?: boolean
+          name: string
+          placeholders?: Json
+          template_key: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          html_content?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          placeholders?: Json
+          template_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      document_versions: {
+        Row: {
+          changes_description: string | null
+          created_at: string
+          created_by: string | null
+          document_id: string
+          file_url: string
+          id: string
+          metadata: Json | null
+          version_number: number
+        }
+        Insert: {
+          changes_description?: string | null
+          created_at?: string
+          created_by?: string | null
+          document_id: string
+          file_url: string
+          id?: string
+          metadata?: Json | null
+          version_number: number
+        }
+        Update: {
+          changes_description?: string | null
+          created_at?: string
+          created_by?: string | null
+          document_id?: string
+          file_url?: string
+          id?: string
+          metadata?: Json | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "document_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "business_documents"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3358,6 +3637,59 @@ export type Database = {
           },
         ]
       }
+      email_templates: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          html_content: string
+          id: string
+          is_active: boolean
+          name: string
+          subject: string
+          template_key: string
+          updated_at: string
+          variables: Json
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          html_content: string
+          id?: string
+          is_active?: boolean
+          name: string
+          subject: string
+          template_key: string
+          updated_at?: string
+          variables?: Json
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          html_content?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          subject?: string
+          template_key?: string
+          updated_at?: string
+          variables?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       employee_documents: {
         Row: {
           created_at: string | null
@@ -4325,10 +4657,14 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           equity: number | null
+          executive_id: string | null
           file_url: string | null
           id: string
           officer_name: string
           role: string
+          signature_status: string | null
+          signature_token: string | null
+          signature_token_expires_at: string | null
           signed_file_url: string | null
           status: string
           type: string
@@ -4337,10 +4673,14 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           equity?: number | null
+          executive_id?: string | null
           file_url?: string | null
           id?: string
           officer_name: string
           role: string
+          signature_status?: string | null
+          signature_token?: string | null
+          signature_token_expires_at?: string | null
           signed_file_url?: string | null
           status?: string
           type: string
@@ -4349,19 +4689,97 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           equity?: number | null
+          executive_id?: string | null
           file_url?: string | null
           id?: string
           officer_name?: string
           role?: string
+          signature_status?: string | null
+          signature_token?: string | null
+          signature_token_expires_at?: string | null
           signed_file_url?: string | null
           status?: string
           type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "executive_documents_executive_id_fkey"
+            columns: ["executive_id"]
+            isOneToOne: false
+            referencedRelation: "exec_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      executive_identity: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          date_of_birth: string
+          executive_id: string
+          full_name: string
+          id: string
+          postal_code: string | null
+          ssn_ciphertext: string
+          ssn_iv: string
+          ssn_last4: string
+          state: string | null
+          updated_at: string | null
+          w9_storage_path: string | null
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          date_of_birth: string
+          executive_id: string
+          full_name: string
+          id?: string
+          postal_code?: string | null
+          ssn_ciphertext: string
+          ssn_iv: string
+          ssn_last4: string
+          state?: string | null
+          updated_at?: string | null
+          w9_storage_path?: string | null
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          date_of_birth?: string
+          executive_id?: string
+          full_name?: string
+          id?: string
+          postal_code?: string | null
+          ssn_ciphertext?: string
+          ssn_iv?: string
+          ssn_last4?: string
+          state?: string | null
+          updated_at?: string | null
+          w9_storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_identity_executive_id_fkey"
+            columns: ["executive_id"]
+            isOneToOne: true
+            referencedRelation: "exec_users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       executive_signatures: {
         Row: {
           created_at: string | null
+          document_id: string | null
           document_type: string
           employee_email: string
           employee_name: string | null
@@ -4380,6 +4798,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          document_id?: string | null
           document_type: string
           employee_email: string
           employee_name?: string | null
@@ -4398,6 +4817,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          document_id?: string | null
           document_type?: string
           employee_email?: string
           employee_name?: string | null
@@ -4414,7 +4834,15 @@ export type Database = {
           typed_name?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "executive_signatures_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "executive_documents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       favorite_restaurants: {
         Row: {
@@ -8671,6 +9099,36 @@ export type Database = {
           },
         ]
       }
+      template_usage: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean
+          template_id: string
+          template_type: string
+          updated_at: string
+          usage_context: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          template_id: string
+          template_type: string
+          updated_at?: string
+          usage_context: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          template_id?: string
+          template_type?: string
+          updated_at?: string
+          usage_context?: string
+        }
+        Relationships: []
+      }
       ticket_messages: {
         Row: {
           created_at: string | null
@@ -9250,6 +9708,59 @@ export type Database = {
           user_id: string | null
         }
         Relationships: []
+      }
+      executive_identity_admin: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          executive_id: string | null
+          full_name: string | null
+          id: string | null
+          postal_code: string | null
+          ssn_last4: string | null
+          state: string | null
+          updated_at: string | null
+          w9_storage_path: string | null
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          executive_id?: string | null
+          full_name?: string | null
+          id?: string | null
+          postal_code?: string | null
+          ssn_last4?: string | null
+          state?: string | null
+          updated_at?: string | null
+          w9_storage_path?: string | null
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          executive_id?: string | null
+          full_name?: string | null
+          id?: string | null
+          postal_code?: string | null
+          ssn_last4?: string | null
+          state?: string | null
+          updated_at?: string | null
+          w9_storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_identity_executive_id_fkey"
+            columns: ["executive_id"]
+            isOneToOne: true
+            referencedRelation: "exec_users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       geography_columns: {
         Row: {

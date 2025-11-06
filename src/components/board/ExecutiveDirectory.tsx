@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Avatar, Tag, Input, Row, Col, message, Button } from 'antd';
-import { UserOutlined, MailOutlined, PhoneOutlined, SearchOutlined, MessageOutlined } from '@ant-design/icons';
+import { Card, Avatar, Tag, Input, Row, Col, message, Button, Modal, Space, Typography } from 'antd';
+import { UserOutlined, MailOutlined, PhoneOutlined, SearchOutlined, MessageOutlined, LockOutlined, CopyOutlined } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
+
+const { Paragraph, Text } = Typography;
 import { isCLevelPosition, getExecRoleFromPosition } from '@/utils/roleUtils';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -60,11 +62,9 @@ export const ExecutiveDirectory: React.FC = () => {
     setLoading(true);
     try {
       // Fetch from exec_users (officers) and employees (C-level employees)
-      // Also fetch user emails from auth.users via profiles
-      const [execUsersRes, employeesRes, profilesRes] = await Promise.all([
+      const [execUsersRes, employeesRes] = await Promise.all([
         supabase.from('exec_users').select('id, user_id, role, title, department, last_login, created_at, photo_url').order('created_at', { ascending: false }),
-        supabase.from('employees' as any).select('*').order('position'),
-        supabase.from('profiles').select('id, email, full_name')
+        supabase.from('employees' as any).select('*').order('position')
       ]);
 
       if (execUsersRes.error) throw execUsersRes.error;

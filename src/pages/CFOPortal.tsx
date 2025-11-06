@@ -1069,6 +1069,7 @@ export default function CFOPortal() {
               <WordProcessor />
             </TabPane>
           </Tabs>
+        </GlassmorphicCard>
         </div>
       </Content>
     </Layout>
