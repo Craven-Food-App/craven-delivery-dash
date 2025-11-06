@@ -14,6 +14,7 @@ const { Title, Text } = Typography;
 const CSUITE_DOC_TYPES = [
   { id: 'employment_agreement', title: 'Executive Employment Agreement' },
   { id: 'board_resolution', title: 'Board Resolution – Appointment of Officers' },
+  { id: 'pre_incorporation_consent', title: 'Pre-Incorporation Consent (Conditional Appointments)' },
   { id: 'founders_agreement', title: "Founders' / Shareholders' Agreement" },
   { id: 'stock_issuance', title: 'Stock Subscription / Issuance Agreement' },
   { id: 'confidentiality_ip', title: 'Confidentiality & IP Assignment Agreement' },
@@ -21,6 +22,38 @@ const CSUITE_DOC_TYPES = [
   { id: 'offer_letter', title: 'Executive Offer Letter' },
   { id: 'bylaws_officers_excerpt', title: 'Bylaws – Officers (Excerpt)' },
 ];
+
+// Helper function to get incorporation status
+const getIncorporationStatus = async (): Promise<'pre_incorporation' | 'incorporated'> => {
+  try {
+    const { data } = await supabase
+      .from('company_settings')
+      .select('setting_value')
+      .eq('setting_key', 'incorporation_status')
+      .single();
+    
+    return (data?.setting_value as 'pre_incorporation' | 'incorporated') || 'pre_incorporation';
+  } catch (error) {
+    console.warn('Error fetching incorporation status, defaulting to pre_incorporation:', error);
+    return 'pre_incorporation';
+  }
+};
+
+// Helper function to get company setting
+const getCompanySetting = async (key: string, defaultValue: string = ''): Promise<string> => {
+  try {
+    const { data } = await supabase
+      .from('company_settings')
+      .select('setting_value')
+      .eq('setting_key', key)
+      .single();
+    
+    return data?.setting_value || defaultValue;
+  } catch (error) {
+    console.warn(`Error fetching company setting ${key}:`, error);
+    return defaultValue;
+  }
+};
 
 interface Executive {
   id: string;
@@ -153,6 +186,19 @@ export default function SendCSuiteDocs() {
   };
 
   const generateDocumentData = async (exec: Executive, docType: string) => {
+    // Fetch company settings for pre-incorporation consent
+    const companyName = await getCompanySetting('company_name', "Crave'n, Inc.");
+    const stateOfIncorporation = await getCompanySetting('state_of_incorporation', 'Ohio');
+    const registeredOffice = await getCompanySetting('registered_office', '123 Main St, Cleveland, OH 44101');
+    const stateFilingOffice = await getCompanySetting('state_filing_office', 'Ohio Secretary of State');
+    const registeredAgentName = await getCompanySetting('registered_agent_name', 'TBD');
+    const registeredAgentAddress = await getCompanySetting('registered_agent_address', 'TBD');
+    const fiscalYearEnd = await getCompanySetting('fiscal_year_end', 'December 31');
+    const incorporatorName = await getCompanySetting('incorporator_name', 'Torrance Stroman');
+    const incorporatorAddress = await getCompanySetting('incorporator_address', '123 Main St, Cleveland, OH 44101');
+    const incorporatorEmail = await getCompanySetting('incorporator_email', 'craven@usa.com');
+    const county = await getCompanySetting('county', 'Cuyahoga');
+
     // Fetch fresh equity data from equity_grants table (linked to exec_users.id)
     // ALL fields must come from appointment flow
     const { data: equityGrant } = await supabase
@@ -264,11 +310,21 @@ export default function SendCSuiteDocs() {
     // Create comprehensive baseData matching appointment flow structure
     const baseData: Record<string, any> = {
       // Company info
-      company_name: "Crave'n, Inc.",
-      company: "Crave'n, Inc.",
-      corporation: "Crave'n, Inc.",
-      state_of_incorporation: "Ohio",
-      company_address: "123 Main St, Cleveland, OH 44101",
+      company_name: companyName,
+      company: companyName,
+      corporation: companyName,
+      state_of_incorporation: stateOfIncorporation,
+      state: stateOfIncorporation,
+      company_address: registeredOffice,
+      registered_office: registeredOffice,
+      state_filing_office: stateFilingOffice,
+      registered_agent_name: registeredAgentName,
+      registered_agent_address: registeredAgentAddress,
+      fiscal_year_end: fiscalYearEnd,
+      incorporator_name: incorporatorName,
+      incorporator_address: incorporatorAddress,
+      incorporator_email: incorporatorEmail,
+      county: county,
       
       // Executive info - ALL variations
       full_name: exec.full_name,
@@ -389,6 +445,68 @@ export default function SendCSuiteDocs() {
           equity_cfo: exec.role === 'cfo' ? equityPercent.toString() : '0',
           equity_cxo: exec.role === 'cxo' ? equityPercent.toString() : '0',
         };
+      case 'pre_incorporation_consent': {
+        // Fetch all executives to populate officers and directors
+        const allExecutives = await getExecutiveData();
+        const formattedExecs = allExecutives.map(e => formatExecutiveForDocuments(e));
+        
+        // Get CEO, CFO, CXO, and Secretary
+        const ceo = formattedExecs.find(e => e.role === 'ceo');
+        const cfo = formattedExecs.find(e => e.role === 'cfo');
+        const cxo = formattedExecs.find(e => e.role === 'cxo');
+        const secretary = formattedExecs.find(e => e.role === 'secretary') || formattedExecs.find(e => e.role === 'ceo');
+        
+        // Directors (typically CEO + 2 others)
+        const directors = formattedExecs.slice(0, 2);
+        
+        const consentDate = appointmentDate;
+        const notaryDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        
+        return {
+          ...baseData,
+          // Directors
+          director_1_name: directors[0]?.full_name || incorporatorName,
+          director_1_address: directors[0]?.full_name ? (registeredOffice) : incorporatorAddress,
+          director_1_email: directors[0]?.email || incorporatorEmail,
+          director_2_name: directors[1]?.full_name || 'Board Member 2',
+          director_2_address: registeredOffice,
+          director_2_email: directors[1]?.email || 'board@cravenusa.com',
+          // Officers
+          officer_1_name: ceo?.full_name || incorporatorName,
+          officer_1_title: 'Chief Executive Officer (CEO)',
+          officer_1_email: ceo?.email || incorporatorEmail,
+          officer_2_name: cfo?.full_name || '',
+          officer_2_title: 'Chief Financial Officer (CFO)',
+          officer_2_email: cfo?.email || '',
+          officer_3_name: cxo?.full_name || '',
+          officer_3_title: 'Chief Experience Officer (CXO)',
+          officer_3_email: cxo?.email || '',
+          officer_4_name: secretary?.full_name || incorporatorName,
+          officer_4_title: 'Corporate Secretary',
+          officer_4_email: secretary?.email || incorporatorEmail,
+          // Acceptance page appointees
+          appointee_1_name: ceo?.full_name || incorporatorName,
+          appointee_1_role: 'Chief Executive Officer (CEO)',
+          appointee_1_email: ceo?.email || incorporatorEmail,
+          appointee_2_name: cfo?.full_name || '',
+          appointee_2_role: 'Chief Financial Officer (CFO)',
+          appointee_2_email: cfo?.email || '',
+          appointee_3_name: cxo?.full_name || '',
+          appointee_3_role: 'Chief Experience Officer (CXO)',
+          appointee_3_email: cxo?.email || '',
+          appointee_4_name: secretary?.full_name || incorporatorName,
+          appointee_4_role: 'Corporate Secretary',
+          appointee_4_email: secretary?.email || incorporatorEmail,
+          // Dates
+          consent_date: consentDate,
+          notary_date: notaryDate,
+          // Pre-incorporation agreements (empty by default)
+          counterparty_1: '',
+          agreement_1_name: '',
+          agreement_1_date: '',
+          agreement_1_notes: '',
+        };
+      }
       case 'stock_issuance':
         return {
           ...baseData,
@@ -478,12 +596,29 @@ export default function SendCSuiteDocs() {
       // ONLY for this specific executive
       const docsForEmail: Array<{ title: string; url: string }> = [];
 
+      // Check incorporation status to determine which document to use
+      const incorporationStatus = await getIncorporationStatus();
+      
       for (const docType of CSUITE_DOC_TYPES) {
+        // Determine actual document type to generate based on incorporation status
+        let actualDocType = docType.id;
+        let actualDocTitle = docType.title;
+        
+        // Replace board_resolution with pre_incorporation_consent if pre-incorporation
+        if (docType.id === 'board_resolution' && incorporationStatus === 'pre_incorporation') {
+          actualDocType = 'pre_incorporation_consent';
+          actualDocTitle = 'Pre-Incorporation Consent (Conditional Appointments)';
+        }
+        // Skip pre_incorporation_consent if incorporated (we'll use board_resolution instead)
+        if (docType.id === 'pre_incorporation_consent' && incorporationStatus === 'incorporated') {
+          continue; // Skip pre_incorporation_consent, will use board_resolution instead
+        }
+        
         try {
           // Validate required fields for this document type
-          const issues = validateExecutive(exec, docType.id);
+          const issues = validateExecutive(exec, actualDocType);
           if (issues.length > 0) {
-            const msg = `${docType.title}: ${issues.join(', ')}`;
+            const msg = `${actualDocTitle}: ${issues.join(', ')}`;
             console.warn(`Validation failed for ${exec.full_name}:`, msg);
             execResults.failed++;
             execResults.errors.push(msg);
@@ -491,12 +626,18 @@ export default function SendCSuiteDocs() {
           }
 
           // Check if document already exists (from appointment flow)
+          // Check for both board_resolution and pre_incorporation_consent since they're interchangeable
           const statuses = statusMap[exec.id] || [];
-          const existingDoc = statuses.find(s => s.type === docType.id && s.exists && s.documentId);
+          const existingDoc = statuses.find(s => 
+            (s.type === actualDocType || 
+             (actualDocType === 'board_resolution' && s.type === 'pre_incorporation_consent') ||
+             (actualDocType === 'pre_incorporation_consent' && s.type === 'board_resolution')) &&
+            s.exists && s.documentId
+          );
           
           if (existingDoc?.documentId) {
             // Use existing document from appointment flow
-            console.log(`✓ Found existing ${docType.title} for ${exec.full_name} (doc ID: ${existingDoc.documentId})`);
+            console.log(`✓ Found existing ${actualDocTitle} for ${exec.full_name} (doc ID: ${existingDoc.documentId})`);
             
             // Fetch document URL
             const { data: doc, error: docError } = await supabase
@@ -524,34 +665,34 @@ export default function SendCSuiteDocs() {
             console.log(`✓ Verified document ${existingDoc.documentId} belongs to ${exec.full_name}`);
             
             if (doc.file_url) {
-              docsForEmail.push({ title: docType.title, url: doc.file_url });
+              docsForEmail.push({ title: actualDocTitle, url: doc.file_url });
               execResults.success++;
             } else {
               throw new Error('Existing document has no file URL');
             }
           } else {
             // Document doesn't exist, generate it using templates from database (or fallback to hardcoded)
-            console.log(`Generating ${docType.title} for ${exec.full_name} using proper templates...`);
-            const data = await generateDocumentData(exec, docType.id);
-            const html_content = await renderDocumentHtml(docType.id, data, docType.id);
+            console.log(`Generating ${actualDocTitle} (${actualDocType}) for ${exec.full_name} using proper templates...`);
+            const data = await generateDocumentData(exec, actualDocType);
+            const html_content = await renderDocumentHtml(actualDocType, data, actualDocType);
 
             // Generate document via API
             const resp = await docsAPI.post('/documents/generate', {
-              template_id: docType.id,
+              template_id: actualDocType,
               officer_name: exec.full_name,
               role: exec.role === 'cxo' ? 'Chief Experience Officer' : exec.title || exec.role.toUpperCase(),
-              equity: docType.id.includes('equity') ? parseFloat(data.equity_percentage) : undefined,
+              equity: actualDocType.includes('equity') ? parseFloat(data.equity_percentage) : undefined,
               data,
               html_content,
               executive_id: exec.id, // Link document to executive for signature portal
             });
 
-            console.log(`Document generation response for ${exec.full_name} - ${docType.title}:`, resp);
+            console.log(`Document generation response for ${exec.full_name} - ${actualDocTitle}:`, resp);
 
             if (resp?.ok && resp?.document) {
               // Collect generated document URL for single combined email
               if (resp.document.file_url) {
-                docsForEmail.push({ title: docType.title, url: resp.document.file_url });
+                docsForEmail.push({ title: actualDocTitle, url: resp.document.file_url });
               }
               execResults.success++;
             } else {
@@ -559,9 +700,9 @@ export default function SendCSuiteDocs() {
             }
           }
         } catch (error: any) {
-          console.error(`✗ Error processing ${docType.title} for ${exec.full_name}:`, error);
+          console.error(`✗ Error processing ${actualDocTitle} for ${exec.full_name}:`, error);
           execResults.failed++;
-          execResults.errors.push(`${docType.title}: ${error.message || error}`);
+          execResults.errors.push(`${actualDocTitle}: ${error.message || error}`);
         }
 
         completed++;
@@ -799,25 +940,42 @@ export default function SendCSuiteDocs() {
         console.error('Error deleting existing documents:', deleteError);
       }
 
+      // Check incorporation status to determine which document to use
+      const incorporationStatus = await getIncorporationStatus();
+      
       // Generate all documents fresh
       for (const docType of CSUITE_DOC_TYPES) {
-          try {
-            console.log(`Generating ${docType.title} for ${exec.full_name}...`);
-            const data = await generateDocumentData(exec, docType.id);
-            const html_content = await renderDocumentHtml(docType.id, data, docType.id);
+        // Determine actual document type to generate based on incorporation status
+        let actualDocType = docType.id;
+        let actualDocTitle = docType.title;
+        
+        // Replace board_resolution with pre_incorporation_consent if pre-incorporation
+        if (docType.id === 'board_resolution' && incorporationStatus === 'pre_incorporation') {
+          actualDocType = 'pre_incorporation_consent';
+          actualDocTitle = 'Pre-Incorporation Consent (Conditional Appointments)';
+        }
+        // Skip pre_incorporation_consent if incorporated (we'll use board_resolution instead)
+        if (docType.id === 'pre_incorporation_consent' && incorporationStatus === 'incorporated') {
+          continue; // Skip pre_incorporation_consent, will use board_resolution instead
+        }
+        
+        try {
+          console.log(`Generating ${actualDocTitle} (${actualDocType}) for ${exec.full_name}...`);
+          const data = await generateDocumentData(exec, actualDocType);
+          const html_content = await renderDocumentHtml(actualDocType, data, actualDocType);
 
           // Generate document via API
           const resp = await docsAPI.post('/documents/generate', {
-            template_id: docType.id,
+            template_id: actualDocType,
             officer_name: exec.full_name,
             role: exec.role === 'cxo' ? 'Chief Experience Officer' : exec.title || exec.role.toUpperCase(),
-            equity: docType.id.includes('equity') ? parseFloat(data.equity_percentage) : undefined,
+            equity: actualDocType.includes('equity') ? parseFloat(data.equity_percentage) : undefined,
             data,
             html_content,
             executive_id: exec.id, // Link document to executive for signature portal
           });
 
-          console.log(`Document generation response for ${exec.full_name} - ${docType.title}:`, resp);
+          console.log(`Document generation response for ${exec.full_name} - ${actualDocTitle}:`, resp);
 
           if (resp?.ok && resp?.document) {
             execResults.success++;
@@ -825,9 +983,9 @@ export default function SendCSuiteDocs() {
             throw new Error(`Document generation failed: ${resp?.error || 'Unknown error'}`);
           }
         } catch (error: any) {
-          console.error(`✗ Error regenerating ${docType.title} for ${exec.full_name}:`, error);
+          console.error(`✗ Error regenerating ${actualDocTitle} for ${exec.full_name}:`, error);
           execResults.failed++;
-          execResults.errors.push(`${docType.title}: ${error.message || error}`);
+          execResults.errors.push(`${actualDocTitle}: ${error.message || error}`);
         }
 
         completed++;

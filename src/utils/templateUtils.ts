@@ -96,21 +96,39 @@ export async function getDocumentTemplate(
     }
 
     // Fallback: try to get by template_key
-    const { data: template } = await supabase
+    // Don't filter by is_active here - we'll check it but still return inactive templates
+    // This allows us to see what's wrong
+    const { data: template, error: templateError } = await supabase
       .from('document_templates')
-      .select('html_content, placeholders')
+      .select('html_content, placeholders, is_active')
       .eq('template_key', templateKey)
-      .eq('is_active', true)
       .single();
 
+    if (templateError) {
+      console.error(`Error fetching template ${templateKey}:`, templateError);
+      throw new Error(`Failed to fetch template: ${templateError.message}`);
+    }
+
     if (template) {
+      if (!template.is_active) {
+        console.warn(`Template ${templateKey} exists but is not active - activating it`);
+        // Try to activate it
+        await supabase
+          .from('document_templates')
+          .update({ is_active: true })
+          .eq('template_key', templateKey);
+      }
       return {
         html_content: template.html_content,
         placeholders: template.placeholders || [],
       };
     }
-  } catch (error) {
-    console.warn(`Template not found in database for ${templateKey}, using fallback`);
+  } catch (error: any) {
+    console.error(`Error fetching template ${templateKey}:`, error);
+    if (error.message && error.message.includes('Failed to fetch')) {
+      throw error; // Re-throw if it's our error
+    }
+    console.warn(`Template not found in database for ${templateKey}`);
   }
 
   // Hardcoded fallback - return null to indicate fallback should be used
@@ -156,6 +174,13 @@ function hasExpectedStructure(templateId: string, htmlContent: string): boolean 
       'WHEREAS',
       'RESOLVED',
       'Board Resolution',
+    ],
+    'pre_incorporation_consent': [
+      'Pre-Incorporation',
+      'Incorporator',
+      'Articles of Incorporation',
+      'RESOLVED',
+      'Effective Time',
     ],
     'stock_issuance': [
       'Stock Subscription',
@@ -360,6 +385,30 @@ export async function seedDocumentTemplates(): Promise<void> {
       html_content: '<!-- Template will be loaded from src/lib/templates.ts by default. Edit this template to customize. -->',
       placeholders: ['company_name', 'offer_date', 'executive_name', 'position_title', 'annual_base_salary', 'share_count', 'ownership_percent', 'vesting_period', 'vesting_cliff'],
       description: 'Executive offer letter template',
+    },
+    {
+      template_key: 'pre_incorporation_consent',
+      name: 'Pre-Incorporation Consent (Conditional Appointments)',
+      category: 'executive',
+      html_content: '<!-- Template will be loaded from server/templates/pre_incorporation_consent.hbs by default. Edit this template to customize. -->',
+      placeholders: [
+        'company_name', 'state', 'state_of_incorporation', 'registered_office', 'state_filing_office',
+        'director_1_name', 'director_1_address', 'director_1_email',
+        'director_2_name', 'director_2_address', 'director_2_email',
+        'officer_1_name', 'officer_1_title', 'officer_1_email',
+        'officer_2_name', 'officer_2_title', 'officer_2_email',
+        'officer_3_name', 'officer_3_title', 'officer_3_email',
+        'officer_4_name', 'officer_4_title', 'officer_4_email',
+        'fiscal_year_end', 'registered_agent_name', 'registered_agent_address',
+        'incorporator_name', 'incorporator_address', 'incorporator_email',
+        'county', 'consent_date', 'notary_date',
+        'appointee_1_name', 'appointee_1_role', 'appointee_1_email',
+        'appointee_2_name', 'appointee_2_role', 'appointee_2_email',
+        'appointee_3_name', 'appointee_3_role', 'appointee_3_email',
+        'appointee_4_name', 'appointee_4_role', 'appointee_4_email',
+        'counterparty_1', 'agreement_1_name', 'agreement_1_date', 'agreement_1_notes'
+      ],
+      description: 'Pre-incorporation consent template for conditional officer appointments',
     },
   ];
 

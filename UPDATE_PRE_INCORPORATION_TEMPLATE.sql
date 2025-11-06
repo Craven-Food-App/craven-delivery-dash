@@ -1,0 +1,766 @@
+-- Update Pre-Incorporation Consent Template with Full HTML Content
+-- Run this in Supabase Dashboard > SQL Editor
+
+-- Use UPSERT to insert or update the template
+INSERT INTO public.document_templates (
+  template_key,
+  name,
+  category,
+  html_content,
+  placeholders,
+  description,
+  is_active
+)
+VALUES (
+  'pre_incorporation_consent',
+  'Pre-Incorporation Consent (Conditional Appointments)',
+  'executive',
+  $TEMPLATE$<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8" />
+
+  <title>Pre-Incorporation Consent (Conditional Appointments)</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+
+    /* --- Print-friendly base --- */
+
+    html, body { margin: 0; padding: 0; font-family: "Times New Roman", Times, serif; color: #111; }
+
+    .doc { max-width: 800px; margin: 0 auto; padding: 48px 56px; }
+
+    h1, h2, h3 { margin: 0 0 12px; font-weight: 700; }
+
+    h1 { font-size: 22px; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    h2 { font-size: 16px; text-transform: uppercase; letter-spacing: 0.4px; }
+
+    h3 { font-size: 15px; }
+
+    p { line-height: 1.35; margin: 8px 0 8px; }
+
+    .muted { color: #555; font-size: 12px; }
+
+    .small { font-size: 12px; }
+
+    .center { text-align: center; }
+
+    .right { text-align: right; }
+
+    .spacer-8 { height: 8px; }
+
+    .spacer-16 { height: 16px; }
+
+    .spacer-24 { height: 24px; }
+
+    .spacer-32 { height: 32px; }
+
+    .hr { border-top: 1px solid #222; margin: 16px 0; }
+
+    .section { margin-top: 18px; }
+
+    .box { border: 1px solid #222; padding: 14px; }
+
+    .table { width: 100%; border-collapse: collapse; }
+
+    .table th, .table td { border: 1px solid #222; padding: 8px 10px; vertical-align: top; }
+
+    .table th { background: #f2f2f2; font-weight: 700; }
+
+    .signature-line { border-bottom: 1px solid #222; height: 22px; }
+
+    .label { font-weight: 700; }
+
+    .page-break { page-break-before: always; }
+
+    @page { size: Letter; margin: 0.75in; }
+
+    @media print { .no-print { display: none; } }
+
+  </style>
+
+</head>
+
+<body>
+
+  <div class="doc">
+
+    <h1>Pre-Incorporation Written Consent<br/>of the Sole Incorporator</h1>
+
+    <div class="spacer-8"></div>
+
+    <p class="center"><span class="label">{{company_name}}</span></p>
+
+    <p class="center small muted">
+
+      Intended State of Incorporation: {{state}} &nbsp;|&nbsp; Intended Registered Office: {{registered_office}}<br/>
+
+      Effective Upon: Filing and acceptance of the Articles of Incorporation by {{state_filing_office}} (the "Effective Time")
+
+    </p>
+
+
+
+    <div class="section">
+
+      <h2>Recitals</h2>
+
+      <div class="box">
+
+        <p>
+
+          I, the undersigned, being the sole incorporator (the "Incorporator") of
+
+          <span class="label">{{company_name}}</span>, a corporation to be formed under the laws of
+
+          <span class="label">{{state}}</span> (the "Corporation"), adopt the following resolutions
+
+          by written consent in lieu of an organizational meeting. This consent is executed prior to the filing of the Articles
+
+          of Incorporation and shall become operative automatically as of the Effective Time.
+
+        </p>
+
+        <p>
+
+          Prior to the Effective Time, the Corporation does not yet exist as a legal entity; accordingly, the actions below are
+
+          expressly made conditional and shall be deemed authorized and effective only as of the Effective Time.
+
+        </p>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="section">
+
+      <h2>1. Articles of Incorporation</h2>
+
+      <p>
+
+        RESOLVED: The Incorporator approves the filing of the Articles of Incorporation in substantially the form attached
+
+        as <em>Exhibit A</em>, with such changes as the Incorporator may approve, and authorizes the submission of the Articles
+
+        for filing with {{state_filing_office}}. This resolution is ratified effective as of the Effective Time.
+
+      </p>
+
+    </div>
+
+
+
+    <div class="section">
+
+      <h2>2. Adoption of Bylaws</h2>
+
+      <p>
+
+        RESOLVED: Effective as of the Effective Time, the Bylaws of the Corporation in the form attached as <em>Exhibit B</em>
+
+        are adopted and approved.
+
+      </p>
+
+    </div>
+
+
+
+    <div class="section">
+
+      <h2>3. Appointment of Initial Board of Directors (Conditional)</h2>
+
+      <p>
+
+        RESOLVED: Effective as of the Effective Time, the following individuals are appointed to serve as the initial
+
+        members of the Board of Directors of the Corporation, to hold office until their successors are duly elected and qualified
+
+        or until their earlier death, resignation, or removal in accordance with the Bylaws:
+
+      </p>
+
+
+
+      <!-- Repeat <tr> for each director -->
+
+      <table class="table">
+
+        <thead>
+
+          <tr>
+
+            <th>Director Name</th>
+
+            <th>Address</th>
+
+            <th>Email</th>
+
+            <th>Term Notes</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          <tr>
+
+            <td>{{director_1_name}}</td>
+
+            <td>{{director_1_address}}</td>
+
+            <td>{{director_1_email}}</td>
+
+            <td>Initial director; serves per Bylaws</td>
+
+          </tr>
+
+          <tr>
+
+            <td>{{director_2_name}}</td>
+
+            <td>{{director_2_address}}</td>
+
+            <td>{{director_2_email}}</td>
+
+            <td>Initial director; serves per Bylaws</td>
+
+          </tr>
+
+          <!-- Add/remove rows as needed -->
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+
+
+    <div class="section">
+
+      <h2>4. Appointment of Initial Officers (Conditional)</h2>
+
+      <p>
+
+        RESOLVED: Effective as of the Effective Time, the following individuals are appointed to the officer positions
+
+        indicated below, to serve at the pleasure of the Board and in accordance with the Bylaws:
+
+      </p>
+
+
+
+      <!-- Repeat <tr> for each officer -->
+
+      <table class="table">
+
+        <thead>
+
+          <tr>
+
+            <th>Officer Name</th>
+
+            <th>Title</th>
+
+            <th>Email</th>
+
+            <th>Notes</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          <tr>
+
+            <td>{{officer_1_name}}</td>
+
+            <td>{{officer_1_title}}</td>
+
+            <td>{{officer_1_email}}</td>
+
+            <td>Appointment effective at Effective Time</td>
+
+          </tr>
+
+          <tr>
+
+            <td>{{officer_2_name}}</td>
+
+            <td>{{officer_2_title}}</td>
+
+            <td>{{officer_2_email}}</td>
+
+            <td>Appointment effective at Effective Time</td>
+
+          </tr>
+
+          <tr>
+
+            <td>{{officer_3_name}}</td>
+
+            <td>{{officer_3_title}}</td>
+
+            <td>{{officer_3_email}}</td>
+
+            <td>Appointment effective at Effective Time</td>
+
+          </tr>
+
+          <tr>
+
+            <td>{{officer_4_name}}</td>
+
+            <td>{{officer_4_title}}</td>
+
+            <td>{{officer_4_email}}</td>
+
+            <td>Appointment effective at Effective Time</td>
+
+          </tr>
+
+          <!-- Add/remove rows as needed -->
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+
+
+    <div class="section">
+
+      <h2>5. Organizational Actions Upon Effectiveness</h2>
+
+      <p>
+
+        RESOLVED: As of the Effective Time, the Board is authorized and directed to (a) open and maintain one or more bank
+
+        accounts, (b) apply for an EIN, (c) issue stock pursuant to the Articles, Bylaws, and applicable resolutions,
+
+        and (d) take such further actions as may be necessary and proper to fully organize the Corporation.
+
+      </p>
+
+    </div>
+
+
+
+    <div class="section">
+
+      <h2>6. Ratification of Pre-Incorporation Agreements</h2>
+
+      <p>
+
+        RESOLVED: Subject to Board review, any pre-incorporation agreements entered into by or on behalf of the to-be-formed
+
+        Corporation, as listed on <em>Exhibit C</em> (if any), are adopted and ratified as of the Effective Time; provided that
+
+        the Corporation assumes no pre-Effective Time liabilities not expressly approved by the Board.
+
+      </p>
+
+    </div>
+
+
+
+    <div class="section">
+
+      <h2>7. Fiscal Year</h2>
+
+      <p>
+
+        RESOLVED: The fiscal year of the Corporation shall end on {{fiscal_year_end}} unless changed by the Board.
+
+      </p>
+
+    </div>
+
+
+
+    <div class="section">
+
+      <h2>8. Registered Agent</h2>
+
+      <p>
+
+        RESOLVED: The Incorporator approves the designation of {{registered_agent_name}}, located at {{registered_agent_address}},
+
+        as the Corporation's registered agent in {{state}}, effective as of the Effective Time.
+
+      </p>
+
+    </div>
+
+
+
+    <div class="section">
+
+      <h2>9. General Authorization</h2>
+
+      <p>
+
+        RESOLVED: The officers and directors appointed as of the Effective Time are authorized and directed to carry out the
+
+        intent of these resolutions and to execute and deliver any documents and instruments necessary or appropriate to
+
+        effectuate the foregoing.
+
+      </p>
+
+    </div>
+
+
+
+    <div class="section">
+
+      <h2>Execution</h2>
+
+      <p>
+
+        IN WITNESS WHEREOF, the undersigned Incorporator has executed this Written Consent as of {{consent_date}}.
+
+        This Written Consent shall be filed in the Corporation's minute book following the Effective Time.
+
+      </p>
+
+
+
+      <div class="spacer-24"></div>
+
+      <table class="table">
+
+        <tbody>
+
+          <tr>
+
+            <td style="width: 60%;">
+
+              <div class="signature-line"></div>
+
+              <div><span class="label">Incorporator:</span> {{incorporator_name}}</div>
+
+              <div class="small muted">Address: {{incorporator_address}}</div>
+
+              <div class="small muted">Email: {{incorporator_email}}</div>
+
+            </td>
+
+            <td style="width: 40%;">
+
+              <div class="label small">Date Signed</div>
+
+              <div class="signature-line"></div>
+
+              <div class="label small">City/State</div>
+
+              <div class="signature-line"></div>
+
+            </td>
+
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+
+
+    <!-- Optional Notary Acknowledgment -->
+
+    <div class="section">
+
+      <h3>Optional Notary Acknowledgment</h3>
+
+      <div class="box small">
+
+        <p>State of {{state}} )</p>
+
+        <p>County of {{county}} )</p>
+
+        <p>
+
+          Subscribed and sworn before me on {{notary_date}} by {{incorporator_name}}.
+
+        </p>
+
+        <div class="spacer-16"></div>
+
+        <div class="signature-line"></div>
+
+        <div class="small">Notary Public</div>
+
+        <div class="spacer-8"></div>
+
+        <div class="signature-line"></div>
+
+        <div class="small">My Commission Expires</div>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="page-break"></div>
+
+
+
+    <!-- Officer Acceptance Page -->
+
+    <div class="section">
+
+      <h2>Officer/Director Acceptance (Effective Upon Filing)</h2>
+
+      <p>
+
+        Each undersigned acknowledges appointment as indicated below and agrees to serve effective as of the Effective Time,
+
+        subject to the Bylaws and applicable law.
+
+      </p>
+
+
+
+      <!-- Duplicate this block per appointee -->
+
+      <div class="box">
+
+        <p><span class="label">Name:</span> {{appointee_1_name}}</p>
+
+        <p><span class="label">Role:</span> {{appointee_1_role}}</p>
+
+        <p><span class="label">Email:</span> {{appointee_1_email}}</p>
+
+        <div class="spacer-16"></div>
+
+        <div class="signature-line"></div>
+
+        <div class="small">Signature of Appointee &nbsp;&nbsp; Date: __________</div>
+
+      </div>
+
+
+
+      <div class="spacer-16"></div>
+
+
+
+      <div class="box">
+
+        <p><span class="label">Name:</span> {{appointee_2_name}}</p>
+
+        <p><span class="label">Role:</span> {{appointee_2_role}}</p>
+
+        <p><span class="label">Email:</span> {{appointee_2_email}}</p>
+
+        <div class="spacer-16"></div>
+
+        <div class="signature-line"></div>
+
+        <div class="small">Signature of Appointee &nbsp;&nbsp; Date: __________</div>
+
+      </div>
+
+
+
+      <div class="spacer-16"></div>
+
+
+
+      <div class="box">
+
+        <p><span class="label">Name:</span> {{appointee_3_name}}</p>
+
+        <p><span class="label">Role:</span> {{appointee_3_role}}</p>
+
+        <p><span class="label">Email:</span> {{appointee_3_email}}</p>
+
+        <div class="spacer-16"></div>
+
+        <div class="signature-line"></div>
+
+        <div class="small">Signature of Appointee &nbsp;&nbsp; Date: __________</div>
+
+      </div>
+
+
+
+      <div class="spacer-16"></div>
+
+
+
+      <div class="box">
+
+        <p><span class="label">Name:</span> {{appointee_4_name}}</p>
+
+        <p><span class="label">Role:</span> {{appointee_4_role}}</p>
+
+        <p><span class="label">Email:</span> {{appointee_4_email}}</p>
+
+        <div class="spacer-16"></div>
+
+        <div class="signature-line"></div>
+
+        <div class="small">Signature of Appointee &nbsp;&nbsp; Date: __________</div>
+
+      </div>
+
+
+
+      <!-- Add/remove acceptance boxes as needed -->
+
+    </div>
+
+
+
+    <div class="page-break"></div>
+
+
+
+    <!-- Exhibits placeholders -->
+
+    <div class="section">
+
+      <h2>Exhibit A — Articles of Incorporation (Draft)</h2>
+
+      <p class="muted small">Attach draft Articles here or merge by template include.</p>
+
+      <div class="hr"></div>
+
+      <div style="height: 500px;"></div>
+
+    </div>
+
+
+
+    <div class="section">
+
+      <h2>Exhibit B — Bylaws (Draft)</h2>
+
+      <p class="muted small">Attach Bylaws here or merge by template include.</p>
+
+      <div class="hr"></div>
+
+      <div style="height: 500px;"></div>
+
+    </div>
+
+
+
+    <div class="section">
+
+      <h2>Exhibit C — Pre-Incorporation Agreements List (If Any)</h2>
+
+      <table class="table small">
+
+        <thead>
+
+          <tr>
+
+            <th>Counterparty</th>
+
+            <th>Agreement Name</th>
+
+            <th>Date</th>
+
+            <th>Assumption Notes</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          <tr>
+
+            <td>{{counterparty_1}}</td>
+
+            <td>{{agreement_1_name}}</td>
+
+            <td>{{agreement_1_date}}</td>
+
+            <td>{{agreement_1_notes}}</td>
+
+          </tr>
+
+          <!-- Add rows as needed -->
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+
+
+    <div class="spacer-32"></div>
+
+    <p class="small muted center">
+
+      This Pre-Incorporation Consent is intended for use as a template and may require modification to comply with the laws of {{state}}.
+
+      Consider consulting counsel for your specific facts.
+
+    </p>
+
+
+
+  </div>
+
+</body>
+
+</html>$TEMPLATE$,
+  to_jsonb(ARRAY[
+    'company_name', 'state', 'state_of_incorporation', 'registered_office', 'state_filing_office',
+    'director_1_name', 'director_1_address', 'director_1_email',
+    'director_2_name', 'director_2_address', 'director_2_email',
+    'officer_1_name', 'officer_1_title', 'officer_1_email',
+    'officer_2_name', 'officer_2_title', 'officer_2_email',
+    'officer_3_name', 'officer_3_title', 'officer_3_email',
+    'officer_4_name', 'officer_4_title', 'officer_4_email',
+    'fiscal_year_end', 'registered_agent_name', 'registered_agent_address',
+    'incorporator_name', 'incorporator_address', 'incorporator_email',
+    'county', 'consent_date', 'notary_date',
+    'appointee_1_name', 'appointee_1_role', 'appointee_1_email',
+    'appointee_2_name', 'appointee_2_role', 'appointee_2_email',
+    'appointee_3_name', 'appointee_3_role', 'appointee_3_email',
+    'appointee_4_name', 'appointee_4_role', 'appointee_4_email',
+    'counterparty_1', 'agreement_1_name', 'agreement_1_date', 'agreement_1_notes'
+  ]::text[]),
+  'Pre-incorporation consent template for conditional officer appointments',
+  true
+)
+ON CONFLICT (template_key) 
+DO UPDATE SET
+  html_content = EXCLUDED.html_content,
+  placeholders = EXCLUDED.placeholders,
+  is_active = true,
+  updated_at = now();
+
+-- Verify the update
+SELECT 
+  template_key,
+  name,
+  CASE 
+    WHEN html_content LIKE '%<!--%' AND length(html_content) < 200 THEN 'PLACEHOLDER - NEEDS UPDATE'
+    ELSE 'LOADED - ' || length(html_content) || ' characters'
+  END as status,
+  length(html_content) as content_length
+FROM document_templates
+WHERE template_key = 'pre_incorporation_consent';

@@ -29,6 +29,8 @@ import { OfficerAppointmentWorkflow } from '@/components/board/OfficerAppointmen
 import { OfficerToEmployeeConverter } from '@/components/board/OfficerToEmployeeConverter';
 import GenerateOfficerDocuments from '@/components/board/GenerateOfficerDocuments';
 import { TemplateManager } from '@/components/board/TemplateManager';
+import { IncorporationStatusToggle } from '@/components/board/IncorporationStatusToggle';
+import { CompanySettingsManager } from '@/components/board/CompanySettingsManager';
 import { executiveTheme } from '@/config/antd-theme';
 import { useExecAuth } from '@/hooks/useExecAuth';
 
@@ -373,7 +375,12 @@ const BoardPortal: React.FC = () => {
                         {
                           key: 'documents',
                           label: 'Officer Documents',
-                          children: <GenerateOfficerDocuments />,
+                          children: (
+                            <div>
+                              <IncorporationStatusToggle />
+                              <GenerateOfficerDocuments />
+                            </div>
+                          ),
                         },
                       ]}
                     />
@@ -456,10 +463,31 @@ const BoardPortal: React.FC = () => {
                   label: (
                     <span className="flex items-center gap-1 sm:gap-2">
                       <CodeOutlined />
-                      <span className="text-xs sm:text-base">Template Manager</span>
+                      <span className="text-xs sm:text-base">Templates & Settings</span>
                     </span>
                   ),
-                  children: <TemplateManager />,
+                  children: (
+                    <Tabs
+                      defaultActiveKey="templates"
+                      size="small"
+                      items={[
+                        {
+                          key: 'templates',
+                          label: 'Template Manager',
+                          children: <TemplateManager />,
+                        },
+                        {
+                          key: 'settings',
+                          label: 'Company Settings',
+                          children: (
+                            <div>
+                              <CompanySettingsManager />
+                            </div>
+                          ),
+                        },
+                      ]}
+                    />
+                  ),
                 },
               ]}
             />

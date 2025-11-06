@@ -384,8 +384,112 @@ export const TemplateManager: React.FC = () => {
     });
   };
 
-  const handlePreview = (htmlContent: string) => {
-    setPreviewContent(htmlContent);
+  const handlePreview = async (htmlContent: string, templateKey?: string) => {
+    let contentToPreview = htmlContent;
+    
+    // If this is the pre-incorporation consent template, populate placeholders with company settings
+    if (templateKey === 'pre_incorporation_consent') {
+      try {
+        // Fetch company settings
+        const { data: settingsData } = await supabase
+          .from('company_settings')
+          .select('setting_key, setting_value')
+          .in('setting_key', [
+            'company_name', 'state_of_incorporation', 'registered_office', 'state_filing_office',
+            'registered_agent_name', 'registered_agent_address', 'fiscal_year_end',
+            'incorporator_name', 'incorporator_address', 'incorporator_email', 'county',
+            'state'
+          ]);
+
+        // Fetch executives for directors and officers
+        const { data: executivesData } = await supabase
+          .from('exec_users')
+          .select('full_name, email, role, title')
+          .order('created_at', { ascending: true });
+
+        // Build data map from company settings
+        const dataMap: Record<string, string> = {};
+        settingsData?.forEach((item) => {
+          dataMap[item.setting_key] = item.setting_value || '';
+        });
+
+        // Add state alias
+        if (dataMap.state_of_incorporation) {
+          dataMap.state = dataMap.state_of_incorporation;
+        }
+
+        // Populate directors (first 2 executives or defaults)
+        const ceo = executivesData?.find(e => e.role === 'ceo');
+        const cfo = executivesData?.find(e => e.role === 'cfo');
+        const cxo = executivesData?.find(e => e.role === 'cxo');
+        const directors = executivesData?.slice(0, 2) || [];
+
+        dataMap.director_1_name = directors[0]?.full_name || dataMap.incorporator_name || 'Director 1';
+        dataMap.director_1_address = dataMap.registered_office || dataMap.incorporator_address || '';
+        dataMap.director_1_email = directors[0]?.email || dataMap.incorporator_email || '';
+        dataMap.director_2_name = directors[1]?.full_name || 'Director 2';
+        dataMap.director_2_address = dataMap.registered_office || '';
+        dataMap.director_2_email = directors[1]?.email || 'board@cravenusa.com';
+
+        // Populate officers
+        dataMap.officer_1_name = ceo?.full_name || dataMap.incorporator_name || 'CEO Name';
+        dataMap.officer_1_title = 'Chief Executive Officer (CEO)';
+        dataMap.officer_1_email = ceo?.email || dataMap.incorporator_email || '';
+        dataMap.officer_2_name = cfo?.full_name || '';
+        dataMap.officer_2_title = 'Chief Financial Officer (CFO)';
+        dataMap.officer_2_email = cfo?.email || '';
+        dataMap.officer_3_name = cxo?.full_name || '';
+        dataMap.officer_3_title = 'Chief Experience Officer (CXO)';
+        dataMap.officer_3_email = cxo?.email || '';
+        dataMap.officer_4_name = ceo?.full_name || dataMap.incorporator_name || 'Corporate Secretary';
+        dataMap.officer_4_title = 'Corporate Secretary';
+        dataMap.officer_4_email = ceo?.email || dataMap.incorporator_email || '';
+
+        // Populate appointees (same as officers)
+        dataMap.appointee_1_name = dataMap.officer_1_name;
+        dataMap.appointee_1_role = dataMap.officer_1_title;
+        dataMap.appointee_1_email = dataMap.officer_1_email;
+        dataMap.appointee_2_name = dataMap.officer_2_name;
+        dataMap.appointee_2_role = dataMap.officer_2_title;
+        dataMap.appointee_2_email = dataMap.officer_2_email;
+        dataMap.appointee_3_name = dataMap.officer_3_name;
+        dataMap.appointee_3_role = dataMap.officer_3_title;
+        dataMap.appointee_3_email = dataMap.officer_3_email;
+        dataMap.appointee_4_name = dataMap.officer_4_name;
+        dataMap.appointee_4_role = dataMap.officer_4_title;
+        dataMap.appointee_4_email = dataMap.officer_4_email;
+
+        // Add dates
+        dataMap.consent_date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        dataMap.notary_date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+        // Pre-incorporation agreements (empty by default)
+        dataMap.counterparty_1 = '';
+        dataMap.agreement_1_name = '';
+        dataMap.agreement_1_date = '';
+        dataMap.agreement_1_notes = '';
+
+        // Replace placeholders in HTML
+        let populatedContent = htmlContent;
+        Object.keys(dataMap).forEach((key) => {
+          const value = dataMap[key] || '';
+          const patterns = [
+            new RegExp(`\\{\\{${key}\\}\\}`, 'gi'),
+            new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'gi'),
+          ];
+          patterns.forEach((pattern) => {
+            populatedContent = populatedContent.replace(pattern, value);
+          });
+        });
+
+        contentToPreview = populatedContent;
+      } catch (error) {
+        console.error('Error populating template with company settings:', error);
+        // Fall back to showing raw template with placeholders
+      }
+    }
+
+    setPreviewContent(contentToPreview);
     setPreviewVisible(true);
   };
 
@@ -519,7 +623,7 @@ export const TemplateManager: React.FC = () => {
           <Button
             icon={<EyeOutlined />}
             size="small"
-            onClick={() => handlePreview(record.html_content)}
+            onClick={() => handlePreview(record.html_content, record.template_key)}
           >
             Preview
           </Button>
@@ -598,7 +702,7 @@ export const TemplateManager: React.FC = () => {
           <Button
             icon={<EyeOutlined />}
             size="small"
-            onClick={() => handlePreview(record.html_content)}
+            onClick={() => handlePreview(record.html_content, record.template_key)}
           >
             Preview
           </Button>
@@ -798,7 +902,7 @@ export const TemplateManager: React.FC = () => {
           <Button key="cancel" onClick={() => setEmailModalVisible(false)}>
             Cancel
           </Button>,
-          <Button key="preview" icon={<EyeOutlined />} onClick={() => handlePreview(emailForm.html_content)}>
+          <Button key="preview" icon={<EyeOutlined />} onClick={() => handlePreview(emailForm.html_content, emailForm.template_key)}>
             Preview
           </Button>,
           <Button key="save" type="primary" icon={<SaveOutlined />} onClick={handleSaveEmailTemplate}>
@@ -912,7 +1016,7 @@ export const TemplateManager: React.FC = () => {
           <Button key="cancel" onClick={() => setDocumentModalVisible(false)}>
             Cancel
           </Button>,
-          <Button key="preview" icon={<EyeOutlined />} onClick={() => handlePreview(documentForm.html_content)}>
+          <Button key="preview" icon={<EyeOutlined />} onClick={() => handlePreview(documentForm.html_content, documentForm.template_key)}>
             Preview
           </Button>,
           <Button key="save" type="primary" icon={<SaveOutlined />} onClick={handleSaveDocumentTemplate}>

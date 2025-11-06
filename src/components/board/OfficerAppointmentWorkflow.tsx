@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Steps, Form, Input, Select, DatePicker, InputNumber, Button, message, Upload, Row, Col, Typography, Divider } from 'antd';
 import { supabase } from '@/integrations/supabase/client';
 import dayjs from 'dayjs';
@@ -7,6 +7,7 @@ import type { UploadFile } from 'antd/es/upload/interface';
 import { renderHtml } from '@/lib/templates';
 import { renderDocumentHtml } from '@/utils/templateUtils';
 import { docsAPI } from '../hr/api';
+import { getExecutiveData, formatExecutiveForDocuments } from '@/utils/getExecutiveData';
 
 const { Step } = Steps;
 const { TextArea } = Input;
@@ -42,6 +43,12 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [photoFile, setPhotoFile] = useState<UploadFile | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string>('');
+  const [incorporationStatus, setIncorporationStatus] = useState<'pre_incorporation' | 'incorporated'>('pre_incorporation');
+
+  // Fetch incorporation status on mount
+  useEffect(() => {
+    getIncorporationStatus().then(setIncorporationStatus);
+  }, []);
 
   const steps = [
     { title: 'Officer Details', description: 'Name, title, email' },
@@ -55,6 +62,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
   const CSUITE_DOC_TYPES = [
     { id: 'employment_agreement', title: 'Executive Employment Agreement' },
     { id: 'board_resolution', title: 'Board Resolution – Appointment of Officers' },
+    { id: 'pre_incorporation_consent', title: 'Pre-Incorporation Consent (Conditional Appointments)' },
     { id: 'founders_agreement', title: "Founders' / Shareholders' Agreement" },
     { id: 'stock_issuance', title: 'Stock Subscription / Issuance Agreement' },
     { id: 'confidentiality_ip', title: 'Confidentiality & IP Assignment Agreement' },
@@ -62,6 +70,38 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
     { id: 'offer_letter', title: 'Executive Offer Letter' },
     { id: 'bylaws_officers_excerpt', title: 'Bylaws – Officers (Excerpt)' },
   ];
+
+  // Helper function to get incorporation status
+  const getIncorporationStatus = async (): Promise<'pre_incorporation' | 'incorporated'> => {
+    try {
+      const { data } = await supabase
+        .from('company_settings')
+        .select('setting_value')
+        .eq('setting_key', 'incorporation_status')
+        .single();
+      
+      return (data?.setting_value as 'pre_incorporation' | 'incorporated') || 'pre_incorporation';
+    } catch (error) {
+      console.warn('Error fetching incorporation status, defaulting to pre_incorporation:', error);
+      return 'pre_incorporation';
+    }
+  };
+
+  // Helper function to get company setting
+  const getCompanySetting = async (key: string, defaultValue: string = ''): Promise<string> => {
+    try {
+      const { data } = await supabase
+        .from('company_settings')
+        .select('setting_value')
+        .eq('setting_key', key)
+        .single();
+      
+      return data?.setting_value || defaultValue;
+    } catch (error) {
+      console.warn(`Error fetching company setting ${key}:`, error);
+      return defaultValue;
+    }
+  };
 
   const generateDocumentsForOfficer = async (
     formValues: OfficerFormData,
@@ -83,6 +123,9 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
       const equityPercent = formValues.equity_percent || 0;
       const annualSalary = formValues.annual_salary || 0;
 
+      // Check incorporation status to determine which document to use
+      const incorporationStatus = await getIncorporationStatus();
+
       // Generate each document
       for (const docType of CSUITE_DOC_TYPES) {
         try {
@@ -92,10 +135,24 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
             continue;
           }
 
+          // Determine actual document type to generate based on incorporation status
+          let actualDocType = docType.id;
+          let actualDocTitle = docType.title;
+          
+          // Replace board_resolution with pre_incorporation_consent if pre-incorporation
+          if (docType.id === 'board_resolution' && incorporationStatus === 'pre_incorporation') {
+            actualDocType = 'pre_incorporation_consent';
+            actualDocTitle = 'Pre-Incorporation Consent (Conditional Appointments)';
+          }
+          // Skip pre_incorporation_consent if incorporated (we'll use board_resolution instead)
+          if (docType.id === 'pre_incorporation_consent' && incorporationStatus === 'incorporated') {
+            continue; // Skip pre_incorporation_consent, will use board_resolution instead
+          }
+
           // Prepare document data based on template type
-          const docData = prepareDocumentData(
+          const docData = await prepareDocumentData(
             formValues,
-            docType.id,
+            actualDocType,
             appointmentDate,
             strikePrice,
             sharesIssued,
@@ -105,23 +162,23 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
           );
 
           // Generate HTML using template from database (or fallback to hardcoded)
-          const html_content = await renderDocumentHtml(docType.id, docData, docType.id);
+          const html_content = await renderDocumentHtml(actualDocType, docData, actualDocType);
 
           // Call document-generate edge function
           const resp = await docsAPI.post('/documents/generate', {
-            template_id: docType.id,
+            template_id: actualDocType,
             officer_name: formValues.full_name,
             role: formValues.position_title === 'CXO' ? 'Chief Experience Officer' : formValues.position_title,
-            equity: docType.id.includes('equity') || docType.id === 'stock_issuance' ? equityPercent : undefined,
+            equity: actualDocType.includes('equity') || actualDocType === 'stock_issuance' ? equityPercent : undefined,
             data: docData,
             html_content,
             executive_id: executiveId, // Link document to executive for signature portal
           });
 
           if (!resp?.ok || !resp?.document) {
-            console.warn(`Failed to generate ${docType.title}:`, resp?.error);
+            console.warn(`Failed to generate ${actualDocTitle}:`, resp?.error);
           } else {
-            console.log(`✓ Generated ${docType.title}`);
+            console.log(`✓ Generated ${actualDocTitle}`);
           }
         } catch (error: any) {
           console.error(`Error generating ${docType.title}:`, error);
@@ -134,7 +191,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
     }
   };
 
-  const prepareDocumentData = (
+  const prepareDocumentData = async (
     formValues: OfficerFormData,
     docType: string,
     appointmentDate: string,
@@ -144,17 +201,40 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
     equityPercent: number,
     annualSalary: number
   ) => {
+    // Fetch company settings
+    const companyName = await getCompanySetting('company_name', "Crave'n, Inc.");
+    const stateOfIncorporation = await getCompanySetting('state_of_incorporation', 'Ohio');
+    const registeredOffice = await getCompanySetting('registered_office', '123 Main St, Cleveland, OH 44101');
+    const stateFilingOffice = await getCompanySetting('state_filing_office', 'Ohio Secretary of State');
+    const registeredAgentName = await getCompanySetting('registered_agent_name', 'Torrance Stroman');
+    const registeredAgentAddress = await getCompanySetting('registered_agent_address', '123 Main St, Cleveland, OH 44101');
+    const fiscalYearEnd = await getCompanySetting('fiscal_year_end', 'December 31');
+    const incorporatorName = await getCompanySetting('incorporator_name', 'Torrance Stroman');
+    const incorporatorAddress = await getCompanySetting('incorporator_address', '123 Main St, Cleveland, OH 44101');
+    const incorporatorEmail = await getCompanySetting('incorporator_email', 'craven@usa.com');
+    const county = await getCompanySetting('county', 'Cuyahoga');
+
     const baseData: Record<string, any> = {
-      company_name: "Crave'n, Inc.",
-      state_of_incorporation: "Ohio",
+      company_name: companyName,
+      state_of_incorporation: stateOfIncorporation,
+      state: stateOfIncorporation,
+      registered_office: registeredOffice,
+      state_filing_office: stateFilingOffice,
+      registered_agent_name: registeredAgentName,
+      registered_agent_address: registeredAgentAddress,
+      fiscal_year_end: fiscalYearEnd,
+      incorporator_name: incorporatorName,
+      incorporator_address: incorporatorAddress,
+      incorporator_email: incorporatorEmail,
+      county: county,
       full_name: formValues.full_name,
       role: formValues.position_title === 'CXO' ? 'Chief Experience Officer' : formValues.position_title,
       effective_date: appointmentDate,
       date: appointmentDate,
       adoption_date: appointmentDate,
       funding_trigger: formValues.funding_trigger || "Upon Series A funding or significant investment event",
-      governing_law: "State of Ohio",
-      governing_law_state: "Ohio",
+      governing_law: `State of ${stateOfIncorporation}`,
+      governing_law_state: stateOfIncorporation,
       equity_percentage: equityPercent.toString(),
       annual_salary: annualSalary.toLocaleString(),
       vesting_schedule: formValues.vesting_schedule || '4 years with 1 year cliff',
@@ -163,11 +243,85 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
       share_count: sharesIssued.toLocaleString(),
       shares_issued: sharesIssued.toLocaleString(),
       total_purchase_price: totalPurchasePrice.toFixed(2),
-      company_address: "123 Main St, Cleveland, OH 44101",
+      company_address: registeredOffice,
     };
 
     // Template-specific data
     switch (docType) {
+      case 'pre_incorporation_consent': {
+        // Fetch all executives to populate officers and directors
+        const allExecutives = await getExecutiveData();
+        const formattedExecs = allExecutives.map(e => formatExecutiveForDocuments(e));
+        
+        // Get CEO, CFO, CXO, and Secretary
+        const ceo = formattedExecs.find(e => e.role === 'ceo');
+        const cfo = formattedExecs.find(e => e.role === 'cfo');
+        const cxo = formattedExecs.find(e => e.role === 'cxo');
+        const secretary = formattedExecs.find(e => e.role === 'secretary') || formattedExecs.find(e => e.role === 'ceo');
+        
+        // Directors (typically CEO + 2 others, or first 2 executives)
+        const directors = formattedExecs.slice(0, 2);
+        
+        const consentDate = appointmentDate;
+        const notaryDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        
+        // Determine officer positions based on current appointment
+        const currentOfficer = {
+          name: formValues.full_name,
+          title: formValues.position_title === 'CEO' ? 'Chief Executive Officer (CEO)' :
+                 formValues.position_title === 'CFO' ? 'Chief Financial Officer (CFO)' :
+                 formValues.position_title === 'CXO' ? 'Chief Experience Officer (CXO)' :
+                 formValues.position_title === 'COO' ? 'Chief Operating Officer (COO)' :
+                 formValues.position_title === 'CTO' ? 'Chief Technology Officer (CTO)' :
+                 formValues.position_title,
+          email: formValues.email,
+        };
+
+        return {
+          ...baseData,
+          // Directors
+          director_1_name: directors[0]?.full_name || incorporatorName,
+          director_1_address: directors[0]?.full_name ? registeredOffice : incorporatorAddress,
+          director_1_email: directors[0]?.email || incorporatorEmail,
+          director_2_name: directors[1]?.full_name || 'Board Member 2',
+          director_2_address: registeredOffice,
+          director_2_email: directors[1]?.email || 'board@cravenusa.com',
+          // Officers - use current appointment where applicable, otherwise existing executives
+          officer_1_name: formValues.position_title === 'CEO' ? currentOfficer.name : (ceo?.full_name || incorporatorName),
+          officer_1_title: formValues.position_title === 'CEO' ? currentOfficer.title : 'Chief Executive Officer (CEO)',
+          officer_1_email: formValues.position_title === 'CEO' ? currentOfficer.email : (ceo?.email || incorporatorEmail),
+          officer_2_name: formValues.position_title === 'CFO' ? currentOfficer.name : (cfo?.full_name || ''),
+          officer_2_title: formValues.position_title === 'CFO' ? currentOfficer.title : 'Chief Financial Officer (CFO)',
+          officer_2_email: formValues.position_title === 'CFO' ? currentOfficer.email : (cfo?.email || ''),
+          officer_3_name: formValues.position_title === 'CXO' ? currentOfficer.name : (cxo?.full_name || ''),
+          officer_3_title: formValues.position_title === 'CXO' ? currentOfficer.title : 'Chief Experience Officer (CXO)',
+          officer_3_email: formValues.position_title === 'CXO' ? currentOfficer.email : (cxo?.email || ''),
+          officer_4_name: secretary?.full_name || incorporatorName,
+          officer_4_title: 'Corporate Secretary',
+          officer_4_email: secretary?.email || incorporatorEmail,
+          // Acceptance page appointees (same as officers)
+          appointee_1_name: formValues.position_title === 'CEO' ? currentOfficer.name : (ceo?.full_name || incorporatorName),
+          appointee_1_role: formValues.position_title === 'CEO' ? currentOfficer.title : 'Chief Executive Officer (CEO)',
+          appointee_1_email: formValues.position_title === 'CEO' ? currentOfficer.email : (ceo?.email || incorporatorEmail),
+          appointee_2_name: formValues.position_title === 'CFO' ? currentOfficer.name : (cfo?.full_name || ''),
+          appointee_2_role: formValues.position_title === 'CFO' ? currentOfficer.title : 'Chief Financial Officer (CFO)',
+          appointee_2_email: formValues.position_title === 'CFO' ? currentOfficer.email : (cfo?.email || ''),
+          appointee_3_name: formValues.position_title === 'CXO' ? currentOfficer.name : (cxo?.full_name || ''),
+          appointee_3_role: formValues.position_title === 'CXO' ? currentOfficer.title : 'Chief Experience Officer (CXO)',
+          appointee_3_email: formValues.position_title === 'CXO' ? currentOfficer.email : (cxo?.email || ''),
+          appointee_4_name: secretary?.full_name || incorporatorName,
+          appointee_4_role: 'Corporate Secretary',
+          appointee_4_email: secretary?.email || incorporatorEmail,
+          // Dates
+          consent_date: consentDate,
+          notary_date: notaryDate,
+          // Pre-incorporation agreements (empty by default)
+          counterparty_1: '',
+          agreement_1_name: '',
+          agreement_1_date: '',
+          agreement_1_notes: '',
+        };
+      }
       case 'board_resolution':
         return {
           ...baseData,
@@ -815,7 +969,11 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
                   <div style={{ marginTop: '24px', padding: '16px', background: '#fff', borderRadius: '4px', border: '1px solid #d9d9d9' }}>
                     <h4 style={{ marginTop: 0 }}>Documents to be Generated:</h4>
                     <ul>
-                      <li>Board Resolution – Officer Appointment</li>
+                      <li>Executive Employment Agreement</li>
+                      <li>{incorporationStatus === 'pre_incorporation' 
+                        ? 'Pre-Incorporation Consent (Conditional Appointments)' 
+                        : 'Board Resolution – Officer Appointment'}</li>
+                      <li>Founders' / Shareholders' Agreement</li>
                       <li>Stock Subscription/Issuance Agreement</li>
                       <li>Executive Offer Letter</li>
                       <li>Confidentiality & IP Assignment Agreement</li>
