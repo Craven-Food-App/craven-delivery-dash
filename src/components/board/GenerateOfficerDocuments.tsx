@@ -143,32 +143,28 @@ export default function SendCSuiteDocs() {
       const execStatus: DocumentStatus[] = [];
 
       // Check which documents already exist for this executive
-      // Prioritize executive_id matching for accuracy, then fall back to name/role
+      // STRICT: Only match by executive_id to avoid cross-executive document matching
       const { data: existingDocs, error: docsError } = await supabase
         .from('executive_documents')
         .select('id, type, status, officer_name, role, executive_id')
-        .or(`executive_id.eq.${exec.id},officer_name.eq.${exec.full_name}`);
+        .eq('executive_id', exec.id); // Only match by executive_id
 
       if (docsError) {
         console.error(`Error checking documents for ${exec.full_name}:`, docsError);
       }
 
-      console.log(`Documents found for ${exec.full_name}:`, existingDocs);
+      console.log(`Documents found for ${exec.full_name} (exec_id: ${exec.id}):`, existingDocs);
 
-      // Match by type and executive_id (most accurate), then fall back to name
+      // Match by type and executive_id only
       const existingTypes = new Set(
         (existingDocs || [])
-          .filter((d: any) => 
-            d.executive_id === exec.id || 
-            d.officer_name === exec.full_name
-          )
+          .filter((d: any) => d.executive_id === exec.id)
           .map((d: any) => d.type)
       );
 
       for (const docType of CSUITE_DOC_TYPES) {
         const matchingDoc = existingDocs?.find((d: any) => 
-          d.type === docType.id && 
-          (d.executive_id === exec.id || d.officer_name === exec.full_name)
+          d.type === docType.id && d.executive_id === exec.id
         );
 
         execStatus.push({
@@ -642,7 +638,7 @@ export default function SendCSuiteDocs() {
             // Fetch document URL
             const { data: doc, error: docError } = await supabase
               .from('executive_documents')
-              .select('file_url, executive_id, officer_name')
+              .select('file_url, executive_id')
               .eq('id', existingDoc.documentId)
               .single();
 
@@ -651,14 +647,9 @@ export default function SendCSuiteDocs() {
               throw new Error(`Failed to fetch existing document: ${docError.message}`);
             }
 
-            // CRITICAL: Verify document belongs to THIS executive only
-            if (doc.executive_id && doc.executive_id !== exec.id) {
+            // CRITICAL: Verify document belongs to THIS executive
+            if (doc.executive_id !== exec.id) {
               console.error(`✗ SECURITY: Document ${existingDoc.documentId} belongs to executive_id ${doc.executive_id}, not ${exec.id} (${exec.full_name})`);
-              throw new Error(`Document ownership mismatch: document belongs to different executive`);
-            }
-            
-            if (doc.officer_name && doc.officer_name !== exec.full_name) {
-              console.error(`✗ SECURITY: Document ${existingDoc.documentId} belongs to ${doc.officer_name}, not ${exec.full_name}`);
               throw new Error(`Document ownership mismatch: document belongs to different executive`);
             }
 
