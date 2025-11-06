@@ -91,6 +91,11 @@ serve(async (req: Request) => {
       );
     }
 
+    // Allow sending email even if documents array is empty (for error notifications)
+    if (documents && documents.length === 0 && !documentUrl && !pdfBase64 && !htmlContent) {
+      console.warn('No documents provided, but sending email anyway for notification purposes');
+    }
+
     console.log(`Sending ${documentTitle} to ${executiveName} at ${to}`);
 
     const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Crave'N HR <hr@craven.com>";
@@ -149,9 +154,11 @@ serve(async (req: Request) => {
     if (documents && documents.length > 0) {
       console.log(`Preparing ${documents.length} documents for email...`);
       const itemsHtml: string[] = [];
+      let successfulAttachments = 0;
 
       for (const doc of documents) {
         try {
+          // Always add link, even if attachment fails
           itemsHtml.push(`<li style="margin: 6px 0;"><a href="${doc.url}" style="color: #ff7a45; text-decoration: none;">${doc.title}</a></li>`);
 
           // Parse storage URL to bucket/path (supports public and signed URLs)
@@ -167,7 +174,10 @@ serve(async (req: Request) => {
             const { data: fileData, error: downloadError } = await supabaseClient.storage
               .from(bucket)
               .download(path);
-            if (downloadError) throw downloadError;
+            if (downloadError) {
+              console.warn(`Failed to download ${doc.title} from storage:`, downloadError);
+              continue; // Skip this attachment but keep the link
+            }
 
             const lowerPath = path.toLowerCase();
             let pdfBytes: Uint8Array | null = null;
@@ -196,6 +206,8 @@ serve(async (req: Request) => {
                 filename: `${doc.title.replace(/[^a-z0-9]/gi, '_')}.pdf`,
                 content: base64,
               });
+              successfulAttachments++;
+              console.log(`✓ Successfully attached ${doc.title} (${pdfBytes.length} bytes)`);
             } else {
               console.warn('Skipping attachment due to empty bytes for', doc.title);
             }
@@ -208,12 +220,15 @@ serve(async (req: Request) => {
         }
       }
 
-      linksHtml = `
-        <div style="background-color: #f9f9f9; padding: 16px; border-radius: 6px; margin: 20px 0;">
-          <h3 style="margin: 0 0 10px 0; color: #1a1a1a; font-size: 16px;">Included Documents</h3>
-          <ul style="margin: 0; padding-left: 18px; color: #4a4a4a; font-size: 14px; line-height: 1.6;">${itemsHtml.join('')}</ul>
-        </div>
-      `;
+      if (itemsHtml.length > 0) {
+        linksHtml = `
+          <div style="background-color: #f9f9f9; padding: 16px; border-radius: 6px; margin: 20px 0;">
+            <h3 style="margin: 0 0 10px 0; color: #1a1a1a; font-size: 16px;">Included Documents</h3>
+            <ul style="margin: 0; padding-left: 18px; color: #4a4a4a; font-size: 14px; line-height: 1.6;">${itemsHtml.join('')}</ul>
+            ${successfulAttachments > 0 ? `<p style="margin: 10px 0 0 0; color: #2e7d32; font-size: 13px;">✓ ${successfulAttachments} PDF attachment(s) included</p>` : ''}
+          </div>
+        `;
+      }
     } else if (pdfBase64) {
       // If we have a base64 PDF, attach it
       attachments = [{

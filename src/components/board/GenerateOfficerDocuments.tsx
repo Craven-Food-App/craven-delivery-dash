@@ -713,35 +713,69 @@ export default function SendCSuiteDocs() {
 
       // After processing all docs, send ONE email with links + PDF attachments
       // ONLY for this specific executive
-      if (exec.email && docsForEmail.length > 0) {
-        console.log(`\n📧 Sending email to ${exec.full_name} (${exec.email}) with ${docsForEmail.length} documents:`);
-        docsForEmail.forEach((doc, idx) => {
-          console.log(`  ${idx + 1}. ${doc.title}`);
-        });
-        
-        try {
-          const { data, error } = await supabase.functions.invoke('send-executive-document-email', {
-            body: {
-              to: exec.email,
-              executiveName: exec.full_name,
-              documentTitle: 'C-Suite Executive Documents',
-              documents: docsForEmail, // ONLY documents for this executive
-            },
+      // Send email even if some documents failed, but only if we have at least one document or if there were errors
+      if (exec.email) {
+        if (docsForEmail.length > 0) {
+          console.log(`\n📧 Sending email to ${exec.full_name} (${exec.email}) with ${docsForEmail.length} documents:`);
+          docsForEmail.forEach((doc, idx) => {
+            console.log(`  ${idx + 1}. ${doc.title}`);
           });
-          if (error) throw error;
-          if (data?.success) {
-            console.log(`✓ Email sent successfully to ${exec.full_name} (${exec.email}) with ${docsForEmail.length} documents`);
-          } else {
-            throw new Error(data?.error || 'Unknown error from email function');
+          
+          try {
+            const { data, error } = await supabase.functions.invoke('send-executive-document-email', {
+              body: {
+                to: exec.email,
+                executiveName: exec.full_name,
+                documentTitle: 'C-Suite Executive Documents',
+                documents: docsForEmail, // ONLY documents for this executive
+              },
+            });
+            if (error) throw error;
+            if (data?.success) {
+              console.log(`✓ Email sent successfully to ${exec.full_name} (${exec.email}) with ${docsForEmail.length} documents`);
+              execResults.success++; // Count email send as success
+            } else {
+              throw new Error(data?.error || 'Unknown error from email function');
+            }
+          } catch (emailErr: any) {
+            console.error(`⚠ Email failed for ${exec.full_name}:`, emailErr);
+            execResults.errors.push(`Email failed: ${emailErr.message || emailErr}`);
+            execResults.failed++;
           }
-        } catch (emailErr: any) {
-          console.error(`⚠ Email failed for ${exec.full_name}:`, emailErr);
-          execResults.errors.push(`Email failed: ${emailErr.message || emailErr}`);
+        } else if (execResults.failed > 0) {
+          // If all documents failed, send a notification email explaining the issue
+          console.log(`\n📧 Sending error notification email to ${exec.full_name} (${exec.email})`);
+          try {
+            const errorSummary = execResults.errors.slice(0, 5).join('; '); // Limit to first 5 errors
+            const { data, error } = await supabase.functions.invoke('send-executive-document-email', {
+              body: {
+                to: exec.email,
+                executiveName: exec.full_name,
+                documentTitle: 'C-Suite Document Generation Notice',
+                htmlContent: `
+                  <p>Dear ${exec.full_name},</p>
+                  <p>We attempted to generate your executive documents, but encountered issues with the following:</p>
+                  <ul>
+                    ${execResults.errors.map(e => `<li>${e}</li>`).join('')}
+                  </ul>
+                  <p>Please contact HR to resolve these issues and regenerate your documents.</p>
+                  <p>Best regards,<br>HR Team</p>
+                `,
+                documents: [], // No documents to attach
+              },
+            });
+            if (error) throw error;
+            if (data?.success) {
+              console.log(`✓ Error notification email sent to ${exec.full_name}`);
+            }
+          } catch (emailErr: any) {
+            console.error(`⚠ Failed to send error notification email:`, emailErr);
+          }
+        } else {
+          console.warn(`⚠ No documents to send for ${exec.full_name} and no errors to report`);
         }
-      } else if (!exec.email) {
+      } else {
         console.warn(`⚠ No email address for ${exec.full_name}, skipping email send`);
-      } else if (docsForEmail.length === 0) {
-        console.warn(`⚠ No documents to send for ${exec.full_name}`);
       }
 
       // Log summary for this executive

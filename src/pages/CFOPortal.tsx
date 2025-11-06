@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { Layout, Typography, Row, Col, Statistic, Tabs, Table, DatePicker, Space, Button, Divider, Alert, Modal, InputNumber, Form, message, Select, Input, Tooltip, Popover } from "antd";
 import {
   DollarOutlined,
@@ -40,10 +40,13 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar, ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar, ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, AreaChart, Area, ComposedChart, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
 import { MessageCenter } from "@/components/messaging/MessageCenter";
 import { ExecutiveInboxIMessage } from '@/components/executive/ExecutiveInboxIMessage';
-import { Aperture, DollarSign, TrendingUp, TrendingDown, Clock, Scale, Sigma } from 'lucide-react';
+import { Aperture, DollarSign, TrendingUp, TrendingDown, Clock, Scale, Sigma, Activity, Zap, Target, PieChart as PieChartIcon } from 'lucide-react';
+import { GlassmorphicCard } from '@/components/cfo/GlassmorphicCard';
+import { GlassmorphicMetricCard } from '@/components/cfo/GlassmorphicMetricCard';
+import { FuturisticChart } from '@/components/cfo/FuturisticChart';
 
 const { Header, Content } = Layout;
 const { RangePicker } = DatePicker;
@@ -102,21 +105,46 @@ function BigNavButton({ color, hover, title, subtitle, onClick, infoContent }: {
       <button
         onClick={onClick}
         style={{
-          background: color,
+          background: `linear-gradient(135deg, ${color} 0%, ${hover} 100%)`,
           color: '#fff',
-          borderRadius: 12,
-          padding: isMobile ? '12px 14px' : '16px 18px',
+          borderRadius: 16,
+          padding: isMobile ? '16px' : '20px',
           textAlign: 'left',
-          border: 'none',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
           cursor: 'pointer',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-          width: '100%'
+          boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+          width: '100%',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          transition: 'all 0.3s ease',
+          position: 'relative',
+          overflow: 'hidden',
         }}
-        onMouseOver={(e)=> (e.currentTarget.style.background = hover)}
-        onMouseOut={(e)=> (e.currentTarget.style.background = color)}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-4px)';
+          e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.2)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.15)';
+        }}
       >
-        <div style={{ fontSize: isMobile ? 14 : 16, fontWeight: 700, lineHeight: 1.2 }}>{title}</div>
-        <div style={{ opacity: 0.9, fontSize: isMobile ? 12 : 14 }}>{subtitle}</div>
+        <div style={{ 
+          fontSize: isMobile ? 16 : 18, 
+          fontWeight: 700, 
+          lineHeight: 1.3,
+          marginBottom: '4px',
+          textShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+        }}>
+          {title}
+        </div>
+        <div style={{ 
+          opacity: 0.9, 
+          fontSize: isMobile ? 13 : 14,
+          textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+        }}>
+          {subtitle}
+        </div>
       </button>
     </div>
   );
@@ -135,123 +163,72 @@ interface KpiData {
 const MetricCard: React.FC<KpiData> = ({ title, value, change, changeUnit, icon: Icon, color }) => {
   const isPositiveMetric = title !== 'Operating Expenses' && title !== 'COGS';
   const isPositive = isPositiveMetric ? change >= 0 : change <= 0;
-  const changeColor = isPositive ? 'text-green-500' : 'text-red-500';
-  const ChangeIcon = isPositive ? TrendingUp : TrendingDown;
+  
+  const getGradient = () => {
+    if (title === 'Monthly Revenue') return 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%)';
+    if (title === 'Gross Margin %') return 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(124, 58, 237, 0.1) 100%)';
+    if (title === 'Net Cash Flow (Burn $)') return 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.1) 100%)';
+    if (title === 'COGS') return 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.1) 100%)';
+    if (title === 'Operating Expenses') return 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.1) 100%)';
+    return 'rgba(255, 255, 255, 0.1)';
+  };
 
-  const getInfoContent = () => {
-    const infoMap: Record<string, string> = {
-      'Monthly Revenue': 'Total revenue generated from all orders in the current month. This includes all transactions completed during the period.',
-      'Gross Margin %': 'The percentage of revenue remaining after subtracting the cost of goods sold (COGS). Higher is better.',
-      'Net Cash Flow (Burn $)': 'The net cash flow or cash burn rate for the month. Positive values indicate cash generation, negative indicates cash burn.',
-      'COGS': 'Cost of Goods Sold - Direct costs associated with producing and delivering orders, including driver payouts and platform fees.',
-      'Operating Expenses': 'All operational costs excluding COGS, including salaries, rent, marketing, and other overhead expenses.',
-    };
-    return infoMap[title] || `Information about ${title}`;
+  const getIconColor = () => {
+    if (title === 'Monthly Revenue') return '#3b82f6';
+    if (title === 'Gross Margin %') return '#8b5cf6';
+    if (title === 'Net Cash Flow (Burn $)') return '#10b981';
+    if (title === 'COGS') return '#f59e0b';
+    if (title === 'Operating Expenses') return '#ef4444';
+    return '#64748b';
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 transition duration-300 hover:shadow-xl relative">
-      <InfoIcon content={getInfoContent()} title={title} />
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-sm font-medium text-gray-500 uppercase">{title}</p>
-        <Icon className={`w-6 h-6 ${color}`} />
-      </div>
-      <div className="flex items-end justify-between">
-        <span className="text-3xl font-extrabold text-gray-900">{value}</span>
-        <div className="flex flex-col items-end">
-          <span className={`text-xs font-semibold flex items-center ${changeColor}`}>
-            <ChangeIcon className="w-4 h-4 mr-1" />
-            {Math.abs(change).toFixed(1)}
-            {changeUnit.includes('pp') ? '' : '%'}
-          </span>
-          <span className="text-xs text-gray-400">{changeUnit}</span>
-        </div>
-      </div>
-    </div>
+    <GlassmorphicMetricCard
+      title={title}
+      value={value}
+      change={change}
+      changeUnit={changeUnit}
+      icon={Icon}
+      iconColor={getIconColor()}
+      gradient={getGradient()}
+    />
   );
 };
 
-// Revenue & Profit Trend Line Chart
+// Revenue & Profit Trend Chart with Glassmorphism
 const RevenueProfitChart: React.FC<{ data: any[] }> = ({ data }) => {
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="p-3 bg-white border border-gray-200 rounded-lg shadow-xl text-sm font-sans">
-          <p className="font-bold text-gray-700 mb-1">{label}</p>
-          {payload.map((p: any, index: number) => (
-            <p key={index} style={{ color: p.color }} className="text-sm">
-              {p.name}: <span className="font-semibold">${p.value}K</span>
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
-
   return (
-    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 h-96 relative">
+    <div style={{ position: 'relative' }}>
       <InfoIcon content="This chart shows the monthly revenue and net cash flow trends over the last 6 months. Revenue represents total order value, while Net Cash Flow shows the profit or burn rate after all expenses." title="Financial Trend Chart" />
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">Financial Trend (K)</h2>
-      <ResponsiveContainer width="100%" height="85%">
-        <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-          <XAxis dataKey="month" stroke="#777" />
-          <YAxis stroke="#777" tickFormatter={(value) => `$${value}K`} />
-          <RechartsTooltip content={<CustomTooltip />} />
-          <Legend wrapperStyle={{ paddingTop: '10px' }} />
-          <Line type="monotone" dataKey="Revenue" stroke="#1890ff" strokeWidth={2} dot={false} />
-          <Line type="monotone" dataKey="Profit" name="Net Cash Flow (Burn $)" stroke="#2ecc71" strokeWidth={2} dot={false} />
-        </LineChart>
-      </ResponsiveContainer>
+      <FuturisticChart
+        data={data}
+        type="area"
+        title="Financial Performance Trend"
+        height={400}
+        colors={['#3b82f6', '#10b981', '#f59e0b']}
+        dataKeys={{ revenue: 'Revenue', profit: 'Profit' }}
+      />
     </div>
   );
 };
 
-// Expense Breakdown Pie Chart
+// Expense Breakdown Pie Chart with Glassmorphism
 const ExpensesPieChart: React.FC<{ data: any[] }> = ({ data }) => {
-  const RADIAN = Math.PI / 180;
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }: any) => {
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-    return (
-      <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-xs font-semibold">
-        {`${name} (${(percent * 100).toFixed(0)}%)`}
-      </text>
-    );
-  };
-
   return (
-    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 h-96 relative">
+    <div style={{ position: 'relative' }}>
       <InfoIcon content="This pie chart displays how operating expenses are distributed across different categories. Use this to identify where the majority of your operational costs are allocated." title="Expense Breakdown" />
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">Expense Breakdown</h2>
-      <ResponsiveContainer width="100%" height="85%">
-        <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            innerRadius={60}
-            outerRadius={100}
-            paddingAngle={5}
-            dataKey="value"
-            labelLine={false}
-            label={renderCustomizedLabel}
-          >
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} />
-            ))}
-          </Pie>
-          <RechartsTooltip />
-        </PieChart>
-      </ResponsiveContainer>
+      <FuturisticChart
+        data={data}
+        type="pie"
+        title="Expense Distribution"
+        height={400}
+        colors={data.map(d => d.color)}
+      />
     </div>
   );
 };
 
-// Key Financial Ratios Table
+// Key Financial Ratios Table with Glassmorphism
 interface RatioData {
   ratio: string;
   value: string;
@@ -262,50 +239,122 @@ const KeyRatiosTable: React.FC<{ data: RatioData[] }> = ({ data }) => {
   const getInterpretationStyles = (interpretation: RatioData['interpretation']) => {
     switch (interpretation) {
       case 'Strong':
-        return 'bg-green-100 text-green-700 border-green-300';
+        return { background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.4)' };
       case 'Average':
-        return 'bg-yellow-100 text-yellow-700 border-yellow-300';
+        return { background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.4)' };
       case 'Needs Attention':
-        return 'bg-red-100 text-red-700 border-red-300';
+        return { background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.4)' };
       default:
-        return 'bg-gray-100 text-gray-700 border-gray-300';
+        return { background: 'rgba(148, 163, 184, 0.2)', color: '#94a3b8', border: '1px solid rgba(148, 163, 184, 0.4)' };
     }
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 relative">
+    <GlassmorphicCard style={{ position: 'relative' }}>
       <InfoIcon content="Key financial ratios help assess the company's financial health. Current Ratio measures liquidity, Debt-to-Equity shows leverage, Gross Margin indicates profitability, Quick Ratio tests short-term solvency, and Inventory Turnover measures efficiency." title="Key Financial Ratios" />
-      <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-        <Scale className="w-5 h-5 text-blue-600 mr-2" />
+      <h2 style={{ 
+        fontSize: '24px', 
+        fontWeight: 700, 
+        color: 'rgba(255, 255, 255, 0.95)', 
+        marginBottom: '24px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        textShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+      }}>
+        <Scale style={{ width: '24px', height: '24px', color: '#3b82f6' }} />
         Key Financial Ratios
       </h2>
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ratio</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Health</th>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <th style={{ 
+                padding: '12px 16px', 
+                textAlign: 'left', 
+                fontSize: '12px', 
+                fontWeight: 600, 
+                color: 'rgba(255, 255, 255, 0.7)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+              }}>
+                Ratio
+              </th>
+              <th style={{ 
+                padding: '12px 16px', 
+                textAlign: 'left', 
+                fontSize: '12px', 
+                fontWeight: 600, 
+                color: 'rgba(255, 255, 255, 0.7)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+              }}>
+                Value
+              </th>
+              <th style={{ 
+                padding: '12px 16px', 
+                textAlign: 'left', 
+                fontSize: '12px', 
+                fontWeight: 600, 
+                color: 'rgba(255, 255, 255, 0.7)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+              }}>
+                Health
+              </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {data.map((item) => (
-              <tr key={item.ratio} className="hover:bg-gray-50 transition duration-150">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.ratio}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.value}</td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getInterpretationStyles(item.interpretation)}`}
-                  >
-                    {item.interpretation}
-                  </span>
-                </td>
-              </tr>
-            ))}
+          <tbody>
+            {data.map((item, index) => {
+              const styles = getInterpretationStyles(item.interpretation);
+              return (
+                <tr 
+                  key={item.ratio} 
+                  style={{ 
+                    borderBottom: index < data.length - 1 ? '1px solid rgba(255, 255, 255, 0.05)' : 'none',
+                    transition: 'background 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  <td style={{ 
+                    padding: '16px', 
+                    fontSize: '14px', 
+                    fontWeight: 600, 
+                    color: 'rgba(255, 255, 255, 0.95)',
+                  }}>
+                    {item.ratio}
+                  </td>
+                  <td style={{ 
+                    padding: '16px', 
+                    fontSize: '14px', 
+                    color: 'rgba(255, 255, 255, 0.8)',
+                  }}>
+                    {item.value}
+                  </td>
+                  <td style={{ padding: '16px' }}>
+                    <span style={{
+                      padding: '6px 12px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      borderRadius: '12px',
+                      display: 'inline-block',
+                      ...styles,
+                    }}>
+                      {item.interpretation}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
-    </div>
+    </GlassmorphicCard>
   );
 };
 
@@ -448,41 +497,142 @@ function CFODashboard() {
   }
 
   return (
-    <div className="bg-gray-50 font-sans p-4 sm:p-8">
-      {/* Header */}
-      <header className="mb-8 p-4 bg-white rounded-xl shadow-md border-b-4 border-blue-600">
-        <h1 className="text-3xl font-extrabold text-gray-900 flex items-center">
-          <Aperture className="w-8 h-8 mr-3 text-blue-600" />
-          CFO Financial Dashboard
-        </h1>
-        <p className="text-gray-500 mt-1">
-          Real-time financial overview for the month ending {currentMonthName}
-        </p>
-      </header>
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)',
+      backgroundSize: '400% 400%',
+      animation: 'gradientShift 15s ease infinite',
+      padding: '24px',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      <style>{`
+        @keyframes gradientShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @media (max-width: 640px) {
+          .glassmorphic-card {
+            padding: 16px !important;
+          }
+        }
+      `}</style>
+      
+      {/* Animated background elements */}
+      <div style={{
+        position: 'absolute',
+        top: '-50%',
+        right: '-50%',
+        width: '800px',
+        height: '800px',
+        background: 'radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%)',
+        borderRadius: '50%',
+        animation: 'float 20s ease-in-out infinite',
+      }} />
+      <div style={{
+        position: 'absolute',
+        bottom: '-30%',
+        left: '-30%',
+        width: '600px',
+        height: '600px',
+        background: 'radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%)',
+        borderRadius: '50%',
+        animation: 'float 25s ease-in-out infinite reverse',
+      }} />
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translate(0, 0) rotate(0deg); }
+          33% { transform: translate(30px, -30px) rotate(120deg); }
+          66% { transform: translate(-20px, 20px) rotate(240deg); }
+        }
+      `}</style>
 
-      <main className="space-y-8">
-        {/* KPI Metrics Grid */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          {kpiData.map((kpi) => (
-            <MetricCard key={kpi.title} {...kpi} />
-          ))}
-        </section>
-
-        {/* Charts & Visualizations */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <RevenueProfitChart data={monthlyData} />
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: '1400px', margin: '0 auto' }}>
+        {/* Header */}
+        <GlassmorphicCard style={{ marginBottom: '32px', background: 'rgba(255, 255, 255, 0.15)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <h1 style={{ 
+                fontSize: '32px', 
+                fontWeight: 800, 
+                color: 'rgba(255, 255, 255, 0.95)',
+                margin: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                textShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+              }}>
+                <Aperture style={{ width: '36px', height: '36px', color: '#3b82f6' }} />
+                CFO Financial Dashboard
+              </h1>
+              <p style={{ 
+                color: 'rgba(255, 255, 255, 0.8)', 
+                marginTop: '8px',
+                fontSize: '16px',
+              }}>
+                Real-time financial overview for the month ending {currentMonthName}
+              </p>
+            </div>
           </div>
-          <div className="lg:col-span-1">
-            <ExpensesPieChart data={expenseBreakdown} />
-          </div>
-        </section>
+        </GlassmorphicCard>
 
-        {/* Financial Ratios Table */}
-        <section>
-          <KeyRatiosTable data={ratios} />
-        </section>
-      </main>
+        <main style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* KPI Metrics Grid */}
+          <section style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: '20px',
+          }}>
+            {kpiData.map((kpi) => (
+              <MetricCard key={kpi.title} {...kpi} />
+            ))}
+          </section>
+
+          {/* Charts & Visualizations */}
+          <section style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+            gap: '24px',
+          }}>
+            <div style={{ gridColumn: 'span 2' }}>
+              <RevenueProfitChart data={monthlyData} />
+            </div>
+            <div>
+              <ExpensesPieChart data={expenseBreakdown} />
+            </div>
+          </section>
+
+          {/* Additional Financial Charts */}
+          <section style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+            gap: '24px',
+          }}>
+            <FuturisticChart
+              data={monthlyData}
+              type="composed"
+              title="Revenue vs Expenses Analysis"
+              height={350}
+              colors={['#3b82f6', '#ef4444', '#10b981']}
+              dataKeys={{ revenue: 'Revenue', expenses: 'Operating_Expenses', profit: 'Profit' }}
+            />
+            <FuturisticChart
+              data={monthlyData.map(d => ({ month: d.month, Revenue: d.Revenue, COGS: d.COGS }))}
+              type="bar"
+              title="Revenue & COGS Comparison"
+              height={350}
+              colors={['#3b82f6', '#f59e0b']}
+              dataKeys={{ revenue: 'Revenue', expenses: 'COGS' }}
+            />
+          </section>
+
+          {/* Financial Ratios Table */}
+          <section>
+            <KeyRatiosTable data={ratios} />
+          </section>
+        </main>
+      </div>
     </div>
   );
 }
@@ -496,6 +646,19 @@ export default function CFOPortal() {
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [isMobile, setIsMobile] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Fetch orders for transactions tab
+      const { data: orders } = await supabase.from("orders").select("total_amount, created_at").limit(200);
+      setPayouts([]);
+      setTransactions(orders || []);
+      setLastUpdated(new Date());
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -533,121 +696,196 @@ export default function CFOPortal() {
       ordersChannel.unsubscribe();
       window.removeEventListener('resize', checkMobile);
     };
-  }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      // Fetch orders for transactions tab
-      const { data: orders } = await supabase.from("orders").select("total_amount, created_at").limit(200);
-      setPayouts([]);
-      setTransactions(orders || []);
-      setLastUpdated(new Date());
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchData]);
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#ffffff' }}>
-      <Header style={{ background: '#ffffff', borderBottom: '1px solid #e5e7eb', padding: isMobile ? '12px 12px' : '12px 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: isMobile ? 8 : 0 }}>
+    <Layout style={{ 
+      minHeight: '100vh', 
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)',
+      backgroundSize: '400% 400%',
+      animation: 'gradientShift 15s ease infinite',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      <style>{`
+        @keyframes gradientShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+      `}</style>
+      
+      <Header style={{ 
+        background: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(20px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+        padding: isMobile ? '12px 12px' : '16px 24px',
+        boxShadow: '0 4px 16px 0 rgba(0, 0, 0, 0.1)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: isMobile ? 12 : 16 }}>
           <Space>
             <Button
               type="default"
               size={isMobile ? 'small' : 'middle'}
               icon={<ArrowLeftOutlined />}
               onClick={() => navigate('/hub')}
+              style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                color: 'rgba(255, 255, 255, 0.95)',
+              }}
             >
               Back to Hub
             </Button>
-            <Typography.Title level={3} style={{ color: '#0f172a', margin: 0, fontSize: isMobile ? 18 : 24 }}>CFO Portal</Typography.Title>
+            <Typography.Title level={3} style={{ 
+              color: 'rgba(255, 255, 255, 0.95)', 
+              margin: 0, 
+              fontSize: isMobile ? 18 : 24,
+              textShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+            }}>
+              CFO Portal
+            </Typography.Title>
           </Space>
           <Space direction={isMobile ? 'vertical' : 'horizontal'} size="small" style={{ width: isMobile ? '100%' : 'auto' }}>
-            <RangePicker onChange={setRange} size={isMobile ? 'small' : 'default'} style={{ width: isMobile ? '100%' : 'auto' }} />
-            <Button onClick={fetchData} size={isMobile ? 'small' : 'default'}>Refresh</Button>
-            <Button onClick={() => {
-              const host = window.location.hostname;
-              if (/^cfo\./i.test(host)) {
-                const target = host.replace(/^cfo\./i, 'board.');
-                window.location.href = `${window.location.protocol}//${target}`;
-              } else {
-                navigate('/board');
-              }
-            }} size={isMobile ? 'small' : 'default'}>Board Portal</Button>
-            <Button onClick={() => {
-              const host = window.location.hostname;
-              if (/^cfo\./i.test(host)) {
-                const target = host.replace(/^cfo\./i, 'admin.');
-                window.location.href = `${window.location.protocol}//${target}`;
-              } else {
-                navigate('/admin');
-              }
-            }} size={isMobile ? 'small' : 'default'}>Admin Portal</Button>
-            <Button onClick={() => {
-              const host = window.location.hostname;
-              if (/^cfo\./i.test(host)) {
-                const target = host.replace(/^cfo\./i, 'ceo.');
-                window.location.href = `${window.location.protocol}//${target}`;
-              } else {
-                navigate('/');
-              }
-            }} size={isMobile ? 'small' : 'default'}>CEO Command Center</Button>
+            <RangePicker 
+              onChange={setRange} 
+              size={isMobile ? 'small' : 'default'} 
+              style={{ 
+                width: isMobile ? '100%' : 'auto',
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+              }}
+            />
+            <Button 
+              onClick={fetchData} 
+              size={isMobile ? 'small' : 'default'}
+              style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                color: 'rgba(255, 255, 255, 0.95)',
+              }}
+            >
+              Refresh
+            </Button>
+            <Button 
+              onClick={() => {
+                const host = window.location.hostname;
+                if (/^cfo\./i.test(host)) {
+                  const target = host.replace(/^cfo\./i, 'board.');
+                  window.location.href = `${window.location.protocol}//${target}`;
+                } else {
+                  navigate('/board');
+                }
+              }} 
+              size={isMobile ? 'small' : 'default'}
+              style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                color: 'rgba(255, 255, 255, 0.95)',
+              }}
+            >
+              Board Portal
+            </Button>
+            <Button 
+              onClick={() => {
+                const host = window.location.hostname;
+                if (/^cfo\./i.test(host)) {
+                  const target = host.replace(/^cfo\./i, 'admin.');
+                  window.location.href = `${window.location.protocol}//${target}`;
+                } else {
+                  navigate('/admin');
+                }
+              }} 
+              size={isMobile ? 'small' : 'default'}
+              style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                color: 'rgba(255, 255, 255, 0.95)',
+              }}
+            >
+              Admin Portal
+            </Button>
+            <Button 
+              onClick={() => {
+                const host = window.location.hostname;
+                if (/^cfo\./i.test(host)) {
+                  const target = host.replace(/^cfo\./i, 'ceo.');
+                  window.location.href = `${window.location.protocol}//${target}`;
+                } else {
+                  navigate('/');
+                }
+              }} 
+              size={isMobile ? 'small' : 'default'}
+              style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                color: 'rgba(255, 255, 255, 0.95)',
+              }}
+            >
+              CEO Command Center
+            </Button>
             <Button 
               type="primary"
               icon={<EditOutlined />}
               onClick={() => setActiveTab('wordprocessor')}
               size={isMobile ? 'small' : 'default'}
+              style={{
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                border: 'none',
+                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
+              }}
             >
               Word Processor
             </Button>
           </Space>
         </div>
       </Header>
-      <Content style={{ padding: isMobile ? 12 : 24 }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-          <Alert
-            type="success"
-            showIcon
-            message={
-              <div className="flex items-center gap-2 justify-between w-full">
-                <span className="flex items-center gap-2">
-                  <CheckCircleOutlined /> Finance systems operational
-                </span>
-                <span className="text-xs text-gray-500">
-                  Last updated: {lastUpdated.toLocaleTimeString()}
-                </span>
-              </div>
-            }
-            style={{ marginBottom: 16, background: "rgba(16,185,129,0.1)", borderColor: "rgba(16,185,129,0.25)" }}
-          />
+      <Content style={{ padding: isMobile ? 12 : 24, position: 'relative', zIndex: 1 }}>
+        <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+          <GlassmorphicCard style={{ marginBottom: 24, background: 'rgba(16, 185, 129, 0.15)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255, 255, 255, 0.95)', fontSize: '14px', fontWeight: 600 }}>
+                <CheckCircleOutlined style={{ color: '#10b981' }} /> Finance systems operational
+              </span>
+              <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px' }}>
+                Last updated: {lastUpdated.toLocaleTimeString()}
+              </span>
+            </div>
+          </GlassmorphicCard>
 
           {/* Executive Chat - Isolated per portal */}
-          <div style={{ marginBottom: 24 }}>
+          <GlassmorphicCard style={{ marginBottom: 24 }}>
             <ExecutiveInboxIMessage role="cfo" deviceId={`cfo-portal-${window.location.hostname}`} />
-          </div>
-          <Divider style={{ margin: '16px 0' }} />
+          </GlassmorphicCard>
 
           {/* High-Priority Quick Access - Responsive Grid */}
-          <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(1, minmax(0,1fr))' : 'repeat(4, minmax(0,1fr))', gap:12, marginBottom: 16 }}>
+          <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(1, minmax(0,1fr))' : 'repeat(4, minmax(0,1fr))', gap:16, marginBottom: 24 }}>
             <BigNavButton color="#2563eb" hover="#1d4ed8" title="Manager Console" subtitle="Team & KPIs" onClick={()=> setActiveTab('manager')} infoContent="Access team management tools, view team KPIs, assign roles, and manage team performance metrics." />
             <BigNavButton color="#16a34a" hover="#15803d" title="Accounts Payable" subtitle="Invoices & Runs" onClick={()=> setActiveTab('ap')} infoContent="Manage vendor invoices, create payment runs, approve expenses, and track accounts payable aging." />
             <BigNavButton color="#f97316" hover="#ea580c" title="Accounts Receivable" subtitle="Aging & Collections" onClick={()=> setActiveTab('ar')} infoContent="View customer invoices, track receivables aging, manage collections, and monitor payment status." />
             <BigNavButton color="#dc2626" hover="#b91c1c" title="Approvals" subtitle="Spend Reviews" onClick={()=> setActiveTab('approvals')} infoContent="Review and approve pending financial transactions, expense requests, and spending authorizations." />
           </div>
-          <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(1, minmax(0,1fr))' : 'repeat(4, minmax(0,1fr))', gap:12, marginBottom: 16 }}>
+          <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(1, minmax(0,1fr))' : 'repeat(4, minmax(0,1fr))', gap:16, marginBottom: 24 }}>
             <BigNavButton color="#0ea5e9" hover="#0284c7" title="Forecast" subtitle="Cash Flow" onClick={()=> setActiveTab('forecast')} infoContent="View cash flow projections, financial forecasts, and predictive analytics for future planning." />
             <BigNavButton color="#7c3aed" hover="#6d28d9" title="Budget vs Actuals" subtitle="Variance" onClick={()=> setActiveTab('bva')} infoContent="Compare budgeted amounts against actual expenses and revenue to identify variances and trends." />
             <BigNavButton color="#9333ea" hover="#7e22ce" title="Close" subtitle="Checklist & Recs" onClick={()=> setActiveTab('close')} infoContent="Monthly and quarterly closing checklist, journal entries, reconciliations, and closing procedures." />
             <BigNavButton color="#0891b2" hover="#0e7490" title="Treasury" subtitle="Bank Balances" onClick={()=> setActiveTab('treasury')} infoContent="Monitor bank account balances, cash positions, and treasury management operations." />
           </div>
 
-          <Tabs
-            activeKey={activeTab}
-            onChange={setActiveTab}
-            size={isMobile ? 'small' : 'large'}
-            tabBarStyle={{ borderBottom: "1px solid rgba(148,163,184,0.2)" }}
-          >
+          <GlassmorphicCard style={{ background: 'rgba(255, 255, 255, 0.1)', padding: '24px', overflow: 'hidden' }}>
+            <Tabs
+              activeKey={activeTab}
+              onChange={setActiveTab}
+              size={isMobile ? 'small' : 'large'}
+              style={{
+                background: 'transparent',
+              }}
+              tabBarStyle={{ 
+                borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
+                marginBottom: '24px',
+              }}
+            >
             <TabPane
               tab={
                 <Tooltip title="View comprehensive financial dashboard with KPIs, charts, and key metrics">
@@ -1819,7 +2057,7 @@ function WordProcessor() {
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
   const [fontFamily, setFontFamily] = useState('Georgia');
   const [fontSize, setFontSize] = useState(16);
-  const [textColor, setTextColor] = useState('#000000');
+  const [textColor, setTextColor] = useState('#ffffff');
   const shareForm = Form.useForm()[0];
 
   useEffect(() => {
@@ -2148,9 +2386,11 @@ function WordProcessor() {
       {/* Sidebar - Document List */}
       <div style={{
         width: isMobile ? '100%' : 280,
-        background: '#f9fafb',
-        border: '1px solid #e5e7eb',
-        borderRadius: 8,
+        background: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        borderRadius: 12,
         padding: 16,
         display: 'flex',
         flexDirection: 'column',
@@ -2183,21 +2423,25 @@ function WordProcessor() {
                 style={{
                   padding: 12,
                   marginBottom: 8,
-                  background: currentDoc?.id === doc.id ? '#fff' : '#ffffff',
-                  border: `1px solid ${currentDoc?.id === doc.id ? '#ff7a45' : '#e5e7eb'}`,
-                  borderRadius: 6,
+                  background: currentDoc?.id === doc.id ? 'rgba(59, 130, 246, 0.3)' : 'rgba(255, 255, 255, 0.05)',
+                  backdropFilter: 'blur(10px)',
+                  WebkitBackdropFilter: 'blur(10px)',
+                  border: `1px solid ${currentDoc?.id === doc.id ? 'rgba(59, 130, 246, 0.5)' : 'rgba(255, 255, 255, 0.2)'}`,
+                  borderRadius: 8,
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                 }}
                 onMouseEnter={(e) => {
                   if (currentDoc?.id !== doc.id) {
-                    e.currentTarget.style.borderColor = '#ff7a45';
-                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                    e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (currentDoc?.id !== doc.id) {
-                    e.currentTarget.style.borderColor = '#e5e7eb';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
                     e.currentTarget.style.boxShadow = 'none';
                   }
                 }}
@@ -2234,16 +2478,18 @@ function WordProcessor() {
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        background: '#fff',
-        border: '1px solid #e5e7eb',
-        borderRadius: 8,
+        background: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        borderRadius: 12,
         padding: 16,
         ...(isMobile && !currentDoc && { display: 'none' }),
       }}>
         {currentDoc ? (
           <>
             {/* Toolbar */}
-            <div style={{ marginBottom: 12, padding: '8px 12px', background: '#f5f5f5', borderRadius: 6, border: '1px solid #e5e7eb' }}>
+            <div style={{ marginBottom: 12, padding: '8px 12px', background: 'rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', borderRadius: 8, border: '1px solid rgba(255, 255, 255, 0.2)' }}>
               <Space size="small" wrap>
                 {/* Text Formatting */}
                 <Button.Group size="small">
@@ -2418,9 +2664,11 @@ function WordProcessor() {
                 color: textColor,
                 lineHeight: 1.8,
                 padding: 20,
-                background: '#fafafa',
-                border: '1px solid #e5e7eb',
-                borderRadius: 6,
+                background: 'rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: 12,
                 minHeight: 400,
                 overflowY: 'auto',
                 outline: 'none',
@@ -2436,12 +2684,12 @@ function WordProcessor() {
             <style>{`
               [contenteditable][data-placeholder]:empty:before {
                 content: attr(data-placeholder);
-                color: #999;
+                color: rgba(255, 255, 255, 0.5);
                 pointer-events: none;
               }
             `}</style>
 
-            <div style={{ marginTop: 12, fontSize: 12, color: '#999', textAlign: 'right', display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ marginTop: 12, fontSize: 12, color: 'rgba(255, 255, 255, 0.7)', textAlign: 'right', display: 'flex', justifyContent: 'space-between' }}>
               <span>Font: {fontFamily} | Size: {fontSize}pt</span>
               <span>Auto-saves every 30 seconds</span>
             </div>

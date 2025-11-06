@@ -1,0 +1,155 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+interface ResetPasswordRequest {
+  email: string;
+  resetBy?: string; // Email of the person resetting (CEO)
+}
+
+// Generate a random temporary password
+function generateTemporaryPassword(): string {
+  const length = 12;
+  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+  let password = "";
+  
+  // Ensure at least one of each required type
+  password += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random() * 26)]; // uppercase
+  password += "abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random() * 26)]; // lowercase
+  password += "0123456789"[Math.floor(Math.random() * 10)]; // number
+  password += "!@#$%^&*"[Math.floor(Math.random() * 8)]; // special char
+  
+  // Fill the rest randomly
+  for (let i = password.length; i < length; i++) {
+    password += charset[Math.floor(Math.random() * charset.length)];
+  }
+  
+  // Shuffle the password
+  return password.split('').sort(() => Math.random() - 0.5).join('');
+}
+
+serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { email, resetBy }: ResetPasswordRequest = await req.json();
+
+    if (!email) {
+      return new Response(
+        JSON.stringify({ error: "Email is required" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+
+    console.log(`Resetting password for ${email}...`);
+
+    // Find the user by email
+    let userFound = null;
+    let page = 0;
+    const pageSize = 1000;
+
+    while (!userFound) {
+      const { data: users, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage: pageSize,
+      });
+
+      if (listError) {
+        throw new Error(`Failed to list users: ${listError.message}`);
+      }
+
+      if (!users || users.users.length === 0) {
+        break; // No more users
+      }
+
+      userFound = users.users.find(u => u.email === email);
+
+      if (userFound) {
+        break;
+      }
+
+      // If we got fewer users than pageSize, we've reached the end
+      if (users.users.length < pageSize) {
+        break;
+      }
+
+      page++;
+    }
+
+    if (!userFound) {
+      return new Response(
+        JSON.stringify({ error: `User with email ${email} not found` }),
+        {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Generate temporary password
+    const tempPassword = generateTemporaryPassword();
+
+    // Update user password and set temporary password flag
+    const { data: updatedUser, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+      userFound.id,
+      {
+        password: tempPassword,
+        user_metadata: {
+          ...userFound.user_metadata,
+          temp_password: true,
+          temp_password_set_at: new Date().toISOString(),
+          temp_password_reset_by: resetBy || 'admin',
+        }
+      }
+    );
+
+    if (updateError) {
+      throw new Error(`Failed to update password: ${updateError.message}`);
+    }
+
+    console.log(`Password reset successfully for ${email}`);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        email,
+        tempPassword,
+        message: "Password reset successfully. Temporary password generated.",
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  } catch (error: any) {
+    console.error("Error resetting password:", error);
+    return new Response(
+      JSON.stringify({ error: error.message || "Unknown error occurred" }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+});
+

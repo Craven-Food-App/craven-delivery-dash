@@ -34,9 +34,16 @@ const BusinessAuth: React.FC = () => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        setUser(user);
-        const redirectPath = getRedirectPath();
-        window.location.href = redirectPath;
+        // Check for temporary password
+        if (user.user_metadata?.temp_password === true) {
+          setHasTempPassword(true);
+          setShowUpdatePassword(true);
+          setUser(null); // Don't redirect yet
+        } else {
+          setUser(user);
+          const redirectPath = getRedirectPath();
+          window.location.href = redirectPath;
+        }
       }
     };
     
@@ -44,18 +51,28 @@ const BusinessAuth: React.FC = () => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
+          // Check if user has a temporary password
+          const hasTempPassword = session.user.user_metadata?.temp_password === true;
+          
           // Check if this is a password recovery session
           const hashParams = new URLSearchParams(window.location.hash.substring(1));
           const isRecovery = hashParams.get('type') === 'recovery';
           
-          if (isRecovery) {
-            // This is a password reset flow, show update password form
+          if (hasTempPassword || isRecovery) {
+            // This is a password reset flow or temporary password, show update password form
             setShowUpdatePassword(true);
             setShowResetPassword(false);
             setResetSent(false);
             setUser(null); // Don't redirect yet
+            if (hasTempPassword) {
+              toast({
+                title: "Temporary Password Detected",
+                description: "Please set a new password to continue.",
+                variant: "default",
+              });
+            }
           } else {
             // Normal sign in
             setUser(session.user);
@@ -106,6 +123,21 @@ const BusinessAuth: React.FC = () => {
       }
 
       if (data.user) {
+        // Check if user has a temporary password
+        const hasTempPassword = data.user.user_metadata?.temp_password === true;
+        
+        if (hasTempPassword) {
+          // Force password change
+          setShowUpdatePassword(true);
+          setUser(null); // Don't redirect yet
+          toast({
+            title: "Temporary Password Detected",
+            description: "Please set a new password to continue.",
+            variant: "default",
+          });
+          return;
+        }
+
         toast({
           title: "Success!",
           description: "Signing you in...",
@@ -238,6 +270,10 @@ const BusinessAuth: React.FC = () => {
     try {
       const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword,
+        data: {
+          temp_password: false, // Clear temporary password flag
+          temp_password_set_at: null,
+        },
       });
 
       if (updateError) {
@@ -246,18 +282,38 @@ const BusinessAuth: React.FC = () => {
 
       toast({
         title: "Password Updated",
-        description: "Your password has been successfully updated. You can now sign in.",
+        description: "Your password has been successfully updated. Signing you in...",
       });
 
-      // Clear the form and show login
-      setShowUpdatePassword(false);
-      setNewPassword('');
-      setConfirmPassword('');
-      setShowResetPassword(false);
-      setResetSent(false);
-      
-      // Clear URL parameters
-      window.history.replaceState({}, document.title, '/business-auth');
+      // If this was a temporary password change, sign in automatically
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Clear the form
+        setShowUpdatePassword(false);
+        setNewPassword('');
+        setConfirmPassword('');
+        setShowResetPassword(false);
+        setResetSent(false);
+        
+        // Clear URL parameters
+        window.history.replaceState({}, document.title, '/business-auth');
+        
+        // Redirect to hub
+        const redirectPath = getRedirectPath();
+        setTimeout(() => {
+          window.location.href = redirectPath;
+        }, 1000);
+      } else {
+        // Clear the form and show login
+        setShowUpdatePassword(false);
+        setNewPassword('');
+        setConfirmPassword('');
+        setShowResetPassword(false);
+        setResetSent(false);
+        
+        // Clear URL parameters
+        window.history.replaceState({}, document.title, '/business-auth');
+      }
     } catch (error: any) {
       console.error('Password update error:', error);
       setError(error.message || 'Failed to update password');
@@ -373,8 +429,23 @@ const BusinessAuth: React.FC = () => {
           )}
 
           {showUpdatePassword ? (
-            // Update Password Form (after clicking email link)
-            <form onSubmit={handleUpdatePassword} className="space-y-3 sm:space-y-4 md:space-y-5">
+            // Update Password Form (after clicking email link or temporary password)
+            <div>
+              <div 
+                className="mb-4 p-3 rounded-lg border"
+                style={{
+                  background: 'rgba(245, 158, 11, 0.2)',
+                  borderColor: 'rgba(245, 158, 11, 0.4)',
+                }}
+              >
+                <p className="text-xs sm:text-sm text-yellow-300 font-semibold mb-1">
+                  Password Change Required
+                </p>
+                <p className="text-xs text-yellow-200">
+                  Please set a new password to continue.
+                </p>
+              </div>
+              <form onSubmit={handleUpdatePassword} className="space-y-3 sm:space-y-4 md:space-y-5">
               <div>
                 <label htmlFor="new-password" className="sr-only">New Password</label>
                 <div className="relative">
@@ -447,6 +518,7 @@ const BusinessAuth: React.FC = () => {
                 )}
               </button>
             </form>
+            </div>
           ) : showResetPassword && !resetSent ? (
             // Password Reset Form
             <form onSubmit={handleResetPassword} className="space-y-3 sm:space-y-4 md:space-y-5">

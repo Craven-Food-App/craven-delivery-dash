@@ -29,6 +29,12 @@ export const ExecutiveDirectory: React.FC = () => {
   const [filteredExecutives, setFilteredExecutives] = useState<Executive[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [resetPasswordModal, setResetPasswordModal] = useState<{ visible: boolean; exec: Executive | null; tempPassword: string | null }>({
+    visible: false,
+    exec: null,
+    tempPassword: null,
+  });
+  const [resettingPassword, setResettingPassword] = useState(false);
 
   useEffect(() => {
     fetchExecutives();
@@ -54,12 +60,22 @@ export const ExecutiveDirectory: React.FC = () => {
     setLoading(true);
     try {
       // Fetch from exec_users (officers) and employees (C-level employees)
-      const [execUsersRes, employeesRes] = await Promise.all([
+      // Also fetch user emails from auth.users via profiles
+      const [execUsersRes, employeesRes, profilesRes] = await Promise.all([
         supabase.from('exec_users').select('id, user_id, role, title, department, last_login, created_at, photo_url').order('created_at', { ascending: false }),
-        supabase.from('employees' as any).select('*').order('position')
+        supabase.from('employees' as any).select('*').order('position'),
+        supabase.from('profiles').select('id, email, full_name')
       ]);
 
       if (execUsersRes.error) throw execUsersRes.error;
+
+      // Create a map of user_id to email from profiles
+      const emailMap = new Map<string, string>();
+      (profilesRes.data || []).forEach((profile: any) => {
+        if (profile.id && profile.email) {
+          emailMap.set(profile.id, profile.email);
+        }
+      });
 
       const executivesFromOfficers: Executive[] = (execUsersRes.data || []).map((officer: any) => ({
         id: officer.id,
@@ -70,7 +86,7 @@ export const ExecutiveDirectory: React.FC = () => {
         last_login: officer.last_login,
         created_at: officer.created_at,
         name: officer.title || officer.role?.toUpperCase(),
-        email: undefined,
+        email: officer.user_id ? emailMap.get(officer.user_id) : undefined,
         source: 'exec_users' as const,
         photo_url: officer.photo_url,
       }));
@@ -177,6 +193,58 @@ export const ExecutiveDirectory: React.FC = () => {
       formatted = formatted.replace(new RegExp(`\\b${t.toLowerCase()}\\b`, 'gi'), t);
     });
     return formatted;
+  };
+
+  const handleResetPassword = async (exec: Executive) => {
+    if (!exec.email) {
+      message.error('No email address found for this executive');
+      return;
+    }
+
+    Modal.confirm({
+      title: 'Reset Executive Password',
+      content: `Are you sure you want to reset the password for ${exec.name || exec.email}? A temporary password will be generated.`,
+      okText: 'Reset Password',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        setResettingPassword(true);
+        try {
+          // Get current user email (CEO)
+          const { data: { user } } = await supabase.auth.getUser();
+          const resetBy = user?.email || 'admin';
+
+          const { data, error } = await supabase.functions.invoke('reset-executive-password-admin', {
+            body: {
+              email: exec.email,
+              resetBy,
+            },
+          });
+
+          if (error) throw error;
+
+          if (data?.success && data?.tempPassword) {
+            setResetPasswordModal({
+              visible: true,
+              exec,
+              tempPassword: data.tempPassword,
+            });
+            message.success('Password reset successfully!');
+          } else {
+            throw new Error(data?.error || 'Failed to reset password');
+          }
+        } catch (error: any) {
+          console.error('Error resetting password:', error);
+          message.error(error.message || 'Failed to reset password');
+        } finally {
+          setResettingPassword(false);
+        }
+      },
+    });
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    message.success('Temporary password copied to clipboard!');
   };
 
   return (
@@ -293,16 +361,84 @@ export const ExecutiveDirectory: React.FC = () => {
                   )}
                 </div>
 
-                <div className="w-full mt-3 pt-2 border-t border-slate-200">
+                <div className="w-full mt-3 pt-2 border-t border-slate-200 flex justify-center gap-2">
                   <Button type="link" icon={<MessageOutlined />} size="small" className="text-xs">
                     Send Message
                   </Button>
+                  {exec.email && (
+                    <Button 
+                      type="link" 
+                      icon={<LockOutlined />} 
+                      size="small" 
+                      className="text-xs"
+                      onClick={() => handleResetPassword(exec)}
+                      loading={resettingPassword}
+                    >
+                      Reset Password
+                    </Button>
+                  )}
                 </div>
               </div>
             </Card>
           </Col>
         ))}
       </Row>
+
+      {/* Password Reset Modal */}
+      <Modal
+        title="Password Reset Successful"
+        open={resetPasswordModal.visible}
+        onCancel={() => setResetPasswordModal({ visible: false, exec: null, tempPassword: null })}
+        footer={[
+          <Button key="close" onClick={() => setResetPasswordModal({ visible: false, exec: null, tempPassword: null })}>
+            Close
+          </Button>,
+        ]}
+        width={500}
+      >
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <Paragraph>
+            A temporary password has been generated for <strong>{resetPasswordModal.exec?.name || resetPasswordModal.exec?.email}</strong>.
+            They will be required to change this password on their next login.
+          </Paragraph>
+          
+          <div>
+            <Text strong>Temporary Password:</Text>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px', 
+              marginTop: '8px',
+              padding: '12px',
+              background: '#f5f5f5',
+              borderRadius: '4px',
+              fontFamily: 'monospace',
+              fontSize: '16px',
+            }}>
+              <Text code style={{ flex: 1, margin: 0 }}>{resetPasswordModal.tempPassword}</Text>
+              <Button 
+                icon={<CopyOutlined />} 
+                size="small"
+                onClick={() => resetPasswordModal.tempPassword && copyToClipboard(resetPasswordModal.tempPassword)}
+              >
+                Copy
+              </Button>
+            </div>
+          </div>
+
+          <div style={{ 
+            padding: '12px', 
+            background: '#fff7e6', 
+            borderRadius: '4px',
+            border: '1px solid #ffd591',
+          }}>
+            <Text type="warning">
+              <strong>Important:</strong> Share this temporary password securely with the executive. 
+              They must change it immediately upon login.
+            </Text>
+          </div>
+        </Space>
+      </Modal>
     </div>
   );
 };
