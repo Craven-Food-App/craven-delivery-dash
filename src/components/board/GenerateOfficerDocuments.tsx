@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Button, Card, message, Space, Typography, List, Tag, Progress, Modal, Alert } from 'antd';
-import { SendOutlined, FileTextOutlined, CheckCircleOutlined, LoadingOutlined, ReloadOutlined } from '@ant-design/icons';
+import { SendOutlined, FileTextOutlined, CheckCircleOutlined, LoadingOutlined, ReloadOutlined, EyeOutlined } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { docsAPI } from '../hr/api';
 import { renderHtml } from '@/lib/templates';
@@ -52,6 +52,9 @@ export default function SendCSuiteDocs() {
   const [progress, setProgress] = useState(0);
   const [statusMap, setStatusMap] = useState<Record<string, DocumentStatus[]>>({});
   const [showPreview, setShowPreview] = useState(false);
+  const [previewDocumentUrl, setPreviewDocumentUrl] = useState<string>('');
+  const [previewDocumentTitle, setPreviewDocumentTitle] = useState<string>('');
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
 
   useEffect(() => {
@@ -149,73 +152,227 @@ export default function SendCSuiteDocs() {
     setStatusMap(status);
   };
 
-  const generateDocumentData = (exec: Executive, docType: string) => {
-    // Calculate actual values from executive data
-    const sharesIssued = parseInt(exec.shares_issued || '0');
-    const strikePrice = parseFloat(exec.strike_price || '0.0001');
-    const purchasePrice = strikePrice * sharesIssued;
-    const annualSalary = parseInt(exec.annual_salary || '0');
-    const equityPercent = parseFloat(exec.equity_percent || '0');
+  const generateDocumentData = async (exec: Executive, docType: string) => {
+    // Fetch fresh equity data from equity_grants table (linked to exec_users.id)
+    // ALL fields must come from appointment flow
+    const { data: equityGrant } = await supabase
+      .from('equity_grants')
+      .select('shares_total, shares_percentage, strike_price, vesting_schedule, grant_date, share_class, consideration_type, consideration_value')
+      .eq('executive_id', exec.id)
+      .order('grant_date', { ascending: false })
+      .limit(1)
+      .single();
+
+    // Fetch salary and funding_trigger from board_resolutions (appointment flow)
+    // Executives are separate from employees - salary comes from appointment
+    let annualSalary = 0;
+    let fundingTrigger: string | undefined = exec.funding_trigger;
     
-    const baseData = {
+    // Get board resolution for this executive (from appointment flow)
+    const { data: resolution } = await supabase
+      .from('board_resolutions')
+      .select('notes, resolution_text')
+      .eq('subject_person_name', exec.full_name)
+      .or(`subject_position.eq.${exec.role},subject_position.eq.${exec.title}`)
+      .eq('resolution_type', 'appointment')
+      .order('effective_date', { ascending: false })
+      .limit(1)
+      .single();
+    
+    if (resolution) {
+      // Try to parse notes as JSON (if salary/funding_trigger stored there)
+      if (resolution.notes) {
+        try {
+          const notesData = JSON.parse(resolution.notes);
+          if (notesData.annual_salary) {
+            annualSalary = typeof notesData.annual_salary === 'number' 
+              ? notesData.annual_salary 
+              : parseFloat(notesData.annual_salary.toString());
+          }
+          if (notesData.funding_trigger) {
+            fundingTrigger = notesData.funding_trigger.toString();
+          }
+        } catch {
+          // Notes is not JSON, try to extract from resolution_text
+          // Parse resolution_text for salary mentions
+          const salaryMatch = resolution.resolution_text.match(/\$(\d{1,3}(?:,\d{3})*)\s*(?:annual|per\s*year|salary)/i);
+          if (salaryMatch) {
+            annualSalary = parseFloat(salaryMatch[1].replace(/,/g, ''));
+          }
+        }
+      }
+    }
+
+    // CRITICAL: Use equity grant data ONLY (from appointment flow)
+    // If no equity grant exists, use exec data as fallback
+    const sharesIssued = equityGrant?.shares_total || parseInt(exec.shares_issued || '0');
+    const strikePrice = equityGrant?.strike_price || parseFloat(exec.strike_price || '0.0001');
+    const equityPercent = equityGrant?.shares_percentage || parseFloat(exec.equity_percent || '0');
+    
+    // Total Purchase Price = Price per Share × Total Shares
+    const totalPurchasePrice = strikePrice * sharesIssued;
+    
+    // Log data source for debugging
+    console.log(`📊 Document data for ${exec.full_name} (ALL from appointment flow):`, {
+      equityGrant: equityGrant ? 'FOUND' : 'NOT FOUND',
+      // From equity_grants (appointment flow)
+      share_class: equityGrant?.share_class || 'fallback',
+      shares_total: equityGrant?.shares_total || 'fallback',
+      strike_price: equityGrant?.strike_price || 'fallback',
+      total_purchase_price: totalPurchasePrice.toFixed(2),
+      consideration_type: equityGrant?.consideration_type || 'fallback',
+      vesting_schedule: equityGrant?.vesting_schedule || 'fallback',
+      equity_percentage: equityGrant?.shares_percentage || 'fallback',
+      // From board_resolutions (appointment flow)
+      annual_salary: annualSalary || 'NOT FOUND',
+      funding_trigger: fundingTrigger || 'NOT FOUND',
+      appointment_date: appointmentDate,
+    });
+    const vestingSchedule = equityGrant?.vesting_schedule 
+      ? (typeof equityGrant.vesting_schedule === 'string' 
+          ? equityGrant.vesting_schedule 
+          : `${equityGrant.vesting_schedule.duration_months || 48} months with ${equityGrant.vesting_schedule.cliff_months || 12} month cliff`)
+      : (exec.vesting_schedule || '4 years with 1 year cliff');
+    
+    // Get appointment date from equity grant (from appointment flow) or board_resolutions
+    let appointmentDateStr = '';
+    if (equityGrant?.grant_date) {
+      appointmentDateStr = new Date(equityGrant.grant_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    } else {
+      // Try to get from board_resolutions
+      const { data: resolution } = await supabase
+        .from('board_resolutions')
+        .select('effective_date')
+        .eq('subject_person_name', exec.full_name)
+        .or(`subject_position.eq.${exec.role},subject_position.eq.${exec.title}`)
+        .order('effective_date', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (resolution?.effective_date) {
+        appointmentDateStr = new Date(resolution.effective_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      } else {
+        appointmentDateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      }
+    }
+    
+    const appointmentDate = appointmentDateStr;
+    const grantDate = equityGrant?.grant_date 
+      ? new Date(equityGrant.grant_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+      : appointmentDate;
+
+    // Create comprehensive baseData matching appointment flow structure
+    const baseData: Record<string, any> = {
+      // Company info
       company_name: "Crave'n, Inc.",
+      company: "Crave'n, Inc.",
+      corporation: "Crave'n, Inc.",
       state_of_incorporation: "Ohio",
+      company_address: "123 Main St, Cleveland, OH 44101",
+      
+      // Executive info - ALL variations
       full_name: exec.full_name,
+      executive_name: exec.full_name,
+      name: exec.full_name,
+      officer_name: exec.full_name,
+      employee_name: exec.full_name,
+      recipient_name: exec.full_name,
+      subscriber_name: exec.full_name,
+      counterparty_name: exec.full_name,
+      
+      // Role/Position - ALL variations
       role: exec.role === 'cxo' ? 'Chief Experience Officer' : exec.title || exec.role.toUpperCase(),
-      effective_date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-      funding_trigger: exec.funding_trigger ? `$${parseInt(exec.funding_trigger).toLocaleString()}` : "Upon Series A funding or significant investment event",
+      position: exec.role === 'cxo' ? 'Chief Experience Officer' : exec.title || exec.role.toUpperCase(),
+      title: exec.title || exec.role.toUpperCase(),
+      position_title: exec.role === 'cxo' ? 'Chief Experience Officer' : exec.title || exec.role.toUpperCase(),
+      executive_title: exec.title || exec.role.toUpperCase(),
+      officer_title: exec.role === 'cxo' ? 'Chief Experience Officer' : exec.title || exec.role.toUpperCase(),
+      
+      // Dates - ALL variations
+      effective_date: appointmentDate,
+      date: appointmentDate,
+      adoption_date: appointmentDate,
+      appointment_date: appointmentDate,
+      grant_date: grantDate,
+      offer_date: appointmentDate,
+      start_date: appointmentDate,
+      execution_date: appointmentDate,
+      closing_date: appointmentDate,
+      board_resolution_date: appointmentDate,
+      
+      // Equity - ALL variations
+      equity_percentage: equityPercent.toString(),
+      equity_percent: equityPercent.toString(),
+      ownership_percent: equityPercent.toString(),
+      equity: equityPercent.toString(),
+      
+      // Shares - ALL variations
+      share_count: sharesIssued.toLocaleString(),
+      shares_issued: sharesIssued.toLocaleString(),
+      shares_total: sharesIssued.toLocaleString(),
+      shares: sharesIssued.toLocaleString(),
+      
+      // Price - ALL variations (without $ sign - templates should use ${{price_per_share}} format)
+      strike_price: strikePrice.toFixed(4),
+      price_per_share: strikePrice.toFixed(4),
+      share_price: strikePrice.toFixed(4),
+      total_purchase_price: totalPurchasePrice.toFixed(2),
+      
+      // Vesting - ALL variations
+      vesting_schedule: vestingSchedule,
+      vesting_terms: vestingSchedule,
+      vesting: vestingSchedule,
+      
+      // Salary - ALL variations
+      annual_salary: annualSalary.toLocaleString(),
+      annual_base_salary: annualSalary.toLocaleString(),
+      base_salary: annualSalary.toLocaleString(),
+      salary: annualSalary.toLocaleString(),
+      
+      // Funding - ALL variations (from appointment flow)
+      funding_trigger: fundingTrigger ? (fundingTrigger.includes('$') ? fundingTrigger : `$${fundingTrigger.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`) : "Upon Series A funding or significant investment event",
+      funding_trigger_amount: fundingTrigger ? fundingTrigger.replace(/\D/g, '') : '0',
+      deferral_trigger: fundingTrigger ? (fundingTrigger.includes('$') ? fundingTrigger : `$${fundingTrigger.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`) : "Series A funding",
+      
+      // Governing Law - ALL variations
       governing_law: "State of Ohio",
       governing_law_state: "Ohio",
-      equity_percentage: exec.equity_percent || '0',
-      annual_salary: annualSalary.toLocaleString(),
-      vesting_schedule: exec.vesting_schedule || '4 years with 1 year cliff',
-      strike_price: strikePrice.toFixed(4),
-      shares_issued: sharesIssued.toLocaleString(),
+      
+      // Other
       salary_status: exec.salary_status || 'deferred',
-      company_address: "123 Main St, Cleveland, OH 44101",
+      currency: 'USD',
+      // Share Class from appointment flow (equity_grants)
+      share_class: equityGrant?.share_class || 'Common Stock',
     };
+    
+    // Add email if available
+    if (exec.email) {
+      baseData.executive_email = exec.email;
+      baseData.subscriber_email = exec.email;
+      baseData.email = exec.email;
+    }
 
-    // Add template-specific data
+    // Template-specific additions (same as appointment flow)
     switch (docType) {
       case 'employment_agreement':
-        return {
-          ...baseData,
-          base_salary: annualSalary.toLocaleString(),
-          equity_grant: `${equityPercent}% (${sharesIssued.toLocaleString()} shares)`,
-          start_date: baseData.effective_date,
-          benefits: "Health insurance upon funding, 15 days PTO",
-        };
+        return baseData;
       case 'offer_letter': {
         const firstName = exec.full_name?.split(' ')[0] || '';
-        const sched = baseData.vesting_schedule || '';
+        const sched = vestingSchedule || '';
         const yearsMatch = sched.match(/(\d+)\s*year/);
         const cliffMatch = sched.match(/(\d+)\s*(month|year)s?\s*cliff/i);
         const vesting_period = yearsMatch ? yearsMatch[1] : '4';
         const vesting_cliff = cliffMatch ? `${cliffMatch[1]} ${cliffMatch[2]}${cliffMatch[1] === '1' ? '' : 's'}` : '1 year';
-
         return {
           ...baseData,
-          company_name: baseData.company_name,
-          offer_date: baseData.effective_date,
-          executive_name: exec.full_name,
           executive_first_name: firstName,
           executive_address: '',
-          executive_email: exec.email || '',
-          position_title: baseData.role,
           reporting_to_title: 'Board of Directors',
           work_location: 'Cleveland, Ohio',
-          start_date: baseData.effective_date,
-          annual_base_salary: annualSalary.toLocaleString(),
-          currency: 'USD',
-          funding_trigger_amount: exec.funding_trigger ? parseInt(exec.funding_trigger).toLocaleString() : '0',
-          share_count: sharesIssued.toLocaleString(),
-          share_class: 'Common Stock',
-          ownership_percent: equityPercent.toString(),
           vesting_period,
           vesting_cliff,
           bonus_structure: 'Discretionary performance bonus as determined by the Board',
           employment_country: 'United States',
-          governing_law_state: 'Ohio',
           signatory_name: 'Torrance Stroman',
           signatory_title: 'CEO',
           company_mission_statement: 'deliver delightful food experiences to every neighborhood',
@@ -224,12 +381,7 @@ export default function SendCSuiteDocs() {
       case 'board_resolution':
         return {
           ...baseData,
-          date: baseData.effective_date,
           directors: "Board of Directors",
-          officer_name: exec.full_name,
-          officer_title: baseData.role,
-          officer_salary: annualSalary.toLocaleString(),
-          officer_equity: `${equityPercent}% (${sharesIssued.toLocaleString()} shares)`,
           ceo_name: exec.role === 'ceo' ? exec.full_name : '',
           cfo_name: exec.role === 'cfo' ? exec.full_name : '',
           cxo_name: exec.role === 'cxo' ? exec.full_name : '',
@@ -239,88 +391,41 @@ export default function SendCSuiteDocs() {
         };
       case 'stock_issuance':
         return {
-          company_name: "Crave'n, Inc.",
-          state_of_incorporation: "Ohio",
-          company_address: "123 Main St, Cleveland, OH 44101",
-          notice_contact_name: "Torrance Stroman",
-          notice_contact_title: "CEO",
-          notice_contact_email: "craven@usa.com",
-          subscriber_name: exec.full_name,
+          ...baseData,
           subscriber_address: "TBD",
-          subscriber_email: exec.email,
           accredited_status: "an accredited investor",
-          share_class: "Common Stock",
           series_label: "N/A",
-          share_count: sharesIssued.toLocaleString(),
-          price_per_share: strikePrice.toFixed(4),
-          total_purchase_price: purchasePrice.toFixed(2),
-          currency: "USD",
-          vesting_terms: baseData.vesting_schedule,
-          consideration_type: annualSalary > 0 ? "Services Rendered" : "Founder Contribution",
+          // Consideration from appointment flow (equity_grants)
+          consideration_type: equityGrant?.consideration_type || (annualSalary > 0 ? "Services Rendered" : "Founder Contribution"),
+          consideration_value: equityGrant?.consideration_value || 0,
           consideration_valuation_basis: "Fair market value of services",
+          // Certificate form - typically book-entry for executives
           certificate_form: "Book-entry (no physical certificate)",
-          closing_date: baseData.effective_date,
-          effective_date: baseData.effective_date,
           payment_method: annualSalary > 0 ? "Services / Sweat Equity" : "Founder Sweat Equity",
           securities_exemption: "Section 4(a)(2) private placement",
           related_agreement_name: "Founders' Agreement",
-          governing_law_state: "Ohio",
-          board_resolution_date: baseData.effective_date,
-          signatory_name: "Torrance Stroman",
-          signatory_title: "CEO",
-          founder_1_name: "Torrance Stroman",
-          founder_1_class: "Common Stock",
-          founder_1_shares: "7,700,000",
-          founder_1_percent: "77",
-          founder_1_notes: "Founder shares, immediate vesting",
-          founder_2_name: "Justin Sweet",
-          founder_2_class: "Common Stock",
-          founder_2_shares: "1,000,000",
-          founder_2_percent: "10",
-          founder_2_notes: "4 year vesting, 1 year cliff",
-          subscriber_percent_post: equityPercent.toString(),
-          option_pool_shares: "0",
-          option_pool_percent: "0",
-          option_pool_notes: "To be established",
-          total_fd_shares: "10,000,000",
-          bank_name: "Chase Bank",
-          routing_number: "021000021",
-          account_number: "1234567890",
-          account_name: "Crave'n, Inc.",
-          swift_bic: "CHASUS33",
-          payment_reference: `Stock Purchase - ${exec.full_name}`,
-          notes: exec.notes || '',
+          notice_contact_name: "Torrance Stroman",
+          notice_contact_title: "CEO",
+          notice_contact_email: "craven@usa.com",
         };
       case 'founders_agreement':
         return {
           ...baseData,
-          founders_table_html: `<table><tr><td>${exec.full_name}</td><td>${equityPercent}%</td><td>${sharesIssued.toLocaleString()} shares</td></tr></table>`,
+          founders_table_html: `<tr><td>${exec.full_name}</td><td>${baseData.role}</td><td>${equityPercent}%</td></tr>`,
           vesting_years: '4',
           cliff_months: '12',
-          founder_1_name: exec.full_name,
-          founder_1_role: baseData.role,
-          founder_1_percent: equityPercent.toString(),
-          founder_1_shares: sharesIssued.toLocaleString(),
-          founder_1_vesting: baseData.vesting_schedule,
         };
       case 'deferred_comp_addendum':
         return {
           ...baseData,
-          deferred_salary: annualSalary.toLocaleString(),
-          total_annual_comp: annualSalary.toLocaleString(),
-          deferral_trigger: exec.funding_trigger ? `$${parseInt(exec.funding_trigger).toLocaleString()}` : "Series A funding",
-          payment_terms: "Paid within 30 days of funding event",
+          defer_until: baseData.funding_trigger,
         };
       case 'confidentiality_ip':
-        return {
-          ...baseData,
-          employee_name: exec.full_name,
-          position: baseData.role,
-        };
+        return baseData;
       case 'bylaws_officers_excerpt':
         return {
           ...baseData,
-          officer_roles_html: `<ul><li>${baseData.role}: ${exec.full_name}</li></ul>`,
+          secretary_name: 'Torrance Stroman',
         };
       default:
         return baseData;
@@ -427,7 +532,7 @@ export default function SendCSuiteDocs() {
           } else {
             // Document doesn't exist, generate it using templates from database (or fallback to hardcoded)
             console.log(`Generating ${docType.title} for ${exec.full_name} using proper templates...`);
-            const data = generateDocumentData(exec, docType.id);
+            const data = await generateDocumentData(exec, docType.id);
             const html_content = await renderDocumentHtml(docType.id, data, docType.id);
 
             // Generate document via API
@@ -640,6 +745,34 @@ export default function SendCSuiteDocs() {
     }
   };
 
+  const handlePreviewDocument = async (documentId: string, documentTitle: string) => {
+    setPreviewLoading(true);
+    try {
+      // Fetch document from database
+      const { data: doc, error } = await supabase
+        .from('executive_documents')
+        .select('file_url')
+        .eq('id', documentId)
+        .single();
+
+      if (error) throw error;
+
+      if (!doc?.file_url) {
+        message.error('Document URL not found');
+        return;
+      }
+
+      setPreviewDocumentUrl(doc.file_url);
+      setPreviewDocumentTitle(documentTitle);
+      setShowPreview(true);
+    } catch (error: any) {
+      console.error('Error fetching document for preview:', error);
+      message.error('Failed to load document for preview');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   const regenerateDocuments = async (exec: Executive) => {
     if (!exec) {
       message.warning('No executive selected');
@@ -668,10 +801,10 @@ export default function SendCSuiteDocs() {
 
       // Generate all documents fresh
       for (const docType of CSUITE_DOC_TYPES) {
-        try {
-          console.log(`Generating ${docType.title} for ${exec.full_name}...`);
-          const data = generateDocumentData(exec, docType.id);
-          const html_content = await renderDocumentHtml(docType.id, data, docType.id);
+          try {
+            console.log(`Generating ${docType.title} for ${exec.full_name}...`);
+            const data = await generateDocumentData(exec, docType.id);
+            const html_content = await renderDocumentHtml(docType.id, data, docType.id);
 
           // Generate document via API
           const resp = await docsAPI.post('/documents/generate', {
@@ -814,13 +947,25 @@ export default function SendCSuiteDocs() {
                     </Text>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                       {statuses.map((status) => (
-                        <Tag
-                          key={status.type}
-                          color={status.exists ? 'green' : 'orange'}
-                          icon={status.exists ? <CheckCircleOutlined /> : <LoadingOutlined />}
-                        >
-                          {status.title}
-                        </Tag>
+                        <Space key={status.type} size={4}>
+                          <Tag
+                            color={status.exists ? 'green' : 'orange'}
+                            icon={status.exists ? <CheckCircleOutlined /> : <LoadingOutlined />}
+                          >
+                            {status.title}
+                          </Tag>
+                          {status.exists && status.documentId && (
+                            <Button
+                              type="link"
+                              icon={<EyeOutlined />}
+                              size="small"
+                              onClick={() => handlePreviewDocument(status.documentId!, status.title)}
+                              style={{ padding: 0, height: 'auto' }}
+                            >
+                              Preview
+                            </Button>
+                          )}
+                        </Space>
                       ))}
                     </div>
                   </Space>
@@ -830,6 +975,64 @@ export default function SendCSuiteDocs() {
           );
         }}
       />
+
+      {/* Document Preview Modal */}
+      <Modal
+        title={`Preview: ${previewDocumentTitle}`}
+        open={showPreview}
+        onCancel={() => {
+          setShowPreview(false);
+          setPreviewDocumentUrl('');
+          setPreviewDocumentTitle('');
+        }}
+        width={900}
+        footer={[
+          <Button key="close" onClick={() => {
+            setShowPreview(false);
+            setPreviewDocumentUrl('');
+            setPreviewDocumentTitle('');
+          }}>
+            Close
+          </Button>,
+          <Button
+            key="download"
+            type="primary"
+            icon={<FileTextOutlined />}
+            onClick={() => {
+              if (previewDocumentUrl) {
+                window.open(previewDocumentUrl, '_blank');
+              }
+            }}
+          >
+            Open in New Tab
+          </Button>,
+        ]}
+      >
+        {previewLoading ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <LoadingOutlined style={{ fontSize: 32 }} />
+            <div style={{ marginTop: 16 }}>
+              <Text>Loading document...</Text>
+            </div>
+          </div>
+        ) : previewDocumentUrl ? (
+          <div style={{ width: '100%', height: '70vh', border: '1px solid #d9d9d9', borderRadius: '4px' }}>
+            <iframe
+              src={previewDocumentUrl}
+              style={{
+                width: '100%',
+                height: '100%',
+                border: 'none',
+              }}
+              title={previewDocumentTitle}
+            />
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Text type="secondary">No document URL available</Text>
+          </div>
+        )}
+      </Modal>
     </Card>
   );
 }

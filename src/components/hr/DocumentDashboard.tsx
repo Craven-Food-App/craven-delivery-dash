@@ -130,16 +130,39 @@ export default function DocumentDashboard() {
   const handleDeleteAll = async () => {
     setDeleting(true);
     try {
+      // First, get all document IDs to delete signatures
+      const { data: allDocs, error: fetchError } = await supabase
+        .from("executive_documents")
+        .select("id");
+
+      if (fetchError) throw fetchError;
+
+      const docIds = allDocs?.map(doc => doc.id) || [];
+
+      // Delete all signatures linked to documents (if any)
+      if (docIds.length > 0) {
+        const { error: sigError } = await supabase
+          .from("executive_signatures")
+          .delete()
+          .in("document_id", docIds);
+
+        if (sigError) {
+          console.warn("Error deleting signatures (may not exist):", sigError);
+          // Continue with document deletion even if signatures fail
+        }
+      }
+
       // Delete all documents from executive_documents table
-      // Use a condition that matches all rows (created_at is never null)
+      // Using a simple delete without conditions (Supabase requires at least one filter, so we use a true condition)
       const { error } = await supabase
         .from("executive_documents")
         .delete()
-        .not("created_at", "is", null);
+        .gte("created_at", "1970-01-01"); // This matches all documents since created_at is always after 1970
 
       if (error) throw error;
 
-      message.success(`Successfully deleted all ${documents.length} documents`);
+      const deletedCount = documents.length;
+      message.success(`Successfully deleted all ${deletedCount} documents`);
       await fetchDocuments(); // Refresh the list
     } catch (err: any) {
       console.error("Error deleting all documents:", err);

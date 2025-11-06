@@ -69,6 +69,17 @@ serve(async (req) => {
     const resolutionNumber = resolutionNumberData || `BR-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`;
 
     // 1. Create board resolution
+    // Store salary and funding_trigger in notes as JSON for document generation
+    const appointmentMetadata = {
+      annual_salary: annual_salary ? parseFloat(annual_salary) : null,
+      funding_trigger: funding_trigger || null,
+      defer_salary: defer_salary,
+      strike_price: strike_price,
+      shares_issued: shares_issued,
+      equity_percent: equity_percent,
+      vesting_schedule: vesting_schedule,
+    };
+    
     const { data: resolutionData, error: resolutionError } = await supabaseClient
       .from('board_resolutions')
       .insert({
@@ -81,6 +92,7 @@ serve(async (req) => {
         effective_date: appointment_date,
         status: 'approved',
         resolution_text: `BE IT RESOLVED that ${executive_name} is hereby appointed as ${executive_title} of the Company, effective ${appointment_date}, with ${equity_percent}% equity (${shares_issued} shares) subject to ${vesting_schedule} vesting schedule.`,
+        notes: JSON.stringify(appointmentMetadata), // Store appointment data for document generation
         board_members: [],
       })
       .select()

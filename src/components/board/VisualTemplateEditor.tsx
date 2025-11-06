@@ -1,0 +1,452 @@
+import React, { useRef, useState, useMemo } from 'react';
+import { Row, Col, Button, Dropdown, Menu, Space, Typography, Divider, Tabs, Card, Alert } from 'antd';
+import {
+  CodeOutlined,
+  EyeOutlined,
+  PlusOutlined,
+  UserOutlined,
+  DollarOutlined,
+  CalendarOutlined,
+  BankOutlined,
+  FileTextOutlined,
+} from '@ant-design/icons';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import './VisualTemplateEditor.css';
+
+const { Text } = Typography;
+
+// Categorized placeholder definitions
+export const PLACEHOLDER_CATEGORIES = {
+  executive: {
+    label: 'Executive Information',
+    icon: <UserOutlined />,
+    placeholders: [
+      { key: 'full_name', label: 'Full Name', description: 'Executive full name' },
+      { key: 'executive_name', label: 'Executive Name', description: 'Alternative name field' },
+      { key: 'name', label: 'Name', description: 'Simple name field' },
+      { key: 'officer_name', label: 'Officer Name', description: 'Officer name' },
+      { key: 'executive_email', label: 'Email', description: 'Executive email address' },
+      { key: 'executive_first_name', label: 'First Name', description: 'First name only' },
+      { key: 'executive_address', label: 'Address', description: 'Executive address' },
+    ],
+  },
+  role: {
+    label: 'Role & Position',
+    icon: <FileTextOutlined />,
+    placeholders: [
+      { key: 'role', label: 'Role', description: 'Executive role (e.g., CEO)' },
+      { key: 'position', label: 'Position', description: 'Position title' },
+      { key: 'title', label: 'Title', description: 'Job title' },
+      { key: 'position_title', label: 'Position Title', description: 'Full position title' },
+      { key: 'executive_title', label: 'Executive Title', description: 'Executive title' },
+      { key: 'officer_title', label: 'Officer Title', description: 'Officer title' },
+    ],
+  },
+  equity: {
+    label: 'Equity & Shares',
+    icon: <DollarOutlined />,
+    placeholders: [
+      { key: 'equity_percentage', label: 'Equity Percentage', description: 'Equity % (e.g., 15%)' },
+      { key: 'equity_percent', label: 'Equity %', description: 'Alternative equity %' },
+      { key: 'ownership_percent', label: 'Ownership %', description: 'Ownership percentage' },
+      { key: 'share_count', label: 'Share Count', description: 'Number of shares (formatted)' },
+      { key: 'shares_issued', label: 'Shares Issued', description: 'Shares issued' },
+      { key: 'shares_total', label: 'Total Shares', description: 'Total shares' },
+      { key: 'price_per_share', label: 'Price per Share', description: 'Price per share ($0.0001)' },
+      { key: 'strike_price', label: 'Strike Price', description: 'Strike price' },
+      { key: 'total_purchase_price', label: 'Total Purchase Price', description: 'Total purchase price' },
+      { key: 'share_class', label: 'Share Class', description: 'Share class (e.g., Common Stock)' },
+    ],
+  },
+  dates: {
+    label: 'Dates',
+    icon: <CalendarOutlined />,
+    placeholders: [
+      { key: 'effective_date', label: 'Effective Date', description: 'Effective date of agreement' },
+      { key: 'appointment_date', label: 'Appointment Date', description: 'Date of appointment' },
+      { key: 'grant_date', label: 'Grant Date', description: 'Equity grant date' },
+      { key: 'offer_date', label: 'Offer Date', description: 'Offer letter date' },
+      { key: 'start_date', label: 'Start Date', description: 'Start date' },
+      { key: 'date', label: 'Date', description: 'Generic date field' },
+      { key: 'execution_date', label: 'Execution Date', description: 'Execution date' },
+    ],
+  },
+  compensation: {
+    label: 'Compensation',
+    icon: <DollarOutlined />,
+    placeholders: [
+      { key: 'annual_salary', label: 'Annual Salary', description: 'Annual base salary (formatted)' },
+      { key: 'annual_base_salary', label: 'Annual Base Salary', description: 'Base salary' },
+      { key: 'base_salary', label: 'Base Salary', description: 'Base salary amount' },
+      { key: 'salary', label: 'Salary', description: 'Salary amount' },
+      { key: 'funding_trigger', label: 'Funding Trigger', description: 'Salary activation trigger' },
+      { key: 'funding_trigger_amount', label: 'Funding Trigger Amount', description: 'Funding amount' },
+      { key: 'deferral_trigger', label: 'Deferral Trigger', description: 'Deferral trigger text' },
+    ],
+  },
+  vesting: {
+    label: 'Vesting',
+    icon: <CalendarOutlined />,
+    placeholders: [
+      { key: 'vesting_schedule', label: 'Vesting Schedule', description: 'Full vesting schedule' },
+      { key: 'vesting_terms', label: 'Vesting Terms', description: 'Vesting terms' },
+      { key: 'vesting_period', label: 'Vesting Period', description: 'Vesting period (years)' },
+      { key: 'vesting_cliff', label: 'Vesting Cliff', description: 'Cliff period' },
+      { key: 'vesting', label: 'Vesting', description: 'Generic vesting field' },
+    ],
+  },
+  company: {
+    label: 'Company Information',
+    icon: <BankOutlined />,
+    placeholders: [
+      { key: 'company_name', label: 'Company Name', description: 'Company name' },
+      { key: 'company', label: 'Company', description: 'Alternative company name' },
+      { key: 'company_address', label: 'Company Address', description: 'Company address' },
+      { key: 'state_of_incorporation', label: 'State of Incorporation', description: 'State of incorporation' },
+      { key: 'governing_law', label: 'Governing Law', description: 'Governing law state' },
+      { key: 'governing_law_state', label: 'Governing Law State', description: 'Governing state' },
+    ],
+  },
+  other: {
+    label: 'Other',
+    icon: <FileTextOutlined />,
+    placeholders: [
+      { key: 'consideration_type', label: 'Consideration Type', description: 'Type of consideration' },
+      { key: 'consideration_value', label: 'Consideration Value', description: 'Consideration value' },
+      { key: 'currency', label: 'Currency', description: 'Currency code (USD)' },
+      { key: 'salary_status', label: 'Salary Status', description: 'Salary status (deferred/active)' },
+    ],
+  },
+};
+
+interface VisualTemplateEditorProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  height?: number;
+}
+
+export const VisualTemplateEditor: React.FC<VisualTemplateEditorProps> = ({
+  value,
+  onChange,
+  placeholder = 'Enter HTML template...',
+  height = 500,
+}) => {
+  const quillRef = useRef<any>(null);
+  const [activeTab, setActiveTab] = useState<'visual' | 'code' | 'preview'>('code'); // Default to code tab to avoid ReactQuill issues
+  const [previewData, setPreviewData] = useState<Record<string, any>>({});
+
+  // Generate sample preview data
+  useMemo(() => {
+    setPreviewData({
+      // Executive info
+      full_name: 'John Doe',
+      executive_name: 'John Doe',
+      name: 'John Doe',
+      officer_name: 'John Doe',
+      employee_name: 'John Doe',
+      recipient_name: 'John Doe',
+      subscriber_name: 'John Doe',
+      counterparty_name: 'John Doe',
+      executive_email: 'john.doe@company.com',
+      executive_first_name: 'John',
+      executive_address: '123 Main St, Cleveland, OH 44101',
+      // Role
+      role: 'CEO',
+      position: 'Chief Executive Officer',
+      title: 'CEO',
+      position_title: 'Chief Executive Officer',
+      executive_title: 'CEO',
+      officer_title: 'Chief Executive Officer',
+      // Equity
+      equity_percentage: '15',
+      equity_percent: '15',
+      ownership_percent: '15',
+      equity: '15',
+      share_count: '1,500,000',
+      shares_issued: '1,500,000',
+      shares_total: '1,500,000',
+      shares: '1,500,000',
+      price_per_share: '0.0001',
+      strike_price: '0.0001',
+      share_price: '0.0001',
+      total_purchase_price: '150.00',
+      share_class: 'Common Stock',
+      // Dates
+      effective_date: 'January 1, 2025',
+      appointment_date: 'January 1, 2025',
+      grant_date: 'January 1, 2025',
+      offer_date: 'January 1, 2025',
+      start_date: 'January 1, 2025',
+      date: 'January 1, 2025',
+      execution_date: 'January 1, 2025',
+      closing_date: 'January 1, 2025',
+      board_resolution_date: 'January 1, 2025',
+      adoption_date: 'January 1, 2025',
+      // Compensation
+      annual_salary: '120,000',
+      annual_base_salary: '120,000',
+      base_salary: '120,000',
+      salary: '120,000',
+      funding_trigger: 'Upon Series A funding',
+      funding_trigger_amount: '500000',
+      deferral_trigger: 'Series A funding',
+      // Vesting
+      vesting_schedule: '4 years with 1 year cliff',
+      vesting_terms: '4 years with 1 year cliff',
+      vesting_period: '4',
+      vesting_cliff: '1 year',
+      vesting: '4 years with 1 year cliff',
+      // Company
+      company_name: "Crave'n, Inc.",
+      company: "Crave'n, Inc.",
+      corporation: "Crave'n, Inc.",
+      company_address: '123 Main St, Cleveland, OH 44101',
+      state_of_incorporation: 'Ohio',
+      governing_law: 'State of Ohio',
+      governing_law_state: 'Ohio',
+      // Other
+      consideration_type: 'Services Rendered',
+      consideration_value: '0',
+      currency: 'USD',
+      salary_status: 'deferred',
+    });
+  }, []);
+
+  // Insert placeholder at cursor position
+  const insertPlaceholder = (placeholderKey: string) => {
+    if (activeTab === 'code') {
+      // For code view, insert into textarea
+      const textarea = document.querySelector('textarea[placeholder="Enter HTML template..."], textarea[placeholder="Enter HTML document template..."]') as HTMLTextAreaElement;
+      if (textarea) {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        const newText = text.substring(0, start) + `{{${placeholderKey}}}` + text.substring(end);
+        onChange(newText);
+        // Set cursor position after inserted text
+        setTimeout(() => {
+          textarea.focus();
+          textarea.setSelectionRange(start + placeholderKey.length + 4, start + placeholderKey.length + 4);
+        }, 0);
+      }
+    } else {
+      // For visual editor (Quill)
+      const quill = quillRef.current?.getEditor();
+      if (!quill) return;
+
+      const range = quill.getSelection(true);
+      if (range) {
+        quill.insertText(range.index, `{{${placeholderKey}}}`, 'user');
+        quill.setSelection(range.index + placeholderKey.length + 4);
+      } else {
+        // If no selection, append at end
+        const length = quill.getLength();
+        quill.insertText(length - 1, `{{${placeholderKey}}}`, 'user');
+        quill.setSelection(length + placeholderKey.length + 3);
+      }
+    }
+  };
+
+  // Create placeholder menu
+  const createPlaceholderMenu = () => {
+    return (
+      <Menu style={{ maxHeight: '400px', overflowY: 'auto', width: '300px' }}>
+        {Object.entries(PLACEHOLDER_CATEGORIES).map(([categoryKey, category]) => (
+          <Menu.SubMenu
+            key={categoryKey}
+            title={
+              <Space>
+                {category.icon}
+                <span>{category.label}</span>
+              </Space>
+            }
+          >
+            {category.placeholders.map((ph) => (
+              <Menu.Item
+                key={ph.key}
+                onClick={() => insertPlaceholder(ph.key)}
+              >
+                <div>
+                  <div style={{ fontWeight: 500 }}>{ph.label}</div>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    {ph.description}
+                  </Text>
+                  <Text code style={{ fontSize: '11px', marginLeft: 8 }}>
+                    {`{{${ph.key}}}`}
+                  </Text>
+                </div>
+              </Menu.Item>
+            ))}
+          </Menu.SubMenu>
+        ))}
+      </Menu>
+    );
+  };
+
+  // Replace placeholders in HTML for preview
+  const getPreviewHtml = () => {
+    let html = value;
+    Object.entries(previewData).forEach(([key, val]) => {
+      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+      html = html.replace(regex, String(val));
+    });
+    // Replace any remaining placeholders with [PLACEHOLDER]
+    html = html.replace(/\{\{[\w_]+\}\}/g, '[PLACEHOLDER]');
+    return html;
+  };
+
+  // Custom toolbar
+  const modules = {
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ align: [] }],
+      ['link', 'image'],
+      ['clean'],
+    ],
+  };
+
+  const formats = [
+    'header',
+    'bold',
+    'italic',
+    'underline',
+    'strike',
+    'list',
+    'bullet',
+    'align',
+    'link',
+    'image',
+  ];
+
+  return (
+    <div style={{ border: '1px solid #d9d9d9', borderRadius: '4px', background: '#fff' }}>
+      <div
+        style={{
+          borderBottom: '1px solid #d9d9d9',
+          padding: '8px 12px',
+          background: '#fafafa',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <Space>
+          <Dropdown 
+            overlay={createPlaceholderMenu()} 
+            trigger={['click']} 
+            placement="bottomLeft"
+            getPopupContainer={(trigger) => trigger.parentElement || document.body}
+          >
+            <Button type="primary" icon={<PlusOutlined />}>
+              Insert Placeholder
+            </Button>
+          </Dropdown>
+          <Divider type="vertical" />
+          <Text type="secondary" style={{ fontSize: '12px' }}>
+            Click where you want to insert a dynamic field, then select from the dropdown
+          </Text>
+        </Space>
+      </div>
+
+      <Tabs
+        activeKey={activeTab}
+        onChange={setActiveTab}
+        type="card"
+        size="small"
+        style={{ margin: 0 }}
+      >
+        <Tabs.TabPane
+          key="visual"
+          tab={
+            <span>
+              <CodeOutlined />
+              Visual Editor
+            </span>
+          }
+        >
+          <div style={{ minHeight: `${height}px` }}>
+            {(() => {
+              try {
+                return (
+                  <ReactQuill
+                    ref={quillRef}
+                    theme="snow"
+                    value={value}
+                    onChange={onChange}
+                    modules={modules}
+                    formats={formats}
+                    placeholder={placeholder}
+                    style={{ height: `${height - 42}px` }}
+                  />
+                );
+              } catch (error) {
+                console.error('ReactQuill error:', error);
+                return (
+                  <Alert
+                    message="Visual Editor Error"
+                    description="The visual editor failed to load. Please use the HTML Code tab instead."
+                    type="error"
+                    showIcon
+                    style={{ margin: '16px' }}
+                  />
+                );
+              }
+            })()}
+          </div>
+        </Tabs.TabPane>
+
+        <Tabs.TabPane
+          key="code"
+          tab={
+            <span>
+              <CodeOutlined />
+              HTML Code
+            </span>
+          }
+        >
+          <textarea
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            style={{
+              width: '100%',
+              height: `${height}px`,
+              padding: '12px',
+              border: 'none',
+              fontFamily: 'monospace',
+              fontSize: '13px',
+              resize: 'none',
+              outline: 'none',
+            }}
+          />
+        </Tabs.TabPane>
+
+        <Tabs.TabPane
+          key="preview"
+          tab={
+            <span>
+              <EyeOutlined />
+              Preview
+            </span>
+          }
+        >
+          <div
+            style={{
+              padding: '24px',
+              minHeight: `${height}px`,
+              maxHeight: `${height}px`,
+              overflow: 'auto',
+              background: '#fff',
+            }}
+            dangerouslySetInnerHTML={{ __html: getPreviewHtml() }}
+          />
+        </Tabs.TabPane>
+      </Tabs>
+    </div>
+  );
+};
+

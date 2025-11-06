@@ -34,6 +34,9 @@ import { supabase } from '@/integrations/supabase/client';
 import dayjs from 'dayjs';
 import { seedTemplatesFromUI } from '@/utils/seedTemplatesFromCode';
 import { seedEmailTemplatesFromUI } from '@/utils/seedEmailTemplatesFromCode';
+import { clearAllDocumentTemplates, verifyRequiredTemplates } from '@/utils/clearDocumentTemplates';
+import { fixTemplatePlaceholdersFromUI } from '@/utils/fixTemplatePlaceholders';
+import { VisualTemplateEditor } from './VisualTemplateEditor';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -748,9 +751,28 @@ export const TemplateManager: React.FC = () => {
             children: (
               <Card
                 extra={
-                  <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateDocumentTemplate}>
-                    Create Document Template
-                  </Button>
+                  <Space>
+                    <Button 
+                      icon={<CheckCircleOutlined />}
+                      onClick={() => {
+                        Modal.confirm({
+                          title: 'Fix Template Placeholders',
+                          content: 'This will replace hardcoded values (like "John Doe", dates, amounts) with proper placeholders (like {{full_name}}, {{effective_date}}). This action will update all document templates. Continue?',
+                          okText: 'Fix Placeholders',
+                          cancelText: 'Cancel',
+                          onOk: async () => {
+                            await fixTemplatePlaceholdersFromUI();
+                            await fetchTemplates();
+                          },
+                        });
+                      }}
+                    >
+                      Fix Placeholders
+                    </Button>
+                    <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateDocumentTemplate}>
+                      Create Document Template
+                    </Button>
+                  </Space>
                 }
               >
                 <Table
@@ -860,12 +882,11 @@ export const TemplateManager: React.FC = () => {
                 </Popover>
               )}
             </div>
-            <TextArea
+            <VisualTemplateEditor
               value={emailForm.html_content}
-              onChange={(e) => handleHtmlContentChange(e.target.value, 'email')}
+              onChange={(value) => handleHtmlContentChange(value, 'email')}
               placeholder="Enter HTML email template..."
-              rows={15}
-              style={{ fontFamily: 'monospace', fontSize: '12px' }}
+              height={400}
             />
           </div>
 
@@ -966,12 +987,11 @@ export const TemplateManager: React.FC = () => {
                 </Popover>
               )}
             </div>
-            <TextArea
+            <VisualTemplateEditor
               value={documentForm.html_content}
-              onChange={(e) => handleHtmlContentChange(e.target.value, 'document')}
+              onChange={(value) => handleHtmlContentChange(value, 'document')}
               placeholder="Enter HTML document template..."
-              rows={20}
-              style={{ fontFamily: 'monospace', fontSize: '12px' }}
+              height={500}
             />
           </div>
 

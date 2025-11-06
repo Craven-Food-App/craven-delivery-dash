@@ -118,116 +118,205 @@ export async function getDocumentTemplate(
 }
 
 /**
- * Render document HTML - tries database template first, falls back to hardcoded
+ * Check if template content is a placeholder or empty
+ */
+function isPlaceholderTemplate(htmlContent: string): boolean {
+  if (!htmlContent || htmlContent.trim().length < 50) {
+    return true;
+  }
+  
+  // Check for placeholder comments
+  const placeholderPatterns = [
+    /<!--\s*Template will be loaded/i,
+    /<!--\s*placeholder/i,
+    /<!--\s*edit this template/i,
+    /placeholder content/i,
+    /^<!--[\s\S]*?-->$/m, // Only HTML comments
+  ];
+  
+  return placeholderPatterns.some(pattern => pattern.test(htmlContent));
+}
+
+/**
+ * Check if template has expected structure for employment_agreement
+ * This helps detect if database template is a simplified/wrong version
+ */
+function hasExpectedStructure(templateId: string, htmlContent: string): boolean {
+  const expectedSections: Record<string, string[]> = {
+    'employment_agreement': [
+      'Duties',
+      'Equity',
+      'Compensation',
+      'Confidentiality',
+      'At-Will',
+      'Restrictive',
+      'Dispute Resolution',
+    ],
+    'board_resolution': [
+      'WHEREAS',
+      'RESOLVED',
+      'Board Resolution',
+    ],
+    'stock_issuance': [
+      'Stock Subscription',
+      'share',
+      'purchase',
+    ],
+    'offer_letter': [
+      'offer',
+      'position',
+      'salary',
+      'equity',
+    ],
+  };
+
+  const sections = expectedSections[templateId];
+  if (!sections) return true; // Unknown template type, assume valid
+
+  // Check if at least 50% of expected sections are present
+  const foundSections = sections.filter(section => 
+    htmlContent.toLowerCase().includes(section.toLowerCase())
+  );
+  
+  return foundSections.length >= Math.ceil(sections.length * 0.5);
+}
+
+/**
+ * Render document HTML - REQUIRES database template (no hardcoded fallback)
+ * All document templates must be provided via Template Manager
  */
 export async function renderDocumentHtml(
   templateId: string,
   data: Record<string, any>,
   usageContext?: string
 ): Promise<string> {
-  // Try database template first
+  // Require database template - no hardcoded fallback
   const dbTemplate = await getDocumentTemplate(templateId, usageContext);
   
-  if (dbTemplate) {
-    // Replace placeholders in database template
-    let html = dbTemplate.html_content;
-    Object.keys(data).forEach((key) => {
-      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-      html = html.replace(regex, String(data[key] || ''));
-    });
-    return html;
+  if (!dbTemplate) {
+    throw new Error(
+      `Document template '${templateId}' not found in database. ` +
+      `Please create this template via Template Manager in the Board Portal.`
+    );
   }
-
-  // Fallback to hardcoded template
-  return renderHtml(templateId, data);
+  
+  if (isPlaceholderTemplate(dbTemplate.html_content)) {
+    throw new Error(
+      `Document template '${templateId}' exists in database but is a placeholder. ` +
+      `Please update it with actual template content via Template Manager.`
+    );
+  }
+  
+  // Check if template has expected structure (not a simplified/wrong version)
+  if (!hasExpectedStructure(templateId, dbTemplate.html_content)) {
+    console.warn(
+      `Database template for ${templateId} appears to be simplified or incorrect. ` +
+      `Please verify the template content in Template Manager.`
+    );
+    // Continue anyway - user's template may have different structure
+  }
+  
+  // Replace placeholders in database template
+  // Handle multiple placeholder formats: {{key}}, ${key}, [key], {{ key }}, etc.
+  let html = dbTemplate.html_content;
+  
+  // Create a comprehensive data map with aliases for common field name variations
+  const dataMap: Record<string, string> = {};
+  
+  // First, add all original data
+  Object.keys(data).forEach((key) => {
+    dataMap[key] = String(data[key] || '');
+  });
+  
+  // Add common aliases to ensure placeholders are matched
+  const aliasMap: Record<string, string[]> = {
+    'full_name': ['executive_name', 'name', 'officer_name', 'employee_name', 'recipient_name', 'subscriber_name', 'counterparty_name'],
+    'company_name': ['company', 'corporation'],
+    'role': ['position', 'title', 'position_title', 'executive_title'],
+    'effective_date': ['date', 'appointment_date', 'grant_date', 'offer_date', 'start_date'],
+    'equity_percentage': ['equity_percent', 'ownership_percent', 'equity'],
+    'share_count': ['shares_issued', 'shares_total', 'shares'],
+    'price_per_share': ['strike_price', 'share_price'],
+    'annual_salary': ['annual_base_salary', 'base_salary', 'salary'],
+    'funding_trigger': ['funding_trigger_amount', 'deferral_trigger'],
+    'vesting_schedule': ['vesting_terms', 'vesting'],
+    'governing_law': ['governing_law_state', 'state_of_incorporation'],
+  };
+  
+  // Populate aliases
+  Object.keys(aliasMap).forEach((key) => {
+    if (dataMap[key]) {
+      aliasMap[key].forEach((alias) => {
+        if (!dataMap[alias]) {
+          dataMap[alias] = dataMap[key];
+        }
+      });
+    }
+  });
+  
+  // Also add reverse mappings (if alias exists, map to original)
+  Object.keys(aliasMap).forEach((key) => {
+    aliasMap[key].forEach((alias) => {
+      if (dataMap[alias] && !dataMap[key]) {
+        dataMap[key] = dataMap[alias];
+      }
+    });
+  });
+  
+  // Multiple passes to ensure all placeholders are replaced
+  for (let pass = 0; pass < 3; pass++) {
+    Object.keys(dataMap).forEach((key) => {
+      const value = dataMap[key];
+      
+      // Escape special regex characters in key
+      const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      
+      // Common placeholder formats - case-insensitive matching
+      const formats = [
+        // Double curly braces (most common): {{key}}, {{ key }}
+        { pattern: new RegExp(`\\{\\{${escapedKey}\\}\\}`, 'gi'), replace: value },
+        { pattern: new RegExp(`\\{\\{\\s*${escapedKey}\\s*\\}\\}`, 'gi'), replace: value },
+        // Single curly braces: {key}
+        { pattern: new RegExp(`\\{${escapedKey}\\}`, 'gi'), replace: value },
+        { pattern: new RegExp(`\\{\\s*${escapedKey}\\s*\\}`, 'gi'), replace: value },
+        // Dollar sign format: ${key}, $key
+        { pattern: new RegExp(`\\$\\{${escapedKey}\\}`, 'gi'), replace: value },
+        { pattern: new RegExp(`\\$\\{\\s*${escapedKey}\\s*\\}`, 'gi'), replace: value },
+        { pattern: new RegExp(`\\$\\{data\\.${escapedKey}\\}`, 'gi'), replace: value },
+        { pattern: new RegExp(`\\$\\{data\\[['"]${escapedKey}['"]\\]\\}`, 'gi'), replace: value },
+        // Square brackets: [key]
+        { pattern: new RegExp(`\\[${escapedKey}\\]`, 'gi'), replace: value },
+        { pattern: new RegExp(`\\[\\s*${escapedKey}\\s*\\]`, 'gi'), replace: value },
+        // Case variations for all formats
+        { pattern: new RegExp(`\\{\\{${escapedKey.toLowerCase()}\\}\\}`, 'gi'), replace: value },
+        { pattern: new RegExp(`\\{\\{${escapedKey.toUpperCase()}\\}\\}`, 'gi'), replace: value },
+        { pattern: new RegExp(`\\$\\{${escapedKey.toLowerCase()}\\}`, 'gi'), replace: value },
+        { pattern: new RegExp(`\\$\\{${escapedKey.toUpperCase()}\\}`, 'gi'), replace: value },
+      ];
+      
+      formats.forEach(({ pattern, replace }) => {
+        html = html.replace(pattern, replace);
+      });
+    });
+  }
+  
+  // Log any remaining placeholders for debugging (but don't remove them - they might be intentional)
+  const remainingPlaceholders = html.match(/\{\{[\w\s]+\}\}/g) || [];
+  if (remainingPlaceholders.length > 0) {
+    console.warn(`Template ${templateId} has ${remainingPlaceholders.length} unmatched placeholders:`, remainingPlaceholders.slice(0, 10));
+    console.warn('Available data keys:', Object.keys(dataMap).slice(0, 20));
+  }
+  
+  return html;
 }
 
 /**
  * Seed initial email templates from hardcoded values
+ * NOTE: This function is deprecated - email templates should be created/imported via Template Manager UI
  */
 export async function seedEmailTemplates(): Promise<void> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
-  const initialTemplates = [
-    {
-      template_key: 'executive_document_email',
-      name: 'Executive Document Email',
-      category: 'executive',
-      subject: 'Your C-Suite Executive Documents - Crave\'n, Inc.',
-      html_content: `<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  </head>
-  <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 0;">
-      <tr>
-        <td align="center">
-          <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-            <tr>
-              <td style="background: linear-gradient(135deg, #ff7a45 0%, #ff8c00 100%); padding: 40px; text-align: center; border-radius: 8px 8px 0 0;">
-                <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">📄 {{documentTitle}}</h1>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 40px;">
-                <h2 style="margin: 0 0 20px 0; color: #1a1a1a; font-size: 24px;">Dear {{executiveName}},</h2>
-                <p style="margin: 0 0 20px 0; color: #4a4a4a; font-size: 16px; line-height: 1.6;">
-                  Please find your <strong>{{documentTitle}}</strong> attached below. This document is part of your C-Suite executive documentation package.
-                </p>
-                <div style="background-color: #e3f2fd; border-left: 4px solid #2196f3; padding: 20px; border-radius: 6px; margin: 30px 0;">
-                  <h3 style="margin: 0 0 15px 0; color: #1976d2; font-size: 18px;">✍️ Digital Signature Portal</h3>
-                  <p style="margin: 0 0 15px 0; color: #4a4a4a; font-size: 15px; line-height: 1.6;">
-                    To sign these documents digitally, please log in to your secure Executive Document Portal.
-                  </p>
-                  <div style="text-align: center; margin: 20px 0 0 0;">
-                    <a href="{{portalUrl}}/executive-portal/documents" 
-                       style="display: inline-block; background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);">
-                      Access Document Portal
-                    </a>
-                  </div>
-                </div>
-                <p style="margin: 30px 0 0 0; color: #4a4a4a; font-size: 14px; line-height: 1.6;">
-                  Best regards,<br/>
-                  <strong>Crave'n HR Team</strong>
-                </p>
-              </td>
-            </tr>
-            <tr>
-              <td style="background-color: #f9f9f9; padding: 30px; text-align: center; border-radius: 0 0 8px 8px;">
-                <p style="margin: 0; color: #898989; font-size: 12px;">
-                  © ${new Date().getFullYear()} Crave'n, Inc. All rights reserved.
-                </p>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>`,
-      variables: ['documentTitle', 'executiveName', 'portalUrl'],
-      description: 'Email template for sending executive documents',
-    },
-  ];
-
-  for (const template of initialTemplates) {
-    // Check if template already exists
-    const { data: existing } = await supabase
-      .from('email_templates')
-      .select('id')
-      .eq('template_key', template.template_key)
-      .single();
-
-    if (!existing) {
-      await supabase.from('email_templates').insert({
-        ...template,
-        created_by: user.id,
-      });
-    }
-  }
+  console.warn('seedEmailTemplates() is deprecated. Please use Template Manager UI to create/import email templates.');
+  // No hardcoded templates - user must provide templates via database
 }
 
 /**

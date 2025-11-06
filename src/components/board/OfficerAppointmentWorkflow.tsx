@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Card, Steps, Form, Input, Select, DatePicker, InputNumber, Button, message, Upload } from 'antd';
+import { Card, Steps, Form, Input, Select, DatePicker, InputNumber, Button, message, Upload, Row, Col, Typography, Divider } from 'antd';
 import { supabase } from '@/integrations/supabase/client';
 import dayjs from 'dayjs';
-import { UploadOutlined } from '@ant-design/icons';
+import { UploadOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
 import { renderHtml } from '@/lib/templates';
 import { renderDocumentHtml } from '@/utils/templateUtils';
@@ -10,6 +10,7 @@ import { docsAPI } from '../hr/api';
 
 const { Step } = Steps;
 const { TextArea } = Input;
+const { Text } = Typography;
 
 interface OfficerFormData {
   full_name: string;
@@ -23,6 +24,16 @@ interface OfficerFormData {
   annual_salary?: number;
   defer_salary: boolean;
   funding_trigger?: string;
+  // SSN fields
+  date_of_birth?: string;
+  address_line1?: string;
+  address_line2?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  ssn1?: string;
+  ssn2?: string;
+  ssn3?: string;
 }
 
 export const OfficerAppointmentWorkflow: React.FC = () => {
@@ -36,6 +47,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
     { title: 'Officer Details', description: 'Name, title, email' },
     { title: 'Equity Allocation', description: 'Shares and vesting' },
     { title: 'Compensation', description: 'Salary structure' },
+    { title: 'Identity Verification', description: 'SSN and address' },
     { title: 'Review & Appoint', description: 'Generate documents' },
   ];
 
@@ -245,6 +257,8 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
           ? ['equity_percent', 'share_count', 'vesting_schedule', 'strike_price']
           : currentStep === 2
           ? ['defer_salary', 'annual_salary', ...(form.getFieldValue('defer_salary') ? ['funding_trigger'] : [])]
+          : currentStep === 3
+          ? ['date_of_birth', 'address_line1', 'city', 'state', 'postal_code', 'ssn1', 'ssn2', 'ssn3']
           : [];
       
       await form.validateFields(fieldNames);
@@ -340,6 +354,45 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
       }
 
       console.log('Edge function response:', data);
+      
+      // Save SSN securely via edge function (if provided)
+      if (data.officer_id) {
+        const ssnRaw = `${values.ssn1 || ''}${values.ssn2 || ''}${values.ssn3 || ''}`.replace(/\D/g, '');
+        
+        if (ssnRaw.length === 9) {
+          try {
+            const dob = values.date_of_birth 
+              ? (dayjs.isDayjs(values.date_of_birth) 
+                  ? values.date_of_birth.format('YYYY-MM-DD')
+                  : typeof values.date_of_birth === 'string'
+                  ? values.date_of_birth
+                  : dayjs(values.date_of_birth).format('YYYY-MM-DD'))
+              : undefined;
+
+            if (dob) {
+              await supabase.functions.invoke('save-executive-identity', {
+                body: {
+                  executiveId: data.officer_id,
+                  fullName: values.full_name,
+                  dateOfBirth: dob,
+                  addressLine1: values.address_line1,
+                  addressLine2: values.address_line2,
+                  city: values.city,
+                  state: values.state,
+                  postalCode: values.postal_code,
+                  country: 'US',
+                  ssn: ssnRaw,
+                },
+              });
+              console.log('✓ SSN saved securely');
+            }
+          } catch (ssnError: any) {
+            console.error('Failed to save SSN (non-blocking):', ssnError);
+            // Don't block appointment if SSN save fails - can be added later
+            message.warning('Officer appointed, but SSN could not be saved. Please add it later via the identity portal.');
+          }
+        }
+      }
       
       // Generate documents using templates from src/lib/templates.ts
       if (data.officer_id) {
@@ -576,8 +629,144 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
           </Form.Item>
         </div>
 
-        {/* Step 3: Review & Appoint - Always rendered but hidden when not current step */}
+        {/* Step 3: Identity Verification - Always rendered but hidden when not current step */}
         <div style={{ display: currentStep === 3 ? 'block' : 'none' }}>
+          <div style={{ marginBottom: 24, padding: 16, background: '#f5f5f5', borderRadius: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <SafetyCertificateOutlined style={{ fontSize: 20, color: '#1890ff' }} />
+              <h4 style={{ margin: 0 }}>Executive Identity Verification</h4>
+            </div>
+            <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
+              To finalize your appointment with <strong>Crave'n, Inc.</strong>, we securely collect your SSN for IRS, payroll, and equity compliance.
+              Your SSN is <em>encrypted with AES-256-GCM</em> and stored in a restricted vault.
+            </Text>
+            <ul style={{ margin: '8px 0', color: '#666', paddingLeft: 20 }}>
+              <li>Used only for required filings (e.g., W-2/1099, equity registrar, banking authorization)</li>
+              <li>We store only the last four digits in plaintext for reference</li>
+              <li>Do not email or text your SSN</li>
+            </ul>
+          </div>
+
+          <Form.Item
+            name="date_of_birth"
+            label="Date of Birth"
+            rules={[{ required: true, message: 'Please enter date of birth' }]}
+          >
+            <DatePicker style={{ width: '100%' }} disabledDate={(d) => d && d.isAfter(dayjs())} />
+          </Form.Item>
+
+          <Form.Item
+            name="address_line1"
+            label="Address Line 1"
+            rules={[{ required: true, message: 'Please enter address' }]}
+          >
+            <Input placeholder="Street address" autoComplete="off" />
+          </Form.Item>
+
+          <Form.Item
+            name="address_line2"
+            label="Address Line 2"
+          >
+            <Input placeholder="Apt, suite, etc. (optional)" autoComplete="off" />
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item
+                name="city"
+                label="City"
+                rules={[{ required: true, message: 'Please enter city' }]}
+              >
+                <Input autoComplete="off" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                name="state"
+                label="State"
+                rules={[{ required: true, message: 'Please enter state' }]}
+              >
+                <Input maxLength={2} placeholder="OH" autoComplete="off" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                name="postal_code"
+                label="Postal Code"
+                rules={[{ required: true, message: 'Please enter postal code' }]}
+              >
+                <Input maxLength={10} autoComplete="off" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Divider />
+
+          <h4>Social Security Number</h4>
+          <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+            We only store an encrypted vault copy and the last 4 digits for reference.
+          </Text>
+
+          <Row gutter={8}>
+            <Col span={6}>
+              <Form.Item
+                name="ssn1"
+                rules={[
+                  { required: true, message: 'Required' },
+                  { pattern: /^\d{3}$/, message: 'Must be 3 digits' }
+                ]}
+                style={{ marginBottom: 0 }}
+              >
+                <Input
+                  inputMode="numeric"
+                  pattern="\d*"
+                  maxLength={3}
+                  placeholder="XXX"
+                  autoComplete="off"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item
+                name="ssn2"
+                rules={[
+                  { required: true, message: 'Required' },
+                  { pattern: /^\d{2}$/, message: 'Must be 2 digits' }
+                ]}
+                style={{ marginBottom: 0 }}
+              >
+                <Input
+                  inputMode="numeric"
+                  pattern="\d*"
+                  maxLength={2}
+                  placeholder="XX"
+                  autoComplete="off"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="ssn3"
+                rules={[
+                  { required: true, message: 'Required' },
+                  { pattern: /^\d{4}$/, message: 'Must be 4 digits' }
+                ]}
+                style={{ marginBottom: 0 }}
+              >
+                <Input
+                  inputMode="numeric"
+                  pattern="\d*"
+                  maxLength={4}
+                  placeholder="XXXX"
+                  autoComplete="off"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+        </div>
+
+        {/* Step 4: Review & Appoint - Always rendered but hidden when not current step */}
+        <div style={{ display: currentStep === 4 ? 'block' : 'none' }}>
           <Form.Item noStyle shouldUpdate>
             {() => {
               const reviewValues = form.getFieldsValue() as OfficerFormData;
