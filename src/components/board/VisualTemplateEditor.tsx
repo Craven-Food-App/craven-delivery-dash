@@ -41,6 +41,30 @@ export const PLACEHOLDER_CATEGORIES = {
       { key: 'position_title', label: 'Position Title', description: 'Full position title' },
       { key: 'executive_title', label: 'Executive Title', description: 'Executive title' },
       { key: 'officer_title', label: 'Officer Title', description: 'Officer title' },
+      // Executive Role Codes
+      { key: 'ceo_name', label: 'CEO Name', description: 'Chief Executive Officer name' },
+      { key: 'cfo_name', label: 'CFO Name', description: 'Chief Financial Officer name' },
+      { key: 'coo_name', label: 'COO Name', description: 'Chief Operating Officer name' },
+      { key: 'cto_name', label: 'CTO Name', description: 'Chief Technology Officer name' },
+      { key: 'cxo_name', label: 'CXO Name', description: 'Chief Experience Officer name' },
+      // Executive Equity by Role
+      { key: 'equity_ceo', label: 'CEO Equity %', description: 'CEO equity percentage' },
+      { key: 'equity_cfo', label: 'CFO Equity %', description: 'CFO equity percentage' },
+      { key: 'equity_coo', label: 'COO Equity %', description: 'COO equity percentage' },
+      { key: 'equity_cto', label: 'CTO Equity %', description: 'CTO equity percentage' },
+      { key: 'equity_cxo', label: 'CXO Equity %', description: 'CXO equity percentage' },
+      // Full Role Names
+      { key: 'chief_executive_officer', label: 'Chief Executive Officer', description: 'Full CEO title' },
+      { key: 'chief_financial_officer', label: 'Chief Financial Officer', description: 'Full CFO title' },
+      { key: 'chief_operating_officer', label: 'Chief Operating Officer', description: 'Full COO title' },
+      { key: 'chief_technology_officer', label: 'Chief Technology Officer', description: 'Full CTO title' },
+      { key: 'chief_experience_officer', label: 'Chief Experience Officer', description: 'Full CXO title' },
+      // Other Roles
+      { key: 'board_member', label: 'Board Member', description: 'Board member role' },
+      { key: 'advisor', label: 'Advisor', description: 'Advisor role' },
+      { key: 'department', label: 'Department', description: 'Executive department' },
+      { key: 'reporting_to_title', label: 'Reporting To Title', description: 'Who they report to' },
+      { key: 'work_location', label: 'Work Location', description: 'Work location' },
     ],
   },
   equity: {
@@ -159,6 +183,30 @@ export const VisualTemplateEditor: React.FC<VisualTemplateEditorProps> = ({
       position_title: 'Chief Executive Officer',
       executive_title: 'CEO',
       officer_title: 'Chief Executive Officer',
+      // Executive Role Names
+      ceo_name: 'John Doe',
+      cfo_name: '',
+      coo_name: '',
+      cto_name: '',
+      cxo_name: '',
+      // Executive Equity by Role
+      equity_ceo: '15',
+      equity_cfo: '0',
+      equity_coo: '0',
+      equity_cto: '0',
+      equity_cxo: '0',
+      // Full Role Names
+      chief_executive_officer: 'Chief Executive Officer',
+      chief_financial_officer: 'Chief Financial Officer',
+      chief_operating_officer: 'Chief Operating Officer',
+      chief_technology_officer: 'Chief Technology Officer',
+      chief_experience_officer: 'Chief Experience Officer',
+      // Other Roles
+      board_member: 'Board Member',
+      advisor: 'Advisor',
+      department: 'Executive',
+      reporting_to_title: 'Board of Directors',
+      work_location: 'Cleveland, Ohio',
       // Equity
       equity_percentage: '15',
       equity_percent: '15',

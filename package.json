@@ -35,7 +35,8 @@
     "analyze": "vite-bundle-analyzer",
     "clean": "rm -rf dist node_modules/.vite",
     "postinstall": "cap sync",
-    "load:pre-incorporation-template": "tsx scripts/load-pre-incorporation-template.ts"
+    "load:pre-incorporation-template": "tsx scripts/load-pre-incorporation-template.ts",
+    "reset-exec-password": "tsx scripts/reset-executive-password.ts"
   },
   "dependencies": {
     "@ant-design/charts": "^2.6.6",

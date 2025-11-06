@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { LogIn, User, Lock, Loader2 } from 'lucide-react';
+import { LogIn, User, Lock, Loader2, Mail, ArrowLeft } from 'lucide-react';
 // Import the background image
 import hubBackgroundImage from '@/assets/hub_background.png';
 
@@ -12,6 +12,14 @@ const BusinessAuth: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState(null);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [showUpdatePassword, setShowUpdatePassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const { toast } = useToast();
 
   // Get redirect parameter from URL
@@ -38,15 +46,28 @@ const BusinessAuth: React.FC = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
-          setUser(session.user);
-          toast({
-            title: "Welcome!",
-            description: "You've been signed in successfully.",
-          });
-          const redirectPath = getRedirectPath();
-          setTimeout(() => {
-            window.location.href = redirectPath;
-          }, 1000);
+          // Check if this is a password recovery session
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const isRecovery = hashParams.get('type') === 'recovery';
+          
+          if (isRecovery) {
+            // This is a password reset flow, show update password form
+            setShowUpdatePassword(true);
+            setShowResetPassword(false);
+            setResetSent(false);
+            setUser(null); // Don't redirect yet
+          } else {
+            // Normal sign in
+            setUser(session.user);
+            toast({
+              title: "Welcome!",
+              description: "You've been signed in successfully.",
+            });
+            const redirectPath = getRedirectPath();
+            setTimeout(() => {
+              window.location.href = redirectPath;
+            }, 1000);
+          }
         }
       }
     );
@@ -107,6 +128,173 @@ const BusinessAuth: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  // --- Password Reset ---
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!resetEmail) {
+      toast({
+        title: "Error",
+        description: "Please enter your email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsResetting(true);
+    setError(null);
+
+    try {
+      // Determine the correct redirect URL based on environment
+      // Priority: Environment variable > Production detection > Current origin
+      const getRedirectUrl = () => {
+        // Check for environment variable first (useful for development/testing)
+        const siteUrl = import.meta.env.VITE_SITE_URL || import.meta.env.VITE_APP_URL;
+        if (siteUrl) {
+          return `${siteUrl}/business-auth?reset=true`;
+        }
+        
+        const hostname = window.location.hostname;
+        
+        // Production URLs - always use production URL for password reset emails
+        if (hostname.includes('hq.cravenusa.com') || hostname.includes('cravenusa.com')) {
+          return `https://hq.cravenusa.com/business-auth?reset=true`;
+        }
+        
+        // Lovable project URL (if deployed there)
+        if (hostname.includes('lovableproject.com')) {
+          return `https://${hostname}/business-auth?reset=true`;
+        }
+        
+        // Development - use production URL so email links work
+        // For local testing, set VITE_SITE_URL environment variable to your production URL
+        // or use a tunnel service like ngrok
+        return `https://hq.cravenusa.com/business-auth?reset=true`;
+      };
+      
+      const redirectUrl = getRedirectUrl();
+      
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: redirectUrl,
+      });
+
+      if (resetError) {
+        throw resetError;
+      }
+
+      setResetSent(true);
+      toast({
+        title: "Password Reset Email Sent",
+        description: "Please check your email for password reset instructions.",
+      });
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      setError(error.message || 'Failed to send password reset email');
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to send password reset email',
+        variant: "destructive",
+      });
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  // Handle password update after clicking reset link
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newPassword || !confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Please enter both password fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    setError(null);
+
+    try {
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      toast({
+        title: "Password Updated",
+        description: "Your password has been successfully updated. You can now sign in.",
+      });
+
+      // Clear the form and show login
+      setShowUpdatePassword(false);
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowResetPassword(false);
+      setResetSent(false);
+      
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, '/business-auth');
+    } catch (error: any) {
+      console.error('Password update error:', error);
+      setError(error.message || 'Failed to update password');
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to update password',
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
+  // Check if this is a password reset callback
+  useEffect(() => {
+    const checkResetSession = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      
+      // Check if URL indicates password reset
+      const isResetFlow = urlParams.get('reset') === 'true' || hashParams.get('type') === 'recovery';
+      
+      if (isResetFlow) {
+        // Check if user has a valid session from the reset link
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          // User clicked the reset link and has a valid session, show password update form
+          setShowUpdatePassword(true);
+          setShowResetPassword(false);
+          setResetSent(false);
+        }
+      }
+    };
+    
+    checkResetSession();
+  }, []);
 
   if (user) {
     return (
@@ -170,7 +358,166 @@ const BusinessAuth: React.FC = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 md:space-y-5">
+          {resetSent && (
+            <div 
+              className="mb-4 p-2.5 sm:p-3 rounded-lg border"
+              style={{
+                background: 'rgba(34, 197, 94, 0.2)',
+                borderColor: 'rgba(34, 197, 94, 0.4)',
+              }}
+            >
+              <p className="text-xs sm:text-sm text-green-400">
+                Password reset email sent! Please check your inbox and follow the instructions to reset your password.
+              </p>
+            </div>
+          )}
+
+          {showUpdatePassword ? (
+            // Update Password Form (after clicking email link)
+            <form onSubmit={handleUpdatePassword} className="space-y-3 sm:space-y-4 md:space-y-5">
+              <div>
+                <label htmlFor="new-password" className="sr-only">New Password</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-2.5 sm:pl-3 pointer-events-none">
+                    <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-gray-300" />
+                  </div>
+                  <input
+                    id="new-password"
+                    name="new-password"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    className="w-full pl-8 sm:pl-9 md:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 md:py-3 text-sm sm:text-base border rounded-lg focus:ring-[#ff7a45] focus:border-[#ff7a45] transition duration-150 text-white placeholder:text-gray-400"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      borderColor: 'rgba(255, 255, 255, 0.2)',
+                    }}
+                    disabled={isUpdatingPassword}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="confirm-password" className="sr-only">Confirm Password</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-2.5 sm:pl-3 pointer-events-none">
+                    <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-gray-300" />
+                  </div>
+                  <input
+                    id="confirm-password"
+                    name="confirm-password"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    className="w-full pl-8 sm:pl-9 md:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 md:py-3 text-sm sm:text-base border rounded-lg focus:ring-[#ff7a45] focus:border-[#ff7a45] transition duration-150 text-white placeholder:text-gray-400"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      borderColor: 'rgba(255, 255, 255, 0.2)',
+                    }}
+                    disabled={isUpdatingPassword}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isUpdatingPassword}
+                className={`w-full flex justify-center items-center py-2 sm:py-2.5 md:py-3 px-3 sm:px-4 border border-transparent rounded-lg text-white text-sm sm:text-base font-semibold shadow-lg transition duration-200 ease-in-out
+                  ${isUpdatingPassword
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-[#ff7a45] hover:bg-[#ff5a1f] focus:outline-none focus:ring-4 focus:ring-[#ff7a45] focus:ring-opacity-50 transform hover:scale-[1.01] active:scale-[0.98]'
+                  }`}
+              >
+                {isUpdatingPassword ? (
+                  <>
+                    <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2 animate-spin" />
+                    <span>Updating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
+                    Update Password
+                  </>
+                )}
+              </button>
+            </form>
+          ) : showResetPassword && !resetSent ? (
+            // Password Reset Form
+            <form onSubmit={handleResetPassword} className="space-y-3 sm:space-y-4 md:space-y-5">
+              <div>
+                <label htmlFor="reset-email" className="sr-only">Email</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-2.5 sm:pl-3 pointer-events-none">
+                    <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-gray-300" />
+                  </div>
+                  <input
+                    id="reset-email"
+                    name="reset-email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    placeholder="Enter your email address"
+                    className="w-full pl-8 sm:pl-9 md:pl-10 pr-3 sm:pr-4 py-2 sm:py-2.5 md:py-3 text-sm sm:text-base border rounded-lg focus:ring-[#ff7a45] focus:border-[#ff7a45] transition duration-150 text-white placeholder:text-gray-400"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      borderColor: 'rgba(255, 255, 255, 0.2)',
+                    }}
+                    disabled={isResetting}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isResetting}
+                className={`w-full flex justify-center items-center py-2 sm:py-2.5 md:py-3 px-3 sm:px-4 border border-transparent rounded-lg text-white text-sm sm:text-base font-semibold shadow-lg transition duration-200 ease-in-out
+                  ${isResetting
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-[#ff7a45] hover:bg-[#ff5a1f] focus:outline-none focus:ring-4 focus:ring-[#ff7a45] focus:ring-opacity-50 transform hover:scale-[1.01] active:scale-[0.98]'
+                  }`}
+              >
+                {isResetting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2 animate-spin" />
+                    <span>Sending...</span>
+                  </>
+                ) : (
+                  <>
+                    <Mail className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
+                    Send Reset Link
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowResetPassword(false);
+                  setResetEmail('');
+                  setError(null);
+                  setResetSent(false);
+                }}
+                className="w-full flex justify-center items-center py-2 sm:py-2.5 md:py-3 px-3 sm:px-4 border rounded-lg text-gray-300 text-sm sm:text-base font-medium hover:text-white transition duration-150"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                }}
+              >
+                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 sm:mr-2" />
+                Back to Sign In
+              </button>
+            </form>
+          ) : (
+            // Login Form
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 md:space-y-5">
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="sr-only">Email</label>
@@ -246,37 +593,38 @@ const BusinessAuth: React.FC = () => {
               )}
             </button>
           </form>
+          )}
 
           {/* Footer Links */}
-          <div className="mt-3 sm:mt-4 md:mt-6 text-center text-xs sm:text-sm">
-            <a 
-              href="#" 
-              onClick={(e) => {
-                e.preventDefault();
-                toast({
-                  title: "Password Reset",
-                  description: "Please contact your HR department for password reset assistance.",
-                });
-              }}
-              className="font-medium text-[#ff7a45] hover:text-[#ff9c6e] transition duration-150 block sm:inline"
-            >
-              Forgot Password?
-            </a>
-            <span className="mx-2 text-gray-400 hidden sm:inline">|</span>
-            <a 
-              href="#" 
-              onClick={(e) => {
-                e.preventDefault();
-                toast({
-                  title: "Support",
-                  description: "Contact IT support at support@cravenusa.com",
-                });
-              }}
-              className="font-medium text-gray-300 hover:text-[#ff7a45] transition duration-150 block sm:inline mt-2 sm:mt-0"
-            >
-              Need Support?
-            </a>
-          </div>
+          {!showResetPassword && !resetSent && !showUpdatePassword && (
+            <div className="mt-3 sm:mt-4 md:mt-6 text-center text-xs sm:text-sm">
+              <a 
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowResetPassword(true);
+                  setResetEmail(email); // Pre-fill with the email they entered
+                }}
+                className="font-medium text-[#ff7a45] hover:text-[#ff9c6e] transition duration-150 block sm:inline"
+              >
+                Forgot Password?
+              </a>
+              <span className="mx-2 text-gray-400 hidden sm:inline">|</span>
+              <a 
+                href="#" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  toast({
+                    title: "Support",
+                    description: "Contact IT support at support@cravenusa.com",
+                  });
+                }}
+                className="font-medium text-gray-300 hover:text-[#ff7a45] transition duration-150 block sm:inline mt-2 sm:mt-0"
+              >
+                Need Support?
+              </a>
+            </div>
+          )}
         </div>
       </div>
     </div>
