@@ -26,6 +26,7 @@ export async function fixTemplatePlaceholders(): Promise<{ updated: number; erro
       pattern: RegExp | string; 
       replacement: string; 
       description: string;
+      check?: (text: string, match: string, offset: number) => boolean;
     }> = [
       // Names - replace "John Doe", "Jane Doe", etc. with {{full_name}}
       { 

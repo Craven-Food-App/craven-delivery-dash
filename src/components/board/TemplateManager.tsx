@@ -158,8 +158,14 @@ export const TemplateManager: React.FC = () => {
       if (emailRes.error) throw emailRes.error;
       if (docRes.error) throw docRes.error;
 
-      setEmailTemplates(emailRes.data || []);
-      setDocumentTemplates(docRes.data || []);
+      setEmailTemplates((emailRes.data || []).map(t => ({ 
+        ...t, 
+        variables: Array.isArray(t.variables) ? t.variables.map(v => String(v)) : [] 
+      })));
+      setDocumentTemplates((docRes.data || []).map(t => ({ 
+        ...t, 
+        placeholders: Array.isArray(t.placeholders) ? t.placeholders.map(p => String(p)) : [] 
+      })));
     } catch (error: any) {
       console.error('Error fetching templates:', error);
       message.error('Failed to load templates');
@@ -176,7 +182,10 @@ export const TemplateManager: React.FC = () => {
         .order('usage_context');
 
       if (error) throw error;
-      setTemplateUsage(data || []);
+      setTemplateUsage((data || []).map(t => ({
+        ...t,
+        template_type: (t.template_type === 'email' || t.template_type === 'document') ? t.template_type : 'document'
+      })) as TemplateUsage[]);
     } catch (error: any) {
       console.error('Error fetching template usage:', error);
     }
@@ -401,10 +410,10 @@ export const TemplateManager: React.FC = () => {
             'state'
           ]);
 
-        // Fetch executives for directors and officers
+        // Fetch executives for directors and officers (exec_users doesn't have email column directly)
         const { data: executivesData } = await supabase
           .from('exec_users')
-          .select('full_name, email, role, title')
+          .select('role, title, user_id')
           .order('created_at', { ascending: true });
 
         // Build data map from company settings
@@ -424,26 +433,26 @@ export const TemplateManager: React.FC = () => {
         const cxo = executivesData?.find(e => e.role === 'cxo');
         const directors = executivesData?.slice(0, 2) || [];
 
-        dataMap.director_1_name = directors[0]?.full_name || dataMap.incorporator_name || 'Director 1';
+        dataMap.director_1_name = directors[0]?.title || dataMap.incorporator_name || 'Director 1';
         dataMap.director_1_address = dataMap.registered_office || dataMap.incorporator_address || '';
-        dataMap.director_1_email = directors[0]?.email || dataMap.incorporator_email || '';
-        dataMap.director_2_name = directors[1]?.full_name || 'Director 2';
+        dataMap.director_1_email = dataMap.incorporator_email || '';
+        dataMap.director_2_name = directors[1]?.title || 'Director 2';
         dataMap.director_2_address = dataMap.registered_office || '';
-        dataMap.director_2_email = directors[1]?.email || 'board@cravenusa.com';
+        dataMap.director_2_email = 'board@cravenusa.com';
 
         // Populate officers
-        dataMap.officer_1_name = ceo?.full_name || dataMap.incorporator_name || 'CEO Name';
+        dataMap.officer_1_name = ceo?.title || dataMap.incorporator_name || 'CEO Name';
         dataMap.officer_1_title = 'Chief Executive Officer (CEO)';
-        dataMap.officer_1_email = ceo?.email || dataMap.incorporator_email || '';
-        dataMap.officer_2_name = cfo?.full_name || '';
+        dataMap.officer_1_email = dataMap.incorporator_email || '';
+        dataMap.officer_2_name = cfo?.title || '';
         dataMap.officer_2_title = 'Chief Financial Officer (CFO)';
-        dataMap.officer_2_email = cfo?.email || '';
-        dataMap.officer_3_name = cxo?.full_name || '';
+        dataMap.officer_2_email = '';
+        dataMap.officer_3_name = cxo?.title || '';
         dataMap.officer_3_title = 'Chief Experience Officer (CXO)';
-        dataMap.officer_3_email = cxo?.email || '';
-        dataMap.officer_4_name = ceo?.full_name || dataMap.incorporator_name || 'Corporate Secretary';
+        dataMap.officer_3_email = '';
+        dataMap.officer_4_name = ceo?.title || dataMap.incorporator_name || 'Corporate Secretary';
         dataMap.officer_4_title = 'Corporate Secretary';
-        dataMap.officer_4_email = ceo?.email || dataMap.incorporator_email || '';
+        dataMap.officer_4_email = dataMap.incorporator_email || '';
 
         // Populate appointees (same as officers)
         dataMap.appointee_1_name = dataMap.officer_1_name;
@@ -603,7 +612,7 @@ export const TemplateManager: React.FC = () => {
       render: (vars: string[]) => (
         <Space wrap>
           {vars?.slice(0, 3).map((v) => (
-            <Tag key={v} size="small">{`{{${v}}}`}</Tag>
+            <Tag key={v}>{`{{${v}}}`}</Tag>
           ))}
           {vars?.length > 3 && <Text type="secondary">+{vars.length - 3} more</Text>}
         </Space>
@@ -682,7 +691,7 @@ export const TemplateManager: React.FC = () => {
       render: (placeholders: string[]) => (
         <Space wrap>
           {placeholders?.slice(0, 3).map((p) => (
-            <Tag key={p} size="small">{`{{${p}}}`}</Tag>
+            <Tag key={p}>{`{{${p}}}`}</Tag>
           ))}
           {placeholders?.length > 3 && <Text type="secondary">+{placeholders.length - 3} more</Text>}
         </Space>

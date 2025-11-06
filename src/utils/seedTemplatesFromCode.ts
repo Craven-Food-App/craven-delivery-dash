@@ -63,8 +63,6 @@ const sampleData: Record<string, any> = {
   share_type: 'Common Stock',
   total_grant_value: '$100',
   total_payment: '$10.00',
-  cfo_name: 'Jane Smith',
-  cfo_email: 'jane.smith@example.com',
   company_address: '123 Business St, City, State 12345',
   recipient_address: '123 Main St, City, State 12345',
   recipient_ssn: 'XXX-XX-1234',

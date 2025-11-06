@@ -69,13 +69,8 @@ export const ExecutiveDirectory: React.FC = () => {
 
       if (execUsersRes.error) throw execUsersRes.error;
 
-      // Create a map of user_id to email from profiles
+      // Create a map of user_id to email (executives already have emails in exec_users table)
       const emailMap = new Map<string, string>();
-      (profilesRes.data || []).forEach((profile: any) => {
-        if (profile.id && profile.email) {
-          emailMap.set(profile.id, profile.email);
-        }
-      });
 
       const executivesFromOfficers: Executive[] = (execUsersRes.data || []).map((officer: any) => ({
         id: officer.id,

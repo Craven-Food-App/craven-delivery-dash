@@ -7,7 +7,7 @@ interface GlassmorphicMetricCardProps {
   value: string;
   change: number;
   changeUnit: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ style?: React.CSSProperties; className?: string }>;
   iconColor: string;
   gradient?: string;
 }
@@ -82,7 +82,7 @@ export const GlassmorphicMetricCard: React.FC<GlassmorphicMetricCardProps> = ({
               border: `1px solid ${iconColor}40`,
             }}
           >
-            <Icon style={{ color: iconColor, fontSize: '24px' }} />
+            {React.createElement(Icon, { style: { color: iconColor, fontSize: '24px' } })}
           </div>
         </div>
         

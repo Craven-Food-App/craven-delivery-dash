@@ -402,7 +402,7 @@ export const VisualTemplateEditor: React.FC<VisualTemplateEditorProps> = ({
 
       <Tabs
         activeKey={activeTab}
-        onChange={setActiveTab}
+        onChange={(key) => setActiveTab(key as 'visual' | 'code' | 'preview')}
         type="card"
         size="small"
         style={{ margin: 0 }}

@@ -31,7 +31,7 @@ export async function getEmailTemplate(
           return {
             subject: template.subject,
             html_content: template.html_content,
-            variables: template.variables || [],
+            variables: Array.isArray(template.variables) ? template.variables.map(v => String(v)) : [],
           };
         }
       }
@@ -49,7 +49,7 @@ export async function getEmailTemplate(
       return {
         subject: template.subject,
         html_content: template.html_content,
-        variables: template.variables || [],
+        variables: Array.isArray(template.variables) ? template.variables.map(v => String(v)) : [],
       };
     }
   } catch (error) {
@@ -89,7 +89,7 @@ export async function getDocumentTemplate(
         if (template) {
           return {
             html_content: template.html_content,
-            placeholders: template.placeholders || [],
+            placeholders: Array.isArray(template.placeholders) ? template.placeholders.map(p => String(p)) : [],
           };
         }
       }
@@ -120,7 +120,7 @@ export async function getDocumentTemplate(
       }
       return {
         html_content: template.html_content,
-        placeholders: template.placeholders || [],
+        placeholders: Array.isArray(template.placeholders) ? template.placeholders.map(p => String(p)) : [],
       };
     }
   } catch (error: any) {

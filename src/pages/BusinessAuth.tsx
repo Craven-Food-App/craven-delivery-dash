@@ -36,7 +36,6 @@ const BusinessAuth: React.FC = () => {
       if (user) {
         // Check for temporary password
         if (user.user_metadata?.temp_password === true) {
-          setHasTempPassword(true);
           setShowUpdatePassword(true);
           setUser(null); // Don't redirect yet
         } else {

@@ -71,7 +71,7 @@ export const ExecutiveDocumentPortal: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setDocuments(data || []);
+      setDocuments((data || []).map(d => ({ ...d, signature_status: d.signature_status as 'pending' | 'signed' | 'expired' | 'declined' })));
     } catch (err: any) {
       console.error('Error fetching documents:', err);
       message.error('Failed to load documents');

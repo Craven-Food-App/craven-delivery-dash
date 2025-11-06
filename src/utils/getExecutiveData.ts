@@ -78,7 +78,7 @@ export async function getExecutiveData(userId?: string): Promise<ExecutiveData[]
     
     const { data: equityData, error: equityError } = await supabase
       .from('employee_equity')
-      .select('employee_id, shares_percentage, shares_total, equity_type, strike_price, vesting_schedule, grant_date')
+      .select('employee_id, shares_percentage, shares_total, strike_price, vesting_schedule, grant_date')
       .in('employee_id', employeeIds);
     
     if (equityError) {
@@ -139,7 +139,6 @@ export async function getExecutiveData(userId?: string): Promise<ExecutiveData[]
         strike_price: finalEquity?.strike_price,
         vesting_schedule: finalEquity?.vesting_schedule,
         grant_date: finalEquity?.grant_date,
-        equity_type: finalEquity?.equity_type,
       };
     });
 
