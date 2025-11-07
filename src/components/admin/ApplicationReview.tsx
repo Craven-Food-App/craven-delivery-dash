@@ -79,6 +79,40 @@ const ApplicationReview: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const fixJahnieceLocation = async () => {
+      try {
+        const { data: jahniece, error } = await supabase
+          .from('craver_applications')
+          .select('id, city, state')
+          .ilike('first_name', 'Jahniece')
+          .ilike('last_name', 'Regester')
+          .maybeSingle();
+
+        if (error) {
+          console.warn('Lookup for Jahniece failed:', error);
+          return;
+        }
+
+        if (jahniece && (jahniece.city !== 'New York' || jahniece.state !== 'NY')) {
+          const { error: updateError } = await supabase
+            .from('craver_applications')
+            .update({ city: 'New York', state: 'NY' })
+            .eq('id', jahniece.id);
+
+          if (!updateError) {
+            fetchApplications();
+            toast({ title: 'Location corrected', description: 'Updated Jahniece Regester to New York, NY.' });
+          }
+        }
+      } catch (e) {
+        console.error('Error correcting Jahniece location:', e);
+      }
+    };
+
+    fixJahnieceLocation();
+  }, []);
+
   const fetchApplications = async () => {
     try {
       const { data, error } = await supabase
