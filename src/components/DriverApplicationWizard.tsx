@@ -49,6 +49,7 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
     position: number;
     city: string;
     state: string;
+    regionName?: string | null;
   } | null>(null);
 
   if (isLoading) {
@@ -72,37 +73,38 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
   ) => {
     try {
       const normalizedZip = (zipCode || '').trim().replace(/[^0-9]/g, '');
-      if (!normalizedZip) return;
+      if (!normalizedZip) return null;
 
       const zipPrefix = normalizedZip.slice(0, 3);
-      if (!zipPrefix) return;
+      if (!zipPrefix) return null;
 
       // Try to find existing region by zip prefix
       const { data: existingRegion, error: regionError } = await supabase
         .from('regions')
-        .select('id')
+        .select('id, name')
         .eq('zip_prefix', zipPrefix)
         .maybeSingle();
 
       if (regionError) {
         console.error('Failed to look up region by ZIP prefix:', regionError);
-        return;
+        return null;
       }
 
-      let regionId = existingRegion?.id;
+      let regionId = existingRegion?.id ?? null;
+      let regionName = existingRegion?.name ?? null;
 
       if (!regionId) {
-        const regionName = `${city}, ${state}`.trim();
+        const defaultName = `${city}, ${state}`.trim() || `Region ${zipPrefix}`;
         const { data: insertedRegion, error: insertError } = await supabase
           .from('regions')
           .insert({
-            name: regionName || `Region ${zipPrefix}`,
+            name: defaultName,
             zip_prefix: zipPrefix,
             status: 'limited',
             active_quota: 50,
             display_quota: 50,
           })
-          .select('id')
+          .select('id, name')
           .single();
 
         if (insertError) {
@@ -110,20 +112,30 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
           if (insertError.code === '23505') {
             const { data: retryRegion } = await supabase
               .from('regions')
-              .select('id')
+              .select('id, name')
               .eq('zip_prefix', zipPrefix)
               .maybeSingle();
-            regionId = retryRegion?.id;
+            regionId = retryRegion?.id ?? null;
+            regionName = retryRegion?.name ?? defaultName;
           } else {
             console.error('Failed to create region for driver application:', insertError);
-            return;
+            return null;
           }
         } else {
-          regionId = insertedRegion?.id;
+          regionId = insertedRegion?.id ?? null;
+          regionName = insertedRegion?.name ?? defaultName;
         }
+      } else if (!regionName) {
+        // Fetch region name if not returned in initial query
+        const { data: regionRow } = await supabase
+          .from('regions')
+          .select('name')
+          .eq('id', regionId)
+          .maybeSingle();
+        regionName = regionRow?.name ?? `${city}, ${state}`.trim();
       }
 
-      if (!regionId) return;
+      if (!regionId) return { regionId: null, regionName };
 
       const { error: updateError } = await supabase
         .from('craver_applications')
@@ -133,8 +145,11 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
       if (updateError) {
         console.error('Failed to update application region:', updateError);
       }
+
+      return { regionId, regionName };
     } catch (error) {
       console.error('Unexpected error assigning region:', error);
+      return null;
     }
   };
 
@@ -199,8 +214,9 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
 
       if (appError) throw appError;
 
+      let regionInfo: { regionId: number | null; regionName: string | null } | null = null;
       if (application?.id) {
-        await ensureRegionForApplication(
+        regionInfo = await ensureRegionForApplication(
           application.id,
           data.city,
           data.state,
@@ -213,6 +229,7 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
         position: 1, // TODO: Implement proper waitlist position calculation
         city: data.city,
         state: data.state,
+        regionName: regionInfo?.regionName ?? `${data.city}, ${data.state}`,
       });
       setShowWaitlistModal(true);
 
@@ -341,6 +358,7 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
           firstName={data.firstName}
           city={waitlistData.city}
           state={waitlistData.state}
+          regionName={waitlistData.regionName}
           waitlistPosition={waitlistData.position}
           onClose={() => {
             setShowWaitlistModal(false);

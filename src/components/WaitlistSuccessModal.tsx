@@ -7,16 +7,20 @@ interface WaitlistSuccessModalProps {
   city: string;
   state: string;
   waitlistPosition: number;
+  regionName?: string | null;
   onClose: () => void;
 }
 
-export const WaitlistSuccessModal = ({ 
-  firstName, 
-  city, 
-  state, 
+export const WaitlistSuccessModal = ({
+  firstName,
+  city,
+  state,
   waitlistPosition,
-  onClose 
+  regionName,
+  onClose,
 }: WaitlistSuccessModalProps) => {
+  const displayRegion = regionName || `${city}, ${state}`;
+
   return (
     <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
       <Card className="max-w-lg w-full p-8 text-center space-y-6 animate-in fade-in zoom-in duration-300">
@@ -38,7 +42,7 @@ export const WaitlistSuccessModal = ({
         {/* Body Text */}
         <div className="bg-muted/50 rounded-lg p-6 text-left space-y-3">
           <p className="text-sm text-foreground">
-            Your application has been received and <strong>you've been placed on our driver waitlist</strong> for <strong>{city}, {state}</strong>.
+            Your application has been received and <strong>you've been placed on our driver waitlist</strong> for <strong>{displayRegion}</strong>. We matched your region automatically based on the address you submitted.
           </p>
           
           <div className="space-y-2">
@@ -54,14 +58,14 @@ export const WaitlistSuccessModal = ({
               </li>
               <li className="flex items-start gap-2">
                 <Clock className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                <span>When routes open in {city}, we'll send you an invitation to complete your background check and start delivering</span>
+                <span>When routes open in {displayRegion}, we'll send you an invitation to complete your background check and start delivering</span>
               </li>
             </ul>
           </div>
           
           <div className="bg-primary/10 border border-primary/20 rounded p-3 text-sm">
             <p className="text-foreground">
-              <strong>Your Position:</strong> #{waitlistPosition} in {city}
+              <strong>Your Position:</strong> #{waitlistPosition} in {displayRegion}
             </p>
             <p className="text-muted-foreground text-xs mt-1">
               Estimated wait time: 2-8 weeks (we're growing fast!)
