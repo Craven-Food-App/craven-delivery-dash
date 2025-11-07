@@ -13,7 +13,9 @@ export const AddressStep = ({ data, onUpdate, onNext, onBack, isValid }: Applica
   const handleAddressParsed = (parsed: { street: string; city: string; state: string; zipCode: string }) => {
     onUpdate('streetAddress', parsed.street);
     onUpdate('city', parsed.city);
-    onUpdate('state', parsed.state);
+    if (parsed.state) {
+      onUpdate('state', parsed.state.toUpperCase());
+    }
     onUpdate('zipCode', parsed.zipCode);
   };
 

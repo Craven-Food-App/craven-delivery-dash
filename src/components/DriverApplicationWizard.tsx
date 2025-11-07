@@ -64,6 +64,80 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
   const currentValidation = validateStep(currentStep, data, files);
   const progress = (currentStep / STEPS.length) * 100;
 
+  const ensureRegionForApplication = async (
+    applicationId: string,
+    city: string,
+    state: string,
+    zipCode: string,
+  ) => {
+    try {
+      const normalizedZip = (zipCode || '').trim().replace(/[^0-9]/g, '');
+      if (!normalizedZip) return;
+
+      const zipPrefix = normalizedZip.slice(0, 3);
+      if (!zipPrefix) return;
+
+      // Try to find existing region by zip prefix
+      const { data: existingRegion, error: regionError } = await supabase
+        .from('regions')
+        .select('id')
+        .eq('zip_prefix', zipPrefix)
+        .maybeSingle();
+
+      if (regionError) {
+        console.error('Failed to look up region by ZIP prefix:', regionError);
+        return;
+      }
+
+      let regionId = existingRegion?.id;
+
+      if (!regionId) {
+        const regionName = `${city}, ${state}`.trim();
+        const { data: insertedRegion, error: insertError } = await supabase
+          .from('regions')
+          .insert({
+            name: regionName || `Region ${zipPrefix}`,
+            zip_prefix: zipPrefix,
+            status: 'limited',
+            active_quota: 50,
+            display_quota: 50,
+          })
+          .select('id')
+          .single();
+
+        if (insertError) {
+          // If insert failed due to unique constraint, fetch again just in case
+          if (insertError.code === '23505') {
+            const { data: retryRegion } = await supabase
+              .from('regions')
+              .select('id')
+              .eq('zip_prefix', zipPrefix)
+              .maybeSingle();
+            regionId = retryRegion?.id;
+          } else {
+            console.error('Failed to create region for driver application:', insertError);
+            return;
+          }
+        } else {
+          regionId = insertedRegion?.id;
+        }
+      }
+
+      if (!regionId) return;
+
+      const { error: updateError } = await supabase
+        .from('craver_applications')
+        .update({ region_id: regionId })
+        .eq('id', applicationId);
+
+      if (updateError) {
+        console.error('Failed to update application region:', updateError);
+      }
+    } catch (error) {
+      console.error('Unexpected error assigning region:', error);
+    }
+  };
+
   const handleSubmit = async (password: string) => {
     try {
       // Step 1: Authenticate user (or use existing session)
@@ -124,6 +198,15 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
         .single();
 
       if (appError) throw appError;
+
+      if (application?.id) {
+        await ensureRegionForApplication(
+          application.id,
+          data.city,
+          data.state,
+          data.zipCode,
+        );
+      }
 
       // Step 4: Show waitlist success modal
       setWaitlistData({
