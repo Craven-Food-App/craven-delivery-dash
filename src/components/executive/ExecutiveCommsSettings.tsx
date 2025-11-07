@@ -20,10 +20,11 @@ import { supabase } from '@/integrations/supabase/client';
 interface ExecRecord {
   id: string;
   title: string | null;
-  role: string;
-  mention_handle: string | null;
-  allow_direct_messages: boolean | null;
+  role: string | null;
   user_id: string | null;
+  metadata: any;
+  mention_handle: string;
+  allow_direct_messages: boolean;
 }
 
 interface FormExecEntry {
@@ -63,14 +64,32 @@ const ExecutiveCommsSettings: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('exec_users')
-        .select('id, title, role, mention_handle, allow_direct_messages, user_id')
+        .select('id, title, role, user_id, metadata')
         .order('title', { ascending: true, nullsFirst: false });
 
       if (error) {
         throw error;
       }
 
-      setRecords(data || []);
+      const records =
+        (data as any[] | null)?.map((record) => {
+          const communications = record?.metadata?.communications || {};
+          const mentionHandle =
+            communications.mention_handle ||
+            generateHandleFromTitle(record?.title, record?.role);
+
+          return {
+            id: record.id,
+            title: record.title ?? null,
+            role: record.role ?? null,
+            user_id: record.user_id ?? null,
+            metadata: record.metadata || {},
+            mention_handle: mentionHandle,
+            allow_direct_messages: communications.allow_direct_messages ?? true,
+          } as ExecRecord;
+        }) || [];
+
+      setRecords(records);
     } catch (err) {
       console.error('Failed to fetch executive communications settings:', err);
       message.error('Unable to load executive communications settings');
@@ -141,15 +160,25 @@ const ExecutiveCommsSettings: React.FC = () => {
 
     setSaving(true);
     try {
-      const updates = normalized.map((entry) =>
-        supabase
-          .from('exec_users')
-          .update({
+      const updates = normalized.map((entry) => {
+        const existing = records.find((record) => record.id === entry.id);
+        const existingMetadata = existing?.metadata || {};
+        const communications = existingMetadata.communications || {};
+
+        const updatedMetadata = {
+          ...existingMetadata,
+          communications: {
+            ...communications,
             mention_handle: entry.mention_handle,
             allow_direct_messages: entry.allow_direct_messages,
-          })
-          .eq('id', entry.id),
-      );
+          },
+        };
+
+        return supabase
+          .from('exec_users')
+          .update({ metadata: updatedMetadata })
+          .eq('id', entry.id);
+      });
 
       const results = await Promise.all(updates);
       const firstError = results.find((result) => result.error);

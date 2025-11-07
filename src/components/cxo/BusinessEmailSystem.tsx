@@ -37,18 +37,70 @@ interface FolderWithCount extends Folder {
 }
 
 interface Email {
-  id: string;
+  id: number;
   subject: string;
   sender: string;
-  senderHandle?: string | null;
   recipient: string;
-  recipientHandle?: string | null;
   body: string;
-  createdAt: string;
+  timestamp: string;
   folder: FolderId;
   read: boolean;
   priority?: 'high' | 'low';
 }
+
+const INITIAL_EMAILS: Email[] = [
+  {
+    id: 1,
+    subject: 'Project Status Update',
+    sender: 'Alice Johnson (via Zoho)',
+    recipient: 'You',
+    body: 'The Q3 report is finalized and ready for your review. Please check the attached document for detailed metrics and next steps.',
+    timestamp: '10:30 AM',
+    folder: 'inbox',
+    read: false,
+    priority: 'high',
+  },
+  {
+    id: 2,
+    subject: 'Meeting Confirmation',
+    sender: 'Calendar Bot',
+    recipient: 'You',
+    body: 'Your meeting with the marketing team on Nov 10th is confirmed.',
+    timestamp: '9:15 AM',
+    folder: 'inbox',
+    read: true,
+  },
+  {
+    id: 3,
+    subject: 'Draft: Quarterly Goals',
+    sender: 'You',
+    recipient: 'Bob Smith',
+    body: 'Just a draft outlining the core Q4 goals for the team...',
+    timestamp: 'Yesterday',
+    folder: 'drafts',
+    read: true,
+  },
+  {
+    id: 4,
+    subject: 'Follow-up on Customer CX',
+    sender: 'Charlie Doe (via Zoho)',
+    recipient: 'You',
+    body: 'We received excellent feedback from the latest customer survey! Great work team.',
+    timestamp: '3 days ago',
+    folder: 'inbox',
+    read: false,
+  },
+  {
+    id: 5,
+    subject: 'Re: Team Lunch',
+    sender: 'You',
+    recipient: 'Team',
+    body: 'Yes, pizza sounds perfect for Friday!',
+    timestamp: '5:00 PM',
+    folder: 'sent',
+    read: true,
+  },
+];
 
 const BASE_FOLDERS: Folder[] = [
   { id: 'inbox', name: 'Inbox', icon: Inbox },
@@ -70,9 +122,9 @@ const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({
 interface ExecHandle {
   id: string;
   title: string | null;
-  role: string;
-  mention_handle: string | null;
-  allow_direct_messages: boolean | null;
+  role: string | null;
+  mention_handle: string;
+  allow_direct_messages: boolean;
 }
 
 const sanitizeHandle = (value: string) =>
@@ -468,7 +520,7 @@ const ComposeEmail: React.FC<ComposeEmailProps> = ({
                 >
                   @{entry.mention_handle}
                   <span className="ml-1 text-[10px] text-gray-500">
-                    {entry.title || entry.role.toUpperCase()}
+                    {entry.title || entry.role?.toUpperCase() || ''}
                   </span>
                 </button>
               ))}
@@ -667,20 +719,35 @@ const BusinessEmailSystem: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from('exec_users')
-          .select('id, title, role, mention_handle, allow_direct_messages')
+          .select('id, title, role, metadata')
           .order('title', { ascending: true, nullsFirst: false });
 
         if (error) throw error;
 
-        setExecHandles(
-          (data || []).filter(
-            (entry): entry is ExecHandle =>
-              !!entry.mention_handle && (entry.allow_direct_messages ?? true),
-          ),
-        );
+        const handleCounts = new Map<string, number>();
+        const processed: ExecHandle[] = (data as any[] | null)?.map((entry) => {
+          const communications = entry?.metadata?.communications || {};
+          const baseHandle =
+            communications.mention_handle ||
+            sanitizeHandle(entry?.title || entry?.role || entry?.id || '');
+          const count = handleCounts.get(baseHandle) || 0;
+          handleCounts.set(baseHandle, count + 1);
+          const uniqueHandle = count === 0 ? baseHandle : `${baseHandle}${count + 1}`;
+
+          return {
+            id: entry.id,
+            title: entry.title ?? null,
+            role: entry.role ?? null,
+            mention_handle: uniqueHandle || sanitizeHandle(entry.id),
+            allow_direct_messages: communications.allow_direct_messages ?? true,
+          };
+        })?.filter((entry) => !!entry.mention_handle) || [];
+
+        setExecHandles(processed);
       } catch (err) {
         console.error('Unable to load executive handles', err);
         message.error('Unable to load executive handles');
+        setExecHandles([]);
       } finally {
         setHandlesLoading(false);
       }

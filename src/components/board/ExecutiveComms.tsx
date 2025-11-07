@@ -31,6 +31,23 @@ const { Option } = Select;
 const { Text, Title } = Typography;
 const { TabPane } = Tabs;
 
+const sanitizeHandle = (handle: string) =>
+  (handle || '')
+    .trim()
+    .replace(/^@+/, '')
+    .toLowerCase();
+
+const generateHandleFromTitle = (title?: string | null, role?: string | null) => {
+  const base = title || role || '';
+  if (!base) return '';
+  return sanitizeHandle(
+    base
+      .split(/\s+/)
+      .map((word, idx) => (idx === 0 ? word : word[0]))
+      .join(''),
+  );
+};
+
 interface Message {
   id: string;
   from_user_id: string;
@@ -161,7 +178,7 @@ export const ExecutiveComms: React.FC = () => {
       // Fetch executives from exec_users
       const { data: execData, error: execError } = await supabase
         .from('exec_users')
-        .select('id, role, title, user_id, mention_handle, allow_direct_messages');
+        .select('id, role, title, user_id, metadata');
 
       if (execError) throw execError;
 
@@ -185,16 +202,24 @@ export const ExecutiveComms: React.FC = () => {
 
       // Map executives
       const executives: Contact[] = (execData || [])
-        .filter(exec => exec.allow_direct_messages ?? true)
-        .map(exec => ({
-          id: exec.id,
-          name: exec.title || exec.role.toUpperCase(),
-          title: exec.title,
-          role: exec.role,
-          type: 'executive' as const,
-          mention_handle: exec.mention_handle,
-          allow_direct_messages: exec.allow_direct_messages,
-        }));
+        .map((exec) => {
+          const communications = exec?.metadata?.communications || {};
+          const allowDirect = communications.allow_direct_messages ?? true;
+          const mentionHandle =
+            communications.mention_handle ||
+            generateHandleFromTitle(exec?.title, exec?.role);
+
+          return {
+            id: exec.id,
+            name: exec.title || exec.role?.toUpperCase() || exec.id,
+            title: exec.title,
+            role: exec.role,
+            type: 'executive' as const,
+            mention_handle: mentionHandle,
+            allow_direct_messages: allowDirect,
+          };
+        })
+        .filter(exec => exec.allow_direct_messages ?? true);
 
       // Map employees
       const employees: Contact[] = (employeeData || []).map(emp => ({
@@ -236,13 +261,27 @@ export const ExecutiveComms: React.FC = () => {
         (data || []).map(async (msg) => {
           const { data: senderData } = await supabase
             .from('exec_users')
-            .select('id, title, role, mention_handle')
+            .select('id, title, role, metadata')
             .eq('id', msg.from_user_id)
-            .single();
+            .maybeSingle();
+
+          if (!senderData) {
+            return msg;
+          }
+
+          const communications = senderData?.metadata?.communications || {};
+          const mentionHandle =
+            communications.mention_handle ||
+            generateHandleFromTitle(senderData?.title, senderData?.role);
 
           return {
             ...msg,
-            from_user: senderData || undefined
+            from_user: {
+              id: senderData.id,
+              title: senderData.title,
+              role: senderData.role,
+              mention_handle: mentionHandle,
+            },
           };
         })
       );
