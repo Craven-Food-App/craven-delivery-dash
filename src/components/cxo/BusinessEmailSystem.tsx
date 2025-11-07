@@ -717,31 +717,51 @@ const BusinessEmailSystem: React.FC = () => {
     const fetchHandles = async () => {
       setHandlesLoading(true);
       try {
-        const { data, error } = await supabase
+        let data: any[] | null = null;
+
+        const metadataQuery = await supabase
           .from('exec_users')
-          .select('id, title, role, metadata')
+          .select<any>('id, title, role, metadata')
           .order('title', { ascending: true, nullsFirst: false });
 
-        if (error) throw error;
+        if (metadataQuery.error) {
+          if (metadataQuery.error.code === '42703') {
+            const fallback = await supabase
+              .from('exec_users')
+              .select<any>('id, title, role')
+              .order('title', { ascending: true, nullsFirst: false });
+
+            if (fallback.error) throw fallback.error;
+            data = fallback.data || [];
+          } else {
+            throw metadataQuery.error;
+          }
+        } else {
+          data = metadataQuery.data || [];
+        }
 
         const handleCounts = new Map<string, number>();
-        const processed: ExecHandle[] = (data as any[] | null)?.map((entry) => {
-          const communications = entry?.metadata?.communications || {};
-          const baseHandle =
-            communications.mention_handle ||
-            sanitizeHandle(entry?.title || entry?.role || entry?.id || '');
-          const count = handleCounts.get(baseHandle) || 0;
-          handleCounts.set(baseHandle, count + 1);
-          const uniqueHandle = count === 0 ? baseHandle : `${baseHandle}${count + 1}`;
+        const processed: ExecHandle[] = data
+          .map((entry) => {
+            const communications = entry?.metadata?.communications || {};
+            const baseHandle =
+              communications?.mention_handle ||
+              sanitizeHandle(entry?.title || entry?.role || entry?.id || '');
+            const count = handleCounts.get(baseHandle) || 0;
+            handleCounts.set(baseHandle, count + 1);
+            const uniqueHandle =
+              count === 0 ? baseHandle : `${baseHandle}${count + 1}`;
 
-          return {
-            id: entry.id,
-            title: entry.title ?? null,
-            role: entry.role ?? null,
-            mention_handle: uniqueHandle || sanitizeHandle(entry.id),
-            allow_direct_messages: communications.allow_direct_messages ?? true,
-          };
-        })?.filter((entry) => !!entry.mention_handle) || [];
+            return {
+              id: entry.id,
+              title: entry.title ?? null,
+              role: entry.role ?? null,
+              mention_handle: uniqueHandle || sanitizeHandle(entry.id),
+              allow_direct_messages:
+                communications?.allow_direct_messages ?? true,
+            };
+          })
+          .filter((entry) => !!entry.mention_handle);
 
         setExecHandles(processed);
       } catch (err) {

@@ -176,11 +176,25 @@ export const ExecutiveComms: React.FC = () => {
   const fetchContacts = async () => {
     try {
       // Fetch executives from exec_users
-      const { data: execData, error: execError } = await supabase
+      let execData: any[] | null = null;
+      const execResponse = await supabase
         .from('exec_users')
         .select('id, role, title, user_id, metadata');
 
-      if (execError) throw execError;
+      if (execResponse.error) {
+        if (execResponse.error.code === '42703') {
+          // metadata column missing – fallback to basic select
+          const fallback = await supabase
+            .from('exec_users')
+            .select('id, role, title, user_id');
+          if (fallback.error) throw fallback.error;
+          execData = fallback.data || [];
+        } else {
+          throw execResponse.error;
+        }
+      } else {
+        execData = execResponse.data || [];
+      }
 
       // Fetch admin employees
       const { data: employeeData, error: empError } = await supabase
@@ -204,10 +218,12 @@ export const ExecutiveComms: React.FC = () => {
       const executives: Contact[] = (execData || [])
         .map((exec) => {
           const communications = exec?.metadata?.communications || {};
-          const allowDirect = communications.allow_direct_messages ?? true;
+          const allowDirect =
+            communications?.allow_direct_messages ?? true;
           const mentionHandle =
-            communications.mention_handle ||
-            generateHandleFromTitle(exec?.title, exec?.role);
+            communications?.mention_handle ||
+            generateHandleFromTitle(exec?.title, exec?.role) ||
+            sanitizeHandle(exec?.id);
 
           return {
             id: exec.id,
@@ -219,7 +235,7 @@ export const ExecutiveComms: React.FC = () => {
             allow_direct_messages: allowDirect,
           };
         })
-        .filter(exec => exec.allow_direct_messages ?? true);
+        .filter((exec) => exec.allow_direct_messages ?? true);
 
       // Map employees
       const employees: Contact[] = (employeeData || []).map(emp => ({
@@ -259,27 +275,53 @@ export const ExecutiveComms: React.FC = () => {
       // Fetch sender details for each message
       const messagesWithSenders = await Promise.all(
         (data || []).map(async (msg) => {
-          const { data: senderData } = await supabase
+          const senderResponse = await supabase
             .from('exec_users')
             .select('id, title, role, metadata')
             .eq('id', msg.from_user_id)
             .maybeSingle();
 
-          if (!senderData) {
+          if (senderResponse.error?.code === '42703') {
+            // Retry without metadata
+            const fallback = await supabase
+              .from('exec_users')
+              .select('id, title, role')
+              .eq('id', msg.from_user_id)
+              .maybeSingle();
+
+            if (fallback.data) {
+              return {
+                ...msg,
+                from_user: {
+                  id: fallback.data.id,
+                  title: fallback.data.title,
+                  role: fallback.data.role,
+                  mention_handle:
+                    generateHandleFromTitle(fallback.data.title, fallback.data.role) ||
+                    sanitizeHandle(fallback.data.id),
+                },
+              };
+            }
             return msg;
           }
 
-          const communications = senderData?.metadata?.communications || {};
+          if (!senderResponse.data) {
+            return msg;
+          }
+
+          const communications =
+            senderResponse.data?.metadata?.communications || {};
           const mentionHandle =
-            communications.mention_handle ||
-            generateHandleFromTitle(senderData?.title, senderData?.role);
+            communications?.mention_handle ||
+            generateHandleFromTitle(senderResponse.data?.title, senderResponse.data?.role) ||
+            sanitizeHandle(senderResponse.data?.id);
 
           return {
             ...msg,
             from_user: {
-              id: senderData.id,
-              title: senderData.title,
-              role: senderData.role,
+              id: senderResponse.data.id,
+              title: senderResponse.data.title,
+              role: senderResponse.data.role,
               mention_handle: mentionHandle,
             },
           };

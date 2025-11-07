@@ -57,25 +57,42 @@ const ExecutiveCommsSettings: React.FC = () => {
   const [records, setRecords] = useState<ExecRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [metadataAvailable, setMetadataAvailable] = useState(true);
   const executivesValues = Form.useWatch('executives', form) as FormExecEntry[] | undefined;
 
   const fetchRecords = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let data: any[] | null = null;
+
+      const metadataQuery = await supabase
         .from('exec_users')
         .select('id, title, role, user_id, metadata')
         .order('title', { ascending: true, nullsFirst: false });
 
-      if (error) {
-        throw error;
+      if (metadataQuery.error) {
+        if (metadataQuery.error.code === '42703') {
+          setMetadataAvailable(false);
+          const fallback = await supabase
+            .from('exec_users')
+            .select('id, title, role, user_id')
+            .order('title', { ascending: true, nullsFirst: false });
+
+          if (fallback.error) throw fallback.error;
+          data = fallback.data || [];
+        } else {
+          throw metadataQuery.error;
+        }
+      } else {
+        setMetadataAvailable(true);
+        data = metadataQuery.data || [];
       }
 
       const records =
-        (data as any[] | null)?.map((record) => {
+        data?.map((record) => {
           const communications = record?.metadata?.communications || {};
           const mentionHandle =
-            communications.mention_handle ||
+            communications?.mention_handle ||
             generateHandleFromTitle(record?.title, record?.role);
 
           return {
@@ -85,7 +102,8 @@ const ExecutiveCommsSettings: React.FC = () => {
             user_id: record.user_id ?? null,
             metadata: record.metadata || {},
             mention_handle: mentionHandle,
-            allow_direct_messages: communications.allow_direct_messages ?? true,
+            allow_direct_messages:
+              communications?.allow_direct_messages ?? true,
           } as ExecRecord;
         }) || [];
 
@@ -130,6 +148,11 @@ const ExecutiveCommsSettings: React.FC = () => {
   }, [executivesValues]);
 
   const handleSave = async (values: { executives: FormExecEntry[] }) => {
+    if (!metadataAvailable) {
+      message.error('Handle settings require the exec_users.metadata column. Please add it before saving.');
+      return;
+    }
+
     if (!values.executives || values.executives.length === 0) {
       message.warning('No executives available to update');
       return;
@@ -219,6 +242,15 @@ const ExecutiveCommsSettings: React.FC = () => {
           <Alert
             type="warning"
             message={`Duplicate handles found: ${duplicates.join(', ')}`}
+            showIcon
+          />
+        )}
+
+        {!metadataAvailable && (
+          <Alert
+            type="warning"
+            message="Exec user metadata not enabled"
+            description="Handles and messaging preferences are read-only until the exec_users.metadata JSONB column is added. Ask an admin to run the migration that adds it."
             showIcon
           />
         )}
