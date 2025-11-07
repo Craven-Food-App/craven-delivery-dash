@@ -15,6 +15,95 @@ interface BasicInfoStepProps {
 export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, applicationData }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [detectedLocation, setDetectedLocation] = useState<{ city: string; state: string; zip: string } | null>(null);
+  const [locationLoading, setLocationLoading] = useState(true);
+
+  // Detect location on mount
+  React.useEffect(() => {
+    const detectLocation = async () => {
+      try {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              const { latitude, longitude } = position.coords;
+              
+              // Reverse geocode using Nominatim (free, no API key needed)
+              const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+              );
+              const data = await response.json();
+              
+              if (data.address) {
+                const city = data.address.city || data.address.town || data.address.village || '';
+                const state = data.address.state || '';
+                const zip = data.address.postcode || '';
+                
+                // Convert state name to abbreviation
+                const stateAbbr = getStateAbbreviation(state);
+                
+                const location = { city, state: stateAbbr, zip };
+                setDetectedLocation(location);
+                form.setFieldsValue({ zip });
+                message.success(`Location detected: ${city}, ${stateAbbr}`);
+              }
+              setLocationLoading(false);
+            },
+            (error) => {
+              console.error('Geolocation error:', error);
+              message.warning('Could not detect location. Using IP-based detection...');
+              fallbackToIPLocation();
+            }
+          );
+        } else {
+          fallbackToIPLocation();
+        }
+      } catch (error) {
+        console.error('Location detection error:', error);
+        setLocationLoading(false);
+        message.error('Location detection failed');
+      }
+    };
+
+    const fallbackToIPLocation = async () => {
+      try {
+        const response = await fetch('https://ipapi.co/json/');
+        const data = await response.json();
+        
+        const location = {
+          city: data.city || '',
+          state: data.region_code || '',
+          zip: data.postal || ''
+        };
+        setDetectedLocation(location);
+        form.setFieldsValue({ zip: location.zip });
+        message.success(`Location detected: ${location.city}, ${location.state}`);
+      } catch (error) {
+        console.error('IP location error:', error);
+        message.error('Could not detect location automatically');
+      } finally {
+        setLocationLoading(false);
+      }
+    };
+
+    detectLocation();
+  }, [form]);
+
+  // Helper function to convert state names to abbreviations
+  const getStateAbbreviation = (stateName: string): string => {
+    const stateMap: Record<string, string> = {
+      'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+      'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
+      'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
+      'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+      'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
+      'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
+      'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
+      'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+      'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
+      'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY'
+    };
+    return stateMap[stateName] || stateName.substring(0, 2).toUpperCase();
+  };
 
   const handleSubmit = async (values: any) => {
     setLoading(true);
@@ -71,8 +160,8 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
           last_name: lastName,
           email: values.email,
           phone: values.phone,
-          city: values.city,
-          state: values.state?.toUpperCase() || 'NY',
+          city: detectedLocation?.city || '',
+          state: detectedLocation?.state || '',
           zip_code: values.zip,
           status: 'waitlist',
           region_id: regionId,
@@ -109,8 +198,8 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
           body: JSON.stringify({
             driverName: values.fullName,
             driverEmail: values.email,
-            city: values.city,
-            state: values.state?.toUpperCase() || 'NY',
+            city: detectedLocation?.city || '',
+            state: detectedLocation?.state || '',
             waitlistPosition: appData.waitlist_position,
             location: regionName,
             emailType: 'waitlist'
@@ -131,7 +220,8 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
         applicationId: appData.id,
         driverId: appData.id,
         email: values.email,
-        city: values.city,
+        city: detectedLocation?.city || '',
+        state: detectedLocation?.state || '',
         regionId,
         ...values
       });
@@ -162,6 +252,18 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
           <Paragraph style={{ fontSize: '16px', color: '#595959' }}>
             We need some basic information to get started
           </Paragraph>
+          {locationLoading && (
+            <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#e6f7ff', borderRadius: '8px' }}>
+              <Text>📍 Detecting your location...</Text>
+            </div>
+          )}
+          {detectedLocation && (
+            <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#f6ffed', borderRadius: '8px', border: '1px solid #b7eb8f' }}>
+              <Text style={{ color: '#52c41a', fontWeight: 500 }}>
+                ✓ Location Detected: {detectedLocation.city}, {detectedLocation.state}
+              </Text>
+            </div>
+          )}
         </div>
 
         {/* Form */}
@@ -224,52 +326,20 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
           </Row>
 
           <Row gutter={16}>
-            <Col xs={24} sm={16}>
-              <Form.Item
-                label="City"
-                name="city"
-                rules={[{ required: true, message: 'Please enter your city' }]}
-              >
-                <Input
-                  prefix={<EnvironmentOutlined style={{ color: '#ff7a00' }} />}
-                  placeholder="New York"
-                  size="large"
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={8}>
-              <Form.Item
-                label="State"
-                name="state"
-                rules={[
-                  { required: true, message: 'Required' },
-                  { len: 2, message: 'Use 2-letter code' }
-                ]}
-              >
-                <Input
-                  placeholder="NY"
-                  size="large"
-                  maxLength={2}
-                  style={{ textTransform: 'uppercase' }}
-                  onInput={(e: any) => e.target.value = e.target.value.toUpperCase()}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
             <Col xs={24}>
               <Form.Item
-                label="ZIP Code"
+                label="ZIP Code (Auto-detected)"
                 name="zip"
                 rules={[
-                  { required: true, message: 'Please enter your ZIP code' },
+                  { required: true, message: 'Please confirm your ZIP code' },
                   { pattern: /^\d{5}(-\d{4})?$/, message: 'Invalid ZIP format' }
                 ]}
               >
                 <Input
-                  placeholder="10001"
+                  prefix={<EnvironmentOutlined style={{ color: '#ff7a00' }} />}
+                  placeholder="ZIP code will be auto-detected"
                   size="large"
+                  disabled={locationLoading}
                 />
               </Form.Item>
             </Col>
