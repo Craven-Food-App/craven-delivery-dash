@@ -18,6 +18,7 @@ import {
   TeamOutlined,
   SafetyOutlined,
 } from '@ant-design/icons';
+import BusinessEmailSystem from '@/components/executive/BusinessEmailSystem';
 import { supabase } from '@/integrations/supabase/client';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -604,6 +605,18 @@ export const ExecutiveComms: React.FC = () => {
                   )}
                 />
               )}
+            </TabPane>
+
+            <TabPane
+              tab={
+                <span>
+                  <MailOutlined />
+                  Executive Communications
+                </span>
+              }
+              key="email"
+            >
+              <BusinessEmailSystem />
             </TabPane>
           </Tabs>
         </Card>

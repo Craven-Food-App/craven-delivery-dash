@@ -18,6 +18,7 @@ import {
   SafetyOutlined,
   SettingOutlined,
   TrophyOutlined,
+  MailOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -34,6 +35,7 @@ import EmployeeRelationsView from '@/components/hr/EmployeeRelationsView';
 import SystemAdminView from '@/components/hr/SystemAdminView';
 import EquityManagement from '@/components/hr/EquityManagement';
 import { useExecAuth } from '@/hooks/useExecAuth';
+import BusinessEmailSystem from '@/components/executive/BusinessEmailSystem';
 
 const { Header, Content, Sider } = Layout;
 const { TabPane } = Tabs;
@@ -559,6 +561,18 @@ const HRPortal: React.FC = () => {
             key="documents_dashboard"
           >
             <DocumentDashboard />
+          </TabPane>
+
+          <TabPane
+            tab={
+              <span>
+                <MailOutlined />
+                Executive Communications
+              </span>
+            }
+            key="communications"
+          >
+            <BusinessEmailSystem />
           </TabPane>
 
           <TabPane

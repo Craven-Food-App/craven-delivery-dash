@@ -1,24 +1,20 @@
 // @ts-nocheck
-import React, { useEffect, useState } from 'react';
-import { Row, Col, Statistic, Badge, Button, Space, Tabs, Alert, Typography, Divider, Card } from 'antd';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Row, Col, Statistic, Badge, Button, Space, Alert, Typography, Divider, Card } from 'antd';
+import { WarningOutlined } from '@ant-design/icons';
 import {
-  DollarOutlined,
-  UserOutlined,
-  RocketOutlined,
-  SafetyOutlined,
-  ThunderboltOutlined,
-  TeamOutlined,
-  FileTextOutlined,
-  BarChartOutlined,
-  WarningOutlined,
-  CheckCircleOutlined,
-  TrophyOutlined,
-  BulbOutlined,
-  ArrowLeftOutlined,
-} from '@ant-design/icons';
+  BarChart3,
+  Users as UsersIcon,
+  DollarSign,
+  Trophy,
+  Rocket,
+  Lightbulb,
+  ShieldAlert,
+  FileText,
+  Mail,
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { MessageCenter } from '@/components/messaging/MessageCenter';
 import { PersonnelManager } from '@/components/ceo/PersonnelManager';
 import { FinancialApprovals } from '@/components/ceo/FinancialApprovals';
 import { EmergencyControls } from '@/components/ceo/EmergencyControls';
@@ -28,10 +24,10 @@ import { AuditTrail } from '@/components/ceo/AuditTrail';
 import { QuickActions } from '@/components/ceo/QuickActions';
 import { EquityDashboard } from '@/components/ceo/EquityDashboard';
 import { ExecutiveInboxIMessage } from '@/components/executive/ExecutiveInboxIMessage';
+import BusinessEmailSystem from '@/components/executive/BusinessEmailSystem';
+import ExecutivePortalLayout, { ExecutiveNavItem } from '@/components/executive/ExecutivePortalLayout';
 import { useExecAuth } from '@/hooks/useExecAuth';
 // No Card components: full-page Ant layout
-
-const { TabPane } = Tabs;
 
 interface CEOMetrics {
   totalRevenue: number;
@@ -53,6 +49,105 @@ const CEOPortal: React.FC = () => {
   const [metrics, setMetrics] = useState<CEOMetrics | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [isChatCollapsed, setIsChatCollapsed] = useState(true);
+
+  const navItems = useMemo<ExecutiveNavItem[]>(() => {
+    const totalEmployees = metrics?.totalEmployees ?? 0;
+    const pendingApprovals = metrics?.pendingApprovals ?? 0;
+
+    return [
+      { id: 'overview', label: 'Quick Actions', icon: BarChart3 },
+      {
+        id: 'personnel',
+        label: `Personnel (${totalEmployees})`,
+        icon: UsersIcon,
+      },
+      {
+        id: 'financial',
+        label:
+          pendingApprovals > 0
+            ? `Financial Approvals (${pendingApprovals})`
+            : 'Financial Approvals',
+        icon: DollarSign,
+      },
+      { id: 'equity', label: 'Equity Ownership', icon: Trophy },
+      { id: 'strategic', label: 'Strategic Planning', icon: Rocket },
+      { id: 'mindmap', label: 'Mind Map', icon: Lightbulb },
+      { id: 'emergency', label: 'Emergency Controls', icon: ShieldAlert },
+      { id: 'audit', label: 'Audit Trail', icon: FileText },
+      { id: 'communications', label: 'Executive Communications', icon: Mail },
+    ];
+  }, [metrics?.totalEmployees, metrics?.pendingApprovals]);
+
+  const handleNavigateToCFO = () => {
+    const host = window.location.hostname;
+    if (/^ceo\./i.test(host)) {
+      const target = host.replace(/^ceo\./i, 'cfo.');
+      window.location.href = `${window.location.protocol}//${target}`;
+      return;
+    }
+    navigate('/cfo');
+  };
+
+  const actionButtons = (
+    <Space wrap>
+      <Button
+        type="primary"
+        danger
+        icon={<WarningOutlined />}
+        onClick={() => setActiveTab('emergency')}
+      >
+        Emergency
+      </Button>
+      <Button onClick={handleNavigateToCFO}>CFO Portal</Button>
+      <Button type="primary" onClick={() => navigate('/admin')}>
+        Admin Portal
+      </Button>
+      <Button onClick={() => navigate('/board')}>Board Portal</Button>
+    </Space>
+  );
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'overview':
+        return <QuickActions />;
+      case 'personnel':
+        return <PersonnelManager />;
+      case 'financial':
+        return <FinancialApprovals />;
+      case 'equity':
+        return <EquityDashboard />;
+      case 'strategic':
+        return <StrategicPlanning />;
+      case 'mindmap':
+        return <StrategicMindMap />;
+      case 'emergency':
+        return <EmergencyControls />;
+      case 'audit':
+        return <AuditTrail />;
+      case 'communications':
+        return <BusinessEmailSystem />;
+      default:
+        return <QuickActions />;
+    }
+  };
+
+  const handleBackToHub = () => navigate('/hub');
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      sessionStorage.removeItem('hub_employee_info');
+      navigate('/auth?hq=true');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(
+      Number.isFinite(value) ? value : 0,
+    );
 
   useEffect(() => {
     if (isAuthorized) {
@@ -190,321 +285,147 @@ const CEOPortal: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header - Command Center Style */}
-      <div className="bg-gradient-to-r from-slate-900 to-blue-900 border-b-4 border-blue-500 shadow-2xl">
-        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                <ThunderboltOutlined className="text-2xl sm:text-4xl text-yellow-400" />
-                <h1 className="text-2xl sm:text-4xl font-bold text-white">
-                  CEO COMMAND CENTER
-                </h1>
-              </div>
-              <p className="text-blue-200 flex flex-col sm:flex-row items-start sm:items-center gap-2 text-sm sm:text-lg">
-                <span>Welcome back, <strong>{execUser?.title || 'CEO'}</strong></span>
-                <Badge status="processing" text="System Operational" className="text-white" />
-                <span className="text-xs sm:text-sm">• All Systems Online</span>
-              </p>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex gap-2 w-full lg:w-auto">
-              <Button
-                type="default"
-                size="large"
-                icon={<ArrowLeftOutlined />}
-                onClick={() => navigate('/hub')}
-                className="bg-slate-100 hover:bg-slate-200 text-xs sm:text-base"
-              >
-                Back to Hub
-              </Button>
-              <Button
-                type="primary"
-                danger
-                size="large"
-                icon={<WarningOutlined />}
-                className="bg-red-600 hover:bg-red-700 text-xs sm:text-base"
-              >
-                Emergency
-              </Button>
-              <Button
-                type="default"
-                size="large"
-                onClick={() => {
-                  const host = window.location.hostname;
-                  if (/^ceo\./i.test(host)) {
-                    const target = host.replace(/^ceo\./i, 'cfo.');
-                    window.location.href = `${window.location.protocol}//${target}`;
-                  } else {
-                    navigate('/cfo');
-                  }
-                }}
-                className="bg-slate-100 hover:bg-slate-200 text-xs sm:text-base"
-              >
-                CFO Portal
-              </Button>
-              <Button
-                type="primary"
-                size="large"
-                onClick={() => navigate('/admin')}
-                className="bg-blue-600 hover:bg-blue-700 text-xs sm:text-base col-span-2 sm:col-span-1"
-              >
-                Admin Portal
-              </Button>
-              <Button
-                type="default"
-                size="large"
-                onClick={() => navigate('/board')}
-                className="bg-slate-700 hover:bg-slate-600 text-white text-xs sm:text-base"
-              >
-                Board Portal
-              </Button>
-              <Button
-                type="default"
-                size="large"
-                onClick={() => {
-                  const el = document.getElementById('ceo-messages');
-                  if (el) el.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="text-xs sm:text-base"
-              >
-                Message Center
-              </Button>
-              <Button
-                type="default"
-                size="large"
-                onClick={signOut}
-                className="text-xs sm:text-base"
-              >
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Critical Alerts */}
-      {metrics?.criticalAlerts! > 0 && (
-        <div className="container mx-auto px-4 sm:px-6 py-4">
+    <ExecutivePortalLayout
+      title="CEO Portal"
+      subtitle="Executive leadership command center"
+      navItems={navItems}
+      activeItemId={activeTab}
+      onSelect={setActiveTab}
+      onBack={handleBackToHub}
+      onSignOut={handleSignOut}
+      actionButtons={actionButtons}
+      userInfo={{
+        initials: 'CE',
+        name: execUser?.title || 'Chief Executive Officer',
+        role: 'Executive Leadership',
+      }}
+    >
+      <div className="space-y-6">
+        {metrics?.criticalAlerts && metrics.criticalAlerts > 0 && (
           <Alert
-            message={`${metrics?.criticalAlerts} Critical Alert${metrics?.criticalAlerts! > 1 ? 's' : ''}`}
+            message={`${metrics.criticalAlerts} Critical Alert${metrics.criticalAlerts > 1 ? 's' : ''}`}
             description="Immediate action required. Click to view details."
             type="error"
             showIcon
             icon={<WarningOutlined />}
-            className="border-2 border-red-500"
             action={
-              <Button size="small" danger>
+              <Button size="small" danger onClick={() => setActiveTab('emergency')}>
                 View Now
               </Button>
             }
           />
-        </div>
-      )}
+        )}
 
-      {/* Main Dashboard */}
-      <div className="container mx-auto px-4 sm:px-6 py-8">
-        {/* Key Metrics - Full page, no cards */}
-        <div className="flex items-center justify-between mb-4">
-          <Typography.Title level={3} style={{ marginTop: 0 }}>Company Health</Typography.Title>
-          <Badge status="processing" text={
-            <span className="text-gray-600 text-sm">
-              Last updated: {lastUpdated.toLocaleTimeString()}
-            </span>
-          } />
-        </div>
-        <Row gutter={[16, 16]} className="mb-8">
-          <Col xs={24} sm={12} lg={4}>
-            <div className="bg-green-600 rounded-md px-4 py-3">
-              <Statistic
-                title={<span className="text-white font-semibold">Total Revenue</span>}
-                value={metrics?.totalRevenue}
-                precision={0}
-                prefix="$"
-                valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
-                suffix={<span className="text-sm text-green-100 ml-2">↑ {metrics?.revenueGrowth}%</span>}
-              />
-            </div>
-          </Col>
-
-          <Col xs={24} sm={12} lg={4}>
-            <div className="bg-blue-600 rounded-md px-4 py-3">
-              <Statistic
-                title={<span className="text-white font-semibold">Cash Flow</span>}
-                value={metrics?.cashFlow}
-                precision={0}
-                prefix="$"
-                valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
-              />
-              <div className="text-xs text-blue-100 mt-2">Burn: ${metrics?.burnRate.toLocaleString()}/mo</div>
-            </div>
-          </Col>
-
-          <Col xs={24} sm={12} lg={4}>
-            <div className="bg-purple-600 rounded-md px-4 py-3">
-              <Statistic
-                title={<span className="text-white font-semibold">Runway</span>}
-                value={metrics?.runway}
-                suffix="months"
-                valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
-              />
-              <div className="text-xs text-purple-100 mt-2">Financial Health: Excellent</div>
-            </div>
-          </Col>
-
-          <Col xs={24} sm={12} lg={4}>
-            <div className="bg-orange-600 rounded-md px-4 py-3">
-              <Statistic
-                title={<span className="text-white font-semibold">Total Employees</span>}
-                value={metrics?.totalEmployees}
-                valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
-              />
-              <div className="text-xs text-orange-100 mt-2">Admins: {metrics?.admins} • Feeders: {metrics?.feeders}</div>
-            </div>
-          </Col>
-
-          <Col xs={24} sm={12} lg={4}>
-            <div className="bg-yellow-600 rounded-md px-4 py-3">
-              <Statistic
-                title={<span className="text-white font-semibold">Pending Approvals</span>}
-                value={metrics?.pendingApprovals}
-                valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
-              />
-              <div className="text-xs text-yellow-100 mt-2">Requires your attention</div>
-            </div>
-          </Col>
-
-          <Col xs={24} sm={12} lg={4}>
-            <div className="bg-teal-600 rounded-md px-4 py-3">
-              <Statistic
-                title={<span className="text-white font-semibold">Merchants</span>}
-                value={metrics?.merchants}
-                valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
-              />
-              <div className="text-xs text-teal-100 mt-2">Active partners</div>
-            </div>
-          </Col>
-        </Row>
-        <Divider style={{ margin: '16px 0' }} />
-        
-        {/* Executive Inbox - iMessage Style - Isolated per portal */}
-        <div className="mb-6">
-          <ExecutiveInboxIMessage role="ceo" deviceId={`ceo-portal-${window.location.hostname}`} />
-        </div>
-        
-        <Divider style={{ margin: '16px 0' }} />
-        {/* Tabbed Interface - no card wrapper */}
-        <Tabs
-            activeKey={activeTab}
-            onChange={setActiveTab}
-            size="large"
-            tabBarStyle={{ borderBottom: '2px solid #e2e8f0' }}
-          >
-            <TabPane
-              tab={
-                <span>
-                  <BarChartOutlined />
-                  Quick Actions
+        <section className="space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <Typography.Title level={3} style={{ margin: 0 }}>
+              Company Health
+            </Typography.Title>
+            <Badge
+              status="processing"
+              text={
+                <span className="text-gray-600 text-sm">
+                  Last updated: {lastUpdated.toLocaleTimeString()}
                 </span>
               }
-              key="overview"
-            >
-              <QuickActions />
-            </TabPane>
+            />
+          </div>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12} lg={4}>
+              <div className="bg-green-600 rounded-md px-4 py-3 h-full">
+                <Statistic
+                  title={<span className="text-white font-semibold">Monthly Revenue</span>}
+                  value={formatCurrency(metrics?.totalRevenue ?? 0)}
+                  valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
+                />
+                <div className="text-xs text-green-100 mt-2">
+                  Revenue Growth: {metrics?.revenueGrowth ?? 0}%
+                </div>
+              </div>
+            </Col>
+            <Col xs={24} sm={12} lg={4}>
+              <div className="bg-blue-600 rounded-md px-4 py-3 h-full">
+                <Statistic
+                  title={<span className="text-white font-semibold">Cash Flow</span>}
+                  value={formatCurrency(metrics?.cashFlow ?? 0)}
+                  valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
+                />
+                <div className="text-xs text-blue-100 mt-2">
+                  Burn Rate {(metrics?.burnRate ?? 0).toLocaleString()}
+                </div>
+              </div>
+            </Col>
+            <Col xs={24} sm={12} lg={4}>
+              <div className="bg-purple-600 rounded-md px-4 py-3 h-full">
+                <Statistic
+                  title={<span className="text-white font-semibold">Runway</span>}
+                  value={`${metrics?.runway ?? 0} mo`}
+                  valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
+                />
+                <div className="text-xs text-purple-100 mt-2">
+                  Admin Staff: {metrics?.admins ?? 0}
+                </div>
+              </div>
+            </Col>
+            <Col xs={24} sm={12} lg={4}>
+              <div className="bg-indigo-600 rounded-md px-4 py-3 h-full">
+                <Statistic
+                  title={<span className="text-white font-semibold">Headcount</span>}
+                  value={metrics?.totalEmployees ?? 0}
+                  valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
+                />
+                <div className="text-xs text-indigo-100 mt-2">
+                  Admins: {metrics?.admins ?? 0} • Feeders: {metrics?.feeders ?? 0}
+                </div>
+              </div>
+            </Col>
+            <Col xs={24} sm={12} lg={4}>
+              <div className="bg-yellow-600 rounded-md px-4 py-3 h-full">
+                <Statistic
+                  title={<span className="text-white font-semibold">Pending Approvals</span>}
+                  value={metrics?.pendingApprovals ?? 0}
+                  valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
+                />
+                <div className="text-xs text-yellow-100 mt-2">
+                  Requires your attention
+                </div>
+              </div>
+            </Col>
+            <Col xs={24} sm={12} lg={4}>
+              <div className="bg-teal-600 rounded-md px-4 py-3 h-full">
+                <Statistic
+                  title={<span className="text-white font-semibold">Merchants</span>}
+                  value={metrics?.merchants ?? 0}
+                  valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
+                />
+                <div className="text-xs text-teal-100 mt-2">Active partners</div>
+              </div>
+            </Col>
+          </Row>
+        </section>
 
-            <TabPane
-              tab={
-                <span>
-                  <TeamOutlined />
-                  Personnel ({metrics?.totalEmployees})
-                </span>
-              }
-              key="personnel"
-            >
-              <PersonnelManager />
-            </TabPane>
+        <section className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Typography.Title level={5} style={{ margin: 0 }}>
+              Executive Chat
+            </Typography.Title>
+            <Button size="small" type="default" onClick={() => setIsChatCollapsed((prev) => !prev)}>
+              {isChatCollapsed ? 'Expand' : 'Collapse'}
+            </Button>
+          </div>
+          {!isChatCollapsed && (
+            <ExecutiveInboxIMessage role="ceo" deviceId={`ceo-portal-${window.location.hostname}`} />
+          )}
+        </section>
 
-            <TabPane
-              tab={
-                <span>
-                  <DollarOutlined />
-                  Financial Approvals
-                  {metrics?.pendingApprovals! > 0 && (
-                    <Badge count={metrics?.pendingApprovals} className="ml-2" />
-                  )}
-                </span>
-              }
-              key="financial"
-            >
-              <FinancialApprovals />
-            </TabPane>
+        <Divider />
 
-            <TabPane
-              tab={
-                <span>
-                  <TrophyOutlined />
-                  Equity Ownership
-                </span>
-              }
-              key="equity"
-            >
-              <EquityDashboard />
-            </TabPane>
+        <section className="space-y-6">{renderContent()}</section>
 
-            <TabPane
-              tab={
-                <span>
-                  <RocketOutlined />
-                  Strategic Planning
-                </span>
-              }
-              key="strategic"
-            >
-              <StrategicPlanning />
-            </TabPane>
+        <Divider />
 
-            <TabPane
-              tab={
-                <span>
-                  <BulbOutlined />
-                  Mind Map
-                </span>
-              }
-              key="mindmap"
-            >
-              <StrategicMindMap />
-            </TabPane>
-
-            <TabPane
-              tab={
-                <span>
-                  <SafetyOutlined />
-                  Emergency Controls
-                </span>
-              }
-              key="emergency"
-            >
-              <EmergencyControls />
-            </TabPane>
-
-            <TabPane
-              tab={
-                <span>
-                  <FileTextOutlined />
-                  Audit Trail
-                </span>
-              }
-              key="audit"
-            >
-              <AuditTrail />
-            </TabPane>
-          </Tabs>
       </div>
-      <div id="ceo-messages" className="container mx-auto px-4 sm:px-6 py-8">
-        <Typography.Title level={3} style={{ marginTop: 0 }}>Message Center</Typography.Title>
-        <MessageCenter />
-      </div>
-    </div>
+    </ExecutivePortalLayout>
   );
 };
  

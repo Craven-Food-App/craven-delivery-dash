@@ -1,11 +1,12 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Row, Col, Statistic, Tabs, Table, Badge, Card, Button, Space, Divider, Modal, Form, Input, InputNumber, Select, message, Popconfirm } from 'antd';
-import { DashboardOutlined, CarOutlined, ShopOutlined, FileProtectOutlined, AlertOutlined, PlusOutlined, EditOutlined, DeleteOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { DashboardOutlined, CarOutlined, ShopOutlined, FileProtectOutlined, AlertOutlined, PlusOutlined, EditOutlined, DeleteOutlined, ArrowLeftOutlined, MailOutlined } from '@ant-design/icons';
 import { useExecAuth } from '@/hooks/useExecAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { ExecutiveInboxIMessage } from '@/components/executive/ExecutiveInboxIMessage';
+import BusinessEmailSystem from '@/components/executive/BusinessEmailSystem';
 
 const { Header, Content } = Layout;
 const { TabPane } = Tabs;
@@ -23,6 +24,7 @@ export default function COOPortal() {
     vehiclesInService: 0,
     pendingCompliance: 0
   });
+  const [isChatCollapsed, setIsChatCollapsed] = useState(true);
 
   useEffect(() => {
     if (isAuthorized) {
@@ -72,9 +74,17 @@ export default function COOPortal() {
       </Header>
       
       <Content className="p-6 bg-gray-50">
-        {/* Executive Chat - Isolated per portal */}
+        {/* Executive Chat - Collapsible */}
         <div className="mb-6">
-          <ExecutiveInboxIMessage role="coo" deviceId={`coo-portal-${window.location.hostname}`} />
+          <div className="flex items-center justify-between mb-2">
+            <Typography.Title level={5} className="m-0">Executive Chat</Typography.Title>
+            <Button size="small" onClick={() => setIsChatCollapsed((prev) => !prev)}>
+              {isChatCollapsed ? 'Expand' : 'Collapse'}
+            </Button>
+          </div>
+          {!isChatCollapsed && (
+            <ExecutiveInboxIMessage role="coo" deviceId={`coo-portal-${window.location.hostname}`} />
+          )}
         </div>
         <Divider style={{ margin: '16px 0' }} />
 
@@ -133,6 +143,9 @@ export default function COOPortal() {
           </TabPane>
           <TabPane tab={<><FileProtectOutlined /> Compliance</>} key="compliance">
             <ComplianceDashboard />
+          </TabPane>
+          <TabPane tab={<><MailOutlined /> Executive Communications</>} key="communications">
+            <BusinessEmailSystem />
           </TabPane>
           <TabPane tab={<><DashboardOutlined /> Operations Analytics</>} key="analytics">
             <OperationsAnalytics />

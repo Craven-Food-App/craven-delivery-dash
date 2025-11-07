@@ -1,6 +1,6 @@
 // @ts-nocheck
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Layout, Typography, Row, Col, Statistic, Tabs, Table, DatePicker, Space, Button, Divider, Alert, Modal, InputNumber, Form, message, Select, Input, Tooltip, Popover } from "antd";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { Typography, Row, Col, Statistic, Table, DatePicker, Space, Button, Divider, Alert, Modal, InputNumber, Form, message, Select, Input, Tooltip, Popover } from "antd";
 import {
   DollarOutlined,
   BarChartOutlined,
@@ -36,21 +36,33 @@ import {
   BgColorsOutlined,
   FontSizeOutlined,
   InfoCircleOutlined,
+  MailOutlined,
 } from "@ant-design/icons";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar, ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, AreaChart, Area, ComposedChart, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
-import { MessageCenter } from "@/components/messaging/MessageCenter";
 import { ExecutiveInboxIMessage } from '@/components/executive/ExecutiveInboxIMessage';
-import { Aperture, DollarSign, TrendingUp, TrendingDown, Clock, Scale, Sigma, Activity, Zap, Target, PieChart as PieChartIcon } from 'lucide-react';
-import { GlassmorphicCard } from '@/components/cfo/GlassmorphicCard';
-import { GlassmorphicMetricCard } from '@/components/cfo/GlassmorphicMetricCard';
+import {
+  Aperture,
+  DollarSign,
+  TrendingDown,
+  Clock,
+  Scale,
+  Sigma,
+  BarChart3,
+  Users,
+  Rocket,
+  Lightbulb,
+  ShieldAlert,
+  FileText,
+  Mail,
+} from 'lucide-react';
 import { FuturisticChart } from '@/components/cfo/FuturisticChart';
+import BusinessEmailSystem from '@/components/executive/BusinessEmailSystem';
+import ExecutivePortalLayout, { ExecutiveNavItem } from '@/components/executive/ExecutivePortalLayout';
 
-const { Header, Content } = Layout;
 const { RangePicker } = DatePicker;
-const { TabPane } = Tabs;
 
 // Reusable InfoIcon component with Popover
 function InfoIcon({ content, title }: { content: string; title?: string }) {
@@ -108,7 +120,7 @@ function BigNavButton({ color, hover, title, subtitle, onClick, infoContent }: {
           background: `linear-gradient(135deg, ${color} 0%, ${hover} 100%)`,
           color: '#fff',
           borderRadius: 16,
-          padding: isMobile ? '16px' : '20px',
+          padding: isMobile ? '10px 12px' : '12px 16px',
           textAlign: 'left',
           border: '1px solid rgba(255, 255, 255, 0.2)',
           cursor: 'pointer',
@@ -119,31 +131,22 @@ function BigNavButton({ color, hover, title, subtitle, onClick, infoContent }: {
           transition: 'all 0.3s ease',
           position: 'relative',
           overflow: 'hidden',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'translateY(-4px)';
-          e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.2)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.15)';
+          minHeight: isMobile ? 80 : 90,
         }}
       >
-        <div style={{ 
-          fontSize: isMobile ? 16 : 18, 
-          fontWeight: 700, 
-          lineHeight: 1.3,
-          marginBottom: '4px',
-          textShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-        }}>
-          {title}
-        </div>
-        <div style={{ 
-          opacity: 0.9, 
-          fontSize: isMobile ? 13 : 14,
-          textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
-        }}>
-          {subtitle}
+        <div style={{
+          position: 'absolute',
+          top: '-40px',
+          right: '-40px',
+          width: '120px',
+          height: '120px',
+          background: 'rgba(255, 255, 255, 0.15)',
+          borderRadius: '50%',
+          filter: 'blur(0px)',
+        }} />
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <h3 style={{ margin: 0, fontSize: isMobile ? 16 : 18, fontWeight: 700 }}>{title}</h3>
+          <p style={{ margin: '6px 0 0 0', fontSize: isMobile ? 12 : 13, color: 'rgba(255, 255, 255, 0.85)' }}>{subtitle}</p>
         </div>
       </button>
     </div>
@@ -159,6 +162,21 @@ interface KpiData {
   icon: React.ElementType;
   color: string;
 }
+
+const SectionCard: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => (
+  <div
+    style={{
+      background: '#ffffff',
+      borderRadius: 12,
+      border: '1px solid #e2e8f0',
+      boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)',
+      padding: 24,
+      ...style,
+    }}
+  >
+    {children}
+  </div>
+);
 
 const MetricCard: React.FC<KpiData> = ({ title, value, change, changeUnit, icon: Icon, color }) => {
   const isPositiveMetric = title !== 'Operating Expenses' && title !== 'COGS';
@@ -183,15 +201,45 @@ const MetricCard: React.FC<KpiData> = ({ title, value, change, changeUnit, icon:
   };
 
   return (
-    <GlassmorphicMetricCard
-      title={title}
-      value={value}
-      change={change}
-      changeUnit={changeUnit}
-      icon={Icon}
-      iconColor={getIconColor()}
-      gradient={getGradient()}
-    />
+    <SectionCard style={{ padding: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <p style={{ margin: 0, fontSize: 14, color: '#64748b', fontWeight: 600 }}>{title}</p>
+          <p style={{ margin: '8px 0 0 0', fontSize: 28, fontWeight: 700, color: '#0f172a' }}>{value}</p>
+          <span
+            style={{
+              marginTop: 8,
+              display: 'inline-flex',
+              alignItems: 'center',
+              background: isPositive ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+              color: isPositive ? '#16a34a' : '#dc2626',
+              borderRadius: 9999,
+              padding: '4px 10px',
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            {isPositive ? '+' : '-'}
+            {Math.abs(change)}{changeUnit} vs last period
+          </span>
+        </div>
+        <div
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 12,
+            background: getGradient(),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: getIconColor(),
+            boxShadow: '0 4px 12px rgba(15, 23, 42, 0.12)',
+          }}
+        >
+          <Icon size={28} />
+        </div>
+      </div>
+    </SectionCard>
   );
 };
 
@@ -250,17 +298,16 @@ const KeyRatiosTable: React.FC<{ data: RatioData[] }> = ({ data }) => {
   };
 
   return (
-    <GlassmorphicCard style={{ position: 'relative' }}>
+    <SectionCard style={{ position: 'relative' }}>
       <InfoIcon content="Key financial ratios help assess the company's financial health. Current Ratio measures liquidity, Debt-to-Equity shows leverage, Gross Margin indicates profitability, Quick Ratio tests short-term solvency, and Inventory Turnover measures efficiency." title="Key Financial Ratios" />
-      <h2 style={{ 
-        fontSize: '24px', 
-        fontWeight: 700, 
-        color: 'rgba(255, 255, 255, 0.95)', 
-        marginBottom: '24px',
+      <h2 style={{
+        fontSize: '24px',
+        fontWeight: 700,
+        color: '#0f172a',
+        marginBottom: '20px',
         display: 'flex',
         alignItems: 'center',
         gap: '12px',
-        textShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
       }}>
         <Scale style={{ width: '24px', height: '24px', color: '#3b82f6' }} />
         Key Financial Ratios
@@ -268,35 +315,35 @@ const KeyRatiosTable: React.FC<{ data: RatioData[] }> = ({ data }) => {
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
-              <th style={{ 
-                padding: '12px 16px', 
-                textAlign: 'left', 
-                fontSize: '12px', 
-                fontWeight: 600, 
-                color: 'rgba(255, 255, 255, 0.7)',
+            <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+              <th style={{
+                padding: '12px 16px',
+                textAlign: 'left',
+                fontSize: '12px',
+                fontWeight: 600,
+                color: '#475569',
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
               }}>
                 Ratio
               </th>
-              <th style={{ 
-                padding: '12px 16px', 
-                textAlign: 'left', 
-                fontSize: '12px', 
-                fontWeight: 600, 
-                color: 'rgba(255, 255, 255, 0.7)',
+              <th style={{
+                padding: '12px 16px',
+                textAlign: 'left',
+                fontSize: '12px',
+                fontWeight: 600,
+                color: '#475569',
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
               }}>
                 Value
               </th>
-              <th style={{ 
-                padding: '12px 16px', 
-                textAlign: 'left', 
-                fontSize: '12px', 
-                fontWeight: 600, 
-                color: 'rgba(255, 255, 255, 0.7)',
+              <th style={{
+                padding: '12px 16px',
+                textAlign: 'left',
+                fontSize: '12px',
+                fontWeight: 600,
+                color: '#475569',
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
               }}>
@@ -311,11 +358,11 @@ const KeyRatiosTable: React.FC<{ data: RatioData[] }> = ({ data }) => {
                 <tr 
                   key={item.ratio} 
                   style={{ 
-                    borderBottom: index < data.length - 1 ? '1px solid rgba(255, 255, 255, 0.05)' : 'none',
+                    borderBottom: index < data.length - 1 ? '1px solid #e2e8f0' : 'none',
                     transition: 'background 0.2s ease',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                    e.currentTarget.style.background = '#f1f5f9';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = 'transparent';
@@ -325,26 +372,29 @@ const KeyRatiosTable: React.FC<{ data: RatioData[] }> = ({ data }) => {
                     padding: '16px', 
                     fontSize: '14px', 
                     fontWeight: 600, 
-                    color: 'rgba(255, 255, 255, 0.95)',
+                    color: '#0f172a',
                   }}>
                     {item.ratio}
                   </td>
                   <td style={{ 
                     padding: '16px', 
                     fontSize: '14px', 
-                    color: 'rgba(255, 255, 255, 0.8)',
+                    color: '#475569',
                   }}>
                     {item.value}
                   </td>
                   <td style={{ padding: '16px' }}>
-                    <span style={{
-                      padding: '6px 12px',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      borderRadius: '12px',
-                      display: 'inline-block',
-                      ...styles,
-                    }}>
+                    <span
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        borderRadius: '12px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        ...styles,
+                      }}
+                    >
                       {item.interpretation}
                     </span>
                   </td>
@@ -354,7 +404,7 @@ const KeyRatiosTable: React.FC<{ data: RatioData[] }> = ({ data }) => {
           </tbody>
         </table>
       </div>
-    </GlassmorphicCard>
+    </SectionCard>
   );
 };
 
@@ -365,9 +415,17 @@ function CFODashboard() {
   const [expenseBreakdown, setExpenseBreakdown] = useState<any[]>([]);
   const [ratios, setRatios] = useState<RatioData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const fetchDashboardData = async () => {
@@ -497,118 +555,44 @@ function CFODashboard() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)',
-      backgroundSize: '400% 400%',
-      animation: 'gradientShift 15s ease infinite',
-      padding: '24px',
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      <style>{`
-        @keyframes gradientShift {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        @media (max-width: 640px) {
-          .glassmorphic-card {
-            padding: 16px !important;
-          }
-        }
-      `}</style>
-      
-      {/* Animated background elements */}
-      <div style={{
-        position: 'absolute',
-        top: '-50%',
-        right: '-50%',
-        width: '800px',
-        height: '800px',
-        background: 'radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%)',
-        borderRadius: '50%',
-        animation: 'float 20s ease-in-out infinite',
-      }} />
-      <div style={{
-        position: 'absolute',
-        bottom: '-30%',
-        left: '-30%',
-        width: '600px',
-        height: '600px',
-        background: 'radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%)',
-        borderRadius: '50%',
-        animation: 'float 25s ease-in-out infinite reverse',
-      }} />
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          33% { transform: translate(30px, -30px) rotate(120deg); }
-          66% { transform: translate(-20px, 20px) rotate(240deg); }
-        }
-      `}</style>
-
-      <div style={{ position: 'relative', zIndex: 1, maxWidth: '1400px', margin: '0 auto' }}>
-        {/* Header */}
-        <GlassmorphicCard style={{ marginBottom: '32px', background: 'rgba(255, 255, 255, 0.15)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+    <div style={{ padding: isMobile ? 16 : 24, background: '#f8fafc' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <SectionCard>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
             <div>
-              <h1 style={{ 
-                fontSize: '32px', 
-                fontWeight: 800, 
-                color: 'rgba(255, 255, 255, 0.95)',
-                margin: 0,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                textShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
-              }}>
-                <Aperture style={{ width: '36px', height: '36px', color: '#3b82f6' }} />
+              <h1 style={{ fontSize: isMobile ? 28 : 32, fontWeight: 700, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <Aperture style={{ width: 32, height: 32, color: '#3b82f6' }} />
                 CFO Financial Dashboard
               </h1>
-              <p style={{ 
-                color: 'rgba(255, 255, 255, 0.8)', 
-                marginTop: '8px',
-                fontSize: '16px',
-              }}>
+              <p style={{ color: '#475569', marginTop: 8, fontSize: isMobile ? 14 : 16 }}>
                 Real-time financial overview for the month ending {currentMonthName}
               </p>
             </div>
+            <div style={{ textAlign: isMobile ? 'left' : 'right', color: '#475569', fontSize: 13 }}>
+              <div style={{ fontWeight: 600 }}>Reporting Period</div>
+              <div style={{ fontSize: 16 }}>{currentMonthName}</div>
+              <div style={{ marginTop: 4 }}>Updated {new Date().toLocaleString()}</div>
+            </div>
           </div>
-        </GlassmorphicCard>
+        </SectionCard>
 
-        <main style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {/* KPI Metrics Grid */}
-          <section style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: '20px',
-          }}>
-            {kpiData.map((kpi) => (
-              <MetricCard key={kpi.title} {...kpi} />
-            ))}
-          </section>
+        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
+          {kpiData.map((kpi) => (
+            <MetricCard key={kpi.title} {...kpi} />
+          ))}
+        </section>
 
-          {/* Charts & Visualizations */}
-          <section style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-            gap: '24px',
-          }}>
-            <div style={{ gridColumn: 'span 2' }}>
-              <RevenueProfitChart data={monthlyData} />
-            </div>
-            <div>
-              <ExpensesPieChart data={expenseBreakdown} />
-            </div>
-          </section>
+        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 24 }}>
+          <SectionCard>
+            <RevenueProfitChart data={monthlyData} />
+          </SectionCard>
+          <SectionCard>
+            <ExpensesPieChart data={expenseBreakdown} />
+          </SectionCard>
+        </section>
 
-          {/* Additional Financial Charts */}
-          <section style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-            gap: '24px',
-          }}>
+        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 24 }}>
+          <SectionCard>
             <FuturisticChart
               data={monthlyData}
               type="composed"
@@ -617,6 +601,8 @@ function CFODashboard() {
               colors={['#3b82f6', '#ef4444', '#10b981']}
               dataKeys={{ revenue: 'Revenue', expenses: 'Operating_Expenses', profit: 'Profit' }}
             />
+          </SectionCard>
+          <SectionCard>
             <FuturisticChart
               data={monthlyData.map(d => ({ month: d.month, Revenue: d.Revenue, COGS: d.COGS }))}
               type="bar"
@@ -625,13 +611,12 @@ function CFODashboard() {
               colors={['#3b82f6', '#f59e0b']}
               dataKeys={{ revenue: 'Revenue', expenses: 'COGS' }}
             />
-          </section>
+          </SectionCard>
+        </section>
 
-          {/* Financial Ratios Table */}
-          <section>
-            <KeyRatiosTable data={ratios} />
-          </section>
-        </main>
+        <SectionCard>
+          <KeyRatiosTable data={ratios} />
+        </SectionCard>
       </div>
     </div>
   );
@@ -643,9 +628,10 @@ export default function CFOPortal() {
   const [payouts, setPayouts] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<string>('overview');
+  const [activeSection, setActiveSection] = useState<string>('overview');
   const [isMobile, setIsMobile] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [isChatCollapsed, setIsChatCollapsed] = useState(true);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -698,381 +684,203 @@ export default function CFOPortal() {
     };
   }, [fetchData]);
 
-  return (
-    <Layout style={{ 
-      minHeight: '100vh', 
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)',
-      backgroundSize: '400% 400%',
-      animation: 'gradientShift 15s ease infinite',
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      <style>{`
-        @keyframes gradientShift {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-      `}</style>
-      
-      <Header style={{ 
-        background: 'rgba(255, 255, 255, 0.1)',
-        backdropFilter: 'blur(20px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-        padding: isMobile ? '12px 12px' : '16px 24px',
-        boxShadow: '0 4px 16px 0 rgba(0, 0, 0, 0.1)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: isMobile ? 12 : 16 }}>
-          <Space>
-            <Button
-              type="default"
-              size={isMobile ? 'small' : 'middle'}
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate('/hub')}
-              style={{
-                background: 'rgba(255, 255, 255, 0.2)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                color: 'rgba(255, 255, 255, 0.95)',
-              }}
-            >
-              Back to Hub
-            </Button>
-            <Typography.Title level={3} style={{ 
-              color: 'rgba(255, 255, 255, 0.95)', 
-              margin: 0, 
-              fontSize: isMobile ? 18 : 24,
-              textShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-            }}>
-              CFO Portal
-            </Typography.Title>
-          </Space>
-          <Space direction={isMobile ? 'vertical' : 'horizontal'} size="small" style={{ width: isMobile ? '100%' : 'auto' }}>
-            <RangePicker 
-              onChange={setRange} 
-              size={isMobile ? 'small' : 'default'} 
-              style={{ 
-                width: isMobile ? '100%' : 'auto',
-                background: 'rgba(255, 255, 255, 0.2)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-              }}
+  const navItems = useMemo<ExecutiveNavItem[]>(() => [
+    { id: 'overview', label: 'Overview Dashboard', icon: BarChart3 },
+    { id: 'transactions', label: `Transactions (${transactions.length})`, icon: FileText },
+    { id: 'payouts', label: `Payouts (${payouts.length})`, icon: DollarSign },
+    { id: 'manager', label: 'Manager Console', icon: Users },
+    { id: 'ap', label: 'Accounts Payable', icon: FileText },
+    { id: 'ar', label: 'Accounts Receivable', icon: FileText },
+    { id: 'approvals', label: 'Approvals', icon: ShieldAlert },
+    { id: 'forecast', label: 'Forecast', icon: Rocket },
+    { id: 'bva', label: 'Budget vs Actuals', icon: Lightbulb },
+    { id: 'close', label: 'Close Checklist', icon: FileText },
+    { id: 'treasury', label: 'Treasury', icon: DollarSign },
+    { id: 'communications', label: 'Executive Communications', icon: Mail },
+    { id: 'messages', label: 'Message Center', icon: Mail },
+    { id: 'wordprocessor', label: 'Word Processor', icon: FileText },
+  ], [transactions.length, payouts.length]);
+
+  const openPortal = (path: string, subdomain?: string) => {
+    const host = window.location.hostname;
+    if (subdomain && /^cfo\./i.test(host)) {
+      const target = host.replace(/^cfo\./i, `${subdomain}.`);
+      window.location.href = `${window.location.protocol}//${target}`;
+      return;
+    }
+    navigate(path);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    } finally {
+      navigate('/auth?hq=true');
+    }
+  };
+
+  const actionButtons = (
+    <Space wrap size={isMobile ? 4 : 8}>
+      <RangePicker onChange={setRange} size={isMobile ? 'small' : 'middle'} />
+      <Button onClick={fetchData} size={isMobile ? 'small' : 'middle'}>
+        Refresh
+      </Button>
+      <Button onClick={() => openPortal('/board', 'board')} size={isMobile ? 'small' : 'middle'}>
+        Board Portal
+      </Button>
+      <Button onClick={() => openPortal('/admin', 'admin')} size={isMobile ? 'small' : 'middle'}>
+        Admin Portal
+      </Button>
+      <Button onClick={() => openPortal('/ceo', 'ceo')} size={isMobile ? 'small' : 'middle'}>
+        CEO Command Center
+      </Button>
+      <Button
+        type="primary"
+        icon={<EditOutlined />}
+        onClick={() => setActiveSection('wordprocessor')}
+        size={isMobile ? 'small' : 'middle'}
+      >
+        Word Processor
+      </Button>
+    </Space>
+  );
+
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'overview':
+        return <CFODashboard />;
+      case 'transactions':
+        return (
+          <div className="overflow-hidden">
+            <Table
+              loading={loading}
+              dataSource={transactions}
+              rowKey={(r: any) => r.id || r.created_at}
+              size={isMobile ? 'small' : 'default'}
+              scroll={{ x: isMobile ? 600 : 'auto' }}
+              pagination={{ pageSize: isMobile ? 5 : 10, showSizeChanger: !isMobile }}
+              columns={[
+                { title: 'Date', dataIndex: 'created_at', render: (v: string) => new Date(v).toLocaleString(), width: 200 },
+                { title: 'Amount', dataIndex: 'total_amount', render: (v: number) => `$${(v || 0).toLocaleString()}` },
+              ]}
             />
-            <Button 
-              onClick={fetchData} 
+          </div>
+        );
+      case 'payouts':
+        return (
+          <div className="overflow-hidden">
+            <Table
+              loading={loading}
+              dataSource={payouts}
+              rowKey={(r: any) => r.id}
               size={isMobile ? 'small' : 'default'}
-              style={{
-                background: 'rgba(255, 255, 255, 0.2)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                color: 'rgba(255, 255, 255, 0.95)',
-              }}
-            >
-              Refresh
-            </Button>
-            <Button 
-              onClick={() => {
-                const host = window.location.hostname;
-                if (/^cfo\./i.test(host)) {
-                  const target = host.replace(/^cfo\./i, 'board.');
-                  window.location.href = `${window.location.protocol}//${target}`;
-                } else {
-                  navigate('/board');
-                }
-              }} 
-              size={isMobile ? 'small' : 'default'}
-              style={{
-                background: 'rgba(255, 255, 255, 0.2)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                color: 'rgba(255, 255, 255, 0.95)',
-              }}
-            >
-              Board Portal
-            </Button>
-            <Button 
-              onClick={() => {
-                const host = window.location.hostname;
-                if (/^cfo\./i.test(host)) {
-                  const target = host.replace(/^cfo\./i, 'admin.');
-                  window.location.href = `${window.location.protocol}//${target}`;
-                } else {
-                  navigate('/admin');
-                }
-              }} 
-              size={isMobile ? 'small' : 'default'}
-              style={{
-                background: 'rgba(255, 255, 255, 0.2)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                color: 'rgba(255, 255, 255, 0.95)',
-              }}
-            >
-              Admin Portal
-            </Button>
-            <Button 
-              onClick={() => {
-                const host = window.location.hostname;
-                if (/^cfo\./i.test(host)) {
-                  const target = host.replace(/^cfo\./i, 'ceo.');
-                  window.location.href = `${window.location.protocol}//${target}`;
-                } else {
-                  navigate('/');
-                }
-              }} 
-              size={isMobile ? 'small' : 'default'}
-              style={{
-                background: 'rgba(255, 255, 255, 0.2)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                color: 'rgba(255, 255, 255, 0.95)',
-              }}
-            >
-              CEO Command Center
-            </Button>
-            <Button 
-              type="primary"
-              icon={<EditOutlined />}
-              onClick={() => setActiveTab('wordprocessor')}
-              size={isMobile ? 'small' : 'default'}
-              style={{
-                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                border: 'none',
-                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
-              }}
-            >
-              Word Processor
-            </Button>
-          </Space>
-        </div>
-      </Header>
-      <Content style={{ padding: isMobile ? 12 : 24, position: 'relative', zIndex: 1 }}>
-        <div style={{ maxWidth: 1400, margin: "0 auto" }}>
-          <GlassmorphicCard style={{ marginBottom: 24, background: 'rgba(16, 185, 129, 0.15)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255, 255, 255, 0.95)', fontSize: '14px', fontWeight: 600 }}>
-                <CheckCircleOutlined style={{ color: '#10b981' }} /> Finance systems operational
-              </span>
-              <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px' }}>
-                Last updated: {lastUpdated.toLocaleTimeString()}
-              </span>
-            </div>
-          </GlassmorphicCard>
+              scroll={{ x: isMobile ? 600 : 'auto' }}
+              pagination={{ pageSize: isMobile ? 5 : 10, showSizeChanger: !isMobile }}
+              columns={[
+                { title: 'Payout ID', dataIndex: 'id' },
+                { title: 'Amount', dataIndex: 'amount', render: (v: number) => `$${(v || 0).toLocaleString()}` },
+                { title: 'Status', dataIndex: 'status' },
+                { title: 'Created', dataIndex: 'created_at', render: (v: string) => new Date(v).toLocaleString() },
+              ]}
+            />
+          </div>
+        );
+      case 'manager':
+        return <ManagerConsole />;
+      case 'ap':
+        return <AccountsPayable />;
+      case 'ar':
+        return <AccountsReceivable />;
+      case 'approvals':
+        return <ApprovalsPanel />;
+      case 'forecast':
+        return <CashFlowForecast />;
+      case 'bva':
+        return <BudgetVsActuals />;
+      case 'close':
+        return <CloseManagement />;
+      case 'treasury':
+        return <TreasuryView />;
+      case 'communications':
+        return <BusinessEmailSystem />;
+      case 'wordprocessor':
+        return <WordProcessor />;
+      default:
+        return <CFODashboard />;
+    }
+  };
 
-          {/* Executive Chat - Isolated per portal */}
-          <GlassmorphicCard style={{ marginBottom: 24 }}>
+  const content = renderContent();
+  const shouldWrapContent = activeSection !== 'overview';
+
+  return (
+    <ExecutivePortalLayout
+      title="CFO Portal"
+      subtitle="Financial operations command center"
+      navItems={navItems}
+      activeItemId={activeSection}
+      onSelect={setActiveSection}
+      onBack={() => navigate('/hub')}
+      onSignOut={handleSignOut}
+      actionButtons={actionButtons}
+      userInfo={{
+        initials: 'CF',
+        name: 'Chief Financial Officer',
+        role: 'Finance Leadership',
+      }}
+    >
+      <div className="space-y-6">
+        <SectionCard style={{ background: '#ecfdf5', borderColor: '#bbf7d0', padding: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, color: '#065f46', fontSize: 14 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600 }}>
+              <CheckCircleOutlined style={{ color: '#059669' }} /> Finance systems operational
+            </span>
+            <span style={{ fontSize: 12, color: '#047857' }}>
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </span>
+          </div>
+        </SectionCard>
+
+        <SectionCard style={{ padding: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isChatCollapsed ? 0 : 16 }}>
+            <h3 style={{ color: '#0f172a', fontSize: 18, fontWeight: 600, margin: 0 }}>Executive Chat</h3>
+            <Button
+              size="small"
+              type="default"
+              onClick={() => setIsChatCollapsed((prev) => !prev)}
+            >
+              {isChatCollapsed ? 'Expand' : 'Collapse'}
+            </Button>
+          </div>
+          {!isChatCollapsed && (
             <ExecutiveInboxIMessage role="cfo" deviceId={`cfo-portal-${window.location.hostname}`} />
-          </GlassmorphicCard>
+          )}
+        </SectionCard>
 
-          {/* High-Priority Quick Access - Responsive Grid */}
-          <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(1, minmax(0,1fr))' : 'repeat(4, minmax(0,1fr))', gap:16, marginBottom: 24 }}>
-            <BigNavButton color="#2563eb" hover="#1d4ed8" title="Manager Console" subtitle="Team & KPIs" onClick={()=> setActiveTab('manager')} infoContent="Access team management tools, view team KPIs, assign roles, and manage team performance metrics." />
-            <BigNavButton color="#16a34a" hover="#15803d" title="Accounts Payable" subtitle="Invoices & Runs" onClick={()=> setActiveTab('ap')} infoContent="Manage vendor invoices, create payment runs, approve expenses, and track accounts payable aging." />
-            <BigNavButton color="#f97316" hover="#ea580c" title="Accounts Receivable" subtitle="Aging & Collections" onClick={()=> setActiveTab('ar')} infoContent="View customer invoices, track receivables aging, manage collections, and monitor payment status." />
-            <BigNavButton color="#dc2626" hover="#b91c1c" title="Approvals" subtitle="Spend Reviews" onClick={()=> setActiveTab('approvals')} infoContent="Review and approve pending financial transactions, expense requests, and spending authorizations." />
-          </div>
-          <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(1, minmax(0,1fr))' : 'repeat(4, minmax(0,1fr))', gap:16, marginBottom: 24 }}>
-            <BigNavButton color="#0ea5e9" hover="#0284c7" title="Forecast" subtitle="Cash Flow" onClick={()=> setActiveTab('forecast')} infoContent="View cash flow projections, financial forecasts, and predictive analytics for future planning." />
-            <BigNavButton color="#7c3aed" hover="#6d28d9" title="Budget vs Actuals" subtitle="Variance" onClick={()=> setActiveTab('bva')} infoContent="Compare budgeted amounts against actual expenses and revenue to identify variances and trends." />
-            <BigNavButton color="#9333ea" hover="#7e22ce" title="Close" subtitle="Checklist & Recs" onClick={()=> setActiveTab('close')} infoContent="Monthly and quarterly closing checklist, journal entries, reconciliations, and closing procedures." />
-            <BigNavButton color="#0891b2" hover="#0e7490" title="Treasury" subtitle="Bank Balances" onClick={()=> setActiveTab('treasury')} infoContent="Monitor bank account balances, cash positions, and treasury management operations." />
-          </div>
-
-          <GlassmorphicCard style={{ background: 'rgba(255, 255, 255, 0.1)', padding: '24px', overflow: 'hidden' }}>
-            <Tabs
-              activeKey={activeTab}
-              onChange={setActiveTab}
-              size={isMobile ? 'small' : 'large'}
-              style={{
-                background: 'transparent',
-              }}
-              tabBarStyle={{ 
-                borderBottom: "1px solid rgba(255, 255, 255, 0.2)",
-                marginBottom: '24px',
-              }}
-            >
-            <TabPane
-              tab={
-                <Tooltip title="View comprehensive financial dashboard with KPIs, charts, and key metrics">
-                  <span>
-                    <BarChartOutlined /> Overview
-                  </span>
-                </Tooltip>
-              }
-              key="overview"
-            >
-              <CFODashboard />
-            </TabPane>
-            <TabPane
-              tab={
-                <Tooltip title="Browse all financial transactions, orders, and payment records">
-                  <span>
-                    <FileSearchOutlined /> Transactions
-                  </span>
-                </Tooltip>
-              }
-              key="transactions"
-            >
-              <div className="overflow-hidden">
-                <Table
-                  loading={loading}
-                  dataSource={transactions}
-                  rowKey={(r) => r.id || r.created_at}
-                  size={isMobile ? 'small' : 'default'}
-                  scroll={{ x: isMobile ? 600 : 'auto' }}
-                  pagination={{ pageSize: isMobile ? 5 : 10, showSizeChanger: !isMobile }}
-                  columns={[
-                    { title: "Date", dataIndex: "created_at", render: (v) => new Date(v).toLocaleString(), width: 200 },
-                    { title: "Amount", dataIndex: "total_amount", render: (v) => `$${(v || 0).toLocaleString()}` },
-                  ]}
-                />
-              </div>
-            </TabPane>
-            <TabPane
-              tab={
-                <Tooltip title="View driver and vendor payout records, payment history, and payout status">
-                  <span>
-                    <BankOutlined /> Payouts
-                  </span>
-                </Tooltip>
-              }
-              key="payouts"
-            >
-              <div className="overflow-hidden">
-                <Table
-                  loading={loading}
-                  dataSource={payouts}
-                  rowKey={(r) => r.id}
-                  size={isMobile ? 'small' : 'default'}
-                  scroll={{ x: isMobile ? 600 : 'auto' }}
-                  pagination={{ pageSize: isMobile ? 5 : 10, showSizeChanger: !isMobile }}
-                  columns={[
-                    { title: "Payout ID", dataIndex: "id" },
-                    { title: "Amount", dataIndex: "amount", render: (v) => `$${(v || 0).toLocaleString()}` },
-                    { title: "Status", dataIndex: "status" },
-                    { title: "Created", dataIndex: "created_at", render: (v) => new Date(v).toLocaleString() },
-                  ]}
-                />
-              </div>
-            </TabPane>
-            <TabPane
-              tab={
-                <Tooltip title="Manage team assignments, view team KPIs, and assign roles to team members">
-                  <span>
-                    <TeamOutlined /> Manager Console
-                  </span>
-                </Tooltip>
-              }
-              key="manager"
-            >
-              <ManagerConsole />
-            </TabPane>
-            <TabPane
-              tab={
-                <Tooltip title="Manage vendor invoices, create payment runs, and track accounts payable">
-                  <span>
-                    <FileTextOutlined /> Accounts Payable
-                  </span>
-                </Tooltip>
-              }
-              key="ap"
-            >
-              <AccountsPayable />
-            </TabPane>
-            <TabPane
-              tab={
-                <Tooltip title="Track customer invoices, receivables aging, and collections management">
-                  <span>
-                    <AccountBookOutlined /> Accounts Receivable
-                  </span>
-                </Tooltip>
-              }
-              key="ar"
-            >
-              <AccountsReceivable />
-            </TabPane>
-            <TabPane
-              tab={
-                <Tooltip title="Review and approve pending financial transactions and expense requests">
-                  <span>
-                    <CheckCircleTwoTone /> Approvals
-                  </span>
-                </Tooltip>
-              }
-              key="approvals"
-            >
-              <ApprovalsPanel />
-            </TabPane>
-            <TabPane
-              tab={
-                <Tooltip title="View cash flow forecasts, financial projections, and predictive analytics">
-                  <span>
-                    <LineChartOutlined /> Forecast
-                  </span>
-                </Tooltip>
-              }
-              key="forecast"
-            >
-              <CashFlowForecast />
-            </TabPane>
-            <TabPane
-              tab={
-                <Tooltip title="Compare budgeted amounts against actual expenses and revenue to analyze variances">
-                  <span>
-                    <CalculatorOutlined /> Budget vs Actuals
-                  </span>
-                </Tooltip>
-              }
-              key="bva"
-            >
-              <BudgetVsActuals />
-            </TabPane>
-            <TabPane
-              tab={
-                <Tooltip title="Monthly and quarterly closing procedures, checklists, and reconciliation tasks">
-                  <span>
-                    <CheckSquareOutlined /> Close
-                  </span>
-                </Tooltip>
-              }
-              key="close"
-            >
-              <CloseManagement />
-            </TabPane>
-            <TabPane
-              tab={
-                <Tooltip title="Monitor bank account balances, cash positions, and treasury operations">
-                  <span>
-                    <WalletOutlined /> Treasury
-                  </span>
-                </Tooltip>
-              }
-              key="treasury"
-            >
-              <TreasuryView />
-            </TabPane>
-            <TabPane 
-              tab={
-                <Tooltip title="Communicate with team members and view message history">
-                  <span>Message Center</span>
-                </Tooltip>
-              } 
-              key="messages"
-            >
-              <MessageCenter />
-            </TabPane>
-            <TabPane
-              tab={
-                <Tooltip title="Create and edit financial documents, reports, and memos">
-                  <span>
-                    <EditOutlined /> Word Processor
-                  </span>
-                </Tooltip>
-              }
-              key="wordprocessor"
-            >
-              <WordProcessor />
-            </TabPane>
-          </Tabs>
-        </GlassmorphicCard>
+        <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(1, minmax(0,1fr))' : 'repeat(4, minmax(0,1fr))', gap:12 }}>
+          <BigNavButton color="#2563eb" hover="#1d4ed8" title="Manager Console" subtitle="Team & KPIs" onClick={()=> setActiveSection('manager')} infoContent="Access team management tools, view team KPIs, assign roles, and manage team performance metrics." />
+          <BigNavButton color="#16a34a" hover="#15803d" title="Accounts Payable" subtitle="Invoices & Runs" onClick={()=> setActiveSection('ap')} infoContent="Manage vendor invoices, create payment runs, approve expenses, and track accounts payable aging." />
+          <BigNavButton color="#f97316" hover="#ea580c" title="Accounts Receivable" subtitle="Aging & Collections" onClick={()=> setActiveSection('ar')} infoContent="View customer invoices, track receivables aging, manage collections, and monitor payment status." />
+          <BigNavButton color="#dc2626" hover="#b91c1c" title="Approvals" subtitle="Spend Reviews" onClick={()=> setActiveSection('approvals')} infoContent="Review and approve pending financial transactions, expense requests, and spending authorizations." />
         </div>
-      </Content>
-    </Layout>
+        <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(1, minmax(0,1fr))' : 'repeat(4, minmax(0,1fr))', gap:12 }}>
+          <BigNavButton color="#0ea5e9" hover="#0284c7" title="Forecast" subtitle="Cash Flow" onClick={()=> setActiveSection('forecast')} infoContent="View cash flow projections, financial forecasts, and predictive analytics for future planning." />
+          <BigNavButton color="#7c3aed" hover="#6d28d9" title="Budget vs Actuals" subtitle="Variance" onClick={()=> setActiveSection('bva')} infoContent="Compare budgeted amounts against actual expenses and revenue to identify variances and trends." />
+          <BigNavButton color="#9333ea" hover="#7e22ce" title="Close" subtitle="Checklist & Recs" onClick={()=> setActiveSection('close')} infoContent="Monthly and quarterly closing checklist, journal entries, reconciliations, and closing procedures." />
+          <BigNavButton color="#0891b2" hover="#0e7490" title="Treasury" subtitle="Bank Balances" onClick={()=> setActiveSection('treasury')} infoContent="Monitor bank account balances, cash positions, and treasury management operations." />
+        </div>
+
+        {shouldWrapContent ? (
+          <SectionCard style={{ padding: isMobile ? 16 : 24, overflow: 'hidden' }}>
+            {content}
+          </SectionCard>
+        ) : (
+          content
+        )}
+      </div>
+    </ExecutivePortalLayout>
   );
 }
 
@@ -2044,330 +1852,122 @@ function TreasuryView() {
 
 function WordProcessor() {
   const [documents, setDocuments] = useState<any[]>([]);
-  const [currentDoc, setCurrentDoc] = useState<any>(null);
-  const [content, setContent] = useState('');
+  const [currentDoc, setCurrentDoc] = useState<any | null>(null);
   const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [newDocModalVisible, setNewDocModalVisible] = useState(false);
   const [newDocTitle, setNewDocTitle] = useState('');
-  const [form] = Form.useForm();
-  const editorRef = useRef<HTMLDivElement>(null);
-  const [shareModalVisible, setShareModalVisible] = useState(false);
-  const [recipients, setRecipients] = useState<any[]>([]);
-  const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
-  const [fontFamily, setFontFamily] = useState('Georgia');
-  const [fontSize, setFontSize] = useState(16);
-  const [textColor, setTextColor] = useState('#ffffff');
-  const shareForm = Form.useForm()[0];
 
-  useEffect(() => {
-    fetchDocuments();
-    fetchRecipients();
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  useEffect(() => {
-    // Auto-save every 30 seconds if there's a current document and content
-    if (currentDoc && content) {
-      const autoSaveTimer = setTimeout(() => {
-        handleSave(false);
-      }, 30000);
-      return () => clearTimeout(autoSaveTimer);
-    }
-  }, [content, currentDoc]);
-
-  const fetchRecipients = async () => {
-    try {
-      // Fetch employees
-      const { data: employees, error: empError } = await supabase
-        .from('employees')
-        .select('id, first_name, last_name, email, position, employment_status')
-        .eq('employment_status', 'active')
-        .order('first_name');
-
-      // Fetch admins and C-suite from user_roles
-      const { data: roles, error: roleError } = await supabase
-        .from('user_roles')
-        .select('user_id, role')
-        .in('role', ['admin', 'ceo', 'cfo', 'coo', 'cto'])
-        .order('role');
-
-      // Fetch user profiles for role users
-      const roleUserIds = (roles || []).map(r => r.user_id);
-      const { data: profiles, error: profileError } = roleUserIds.length > 0
-        ? await supabase
-            .from('profiles')
-            .select('id, full_name, email')
-            .in('id', roleUserIds)
-        : { data: [], error: null };
-
-      const allRecipients: any[] = [];
-
-      // Add employees
-      if (employees) {
-        employees.forEach((emp: any) => {
-          allRecipients.push({
-            id: emp.id,
-            name: `${emp.first_name} ${emp.last_name}`,
-            email: emp.email,
-            role: emp.position,
-            type: 'employee',
-          });
-        });
-      }
-
-      // Add C-suite and admins
-      if (profiles && roles) {
-        profiles.forEach((profile: any) => {
-          const userRole = roles.find(r => r.user_id === profile.id);
-          if (userRole) {
-            allRecipients.push({
-              id: profile.id,
-              name: profile.full_name || 'Unknown',
-              email: profile.email,
-              role: userRole.role.toUpperCase(),
-              type: 'executive',
-            });
-          }
-        });
-      }
-
-      setRecipients(allRecipients);
-    } catch (err: any) {
-      console.error('Error fetching recipients:', err);
-    }
-  };
-
-  const executeCommand = (command: string, value?: string) => {
-    document.execCommand(command, false, value);
-    if (editorRef.current) {
-      setContent(editorRef.current.innerHTML);
-    }
-  };
-
-  const handlePrint = () => {
-    if (!currentDoc) {
-      message.warning('No document selected');
-      return;
-    }
-
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>${title}</title>
-          <style>
-            body { 
-              font-family: ${fontFamily}, serif; 
-              font-size: ${fontSize}px;
-              color: ${textColor};
-              padding: 40px;
-              max-width: 800px;
-              margin: 0 auto;
-            }
-            @media print {
-              body { padding: 20px; }
-            }
-          </style>
-        </head>
-        <body>
-          <h1>${title}</h1>
-          <div>${content || '<p>No content</p>'}</div>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-    }, 250);
-  };
-
-  const handleShare = async () => {
-    if (!currentDoc) {
-      message.warning('No document selected');
-      return;
-    }
-
-    if (selectedRecipients.length === 0) {
-      message.warning('Please select at least one recipient');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Create a shared document notification or email
-      // For now, we'll store it in a shared documents table or send via messaging
-      const recipientList = selectedRecipients.map(id => {
-        const recipient = recipients.find(r => r.id === id);
-        return recipient ? recipient.email : id;
-      }).join(', ');
-
-      message.success(`Document shared with ${selectedRecipients.length} recipient(s)`);
-      setShareModalVisible(false);
-      setSelectedRecipients([]);
-    } catch (err: any) {
-      console.error('Error sharing document:', err);
-      message.error('Failed to share document');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('cfo_documents')
-        .select('*')
+        .select('id, title, content, updated_at, created_at')
         .order('updated_at', { ascending: false })
-        .limit(50);
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setDocuments(data || []);
-    } catch (err: any) {
-      console.error('Error fetching documents:', err);
+      const docs = data || [];
+      setDocuments(docs);
+
+      if (docs.length === 0) {
+        setCurrentDoc(null);
+        setTitle('');
+        setContent('');
+        return;
+      }
+
+      if (!currentDoc || !docs.some((doc) => doc.id === currentDoc.id)) {
+        const firstDoc = docs[0];
+        setCurrentDoc(firstDoc);
+        setTitle(firstDoc.title ?? '');
+        setContent(firstDoc.content ?? '');
+      }
+    } catch (error) {
+      console.error('Error loading documents:', error);
       message.error('Failed to load documents');
     } finally {
       setLoading(false);
     }
+  }, [currentDoc]);
+
+  useEffect(() => {
+    fetchDocuments();
+  }, [fetchDocuments]);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleSelectDocument = (doc: any) => {
+    setCurrentDoc(doc);
+    setTitle(doc.title ?? '');
+    setContent(doc.content ?? '');
   };
 
-  const handleNewDocument = async () => {
-    if (!newDocTitle.trim()) {
-      message.warning('Please enter a document title');
+  const handleSaveDocument = async () => {
+    if (!title.trim()) {
+      message.warning('Document title is required');
       return;
     }
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('cfo_documents')
-        .insert({
-          title: newDocTitle.trim(),
-          content: '',
-          created_by: (await supabase.auth.getUser()).data.user?.id,
-        })
-        .select()
-        .single();
+      if (currentDoc) {
+        const { error } = await supabase
+          .from('cfo_documents')
+          .update({ title: title.trim(), content })
+          .eq('id', currentDoc.id);
 
-      if (error) throw error;
-
-      setDocuments([data, ...documents]);
-      setCurrentDoc(data);
-      setTitle(data.title);
-      setContent('');
-      if (editorRef.current) {
-        editorRef.current.innerHTML = '';
-      }
-      setNewDocModalVisible(false);
-      setNewDocTitle('');
-      message.success('New document created');
-    } catch (err: any) {
-      console.error('Error creating document:', err);
-      message.error('Failed to create document');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLoadDocument = async (doc: any) => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('cfo_documents')
-        .select('*')
-        .eq('id', doc.id)
-        .single();
-
-      if (error) throw error;
-
-      setCurrentDoc(data);
-      setTitle(data.title);
-      setContent(data.content || '');
-      if (editorRef.current) {
-        editorRef.current.innerHTML = data.content || '';
-      }
-      message.success('Document loaded');
-    } catch (err: any) {
-      console.error('Error loading document:', err);
-      message.error('Failed to load document');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSave = async (showMessage = true) => {
-    if (!currentDoc) {
-      message.warning('No document selected');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { error } = await supabase
-        .from('cfo_documents')
-        .update({
-          title: title.trim(),
-          content: content,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', currentDoc.id);
-
-      if (error) throw error;
-
-      // Update local documents list
-      const updatedDocs = documents.map(doc =>
-        doc.id === currentDoc.id
-          ? { ...doc, title: title.trim(), content, updated_at: new Date().toISOString() }
-          : doc
-      );
-      setDocuments(updatedDocs);
-      setCurrentDoc({ ...currentDoc, title: title.trim(), content });
-
-      if (showMessage) {
+        if (error) throw error;
         message.success('Document saved');
+      } else {
+        const { data, error } = await supabase
+          .from('cfo_documents')
+          .insert({ title: title.trim(), content })
+          .select()
+          .single();
+
+        if (error) throw error;
+        setCurrentDoc(data);
       }
-    } catch (err: any) {
-      console.error('Error saving document:', err);
+
+      fetchDocuments();
+    } catch (error) {
+      console.error('Error saving document:', error);
       message.error('Failed to save document');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (doc: any) => {
+  const handleDeleteDocument = async (doc: any) => {
     Modal.confirm({
-      title: 'Delete Document',
-      content: `Are you sure you want to delete "${doc.title}"? This action cannot be undone.`,
+      title: 'Delete document',
+      content: `Are you sure you want to delete "${doc.title}"?`,
       okText: 'Delete',
       okType: 'danger',
-      cancelText: 'Cancel',
       onOk: async () => {
         setLoading(true);
         try {
-          const { error } = await supabase
-            .from('cfo_documents')
-            .delete()
-            .eq('id', doc.id);
-
+          const { error } = await supabase.from('cfo_documents').delete().eq('id', doc.id);
           if (error) throw error;
+          message.success('Document deleted');
 
-          setDocuments(documents.filter(d => d.id !== doc.id));
           if (currentDoc?.id === doc.id) {
             setCurrentDoc(null);
             setTitle('');
             setContent('');
           }
-          message.success('Document deleted');
-        } catch (err: any) {
+
+          fetchDocuments();
+        } catch (err) {
           console.error('Error deleting document:', err);
           message.error('Failed to delete document');
         } finally {
@@ -2377,426 +1977,172 @@ function WordProcessor() {
     });
   };
 
-  const formatDate = (dateString: string) => {
+  const handleCreateDocument = async () => {
+    const trimmed = newDocTitle.trim();
+    if (!trimmed) {
+      message.warning('Enter a document title');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('cfo_documents')
+        .insert({ title: trimmed, content: '' })
+        .select()
+        .single();
+
+      if (error) throw error;
+      setNewDocTitle('');
+      setNewDocModalVisible(false);
+      setCurrentDoc(data);
+      setTitle(data?.title ?? '');
+      setContent(data?.content ?? '');
+      fetchDocuments();
+      message.success('Document created');
+    } catch (err) {
+      console.error('Error creating document:', err);
+      message.error('Failed to create document');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString?: string | null) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   };
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 200px)', gap: 16 }}>
-      {/* Sidebar - Document List */}
-      <div style={{
-        width: isMobile ? '100%' : 280,
-        background: 'rgba(255, 255, 255, 0.1)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-        borderRadius: 12,
-        padding: 16,
-        display: 'flex',
-        flexDirection: 'column',
-        ...(isMobile && currentDoc && { display: 'none' }),
-      }}>
-        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography.Title level={5} style={{ margin: 0 }}>Documents</Typography.Title>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            size="small"
-            onClick={() => setNewDocModalVisible(true)}
+    <>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : '280px 1fr',
+          gap: 16,
+          alignItems: 'stretch',
+        }}
+      >
+        {(!isMobile || !currentDoc) && (
+          <div
+            style={{
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: 12,
+              padding: 16,
+              background: 'rgba(255, 255, 255, 0.08)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+            }}
           >
-            New
-          </Button>
-        </div>
-        
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          {loading && documents.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 20 }}>Loading...</div>
-          ) : documents.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 20, color: '#999' }}>
-              No documents yet
-            </div>
-          ) : (
-            documents.map((doc) => (
-              <div
-                key={doc.id}
-                onClick={() => handleLoadDocument(doc)}
-                style={{
-                  padding: 12,
-                  marginBottom: 8,
-                  background: currentDoc?.id === doc.id ? 'rgba(59, 130, 246, 0.3)' : 'rgba(255, 255, 255, 0.05)',
-                  backdropFilter: 'blur(10px)',
-                  WebkitBackdropFilter: 'blur(10px)',
-                  border: `1px solid ${currentDoc?.id === doc.id ? 'rgba(59, 130, 246, 0.5)' : 'rgba(255, 255, 255, 0.2)'}`,
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  if (currentDoc?.id !== doc.id) {
-                    e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (currentDoc?.id !== doc.id) {
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <Typography.Text strong style={{ fontSize: 14, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {doc.title}
-                    </Typography.Text>
-                    <Typography.Text type="secondary" style={{ fontSize: 11 }}>
-                      {formatDate(doc.updated_at || doc.created_at)}
-                    </Typography.Text>
-                  </div>
-                  <Button
-                    type="text"
-                    danger
-                    size="small"
-                    icon={<DeleteOutlined />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(doc);
-                    }}
-                    style={{ marginLeft: 8, flexShrink: 0 }}
-                  />
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* Main Editor Area */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        background: 'rgba(255, 255, 255, 0.1)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-        borderRadius: 12,
-        padding: 16,
-        ...(isMobile && !currentDoc && { display: 'none' }),
-      }}>
-        {currentDoc ? (
-          <>
-            {/* Toolbar */}
-            <div style={{ marginBottom: 12, padding: '8px 12px', background: 'rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', borderRadius: 8, border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-              <Space size="small" wrap>
-                {/* Text Formatting */}
-                <Button.Group size="small">
-                  <Button
-                    icon={<BoldOutlined />}
-                    onClick={() => executeCommand('bold')}
-                    title="Bold"
-                  />
-                  <Button
-                    icon={<ItalicOutlined />}
-                    onClick={() => executeCommand('italic')}
-                    title="Italic"
-                  />
-                  <Button
-                    icon={<UnderlineOutlined />}
-                    onClick={() => executeCommand('underline')}
-                    title="Underline"
-                  />
-                  <Button
-                    icon={<StrikethroughOutlined />}
-                    onClick={() => executeCommand('strikeThrough')}
-                    title="Strikethrough"
-                  />
-                </Button.Group>
-
-                <Divider type="vertical" />
-
-                {/* Alignment */}
-                <Button.Group size="small">
-                  <Button
-                    icon={<AlignLeftOutlined />}
-                    onClick={() => executeCommand('justifyLeft')}
-                    title="Align Left"
-                  />
-                  <Button
-                    icon={<AlignCenterOutlined />}
-                    onClick={() => executeCommand('justifyCenter')}
-                    title="Align Center"
-                  />
-                  <Button
-                    icon={<AlignRightOutlined />}
-                    onClick={() => executeCommand('justifyRight')}
-                    title="Align Right"
-                  />
-                </Button.Group>
-
-                <Divider type="vertical" />
-
-                {/* Lists */}
-                <Button.Group size="small">
-                  <Button
-                    icon={<UnorderedListOutlined />}
-                    onClick={() => executeCommand('insertUnorderedList')}
-                    title="Bullet List"
-                  />
-                  <Button
-                    icon={<OrderedListOutlined />}
-                    onClick={() => executeCommand('insertOrderedList')}
-                    title="Numbered List"
-                  />
-                </Button.Group>
-
-                <Divider type="vertical" />
-
-                {/* Font Settings */}
-                <Select
-                  value={fontFamily}
-                  onChange={setFontFamily}
-                  size="small"
-                  style={{ width: 140 }}
-                  suffixIcon={<FontSizeOutlined />}
-                >
-                  <Select.Option value="Georgia">Georgia</Select.Option>
-                  <Select.Option value="Times New Roman">Times New Roman</Select.Option>
-                  <Select.Option value="Arial">Arial</Select.Option>
-                  <Select.Option value="Helvetica">Helvetica</Select.Option>
-                  <Select.Option value="Courier New">Courier New</Select.Option>
-                  <Select.Option value="Verdana">Verdana</Select.Option>
-                  <Select.Option value="Calibri">Calibri</Select.Option>
-                </Select>
-
-                <Select
-                  value={fontSize}
-                  onChange={setFontSize}
-                  size="small"
-                  style={{ width: 80 }}
-                >
-                  {[10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48].map(size => (
-                    <Select.Option key={size} value={size}>{size}pt</Select.Option>
-                  ))}
-                </Select>
-
-                <Input
-                  type="color"
-                  value={textColor}
-                  onChange={(e) => {
-                    setTextColor(e.target.value);
-                    executeCommand('foreColor', e.target.value);
-                  }}
-                  size="small"
-                  style={{ width: 50, height: 28, padding: 2, cursor: 'pointer' }}
-                  title="Text Color"
-                />
-              </Space>
-            </div>
-
-            {/* Title and Action Buttons */}
-            <div style={{ marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Document title"
-                style={{ flex: 1, minWidth: 200 }}
-              />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography.Title level={5} style={{ margin: 0 }}>
+                Documents
+              </Typography.Title>
               <Button
                 type="primary"
-                icon={<SaveOutlined />}
-                onClick={() => handleSave(true)}
-                loading={loading}
+                size="small"
+                icon={<PlusOutlined />}
+                onClick={() => setNewDocModalVisible(true)}
               >
-                Save
+                New
               </Button>
-              <Button
-                icon={<PrinterOutlined />}
-                onClick={handlePrint}
-                title="Print"
-              >
-                Print
-              </Button>
-              <Button
-                icon={<ShareAltOutlined />}
-                onClick={() => setShareModalVisible(true)}
-                title="Share Document"
-              >
-                Share
-              </Button>
-              {isMobile && (
-                <Button onClick={() => {
-                  setCurrentDoc(null);
-                  setTitle('');
-                  setContent('');
-                  if (editorRef.current) {
-                    editorRef.current.innerHTML = '';
-                  }
-                }}>
-                  Back
-                </Button>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {loading && documents.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 20 }}>Loading…</div>
+              ) : documents.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 20, color: '#a1a1aa' }}>
+                  No documents yet
+                </div>
+              ) : (
+                documents.map((doc) => (
+                  <Button
+                    key={doc.id}
+                    type={currentDoc?.id === doc.id ? 'primary' : 'default'}
+                    block
+                    style={{
+                      marginBottom: 8,
+                      textAlign: 'left',
+                      height: 'auto',
+                      whiteSpace: 'normal',
+                    }}
+                    onClick={() => handleSelectDocument(doc)}
+                  >
+                    <div style={{ fontWeight: 600 }}>{doc.title || 'Untitled document'}</div>
+                    <div style={{ fontSize: 12, opacity: 0.7 }}>{formatDate(doc.updated_at || doc.created_at)}</div>
+                  </Button>
+                ))
               )}
             </div>
-
-            {/* Rich Text Editor */}
-            <div
-              ref={editorRef}
-              contentEditable
-              onInput={(e) => {
-                const html = e.currentTarget.innerHTML;
-                setContent(html);
-                // Apply font settings
-                e.currentTarget.style.fontFamily = fontFamily;
-                e.currentTarget.style.fontSize = `${fontSize}px`;
-                e.currentTarget.style.color = textColor;
-              }}
-              onBlur={() => {
-                if (editorRef.current) {
-                  setContent(editorRef.current.innerHTML);
-                }
-              }}
-              style={{
-                flex: 1,
-                fontFamily: fontFamily,
-                fontSize: `${fontSize}px`,
-                color: textColor,
-                lineHeight: 1.8,
-                padding: 20,
-                background: 'rgba(255, 255, 255, 0.1)',
-                backdropFilter: 'blur(10px)',
-                WebkitBackdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: 12,
-                minHeight: 400,
-                overflowY: 'auto',
-                outline: 'none',
-              }}
-              suppressContentEditableWarning={true}
-              data-placeholder="Start typing your document here..."
-              onFocus={(e) => {
-                if (e.currentTarget.innerHTML === '' || e.currentTarget.innerHTML === '<br>') {
-                  e.currentTarget.innerHTML = '';
-                }
-              }}
-            />
-            <style>{`
-              [contenteditable][data-placeholder]:empty:before {
-                content: attr(data-placeholder);
-                color: rgba(255, 255, 255, 0.5);
-                pointer-events: none;
-              }
-            `}</style>
-
-            <div style={{ marginTop: 12, fontSize: 12, color: 'rgba(255, 255, 255, 0.7)', textAlign: 'right', display: 'flex', justifyContent: 'space-between' }}>
-              <span>Font: {fontFamily} | Size: {fontSize}pt</span>
-              <span>Auto-saves every 30 seconds</span>
-            </div>
-          </>
-        ) : (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-            color: '#999',
-          }}>
-            <FileOutlined style={{ fontSize: 64, marginBottom: 16 }} />
-            <Typography.Text style={{ fontSize: 16, marginBottom: 8 }}>
-              No document selected
-            </Typography.Text>
-            <Typography.Text type="secondary" style={{ fontSize: 14 }}>
-              Create a new document or select one from the list
-            </Typography.Text>
           </div>
         )}
-      </div>
 
-      {/* New Document Modal */}
-      <Modal
-        title="Create New Document"
-        open={newDocModalVisible}
-        onOk={handleNewDocument}
-        onCancel={() => {
-          setNewDocModalVisible(false);
-          setNewDocTitle('');
-        }}
-        confirmLoading={loading}
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item label="Document Title" required>
-            <Input
-              value={newDocTitle}
-              onChange={(e) => setNewDocTitle(e.target.value)}
-              placeholder="Enter document title"
-              onPressEnter={handleNewDocument}
-              autoFocus
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
+        <div
+          style={{
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: 12,
+            padding: 16,
+            background: 'rgba(255, 255, 255, 0.08)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 16,
+          }}
+        >
+          {currentDoc ? (
+            <>
+              <Space style={{ width: '100%' }} wrap>
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Document title"
+                  style={{ flex: 1, minWidth: 200 }}
+                />
+                <Button type="primary" loading={loading} onClick={handleSaveDocument}>
+                  Save
+                </Button>
+                <Button danger onClick={() => currentDoc && handleDeleteDocument(currentDoc)}>
+                  Delete
+                </Button>
+              </Space>
 
-      {/* Share Document Modal */}
-      <Modal
-        title="Share Document"
-        open={shareModalVisible}
-        onOk={handleShare}
-        onCancel={() => {
-          setShareModalVisible(false);
-          setSelectedRecipients([]);
-        }}
-        confirmLoading={loading}
-        width={600}
-      >
-        <Form form={shareForm} layout="vertical">
-          <Form.Item label="Select Recipients">
-            <Select
-              mode="multiple"
-              placeholder="Select team members, C-suite, or admins"
-              value={selectedRecipients}
-              onChange={setSelectedRecipients}
-              showSearch
-              filterOption={(input, option: any) =>
-                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-              }
-              style={{ width: '100%' }}
-            >
-              <Select.OptGroup label="C-Suite & Executives">
-                {recipients.filter(r => r.type === 'executive').map((recipient: any) => (
-                  <Select.Option key={recipient.id} value={recipient.id} label={`${recipient.name} (${recipient.role})`}>
-                    <div>
-                      <strong>{recipient.name}</strong> <span style={{ color: '#999' }}>— {recipient.role}</span>
-                      <br />
-                      <span style={{ fontSize: 12, color: '#666' }}>{recipient.email}</span>
-                    </div>
-                  </Select.Option>
-                ))}
-              </Select.OptGroup>
-              <Select.OptGroup label="Team Members">
-                {recipients.filter(r => r.type === 'employee').map((recipient: any) => (
-                  <Select.Option key={recipient.id} value={recipient.id} label={`${recipient.name} (${recipient.role})`}>
-                    <div>
-                      <strong>{recipient.name}</strong> <span style={{ color: '#999' }}>— {recipient.role}</span>
-                      <br />
-                      <span style={{ fontSize: 12, color: '#666' }}>{recipient.email}</span>
-                    </div>
-                  </Select.Option>
-                ))}
-              </Select.OptGroup>
-            </Select>
-          </Form.Item>
-          {selectedRecipients.length > 0 && (
-            <div style={{ marginTop: 16, padding: 12, background: '#f5f5f5', borderRadius: 6 }}>
-              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                Document will be shared with {selectedRecipients.length} recipient(s)
-              </Typography.Text>
+              <Input.TextArea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                autoSize={{ minRows: isMobile ? 12 : 18, maxRows: 30 }}
+                placeholder="Start typing your document here…"
+              />
+            </>
+          ) : (
+            <div style={{ textAlign: 'center', padding: 40 }}>
+              <Typography.Title level={4}>Create your first document</Typography.Title>
+              <Typography.Paragraph type="secondary">
+                Draft financial memos, board summaries, or approvals using the built-in editor.
+              </Typography.Paragraph>
+              <Button type="primary" onClick={() => setNewDocModalVisible(true)}>
+                Create Document
+              </Button>
             </div>
           )}
-        </Form>
+        </div>
+      </div>
+
+      <Modal
+        open={newDocModalVisible}
+        title="New Document"
+        okText="Create"
+        okButtonProps={{ loading }}
+        onOk={handleCreateDocument}
+        onCancel={() => setNewDocModalVisible(false)}
+      >
+        <Input
+          value={newDocTitle}
+          onChange={(e) => setNewDocTitle(e.target.value)}
+          placeholder="Document title"
+        />
       </Modal>
-    </div>
+    </>
   );
 }

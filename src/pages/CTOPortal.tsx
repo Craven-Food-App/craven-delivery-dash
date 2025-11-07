@@ -1,11 +1,12 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Row, Col, Statistic, Tabs, Table, Badge, Card, Button, Space, Progress, Alert, Modal, Form, Input, InputNumber, Select, message, Popconfirm } from 'antd';
-import { CloudOutlined, BugOutlined, LockOutlined, DatabaseOutlined, DashboardOutlined, PlusOutlined, EditOutlined, DeleteOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { Layout, Typography, Row, Col, Statistic, Tabs, Table, Badge, Card, Button, Space, Progress, Alert, Modal, Form, Input, InputNumber, Select, message, Popconfirm, Divider } from 'antd';
+import { CloudOutlined, BugOutlined, LockOutlined, DatabaseOutlined, DashboardOutlined, PlusOutlined, EditOutlined, DeleteOutlined, ArrowLeftOutlined, MailOutlined } from '@ant-design/icons';
 import { useExecAuth } from '@/hooks/useExecAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { ExecutiveInboxIMessage } from '@/components/executive/ExecutiveInboxIMessage';
+import BusinessEmailSystem from '@/components/executive/BusinessEmailSystem';
 
 const { Header, Content } = Layout;
 const { TabPane } = Tabs;
@@ -22,6 +23,7 @@ export default function CTOPortal() {
     assetsTotal: 0,
     licensesExpiring: 0
   });
+  const [isChatCollapsed, setIsChatCollapsed] = useState(true);
 
   useEffect(() => {
     if (isAuthorized) {
@@ -70,9 +72,17 @@ export default function CTOPortal() {
       </Header>
       
       <Content className="p-6 bg-gray-50">
-        {/* Executive Chat - Isolated per portal */}
+        {/* Executive Chat - Collapsible */}
         <div className="mb-6">
-          <ExecutiveInboxIMessage role="cto" deviceId={`cto-portal-${window.location.hostname}`} />
+          <div className="flex items-center justify-between mb-2">
+            <Typography.Title level={5} className="m-0">Executive Chat</Typography.Title>
+            <Button size="small" onClick={() => setIsChatCollapsed((prev) => !prev)}>
+              {isChatCollapsed ? 'Expand' : 'Collapse'}
+            </Button>
+          </div>
+          {!isChatCollapsed && (
+            <ExecutiveInboxIMessage role="cto" deviceId={`cto-portal-${window.location.hostname}`} />
+          )}
         </div>
         <Divider style={{ margin: '16px 0' }} />
 
@@ -132,6 +142,9 @@ export default function CTOPortal() {
           </TabPane>
           <TabPane tab={<><LockOutlined /> Security</>} key="security">
             <SecurityDashboard />
+          </TabPane>
+          <TabPane tab={<><MailOutlined /> Executive Communications</>} key="communications">
+            <BusinessEmailSystem />
           </TabPane>
           <TabPane tab={<><DatabaseOutlined /> Assets</>} key="assets">
             <AssetManagement />

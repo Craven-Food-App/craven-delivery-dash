@@ -912,6 +912,14 @@ const MainHub: React.FC = () => {
       color: "#eb2f96",
     },
     {
+      id: "cxo",
+      name: "CXO Experience Portal",
+      description: "Experience leadership and customer insights",
+      icon: TeamOutlined,
+      path: "/cxo",
+      color: "#fa541c",
+    },
+    {
       id: "hr",
       name: "HR Portal",
       description: "Human resources and document generation",
@@ -940,6 +948,7 @@ const MainHub: React.FC = () => {
       case 'cfo': return canCFO;
       case 'coo': return canCOO;
       case 'cto': return canCTO;
+      case 'cxo': return canCEO;
       case 'hr': return canHR;
       default: return true;
     }
@@ -1027,7 +1036,7 @@ const MainHub: React.FC = () => {
                   textOverflow: "ellipsis",
                 }}
               >
-                Enterprise Portal Hub
+                Portal Access
               </Title>
               <Text
                 type="secondary"
@@ -1092,22 +1101,7 @@ const MainHub: React.FC = () => {
             background: "#ffffff",
           }}
         >
-          <div style={{ marginBottom: 48 }}>
-            <Title
-              level={1}
-              style={{
-                color: "#111827",
-                fontSize: 32,
-                fontWeight: 700,
-                marginBottom: 8,
-              }}
-            >
-              Portal Access
-            </Title>
-            <Text type="secondary" style={{ fontSize: 16, color: "#6b7280" }}>
-              Access your department portal or administrative dashboard
-            </Text>
-          </div>
+          <div style={{ marginBottom: 48 }} />
 
           {/* Time Clock Section - Show when user is logged in */}
           {user && (

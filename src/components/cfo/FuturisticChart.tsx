@@ -34,14 +34,14 @@ interface ChartProps {
 }
 
 const defaultColors = [
-  '#3b82f6', // blue
-  '#10b981', // green
-  '#f59e0b', // amber
-  '#ef4444', // red
-  '#8b5cf6', // purple
-  '#ec4899', // pink
-  '#06b6d4', // cyan
-  '#84cc16', // lime
+  '#2563eb',
+  '#059669',
+  '#f59e0b',
+  '#dc2626',
+  '#7c3aed',
+  '#db2777',
+  '#0ea5e9',
+  '#65a30d',
 ];
 
 export const FuturisticChart: React.FC<ChartProps> = ({
@@ -68,15 +68,15 @@ export const FuturisticChart: React.FC<ChartProps> = ({
                   <stop offset="95%" stopColor={colors[1]} stopOpacity={0.1}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-              <XAxis dataKey="month" stroke="rgba(255, 255, 255, 0.7)" />
-              <YAxis stroke="rgba(255, 255, 255, 0.7)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="month" stroke="#475467" />
+              <YAxis stroke="#475467" />
               <Tooltip
                 contentStyle={{
-                  background: 'rgba(0, 0, 0, 0.8)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  background: '#ffffff',
+                  border: '1px solid #e5e7eb',
                   borderRadius: '8px',
-                  color: '#fff',
+                  color: '#1f2937',
                 }}
               />
               <Legend />
@@ -90,15 +90,15 @@ export const FuturisticChart: React.FC<ChartProps> = ({
         return (
           <ResponsiveContainer width="100%" height={height}>
             <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-              <XAxis dataKey="month" stroke="rgba(255, 255, 255, 0.7)" />
-              <YAxis stroke="rgba(255, 255, 255, 0.7)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="month" stroke="#475467" />
+              <YAxis stroke="#475467" />
               <Tooltip
                 contentStyle={{
-                  background: 'rgba(0, 0, 0, 0.8)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  background: '#ffffff',
+                  border: '1px solid #e5e7eb',
                   borderRadius: '8px',
-                  color: '#fff',
+                  color: '#1f2937',
                 }}
               />
               <Legend />
@@ -128,10 +128,10 @@ export const FuturisticChart: React.FC<ChartProps> = ({
               </Pie>
               <Tooltip
                 contentStyle={{
-                  background: 'rgba(0, 0, 0, 0.8)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  background: '#ffffff',
+                  border: '1px solid #e5e7eb',
                   borderRadius: '8px',
-                  color: '#fff',
+                  color: '#1f2937',
                 }}
               />
             </PieChart>
@@ -142,16 +142,16 @@ export const FuturisticChart: React.FC<ChartProps> = ({
         return (
           <ResponsiveContainer width="100%" height={height}>
             <RadarChart data={data}>
-              <PolarGrid stroke="rgba(255, 255, 255, 0.2)" />
-              <PolarAngleAxis dataKey="subject" stroke="rgba(255, 255, 255, 0.7)" />
-              <PolarRadiusAxis stroke="rgba(255, 255, 255, 0.2)" />
+              <PolarGrid stroke="#e5e7eb" />
+              <PolarAngleAxis dataKey="subject" stroke="#475467" />
+              <PolarRadiusAxis stroke="#e5e7eb" />
               <Radar name="Value" dataKey="value" stroke={colors[0]} fill={colors[0]} fillOpacity={0.6} />
               <Tooltip
                 contentStyle={{
-                  background: 'rgba(0, 0, 0, 0.8)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  background: '#ffffff',
+                  border: '1px solid #e5e7eb',
                   borderRadius: '8px',
-                  color: '#fff',
+                  color: '#1f2937',
                 }}
               />
             </RadarChart>
@@ -162,16 +162,16 @@ export const FuturisticChart: React.FC<ChartProps> = ({
         return (
           <ResponsiveContainer width="100%" height={height}>
             <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-              <XAxis dataKey="month" stroke="rgba(255, 255, 255, 0.7)" />
-              <YAxis yAxisId="left" stroke="rgba(255, 255, 255, 0.7)" />
-              <YAxis yAxisId="right" orientation="right" stroke="rgba(255, 255, 255, 0.7)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="month" stroke="#475467" />
+              <YAxis yAxisId="left" stroke="#475467" />
+              <YAxis yAxisId="right" orientation="right" stroke="#475467" />
               <Tooltip
                 contentStyle={{
-                  background: 'rgba(0, 0, 0, 0.8)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  background: '#ffffff',
+                  border: '1px solid #e5e7eb',
                   borderRadius: '8px',
-                  color: '#fff',
+                  color: '#1f2937',
                 }}
               />
               <Legend />
@@ -186,15 +186,15 @@ export const FuturisticChart: React.FC<ChartProps> = ({
         return (
           <ResponsiveContainer width="100%" height={height}>
             <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-              <XAxis dataKey="month" stroke="rgba(255, 255, 255, 0.7)" />
-              <YAxis stroke="rgba(255, 255, 255, 0.7)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="month" stroke="#475467" />
+              <YAxis stroke="#475467" />
               <Tooltip
                 contentStyle={{
-                  background: 'rgba(0, 0, 0, 0.8)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  background: '#ffffff',
+                  border: '1px solid #e5e7eb',
                   borderRadius: '8px',
-                  color: '#fff',
+                  color: '#1f2937',
                 }}
               />
               <Legend />
@@ -209,12 +209,11 @@ export const FuturisticChart: React.FC<ChartProps> = ({
   return (
     <GlassmorphicCard>
       {title && (
-        <h3 style={{ 
-          color: 'rgba(255, 255, 255, 0.95)', 
-          fontSize: '20px', 
-          fontWeight: 700, 
+        <h3 style={{
+          color: '#101828',
+          fontSize: '20px',
+          fontWeight: 700,
           marginBottom: '20px',
-          textShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
         }}>
           {title}
         </h3>

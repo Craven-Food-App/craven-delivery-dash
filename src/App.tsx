@@ -63,6 +63,7 @@ import CFOPortal from "./pages/CFOPortal";
 import CEOPortal from "./pages/CEOPortal";
 import COOPortal from "./pages/COOPortal";
 import CTOPortal from "./pages/CTOPortal";
+import CXOPortal from "./pages/CXOPortal";
 import MarketingPortal from "./pages/MarketingPortal";
 import HRPortal from "./pages/HRPortal";
 import MainHub from "./pages/MainHub";
@@ -114,6 +115,7 @@ const App = () => {
            pathname.includes('/cfo') ||
            pathname.includes('/coo') ||
            pathname.includes('/cto') ||
+           pathname.includes('/cxo') ||
            pathname.includes('/board'))) ||
         (hostname === '127.0.0.1' && 
           (search.includes('hq=true') || 
@@ -124,6 +126,7 @@ const App = () => {
            pathname.includes('/cfo') ||
            pathname.includes('/coo') ||
            pathname.includes('/cto') ||
+           pathname.includes('/cxo') ||
            pathname.includes('/board'))) ||
         search.includes('hq=true')
       );
@@ -268,6 +271,7 @@ const App = () => {
                   <Route path="/cfo" element={<BusinessAuthGuard><CFOPortal /></BusinessAuthGuard>} />
                   <Route path="/coo" element={<BusinessAuthGuard><COOPortal /></BusinessAuthGuard>} />
                   <Route path="/cto" element={<BusinessAuthGuard><CTOPortal /></BusinessAuthGuard>} />
+                  <Route path="/cxo" element={<BusinessAuthGuard><CXOPortal /></BusinessAuthGuard>} />
                   <Route path="/executive-portal/documents" element={<ExecutiveDocumentPortal />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
@@ -520,6 +524,7 @@ const App = () => {
           <Route path="/ceo" element={<BusinessAuthGuard><CEOPortal /></BusinessAuthGuard>} />
           <Route path="/coo" element={<BusinessAuthGuard><COOPortal /></BusinessAuthGuard>} />
           <Route path="/cto" element={<BusinessAuthGuard><CTOPortal /></BusinessAuthGuard>} />
+          <Route path="/cxo" element={<BusinessAuthGuard><CXOPortal /></BusinessAuthGuard>} />
           <Route path="/marketing-portal" element={<MarketingPortal />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/checkout" element={<Checkout />} />
