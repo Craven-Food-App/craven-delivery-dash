@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { 
-  Card, List, Button, Modal, Form, Input, Select, Tag, Avatar, message, 
+  Card, List, Button, Modal, Form, Input, Select, Tag, Avatar, message as antdMessage, 
   Badge, Space, Typography, Divider, Empty, Spin, Tooltip, Alert, Tabs
 } from 'antd';
 import {
@@ -17,6 +17,7 @@ import {
   ClockCircleOutlined,
   TeamOutlined,
   SafetyOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import BusinessEmailSystem from '@/components/executive/BusinessEmailSystem';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,6 +38,7 @@ interface Message {
     id: string;
     title: string;
     role: string;
+    mention_handle?: string;
   };
   to_user_ids: string[];
   subject: string;
@@ -45,6 +47,8 @@ interface Message {
   is_confidential: boolean;
   read_by: string[];
   created_at: string;
+  trashed_for?: string[];
+  delete_mark_for?: string[];
 }
 
 interface Contact {
@@ -54,6 +58,8 @@ interface Contact {
   role: string;
   type: 'executive' | 'admin';
   email?: string;
+  mention_handle?: string | null;
+  allow_direct_messages?: boolean | null;
 }
 
 export const ExecutiveComms: React.FC = () => {
@@ -107,7 +113,7 @@ export const ExecutiveComms: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        message.error('Please log in to access communications');
+        antdMessage.error('Please log in to access communications');
         return;
       }
 
@@ -144,7 +150,7 @@ export const ExecutiveComms: React.FC = () => {
 
     } catch (error) {
       console.error('Error initializing comms:', error);
-      message.error('Failed to initialize communications');
+      antdMessage.error('Failed to initialize communications');
     } finally {
       setLoading(false);
     }
@@ -155,7 +161,7 @@ export const ExecutiveComms: React.FC = () => {
       // Fetch executives from exec_users
       const { data: execData, error: execError } = await supabase
         .from('exec_users')
-        .select('id, role, title, user_id');
+        .select('id, role, title, user_id, mention_handle, allow_direct_messages');
 
       if (execError) throw execError;
 
@@ -178,13 +184,17 @@ export const ExecutiveComms: React.FC = () => {
       if (empError) console.warn('Error fetching employees:', empError);
 
       // Map executives
-      const executives: Contact[] = (execData || []).map(exec => ({
-        id: exec.id,
-        name: exec.title || exec.role.toUpperCase(),
-        title: exec.title,
-        role: exec.role,
-        type: 'executive' as const
-      }));
+      const executives: Contact[] = (execData || [])
+        .filter(exec => exec.allow_direct_messages ?? true)
+        .map(exec => ({
+          id: exec.id,
+          name: exec.title || exec.role.toUpperCase(),
+          title: exec.title,
+          role: exec.role,
+          type: 'executive' as const,
+          mention_handle: exec.mention_handle,
+          allow_direct_messages: exec.allow_direct_messages,
+        }));
 
       // Map employees
       const employees: Contact[] = (employeeData || []).map(emp => ({
@@ -226,7 +236,7 @@ export const ExecutiveComms: React.FC = () => {
         (data || []).map(async (msg) => {
           const { data: senderData } = await supabase
             .from('exec_users')
-            .select('id, title, role')
+            .select('id, title, role, mention_handle')
             .eq('id', msg.from_user_id)
             .single();
 
@@ -246,7 +256,7 @@ export const ExecutiveComms: React.FC = () => {
 
   const sendMessage = async (values: any) => {
     if (!currentExecId) {
-      message.error('Unable to send message: User not found');
+      antdMessage.error('Unable to send message: User not found');
       return;
     }
 
@@ -260,7 +270,9 @@ export const ExecutiveComms: React.FC = () => {
           subject: values.subject,
           message: values.message,
           priority: values.priority || 'normal',
-          is_confidential: values.is_confidential || false
+          is_confidential: values.is_confidential || false,
+          trashed_for: [],
+          delete_mark_for: []
         })
         .select()
         .single();
@@ -275,14 +287,14 @@ export const ExecutiveComms: React.FC = () => {
         subject: values.subject
       });
 
-      message.success('Message sent successfully');
+      antdMessage.success('Message sent successfully');
       setModalVisible(false);
       form.resetFields();
       fetchMessages();
 
     } catch (error) {
       console.error('Error sending message:', error);
-      message.error('Failed to send message');
+      antdMessage.error('Failed to send message');
     } finally {
       setSending(false);
     }
@@ -347,24 +359,109 @@ export const ExecutiveComms: React.FC = () => {
     return null;
   };
 
-  // Filter messages
-  const filteredMessages = messages.filter(msg => {
-    const matchesSearch = !searchText || 
-      msg.subject.toLowerCase().includes(searchText.toLowerCase()) ||
-      msg.message.toLowerCase().includes(searchText.toLowerCase());
-    
-    const matchesPriority = filterPriority === 'all' || msg.priority === filterPriority;
-    
-    const isUnread = !msg.read_by || !msg.read_by.includes(currentExecId);
-    const matchesUnread = !filterUnread || isUnread;
+  const moveMessageToTrash = async (msg: Message) => {
+    if (!currentExecId) return;
+    const updatedTrashed = Array.from(
+      new Set([...(msg.trashed_for || []), currentExecId]),
+    );
 
-    return matchesSearch && matchesPriority && matchesUnread;
-  });
+    try {
+      const { error } = await supabase
+        .from('exec_messages')
+        .update({ trashed_for: updatedTrashed })
+        .eq('id', msg.id);
 
-  // Separate inbox and sent messages
-  const inboxMessages = filteredMessages.filter(m => m.to_user_ids?.includes(currentExecId));
-  const sentMessages = filteredMessages.filter(m => m.from_user_id === currentExecId);
-  const unreadCount = inboxMessages.filter(m => !m.read_by || !m.read_by.includes(currentExecId)).length;
+      if (error) throw error;
+
+      await logAuditTrail('message_trashed', {
+        message_id: msg.id,
+      });
+
+      antdMessage.success('Message moved to trash');
+      fetchMessages();
+    } catch (error) {
+      console.error('Error moving message to trash:', error);
+      antdMessage.error('Failed to move message to trash');
+    }
+  };
+
+  const permanentlyDeleteMessage = async (msg: Message) => {
+    if (!currentExecId) return;
+    const updatedDeleteMark = Array.from(
+      new Set([...(msg.delete_mark_for || []), currentExecId]),
+    );
+
+    try {
+      const { error } = await supabase
+        .from('exec_messages')
+        .update({ delete_mark_for: updatedDeleteMark })
+        .eq('id', msg.id);
+
+      if (error) throw error;
+
+      await logAuditTrail('message_delete_marked', {
+        message_id: msg.id,
+      });
+
+      antdMessage.success('Message deleted. CEO review pending for purge.');
+      fetchMessages();
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      antdMessage.error('Failed to delete message');
+    }
+  };
+
+  const isTrashedForUser = (msg: Message) => msg.trashed_for?.includes(currentExecId) ?? false;
+  const isDeletedForUser = (msg: Message) => msg.delete_mark_for?.includes(currentExecId) ?? false;
+
+  const matchesSearchFilter = (msg: Message) =>
+    !searchText ||
+    msg.subject.toLowerCase().includes(searchText.toLowerCase()) ||
+    msg.message.toLowerCase().includes(searchText.toLowerCase()) ||
+    (msg.from_user?.mention_handle &&
+      `@${msg.from_user.mention_handle}`.toLowerCase().includes(searchText.toLowerCase()));
+
+  const matchesPriorityFilter = (msg: Message) =>
+    filterPriority === 'all' || msg.priority === filterPriority;
+
+  const matchesUnreadFilter = (msg: Message) => {
+    if (!filterUnread) return true;
+    return !msg.read_by || !msg.read_by.includes(currentExecId);
+  };
+
+  const inboxMessages = messages.filter(
+    (msg) =>
+      msg.to_user_ids?.includes(currentExecId) &&
+      !isTrashedForUser(msg) &&
+      !isDeletedForUser(msg) &&
+      matchesSearchFilter(msg) &&
+      matchesPriorityFilter(msg) &&
+      matchesUnreadFilter(msg),
+  );
+
+  const sentMessages = messages.filter(
+    (msg) =>
+      msg.from_user_id === currentExecId &&
+      !isTrashedForUser(msg) &&
+      !isDeletedForUser(msg) &&
+      matchesSearchFilter(msg) &&
+      matchesPriorityFilter(msg) &&
+      matchesUnreadFilter(msg),
+  );
+
+  const trashMessages = messages.filter(
+    (msg) =>
+      isTrashedForUser(msg) &&
+      !isDeletedForUser(msg) &&
+      matchesSearchFilter(msg) &&
+      matchesPriorityFilter(msg),
+  );
+
+  const unreadCount = inboxMessages.filter(
+    (msg) => !msg.read_by || !msg.read_by.includes(currentExecId),
+  ).length;
+
+  const trashCount = trashMessages.length;
 
   const viewMessage = (msg: Message) => {
     setSelectedMessage(msg);
@@ -530,6 +627,11 @@ export const ExecutiveComms: React.FC = () => {
                             <Space direction="vertical" size={0} style={{ width: '100%' }}>
                               <Text type="secondary" style={{ wordBreak: 'normal' }}>
                                 From: {msg.from_user?.title || 'Unknown'}
+                                {msg.from_user?.mention_handle && (
+                                  <span style={{ marginLeft: 4 }}>
+                                    (@{msg.from_user.mention_handle})
+                                  </span>
+                                )}
                               </Text>
                               <Text type="secondary" ellipsis style={{ 
                                 maxWidth: '100%',
@@ -618,6 +720,69 @@ export const ExecutiveComms: React.FC = () => {
             >
               <BusinessEmailSystem />
             </TabPane>
+
+            <TabPane
+              tab={
+                <span>
+                  <DeleteOutlined />
+                  Trash {trashCount > 0 && <Badge count={trashCount} style={{ marginLeft: 8 }} />}
+                </span>
+              }
+              key="trash"
+            >
+              {trashMessages.length === 0 ? (
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description="Trash is empty"
+                />
+              ) : (
+                <List
+                  dataSource={trashMessages}
+                  renderItem={(msg) => (
+                    <List.Item
+                      key={msg.id}
+                      style={{
+                        cursor: 'pointer',
+                        padding: '16px',
+                        borderRadius: '8px',
+                        marginBottom: '8px',
+                        border: '1px solid #f0f0f0'
+                      }}
+                      onClick={() => viewMessage(msg)}
+                    >
+                      <List.Item.Meta
+                        avatar={
+                          <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#fa8c16' }} />
+                        }
+                        title={
+                          <Space>
+                            <Text strong style={{ fontSize: '16px' }}>{msg.subject}</Text>
+                            <Tag color={getPriorityColor(msg.priority)}>
+                              {msg.priority.toUpperCase()}
+                            </Tag>
+                          </Space>
+                        }
+                        description={
+                          <Space direction="vertical" size={0}>
+                            <Text type="secondary">
+                              From: {msg.from_user?.title || 'Unknown'}
+                              {msg.from_user?.mention_handle && (
+                                <span style={{ marginLeft: 4 }}>
+                                  (@{msg.from_user.mention_handle})
+                                </span>
+                              )}
+                            </Text>
+                            <Text type="secondary" style={{ fontSize: '12px' }}>
+                              <ClockCircleOutlined /> {dayjs(msg.created_at).fromNow()}
+                            </Text>
+                          </Space>
+                        }
+                      />
+                    </List.Item>
+                  )}
+                />
+              )}
+            </TabPane>
           </Tabs>
         </Card>
       </Space>
@@ -653,20 +818,46 @@ export const ExecutiveComms: React.FC = () => {
               mode="multiple"
               placeholder="Select recipients"
               showSearch
-              filterOption={(input, option) =>
-                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-              }
+              filterOption={(input, option) => {
+                const contact: Contact | undefined = option?.data?.contact;
+                if (!contact) return false;
+                const haystack = `${contact.name} ${contact.title || ''} ${
+                  contact.mention_handle ? `@${contact.mention_handle}` : ''
+                }`.toLowerCase();
+                return haystack.includes(input.toLowerCase());
+              }}
               options={contacts.map(contact => ({
                 value: contact.id,
-                label: `${contact.name} - ${contact.title}`,
-                type: contact.type
+                label: contact.mention_handle
+                  ? `@${contact.mention_handle}`
+                  : contact.name,
+                type: contact.type,
+                contact,
               }))}
-              optionRender={(option) => (
-                <Space>
-                  <TeamOutlined style={{ color: option.data.type === 'executive' ? '#1890ff' : '#52c41a' }} />
-                  {option.label}
-                </Space>
-              )}
+              optionRender={(option) => {
+                const contact: Contact | undefined = option.data.contact;
+                if (!contact) {
+                  return option.label;
+                }
+
+                return (
+                  <Space direction="vertical" size={0}>
+                    <Space>
+                      <TeamOutlined
+                        style={{
+                          color: contact.type === 'executive' ? '#1890ff' : '#52c41a',
+                        }}
+                      />
+                      <span>{contact.name}</span>
+                    </Space>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      {contact.mention_handle
+                        ? `@${contact.mention_handle}`
+                        : contact.title || contact.role.toUpperCase()}
+                    </Text>
+                  </Space>
+                );
+              }}
             />
           </Form.Item>
 
@@ -736,14 +927,40 @@ export const ExecutiveComms: React.FC = () => {
           setSelectedMessage(null);
         }}
         footer={[
-          <Button 
-            key="close" 
+          selectedMessage && !isTrashedForUser(selectedMessage) ? (
+            <Button
+              key="trash"
+              danger
+              onClick={() => {
+                moveMessageToTrash(selectedMessage);
+                setDetailModalVisible(false);
+              }}
+              size={window.innerWidth < 768 ? 'small' : 'middle'}
+            >
+              Move to Trash
+            </Button>
+          ) : null,
+          selectedMessage && isTrashedForUser(selectedMessage) ? (
+            <Button
+              key="delete"
+              danger
+              onClick={() => {
+                permanentlyDeleteMessage(selectedMessage);
+                setDetailModalVisible(false);
+              }}
+              size={window.innerWidth < 768 ? 'small' : 'middle'}
+            >
+              Delete Permanently
+            </Button>
+          ) : null,
+          <Button
+            key="close"
             onClick={() => setDetailModalVisible(false)}
             size={window.innerWidth < 768 ? 'small' : 'middle'}
           >
             Close
-          </Button>
-        ]}
+          </Button>,
+        ].filter(Boolean)}
         width={window.innerWidth < 768 ? '95%' : 700}
         style={{ top: window.innerWidth < 768 ? 10 : 100 }}
       >
@@ -754,6 +971,11 @@ export const ExecutiveComms: React.FC = () => {
                 <Text strong style={{ fontSize: window.innerWidth < 768 ? '13px' : '14px' }}>From:</Text>
                 <Text style={{ fontSize: window.innerWidth < 768 ? '13px' : '14px' }}>
                   {selectedMessage.from_user?.title || 'Unknown'}
+                  {selectedMessage.from_user?.mention_handle && (
+                    <span style={{ marginLeft: 4 }}>
+                      (@{selectedMessage.from_user.mention_handle})
+                    </span>
+                  )}
                 </Text>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>

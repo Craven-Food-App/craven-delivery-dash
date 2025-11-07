@@ -24,7 +24,7 @@ import { AuditTrail } from '@/components/ceo/AuditTrail';
 import { QuickActions } from '@/components/ceo/QuickActions';
 import { EquityDashboard } from '@/components/ceo/EquityDashboard';
 import { ExecutiveInboxIMessage } from '@/components/executive/ExecutiveInboxIMessage';
-import BusinessEmailSystem from '@/components/executive/BusinessEmailSystem';
+import ExecutiveCommunicationsCenter from '@/components/executive/ExecutiveCommunicationsCenter';
 import ExecutivePortalLayout, { ExecutiveNavItem } from '@/components/executive/ExecutivePortalLayout';
 import { useExecAuth } from '@/hooks/useExecAuth';
 // No Card components: full-page Ant layout
@@ -126,7 +126,7 @@ const CEOPortal: React.FC = () => {
       case 'audit':
         return <AuditTrail />;
       case 'communications':
-        return <BusinessEmailSystem />;
+        return <ExecutiveCommunicationsCenter defaultTab="messages" />;
       default:
         return <QuickActions />;
     }

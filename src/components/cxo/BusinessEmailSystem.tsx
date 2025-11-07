@@ -21,6 +21,8 @@ import {
   ChevronRight,
   CornerDownLeft,
 } from 'lucide-react';
+import { message } from 'antd';
+import { supabase } from '@/integrations/supabase/client';
 
 type FolderId = 'inbox' | 'sent' | 'drafts' | 'trash' | 'archive';
 
@@ -35,12 +37,14 @@ interface FolderWithCount extends Folder {
 }
 
 interface Email {
-  id: number;
+  id: string;
   subject: string;
   sender: string;
+  senderHandle?: string | null;
   recipient: string;
+  recipientHandle?: string | null;
   body: string;
-  timestamp: string;
+  createdAt: string;
   folder: FolderId;
   read: boolean;
   priority?: 'high' | 'low';
@@ -54,60 +58,6 @@ const BASE_FOLDERS: Folder[] = [
   { id: 'archive', name: 'Archive', icon: Tag },
 ];
 
-const INITIAL_EMAILS: Email[] = [
-  {
-    id: 1,
-    subject: 'Project Status Update',
-    sender: 'Alice Johnson',
-    recipient: 'You',
-    body: 'The Q3 report is finalized and ready for your review. Please check the attached document for detailed metrics and next steps.',
-    timestamp: '10:30 AM',
-    folder: 'inbox',
-    read: false,
-    priority: 'high',
-  },
-  {
-    id: 2,
-    subject: 'Meeting Confirmation',
-    sender: 'Calendar Bot',
-    recipient: 'You',
-    body: 'Your meeting with the marketing team on Nov 10th is confirmed.',
-    timestamp: '9:15 AM',
-    folder: 'inbox',
-    read: true,
-  },
-  {
-    id: 3,
-    subject: 'Draft: Quarterly Goals',
-    sender: 'You',
-    recipient: 'Bob Smith',
-    body: 'Just a draft outlining the core Q4 goals for the team...',
-    timestamp: 'Yesterday',
-    folder: 'drafts',
-    read: true,
-  },
-  {
-    id: 4,
-    subject: 'Follow-up on Customer CX',
-    sender: 'Charlie Doe',
-    recipient: 'You',
-    body: 'We received excellent feedback from the latest customer survey! Great work team.',
-    timestamp: '3 days ago',
-    folder: 'inbox',
-    read: false,
-  },
-  {
-    id: 5,
-    subject: 'Re: Team Lunch',
-    sender: 'You',
-    recipient: 'Team',
-    body: 'Yes, pizza sounds perfect for Friday!',
-    timestamp: '5:00 PM',
-    folder: 'sent',
-    read: true,
-  },
-];
-
 const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({
   children,
   className = '',
@@ -116,6 +66,20 @@ const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({
     {children}
   </div>
 );
+
+interface ExecHandle {
+  id: string;
+  title: string | null;
+  role: string;
+  mention_handle: string | null;
+  allow_direct_messages: boolean | null;
+}
+
+const sanitizeHandle = (value: string) =>
+  value
+    .trim()
+    .replace(/^@+/, '')
+    .toLowerCase();
 
 interface SidebarProps {
   folders: FolderWithCount[];
@@ -377,21 +341,46 @@ interface ComposeEmailProps {
   setIsComposing: (state: boolean) => void;
   addEmail: (email: Omit<Email, 'id' | 'timestamp' | 'folder' | 'read'>) => void;
   saveDraft: (email: Omit<Email, 'id' | 'timestamp' | 'folder' | 'read'>) => void;
+  handles: ExecHandle[];
+  handlesLoading: boolean;
 }
 
 const ComposeEmail: React.FC<ComposeEmailProps> = ({
   setIsComposing,
   addEmail,
   saveDraft,
+  handles,
+  handlesLoading,
 }) => {
   const [recipient, setRecipient] = useState('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const normalizedRecipient = sanitizeHandle(recipient);
+
+  const availableHandles = useMemo(
+    () => handles.filter((entry) => entry.mention_handle && (entry.allow_direct_messages ?? true)),
+    [handles],
+  );
+
+  const suggestions = useMemo(() => {
+    if (!normalizedRecipient) {
+      return availableHandles.slice(0, 6);
+    }
+    return availableHandles
+      .filter((entry) =>
+        entry.mention_handle &&
+        sanitizeHandle(entry.mention_handle).includes(normalizedRecipient),
+      )
+      .slice(0, 6);
+  }, [availableHandles, normalizedRecipient]);
 
   const resetForm = () => {
     setRecipient('');
     setSubject('');
     setBody('');
+    setValidationError(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -399,7 +388,20 @@ const ComposeEmail: React.FC<ComposeEmailProps> = ({
     if (!recipient || !subject || !body) {
       return;
     }
-    addEmail({ recipient, subject, body, sender: 'You' });
+    const matchedHandle = availableHandles.find(
+      (entry) =>
+        entry.mention_handle &&
+        sanitizeHandle(entry.mention_handle) === normalizedRecipient,
+    );
+
+    if (!matchedHandle) {
+      setValidationError('Select a valid executive @handle.');
+      return;
+    }
+
+    const formattedRecipient = `@${sanitizeHandle(matchedHandle.mention_handle || '')}`;
+
+    addEmail({ recipient: formattedRecipient, subject, body, sender: 'You' });
     resetForm();
   };
 
@@ -410,6 +412,17 @@ const ComposeEmail: React.FC<ComposeEmailProps> = ({
     }
     saveDraft({ recipient, subject, body, sender: 'You' });
     resetForm();
+  };
+
+  const handleRecipientChange = (value: string) => {
+    if (!value) {
+      setRecipient('');
+      setValidationError(null);
+      return;
+    }
+    const sanitized = value.startsWith('@') ? value : `@${value}`;
+    setRecipient(sanitized.replace(/\s+/g, ''));
+    setValidationError(null);
   };
 
   return (
@@ -431,13 +444,44 @@ const ComposeEmail: React.FC<ComposeEmailProps> = ({
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-y-auto">
         <div className="p-4 space-y-3 border-b border-gray-100">
           <input
-            type="email"
-            placeholder="Recipient"
+            type="text"
+            placeholder="Recipient @handle"
             value={recipient}
-            onChange={(e) => setRecipient(e.target.value)}
+            onChange={(e) => handleRecipientChange(e.target.value)}
             required
             className="w-full p-2 border-b text-sm focus:outline-none focus:border-orange-500"
           />
+          {handlesLoading ? (
+            <p className="text-xs text-gray-400">Loading executive directory…</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {suggestions.map((entry) => (
+                <button
+                  type="button"
+                  key={entry.id}
+                  onClick={() => {
+                    if (!entry.mention_handle) return;
+                    setRecipient(`@${entry.mention_handle}`);
+                    setValidationError(null);
+                  }}
+                  className="px-2 py-1 text-xs bg-orange-50 text-orange-700 rounded-full hover:bg-orange-100 transition"
+                >
+                  @{entry.mention_handle}
+                  <span className="ml-1 text-[10px] text-gray-500">
+                    {entry.title || entry.role.toUpperCase()}
+                  </span>
+                </button>
+              ))}
+              {suggestions.length === 0 && !handlesLoading && (
+                <span className="text-xs text-gray-400">
+                  No matching executives. Check spelling or configure handles in settings.
+                </span>
+              )}
+            </div>
+          )}
+          {validationError && (
+            <p className="text-xs text-red-500">{validationError}</p>
+          )}
           <input
             type="text"
             placeholder="Subject"
@@ -485,6 +529,8 @@ const BusinessEmailSystem: React.FC = () => {
   const [selectedEmailId, setSelectedEmailId] = useState<number | null>(null);
   const [isComposing, setIsComposing] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [execHandles, setExecHandles] = useState<ExecHandle[]>([]);
+  const [handlesLoading, setHandlesLoading] = useState(false);
 
   const folderCounts = useMemo(() => {
     const counts: Record<FolderId, number> = {
@@ -615,6 +661,34 @@ const BusinessEmailSystem: React.FC = () => {
   const viewerVisible = !!selectedEmail && !isComposing;
   const listVisible = !isComposing;
 
+  useEffect(() => {
+    const fetchHandles = async () => {
+      setHandlesLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('exec_users')
+          .select('id, title, role, mention_handle, allow_direct_messages')
+          .order('title', { ascending: true, nullsFirst: false });
+
+        if (error) throw error;
+
+        setExecHandles(
+          (data || []).filter(
+            (entry): entry is ExecHandle =>
+              !!entry.mention_handle && (entry.allow_direct_messages ?? true),
+          ),
+        );
+      } catch (err) {
+        console.error('Unable to load executive handles', err);
+        message.error('Unable to load executive handles');
+      } finally {
+        setHandlesLoading(false);
+      }
+    };
+
+    fetchHandles();
+  }, []);
+
   return (
     <div className="relative bg-gray-50 border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
       {/* Mobile overlay */}
@@ -681,6 +755,8 @@ const BusinessEmailSystem: React.FC = () => {
                 setIsComposing={setIsComposing}
                 addEmail={addEmail}
                 saveDraft={saveDraft}
+                handles={execHandles}
+                handlesLoading={handlesLoading}
               />
             )}
 

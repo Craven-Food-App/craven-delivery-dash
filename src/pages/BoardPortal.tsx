@@ -17,7 +17,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { ExecutiveDirectory } from '@/components/board/ExecutiveDirectory';
-import { ExecutiveComms } from '@/components/board/ExecutiveComms';
+import ExecutiveCommunicationsCenter from '@/components/executive/ExecutiveCommunicationsCenter';
 import { PersonnelManager } from '@/components/ceo/PersonnelManager';
 import { EquityDashboard } from '@/components/ceo/EquityDashboard';
 import { FinancialApprovals } from '@/components/ceo/FinancialApprovals';
@@ -337,7 +337,7 @@ const BoardPortal: React.FC = () => {
                       <span className="text-xs sm:text-base">Communications</span>
                     </span>
                   ),
-                  children: <ExecutiveComms />,
+                  children: <ExecutiveCommunicationsCenter defaultTab="messages" compact />,
                 },
                 {
                   key: 'directory',
