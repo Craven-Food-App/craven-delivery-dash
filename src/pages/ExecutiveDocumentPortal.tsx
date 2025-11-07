@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Button, Tag, Space, message, Modal, Input } from 'antd';
-import { FileTextOutlined, CheckCircleOutlined, ClockCircleOutlined, EyeOutlined, DownloadOutlined } from '@ant-design/icons';
+import { Card, Button, Tag, Space, message, Modal, Input, Alert, Progress } from 'antd';
+import { FileTextOutlined, CheckCircleOutlined, ClockCircleOutlined, EyeOutlined, DownloadOutlined, LockOutlined } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useExecAuth } from '@/hooks/useExecAuth';
 import { LoadingOutlined } from '@ant-design/icons';
@@ -18,6 +18,13 @@ interface ExecutiveDocument {
   created_at: string;
   signature_token?: string;
   signature_token_expires_at?: string;
+  signing_stage?: number;
+  signing_order?: number;
+  depends_on_document_id?: string;
+  packet_id?: string;
+  template_key?: string;
+  can_sign?: boolean; // Computed: all dependencies signed
+  blocking_documents?: ExecutiveDocument[]; // Documents that must be signed first
 }
 
 export const ExecutiveDocumentPortal: React.FC = () => {
@@ -67,11 +74,45 @@ export const ExecutiveDocumentPortal: React.FC = () => {
       const { data, error } = await supabase
         .from('executive_documents')
         .select('*')
-        .eq('executive_id', currentExec.id)
-        .order('created_at', { ascending: false });
+        .eq('executive_id', currentExec.id);
 
       if (error) throw error;
-      setDocuments((data || []).map(d => ({ ...d, signature_status: d.signature_status as 'pending' | 'signed' | 'expired' | 'declined' })));
+      
+      // Sort by signing_stage, then signing_order, then created_at
+      const sorted = (data || []).map(d => ({
+        ...d,
+        signature_status: d.signature_status as 'pending' | 'signed' | 'expired' | 'declined',
+        signing_stage: (d as any).signing_stage as number | undefined,
+        signing_order: (d as any).signing_order as number | undefined,
+        depends_on_document_id: (d as any).depends_on_document_id as string | undefined,
+        packet_id: (d as any).packet_id as string | undefined,
+        template_key: (d as any).template_key as string | undefined,
+      } as ExecutiveDocument)).sort((a, b) => {
+        // First sort by signing_stage
+        if (a.signing_stage !== b.signing_stage) {
+          return (a.signing_stage || 999) - (b.signing_stage || 999);
+        }
+        // Then by signing_order
+        if (a.signing_order !== b.signing_order) {
+          return (a.signing_order || 999) - (b.signing_order || 999);
+        }
+        // Finally by created_at
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+
+      // Check dependencies and compute can_sign
+      const withDependencies = sorted.map(doc => {
+        const dependsOn = sorted.find(d => d.id === doc.depends_on_document_id);
+        const canSign = !dependsOn || dependsOn.signature_status === 'signed';
+        
+        return {
+          ...doc,
+          can_sign: canSign,
+          blocking_documents: dependsOn && dependsOn.signature_status !== 'signed' ? [dependsOn] : [],
+        };
+      });
+
+      setDocuments(withDependencies);
     } catch (err: any) {
       console.error('Error fetching documents:', err);
       message.error('Failed to load documents');
@@ -214,15 +255,38 @@ export const ExecutiveDocumentPortal: React.FC = () => {
 
   const pendingDocuments = documents.filter(d => d.signature_status === 'pending');
   const signedDocuments = documents.filter(d => d.signature_status === 'signed');
+  
+  // Group documents by stage for better organization
+  const documentsByStage = {
+    stage1: documents.filter(d => d.signing_stage === 1),
+    stage2: documents.filter(d => d.signing_stage === 2),
+    stage3: documents.filter(d => d.signing_stage === 3),
+    stage4: documents.filter(d => d.signing_stage === 4),
+    ungrouped: documents.filter(d => !d.signing_stage),
+  };
+  
+  // Calculate progress
+  const totalDocuments = documents.length;
+  const signedCount = signedDocuments.length;
+  const progressPercent = totalDocuments > 0 ? Math.round((signedCount / totalDocuments) * 100) : 0;
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Executive Document Portal</h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 mb-4">
             Welcome, {execUser?.title || 'Executive'}. Review and sign your executive agreements below.
           </p>
+          {totalDocuments > 0 && (
+            <Card className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700">Signing Progress</span>
+                <span className="text-sm text-gray-600">{signedCount} of {totalDocuments} documents signed</span>
+              </div>
+              <Progress percent={progressPercent} status={progressPercent === 100 ? 'success' : 'active'} />
+            </Card>
+          )}
         </div>
 
         {/* Pending Signatures Section */}
@@ -230,15 +294,43 @@ export const ExecutiveDocumentPortal: React.FC = () => {
           <Card className="mb-6" title={<span className="text-lg font-semibold">Documents Requiring Signature ({pendingDocuments.length})</span>}>
             <Space direction="vertical" style={{ width: '100%' }} size="middle">
               {pendingDocuments.map((doc) => (
-                <Card key={doc.id} size="small" className="border-l-4 border-l-orange-500">
+                <Card key={doc.id} size="small" className={`border-l-4 ${doc.can_sign ? 'border-l-orange-500' : 'border-l-gray-300'}`}>
+                  {!doc.can_sign && doc.blocking_documents && doc.blocking_documents.length > 0 && (
+                    <Alert
+                      message="Previous document must be signed first"
+                      description={
+                        <div>
+                          <p className="mb-1">This document requires the following to be signed first:</p>
+                          <ul className="list-disc list-inside">
+                            {doc.blocking_documents.map(blocking => (
+                              <li key={blocking.id}>{getDocumentTypeName(blocking.type)}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      }
+                      type="warning"
+                      showIcon
+                      icon={<LockOutlined />}
+                      className="mb-3"
+                    />
+                  )}
                   <div className="flex justify-between items-center">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <FileTextOutlined className="text-orange-500 text-xl" />
+                        <FileTextOutlined className={doc.can_sign ? "text-orange-500 text-xl" : "text-gray-400 text-xl"} />
                         <div>
-                          <h3 className="font-semibold text-lg">{getDocumentTypeName(doc.type)}</h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-lg">{getDocumentTypeName(doc.type)}</h3>
+                            {doc.signing_stage && (
+                              <Tag color="blue">Stage {doc.signing_stage}</Tag>
+                            )}
+                            {doc.packet_id && (
+                              <Tag color="cyan" className="text-xs">{doc.packet_id}</Tag>
+                            )}
+                          </div>
                           <p className="text-gray-500 text-sm">
                             Role: {doc.role} • Created: {new Date(doc.created_at).toLocaleDateString()}
+                            {doc.signing_order && ` • Order: ${doc.signing_order}`}
                           </p>
                         </div>
                       </div>
@@ -256,10 +348,11 @@ export const ExecutiveDocumentPortal: React.FC = () => {
                       </Button>
                       <Button
                         type="primary"
-                        icon={<CheckCircleOutlined />}
+                        icon={doc.can_sign ? <CheckCircleOutlined /> : <LockOutlined />}
+                        disabled={!doc.can_sign}
                         onClick={() => handleSignDocument(doc)}
                       >
-                        Sign Document
+                        {doc.can_sign ? 'Sign Document' : 'Waiting for Previous Document'}
                       </Button>
                     </Space>
                   </div>

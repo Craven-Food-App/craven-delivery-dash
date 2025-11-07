@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { PDFDocument, StandardFonts, rgb } from "https://esm.sh/pdf-lib@1.17.1?bundle";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -73,6 +74,8 @@ serve(async (req) => {
       throw sigError;
     }
 
+    const signedAtISO = new Date().toISOString();
+
     // 3. Also create entry in executive_signatures for legacy compatibility
     if (document.signature_token) {
       await supabaseClient
@@ -83,7 +86,7 @@ serve(async (req) => {
           position: document.role,
           document_type: document.type,
           token: document.signature_token,
-          signed_at: new Date().toISOString(),
+          signed_at: signedAtISO,
           typed_name: typed_name || document.officer_name,
           signature_png_base64: signature_png_base64,
           signer_ip: signer_ip,
@@ -98,24 +101,120 @@ serve(async (req) => {
     // For now, we'll store the signature separately and update the document status
     // In a production system, you'd use a PDF library to embed the signature
     
+    // Helper to convert base64 data URL to Uint8Array
+    const base64ToUint8Array = (base64: string): Uint8Array => {
+      const cleaned = base64.includes(',') ? base64.split(',').pop() ?? '' : base64;
+      const binaryString = atob(cleaned);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return bytes;
+    };
+
     // Download original PDF
     const pdfResponse = await fetch(document.file_url);
     if (!pdfResponse.ok) {
       throw new Error('Failed to fetch original PDF');
     }
     const pdfBlob = await pdfResponse.arrayBuffer();
-    
-    // TODO: Use a PDF library (like pdf-lib) to embed signature into PDF
-    // For now, we'll store the signed version URL as the same file
-    // and mark it as signed in the database
-    
+
+    // Embed signature + metadata into PDF (if pdf-lib fails, we still continue with original)
+    let signedPdfBytes: Uint8Array | null = null;
+    try {
+      const pdfDoc = await PDFDocument.load(pdfBlob);
+      const pages = pdfDoc.getPages();
+      const targetPage = pages[pages.length - 1];
+      const { width, height } = targetPage.getSize();
+      const margin = 50;
+      let currentY = margin + 100;
+
+      const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+      if (signature_png_base64) {
+        try {
+          const signatureBytes = base64ToUint8Array(signature_png_base64);
+          const pngImage = await pdfDoc.embedPng(signatureBytes);
+          const scaled = pngImage.scaleToFit(width - margin * 2, 120);
+          const sigX = (width - scaled.width) / 2;
+          const sigY = margin + 60;
+          targetPage.drawImage(pngImage, {
+            x: sigX,
+            y: sigY,
+            width: scaled.width,
+            height: scaled.height,
+          });
+          currentY = sigY + scaled.height + 12;
+        } catch (err) {
+          console.error('Failed to embed signature image, falling back to text only:', err);
+          currentY = margin + 40;
+        }
+      } else {
+        currentY = margin + 40;
+      }
+
+      const textLines: string[] = [];
+      textLines.push(`Signed electronically by: ${typed_name || document.officer_name || 'Executive'}`);
+      textLines.push(`Signed on: ${new Date(signedAtISO).toLocaleString('en-US', { timeZone: 'UTC' })} UTC`);
+      if (signer_ip) {
+        textLines.push(`Signer IP: ${signer_ip}`);
+      }
+      if (signer_user_agent) {
+        textLines.push(`User Agent: ${signer_user_agent.substring(0, 120)}`);
+      }
+
+      let textY = currentY;
+      textLines.forEach((line, index) => {
+        const isHeader = index === 0;
+        targetPage.drawText(line, {
+          x: margin,
+          y: textY,
+          size: isHeader ? 12 : 10,
+          font: isHeader ? fontBold : fontRegular,
+          color: rgb(0, 0, 0),
+        });
+        textY -= isHeader ? 18 : 14;
+      });
+
+      signedPdfBytes = await pdfDoc.save();
+    } catch (pdfErr) {
+      console.error('Failed to embed signature into PDF, using original file:', pdfErr);
+    }
+
+    // Upload signed PDF (either modified or original)
+    const finalPdfBytes = signedPdfBytes ?? new Uint8Array(pdfBlob);
+    const signedPath = `executive_docs/signed/${document_id}.pdf`;
+    const { error: signedUploadError } = await supabaseClient.storage
+      .from('documents')
+      .upload(signedPath, finalPdfBytes, {
+        contentType: 'application/pdf',
+        upsert: true,
+      });
+
+    if (signedUploadError) {
+      console.error('Failed to upload signed PDF, falling back to original URL:', signedUploadError);
+    }
+
+    const { data: signedUrlData } = supabaseClient.storage
+      .from('documents')
+      .getPublicUrl(signedPath);
+    const signedPublicUrl = signedUrlData?.publicUrl ?? document.file_url;
+
+    const existingSignerRoles = document.signer_roles && typeof document.signer_roles === 'object'
+      ? document.signer_roles as Record<string, boolean>
+      : {};
+    const updatedSignerRoles = { ...existingSignerRoles, officer: true };
+
     // 5. Update document status to 'signed'
     const { error: updateError } = await supabaseClient
       .from('executive_documents')
       .update({
         signature_status: 'signed',
         status: 'signed',
-        signed_file_url: document.file_url, // TODO: Replace with actual signed PDF URL
+        signed_file_url: signedPublicUrl,
+        signer_roles: updatedSignerRoles,
       })
       .eq('id', document_id);
 
@@ -132,6 +231,7 @@ serve(async (req) => {
         signature_id: signature.id,
         document_id: document_id,
         message: 'Document signed successfully',
+        signed_pdf_url: signedPublicUrl,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Action by Sole Incorporator of {{company.legalName}}</title>
+  <style>
+    body { font-family: 'Times New Roman', serif; line-height: 1.6; margin: 40px; }
+    h1, h2 { text-align: center; }
+    .signature-block { margin-top: 60px; }
+    ul { list-style-type: none; padding-left: 0; }
+    li { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h1>ACTION BY SOLE INCORPORATOR</h1>
+  <h2>OF {{company.legalName}}</h2>
+  <p>Date: {{date}}</p>
+  <p>The undersigned, being the sole incorporator of <strong>{{company.legalName}}</strong> (the "Corporation"), a corporation organized and existing under the laws of the State of {{company.state}}, hereby takes the following actions and adopts the following resolutions pursuant to the powers granted to the incorporator under applicable law:</p>
+  
+  <h3>1. Appointment of Initial Board of Directors</h3>
+  <p>RESOLVED, that the following persons are hereby appointed to serve as the initial members of the Board of Directors of the Corporation, to hold office in accordance with the bylaws of the Corporation until their successors are duly elected and qualified:</p>
+  <ul>
+    {{#each boardMembers}}
+      <li>{{name}} – {{address}}</li>
+    {{/each}}
+  </ul>
+  
+  <h3>2. Adoption of Bylaws</h3>
+  <p>RESOLVED, that the form of bylaws presented to the incorporator and attached hereto as <strong>Exhibit A</strong> are hereby adopted as and for the bylaws of the Corporation.</p>
+  
+  <h3>3. Resignation of Incorporator</h3>
+  <p>RESOLVED, that the undersigned hereby resigns as incorporator of the Corporation, effective immediately upon the appointment of the above-named directors.</p>
+  
+  <div class="signature-block">
+    <p>IN WITNESS WHEREOF, the undersigned has executed this Action by Sole Incorporator on the date first above written.</p>
+    <p><strong>__________________________________</strong><br>
+    {{incorporator.fullName}}<br>
+    Incorporator</p>
+  </div>
+</body>
+</html>
+

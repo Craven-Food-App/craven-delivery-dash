@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Organizational Resolutions of the Board of Directors of {{company.legalName}}</title>
+  <style>
+    body { font-family: 'Times New Roman', serif; line-height: 1.6; margin: 40px; }
+    h1, h2 { text-align: center; }
+    .signature-block { margin-top: 60px; }
+    ul { list-style-type: none; padding-left: 0; }
+    li { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h1>UNANIMOUS WRITTEN CONSENT</h1>
+  <h2>OF THE BOARD OF DIRECTORS OF {{company.legalName}}</h2>
+  <p>Date: {{date}}</p>
+  <p>The undersigned, being all of the members of the Board of Directors of <strong>{{company.legalName}}</strong> (the "Corporation"), hereby adopt the following resolutions pursuant to the authority granted by the Bylaws and the laws of the State of {{company.state}}.</p>
+  
+  <h3>1. Adoption of Bylaws</h3>
+  <p>RESOLVED, that the Bylaws attached hereto as <strong>Exhibit A</strong> are hereby approved and adopted as the Bylaws of the Corporation.</p>
+  
+  <h3>2. Appointment of Officers</h3>
+  <p>RESOLVED, that the following individuals are hereby appointed to serve as the officers of the Corporation to hold office in accordance with the Bylaws:</p>
+  <ul>
+    {{#each officers}}
+      <li>{{title}}: {{name}}</li>
+    {{/each}}
+  </ul>
+  
+  <h3>3. Fiscal Year</h3>
+  <p>RESOLVED, that the fiscal year of the Corporation shall end on {{company.fiscalYearEnd}}.</p>
+  
+  <h3>4. Banking Resolutions</h3>
+  <p>RESOLVED, that the officers are hereby authorized to open and maintain such bank accounts in the name of the Corporation at such financial institutions as they may determine, and any two officers, or such officer(s) as may be designated from time to time, are authorized signatories thereon.</p>
+  
+  <h3>5. Stock Authorization and Issuance</h3>
+  <p>RESOLVED, that the Corporation is authorized to issue up to 10,000,000 shares of common stock with a par value of $0.0001 per share, and that the officers are authorized to execute and deliver stock issuance and equity agreements consistent with the approved terms for founders and executives.</p>
+  
+  <h3>6. Ratification of Pre-Incorporation Actions</h3>
+  <p>RESOLVED, that all actions taken on behalf of the Corporation by the incorporator, founders, or officers prior to the incorporation are hereby ratified, confirmed, and approved in all respects.</p>
+  
+  <div class="signature-block">
+    <p>IN WITNESS WHEREOF, the undersigned have executed this Unanimous Written Consent as of the date first above written.</p>
+    <ul>
+      {{#each directors}}
+        <li>__________________________________<br>
+        {{name}}, Director</li>
+      {{/each}}
+    </ul>
+  </div>
+</body>
+</html>
+
