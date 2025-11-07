@@ -358,7 +358,7 @@ const App: React.FC = () => {
       NAV_ITEMS.map((item) => ({
         id: item.id,
         label: item.name,
-        icon: IconMap[item.icon],
+        icon: IconMap[item.icon] as any, // Lucide icons are compatible
       })),
     []
   );
@@ -406,7 +406,7 @@ const App: React.FC = () => {
       subtitle="Experience leadership command center"
       navItems={navItems}
       activeItemId={activeTab}
-      onSelect={setActiveTab}
+      onSelect={(id) => setActiveTab(id as NavItem['id'])}
       onBack={handleBackToHub}
       onSignOut={handleSignOut}
       userInfo={{ initials: 'TS', name: 'Torrance Stroman', role: 'Chief Experience Officer' }}

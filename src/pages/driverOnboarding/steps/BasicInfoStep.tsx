@@ -72,7 +72,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
           email: values.email,
           phone: values.phone,
           city: values.city,
-          state: 'OH', // TODO: determine from ZIP
+          state: values.state?.toUpperCase() || 'NY',
           zip_code: values.zip,
           status: 'waitlist',
           region_id: regionId,
@@ -110,7 +110,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
             driverName: values.fullName,
             driverEmail: values.email,
             city: values.city,
-            state: 'OH', // TODO: determine from ZIP
+            state: values.state?.toUpperCase() || 'NY',
             waitlistPosition: appData.waitlist_position,
             location: regionName,
             emailType: 'waitlist'
@@ -224,7 +224,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
           </Row>
 
           <Row gutter={16}>
-            <Col xs={24} sm={12}>
+            <Col xs={24} sm={16}>
               <Form.Item
                 label="City"
                 name="city"
@@ -232,12 +232,33 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
               >
                 <Input
                   prefix={<EnvironmentOutlined style={{ color: '#ff7a00' }} />}
-                  placeholder="Columbus"
+                  placeholder="New York"
                   size="large"
                 />
               </Form.Item>
             </Col>
-            <Col xs={24} sm={12}>
+            <Col xs={24} sm={8}>
+              <Form.Item
+                label="State"
+                name="state"
+                rules={[
+                  { required: true, message: 'Required' },
+                  { len: 2, message: 'Use 2-letter code' }
+                ]}
+              >
+                <Input
+                  placeholder="NY"
+                  size="large"
+                  maxLength={2}
+                  style={{ textTransform: 'uppercase' }}
+                  onInput={(e: any) => e.target.value = e.target.value.toUpperCase()}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col xs={24}>
               <Form.Item
                 label="ZIP Code"
                 name="zip"
@@ -247,7 +268,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
                 ]}
               >
                 <Input
-                  placeholder="43210"
+                  placeholder="10001"
                   size="large"
                 />
               </Form.Item>

@@ -56,7 +56,7 @@ const VideoGenerator: React.FC = () => {
   const fetchVideoHistory = async () => {
     try {
       const { data, error } = await supabase
-        .from('marketing_videos')
+        .from('marketing_videos' as any)
         .select('*')
         .order('created_at', { ascending: false })
         .limit(20);
@@ -70,7 +70,7 @@ const VideoGenerator: React.FC = () => {
         throw error;
       }
       if (data) {
-        setVideos(data.map(v => ({
+        setVideos(data.map((v: any) => ({
           id: v.id,
           task_id: v.task_id,
           prompt: v.prompt,
@@ -92,7 +92,7 @@ const VideoGenerator: React.FC = () => {
       if (!user) return;
 
       const { error } = await supabase
-        .from('marketing_videos')
+        .from('marketing_videos' as any)
         .upsert({
           task_id: videoData.task_id,
           prompt: videoData.prompt,

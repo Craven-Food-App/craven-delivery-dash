@@ -176,7 +176,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               }`}
             >
               <div className="flex items-center space-x-3">
-                <Icon size={20} />
+                {React.createElement(Icon as React.ComponentType<{ size: number }>, { size: 20 })}
                 <span>{folder.name}</span>
               </div>
               {folder.count > 0 && (
