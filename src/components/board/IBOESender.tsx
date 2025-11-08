@@ -4,27 +4,46 @@ import {
   Button,
   Card,
   Col,
+  DatePicker,
   Divider,
   Form,
   Input,
   InputNumber,
-  message,
   Modal,
   Row,
   Segmented,
+  Select,
   Space,
+  Spin,
   Tooltip,
   Typography,
-  DatePicker,
+  message,
 } from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
 import { supabase } from '@/integrations/supabase/client';
-import { CopyOutlined, PrinterOutlined, SendOutlined, FilePdfOutlined, CodeOutlined, EyeOutlined, EditOutlined } from '@ant-design/icons';
+import {
+  CopyOutlined,
+  PrinterOutlined,
+  SendOutlined,
+  FilePdfOutlined,
+  CodeOutlined,
+  EyeOutlined,
+  EditOutlined,
+  SyncOutlined,
+} from '@ant-design/icons';
 
 const { TextArea } = Input;
 const { Title, Text } = Typography;
 
 type EditorMode = 'html' | 'preview' | 'live';
+
+interface IboeTemplate {
+  id: string;
+  name: string;
+  template_key: string;
+  html_content: string;
+  is_default: boolean;
+}
 
 type IboeFormValues = {
   payeeName: string;
@@ -148,11 +167,15 @@ const IBOESender: React.FC = () => {
   const [sending, setSending] = useState(false);
   const [previewKey, setPreviewKey] = useState(Date.now());
   const liveEditRef = useRef<HTMLDivElement | null>(null);
+  const [templates, setTemplates] = useState<IboeTemplate[]>([]);
+  const [templateLoading, setTemplateLoading] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
   useEffect(() => {
     const initialHtml = buildInitialHtml(defaultValues);
     setHtmlContent(initialHtml);
     setLiveHtml(initialHtml);
+    loadTemplates();
   }, []);
 
   const activeHtml = useMemo(() => {
@@ -274,6 +297,55 @@ const IBOESender: React.FC = () => {
     }
   };
 
+  const loadTemplates = async () => {
+    setTemplateLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('iboe_templates')
+        .select('id, name, template_key, html_content, is_default, is_active')
+        .eq('is_active', true)
+        .order('is_default', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      const available = (data || []).map((tpl) => ({
+        id: tpl.id,
+        name: tpl.name,
+        template_key: tpl.template_key,
+        html_content: tpl.html_content,
+        is_default: tpl.is_default,
+      }));
+      setTemplates(available);
+      if (available.length > 0) {
+        const preferred = available.find((tpl) => tpl.is_default) ?? available[0];
+        setSelectedTemplateId(preferred.id);
+        setHtmlContent(preferred.html_content);
+        setLiveHtml(preferred.html_content);
+        setPreviewKey(Date.now());
+      }
+    } catch (error: any) {
+      console.error('Failed to load IBOE templates:', error);
+      message.error('Unable to load IBOE templates.');
+    } finally {
+      setTemplateLoading(false);
+    }
+  };
+
+  const handleTemplateChange = (templateId?: string) => {
+    if (!templateId) {
+      setSelectedTemplateId(null);
+      return;
+    }
+    setSelectedTemplateId(templateId);
+    const tpl = templates.find((item) => item.id === templateId);
+    if (tpl) {
+      setHtmlContent(tpl.html_content);
+      setLiveHtml(tpl.html_content);
+      setPreviewKey(Date.now());
+      message.success(`Loaded template "${tpl.name}".`);
+    }
+  };
+
   return (
     <Card title="International Bill of Exchange (IBOE)" bordered={false} className="shadow-lg">
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
@@ -283,6 +355,26 @@ const IBOESender: React.FC = () => {
           description="Use the form to generate a template, fine-tune the HTML, preview the document, and optionally download or print a PDF copy before sending to the payee."
           showIcon
         />
+
+        <Space wrap align="center">
+          <Text strong>Select Template:</Text>
+          <Select
+            style={{ minWidth: 240 }}
+            placeholder="Select IBOE template"
+            loading={templateLoading}
+            value={selectedTemplateId ?? undefined}
+            onChange={handleTemplateChange}
+            allowClear
+            options={templates.map((tpl) => ({
+              value: tpl.id,
+              label: tpl.is_default ? `${tpl.name} (Default)` : tpl.name,
+            }))}
+          />
+          <Button icon={<SyncOutlined spin={templateLoading} />} onClick={loadTemplates}>
+            Refresh Templates
+          </Button>
+          {templateLoading && <Spin size="small" />}
+        </Space>
 
         <Form<IboeFormValues>
           form={form}

@@ -32,6 +32,7 @@ import GenerateOfficerDocuments from '@/components/board/GenerateOfficerDocument
 import { TemplateManager } from '@/components/board/TemplateManager';
 import { IncorporationStatusToggle } from '@/components/board/IncorporationStatusToggle';
 import { CompanySettingsManager } from '@/components/board/CompanySettingsManager';
+import IBOETemplateManager from '@/components/board/IBOETemplateManager';
 import IBOESender from '@/components/board/IBOESender';
 import { executiveTheme } from '@/config/antd-theme';
 import { useExecAuth } from '@/hooks/useExecAuth';
@@ -416,7 +417,24 @@ const BoardPortal: React.FC = () => {
                       <span className="text-xs sm:text-base">IBOE Sender</span>
                     </span>
                   ),
-                  children: <IBOESender />,
+                  children: (
+                    <Tabs
+                      defaultActiveKey="compose"
+                      size="small"
+                      items={[
+                        {
+                          key: 'compose',
+                          label: 'Compose IBOE',
+                          children: <IBOESender />,
+                        },
+                        {
+                          key: 'templates',
+                          label: 'Template Manager',
+                          children: <IBOETemplateManager />,
+                        },
+                      ]}
+                    />
+                  ),
                 },
                 {
                   key: 'equity',
