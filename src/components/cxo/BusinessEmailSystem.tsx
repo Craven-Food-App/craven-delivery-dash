@@ -20,9 +20,10 @@ import {
   Paperclip,
   ChevronRight,
   CornerDownLeft,
+  RefreshCw,
 } from 'lucide-react';
 import { message, Modal, Form, Input, Alert, Typography, Spin, Button } from 'antd';
-import { SettingOutlined } from '@ant-design/icons';
+import { SettingOutlined, SyncOutlined } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 
 type FolderId = 'inbox' | 'sent' | 'drafts' | 'trash' | 'archive';
@@ -38,7 +39,7 @@ interface FolderWithCount extends Folder {
 }
 
 interface Email {
-  id: number;
+  id: string;
   subject: string;
   sender: string;
   recipient: string;
@@ -47,6 +48,8 @@ interface Email {
   folder: FolderId;
   read: boolean;
   priority?: 'high' | 'low';
+  gmail_message_id?: string;
+  gmail_thread_id?: string;
 }
 
 interface WorkspaceFormValues {
@@ -64,7 +67,7 @@ const TextArea = Input.TextArea;
 
 const INITIAL_EMAILS: Email[] = [
   {
-    id: 1,
+    id: '1',
     subject: 'Project Status Update',
     sender: 'Alice Johnson (via Zoho)',
     recipient: 'You',
@@ -75,7 +78,7 @@ const INITIAL_EMAILS: Email[] = [
     priority: 'high',
   },
   {
-    id: 2,
+    id: '2',
     subject: 'Meeting Confirmation',
     sender: 'Calendar Bot',
     recipient: 'You',
@@ -85,7 +88,7 @@ const INITIAL_EMAILS: Email[] = [
     read: true,
   },
   {
-    id: 3,
+    id: '3',
     subject: 'Draft: Quarterly Goals',
     sender: 'You',
     recipient: 'Bob Smith',
@@ -95,7 +98,7 @@ const INITIAL_EMAILS: Email[] = [
     read: true,
   },
   {
-    id: 4,
+    id: '4',
     subject: 'Follow-up on Customer CX',
     sender: 'Charlie Doe (via Zoho)',
     recipient: 'You',
@@ -105,7 +108,7 @@ const INITIAL_EMAILS: Email[] = [
     read: false,
   },
   {
-    id: 5,
+    id: '5',
     subject: 'Re: Team Lunch',
     sender: 'You',
     recipient: 'Team',
@@ -228,9 +231,10 @@ const Sidebar: React.FC<SidebarProps> = ({
 
 interface EmailListProps {
   emails: Email[];
-  selectedEmailId: number | null;
-  setSelectedEmailId: (id: number | null) => void;
+  selectedEmailId: string | null;
+  setSelectedEmailId: (id: string | null) => void;
   activeFolder: FolderId;
+  isLoading?: boolean;
 }
 
 const EmailList: React.FC<EmailListProps> = ({
@@ -238,12 +242,18 @@ const EmailList: React.FC<EmailListProps> = ({
   selectedEmailId,
   setSelectedEmailId,
   activeFolder,
+  isLoading = false,
 }) => {
   const filteredEmails = useMemo(
     () =>
       emails
         .filter((email) => email.folder === activeFolder)
-        .sort((a, b) => b.id - a.id),
+        .sort((a, b) => {
+          // Sort by received_at if available, otherwise use timestamp
+          const timeA = new Date(a.timestamp).getTime();
+          const timeB = new Date(b.timestamp).getTime();
+          return timeB - timeA;
+        }),
     [emails, activeFolder],
   );
 
@@ -262,7 +272,12 @@ const EmailList: React.FC<EmailListProps> = ({
       </header>
 
       <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
-        {filteredEmails.length === 0 ? (
+        {isLoading ? (
+          <div className="text-center p-8">
+            <Spin size="large" />
+            <p className="mt-4 text-gray-500">Loading emails...</p>
+          </div>
+        ) : filteredEmails.length === 0 ? (
           <div className="text-center p-8 text-gray-500">No emails in this folder.</div>
         ) : (
           filteredEmails.map((email) => {
@@ -309,9 +324,9 @@ const EmailList: React.FC<EmailListProps> = ({
 interface EmailViewerProps {
   email: Email;
   setIsComposing: (state: boolean) => void;
-  setSelectedEmailId: (id: number | null) => void;
-  handleDelete: (id: number) => void;
-  handleArchive: (id: number) => void;
+  setSelectedEmailId: (id: string | null) => void;
+  handleDelete: (id: string) => void;
+  handleArchive: (id: string) => void;
 }
 
 const EmailViewer: React.FC<EmailViewerProps> = ({
@@ -386,7 +401,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 text-gray-700 leading-relaxed">
-        <p>{email.body}</p>
+        <div dangerouslySetInnerHTML={{ __html: email.body }} />
         <div className="mt-8 pt-4 border-t border-gray-100">
           <p className="text-sm font-semibold text-gray-600 mb-2 flex items-center">
             <Paperclip size={14} className="mr-1" /> Attachments (1)
@@ -591,8 +606,8 @@ const ComposeEmail: React.FC<ComposeEmailProps> = ({
 
 const BusinessEmailSystem: React.FC = () => {
   const [activeFolder, setActiveFolder] = useState<FolderId>('inbox');
-  const [emails, setEmails] = useState<Email[]>(INITIAL_EMAILS);
-  const [selectedEmailId, setSelectedEmailId] = useState<number | null>(null);
+  const [emails, setEmails] = useState<Email[]>([]);
+  const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
   const [isComposing, setIsComposing] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [execHandles, setExecHandles] = useState<ExecHandle[]>([]);
@@ -602,6 +617,8 @@ const BusinessEmailSystem: React.FC = () => {
   const [workspaceSettingsSaving, setWorkspaceSettingsSaving] = useState(false);
   const [workspaceSettingId, setWorkspaceSettingId] = useState<string | null>(null);
   const [workspaceForm] = Form.useForm<WorkspaceFormValues>();
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [emailsLoading, setEmailsLoading] = useState(false);
 
   const folderCounts = useMemo(() => {
     const counts: Record<FolderId, number> = {
@@ -627,10 +644,59 @@ const BusinessEmailSystem: React.FC = () => {
     [emails, selectedEmailId],
   );
 
-  const currentMaxId = useMemo(
-    () => emails.reduce((max, email) => Math.max(max, email.id), 0),
-    [emails],
-  );
+  // Fetch emails from database
+  const fetchEmails = useCallback(async () => {
+    setEmailsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('gmail_messages')
+        .select('*')
+        .order('received_at', { ascending: false });
+
+      if (error) throw error;
+
+      const mappedEmails: Email[] = (data || []).map((msg: any) => ({
+        id: msg.id,
+        gmail_message_id: msg.gmail_message_id,
+        gmail_thread_id: msg.gmail_thread_id,
+        subject: msg.subject || '(No Subject)',
+        sender: msg.from_address || 'Unknown',
+        recipient: msg.to_address || 'Unknown',
+        body: msg.body_html || msg.body_text || '',
+        timestamp: new Date(msg.received_at).toLocaleString(),
+        folder: msg.folder as FolderId,
+        read: msg.is_read,
+        priority: undefined,
+      }));
+
+      setEmails(mappedEmails);
+    } catch (err: any) {
+      console.error('Failed to fetch emails:', err);
+      message.error('Failed to load emails');
+    } finally {
+      setEmailsLoading(false);
+    }
+  }, []);
+
+  // Sync emails from Gmail
+  const handleSync = useCallback(async () => {
+    setIsSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('gmail-sync', {
+        body: { maxResults: 50, forceFull: false },
+      });
+
+      if (error) throw error;
+
+      message.success(`Synced ${data?.synced || 0} messages`);
+      await fetchEmails();
+    } catch (err: any) {
+      console.error('Sync failed:', err);
+      message.error(err.message || 'Failed to sync emails');
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [fetchEmails]);
 
   const addEmail = useCallback(
     (newEmail: Omit<Email, 'id' | 'timestamp' | 'folder' | 'read'>) => {
@@ -640,7 +706,7 @@ const BusinessEmailSystem: React.FC = () => {
       });
       const emailToAdd: Email = {
         ...newEmail,
-        id: currentMaxId + 1,
+        id: crypto.randomUUID(),
         timestamp,
         folder: 'sent',
         read: true,
@@ -650,7 +716,7 @@ const BusinessEmailSystem: React.FC = () => {
       setSelectedEmailId(emailToAdd.id);
       setIsComposing(false);
     },
-    [currentMaxId],
+    [],
   );
 
   const saveDraft = useCallback(
@@ -665,7 +731,7 @@ const BusinessEmailSystem: React.FC = () => {
       });
       const emailToAdd: Email = {
         ...draftEmail,
-        id: currentMaxId + 1,
+        id: crypto.randomUUID(),
         timestamp,
         folder: 'drafts',
         read: true,
@@ -675,7 +741,7 @@ const BusinessEmailSystem: React.FC = () => {
       setSelectedEmailId(emailToAdd.id);
       setIsComposing(false);
     },
-    [currentMaxId],
+    [],
   );
 
   const fetchWorkspaceSettings = useCallback(async () => {
@@ -833,7 +899,7 @@ const BusinessEmailSystem: React.FC = () => {
     setIsComposing(false);
   }, []);
 
-  const handleDelete = useCallback((id: number) => {
+  const handleDelete = useCallback((id: string) => {
     setEmails((prev) => {
       const target = prev.find((email) => email.id === id);
       if (!target) {
@@ -850,7 +916,7 @@ const BusinessEmailSystem: React.FC = () => {
     setIsComposing(false);
   }, []);
 
-  const handleArchive = useCallback((id: number) => {
+  const handleArchive = useCallback((id: string) => {
     setEmails((prev) =>
       prev.map((email) =>
         email.id === id ? { ...email, folder: 'archive', read: true } : email,
@@ -880,6 +946,11 @@ const BusinessEmailSystem: React.FC = () => {
 
   const viewerVisible = !!selectedEmail && !isComposing;
   const listVisible = !isComposing;
+
+  // Load emails on mount
+  useEffect(() => {
+    fetchEmails();
+  }, [fetchEmails]);
 
   useEffect(() => {
     const fetchHandles = async () => {
@@ -990,7 +1061,14 @@ const BusinessEmailSystem: React.FC = () => {
             </span>
           </div>
 
-          <div className="flex justify-end mb-3">
+          <div className="flex justify-end gap-2 mb-3">
+            <Button 
+              icon={isSyncing ? <SyncOutlined spin /> : <RefreshCw size={16} />} 
+              onClick={handleSync}
+              loading={isSyncing}
+            >
+              Sync Gmail
+            </Button>
             <Button icon={<SettingOutlined />} onClick={handleOpenWorkspaceSettings}>
               Google Workspace Settings
             </Button>
@@ -1003,6 +1081,7 @@ const BusinessEmailSystem: React.FC = () => {
                 selectedEmailId={selectedEmailId}
                 setSelectedEmailId={setSelectedEmailId}
                 activeFolder={activeFolder}
+                isLoading={emailsLoading}
               />
             </div>
           )}

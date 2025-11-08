@@ -4218,6 +4218,47 @@ export type Database = {
           },
         ]
       }
+      exec_audit_logs: {
+        Row: {
+          action_category: string
+          action_type: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          severity: string | null
+          target_type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_category: string
+          action_type: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          severity?: string | null
+          target_type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_category?: string
+          action_type?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          severity?: string | null
+          target_type?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exec_audit_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "exec_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exec_conversation_messages: {
         Row: {
           attachment_name: string | null
@@ -4509,6 +4550,7 @@ export type Database = {
       exec_messages: {
         Row: {
           created_at: string | null
+          delete_mark_for: string[] | null
           from_user_id: string
           id: string
           is_confidential: boolean | null
@@ -4517,9 +4559,11 @@ export type Database = {
           read_by: string[] | null
           subject: string
           to_user_ids: string[]
+          trashed_for: string[] | null
         }
         Insert: {
           created_at?: string | null
+          delete_mark_for?: string[] | null
           from_user_id: string
           id?: string
           is_confidential?: boolean | null
@@ -4528,9 +4572,11 @@ export type Database = {
           read_by?: string[] | null
           subject: string
           to_user_ids: string[]
+          trashed_for?: string[] | null
         }
         Update: {
           created_at?: string | null
+          delete_mark_for?: string[] | null
           from_user_id?: string
           id?: string
           is_confidential?: boolean | null
@@ -4539,6 +4585,7 @@ export type Database = {
           read_by?: string[] | null
           subject?: string
           to_user_ids?: string[]
+          trashed_for?: string[] | null
         }
         Relationships: [
           {
@@ -4553,6 +4600,7 @@ export type Database = {
       exec_users: {
         Row: {
           access_level: number
+          allow_direct_messages: boolean | null
           appointment_date: string | null
           approved_at: string | null
           approved_by: string | null
@@ -4564,6 +4612,8 @@ export type Database = {
           is_also_employee: boolean | null
           last_login: string | null
           linked_employee_id: string | null
+          mention_handle: string | null
+          metadata: Json | null
           mfa_enabled: boolean | null
           officer_status: string | null
           photo_url: string | null
@@ -4574,6 +4624,7 @@ export type Database = {
         }
         Insert: {
           access_level?: number
+          allow_direct_messages?: boolean | null
           appointment_date?: string | null
           approved_at?: string | null
           approved_by?: string | null
@@ -4585,6 +4636,8 @@ export type Database = {
           is_also_employee?: boolean | null
           last_login?: string | null
           linked_employee_id?: string | null
+          mention_handle?: string | null
+          metadata?: Json | null
           mfa_enabled?: boolean | null
           officer_status?: string | null
           photo_url?: string | null
@@ -4595,6 +4648,7 @@ export type Database = {
         }
         Update: {
           access_level?: number
+          allow_direct_messages?: boolean | null
           appointment_date?: string | null
           approved_at?: string | null
           approved_by?: string | null
@@ -4606,6 +4660,8 @@ export type Database = {
           is_also_employee?: boolean | null
           last_login?: string | null
           linked_employee_id?: string | null
+          mention_handle?: string | null
+          metadata?: Json | null
           mfa_enabled?: boolean | null
           officer_status?: string | null
           photo_url?: string | null
@@ -4656,52 +4712,83 @@ export type Database = {
         Row: {
           created_at: string | null
           created_by: string | null
+          depends_on_document_id: string | null
           equity: number | null
           executive_id: string | null
           file_url: string | null
           id: string
           officer_name: string
+          packet_id: string | null
+          required_signers: string[] | null
           role: string
           signature_status: string | null
           signature_token: string | null
           signature_token_expires_at: string | null
           signed_file_url: string | null
+          signer_roles: Json | null
+          signing_order: number | null
+          signing_stage: number | null
+          stage_completed: boolean | null
           status: string
+          template_key: string | null
           type: string
         }
         Insert: {
           created_at?: string | null
           created_by?: string | null
+          depends_on_document_id?: string | null
           equity?: number | null
           executive_id?: string | null
           file_url?: string | null
           id?: string
           officer_name: string
+          packet_id?: string | null
+          required_signers?: string[] | null
           role: string
           signature_status?: string | null
           signature_token?: string | null
           signature_token_expires_at?: string | null
           signed_file_url?: string | null
+          signer_roles?: Json | null
+          signing_order?: number | null
+          signing_stage?: number | null
+          stage_completed?: boolean | null
           status?: string
+          template_key?: string | null
           type: string
         }
         Update: {
           created_at?: string | null
           created_by?: string | null
+          depends_on_document_id?: string | null
           equity?: number | null
           executive_id?: string | null
           file_url?: string | null
           id?: string
           officer_name?: string
+          packet_id?: string | null
+          required_signers?: string[] | null
           role?: string
           signature_status?: string | null
           signature_token?: string | null
           signature_token_expires_at?: string | null
           signed_file_url?: string | null
+          signer_roles?: Json | null
+          signing_order?: number | null
+          signing_stage?: number | null
+          stage_completed?: boolean | null
           status?: string
+          template_key?: string | null
           type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "executive_documents_depends_on_document_id_fkey"
+            columns: ["depends_on_document_id"]
+            isOneToOne: false
+            referencedRelation: "executive_documents"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "executive_documents_executive_id_fkey"
             columns: ["executive_id"]
@@ -4911,6 +4998,161 @@ export type Database = {
           {
             foreignKeyName: "fleet_vehicles_driver_id_fkey"
             columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      gmail_messages: {
+        Row: {
+          body_html: string | null
+          body_text: string | null
+          cc_address: string | null
+          created_at: string | null
+          delegated_user: string
+          folder: string | null
+          from_address: string | null
+          gmail_message_id: string
+          gmail_thread_id: string | null
+          has_attachments: boolean | null
+          id: string
+          is_read: boolean | null
+          is_starred: boolean | null
+          label_ids: string[] | null
+          raw_headers: Json | null
+          received_at: string | null
+          subject: string | null
+          synced_at: string | null
+          to_address: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          body_html?: string | null
+          body_text?: string | null
+          cc_address?: string | null
+          created_at?: string | null
+          delegated_user: string
+          folder?: string | null
+          from_address?: string | null
+          gmail_message_id: string
+          gmail_thread_id?: string | null
+          has_attachments?: boolean | null
+          id?: string
+          is_read?: boolean | null
+          is_starred?: boolean | null
+          label_ids?: string[] | null
+          raw_headers?: Json | null
+          received_at?: string | null
+          subject?: string | null
+          synced_at?: string | null
+          to_address?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          body_html?: string | null
+          body_text?: string | null
+          cc_address?: string | null
+          created_at?: string | null
+          delegated_user?: string
+          folder?: string | null
+          from_address?: string | null
+          gmail_message_id?: string
+          gmail_thread_id?: string | null
+          has_attachments?: boolean | null
+          id?: string
+          is_read?: boolean | null
+          is_starred?: boolean | null
+          label_ids?: string[] | null
+          raw_headers?: Json | null
+          received_at?: string | null
+          subject?: string | null
+          synced_at?: string | null
+          to_address?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      gmail_sync_state: {
+        Row: {
+          created_at: string | null
+          delegated_user: string
+          delta_token: string | null
+          history_id: string | null
+          id: string
+          last_sync_at: string | null
+          subscription_expires_at: string | null
+          subscription_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          delegated_user: string
+          delta_token?: string | null
+          history_id?: string | null
+          id?: string
+          last_sync_at?: string | null
+          subscription_expires_at?: string | null
+          subscription_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          delegated_user?: string
+          delta_token?: string | null
+          history_id?: string | null
+          id?: string
+          last_sync_at?: string | null
+          subscription_expires_at?: string | null
+          subscription_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      iboe_templates: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          html_content: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          template_key: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          html_content: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          template_key: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          html_content?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          template_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "iboe_templates_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "effective_permissions"
             referencedColumns: ["user_id"]

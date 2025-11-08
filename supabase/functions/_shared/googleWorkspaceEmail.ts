@@ -298,7 +298,7 @@ function buildMimeMessage(options: Required<Pick<GoogleWorkspaceEmailOptions, "t
   return lines.join("\r\n");
 }
 
-async function getAccessToken(): Promise<string> {
+export async function getAccessToken(): Promise<string> {
   const now = Date.now();
   if (cachedToken && cachedToken.expiresAt > now + 30_000) {
     return cachedToken.token;
