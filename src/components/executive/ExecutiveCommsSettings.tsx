@@ -199,7 +199,7 @@ const ExecutiveCommsSettings: React.FC = () => {
 
         return supabase
           .from('exec_users')
-          .update({ metadata: updatedMetadata })
+          .update({ metadata: updatedMetadata } as any)
           .eq('id', entry.id);
       });
 
