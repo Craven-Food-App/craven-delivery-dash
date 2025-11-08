@@ -13,6 +13,7 @@ import {
   ArrowLeftOutlined,
   PieChartOutlined,
   CodeOutlined,
+  AuditOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -31,6 +32,7 @@ import GenerateOfficerDocuments from '@/components/board/GenerateOfficerDocument
 import { TemplateManager } from '@/components/board/TemplateManager';
 import { IncorporationStatusToggle } from '@/components/board/IncorporationStatusToggle';
 import { CompanySettingsManager } from '@/components/board/CompanySettingsManager';
+import IBOESender from '@/components/board/IBOESender';
 import { executiveTheme } from '@/config/antd-theme';
 import { useExecAuth } from '@/hooks/useExecAuth';
 
@@ -405,6 +407,16 @@ const BoardPortal: React.FC = () => {
                     </span>
                   ),
                   children: <DocumentVault />,
+                },
+                {
+                  key: 'iboe',
+                  label: (
+                    <span className="flex items-center gap-1 sm:gap-2">
+                      <AuditOutlined />
+                      <span className="text-xs sm:text-base">IBOE Sender</span>
+                    </span>
+                  ),
+                  children: <IBOESender />,
                 },
                 {
                   key: 'equity',

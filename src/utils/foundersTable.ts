@@ -11,9 +11,9 @@ export interface FoundersTableTarget {
 
 const ROLE_ORDER = ['ceo', 'cfo', 'cxo'];
 const ROLE_TITLES: Record<string, string> = {
-  ceo: 'CEO',
-  cfo: 'CFO',
-  cxo: 'CXO',
+  ceo: 'Chief Executive Officer (CEO)',
+  cfo: 'Chief Financial Officer (CFO)',
+  cxo: 'Chief Experience Officer (CXO)',
 };
 
 const parseNumeric = (value: string | number | null | undefined): number => {
@@ -59,24 +59,35 @@ interface RowData {
 }
 
 const buildRowData = (role: string, data?: { full_name?: string; title?: string; equity_percent?: string; shares_issued?: string; vesting_schedule?: string }): RowData => {
+  const defaultTitle = ROLE_TITLES[role] || role.toUpperCase();
   return {
     role,
     name: data?.full_name || '—',
-    title: ROLE_TITLES[role] || (data?.title || role.toUpperCase()),
+    title: data?.title || defaultTitle,
     equity: formatPercent(data?.equity_percent),
     shares: formatShares(data?.shares_issued),
     vesting: formatVesting(data?.vesting_schedule),
   };
 };
 
+const findRow = (rows: RowData[], role: string): RowData => {
+  return rows.find((row) => row.role === role) ?? {
+    role,
+    name: '—',
+    title: ROLE_TITLES[role] || role.toUpperCase(),
+    equity: '0%',
+    shares: '0',
+    vesting: 'Immediate',
+  };
+};
+
 export interface FoundersTableResult {
   tableHtml: string;
   signatureHtml: string;
-  addressedName: string;
-  addressedRole: string;
-  ceoName: string;
-  cfoName: string;
-  cxoName: string;
+  addressed: RowData;
+  ceo: RowData;
+  cfo: RowData;
+  cxo: RowData;
   rows: RowData[];
 }
 
@@ -144,16 +155,17 @@ export const buildFoundersTableHtml = async (target: FoundersTableTarget): Promi
     )
     .join('');
 
-  const nameForRole = (role: string) => rows.find((row) => row.role === role)?.name || '—';
+  const ceoRow = findRow(rows, 'ceo');
+  const cfoRow = findRow(rows, 'cfo');
+  const cxoRow = findRow(rows, 'cxo');
 
   return {
     tableHtml,
     signatureHtml,
-    addressedName: targetRow.name,
-    addressedRole: targetRow.title,
-    ceoName: nameForRole('ceo'),
-    cfoName: nameForRole('cfo'),
-    cxoName: nameForRole('cxo'),
+    addressed: targetRow,
+    ceo: ceoRow,
+    cfo: cfoRow,
+    cxo: cxoRow,
     rows,
   };
 };

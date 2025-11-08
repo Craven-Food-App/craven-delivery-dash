@@ -3,6 +3,24 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
+const stripLovableAttributes = () => ({
+  name: 'strip-lovable-attributes',
+  enforce: 'post',
+  transform(code: string, id: string) {
+    if (!id.endsWith('.tsx') && !id.endsWith('.jsx')) {
+      return null;
+    }
+    if (!code.includes('data-lov-')) {
+      return null;
+    }
+    const cleaned = code.replace(/\sdata-lov-[^=]*="[^"]*"/g, '');
+    return {
+      code: cleaned,
+      map: null,
+    };
+  },
+});
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   // Use relative paths in production so Capacitor (file assets) can load bundles
@@ -20,8 +38,8 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
+    mode === 'development' && componentTagger(),
+    stripLovableAttributes(),
   ].filter(Boolean),
   resolve: {
     alias: {
