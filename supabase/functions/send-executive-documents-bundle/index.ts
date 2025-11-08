@@ -1,7 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "https://esm.sh/resend@4.0.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+import { sendGoogleWorkspaceEmail } from "../_shared/googleWorkspaceEmail.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -42,7 +40,9 @@ serve(async (req: Request) => {
 
     console.log(`Sending ${documents.length} documents to ${executiveName} (${position}) at ${to}`);
 
-    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Crave'N HR <hr@craven.com>";
+    const fromEmail = Deno.env.get("GOOGLE_WORKSPACE_EXECUTIVE_FROM") ||
+      Deno.env.get("GOOGLE_WORKSPACE_DEFAULT_FROM") ||
+      "Crave'N HR <hr@craven.com>";
 
     // Group documents by signature requirement
     const signatureDocs = documents.filter(d => d.requiresSignature);
@@ -72,9 +72,9 @@ serve(async (req: Request) => {
       `).join('');
     };
 
-    const emailResponse = await resend.emails.send({
+    const emailResponse = await sendGoogleWorkspaceEmail({
       from: fromEmail,
-      to: [to],
+      to,
       subject: `Your C-Suite Executive Documents Package - Crave'n, Inc.`,
       html: `
         <!DOCTYPE html>
@@ -189,23 +189,12 @@ serve(async (req: Request) => {
       `,
     });
 
-    if (emailResponse.error) {
-      console.error("Resend error:", emailResponse.error);
-      return new Response(
-        JSON.stringify({ error: emailResponse.error.message || "Failed to send email" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
     console.log(`Email sent successfully to ${to}`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        messageId: emailResponse.data?.id,
+        messageId: emailResponse.id,
         to,
         documentCount: documents.length 
       }),

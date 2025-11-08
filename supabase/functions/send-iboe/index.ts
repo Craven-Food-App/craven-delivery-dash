@@ -1,7 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "https://esm.sh/resend@4.0.0";
-
-const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+import { sendGoogleWorkspaceEmail } from "../_shared/googleWorkspaceEmail.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -31,28 +29,26 @@ serve(async (req) => {
       );
     }
 
-    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'Crave\'n Treasury <treasury@cravenusa.com>';
+    const fromEmail = Deno.env.get('GOOGLE_WORKSPACE_TREASURY_FROM') ||
+      Deno.env.get('GOOGLE_WORKSPACE_DEFAULT_FROM') ||
+      'Crave\'n Treasury <treasury@cravenusa.com>';
 
-    const response = await resend.emails.send({
+    const metadataHeaders = payload.metadata
+      ? Object.fromEntries(
+        Object.entries(payload.metadata).map(([key, value]) => [`X-Craven-Meta-${key}`, String(value ?? '')]),
+      )
+      : undefined;
+
+    const response = await sendGoogleWorkspaceEmail({
       from: fromEmail,
-      to: [payload.to],
+      to: payload.to,
       subject: payload.subject,
       html: payload.html,
-      tags: payload.metadata
-        ? Object.entries(payload.metadata).map(([key, value]) => ({ name: key, value: String(value ?? '') }))
-        : undefined,
+      headers: metadataHeaders,
     });
 
-    if (response.error) {
-      console.error('Resend error sending IBOE:', response.error);
-      return new Response(
-        JSON.stringify({ error: response.error.message || 'Failed to send email' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     return new Response(
-      JSON.stringify({ success: true, id: response.data?.id }),
+      JSON.stringify({ success: true, id: response.id }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error: any) {

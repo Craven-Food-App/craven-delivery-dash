@@ -3,6 +3,28 @@
 ## Overview
 This document describes the implementation of the ordered executive document signing flow system. Executives now have a secure portal where documents must be signed in a specific order, with dependencies enforced.
 
+## Email Delivery (Google Workspace)
+Outbound notifications that support the signing flow (IBOE dispatch, executive document bundles, and onboarding packets) are now sent through Google Workspace using the Gmail API. Supabase Edge Functions authenticate with a Google service account that has domain-wide delegation enabled for Gmail sending.
+
+### Setup Checklist
+1. **Create a service account** in Google Cloud and enable domain-wide delegation.
+2. **Grant domain-wide access** to the Gmail API scope `https://www.googleapis.com/auth/gmail.send` inside the Google Workspace admin console. Use the service account client ID.
+3. **Configure send-as aliases** for the delegated user (e.g., `hr@craven.com`, `treasury@cravenusa.com`) so Gmail allows those `From` addresses.
+4. **Store secrets** in the Supabase Edge Function environment (Dashboard → Project Settings → API → Environment variables, or `supabase functions secrets set ...`).
+
+### Required Environment Variables
+- `GOOGLE_WORKSPACE_SERVICE_ACCOUNT_EMAIL`
+- `GOOGLE_WORKSPACE_SERVICE_ACCOUNT_PRIVATE_KEY` (use the PEM value; escape newlines as `\n` when storing)
+- `GOOGLE_WORKSPACE_DELEGATED_USER` (workspace user that holds the send-as aliases)
+- `GOOGLE_WORKSPACE_DEFAULT_FROM` (fallback `From` header, e.g., `Crave'N HR <hr@craven.com>`)
+
+### Optional Overrides
+- `GOOGLE_WORKSPACE_EXECUTIVE_FROM` (overrides the `From` header for executive document related emails)
+- `GOOGLE_WORKSPACE_TREASURY_FROM` (overrides the `From` header for treasury/IBOE mail)
+- `GOOGLE_WORKSPACE_GMAIL_SCOPE` (defaults to `https://www.googleapis.com/auth/gmail.send`)
+
+All Supabase email functions now surface Google API errors directly in the function response/logs. Removing the external Resend dependency means email deliverability depends on the Google Workspace account configuration and quota.
+
 ## Database Changes
 
 ### Migration: `20251106131924_add_document_signing_order.sql`
