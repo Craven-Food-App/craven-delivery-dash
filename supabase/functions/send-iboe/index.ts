@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { sendGoogleWorkspaceEmail } from "../_shared/googleWorkspaceEmail.ts";
+import { getGoogleWorkspaceConfig, sendGoogleWorkspaceEmail } from "../_shared/googleWorkspaceEmail.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,9 +29,8 @@ serve(async (req) => {
       );
     }
 
-    const fromEmail = Deno.env.get('GOOGLE_WORKSPACE_TREASURY_FROM') ||
-      Deno.env.get('GOOGLE_WORKSPACE_DEFAULT_FROM') ||
-      'Crave\'n Treasury <treasury@cravenusa.com>';
+    const config = await getGoogleWorkspaceConfig();
+    const fromEmail = config.treasuryFrom ?? config.defaultFrom ?? "Crave'n Treasury <treasury@cravenusa.com>";
 
     const metadataHeaders = payload.metadata
       ? Object.fromEntries(

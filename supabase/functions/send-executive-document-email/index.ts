@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { encode as base64Encode } from "https://deno.land/std@0.190.0/encoding/base64.ts";
-import { sendGoogleWorkspaceEmail, type GoogleWorkspaceAttachment } from "../_shared/googleWorkspaceEmail.ts";
+import { getGoogleWorkspaceConfig, sendGoogleWorkspaceEmail, type GoogleWorkspaceAttachment } from "../_shared/googleWorkspaceEmail.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -104,9 +104,8 @@ serve(async (req: Request) => {
 
     console.log(`Sending ${documentTitle} to ${executiveName} at ${to}`);
 
-    const fromEmail = Deno.env.get("GOOGLE_WORKSPACE_EXECUTIVE_FROM") ||
-      Deno.env.get("GOOGLE_WORKSPACE_DEFAULT_FROM") ||
-      "Crave'N HR <hr@craven.com>";
+    const config = await getGoogleWorkspaceConfig();
+    const fromEmail = config.executiveFrom ?? config.defaultFrom ?? "Crave'N HR <hr@craven.com>";
 
     // Prepare attachments and links
     let attachments: GoogleWorkspaceAttachment[] = [];

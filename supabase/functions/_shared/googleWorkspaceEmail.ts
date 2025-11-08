@@ -1,4 +1,5 @@
 import { encode as encodeBase64Url } from "https://deno.land/std@0.190.0/encoding/base64url.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 type AddressList = string | string[];
 
@@ -20,18 +21,35 @@ export interface GoogleWorkspaceEmailOptions {
   headers?: Record<string, string>;
 }
 
+export interface GoogleWorkspaceConfig {
+  serviceAccountEmail: string;
+  privateKey: string;
+  delegatedUser: string;
+  defaultFrom: string;
+  executiveFrom?: string;
+  treasuryFrom?: string;
+  scope?: string;
+}
+
 interface CachedAccessToken {
   token: string;
+  expiresAt: number;
+}
+
+interface CachedConfig {
+  config: GoogleWorkspaceConfig;
   expiresAt: number;
 }
 
 const textEncoder = new TextEncoder();
 
 let cachedToken: CachedAccessToken | null = null;
-let privateKeyPromise: Promise<CryptoKey> | null = null;
+let cachedConfig: CachedConfig | null = null;
+let cachedPrivateKey: { pem: string; promise: Promise<CryptoKey> } | null = null;
 
 const DEFAULT_SCOPE = "https://www.googleapis.com/auth/gmail.send";
 const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
+const CONFIG_CACHE_TTL_MS = 5 * 60 * 1000;
 
 function coerceAddressList(value?: AddressList): string | undefined {
   if (!value) return undefined;
@@ -69,17 +87,119 @@ function pemToUint8Array(pem: string): Uint8Array {
   return bytes;
 }
 
-async function importPrivateKey(): Promise<CryptoKey> {
-  if (privateKeyPromise) return privateKeyPromise;
+function collectEnvConfig(): Partial<GoogleWorkspaceConfig> {
+  return {
+    serviceAccountEmail: Deno.env.get("GOOGLE_WORKSPACE_SERVICE_ACCOUNT_EMAIL") ?? undefined,
+    privateKey: Deno.env.get("GOOGLE_WORKSPACE_SERVICE_ACCOUNT_PRIVATE_KEY") ?? undefined,
+    delegatedUser: Deno.env.get("GOOGLE_WORKSPACE_DELEGATED_USER") ?? undefined,
+    defaultFrom: Deno.env.get("GOOGLE_WORKSPACE_DEFAULT_FROM") ?? undefined,
+    executiveFrom: Deno.env.get("GOOGLE_WORKSPACE_EXECUTIVE_FROM") ?? undefined,
+    treasuryFrom: Deno.env.get("GOOGLE_WORKSPACE_TREASURY_FROM") ?? undefined,
+    scope: Deno.env.get("GOOGLE_WORKSPACE_GMAIL_SCOPE") ?? undefined,
+  };
+}
 
-  const privateKeyPem = Deno.env.get("GOOGLE_WORKSPACE_SERVICE_ACCOUNT_PRIVATE_KEY");
-  if (!privateKeyPem) {
-    throw new Error("GOOGLE_WORKSPACE_SERVICE_ACCOUNT_PRIVATE_KEY is not configured.");
+function hasRequiredFields(config: Partial<GoogleWorkspaceConfig>): config is GoogleWorkspaceConfig {
+  return Boolean(
+    config.serviceAccountEmail?.trim() &&
+      config.privateKey?.trim() &&
+      config.delegatedUser?.trim() &&
+      config.defaultFrom?.trim(),
+  );
+}
+
+async function fetchConfigFromDatabase(): Promise<Partial<GoogleWorkspaceConfig>> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error("Supabase service credentials are not configured for Google Workspace email.");
   }
 
-  const keyData = pemToUint8Array(privateKeyPem);
+  const supabaseClient = createClient(supabaseUrl, serviceRoleKey);
 
-  privateKeyPromise = crypto.subtle.importKey(
+  const { data, error } = await supabaseClient
+    .from("ceo_system_settings")
+    .select("setting_value")
+    .eq("setting_key", "google_workspace_email")
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to load Google Workspace configuration: ${error.message}`);
+  }
+
+  if (!data?.setting_value) {
+    return {};
+  }
+
+  const value = data.setting_value as Record<string, unknown>;
+
+  return {
+    serviceAccountEmail: typeof value.serviceAccountEmail === "string" ? value.serviceAccountEmail : undefined,
+    privateKey: typeof value.privateKey === "string" ? value.privateKey : undefined,
+    delegatedUser: typeof value.delegatedUser === "string" ? value.delegatedUser : undefined,
+    defaultFrom: typeof value.defaultFrom === "string" ? value.defaultFrom : undefined,
+    executiveFrom: typeof value.executiveFrom === "string" ? value.executiveFrom : undefined,
+    treasuryFrom: typeof value.treasuryFrom === "string" ? value.treasuryFrom : undefined,
+    scope: typeof value.scope === "string" ? value.scope : undefined,
+  };
+}
+
+export async function getGoogleWorkspaceConfig(): Promise<GoogleWorkspaceConfig> {
+  const now = Date.now();
+  if (cachedConfig && cachedConfig.expiresAt > now) {
+    return cachedConfig.config;
+  }
+
+  const envConfig = collectEnvConfig();
+
+  if (hasRequiredFields(envConfig)) {
+    cachedConfig = {
+      config: { ...envConfig, scope: envConfig.scope || DEFAULT_SCOPE },
+      expiresAt: now + CONFIG_CACHE_TTL_MS,
+    };
+    return cachedConfig.config;
+  }
+
+  const dbConfig = await fetchConfigFromDatabase();
+  const merged: Partial<GoogleWorkspaceConfig> = { ...dbConfig, ...envConfig };
+
+  if (!hasRequiredFields(merged)) {
+    throw new Error("Google Workspace email configuration is incomplete. Please configure it in the admin portal.");
+  }
+
+  const completeConfig: GoogleWorkspaceConfig = {
+    serviceAccountEmail: merged.serviceAccountEmail.trim(),
+    privateKey: merged.privateKey.trim(),
+    delegatedUser: merged.delegatedUser.trim(),
+    defaultFrom: merged.defaultFrom.trim(),
+    executiveFrom: merged.executiveFrom?.trim() || undefined,
+    treasuryFrom: merged.treasuryFrom?.trim() || undefined,
+    scope: (merged.scope?.trim() || DEFAULT_SCOPE),
+  };
+
+  cachedConfig = {
+    config: completeConfig,
+    expiresAt: now + CONFIG_CACHE_TTL_MS,
+  };
+
+  // reset token and private key cache when configuration changes
+  cachedToken = null;
+  cachedPrivateKey = null;
+
+  return completeConfig;
+}
+
+async function importPrivateKey(): Promise<CryptoKey> {
+  const config = await getGoogleWorkspaceConfig();
+
+  if (cachedPrivateKey && cachedPrivateKey.pem === config.privateKey) {
+    return cachedPrivateKey.promise;
+  }
+
+  const keyData = pemToUint8Array(config.privateKey);
+
+  const promise = crypto.subtle.importKey(
     "pkcs8",
     keyData.buffer,
     { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
@@ -87,7 +207,12 @@ async function importPrivateKey(): Promise<CryptoKey> {
     ["sign"],
   );
 
-  return privateKeyPromise;
+  cachedPrivateKey = {
+    pem: config.privateKey,
+    promise,
+  };
+
+  return promise;
 }
 
 function encodeSubject(subject: string): string {
@@ -179,17 +304,7 @@ async function getAccessToken(): Promise<string> {
     return cachedToken.token;
   }
 
-  const serviceAccountEmail = Deno.env.get("GOOGLE_WORKSPACE_SERVICE_ACCOUNT_EMAIL");
-  if (!serviceAccountEmail) {
-    throw new Error("GOOGLE_WORKSPACE_SERVICE_ACCOUNT_EMAIL is not configured.");
-  }
-
-  const delegatedUser = Deno.env.get("GOOGLE_WORKSPACE_DELEGATED_USER");
-  if (!delegatedUser) {
-    throw new Error("GOOGLE_WORKSPACE_DELEGATED_USER is not configured.");
-  }
-
-  const scope = Deno.env.get("GOOGLE_WORKSPACE_GMAIL_SCOPE") ?? DEFAULT_SCOPE;
+  const config = await getGoogleWorkspaceConfig();
 
   const iat = Math.floor(now / 1000);
   const exp = iat + 3600;
@@ -200,10 +315,10 @@ async function getAccessToken(): Promise<string> {
   };
 
   const claimSet = {
-    iss: serviceAccountEmail,
-    scope,
+    iss: config.serviceAccountEmail,
+    scope: config.scope || DEFAULT_SCOPE,
     aud: TOKEN_ENDPOINT,
-    sub: delegatedUser,
+    sub: config.delegatedUser,
     iat,
     exp,
   };
@@ -249,15 +364,9 @@ async function getAccessToken(): Promise<string> {
 }
 
 export async function sendGoogleWorkspaceEmail(options: GoogleWorkspaceEmailOptions): Promise<{ id: string; threadId?: string }> {
-  const from = options.from ?? Deno.env.get("GOOGLE_WORKSPACE_DEFAULT_FROM");
-  if (!from) {
-    throw new Error("No from address provided and GOOGLE_WORKSPACE_DEFAULT_FROM is not configured.");
-  }
+  const config = await getGoogleWorkspaceConfig();
 
-  const delegatedUser = Deno.env.get("GOOGLE_WORKSPACE_DELEGATED_USER");
-  if (!delegatedUser) {
-    throw new Error("GOOGLE_WORKSPACE_DELEGATED_USER is not configured.");
-  }
+  const from = options.from ?? config.defaultFrom;
 
   const mimeMessage = buildMimeMessage({
     ...options,
@@ -268,7 +377,7 @@ export async function sendGoogleWorkspaceEmail(options: GoogleWorkspaceEmailOpti
 
   const accessToken = await getAccessToken();
 
-  const response = await fetch(`https://gmail.googleapis.com/gmail/v1/users/${encodeURIComponent(delegatedUser)}/messages/send`, {
+  const response = await fetch(`https://gmail.googleapis.com/gmail/v1/users/${encodeURIComponent(config.delegatedUser)}/messages/send`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${accessToken}`,

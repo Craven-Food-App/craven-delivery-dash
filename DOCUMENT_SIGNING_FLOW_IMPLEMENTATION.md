@@ -23,6 +23,9 @@ Outbound notifications that support the signing flow (IBOE dispatch, executive d
 - `GOOGLE_WORKSPACE_TREASURY_FROM` (overrides the `From` header for treasury/IBOE mail)
 - `GOOGLE_WORKSPACE_GMAIL_SCOPE` (defaults to `https://www.googleapis.com/auth/gmail.send`)
 
+### In-App Configuration
+Administrators can update these credentials from the CEO portal’s Business Email System by clicking **Google Workspace Settings**. The modal writes the values to `ceo_system_settings.google_workspace_email`, which the Supabase Edge Functions read automatically (environment variables still take precedence when set).
+
 All Supabase email functions now surface Google API errors directly in the function response/logs. Removing the external Resend dependency means email deliverability depends on the Google Workspace account configuration and quota.
 
 ## Database Changes
