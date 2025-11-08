@@ -72,70 +72,34 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
     zipCode: string,
   ) => {
     try {
-      const normalizedZip = (zipCode || '').trim().replace(/[^0-9]/g, '');
-      if (!normalizedZip) return null;
-
-      const zipPrefix = normalizedZip.slice(0, 3);
-      if (!zipPrefix) return null;
-
-      // Try to find existing region by zip prefix
-      const { data: existingRegion, error: regionError } = await supabase
-        .from('regions')
-        .select('id, name')
-        .eq('zip_prefix', zipPrefix)
-        .maybeSingle();
-
-      if (regionError) {
-        console.error('Failed to look up region by ZIP prefix:', regionError);
+      const normalizedZip = (zipCode || '').trim().replace(/[^0-9]/g, '').slice(0, 5);
+      if (!normalizedZip) {
+        console.warn('Unable to auto-assign region: invalid ZIP', zipCode);
         return null;
       }
 
-      let regionId = existingRegion?.id ?? null;
-      let regionName = existingRegion?.name ?? null;
+      const { data: regionData, error: regionError } = await supabase.functions.invoke(
+        'ensure-region',
+        {
+          body: {
+            city,
+            state,
+            zip_code: normalizedZip,
+          },
+        },
+      );
 
-      if (!regionId) {
-        const defaultName = `${city}, ${state}`.trim() || `Region ${zipPrefix}`;
-        const { data: insertedRegion, error: insertError } = await supabase
-          .from('regions')
-          .insert({
-            name: defaultName,
-            zip_prefix: zipPrefix,
-            status: 'limited',
-            active_quota: 50,
-            display_quota: 50,
-          })
-          .select('id, name')
-          .single();
-
-        if (insertError) {
-          // If insert failed due to unique constraint, fetch again just in case
-          if (insertError.code === '23505') {
-            const { data: retryRegion } = await supabase
-              .from('regions')
-              .select('id, name')
-              .eq('zip_prefix', zipPrefix)
-              .maybeSingle();
-            regionId = retryRegion?.id ?? null;
-            regionName = retryRegion?.name ?? defaultName;
-          } else {
-            console.error('Failed to create region for driver application:', insertError);
-            return null;
-          }
-        } else {
-          regionId = insertedRegion?.id ?? null;
-          regionName = insertedRegion?.name ?? defaultName;
-        }
-      } else if (!regionName) {
-        // Fetch region name if not returned in initial query
-        const { data: regionRow } = await supabase
-          .from('regions')
-          .select('name')
-          .eq('id', regionId)
-          .maybeSingle();
-        regionName = regionRow?.name ?? `${city}, ${state}`.trim();
+      if (regionError) {
+        console.error('ensure-region error:', regionError);
+        return null;
       }
 
-      if (!regionId) return { regionId: null, regionName };
+      const regionId = regionData?.region_id ?? null;
+      const regionName = regionData?.region_name ?? null;
+
+      if (!regionId) {
+        return { regionId: null, regionName };
+      }
 
       const { error: updateError } = await supabase
         .from('craver_applications')

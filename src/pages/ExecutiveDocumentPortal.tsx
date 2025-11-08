@@ -88,23 +88,28 @@ export const ExecutiveDocumentPortal: React.FC = () => {
         packet_id: (d as any).packet_id as string | undefined,
         template_key: (d as any).template_key as string | undefined,
       } as ExecutiveDocument)).sort((a, b) => {
-        // First sort by signing_stage
         if (a.signing_stage !== b.signing_stage) {
           return (a.signing_stage || 999) - (b.signing_stage || 999);
         }
-        // Then by signing_order
         if (a.signing_order !== b.signing_order) {
           return (a.signing_order || 999) - (b.signing_order || 999);
         }
-        // Finally by created_at
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
 
-      // Check dependencies and compute can_sign
-      const withDependencies = sorted.map(doc => {
-        const dependsOn = sorted.find(d => d.id === doc.depends_on_document_id);
+      const uniqueSorted: ExecutiveDocument[] = [];
+      const seen = new Set<string>();
+      for (const doc of sorted) {
+        const key = `${doc.template_key || doc.type}::${doc.role}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        uniqueSorted.push(doc);
+      }
+
+      const withDependencies = uniqueSorted.map(doc => {
+        const dependsOn = uniqueSorted.find(d => d.id === doc.depends_on_document_id);
         const canSign = !dependsOn || dependsOn.signature_status === 'signed';
-        
+
         return {
           ...doc,
           can_sign: canSign,
@@ -255,7 +260,8 @@ export const ExecutiveDocumentPortal: React.FC = () => {
 
   const pendingDocuments = documents.filter(d => d.signature_status === 'pending');
   const signedDocuments = documents.filter(d => d.signature_status === 'signed');
-  
+  const signableDocuments = documents.filter(d => d.signature_status === 'pending' || d.signature_status === 'signed');
+
   // Group documents by stage for better organization
   const documentsByStage = {
     stage1: documents.filter(d => d.signing_stage === 1),
@@ -266,7 +272,7 @@ export const ExecutiveDocumentPortal: React.FC = () => {
   };
   
   // Calculate progress
-  const totalDocuments = documents.length;
+  const totalDocuments = signableDocuments.length;
   const signedCount = signedDocuments.length;
   const progressPercent = totalDocuments > 0 ? Math.round((signedCount / totalDocuments) * 100) : 0;
 

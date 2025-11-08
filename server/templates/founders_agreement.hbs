@@ -65,27 +65,7 @@
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td>{{founder_1_name}}</td>
-        <td>{{founder_1_role}}</td>
-        <td>{{founder_1_percent}}%</td>
-        <td>{{founder_1_shares}}</td>
-        <td>{{founder_1_vesting}}</td>
-      </tr>
-      <tr>
-        <td>{{founder_2_name}}</td>
-        <td>{{founder_2_role}}</td>
-        <td>{{founder_2_percent}}%</td>
-        <td>{{founder_2_shares}}</td>
-        <td>{{founder_2_vesting}}</td>
-      </tr>
-      <tr>
-        <td>{{founder_3_name}}</td>
-        <td>{{founder_3_role}}</td>
-        <td>{{founder_3_percent}}%</td>
-        <td>{{founder_3_shares}}</td>
-        <td>{{founder_3_vesting}}</td>
-      </tr>
+      {{{founders_table_html}}}
     </tbody>
   </table>
 
@@ -93,13 +73,13 @@
   <p>The Company's authorized capital stock shall consist of {{authorized_shares}} shares of common stock, par value {{par_value}} per share. The distribution of shares among the Founders is detailed above.</p>
 
   <h2>4. Vesting</h2>
-  <p>To ensure long-term commitment, each Founder's shares shall be subject to a vesting schedule of four (4) years, with a one (1) year cliff, unless otherwise agreed in writing. If a Founder ceases to be employed by or involved with the Company before full vesting, all unvested shares shall be forfeited or subject to repurchase by the Company at cost.</p>
+  <p>To ensure long-term commitment, each Founder's shares shall be subject to a vesting schedule of {{vesting_years}}, with a {{cliff_months}} cliff, unless otherwise agreed in writing. If a Founder ceases to be employed by or involved with the Company before full vesting, all unvested shares shall be forfeited or subject to repurchase by the Company at cost.</p>
 
   <h2>5. Roles and Responsibilities</h2>
   <ul>
-    <li><strong>Chief Executive Officer ({{founder_1_name}}):</strong> Overall leadership, strategy, and operations.</li>
-    <li><strong>Chief Financial Officer ({{founder_2_name}}):</strong> Oversees finances, accounting, and investment relations.</li>
-    <li><strong>Chief Experience Officer ({{founder_3_name}}):</strong> Directs user experience, branding, and engagement.</li>
+    <li><strong>Chief Executive Officer ({{founders_ceo_name}}):</strong> Overall leadership, strategy, and operations.</li>
+    <li><strong>Chief Financial Officer ({{founders_cfo_name}}):</strong> Oversees finances, accounting, and investor relations.</li>
+    <li><strong>Chief Experience Officer ({{founders_cxo_name}}):</strong> Directs product experience, branding, and customer engagement.</li>
   </ul>
 
   <h2>6. Decision-Making and Voting</h2>
@@ -131,51 +111,11 @@
   <h2>IN WITNESS WHEREOF</h2>
   <p>The undersigned Founders have executed this Agreement as of the date first written above.</p>
 
-  <table class="signature">
-    <tr>
-      <td>
-        <span class="sig-line"></span>
-        <div class="sig-label">Signature of {{founder_1_name}}</div>
-      </td>
-      <td style="width:40px;"></td>
-      <td>
-        <span class="sig-line"></span>
-        <div class="sig-label">Date</div>
-      </td>
-    </tr>
-  </table>
-
-  <table class="signature">
-    <tr>
-      <td>
-        <span class="sig-line"></span>
-        <div class="sig-label">Signature of {{founder_2_name}}</div>
-      </td>
-      <td style="width:40px;"></td>
-      <td>
-        <span class="sig-line"></span>
-        <div class="sig-label">Date</div>
-      </td>
-    </tr>
-  </table>
-
-  <table class="signature">
-    <tr>
-      <td>
-        <span class="sig-line"></span>
-        <div class="sig-label">Signature of {{founder_3_name}}</div>
-      </td>
-      <td style="width:40px;"></td>
-      <td>
-        <span class="sig-line"></span>
-        <div class="sig-label">Date</div>
-      </td>
-    </tr>
-  </table>
+  {{{founders_signature_html}}}
 
   <hr>
   <p style="font-size:12px;color:#777;">
-    Developer Note: Replace placeholders {{company_name}}, {{state_of_incorporation}}, {{effective_date}}, {{founder_X_name}}, etc. using your automated data injection system. Store signed PDF in the corporate document registry for recordkeeping.
+    Developer Note: Replace placeholders using your automated data injection system. Store signed PDF in the corporate document registry for recordkeeping.
   </p>
 
 </body>

@@ -76,7 +76,23 @@ serve(async (req) => {
   }
 
   try {
-    const { template_id, data, officer_name, role, equity, html_content, executive_id } = await req.json();
+    const {
+      template_id,
+      data,
+      officer_name,
+      role,
+      equity,
+      html_content,
+      executive_id,
+      packet_id,
+      signing_stage,
+      signing_order,
+      depends_on_document_id,
+      required_signers,
+      signer_roles,
+      template_key,
+      document_title,
+    } = await req.json();
     
     console.log('Generating document:', { template_id, officer_name, role, executive_id });
 
@@ -119,7 +135,8 @@ serve(async (req) => {
       .getPublicUrl(filename);
 
     // Generate signature token if executive_id is provided (for documents requiring signature)
-    const requiresSignature = ['employment_agreement', 'offer_letter', 'stock_issuance', 'founders_agreement', 'confidentiality_ip'].includes(template_id);
+    const resolvedTemplateKey = template_key || template_id;
+    const requiresSignature = ['employment_agreement', 'offer_letter', 'stock_issuance', 'founders_agreement', 'confidentiality_ip', 'deferred_comp_addendum'].includes(resolvedTemplateKey);
     let signatureToken: string | null = null;
     let tokenExpiresAt: Date | null = null;
     
@@ -136,7 +153,8 @@ serve(async (req) => {
       .from('executive_documents')
       .insert({
         type: template_id,
-        officer_name: officer_name || data.full_name || '',
+        template_key: resolvedTemplateKey,
+        officer_name: officer_name || document_title || data.full_name || '',
         role: role || data.role || '',
         equity: equity,
         status: 'generated',
@@ -145,6 +163,16 @@ serve(async (req) => {
         signature_token: signatureToken,
         signature_token_expires_at: tokenExpiresAt ? tokenExpiresAt.toISOString() : null,
         signature_status: requiresSignature && executive_id ? 'pending' : null,
+        packet_id: packet_id || null,
+        signing_stage: signing_stage ?? null,
+        signing_order: signing_order ?? null,
+        depends_on_document_id: depends_on_document_id ?? null,
+        required_signers: required_signers ?? null,
+        signer_roles:
+          signer_roles ??
+          (Array.isArray(required_signers)
+            ? Object.fromEntries(required_signers.map((r: string) => [r.toLowerCase(), false]))
+            : null),
       })
       .select()
       .single();

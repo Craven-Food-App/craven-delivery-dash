@@ -43,7 +43,19 @@ export const templates: TemplateMeta[] = [
   { 
     id: "founders_agreement", 
     title: "Founders' / Shareholders' Agreement", 
-    placeholders: ["company_name","founders_table_html","vesting_years","cliff_months","governing_law"], 
+    placeholders: [
+      "company_name",
+      "founders_table_html",
+      "founders_signature_html",
+      "founders_addressed_name",
+      "founders_addressed_role",
+      "founders_ceo_name",
+      "founders_cfo_name",
+      "founders_cxo_name",
+      "vesting_years",
+      "cliff_months",
+      "governing_law"
+    ], 
     compile: Handlebars.compile(TPL("founders_agreement.hbs")) 
   },
   { 

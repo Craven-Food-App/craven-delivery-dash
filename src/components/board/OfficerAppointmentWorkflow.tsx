@@ -4,10 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import dayjs from 'dayjs';
 import { UploadOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
-import { renderHtml } from '@/lib/templates';
 import { renderDocumentHtml } from '@/utils/templateUtils';
 import { docsAPI } from '../hr/api';
 import { getExecutiveData, formatExecutiveForDocuments } from '@/utils/getExecutiveData';
+import { FlowExecutive } from '@/types/executiveDocuments';
+import { DocumentFlowNode, PACKET_LABELS, getExpectedNodesForExecutive } from '@/utils/executiveDocumentFlow';
+import { buildFoundersTableHtml } from '@/utils/foundersTable';
 
 const { Step } = Steps;
 const { TextArea } = Input;
@@ -58,18 +60,22 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
     { title: 'Review & Appoint', description: 'Generate documents' },
   ];
 
-  // Document types to generate during appointment
-  const CSUITE_DOC_TYPES = [
-    { id: 'employment_agreement', title: 'Executive Employment Agreement' },
-    { id: 'board_resolution', title: 'Board Resolution – Appointment of Officers' },
-    { id: 'pre_incorporation_consent', title: 'Pre-Incorporation Consent (Conditional Appointments)' },
-    { id: 'founders_agreement', title: "Founders' / Shareholders' Agreement" },
-    { id: 'stock_issuance', title: 'Stock Subscription / Issuance Agreement' },
-    { id: 'confidentiality_ip', title: 'Confidentiality & IP Assignment Agreement' },
-    { id: 'deferred_comp_addendum', title: 'Deferred Compensation Addendum' },
-    { id: 'offer_letter', title: 'Executive Offer Letter' },
-    { id: 'bylaws_officers_excerpt', title: 'Bylaws – Officers (Excerpt)' },
-  ];
+  const buildFlowExecutive = (values: OfficerFormData): FlowExecutive => {
+    const rawRole = values.position_title ? String(values.position_title) : '';
+    const normalizedRole = rawRole.trim().toLowerCase() || 'officer';
+
+    return {
+      role: normalizedRole,
+      title: rawRole || 'Officer',
+      equity_percent: values.equity_percent,
+      shares_issued: values.share_count,
+      share_count: values.share_count,
+      salary_status: values.defer_salary ? 'deferred' : 'active',
+      defer_salary: values.defer_salary,
+      funding_trigger: values.funding_trigger,
+      incorporation_status: incorporationStatus,
+    };
+  };
 
   // Helper function to get incorporation status
   const getIncorporationStatus = async (): Promise<'pre_incorporation' | 'incorporated'> => {
@@ -79,7 +85,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
         .select('setting_value')
         .eq('setting_key', 'incorporation_status')
         .single();
-      
+
       return (data?.setting_value as 'pre_incorporation' | 'incorporated') || 'pre_incorporation';
     } catch (error) {
       console.warn('Error fetching incorporation status, defaulting to pre_incorporation:', error);
@@ -95,7 +101,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
         .select('setting_value')
         .eq('setting_key', key)
         .single();
-      
+
       return data?.setting_value || defaultValue;
     } catch (error) {
       console.warn(`Error fetching company setting ${key}:`, error);
@@ -109,8 +115,8 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
     equityGrantId?: string
   ) => {
     try {
-      const appointmentDate = formValues.appointment_date 
-        ? (dayjs.isDayjs(formValues.appointment_date) 
+      const appointmentDate = formValues.appointment_date
+        ? (dayjs.isDayjs(formValues.appointment_date)
             ? formValues.appointment_date.format('MMMM D, YYYY')
             : typeof formValues.appointment_date === 'string'
             ? dayjs(formValues.appointment_date).format('MMMM D, YYYY')
@@ -123,36 +129,15 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
       const equityPercent = formValues.equity_percent || 0;
       const annualSalary = formValues.annual_salary || 0;
 
-      // Check incorporation status to determine which document to use
-      const incorporationStatus = await getIncorporationStatus();
+      const flowExecutive = buildFlowExecutive(formValues);
+      const expectedNodes = getExpectedNodesForExecutive(flowExecutive);
+      const documentIdMap = new Map<string, string>();
 
-      // Generate each document
-      for (const docType of CSUITE_DOC_TYPES) {
+      for (const node of expectedNodes) {
         try {
-          // Skip deferred_comp_addendum if salary is not deferred
-          if (docType.id === 'deferred_comp_addendum' && !formValues.defer_salary) {
-            console.log(`Skipping ${docType.title} - salary is not deferred`);
-            continue;
-          }
-
-          // Determine actual document type to generate based on incorporation status
-          let actualDocType = docType.id;
-          let actualDocTitle = docType.title;
-          
-          // Replace board_resolution with pre_incorporation_consent if pre-incorporation
-          if (docType.id === 'board_resolution' && incorporationStatus === 'pre_incorporation') {
-            actualDocType = 'pre_incorporation_consent';
-            actualDocTitle = 'Pre-Incorporation Consent (Conditional Appointments)';
-          }
-          // Skip pre_incorporation_consent if incorporated (we'll use board_resolution instead)
-          if (docType.id === 'pre_incorporation_consent' && incorporationStatus === 'incorporated') {
-            continue; // Skip pre_incorporation_consent, will use board_resolution instead
-          }
-
-          // Prepare document data based on template type
           const docData = await prepareDocumentData(
             formValues,
-            actualDocType,
+            node.type,
             appointmentDate,
             strikePrice,
             sharesIssued,
@@ -161,28 +146,35 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
             annualSalary
           );
 
-          // Generate HTML using template from database (or fallback to hardcoded)
-          const html_content = await renderDocumentHtml(actualDocType, docData, actualDocType);
+          const html_content = await renderDocumentHtml(node.type, docData, node.type);
 
-          // Call document-generate edge function
+          const dependsOnId = node.dependsOn ? documentIdMap.get(node.dependsOn) : undefined;
+
           const resp = await docsAPI.post('/documents/generate', {
-            template_id: actualDocType,
+            template_id: node.type,
+            template_key: node.type,
+            document_title: node.title,
             officer_name: formValues.full_name,
             role: formValues.position_title === 'CXO' ? 'Chief Experience Officer' : formValues.position_title,
-            equity: actualDocType.includes('equity') || actualDocType === 'stock_issuance' ? equityPercent : undefined,
+            equity: node.type.includes('equity') || node.type === 'stock_issuance' ? equityPercent : undefined,
             data: docData,
             html_content,
-            executive_id: executiveId, // Link document to executive for signature portal
+            executive_id: executiveId,
+            packet_id: node.packetId,
+            signing_stage: node.signingStage,
+            signing_order: node.signingOrder,
+            depends_on_document_id: dependsOnId,
+            required_signers: node.requiredSigners,
           });
 
-          if (!resp?.ok || !resp?.document) {
-            console.warn(`Failed to generate ${actualDocTitle}:`, resp?.error);
+          if (resp?.ok && resp?.document?.id) {
+            documentIdMap.set(node.type, resp.document.id);
+            console.log(`✓ Generated ${node.title}`);
           } else {
-            console.log(`✓ Generated ${actualDocTitle}`);
+            console.warn(`Failed to generate ${node.title}:`, resp?.error);
           }
         } catch (error: any) {
-          console.error(`Error generating ${docType.title}:`, error);
-          // Continue with other documents even if one fails
+          console.error(`Error generating ${node.title}:`, error);
         }
       }
     } catch (error: any) {
@@ -252,19 +244,19 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
         // Fetch all executives to populate officers and directors
         const allExecutives = await getExecutiveData();
         const formattedExecs = allExecutives.map(e => formatExecutiveForDocuments(e));
-        
+
         // Get CEO, CFO, CXO, and Secretary
         const ceo = formattedExecs.find(e => e.role === 'ceo');
         const cfo = formattedExecs.find(e => e.role === 'cfo');
         const cxo = formattedExecs.find(e => e.role === 'cxo');
         const secretary = formattedExecs.find(e => e.role === 'secretary') || formattedExecs.find(e => e.role === 'ceo');
-        
+
         // Directors (typically CEO + 2 others, or first 2 executives)
         const directors = formattedExecs.slice(0, 2);
-        
+
         const consentDate = appointmentDate;
         const notaryDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        
+
         // Determine officer positions based on current appointment
         const currentOfficer = {
           name: formValues.full_name,
@@ -378,13 +370,29 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
           company_mission_statement: 'deliver delightful food experiences to every neighborhood',
         };
       }
-      case 'founders_agreement':
+      case 'founders_agreement': {
+        const flowExec = buildFlowExecutive(formValues);
+        const foundersTable = await buildFoundersTableHtml({
+          role: flowExec.role,
+          name: formValues.full_name,
+          title: formValues.position_title,
+          equityPercent: equityPercent,
+          shares: sharesIssued,
+          vesting: formValues.vesting_schedule,
+        });
         return {
           ...baseData,
-          founders_table_html: `<tr><td>${formValues.full_name}</td><td>${baseData.role}</td><td>${equityPercent}%</td></tr>`,
+          founders_table_html: foundersTable.tableHtml,
+          founders_signature_html: foundersTable.signatureHtml,
+          founders_addressed_name: foundersTable.addressedName,
+          founders_addressed_role: foundersTable.addressedRole,
+          founders_ceo_name: foundersTable.ceoName,
+          founders_cfo_name: foundersTable.cfoName,
+          founders_cxo_name: foundersTable.cxoName,
           vesting_years: '4',
           cliff_months: '12',
         };
+      }
       case 'deferred_comp_addendum':
         return {
           ...baseData,
@@ -404,8 +412,8 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
   const handleNext = async () => {
     try {
       // Validate only fields in the current step
-      const fieldNames = 
-        currentStep === 0 
+      const fieldNames =
+        currentStep === 0
           ? ['full_name', 'email', 'position_title', 'appointment_date']
           : currentStep === 1
           ? ['equity_percent', 'share_count', 'vesting_schedule', 'strike_price']
@@ -414,7 +422,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
           : currentStep === 3
           ? ['date_of_birth', 'address_line1', 'city', 'state', 'postal_code', 'ssn1', 'ssn2', 'ssn3']
           : [];
-      
+
       await form.validateFields(fieldNames);
       setCurrentStep(currentStep + 1);
     } catch (error) {
@@ -460,8 +468,8 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
       }
 
       // Format appointment_date for submission
-      const appointmentDateStr = typeof values.appointment_date === 'string' 
-        ? values.appointment_date 
+      const appointmentDateStr = typeof values.appointment_date === 'string'
+        ? values.appointment_date
         : (values.appointment_date as any).format('YYYY-MM-DD');
 
       // Call edge function to appoint officer
@@ -508,15 +516,15 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
       }
 
       console.log('Edge function response:', data);
-      
+
       // Save SSN securely via edge function (if provided)
       if (data.officer_id) {
         const ssnRaw = `${values.ssn1 || ''}${values.ssn2 || ''}${values.ssn3 || ''}`.replace(/\D/g, '');
-        
+
         if (ssnRaw.length === 9) {
           try {
-            const dob = values.date_of_birth 
-              ? (dayjs.isDayjs(values.date_of_birth) 
+            const dob = values.date_of_birth
+              ? (dayjs.isDayjs(values.date_of_birth)
                   ? values.date_of_birth.format('YYYY-MM-DD')
                   : typeof values.date_of_birth === 'string'
                   ? values.date_of_birth
@@ -547,19 +555,19 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
           }
         }
       }
-      
+
       // Generate documents using templates from src/lib/templates.ts
       if (data.officer_id) {
         message.info('Generating documents...', 2);
         await generateDocumentsForOfficer(values, data.officer_id, data.equity_grant_id);
       }
-      
+
       // Show success message with details
       message.success({
         content: `${values.full_name} has been successfully appointed as ${values.position_title}. Documents have been generated. Price per Share: $${data.price_per_share || '0.0000'}, Total Purchase Price: $${data.total_purchase_price || '0.00'}`,
         duration: 6,
       });
-      
+
       // Reset form and return to first step instead of navigating away
       form.resetFields();
       setPhotoFile(null);
@@ -567,10 +575,10 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
       setCurrentStep(0);
     } catch (error: any) {
       console.error('Error appointing officer:', error);
-      
+
       // Provide more helpful error messages
       let errorMessage = 'Failed to appoint officer';
-      
+
       if (error?.message) {
         errorMessage = error.message;
       } else if (error?.context?.message) {
@@ -578,9 +586,9 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
       } else if (typeof error === 'string') {
         errorMessage = error;
       }
-      
+
       // Check for common edge function errors
-      if (errorMessage.includes('Failed to send a request') || 
+      if (errorMessage.includes('Failed to send a request') ||
           errorMessage.includes('Edge Function') ||
           error?.status === 404) {
         errorMessage = 'Edge function not found or not deployed. Please deploy the appoint-corporate-officer function to Supabase.';
@@ -589,7 +597,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
       } else if (error?.status === 401 || error?.status === 403) {
         errorMessage = 'Authentication error. Please check your permissions.';
       }
-      
+
       message.error(errorMessage);
     } finally {
       setLoading(false);
@@ -599,7 +607,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
   const renderStepContent = () => {
     // Get current form values for review step
     const values = form.getFieldsValue() as OfficerFormData;
-    
+
     return (
       <>
         {/* Step 0: Officer Details - Always rendered but hidden when not current step */}
@@ -659,14 +667,14 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
                   return false;
                 }
                 setPhotoFile(file as any);
-                
+
                 // Create preview URL
                 const reader = new FileReader();
                 reader.onload = (e) => {
                   setPhotoUrl(e.target?.result as string);
                 };
                 reader.readAsDataURL(file);
-                
+
                 return false; // Prevent auto upload
               }}
               onRemove={() => {
@@ -924,28 +932,28 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
           <Form.Item noStyle shouldUpdate>
             {() => {
               const reviewValues = form.getFieldsValue() as OfficerFormData;
-              
+
               // Format appointment date
-              const appointmentDate = reviewValues.appointment_date 
-                ? (dayjs.isDayjs(reviewValues.appointment_date) 
+              const appointmentDate = reviewValues.appointment_date
+                ? (dayjs.isDayjs(reviewValues.appointment_date)
                     ? reviewValues.appointment_date.format('MMMM D, YYYY')
                     : typeof reviewValues.appointment_date === 'string'
                     ? dayjs(reviewValues.appointment_date).format('MMMM D, YYYY')
                     : (reviewValues.appointment_date as any)?.format?.('MMMM D, YYYY') || String(reviewValues.appointment_date))
                 : 'TBD';
-              
+
               return (
                 <div style={{ padding: '24px', background: '#fafafa', borderRadius: '8px' }}>
                   <h3 style={{ marginTop: 0 }}>Review Officer Appointment</h3>
                   {photoUrl && (
                     <div style={{ marginBottom: '16px', textAlign: 'center' }}>
-                      <img 
-                        src={photoUrl} 
-                        alt={reviewValues.full_name} 
-                        style={{ 
-                          width: '128px', 
-                          height: '128px', 
-                          borderRadius: '50%', 
+                      <img
+                        src={photoUrl}
+                        alt={reviewValues.full_name}
+                        style={{
+                          width: '128px',
+                          height: '128px',
+                          borderRadius: '50%',
                           objectFit: 'cover',
                           border: '4px solid white',
                           boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
@@ -968,18 +976,24 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
                   )}
                   <div style={{ marginTop: '24px', padding: '16px', background: '#fff', borderRadius: '4px', border: '1px solid #d9d9d9' }}>
                     <h4 style={{ marginTop: 0 }}>Documents to be Generated:</h4>
-                    <ul>
-                      <li>Executive Employment Agreement</li>
-                      <li>{incorporationStatus === 'pre_incorporation' 
-                        ? 'Pre-Incorporation Consent (Conditional Appointments)' 
-                        : 'Board Resolution – Officer Appointment'}</li>
-                      <li>Founders' / Shareholders' Agreement</li>
-                      <li>Stock Subscription/Issuance Agreement</li>
-                      <li>Executive Offer Letter</li>
-                      <li>Confidentiality & IP Assignment Agreement</li>
-                      {reviewValues.defer_salary && <li>Deferred Compensation Addendum</li>}
-                      <li>Bylaws – Officers Excerpt</li>
-                    </ul>
+                    {(() => {
+                      const flowExecutive = buildFlowExecutive(reviewValues);
+                      const expectedDocuments = getExpectedNodesForExecutive(flowExecutive);
+
+                      if (expectedDocuments.length === 0) {
+                        return <p style={{ margin: 0 }}>No documents are required for this appointment.</p>;
+                      }
+
+                      return (
+                        <ul>
+                          {expectedDocuments.map((node) => (
+                            <li key={node.type}>
+                              <strong>{PACKET_LABELS[node.packetId]}</strong>: {node.title}
+                            </li>
+                          ))}
+                        </ul>
+                      );
+                    })()}
                   </div>
                 </div>
               );
