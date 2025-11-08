@@ -275,9 +275,9 @@ const IBOESender: React.FC = () => {
   };
 
   return (
-    <Card
-      title="International Bill of Exchange (IBOE)"
-      bordered={false}
+    <Card 
+      title="International Bill of Exchange (IBOE)" 
+      bordered={false} 
       className="shadow-lg"
     >
       <Space direction="vertical" size="large" style={{ width: '100%' }}>

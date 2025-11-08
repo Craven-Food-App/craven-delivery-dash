@@ -3,9 +3,9 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
-const stripLovableAttributes = () => ({
+const stripLovableAttributes = (): any => ({
   name: 'strip-lovable-attributes',
-  enforce: 'post',
+  enforce: 'post' as const,
   transform(code: string, id: string) {
     if (!id.endsWith('.tsx') && !id.endsWith('.jsx')) {
       return null;
