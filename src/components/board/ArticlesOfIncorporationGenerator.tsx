@@ -282,10 +282,12 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       position: relative;
       z-index: 2;
       flex-shrink: 0;
+      font-family: "Arial", "Helvetica", sans-serif;
     }
 
     .cover-barcode {
       text-align: center;
+      font-family: "Arial", "Helvetica", sans-serif;
     }
 
     .cover-barcode svg {
@@ -299,6 +301,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       letter-spacing: 0.6px;
       margin-top: 6px;
       text-align: center;
+      font-family: "Arial", "Helvetica", sans-serif;
     }
 
     .cover-meta-table {
@@ -307,6 +310,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       font-size: 10.5px;
       text-transform: uppercase;
       letter-spacing: 0.6px;
+      font-family: "Arial", "Helvetica", sans-serif;
     }
 
     .cover-meta-table th,
@@ -329,11 +333,13 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       text-transform: uppercase;
       letter-spacing: 0.8px;
       font-size: 14px;
+      font-family: "Arial", "Helvetica", sans-serif;
     }
 
     .cover-receipt-note {
       font-size: 10px;
       text-align: center;
+      font-family: "Arial", "Helvetica", sans-serif;
     }
 
     .cover-address {
@@ -342,6 +348,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       text-transform: uppercase;
       letter-spacing: 0.6px;
       margin-top: 6px;
+      font-family: "Arial", "Helvetica", sans-serif;
     }
 
     .certificate-frame {
