@@ -90,6 +90,18 @@ type ArticlesFormValues = {
   incorporators: Incorporator[];
   optionalProvisions: string[];
   barcode: BarcodeMeta;
+  filingType: string;
+  filingFee: string;
+  expediteFee: string;
+  penaltyFee: string;
+  certificateFee: string;
+  copyFee: string;
+  recipientName: string;
+  recipientAddressLine1: string;
+  recipientAddressLine2?: string;
+  recipientAddressLine3?: string;
+  secretaryOfStateName: string;
+  certificateNumber?: string;
 };
 
 interface TemplateRecord {
@@ -174,6 +186,18 @@ const DEFAULT_FORM_VALUES: ArticlesFormValues = {
     'The corporation elects to be governed by Section 1701.59(B) of the Ohio Revised Code regarding director liability limitations.',
   ],
   barcode: DEFAULT_BARCODE_META,
+  filingType: 'corporation',
+  filingFee: '50.00',
+  expediteFee: '300.00',
+  penaltyFee: '0.00',
+  certificateFee: '0.00',
+  copyFee: '0.00',
+  recipientName: 'Thompson Hine LLP',
+  recipientAddressLine1: '3900 Key Center',
+  recipientAddressLine2: '127 Public Square',
+  recipientAddressLine3: 'Cleveland, OH 44114-1291',
+  secretaryOfStateName: 'Frank LaRose',
+  certificateNumber: '317430',
 };
 
 const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
@@ -203,8 +227,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
     .certificate-page {
       width: 8.5in;
       height: 11in;
-      border: 18px double #1f2937;
-      padding: 0.8in;
+      padding: 0;
       box-sizing: border-box;
       position: relative;
       overflow: hidden;
@@ -223,38 +246,43 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       opacity: 0.1;
       pointer-events: none;
     }
-    .certificate-page .border-inner {
-      position: absolute;
-      inset: 0.32in;
-      border: 2px solid rgba(30, 41, 59, 0.6);
-      pointer-events: none;
-    }
     .cover-header {
+      padding: 0.75in 0.8in 0;
       display: grid;
       grid-template-columns: 1fr;
-      gap: 16px;
+      gap: 18px;
       position: relative;
       z-index: 2;
     }
     .cover-barcode {
       display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      font-size: 12px;
+      flex-direction: column;
+      align-items: flex-end;
+      font-size: 11px;
       color: #1f2937;
+      gap: 6px;
+      margin-top: 12px;
+    }
+    .barcode-text {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-top: 6px;
+      text-align: right;
     }
     .cover-barcode svg {
-      width: 6.5in;
-      height: 0.95in;
+      width: 6.8in;
+      height: 1in;
     }
     .cover-receipt {
-      margin-top: 4px;
-      font-size: 11px;
+      margin-top: 2px;
+      font-size: 10.5px;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.9px;
     }
     .cover-body {
-      margin-top: 28px;
+      padding: 0 0.8in;
+      margin-top: 18px;
       position: relative;
       z-index: 2;
     }
@@ -277,8 +305,8 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       line-height: 1.65;
     }
     .certificate-content p {
-      margin: 0 0 16px;
-      text-indent: 30px;
+      margin: 0 0 14px;
+      text-indent: 32px;
     }
     .certificate-details {
       display: flex;
@@ -291,18 +319,29 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
-      margin-top: 60px;
+      margin-top: 36px;
+      padding: 0 0.8in 0.9in;
+    }
+    .certificate-left {
+      display: flex;
+      align-items: flex-end;
+      gap: 14px;
+    }
+    .certificate-left-text {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      line-height: 1.5;
     }
     .cover-seal {
-      width: 1.6in;
-      height: 1.6in;
+      width: 1.55in;
+      height: 1.55in;
       border-radius: 50%;
       overflow: hidden;
       background: #ffffff;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 2px solid #111827;
     }
     .cover-seal img {
       width: 100%;
@@ -406,65 +445,198 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       display: flex;
       justify-content: space-between;
     }
+    .cover-meta {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, auto));
+      gap: 8px 18px;
+      font-size: 10.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 8px;
+    }
+    .cover-meta span {
+      display: block;
+      margin-top: 2px;
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 11.5px;
+    }
+    .cover-receipt {
+      margin-top: 12px;
+      text-transform: uppercase;
+      font-size: 14px;
+      letter-spacing: 0.8px;
+      text-align: left;
+    }
+    .cover-receipt-note {
+      font-size: 10px;
+      margin-top: 2px;
+    }
+    .cover-address {
+      margin-top: 18px;
+      margin-bottom: 24px;
+      font-size: 11px;
+      line-height: 1.6;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    .certificate-box {
+      margin: 0.5in 0.8in 0.4in;
+      padding: 0.4in;
+      border: 2px solid #000000;
+      position: relative;
+      background: #ffffff;
+    }
+    .certificate-box-header {
+      text-align: center;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      font-size: 22px;
+    }
+    .certificate-box-subheader {
+      text-align: center;
+      font-size: 17px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+    .certificate-box-subtitle {
+      text-align: center;
+      font-size: 13px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 18px;
+    }
+    .certificate-box-number {
+      text-align: center;
+      font-size: 12px;
+      margin-top: 6px;
+      letter-spacing: 1px;
+    }
+    .certificate-box-body {
+      margin-top: 20px;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+    .certificate-box-body p {
+      margin: 0 0 14px;
+      text-indent: 32px;
+    }
+    .certificate-box-details {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      font-size: 13px;
+      margin-top: 24px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    .certificate-box-details div:nth-child(2) {
+      text-align: center;
+    }
+    .certificate-box-details div:nth-child(3) {
+      text-align: right;
+    }
+    .certificate-box-details strong {
+      display: block;
+      margin-top: 4px;
+      letter-spacing: 0;
+    }
   </style>
 </head>
 <body>
   <div class="certificate-container">
     <div class="certificate-page cover">
-      <div class="border-inner"></div>
       <div class="cover-header">
-        <div class="cover-barcode">
+        <div class="cover-meta">
           <div>
-            <div class="cover-receipt">Receipt</div>
-            <div>Filing #: {{submission_number}}</div>
-            <div>Document #: {{charter_number}}</div>
-            <div>Charter/Registration #: {{entity_number}}</div>
-            <div>Filed: {{filing_date_long}}</div>
+            <strong>DATE</strong>
+            <span>{{filing_date_short}}</span>
           </div>
           <div>
-            {{articles_barcode_svg}}
-            <div>{{barcode_human_readable}}</div>
+            <strong>DOCUMENT ID</strong>
+            <span>{{submission_number}}</span>
+          </div>
+          <div>
+            <strong>DESCRIPTION</strong>
+            <span>{{filing_receipt_description}}</span>
+          </div>
+          <div>
+            <strong>FILING</strong>
+            <span>{{filing_fee}}</span>
+          </div>
+          <div>
+            <strong>EXPED</strong>
+            <span>{{filing_expedite_fee}}</span>
+          </div>
+          <div>
+            <strong>PENALTY</strong>
+            <span>{{filing_penalty_fee}}</span>
+          </div>
+          <div>
+            <strong>CERT</strong>
+            <span>{{filing_certificate_fee}}</span>
+          </div>
+          <div>
+            <strong>COPY</strong>
+            <span>{{filing_copy_fee}}</span>
           </div>
         </div>
+        <div class="cover-barcode">
+          {{articles_barcode_svg}}
+          <div class="barcode-text">{{barcode_human_readable}}</div>
+        </div>
+        <div class="cover-receipt">Receipt</div>
+        <div class="cover-receipt-note">This is not a bill. Please do not remit payment.</div>
+        <div class="cover-address">{{recipient_block}}</div>
       </div>
 
-      <div class="cover-body">
-        <div class="state-title">State of Ohio</div>
-        <div class="state-subtitle">Certificate</div>
-        <div style="text-align:center;text-transform:uppercase;letter-spacing:2px;font-size:13px;margin-bottom:24px;">
-          Ohio Secretary of State
+      <div class="certificate-box">
+        <div class="certificate-box-header">STATE OF OHIO</div>
+        <div class="certificate-box-subheader">CERTIFICATE</div>
+        <div class="certificate-box-subtitle">Ohio Secretary of State, {{secretary_name}}</div>
+        <div class="certificate-box-number">{{certificate_number}}</div>
+
+        <div class="certificate-box-body">
+          <p>It is hereby certified that the Secretary of State of Ohio has custody of the business records for <strong>{{entity_name}}</strong>.</p>
+          <p>and, that said business records show the filing and recording of:</p>
         </div>
 
-        <div class="certificate-content">
-          <p>It is hereby certified that the Secretary of State of Ohio has received the record of the business filings for <strong>{{entity_name}}</strong>.</p>
-          <p>Said document has been numbered and the filing date recorded as noted above. The certificate set forth on the following page reflects the information on file relating to the entity at the time of this filing.</p>
-        </div>
-
-        <div class="certificate-details">
-          <div><strong>Document(s):</strong> Articles of Incorporation</div>
-          <div><strong>Entity Name:</strong> {{entity_name}}</div>
-          <div><strong>Document Number:</strong> {{charter_number}}</div>
-          <div><strong>Filing Date:</strong> {{filing_date_long}}</div>
+        <div class="certificate-box-details">
+          <div>
+            <span>Document(s)</span>
+            <strong>{{filing_document_title_upper}}</strong>
+          </div>
+          <div>
+            <span>Effective Date:</span>
+            <strong>{{effective_date_short}}</strong>
+          </div>
+          <div>
+            <span>Document No(s):</span>
+            <strong>{{charter_number}}</strong>
+          </div>
         </div>
 
         <div class="signature-row">
-          <div class="cover-seal">
-            <img src="{{ohio_seal_src}}" alt="Great Seal of the State of Ohio" />
+          <div class="certificate-left">
+            <div class="cover-seal">
+              <img src="{{ohio_seal_src}}" alt="Great Seal of the State of Ohio" />
+            </div>
+            <div class="certificate-left-text">
+              United States of America<br/>State of Ohio<br/>Office of the Secretary of State
+            </div>
           </div>
           <div class="cover-signature">
-            <div>Witness my hand and the seal of</div>
-            <div>To the Secretary of State at Columbus,</div>
-            <div>Ohio, this {{filing_date_long}}.</div>
-            <div class="signature-script">Ohio Secretary of State</div>
-            <div class="signature-line">Secretary of State</div>
-            <div class="signature-line">State of Ohio</div>
+            <div>Witness my hand and the seal of the Secretary of State at Columbus, Ohio this</div>
+            <div>{{filing_date_long}}.</div>
+            <div class="signature-script">{{secretary_name}}</div>
+            <div class="signature-line">Ohio Secretary of State</div>
           </div>
         </div>
       </div>
     </div>
 
     <div class="certificate-page form">
-      <div class="border-inner"></div>
       <div class="form-header">
         <div class="form-header-left">
           <img src="{{ohio_seal_src}}" alt="Great Seal of the State of Ohio" />
@@ -481,16 +653,18 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
         </div>
       </div>
 
-      <div class="form-title">Articles of Incorporation</div>
-      <div class="form-subtitle">Ohio Revised Code §§ 1701.04, 1702.04</div>
+      <div class="form-title">{{filing_document_title}}</div>
+      <div class="form-subtitle">{{filing_option_label}}</div>
 
       <div class="form-section">
         <h4>Entity Information</h4>
         <div class="form-grid">
-          <div><strong>Name of Corporation:</strong><br/>{{entity_name}}</div>
+          <div><strong>Name of Entity:</strong><br/>{{entity_name}}</div>
           <div><strong>Charter Number:</strong><br/>{{charter_number}}</div>
-          <div><strong>Document Number:</strong><br/>{{charter_number}}</div>
+          <div><strong>Document Type:</strong><br/>{{filing_document_title}}</div>
+          <div><strong>Description:</strong><br/>{{filing_receipt_description}}</div>
           <div><strong>Filing Date:</strong><br/>{{filing_date_long}}</div>
+          <div><strong>Document ID:</strong><br/>{{submission_number}}</div>
         </div>
       </div>
 
@@ -541,6 +715,58 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
   </div>
 </body>
 </html>`;
+
+const FILING_OPTIONS: Record<string, {
+  label: string;
+  receiptDescription: string;
+  documentTitle: string;
+}> = {
+  corporation: {
+    label: 'For-Profit Corporation',
+    receiptDescription: 'ARTICLES OF INCORPORATION (FOR PROFIT)',
+    documentTitle: 'Articles of Incorporation',
+  },
+  llc: {
+    label: 'Limited Liability Company',
+    receiptDescription: 'ARTICLES OF ORGANIZATION (LLC)',
+    documentTitle: 'Articles of Organization',
+  },
+  nonprofit: {
+    label: 'Nonprofit Corporation',
+    receiptDescription: 'ARTICLES OF INCORPORATION (NONPROFIT)',
+    documentTitle: 'Articles of Incorporation (Nonprofit)',
+  },
+  professional: {
+    label: 'Professional Corporation / LLC',
+    receiptDescription: 'PROFESSIONAL ENTITY FILING',
+    documentTitle: 'Professional Entity Filing',
+  },
+  partnership: {
+    label: 'Partnership / LLP / LP',
+    receiptDescription: 'PARTNERSHIP OR LLP FILING',
+    documentTitle: 'Partnership Filing',
+  },
+  cooperative: {
+    label: 'Cooperative Association',
+    receiptDescription: 'COOPERATIVE ASSOCIATION FILING',
+    documentTitle: 'Articles of Incorporation (Cooperative)',
+  },
+  trust: {
+    label: 'Business or Statutory Trust',
+    receiptDescription: 'BUSINESS TRUST FILING',
+    documentTitle: 'Business Trust Filing',
+  },
+  foreign: {
+    label: 'Foreign Registration',
+    receiptDescription: 'FOREIGN REGISTRATION STATEMENT',
+    documentTitle: 'Foreign Registration Statement',
+  },
+};
+
+const FILING_TYPE_OPTIONS = Object.entries(FILING_OPTIONS).map(([value, info]) => ({
+  value,
+  label: info.label,
+}));
 
 const formatDayjs = (value?: Dayjs, format = 'MMMM D, YYYY'): string => {
   if (!value) return '';
@@ -637,6 +863,7 @@ const createBarcodeSvgMarkup = (payload: string): string => {
 };
 
 const buildArticlesHtml = (template: string, values: ArticlesFormValues, barcodeSvg: string, barcodeHumanReadable: string): string => {
+  const filingOption = FILING_OPTIONS[values.filingType] ?? FILING_OPTIONS.corporation;
   const principalAddress = [`${sanitizeText(values.principalAddressLine1)}`]
     .concat(
       [
@@ -655,11 +882,21 @@ const buildArticlesHtml = (template: string, values: ArticlesFormValues, barcode
     )
     .join('<br/>');
 
+  const recipientBlock = [
+    sanitizeText(values.recipientName),
+    sanitizeText(values.recipientAddressLine1),
+    sanitizeText(values.recipientAddressLine2),
+    sanitizeText(values.recipientAddressLine3),
+  ]
+    .filter((line) => line && line.length > 0)
+    .join('<br/>');
+
   const replacements: Record<string, string> = {
     '{{entity_name}}': sanitizeText(values.entityName),
     '{{entity_type}}': sanitizeText(values.entityType),
     '{{formation_state}}': sanitizeText(values.formationState),
     '{{effective_date}}': formatDayjs(values.effectiveDate),
+    '{{effective_date_short}}': formatDayjs(values.effectiveDate, 'MM/DD/YYYY'),
     '{{duration}}': sanitizeText(values.duration),
     '{{principal_office}}': principalAddress,
     '{{principal_county}}': sanitizeText(values.principalCounty),
@@ -680,8 +917,20 @@ const buildArticlesHtml = (template: string, values: ArticlesFormValues, barcode
     '{{entity_number}}': sanitizeText(values.barcode.entityNumber),
     '{{receipt_number}}': sanitizeText(values.barcode.receiptNumber),
     '{{filing_timestamp}}': `${formatDayjs(values.barcode.filingDate)} ${sanitizeText(values.barcode.filingTime)}`,
+    '{{filing_date_short}}': formatDayjs(values.barcode.filingDate, 'MM/DD/YYYY'),
     '{{filing_date_long}}': formatDayjs(values.barcode.filingDate, 'MMMM D, YYYY'),
-    '{{doc_type_code}}': sanitizeText(values.barcode.docTypeCode),
+    '{{filing_receipt_description}}': sanitizeText(filingOption.receiptDescription),
+    '{{filing_document_title}}': sanitizeText(filingOption.documentTitle),
+    '{{filing_document_title_upper}}': sanitizeText(filingOption.documentTitle).toUpperCase(),
+    '{{filing_option_label}}': sanitizeText(filingOption.label),
+    '{{filing_fee}}': sanitizeText(values.filingFee),
+    '{{filing_expedite_fee}}': sanitizeText(values.expediteFee),
+    '{{filing_penalty_fee}}': sanitizeText(values.penaltyFee),
+    '{{filing_certificate_fee}}': sanitizeText(values.certificateFee),
+    '{{filing_copy_fee}}': sanitizeText(values.copyFee),
+    '{{recipient_block}}': recipientBlock || '&nbsp;',
+    '{{secretary_name}}': sanitizeText(values.secretaryOfStateName),
+    '{{certificate_number}}': sanitizeText(values.certificateNumber || values.barcode.submissionNumber),
   };
 
   let output = template;
@@ -1036,36 +1285,43 @@ const ArticlesOfIncorporationGenerator: React.FC = () => {
                   <div className="space-y-4">
                   <Row gutter={24}>
                     <Col xs={24} md={12}>
-                      <Form.Item name="entityName" label="Legal Entity Name" rules={[{ required: true, message: 'Enter the entity name' }]}>
+                      <Form.Item name="entityName" label="Legal Entity Name" rules={[{ required: true, message: 'Enter the entity name' }] }>
                         <Input placeholder="Legal entity name" />
                       </Form.Item>
                     </Col>
                     <Col xs={24} md={12}>
-                      <Form.Item name="entityType" label="Entity Type" rules={[{ required: true, message: 'Select entity type' }]}>
-                        <Select
-                          options={[
-                            { value: 'For-Profit Corporation', label: 'For-Profit Corporation' },
-                            { value: 'Nonprofit Corporation', label: 'Nonprofit Corporation' },
-                            { value: 'Professional Corporation', label: 'Professional Corporation' },
-                          ]}
-                        />
+                      <Form.Item name="entityType" label="Entity Type" rules={[{ required: true, message: 'Enter entity type' }] }>
+                        <Input placeholder="For-Profit Corporation" />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+
+                  <Row gutter={24}>
+                    <Col xs={24} md={12}>
+                      <Form.Item name="filingType" label="Filing Type" rules={[{ required: true, message: 'Select filing type' }] }>
+                        <Select options={FILING_TYPE_OPTIONS} />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={24} md={12}>
+                      <Form.Item name="certificateNumber" label="Certificate Number">
+                        <Input placeholder="Certificate control number" />
                       </Form.Item>
                     </Col>
                   </Row>
 
                   <Row gutter={24}>
                     <Col xs={24} md={8}>
-                      <Form.Item name="formationState" label="Formation State" rules={[{ required: true, message: 'Enter formation state' }]}>
+                      <Form.Item name="formationState" label="Formation State" rules={[{ required: true, message: 'Enter formation state' }] }>
                         <Input placeholder="Ohio" />
                       </Form.Item>
                     </Col>
                     <Col xs={24} md={8}>
-                      <Form.Item name="principalCounty" label="Principal County" rules={[{ required: true, message: 'Enter county' }]}>
+                      <Form.Item name="principalCounty" label="Principal County" rules={[{ required: true, message: 'Enter county' }] }>
                         <Input placeholder="County name" />
                       </Form.Item>
                     </Col>
                     <Col xs={24} md={8}>
-                      <Form.Item name="effectiveDate" label="Effective Date" rules={[{ required: true, message: 'Select effective date' }]}>
+                      <Form.Item name="effectiveDate" label="Effective Date" rules={[{ required: true, message: 'Select effective date' }] }>
                         <DatePicker style={{ width: '100%' }} />
                       </Form.Item>
                     </Col>
@@ -1073,12 +1329,12 @@ const ArticlesOfIncorporationGenerator: React.FC = () => {
 
                   <Row gutter={24}>
                     <Col xs={24} md={12}>
-                      <Form.Item name="duration" label="Duration" rules={[{ required: true, message: 'Specify duration' }]}>
+                      <Form.Item name="duration" label="Duration" rules={[{ required: true, message: 'Specify duration' }] }>
                         <Input placeholder="Perpetual" />
                       </Form.Item>
                     </Col>
                     <Col xs={24} md={12}>
-                      <Form.Item name="purpose" label="Purpose Clause" rules={[{ required: true, message: 'Describe corporate purpose' }]}>
+                      <Form.Item name="purpose" label="Purpose Clause" rules={[{ required: true, message: 'Describe corporate purpose' }] }>
                         <TextArea rows={4} placeholder="Add the corporate purpose" />
                       </Form.Item>
                     </Col>
@@ -1132,6 +1388,70 @@ const ArticlesOfIncorporationGenerator: React.FC = () => {
                       </Form.Item>
                     </Col>
                   </Row>
+                  </div>
+                ),
+              },
+              {
+                key: 'filing',
+                label: 'Filing Details',
+                children: (
+                  <div className="space-y-4">
+                    <Row gutter={24}>
+                      <Col xs={24} md={4}>
+                        <Form.Item name="filingFee" label="Filing Fee">
+                          <Input placeholder="50.00" />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} md={4}>
+                        <Form.Item name="expediteFee" label="Expedite Fee">
+                          <Input placeholder="300.00" />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} md={4}>
+                        <Form.Item name="penaltyFee" label="Penalty">
+                          <Input placeholder="0.00" />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} md={4}>
+                        <Form.Item name="certificateFee" label="Cert Fee">
+                          <Input placeholder="0.00" />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} md={4}>
+                        <Form.Item name="copyFee" label="Copy Fee">
+                          <Input placeholder="0.00" />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                    <Row gutter={24}>
+                      <Col xs={24} md={12}>
+                        <Form.Item name="recipientName" label="Recipient Name">
+                          <Input placeholder="Thompson Hine LLP" />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} md={12}>
+                        <Form.Item name="secretaryOfStateName" label="Secretary of State">
+                          <Input placeholder="Frank LaRose" />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+                    <Row gutter={24}>
+                      <Col xs={24} md={8}>
+                        <Form.Item name="recipientAddressLine1" label="Address Line 1">
+                          <Input placeholder="3900 Key Center" />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} md={8}>
+                        <Form.Item name="recipientAddressLine2" label="Address Line 2">
+                          <Input placeholder="127 Public Square" />
+                        </Form.Item>
+                      </Col>
+                      <Col xs={24} md={8}>
+                        <Form.Item name="recipientAddressLine3" label="Address Line 3">
+                          <Input placeholder="Cleveland, OH 44114-1291" />
+                        </Form.Item>
+                      </Col>
+                    </Row>
                   </div>
                 ),
               },
@@ -1487,4 +1807,5 @@ const ArticlesOfIncorporationGenerator: React.FC = () => {
 };
 
 export default ArticlesOfIncorporationGenerator;
+
 
