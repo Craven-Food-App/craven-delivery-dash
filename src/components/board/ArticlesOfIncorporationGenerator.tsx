@@ -30,7 +30,7 @@ import {
 } from '@ant-design/icons';
 import JsBarcode from 'jsbarcode';
 import { docsAPI } from '@/components/hr/api';
-import ohioSealImage from '@/assets/ohio-state-seal.png';
+import ohioSealImage from '@/assets/ohio-state-seal.png?url';
 
 const { TextArea } = Input;
 const { Title, Text, Paragraph } = Typography;
