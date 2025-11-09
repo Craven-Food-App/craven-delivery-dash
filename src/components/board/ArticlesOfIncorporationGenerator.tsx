@@ -206,39 +206,73 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
   <meta charset="UTF-8" />
   <title>State of Ohio – Certificate of Incorporation</title>
   <style>
-    * { box-sizing: border-box; }
-    @page { size: 8.5in 11in; margin: 0; }
-    @media print { body { margin: 0; } .certificate-page { box-shadow: none; } }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    @page {
+      size: 8.5in 11in;
+      margin: 0;
+    }
+
+    @media print {
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      .certificate-page {
+        box-shadow: none;
+        page-break-inside: avoid;
+      }
+      .certificate-page.cover {
+        page-break-after: always;
+      }
+      .certificate-page.form {
+        page-break-before: always;
+      }
+      .page-separator {
+        display: none;
+      }
+    }
+
     body {
       margin: 0;
       padding: 0;
       font-family: "Times New Roman", "Georgia", serif;
-      background: #ffffff;
+      background: #f5f5f5;
       color: #111827;
     }
+
     .certificate-container {
       display: flex;
       flex-direction: column;
       align-items: center;
-      background: #ffffff;
+      background: #f5f5f5;
       padding: 24px 0;
-      gap: 24px;
+      gap: 0;
     }
+
     .page-separator {
       height: 48px;
       width: 100%;
+      background: #f5f5f5;
     }
+
     .certificate-page {
       width: 8.5in;
+      min-height: 11in;
+      max-height: 11in;
       height: 11in;
       padding: 0;
       box-sizing: border-box;
       background: #ffffff;
       position: relative;
-      page-break-after: always;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      overflow: hidden;
     }
-    .certificate-page:last-of-type { page-break-after: auto; }
-    .certificate-page.form { page-break-before: always; }
+
+    .certificate-page.cover {
+      display: flex;
+      flex-direction: column;
+    }
 
     .cover-header {
       padding: 0.65in 0.8in 0;
@@ -247,9 +281,18 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       gap: 14px;
       position: relative;
       z-index: 2;
+      flex-shrink: 0;
     }
-    .cover-barcode { text-align: center; }
-    .cover-barcode svg { width: 7in; height: 1in; }
+
+    .cover-barcode {
+      text-align: center;
+    }
+
+    .cover-barcode svg {
+      width: 7in;
+      height: 1in;
+    }
+
     .barcode-text {
       font-size: 10px;
       text-transform: uppercase;
@@ -257,6 +300,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       margin-top: 6px;
       text-align: center;
     }
+
     .cover-meta-table {
       width: 100%;
       border-collapse: collapse;
@@ -264,18 +308,21 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       text-transform: uppercase;
       letter-spacing: 0.6px;
     }
+
     .cover-meta-table th,
     .cover-meta-table td {
       text-align: left;
       padding-right: 18px;
       white-space: nowrap;
     }
+
     .cover-meta-table td {
       font-size: 11.5px;
       text-transform: none;
       letter-spacing: 0;
       padding-top: 3px;
     }
+
     .cover-receipt {
       margin-top: 6px;
       text-align: center;
@@ -283,10 +330,12 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       letter-spacing: 0.8px;
       font-size: 14px;
     }
+
     .cover-receipt-note {
       font-size: 10px;
       text-align: center;
     }
+
     .cover-address {
       font-size: 11px;
       line-height: 1.6;
@@ -298,10 +347,11 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
     .certificate-frame {
       margin: 0.35in 0.55in 0.4in;
       border: 3px solid #000000;
-      height: calc(11in - 0.35in - 0.4in - 0.65in);
+      flex: 1;
       position: relative;
       display: flex;
     }
+
     .certificate-inner {
       border: 1px solid #000000;
       margin: 12px;
@@ -312,41 +362,49 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       align-items: center;
       text-align: center;
     }
+
     .certificate-title {
       font-size: 28px;
       letter-spacing: 6px;
       text-transform: uppercase;
       font-weight: 600;
     }
+
     .certificate-subtitle {
       margin-top: 6px;
       font-size: 18px;
       letter-spacing: 3px;
       text-transform: uppercase;
     }
+
     .certificate-secretary {
       margin-top: 16px;
       font-size: 15px;
       font-weight: 600;
     }
+
     .certificate-number {
       margin-top: 8px;
       font-size: 13px;
       letter-spacing: 1px;
     }
+
     .certificate-body {
       margin-top: 26px;
       font-size: 13px;
       line-height: 1.7;
     }
+
     .certificate-body p {
       margin: 0 0 18px;
     }
+
     .certificate-body .certificate-entity {
       font-weight: 700;
       font-size: 14px;
       letter-spacing: 1px;
     }
+
     .certificate-details {
       width: 100%;
       border-collapse: collapse;
@@ -355,12 +413,23 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       text-transform: uppercase;
       letter-spacing: 0.6px;
     }
+
     .certificate-details td {
       padding-top: 10px;
     }
-    .certificate-details td:first-child { text-align: left; }
-    .certificate-details td:nth-child(2) { text-align: center; }
-    .certificate-details td:last-child { text-align: right; }
+
+    .certificate-details td:first-child {
+      text-align: left;
+    }
+
+    .certificate-details td:nth-child(2) {
+      text-align: center;
+    }
+
+    .certificate-details td:last-child {
+      text-align: right;
+    }
+
     .certificate-details strong {
       display: block;
       margin-top: 4px;
@@ -368,6 +437,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       letter-spacing: 0;
       text-transform: none;
     }
+
     .certificate-footer {
       width: 100%;
       margin-top: 40px;
@@ -376,39 +446,49 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       align-items: flex-end;
       text-align: left;
     }
+
     .certificate-seal-block {
       display: flex;
       align-items: flex-end;
       gap: 14px;
     }
+
     .certificate-seal-block img {
       width: 1.55in;
       height: 1.55in;
       object-fit: contain;
     }
+
     .certificate-seal-caption {
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.6px;
       line-height: 1.5;
     }
+
     .certificate-signature-block {
       font-size: 12px;
       line-height: 1.6;
       text-align: right;
     }
+
     .certificate-signature-name {
       margin-top: 10px;
       font-size: 18px;
       letter-spacing: 1px;
       font-family: "Brush Script MT", "Lucida Handwriting", cursive;
     }
+
     .certificate-signature-title {
       margin-top: 4px;
       font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 0.8px;
       font-weight: 600;
+    }
+
+    .certificate-page.form {
+      padding: 0.65in 0.8in 0.5in;
     }
 
     .form-header {
@@ -419,77 +499,137 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       align-items: flex-start;
       margin-bottom: 12px;
     }
+
     .form-header-left {
       max-width: 60%;
       font-size: 11px;
     }
+
     .form-header-left img {
       width: 1.2in;
+      height: 1.2in;
       margin-bottom: 8px;
     }
+
     .form-header-right {
       text-align: right;
       font-size: 11px;
     }
+
     .form-title {
       text-align: center;
       font-size: 18px;
       text-transform: uppercase;
       letter-spacing: 1.4px;
       margin: 12px 0 6px;
+      font-weight: 600;
     }
+
     .form-subtitle {
       text-align: center;
       font-size: 12px;
       margin-bottom: 16px;
     }
+
     .form-section {
       border: 1px solid #1f2937;
       margin-bottom: 12px;
       padding: 8px 10px;
       font-size: 11px;
     }
+
     .form-section h4 {
       margin: 0 0 6px;
       font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 0.6px;
+      font-weight: 600;
     }
+
     .form-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 6px 16px;
       font-size: 11px;
     }
-    .checkbox-row {
-      display: flex;
-      gap: 18px;
-      margin-bottom: 8px;
+
+    .share-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10px;
+      margin-top: 6px;
     }
-    .checkbox {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .checkbox-square {
-      width: 12px;
-      height: 12px;
+
+    .share-table th,
+    .share-table td {
       border: 1px solid #1f2937;
+      padding: 4px 6px;
+      text-align: left;
     }
+
+    .share-table th {
+      background: #f3f4f6;
+      font-weight: 600;
+    }
+
+    .signature-block {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .signature-card {
+      border: 1px solid #1f2937;
+      padding: 8px;
+      font-size: 10px;
+    }
+
+    .signature-card .name {
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .signature-card .field-value {
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    .signature-card .signature-line {
+      border-top: 1px solid #1f2937;
+      margin-top: 12px;
+      padding-top: 4px;
+      font-size: 9px;
+      color: #6b7280;
+    }
+
+    .form-section ul {
+      margin: 8px 0 0 18px;
+      padding: 0;
+      line-height: 1.5;
+    }
+
+    .form-section ul li {
+      margin-bottom: 4px;
+    }
+
     .signature-area {
       margin-top: 18px;
       font-size: 11px;
     }
+
     .signature-area .line {
       border-bottom: 1px solid #1f2937;
       height: 18px;
       margin-top: 8px;
     }
+
     footer.form-footer {
       margin-top: 24px;
       font-size: 10px;
       display: flex;
       justify-content: space-between;
+      color: #6b7280;
     }
   </style>
 </head>
@@ -501,6 +641,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
           {{articles_barcode_svg}}
           <div class="barcode-text">{{barcode_human_readable}}</div>
         </div>
+
         <table class="cover-meta-table">
           <tr>
             <th>DATE</th>
@@ -523,6 +664,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
             <td>{{filing_copy_fee}}</td>
           </tr>
         </table>
+
         <div class="cover-receipt">Receipt</div>
         <div class="cover-receipt-note">This is not a bill. Please do not remit payment.</div>
         <div class="cover-address">{{recipient_block}}</div>
@@ -631,7 +773,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       <div class="form-section">
         <h4>Purpose &amp; Duration</h4>
         <div><strong>Purpose:</strong> {{purpose}}</div>
-        <div><strong>Duration:</strong> {{duration}}</div>
+        <div style="margin-top: 6px;"><strong>Duration:</strong> {{duration}}</div>
       </div>
 
       <div class="form-section">
@@ -647,7 +789,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       <div class="signature-area">
         <div>I certify that the statements contained herein are true and accurate.</div>
         <div class="line"></div>
-        <div>Incorporator Signature & Date</div>
+        <div>Incorporator Signature &amp; Date</div>
       </div>
 
       <footer class="form-footer">
@@ -733,7 +875,7 @@ const buildShareClassesTable = (shareClasses: ShareClass[]): string => {
     .map(
       (cls) => `<tr>
         <td>${sanitizeText(cls.className)}</td>
-        <td>${cls.authorizedShares ?? ''}</td>
+        <td>${cls.authorizedShares != null ? Number(cls.authorizedShares).toLocaleString('en-US') : ''}</td>
         <td>${sanitizeText(cls.parValue)}</td>
         <td>${sanitizeText(cls.votingRights)}</td>
       </tr>`,
