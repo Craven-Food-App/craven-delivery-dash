@@ -20,8 +20,16 @@ import {
 } from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
 import { supabase } from '@/integrations/supabase/client';
-import { CodeOutlined, DownloadOutlined, FileTextOutlined, SyncOutlined } from '@ant-design/icons';
+import {
+  CloudUploadOutlined,
+  CodeOutlined,
+  DownloadOutlined,
+  FileTextOutlined,
+  LinkOutlined,
+  SyncOutlined,
+} from '@ant-design/icons';
 import JsBarcode from 'jsbarcode';
+import { docsAPI } from '@/components/hr/api';
 
 const { TextArea } = Input;
 const { Title, Text, Paragraph } = Typography;
@@ -436,6 +444,8 @@ const ArticlesOfIncorporationGenerator: React.FC = () => {
   const [templateLoading, setTemplateLoading] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [barcodeReadable, setBarcodeReadable] = useState<string>('');
+  const [generating, setGenerating] = useState(false);
+  const [generatedFileUrl, setGeneratedFileUrl] = useState<string | null>(null);
 
   const buildBarcodePayload = useCallback((values: Partial<ArticlesFormValues> | undefined): { payload: string; humanReadable: string } => {
     const meta: BarcodeMeta = {
@@ -603,6 +613,57 @@ const ArticlesOfIncorporationGenerator: React.FC = () => {
     }
   };
 
+  const handleGenerateDocument = async () => {
+    try {
+      setGenerating(true);
+      const currentValues = form.getFieldsValue(true) as ArticlesFormValues;
+      const compiledHtml = syncHtmlWithForm(currentValues);
+      const templateRecord = selectedTemplateId ? templates.find((tpl) => tpl.id === selectedTemplateId) : null;
+      const templateKey = templateRecord?.template_key || 'articles_of_incorporation_oh';
+
+      if (!compiledHtml || compiledHtml.trim().length < 20) {
+        message.warning('Document content is empty. Please complete the form before generating.');
+        return;
+      }
+
+      const { payload } = buildBarcodePayload(currentValues);
+      if (!payload) {
+        message.warning('Barcode metadata is incomplete. Please review the barcode tab.');
+      }
+
+      const result = await docsAPI.post('/documents/generate', {
+        template_id: templateKey,
+        template_key: templateKey,
+        document_title: `${sanitizeText(currentValues.entityName)} Articles of Incorporation`,
+        officer_name: sanitizeText(currentValues.entityName),
+        role: sanitizeText(currentValues.entityType),
+        data: currentValues,
+        html_content: compiledHtml,
+        executive_id: null,
+        packet_id: null,
+        signing_stage: null,
+        signing_order: null,
+      });
+
+      if (result?.ok) {
+        const url = result.file_url;
+        setGeneratedFileUrl(url || null);
+        message.success('Articles of Incorporation generated and stored successfully.');
+        if (!url) {
+          message.info('No storage URL returned. Check Supabase Storage for the generated file.');
+        }
+      } else {
+        throw new Error(result?.error || 'Unknown error generating document.');
+      }
+    } catch (error: any) {
+      console.error('Failed to generate Articles document:', error);
+      message.error(error?.message || 'Failed to generate the Articles document.');
+      setGeneratedFileUrl(null);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const handlePrint = () => {
     const printWindow = window.open('', '_blank', 'width=900,height=700');
     if (!printWindow) {
@@ -676,10 +737,34 @@ const ArticlesOfIncorporationGenerator: React.FC = () => {
           <Button icon={<FileTextOutlined />} onClick={handlePrint}>
             Print
           </Button>
+          <Button
+            icon={<CloudUploadOutlined />}
+            loading={generating}
+            disabled={generating}
+            onClick={handleGenerateDocument}
+          >
+            Generate & Save
+          </Button>
           <Button type="primary" icon={<DownloadOutlined />} onClick={handleDownloadPdf}>
             Download PDF
           </Button>
         </Space>
+
+        {generatedFileUrl && (
+          <Alert
+            type="success"
+            showIcon
+            message="Document Generated"
+            description={
+              <Space direction="vertical">
+                <span>The Articles of Incorporation PDF has been generated and stored.</span>
+                <Typography.Link href={generatedFileUrl} target="_blank" rel="noopener noreferrer" icon={<LinkOutlined />}>
+                  View Generated Document
+                </Typography.Link>
+              </Space>
+            }
+          />
+        )}
 
         <Form layout="vertical" form={form} onValuesChange={handleValuesChange}>
           <Tabs
