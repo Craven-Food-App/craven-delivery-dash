@@ -30,6 +30,7 @@ import {
 } from '@ant-design/icons';
 import JsBarcode from 'jsbarcode';
 import { docsAPI } from '@/components/hr/api';
+import ohioSealImage from '@/assets/ohio-state-seal.png';
 
 const { TextArea } = Input;
 const { Title, Text, Paragraph } = Typography;
@@ -209,21 +210,17 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       height: 120px;
       border: 4px double #1f2937;
       border-radius: 50%;
+      overflow: hidden;
+      background: #ffffff;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      text-align: center;
-      font-size: 13px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      background: radial-gradient(circle at center, #f8fafc, #e2e8f0);
       margin-right: 24px;
     }
-    .seal strong {
-      display: block;
-      font-size: 16px;
-      margin-top: 6px;
+    .seal img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
     .title-block {
       flex: 1;
@@ -343,9 +340,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
     <div class="border-inner"></div>
     <div class="header">
       <div class="seal">
-        State of<br/>Ohio
-        <strong>Seal</strong>
-        1803
+        <img src="{{ohio_seal_src}}" alt="Seal of the Secretary of State of Ohio" />
       </div>
       <div class="title-block">
         <h1>Certificate of Incorporation</h1>
@@ -573,6 +568,7 @@ const buildArticlesHtml = (template: string, values: ArticlesFormValues, barcode
     '{{optional_provisions_block}}': buildOptionalProvisionsBlock(values.optionalProvisions),
     '{{articles_barcode_svg}}': barcodeSvg || '<div style="height:110px;border:1px dashed #94a3b8;display:flex;align-items:center;justify-content:center;color:#94a3b8;">Barcode Pending</div>',
     '{{barcode_human_readable}}': barcodeHumanReadable,
+    '{{ohio_seal_src}}': ohioSealImage,
     '{{submission_number}}': sanitizeText(values.barcode.submissionNumber),
     '{{charter_number}}': sanitizeText(values.barcode.charterNumber),
     '{{entity_number}}': sanitizeText(values.barcode.entityNumber),
