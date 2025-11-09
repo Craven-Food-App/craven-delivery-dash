@@ -156,9 +156,3 @@ verify_jwt = true
 
 [functions.send-iboe]
 verify_jwt = true
-
-[functions.gmail-sync]
-verify_jwt = true
-
-[functions.gmail-webhook]
-verify_jwt = false

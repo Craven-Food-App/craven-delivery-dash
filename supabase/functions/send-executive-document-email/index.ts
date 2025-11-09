@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { encode as base64Encode } from "https://deno.land/std@0.190.0/encoding/base64.ts";
-import { getGoogleWorkspaceConfig, sendGoogleWorkspaceEmail, type GoogleWorkspaceAttachment } from "../_shared/googleWorkspaceEmail.ts";
+import { Resend } from "https://esm.sh/resend@4.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -104,27 +104,11 @@ serve(async (req: Request) => {
 
     console.log(`Sending ${documentTitle} to ${executiveName} at ${to}`);
 
-    let config;
-    try {
-      config = await getGoogleWorkspaceConfig();
-    } catch (configError: any) {
-      console.error("Google Workspace configuration error:", configError.message);
-      return new Response(
-        JSON.stringify({ 
-          error: "Email service not configured",
-          details: "Please configure Google Workspace email settings in CEO Portal → Email Settings before sending emails.",
-          configurationRequired: true
-        }),
-        {
-          status: 503,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-    const fromEmail = config.executiveFrom ?? config.defaultFrom ?? "Crave'N HR <hr@craven.com>";
+    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Crave'N HR <hr@craven.com>";
 
     // Prepare attachments and links
-    let attachments: GoogleWorkspaceAttachment[] = [];
+    let attachments: Array<{ filename: string; content: string; type?: string }> = [];
     let linksHtml = '';
 
     const supabaseClient = createClient(
@@ -229,7 +213,7 @@ serve(async (req: Request) => {
               attachments.push({
                 filename: `${doc.title.replace(/[^a-z0-9]/gi, '_')}.pdf`,
                 content: base64,
-                contentType: "application/pdf",
+                type: "application/pdf",
               });
               successfulAttachments++;
               console.log(`✓ Successfully attached ${doc.title} (${pdfBytes.length} bytes)`);
@@ -259,7 +243,7 @@ serve(async (req: Request) => {
       attachments = [{
         filename: `${documentTitle.replace(/[^a-z0-9]/gi, '_')}.pdf`,
         content: pdfBase64,
-        contentType: "application/pdf",
+        type: "application/pdf",
       }];
       console.log(`Attaching PDF: ${documentTitle}`);
     } else if (documentUrl) {
@@ -284,7 +268,7 @@ serve(async (req: Request) => {
             attachments = [{
               filename: `${documentTitle.replace(/[^a-z0-9]/gi, '_')}.pdf`,
               content: base64,
-              contentType: "application/pdf",
+              type: "application/pdf",
             }];
             console.log(`Successfully downloaded PDF from storage, size: ${arrayBuffer.byteLength} bytes`);
           }
@@ -391,9 +375,9 @@ serve(async (req: Request) => {
 
     console.log('Using email template from database');
 
-    const emailResponse = await sendGoogleWorkspaceEmail({
+    const emailResponse = await resend.emails.send({
       from: fromEmail,
-      to,
+      to: [to],
       subject: emailSubject,
       html: emailHtml,
       attachments: attachments.length > 0 ? attachments : undefined,
@@ -404,7 +388,7 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        messageId: emailResponse.id,
+        messageId: (emailResponse.data as any)?.id || emailResponse.id,
         to,
         documentTitle 
       }),

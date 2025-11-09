@@ -20,10 +20,9 @@ import {
   Paperclip,
   ChevronRight,
   CornerDownLeft,
-  RefreshCw,
 } from 'lucide-react';
-import { message, Modal, Form, Input, Alert, Typography, Spin, Button } from 'antd';
-import { SettingOutlined, SyncOutlined } from '@ant-design/icons';
+import { message, Modal, Form, Input, Alert, Typography, Button } from 'antd';
+import { SettingOutlined } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 
 type FolderId = 'inbox' | 'sent' | 'drafts' | 'trash' | 'archive';
@@ -48,18 +47,6 @@ interface Email {
   folder: FolderId;
   read: boolean;
   priority?: 'high' | 'low';
-  gmail_message_id?: string;
-  gmail_thread_id?: string;
-}
-
-interface WorkspaceFormValues {
-  serviceAccountEmail: string;
-  privateKey: string;
-  delegatedUser: string;
-  defaultFrom: string;
-  executiveFrom?: string;
-  treasuryFrom?: string;
-  scope?: string;
 }
 
 const DEFAULT_GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.send';
@@ -272,12 +259,7 @@ const EmailList: React.FC<EmailListProps> = ({
       </header>
 
       <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
-        {isLoading ? (
-          <div className="text-center p-8">
-            <Spin size="large" />
-            <p className="mt-4 text-gray-500">Loading emails...</p>
-          </div>
-        ) : filteredEmails.length === 0 ? (
+        {filteredEmails.length === 0 ? (
           <div className="text-center p-8 text-gray-500">No emails in this folder.</div>
         ) : (
           filteredEmails.map((email) => {
@@ -612,13 +594,6 @@ const BusinessEmailSystem: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [execHandles, setExecHandles] = useState<ExecHandle[]>([]);
   const [handlesLoading, setHandlesLoading] = useState(false);
-  const [workspaceSettingsOpen, setWorkspaceSettingsOpen] = useState(false);
-  const [workspaceSettingsLoading, setWorkspaceSettingsLoading] = useState(false);
-  const [workspaceSettingsSaving, setWorkspaceSettingsSaving] = useState(false);
-  const [workspaceSettingId, setWorkspaceSettingId] = useState<string | null>(null);
-  const [workspaceForm] = Form.useForm<WorkspaceFormValues>();
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [emailsLoading, setEmailsLoading] = useState(false);
 
   const folderCounts = useMemo(() => {
     const counts: Record<FolderId, number> = {
@@ -644,59 +619,7 @@ const BusinessEmailSystem: React.FC = () => {
     [emails, selectedEmailId],
   );
 
-  // Fetch emails from database
-  const fetchEmails = useCallback(async () => {
-    setEmailsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('gmail_messages')
-        .select('*')
-        .order('received_at', { ascending: false });
-
-      if (error) throw error;
-
-      const mappedEmails: Email[] = (data || []).map((msg: any) => ({
-        id: msg.id,
-        gmail_message_id: msg.gmail_message_id,
-        gmail_thread_id: msg.gmail_thread_id,
-        subject: msg.subject || '(No Subject)',
-        sender: msg.from_address || 'Unknown',
-        recipient: msg.to_address || 'Unknown',
-        body: msg.body_html || msg.body_text || '',
-        timestamp: new Date(msg.received_at).toLocaleString(),
-        folder: msg.folder as FolderId,
-        read: msg.is_read,
-        priority: undefined,
-      }));
-
-      setEmails(mappedEmails);
-    } catch (err: any) {
-      console.error('Failed to fetch emails:', err);
-      message.error('Failed to load emails');
-    } finally {
-      setEmailsLoading(false);
-    }
-  }, []);
-
-  // Sync emails from Gmail
-  const handleSync = useCallback(async () => {
-    setIsSyncing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('gmail-sync', {
-        body: { maxResults: 50, forceFull: false },
-      });
-
-      if (error) throw error;
-
-      message.success(`Synced ${data?.synced || 0} messages`);
-      await fetchEmails();
-    } catch (err: any) {
-      console.error('Sync failed:', err);
-      message.error(err.message || 'Failed to sync emails');
-    } finally {
-      setIsSyncing(false);
-    }
-  }, [fetchEmails]);
+  // Using mock data for emails
 
   const addEmail = useCallback(
     (newEmail: Omit<Email, 'id' | 'timestamp' | 'folder' | 'read'>) => {
@@ -743,155 +666,6 @@ const BusinessEmailSystem: React.FC = () => {
     },
     [],
   );
-
-  const fetchWorkspaceSettings = useCallback(async () => {
-    setWorkspaceSettingsLoading(true);
-    try {
-      const emptyValues: WorkspaceFormValues = {
-        serviceAccountEmail: '',
-        privateKey: '',
-        delegatedUser: '',
-        defaultFrom: '',
-        executiveFrom: '',
-        treasuryFrom: '',
-        scope: DEFAULT_GMAIL_SCOPE,
-      };
-
-      workspaceForm.setFieldsValue(emptyValues);
-      setWorkspaceSettingId(null);
-
-      const { data, error } = await supabase
-        .from('ceo_system_settings')
-        .select('id, setting_value')
-        .eq('setting_key', 'google_workspace_email')
-        .maybeSingle();
-
-      if (error) {
-        throw error;
-      }
-
-      if (data) {
-        setWorkspaceSettingId(data.id);
-        const value = (data.setting_value as Partial<WorkspaceFormValues>) ?? {};
-        workspaceForm.setFieldsValue({
-          serviceAccountEmail: value.serviceAccountEmail ?? '',
-          privateKey: value.privateKey ?? '',
-          delegatedUser: value.delegatedUser ?? '',
-          defaultFrom: value.defaultFrom ?? '',
-          executiveFrom: value.executiveFrom ?? '',
-          treasuryFrom: value.treasuryFrom ?? '',
-          scope: value.scope ?? DEFAULT_GMAIL_SCOPE,
-        });
-      }
-    } catch (err: any) {
-      console.error('Failed to load Google Workspace settings', err);
-      message.error(err?.message ?? 'Failed to load Google Workspace settings');
-      workspaceForm.setFieldsValue({
-        serviceAccountEmail: '',
-        privateKey: '',
-        delegatedUser: '',
-        defaultFrom: '',
-        executiveFrom: '',
-        treasuryFrom: '',
-        scope: DEFAULT_GMAIL_SCOPE,
-      });
-      setWorkspaceSettingId(null);
-    } finally {
-      setWorkspaceSettingsLoading(false);
-    }
-  }, [workspaceForm]);
-
-  const handleSaveWorkspaceSettings = useCallback(async () => {
-    try {
-      const values = await workspaceForm.validateFields();
-
-      setWorkspaceSettingsSaving(true);
-
-      const payload = {
-        serviceAccountEmail: values.serviceAccountEmail.trim(),
-        privateKey: values.privateKey.trim(),
-        delegatedUser: values.delegatedUser.trim(),
-        defaultFrom: values.defaultFrom.trim(),
-        executiveFrom: values.executiveFrom?.trim() || null,
-        treasuryFrom: values.treasuryFrom?.trim() || null,
-        scope: values.scope?.trim() || DEFAULT_GMAIL_SCOPE,
-      };
-
-      const { data: authData } = await supabase.auth.getUser();
-
-      const updatePayload = {
-        setting_value: payload,
-        category: 'operations',
-        description: 'Google Workspace email configuration',
-        is_critical: true,
-        requires_confirmation: false,
-        last_changed_by: authData.user?.id ?? null,
-        last_changed_at: new Date().toISOString(),
-      };
-
-      let settingId = workspaceSettingId;
-
-      if (workspaceSettingId) {
-        const { error } = await supabase
-          .from('ceo_system_settings')
-          .update(updatePayload)
-          .eq('id', workspaceSettingId);
-
-        if (error) {
-          throw error;
-        }
-      } else {
-        const { data, error } = await supabase
-          .from('ceo_system_settings')
-          .insert([{ setting_key: 'google_workspace_email', ...updatePayload }])
-          .select('id')
-          .single();
-
-        if (error) {
-          throw error;
-        }
-
-        settingId = data?.id ?? null;
-        setWorkspaceSettingId(settingId);
-      }
-
-      if (settingId) {
-        const { error: logError } = await supabase.rpc('log_ceo_action', {
-          p_action_type: 'update_google_workspace_email',
-          p_action_category: 'system',
-          p_target_type: 'system_setting',
-          p_target_id: settingId,
-          p_target_name: 'google_workspace_email',
-          p_description: 'Updated Google Workspace email configuration',
-          p_severity: 'high',
-        });
-        if (logError) {
-          console.warn('Failed to log CEO action', logError);
-        }
-      }
-
-      message.success('Google Workspace email settings saved');
-      setWorkspaceSettingsOpen(false);
-    } catch (err: any) {
-      if (Array.isArray(err?.errorFields)) {
-        return;
-      }
-      console.error('Failed to save Google Workspace settings', err);
-      message.error(err?.message ?? 'Unable to save Google Workspace email settings');
-    } finally {
-      setWorkspaceSettingsSaving(false);
-    }
-  }, [workspaceForm, workspaceSettingId]);
-
-  const handleOpenWorkspaceSettings = useCallback(() => {
-    setWorkspaceSettingsOpen(true);
-  }, []);
-
-  const handleCloseWorkspaceSettings = useCallback(() => {
-    if (!workspaceSettingsSaving) {
-      setWorkspaceSettingsOpen(false);
-    }
-  }, [workspaceSettingsSaving]);
 
   const handleFolderChange = useCallback((folderId: FolderId) => {
     setActiveFolder(folderId);
@@ -947,10 +721,10 @@ const BusinessEmailSystem: React.FC = () => {
   const viewerVisible = !!selectedEmail && !isComposing;
   const listVisible = !isComposing;
 
-  // Load emails on mount
+  // Load emails on mount - start with initial mock data
   useEffect(() => {
-    fetchEmails();
-  }, [fetchEmails]);
+    setEmails(INITIAL_EMAILS);
+  }, []);
 
   useEffect(() => {
     const fetchHandles = async () => {
@@ -1015,13 +789,6 @@ const BusinessEmailSystem: React.FC = () => {
     fetchHandles();
   }, []);
 
-  useEffect(() => {
-    if (!workspaceSettingsOpen) {
-      return;
-    }
-    fetchWorkspaceSettings();
-  }, [workspaceSettingsOpen, fetchWorkspaceSettings]);
-
   return (
     <div className="relative bg-gray-50 border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
       {/* Mobile overlay */}
@@ -1061,19 +828,6 @@ const BusinessEmailSystem: React.FC = () => {
             </span>
           </div>
 
-          <div className="flex justify-end gap-2 mb-3">
-            <Button 
-              icon={isSyncing ? <SyncOutlined spin /> : <RefreshCw size={16} />} 
-              onClick={handleSync}
-              loading={isSyncing}
-            >
-              Sync Gmail
-            </Button>
-            <Button icon={<SettingOutlined />} onClick={handleOpenWorkspaceSettings}>
-              Google Workspace Settings
-            </Button>
-          </div>
-
           {listVisible && (
             <div className="flex-1 lg:flex-[0.45] flex flex-col min-h-[320px]">
               <EmailList
@@ -1081,7 +835,6 @@ const BusinessEmailSystem: React.FC = () => {
                 selectedEmailId={selectedEmailId}
                 setSelectedEmailId={setSelectedEmailId}
                 activeFolder={activeFolder}
-                isLoading={emailsLoading}
               />
             </div>
           )}
@@ -1115,104 +868,6 @@ const BusinessEmailSystem: React.FC = () => {
           </div>
         </main>
       </div>
-
-      <Modal
-        title={
-          <span className="flex items-center gap-2">
-            <SettingOutlined />
-            <span>Google Workspace Email Settings</span>
-          </span>
-        }
-        open={workspaceSettingsOpen}
-        onCancel={handleCloseWorkspaceSettings}
-        footer={[
-          <Button key="cancel" onClick={handleCloseWorkspaceSettings} disabled={workspaceSettingsSaving}>
-            Cancel
-          </Button>,
-          <Button
-            key="save"
-            type="primary"
-            loading={workspaceSettingsSaving}
-            onClick={handleSaveWorkspaceSettings}
-          >
-            Save Settings
-          </Button>,
-        ]}
-        width={720}
-        destroyOnClose
-      >
-        <Spin spinning={workspaceSettingsLoading}>
-          <Alert
-            type="warning"
-            showIcon
-            className="mb-4"
-            message="Service account credentials are stored in Supabase and used by automated email flows."
-          />
-          <Typography.Paragraph type="secondary" className="mb-4">
-            Provide the Google Cloud service account and Workspace sender addresses that should deliver Crave'N emails.
-          </Typography.Paragraph>
-          <Form
-            layout="vertical"
-            form={workspaceForm}
-            initialValues={{ scope: DEFAULT_GMAIL_SCOPE }}
-            disabled={workspaceSettingsSaving}
-          >
-            <Form.Item
-              name="serviceAccountEmail"
-              label="Service Account Email"
-              rules={[{ required: true, message: 'Enter the service account email address' }]}
-            >
-              <Input placeholder="service-account@project-id.iam.gserviceaccount.com" autoComplete="off" />
-            </Form.Item>
-            <Form.Item
-              name="privateKey"
-              label="Service Account Private Key"
-              rules={[{ required: true, message: 'Paste the service account private key' }]}
-            >
-              <TextArea
-                autoSize={{ minRows: 4, maxRows: 8 }}
-                placeholder={'-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----'}
-              />
-            </Form.Item>
-            <Form.Item
-              name="delegatedUser"
-              label="Delegated Workspace User"
-              rules={[{ required: true, message: 'Enter the Workspace user to impersonate' }]}
-              extra="This Workspace mailbox must have send-as access for each From address below."
-            >
-              <Input placeholder="hr@craven.com" autoComplete="off" />
-            </Form.Item>
-            <Form.Item
-              name="defaultFrom"
-              label="Default From Address"
-              rules={[{ required: true, message: 'Provide the default From address' }]}
-            >
-              <Input placeholder="Crave'N HR <hr@craven.com>" autoComplete="off" />
-            </Form.Item>
-            <Form.Item
-              name="executiveFrom"
-              label="Executive Emails From (optional)"
-              extra="Overrides the default sender for executive onboarding flows."
-            >
-              <Input placeholder="Crave'N Executive Services <executive@craven.com>" autoComplete="off" />
-            </Form.Item>
-            <Form.Item
-              name="treasuryFrom"
-              label="Treasury Emails From (optional)"
-              extra="Overrides the default sender for treasury and IBOE notifications."
-            >
-              <Input placeholder="Crave'N Treasury <treasury@cravenusa.com>" autoComplete="off" />
-            </Form.Item>
-            <Form.Item
-              name="scope"
-              label="Gmail API Scope"
-              extra="Defaults to https://www.googleapis.com/auth/gmail.send"
-            >
-              <Input placeholder={DEFAULT_GMAIL_SCOPE} autoComplete="off" />
-            </Form.Item>
-          </Form>
-        </Spin>
-      </Modal>
     </div>
   );
 };

@@ -27,8 +27,6 @@ import { ExecutiveInboxIMessage } from '@/components/executive/ExecutiveInboxIMe
 import ExecutiveCommunicationsCenter from '@/components/executive/ExecutiveCommunicationsCenter';
 import ExecutivePortalLayout, { ExecutiveNavItem } from '@/components/executive/ExecutivePortalLayout';
 import { useExecAuth } from '@/hooks/useExecAuth';
-import GoogleWorkspaceSettings from '@/components/admin/GoogleWorkspaceSettings';
-import { Settings } from 'lucide-react';
 // No Card components: full-page Ant layout
 
 interface CEOMetrics {
@@ -78,7 +76,6 @@ const CEOPortal: React.FC = () => {
       { id: 'emergency', label: 'Emergency Controls', icon: ShieldAlert },
       { id: 'audit', label: 'Audit Trail', icon: FileText },
       { id: 'communications', label: 'Executive Communications', icon: Mail },
-      { id: 'settings', label: 'Email Settings', icon: Settings },
     ];
   }, [metrics?.totalEmployees, metrics?.pendingApprovals]);
 
@@ -130,8 +127,6 @@ const CEOPortal: React.FC = () => {
         return <AuditTrail />;
       case 'communications':
         return <ExecutiveCommunicationsCenter defaultTab="messages" />;
-      case 'settings':
-        return <GoogleWorkspaceSettings />;
       default:
         return <QuickActions />;
     }

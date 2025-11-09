@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { getGoogleWorkspaceConfig, sendGoogleWorkspaceEmail } from "../_shared/googleWorkspaceEmail.ts";
+import { Resend } from "https://esm.sh/resend@4.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,24 +40,8 @@ serve(async (req: Request) => {
 
     console.log(`Sending ${documents.length} documents to ${executiveName} (${position}) at ${to}`);
 
-    let config;
-    try {
-      config = await getGoogleWorkspaceConfig();
-    } catch (configError: any) {
-      console.error("Google Workspace configuration error:", configError.message);
-      return new Response(
-        JSON.stringify({ 
-          error: "Email service not configured",
-          details: "Please configure Google Workspace email settings in CEO Portal → Email Settings before sending emails.",
-          configurationRequired: true
-        }),
-        {
-          status: 503,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-    const fromEmail = config.executiveFrom ?? config.defaultFrom ?? "Crave'N HR <hr@craven.com>";
+    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Crave'N HR <hr@craven.com>";
 
     // Group documents by signature requirement
     const signatureDocs = documents.filter(d => d.requiresSignature);
@@ -87,9 +71,9 @@ serve(async (req: Request) => {
       `).join('');
     };
 
-    const emailResponse = await sendGoogleWorkspaceEmail({
+    const emailResponse = await resend.emails.send({
       from: fromEmail,
-      to,
+      to: [to],
       subject: `Your C-Suite Executive Documents Package - Crave'n, Inc.`,
       html: `
         <!DOCTYPE html>
@@ -209,7 +193,7 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        messageId: emailResponse.id,
+        messageId: (emailResponse.data as any)?.id || emailResponse.id,
         to,
         documentCount: documents.length 
       }),
