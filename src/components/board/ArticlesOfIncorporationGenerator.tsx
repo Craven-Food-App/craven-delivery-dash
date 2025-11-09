@@ -183,18 +183,28 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
   <title>State of Ohio – Certificate of Incorporation</title>
   <style>
     * { box-sizing: border-box; }
-    @media print {
-      body { margin: 0; }
+    @page { size: 8.5in 11in; margin: 0; }
+    @media print { body { margin: 0; } }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Times New Roman", "Georgia", serif;
+      background: #ffffff;
+      color: #111827;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
     }
-    body { margin: 0; padding: 48px; font-family: "Times New Roman", "Georgia", serif; background: #ffffff; color: #111827; }
     .certificate {
-      max-width: 880px;
-      margin: 0 auto;
+      width: 8.5in;
+      height: 11in;
       background: #ffffff;
       border: 18px double #1f2937;
-      padding: 42px 54px;
+      padding: 0.85in 0.9in;
       position: relative;
       overflow: hidden;
+      box-sizing: border-box;
     }
     .certificate::before {
       content: "";
