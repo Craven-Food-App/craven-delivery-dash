@@ -1,5 +1,5 @@
 import React, { useRef, useState, useMemo } from 'react';
-import { Row, Col, Button, Dropdown, Menu, Space, Typography, Divider, Tabs, Card, Alert } from 'antd';
+import { Row, Col, Button, Dropdown, Space, Typography, Divider, Tabs, Card, Alert, Input } from 'antd';
 import {
   CodeOutlined,
   EyeOutlined,
@@ -9,6 +9,7 @@ import {
   CalendarOutlined,
   BankOutlined,
   FileTextOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -65,6 +66,24 @@ export const PLACEHOLDER_CATEGORIES = {
       { key: 'department', label: 'Department', description: 'Executive department' },
       { key: 'reporting_to_title', label: 'Reporting To Title', description: 'Who they report to' },
       { key: 'work_location', label: 'Work Location', description: 'Work location' },
+      { key: 'ceo_email', label: 'CEO Email', description: 'Chief Executive Officer email' },
+      { key: 'cfo_email', label: 'CFO Email', description: 'Chief Financial Officer email' },
+      { key: 'cxo_email', label: 'CXO Email', description: 'Chief Experience Officer email' },
+      { key: 'founders_cfo_name', label: 'Founders: CFO Name', description: 'Founders table CFO name' },
+      { key: 'founders_cfo_role', label: 'Founders: CFO Role', description: 'Founders CFO role title' },
+      { key: 'founders_cfo_equity', label: 'Founders: CFO Equity', description: 'Founders CFO equity percentage' },
+      { key: 'founders_cfo_shares', label: 'Founders: CFO Shares', description: 'Founders CFO shares issued' },
+      { key: 'founders_cfo_vesting', label: 'Founders: CFO Vesting', description: 'Founders CFO vesting schedule' },
+      { key: 'founders_ceo_name', label: 'Founders: CEO Name', description: 'Founders table CEO name' },
+      { key: 'founders_ceo_role', label: 'Founders: CEO Role', description: 'Founders CEO role title' },
+      { key: 'founders_ceo_equity', label: 'Founders: CEO Equity', description: 'Founders CEO equity percentage' },
+      { key: 'founders_ceo_shares', label: 'Founders: CEO Shares', description: 'Founders CEO shares issued' },
+      { key: 'founders_ceo_vesting', label: 'Founders: CEO Vesting', description: 'Founders CEO vesting schedule' },
+      { key: 'founders_cxo_name', label: 'Founders: CXO Name', description: 'Founders table CXO name' },
+      { key: 'founders_cxo_role', label: 'Founders: CXO Role', description: 'Founders CXO role title' },
+      { key: 'founders_cxo_equity', label: 'Founders: CXO Equity', description: 'Founders CXO equity percentage' },
+      { key: 'founders_cxo_shares', label: 'Founders: CXO Shares', description: 'Founders CXO shares issued' },
+      { key: 'founders_cxo_vesting', label: 'Founders: CXO Vesting', description: 'Founders CXO vesting schedule' },
     ],
   },
   equity: {
@@ -144,6 +163,10 @@ export const PLACEHOLDER_CATEGORIES = {
   },
 };
 
+const PLACEHOLDER_CATEGORY_KEYS = Object.keys(PLACEHOLDER_CATEGORIES) as Array<
+  keyof typeof PLACEHOLDER_CATEGORIES
+>;
+
 interface VisualTemplateEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -160,6 +183,11 @@ export const VisualTemplateEditor: React.FC<VisualTemplateEditorProps> = ({
   const quillRef = useRef<any>(null);
   const [activeTab, setActiveTab] = useState<'visual' | 'code' | 'preview'>('code'); // Default to code tab to avoid ReactQuill issues
   const [previewData, setPreviewData] = useState<Record<string, any>>({});
+  const [isPlaceholderDropdownOpen, setIsPlaceholderDropdownOpen] = useState(false);
+  const [selectedCategoryKey, setSelectedCategoryKey] = useState<keyof typeof PLACEHOLDER_CATEGORIES>(
+    PLACEHOLDER_CATEGORY_KEYS[0] ?? 'executive'
+  );
+  const [placeholderSearch, setPlaceholderSearch] = useState('');
 
   // Generate sample preview data
   useMemo(() => {
@@ -195,6 +223,9 @@ export const VisualTemplateEditor: React.FC<VisualTemplateEditorProps> = ({
       equity_coo: '0',
       equity_cto: '0',
       equity_cxo: '0',
+      ceo_email: 'ceo@cravenusa.com',
+      cfo_email: 'finance@cravenusa.com',
+      cxo_email: 'experience@cravenusa.com',
       // Full Role Names
       chief_executive_officer: 'Chief Executive Officer',
       chief_financial_officer: 'Chief Financial Officer',
@@ -297,41 +328,120 @@ export const VisualTemplateEditor: React.FC<VisualTemplateEditorProps> = ({
     }
   };
 
-  // Create placeholder menu
-  const createPlaceholderMenu = () => {
-    return (
-      <Menu style={{ maxHeight: '400px', overflowY: 'auto', width: '300px' }}>
-        {Object.entries(PLACEHOLDER_CATEGORIES).map(([categoryKey, category]) => (
-          <Menu.SubMenu
-            key={categoryKey}
-            title={
-              <Space>
-                {category.icon}
-                <span>{category.label}</span>
-              </Space>
-            }
-          >
-            {category.placeholders.map((ph) => (
-              <Menu.Item
+  const selectedCategory = PLACEHOLDER_CATEGORIES[selectedCategoryKey];
+
+  const filteredPlaceholders = useMemo(() => {
+    if (!selectedCategory) return [];
+    const search = placeholderSearch.trim().toLowerCase();
+    if (!search) return selectedCategory.placeholders;
+    return selectedCategory.placeholders.filter((ph) => {
+      const labelMatch = ph.label.toLowerCase().includes(search);
+      const keyMatch = ph.key.toLowerCase().includes(search);
+      const descriptionMatch = ph.description?.toLowerCase().includes(search);
+      return labelMatch || keyMatch || descriptionMatch;
+    });
+  }, [selectedCategory, placeholderSearch]);
+
+  const placeholderOverlay = (
+    <div
+      style={{
+        width: 760,
+        maxHeight: 440,
+        display: 'flex',
+        background: '#fff',
+        borderRadius: 8,
+        border: '1px solid #e5e6eb',
+        boxShadow: '0 12px 32px rgba(15, 23, 42, 0.18)',
+      }}
+    >
+      <div
+        style={{
+          width: 220,
+          borderRight: '1px solid #f0f0f0',
+          padding: '12px 0',
+          overflowY: 'auto',
+        }}
+      >
+        {PLACEHOLDER_CATEGORY_KEYS.map((key) => {
+          const category = PLACEHOLDER_CATEGORIES[key];
+          const isActive = key === selectedCategoryKey;
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => {
+                setSelectedCategoryKey(key);
+                setPlaceholderSearch('');
+              }}
+              style={{
+                width: '100%',
+                padding: '10px 16px',
+                background: isActive ? '#f0f5ff' : 'transparent',
+                border: 'none',
+                textAlign: 'left',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                cursor: 'pointer',
+                fontWeight: isActive ? 600 : 500,
+                color: isActive ? '#1f3b99' : '#1f2937',
+              }}
+            >
+              <span>{category.icon}</span>
+              <span>{category.label}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ flex: 1, padding: 16, display: 'flex', flexDirection: 'column' }}>
+        <Input
+          placeholder="Search placeholders..."
+          prefix={<SearchOutlined />}
+          value={placeholderSearch}
+          onChange={(e) => setPlaceholderSearch(e.target.value)}
+          allowClear
+        />
+        <div
+          style={{
+            marginTop: 16,
+            overflowY: 'auto',
+            paddingRight: 4,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+            gap: 12,
+          }}
+        >
+          {filteredPlaceholders.length === 0 ? (
+            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '24px 12px', color: '#64748b' }}>
+              No placeholders found.
+            </div>
+          ) : (
+            filteredPlaceholders.map((ph) => (
+              <Card
                 key={ph.key}
-                onClick={() => insertPlaceholder(ph.key)}
+                hoverable
+                onClick={() => {
+                  insertPlaceholder(ph.key);
+                  setIsPlaceholderDropdownOpen(false);
+                  setPlaceholderSearch('');
+                }}
+                style={{ borderRadius: 8 }}
+                bodyStyle={{ padding: 12 }}
               >
-                <div>
-                  <div style={{ fontWeight: 500 }}>{ph.label}</div>
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    {ph.description}
-                  </Text>
-                  <Text code style={{ fontSize: '11px', marginLeft: 8 }}>
-                    {`{{${ph.key}}}`}
-                  </Text>
-                </div>
-              </Menu.Item>
-            ))}
-          </Menu.SubMenu>
-        ))}
-      </Menu>
-    );
-  };
+                <div style={{ fontWeight: 600, marginBottom: 6 }}>{ph.label}</div>
+                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 6 }}>
+                  {ph.description}
+                </Text>
+                <Text code style={{ fontSize: 11 }}>
+                  {`{{${ph.key}}}`}
+                </Text>
+              </Card>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
 
   // Replace placeholders in HTML for preview
   const getPreviewHtml = () => {
@@ -383,10 +493,17 @@ export const VisualTemplateEditor: React.FC<VisualTemplateEditorProps> = ({
         }}
       >
         <Space>
-          <Dropdown 
-            overlay={createPlaceholderMenu()} 
-            trigger={['click']} 
+          <Dropdown
+            trigger={['click']}
+            open={isPlaceholderDropdownOpen}
+            onOpenChange={(open) => {
+              setIsPlaceholderDropdownOpen(open);
+              if (!open) {
+                setPlaceholderSearch('');
+              }
+            }}
             placement="bottomLeft"
+            dropdownRender={() => placeholderOverlay}
             getPopupContainer={(trigger) => trigger.parentElement || document.body}
           >
             <Button type="primary" icon={<PlusOutlined />}>

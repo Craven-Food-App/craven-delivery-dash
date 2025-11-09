@@ -21,6 +21,7 @@ import {
   EyeOutlined,
   LockOutlined,
   ClockCircleOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { docsAPI } from '../hr/api';
@@ -67,15 +68,6 @@ interface DocumentStatus {
 
 type DocumentStatusMap = Record<string, DocumentStatus[]>;
 
-const SIGNATURE_REQUIRED_TYPES = new Set([
-  'employment_agreement',
-  'offer_letter',
-  'stock_issuance',
-  'founders_agreement',
-  'confidentiality_ip',
-  'deferred_comp_addendum',
-]);
-
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
@@ -93,6 +85,25 @@ const parseNumeric = (value?: string | number | null) => {
   const cleaned = value.replace(/[^0-9.-]/g, '');
   const parsed = Number(cleaned);
   return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const formatPercentValue = (value?: string | number | null) => {
+  if (value == null || value === '') return '0%';
+  const numeric =
+    typeof value === 'number'
+      ? value
+      : Number(value.toString().replace(/[^0-9.-]/g, ''));
+  if (!Number.isFinite(numeric)) {
+    return typeof value === 'string' ? value : '0%';
+  }
+  const rounded = Number(numeric.toFixed(2));
+  const display = rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(2);
+  return `${display.replace(/\.00$/, '')}%`;
+};
+
+const formatSharesValue = (value?: string | number | null) => {
+  const num = parseNumeric(value);
+  return num ? num.toLocaleString() : '0';
 };
 
 const getCompanySetting = async (key: string, defaultValue: string = ''): Promise<string> => {
@@ -244,6 +255,144 @@ const generateDocumentData = async (exec: Executive, docType: string) => {
   );
   const incorporatorEmail = await getCompanySetting('incorporator_email', 'craven@usa.com');
   const county = await getCompanySetting('county', 'Cuyahoga');
+
+  const officersRaw = await getExecutiveData();
+  const officerMap = new Map<string, ReturnType<typeof formatExecutiveForDocuments>>();
+  officersRaw.forEach((officer) => {
+    if (officer?.role) {
+      const formatted = formatExecutiveForDocuments(officer);
+      officerMap.set(officer.role.toLowerCase(), formatted);
+    }
+  });
+
+  const getOfficer = (role: string) => {
+    const normalized = role.toLowerCase();
+    if (exec.role?.toLowerCase?.() === normalized) {
+      return {
+        full_name: exec.full_name,
+        email: exec.email,
+        equity_percent: exec.equity_percent,
+        shares_issued: exec.shares_issued,
+      };
+    }
+    return officerMap.get(normalized) || null;
+  };
+
+  const purgeExecutiveDocuments = async (exec: Executive) => {
+    if (!exec?.id) return;
+
+    Modal.confirm({
+      title: `Purge documents for ${exec.full_name}?`,
+      content:
+        'This will permanently delete all generated executive documents, signatures, and stored PDFs for this person. You will need to regenerate documents afterward.',
+      okText: 'Yes, purge documents',
+      okButtonProps: { danger: true },
+      cancelText: 'Cancel',
+      onOk: async () => {
+        try {
+          const filterParts = [`executive_id.eq.${exec.id}`];
+          if (exec.full_name) {
+            filterParts.push(`officer_name.eq.${encodeURIComponent(exec.full_name)}`);
+          }
+          const filterString = filterParts.join(',');
+
+          let docsQuery = supabase.from('executive_documents').select('id, file_url');
+          if (filterParts.length === 1) {
+            docsQuery = docsQuery.eq('executive_id', exec.id);
+          } else {
+            docsQuery = docsQuery.or(filterString);
+          }
+
+          const { data: docs, error: fetchError } = await docsQuery;
+
+          if (fetchError) {
+            throw fetchError;
+          }
+
+          if (!docs || docs.length === 0) {
+            message.info(`No documents found for ${exec.full_name}.`);
+            return;
+          }
+
+          const docIds = docs.map((doc) => doc.id).filter(Boolean);
+
+          if (docIds.length > 0) {
+            const { error: sigError } = await supabase
+              .from('executive_signatures')
+              .delete()
+              .in('document_id', docIds);
+
+            if (sigError) {
+              console.warn(`Error deleting signatures for ${exec.full_name}:`, sigError);
+            }
+          }
+
+          const filePaths = docs
+            .map((doc) => {
+              if (!doc.file_url) return null;
+              try {
+                const url = new URL(doc.file_url);
+                const path = decodeURIComponent(url.pathname);
+                const match = path.match(/\/storage\/v1\/object\/public\/documents\/(.+)$/i);
+                return match ? match[1] : null;
+              } catch (err) {
+                console.warn('Failed to parse file URL for deletion', err);
+                return null;
+              }
+            })
+            .filter((path): path is string => Boolean(path));
+
+          if (filePaths.length > 0) {
+            const { error: removeError } = await supabase.storage
+              .from('documents')
+              .remove(filePaths);
+
+            if (removeError) {
+              console.warn(`Error removing storage files for ${exec.full_name}:`, removeError);
+            }
+          }
+
+          let deleteQuery = supabase.from('executive_documents').delete();
+          if (filterParts.length === 1) {
+            deleteQuery = deleteQuery.eq('executive_id', exec.id);
+          } else {
+            deleteQuery = deleteQuery.or(filterString);
+          }
+
+          const { error: deleteError } = await deleteQuery;
+
+          if (deleteError) {
+            throw deleteError;
+          }
+
+          setDocumentStatusMap((prev) => {
+            const current = prev[exec.id] || [];
+            return {
+              ...prev,
+              [exec.id]: current.map((status) => ({
+                ...status,
+                exists: false,
+                documentId: undefined,
+                status: null,
+                signatureStatus: null,
+                fileUrl: null,
+              })),
+            };
+          });
+
+          message.success(`Purged ${docs.length} document${docs.length === 1 ? '' : 's'} for ${exec.full_name}`);
+          await checkExistingDocuments(executives);
+        } catch (error: any) {
+          console.error(`Error purging documents for ${exec.full_name}:`, error);
+          message.error(error?.message || 'Failed to purge documents');
+        }
+      },
+    });
+  };
+
+  const ceoInfo = getOfficer('ceo');
+  const cfoInfo = getOfficer('cfo');
+  const cxoInfo = getOfficer('cxo');
 
   const { data: equityGrant } = await supabase
     .from('equity_grants')
@@ -428,6 +577,27 @@ const generateDocumentData = async (exec: Executive, docType: string) => {
     baseData.email = exec.email;
   }
 
+  if (ceoInfo) {
+    baseData.ceo_name = ceoInfo.full_name || baseData.ceo_name || '';
+    baseData.ceo_email = ceoInfo.email || baseData.ceo_email || '';
+    baseData.equity_ceo = formatPercentValue(ceoInfo.equity_percent);
+    baseData.ceo_shares = formatSharesValue(ceoInfo.shares_issued);
+  }
+
+  if (cfoInfo) {
+    baseData.cfo_name = cfoInfo.full_name || baseData.cfo_name || '';
+    baseData.cfo_email = cfoInfo.email || baseData.cfo_email || '';
+    baseData.equity_cfo = formatPercentValue(cfoInfo.equity_percent);
+    baseData.cfo_shares = formatSharesValue(cfoInfo.shares_issued);
+  }
+
+  if (cxoInfo) {
+    baseData.cxo_name = cxoInfo.full_name || baseData.cxo_name || '';
+    baseData.cxo_email = cxoInfo.email || baseData.cxo_email || '';
+    baseData.equity_cxo = formatPercentValue(cxoInfo.equity_percent);
+    baseData.cxo_shares = formatSharesValue(cxoInfo.shares_issued);
+  }
+
   switch (docType) {
     case 'employment_agreement':
       return baseData;
@@ -455,26 +625,32 @@ const generateDocumentData = async (exec: Executive, docType: string) => {
         company_mission_statement: 'Deliver delightful food experiences to every neighborhood.',
       };
     }
-    case 'board_resolution':
+    case 'board_resolution': {
+      const officerTitle =
+        exec.role === 'cxo'
+          ? 'Chief Experience Officer'
+          : exec.role === 'cfo'
+          ? 'Chief Financial Officer'
+          : exec.role === 'coo'
+          ? 'Chief Operating Officer'
+          : exec.role === 'cto'
+          ? 'Chief Technology Officer'
+          : 'Chief Executive Officer';
+
       return {
         ...baseData,
         directors: 'Board of Directors',
-        ceo_name: exec.role === 'ceo' ? exec.full_name : '',
-        cfo_name: exec.role === 'cfo' ? exec.full_name : '',
-        cxo_name: exec.role === 'cxo' ? exec.full_name : '',
-        coo_name: exec.role === 'coo' ? exec.full_name : '',
-        cto_name: exec.role === 'cto' ? exec.full_name : '',
-        officer_titles:
-          exec.role === 'cxo'
-            ? 'Chief Experience Officer'
-            : exec.role === 'cfo'
-            ? 'Chief Financial Officer'
-            : exec.role === 'coo'
-            ? 'Chief Operating Officer'
-            : exec.role === 'cto'
-            ? 'Chief Technology Officer'
-            : 'Chief Executive Officer',
+        ceo_name: baseData.ceo_name || ceoInfo?.full_name || '',
+        cfo_name: baseData.cfo_name || cfoInfo?.full_name || '',
+        cxo_name: baseData.cxo_name || cxoInfo?.full_name || '',
+        coo_name: exec.role === 'coo' ? exec.full_name : baseData.coo_name || '',
+        cto_name: exec.role === 'cto' ? exec.full_name : baseData.cto_name || '',
+        equity_ceo: baseData.equity_ceo || formatPercentValue(ceoInfo?.equity_percent),
+        equity_cfo: baseData.equity_cfo || formatPercentValue(cfoInfo?.equity_percent),
+        equity_cxo: baseData.equity_cxo || formatPercentValue(cxoInfo?.equity_percent),
+        officer_titles: officerTitle,
       };
+    }
     case 'pre_incorporation_consent':
       return await buildPreIncorporationConsentData(
         baseData,
@@ -970,6 +1146,16 @@ export default function GenerateOfficerDocuments() {
                   size="small"
                 >
                   Regenerate
+                </Button>,
+                <Button
+                  key="purge"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={() => purgeExecutiveDocuments(exec)}
+                  disabled={sending || regenerating}
+                  size="small"
+                >
+                  Purge
                 </Button>,
               ]}
             >
