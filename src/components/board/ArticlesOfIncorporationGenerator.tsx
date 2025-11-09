@@ -334,14 +334,14 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
 
     .certificate-frame {
       border: 4px solid #000000;
-      margin: 20px 60px;
+      margin: 32px 72px;
       padding: 0;
     }
 
     .certificate-inner-border {
       border: 1px solid #000000;
-      margin: 10px;
-      padding: 40px 50px;
+      margin: 16px;
+      padding: 48px 56px;
     }
 
     .certificate-main-title {
