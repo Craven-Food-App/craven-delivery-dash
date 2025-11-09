@@ -253,7 +253,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       text-align: center;
     }
     .cover-barcode svg {
-      width: 7in;
+      width: 6.9in;
       height: 1in;
     }
     .barcode-text {
@@ -334,40 +334,50 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       letter-spacing: 1px;
     }
     .certificate-box-body {
-      margin-top: 20px;
-      font-size: 14px;
+      margin-top: 24px;
+      font-size: 13px;
       line-height: 1.7;
+      text-align: center;
     }
     .certificate-box-body p {
-      margin: 0 0 14px;
-      text-indent: 32px;
+      margin: 0 0 18px;
+      text-indent: 0;
+    }
+    .entity-name {
+      font-size: 14px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 18px;
     }
     .certificate-box-details {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      font-size: 13px;
-      margin-top: 24px;
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 18px;
+      font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 0.6px;
     }
-    .certificate-box-details div:nth-child(2) {
+    .certificate-box-details td {
+      padding-top: 8px;
+    }
+    .certificate-box-details .center {
       text-align: center;
     }
-    .certificate-box-details div:nth-child(3) {
+    .certificate-box-details .right {
       text-align: right;
     }
     .certificate-box-details strong {
       display: block;
       margin-top: 4px;
+      font-size: 13px;
       letter-spacing: 0;
+      text-transform: none;
     }
-    .signature-row {
+    .certificate-footer {
+      margin-top: 36px;
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
-      margin-top: 36px;
-      padding: 0 0 0.4in;
     }
     .certificate-left {
       display: flex;
@@ -380,36 +390,10 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       letter-spacing: 0.6px;
       line-height: 1.5;
     }
-    .cover-seal {
-      width: 1.55in;
-      height: 1.55in;
-      border-radius: 50%;
-      overflow: hidden;
-      background: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .cover-seal img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-    .cover-signature {
+    .certificate-signature {
       text-align: right;
-      font-size: 13px;
+      font-size: 12px;
       line-height: 1.6;
-    }
-    .signature-script {
-      font-family: "Brush Script MT", "Lucida Handwriting", cursive;
-      font-size: 28px;
-      letter-spacing: 1px;
-      margin: 4px 0;
-    }
-    .signature-line {
-      text-transform: uppercase;
-      font-size: 11px;
-      letter-spacing: 1px;
     }
 
     .form-header {
@@ -530,42 +514,48 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       </div>
 
       <div class="certificate-box">
-        <div class="certificate-box-header">STATE OF OHIO</div>
-        <div class="certificate-box-subheader">CERTIFICATE</div>
+        <div class="certificate-box-header">S T A T E&nbsp; O F&nbsp; O H I O</div>
+        <div class="certificate-box-subheader">C E R T I F I C A T E</div>
         <div class="certificate-box-subtitle">Ohio Secretary of State, {{secretary_name}}</div>
         <div class="certificate-box-number">{{certificate_number}}</div>
 
         <div class="certificate-box-body">
-          <p>It is hereby certified that the Secretary of State of Ohio has custody of the business records for <strong>{{entity_name}}</strong>.</p>
+          <p>It is hereby certified that the Secretary of State of Ohio has custody of the business records for</p>
+          <div class="entity-name">{{entity_name}}</div>
           <p>and, that said business records show the filing and recording of:</p>
         </div>
 
-        <div class="certificate-box-details">
-          <div>
-            <span>Document(s)</span>
-            <strong>{{filing_document_title_upper}}</strong>
-          </div>
-          <div>
-            <span>Effective Date:</span>
-            <strong>{{effective_date_short}}</strong>
-          </div>
-          <div>
-            <span>Document No(s):</span>
-            <strong>{{charter_number}}</strong>
-          </div>
-        </div>
+        <table class="certificate-box-details">
+          <tr>
+            <td>
+              Document(s)<br/>
+              <strong>{{filing_document_title_upper}}</strong>
+            </td>
+            <td class="center">
+              Effective Date:<br/>
+              <strong>{{effective_date_short}}</strong>
+            </td>
+            <td class="right">
+              Document No(s):<br/>
+              <strong>{{submission_number}}</strong>
+            </td>
+          </tr>
+        </table>
 
-        <div class="signature-row">
+        <div class="certificate-footer">
           <div class="certificate-left">
             <div class="cover-seal">
               <img src="{{ohio_seal_src}}" alt="Great Seal of the State of Ohio" />
             </div>
             <div class="certificate-left-text">
-              United States of America<br/>State of Ohio<br/>Office of the Secretary of State
+              United States of America<br/>
+              State of Ohio<br/>
+              Office of the Secretary of State
             </div>
           </div>
-          <div class="cover-signature">
-            <div>Witness my hand and the seal of the Secretary of State at Columbus, Ohio this</div>
+          <div class="certificate-signature">
+            <div>Witness my hand and the seal of the</div>
+            <div>Secretary of State at Columbus, Ohio this</div>
             <div>{{filing_date_long}}.</div>
             <div class="signature-script">{{secretary_name}}</div>
             <div class="signature-line">Ohio Secretary of State</div>
@@ -869,6 +859,7 @@ const buildArticlesHtml = (template: string, values: ArticlesFormValues, barcode
     '{{recipient_block}}': recipientBlock || '&nbsp;',
     '{{secretary_name}}': sanitizeText(values.secretaryOfStateName),
     '{{certificate_number}}': sanitizeText(values.certificateNumber || values.barcode.submissionNumber),
+    '{{entity_name}}': sanitizeText(values.entityName),
   };
 
   let output = template;
