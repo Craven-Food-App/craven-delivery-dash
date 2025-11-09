@@ -32,17 +32,34 @@ const buildFallbackDocumentHtml = (templateId: string, data: Record<string, any>
       <head>
         <meta charset="utf-8" />
         <title>${escapeHtml(templateId)}</title>
+        <style>
+          @media print {
+            body { font-family: "Times New Roman", serif; background: #fff; color: #111827; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #d1d5db; padding: 6px 10px; }
+            h1, h2, h3 { margin: 0 0 8px; }
+          }
+        </style>
       </head>
       <body style="font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; margin: 0; padding: 32px; background: #ffffff; color: #0f172a;">
-        <h1 style="margin: 0 0 12px; font-size: 24px; color: #0f172a;">${escapeHtml(templateId.replace(/_/g, ' '))}</h1>
-        <p style="margin: 0 0 24px; color: #475569;">
-          This document was generated using the default fallback template because a customized template was not found.
-        </p>
-        <table style="border-collapse: collapse; width: 100%; max-width: 720px;">
-          <tbody>
-            ${rows || '<tr><td style="padding:12px; border:1px solid #e2e8f0;">No data available.</td></tr>'}
-          </tbody>
-        </table>
+        <header style="margin-bottom: 24px;">
+          <h1 style="margin: 0; font-size: 26px; color: #0f172a;">${escapeHtml(templateId.replace(/_/g, ' '))}</h1>
+          <p style="margin: 8px 0 0; color: #475569; font-size: 14px;">
+            This document uses the default fallback template because a customized template was not found or is incomplete.
+          </p>
+        </header>
+
+        <section>
+          <table style="border-collapse: collapse; width: 100%; max-width: 760px;">
+            <tbody>
+              ${rows || '<tr><td style="padding:12px; border:1px solid #e2e8f0;">No data available.</td></tr>'}
+            </tbody>
+          </table>
+        </section>
+
+        <footer style="margin-top: 40px; color: #64748b; font-size: 12px; text-align: center;">
+          <p style="margin: 0;">Generated automatically by Crave\'N Executive Document System</p>
+        </footer>
       </body>
     </html>
   `;
