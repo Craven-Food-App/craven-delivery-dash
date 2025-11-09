@@ -323,6 +323,7 @@ const IBOESender: React.FC = () => {
   const [templates, setTemplates] = useState<IboeTemplate[]>([]);
   const [templateLoading, setTemplateLoading] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const initializedRef = useRef(false);
 
   const syncHtmlWithForm = useCallback(
     (overrides?: Partial<IboeFormValues>, options?: { force?: boolean; template?: string }) => {
@@ -417,6 +418,8 @@ const IBOESender: React.FC = () => {
   }, [syncHtmlWithForm]);
 
   useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
     form.setFieldsValue(defaultValues);
     syncHtmlWithForm(defaultValues, { force: true, template: DEFAULT_TEMPLATE_HTML });
     loadTemplates();
