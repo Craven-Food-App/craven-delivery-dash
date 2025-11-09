@@ -1,6 +1,53 @@
 import { supabase } from '@/integrations/supabase/client';
 import { renderHtml } from '@/lib/templates';
 
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+const buildFallbackDocumentHtml = (templateId: string, data: Record<string, any>): string => {
+  const rows = Object.entries(data)
+    .filter(([, value]) => value != null && value !== '')
+    .map(
+      ([key, value]) => `
+        <tr>
+          <td style="padding: 6px 12px; border: 1px solid #e2e8f0; background: #f8fafc; font-weight: 600;">
+            ${escapeHtml(key)}
+          </td>
+          <td style="padding: 6px 12px; border: 1px solid #e2e8f0;">
+            ${escapeHtml(String(value))}
+          </td>
+        </tr>
+      `,
+    )
+    .join('');
+
+  return `
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <title>${escapeHtml(templateId)}</title>
+      </head>
+      <body style="font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; margin: 0; padding: 32px; background: #ffffff; color: #0f172a;">
+        <h1 style="margin: 0 0 12px; font-size: 24px; color: #0f172a;">${escapeHtml(templateId.replace(/_/g, ' '))}</h1>
+        <p style="margin: 0 0 24px; color: #475569;">
+          This document was generated using the default fallback template because a customized template was not found.
+        </p>
+        <table style="border-collapse: collapse; width: 100%; max-width: 720px;">
+          <tbody>
+            ${rows || '<tr><td style="padding:12px; border:1px solid #e2e8f0;">No data available.</td></tr>'}
+          </tbody>
+        </table>
+      </body>
+    </html>
+  `;
+};
+
 /**
  * Fetch email template from database, with fallback to hardcoded templates
  */
@@ -215,21 +262,23 @@ export async function renderDocumentHtml(
   data: Record<string, any>,
   usageContext?: string
 ): Promise<string> {
+  const fallbackHtml = buildFallbackDocumentHtml(templateId, data);
+
   // Require database template - no hardcoded fallback
   const dbTemplate = await getDocumentTemplate(templateId, usageContext);
   
   if (!dbTemplate) {
-    throw new Error(
-      `Document template '${templateId}' not found in database. ` +
-      `Please create this template via Template Manager in the Board Portal.`
+    console.warn(
+      `Document template '${templateId}' not found in database. Using fallback HTML.`,
     );
+    return fallbackHtml;
   }
   
   if (isPlaceholderTemplate(dbTemplate.html_content)) {
-    throw new Error(
-      `Document template '${templateId}' exists in database but is a placeholder. ` +
-      `Please update it with actual template content via Template Manager.`
+    console.warn(
+      `Document template '${templateId}' exists but appears to be a placeholder. Using fallback HTML.`,
     );
+    return fallbackHtml;
   }
   
   // Check if template has expected structure (not a simplified/wrong version)
@@ -332,7 +381,7 @@ export async function renderDocumentHtml(
     console.warn('Available data keys:', Object.keys(dataMap).slice(0, 20));
   }
   
-  return html;
+  return html || fallbackHtml;
 }
 
 /**

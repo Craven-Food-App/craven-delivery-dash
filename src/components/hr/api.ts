@@ -20,6 +20,9 @@ export const docsAPI = {
     if (endpoint === "/documents/generate") {
       return invokeEdgeFunction("document-generate", data);
     }
+    if (endpoint === "/documents/purge") {
+      return invokeEdgeFunction("purge-executive-documents", data);
+    }
     throw new Error(`Unsupported POST endpoint: ${endpoint}`);
   },
 };

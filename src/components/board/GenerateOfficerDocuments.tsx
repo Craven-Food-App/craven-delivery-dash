@@ -278,118 +278,6 @@ const generateDocumentData = async (exec: Executive, docType: string) => {
     return officerMap.get(normalized) || null;
   };
 
-  const purgeExecutiveDocuments = async (exec: Executive) => {
-    if (!exec?.id) return;
-
-    Modal.confirm({
-      title: `Purge documents for ${exec.full_name}?`,
-      content:
-        'This will permanently delete all generated executive documents, signatures, and stored PDFs for this person. You will need to regenerate documents afterward.',
-      okText: 'Yes, purge documents',
-      okButtonProps: { danger: true },
-      cancelText: 'Cancel',
-      onOk: async () => {
-        try {
-          const filterParts = [`executive_id.eq.${exec.id}`];
-          if (exec.full_name) {
-            filterParts.push(`officer_name.eq.${encodeURIComponent(exec.full_name)}`);
-          }
-          const filterString = filterParts.join(',');
-
-          let docsQuery = supabase.from('executive_documents').select('id, file_url');
-          if (filterParts.length === 1) {
-            docsQuery = docsQuery.eq('executive_id', exec.id);
-          } else {
-            docsQuery = docsQuery.or(filterString);
-          }
-
-          const { data: docs, error: fetchError } = await docsQuery;
-
-          if (fetchError) {
-            throw fetchError;
-          }
-
-          if (!docs || docs.length === 0) {
-            message.info(`No documents found for ${exec.full_name}.`);
-            return;
-          }
-
-          const docIds = docs.map((doc) => doc.id).filter(Boolean);
-
-          if (docIds.length > 0) {
-            const { error: sigError } = await supabase
-              .from('executive_signatures')
-              .delete()
-              .in('document_id', docIds);
-
-            if (sigError) {
-              console.warn(`Error deleting signatures for ${exec.full_name}:`, sigError);
-            }
-          }
-
-          const filePaths = docs
-            .map((doc) => {
-              if (!doc.file_url) return null;
-              try {
-                const url = new URL(doc.file_url);
-                const path = decodeURIComponent(url.pathname);
-                const match = path.match(/\/storage\/v1\/object\/public\/documents\/(.+)$/i);
-                return match ? match[1] : null;
-              } catch (err) {
-                console.warn('Failed to parse file URL for deletion', err);
-                return null;
-              }
-            })
-            .filter((path): path is string => Boolean(path));
-
-          if (filePaths.length > 0) {
-            const { error: removeError } = await supabase.storage
-              .from('documents')
-              .remove(filePaths);
-
-            if (removeError) {
-              console.warn(`Error removing storage files for ${exec.full_name}:`, removeError);
-            }
-          }
-
-          let deleteQuery = supabase.from('executive_documents').delete();
-          if (filterParts.length === 1) {
-            deleteQuery = deleteQuery.eq('executive_id', exec.id);
-          } else {
-            deleteQuery = deleteQuery.or(filterString);
-          }
-
-          const { error: deleteError } = await deleteQuery;
-
-          if (deleteError) {
-            throw deleteError;
-          }
-
-          setDocumentStatusMap((prev) => {
-            const current = prev[exec.id] || [];
-            return {
-              ...prev,
-              [exec.id]: current.map((status) => ({
-                ...status,
-                exists: false,
-                documentId: undefined,
-                status: null,
-                signatureStatus: null,
-                fileUrl: null,
-              })),
-            };
-          });
-
-          message.success(`Purged ${docs.length} document${docs.length === 1 ? '' : 's'} for ${exec.full_name}`);
-          await checkExistingDocuments(executives);
-        } catch (error: any) {
-          console.error(`Error purging documents for ${exec.full_name}:`, error);
-          message.error(error?.message || 'Failed to purge documents');
-        }
-      },
-    });
-  };
-
   const ceoInfo = getOfficer('ceo');
   const cfoInfo = getOfficer('cfo');
   const cxoInfo = getOfficer('cxo');
@@ -728,6 +616,33 @@ export default function GenerateOfficerDocuments() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [incorporationStatus, setIncorporationStatus] = useState<'pre_incorporation' | 'incorporated'>('pre_incorporation');
+  const [purgingAll, setPurgingAll] = useState(false);
+  const extractStoragePath = (fileUrl?: string | null): string | null => {
+    if (!fileUrl) return null;
+    try {
+      const url = new URL(fileUrl);
+      const path = decodeURIComponent(url.pathname);
+      const match = path.match(/\/storage\/v1\/object\/public\/documents\/(.+)$/i);
+      return match ? match[1] : null;
+    } catch (err) {
+      console.warn('Failed to parse file URL for deletion', err);
+      return null;
+    }
+  };
+
+  const purgeStorageFiles = async (fileUrls: (string | null | undefined)[]) => {
+    const filePaths = fileUrls
+      .map(extractStoragePath)
+      .filter((path): path is string => Boolean(path));
+
+    if (filePaths.length === 0) return;
+
+    const { error: removeError } = await supabase.storage.from('documents').remove(filePaths);
+    if (removeError) {
+      console.warn('Error removing files from storage:', removeError);
+    }
+  };
+
 
   useEffect(() => {
     fetchExecutives();
@@ -823,6 +738,139 @@ export default function GenerateOfficerDocuments() {
     setDocumentStatusMap(statusMap);
   };
 
+  const purgeExecutiveDocuments = async (exec: Executive) => {
+    if (!exec?.id) return;
+
+    Modal.confirm({
+      title: `Purge documents for ${exec.full_name}?`,
+      content:
+        'This will permanently delete all generated executive documents, signatures, and stored PDFs for this person. You will need to regenerate documents afterward.',
+      okText: 'Yes, purge documents',
+      okButtonProps: { danger: true },
+      cancelText: 'Cancel',
+      onOk: async () => {
+        try {
+          const filterParts = [`executive_id.eq.${exec.id}`];
+          if (exec.full_name) {
+            filterParts.push(`officer_name.eq.${encodeURIComponent(exec.full_name)}`);
+          }
+          const filterString = filterParts.join(',');
+
+          let docsQuery = supabase.from('executive_documents').select('id, file_url');
+          if (filterParts.length === 1) {
+            docsQuery = docsQuery.eq('executive_id', exec.id);
+          } else {
+            docsQuery = docsQuery.or(filterString);
+          }
+
+          const { data: docs, error: fetchError } = await docsQuery;
+          if (fetchError) throw fetchError;
+
+          if (!docs || docs.length === 0) {
+            message.info(`No documents found for ${exec.full_name}.`);
+            return;
+          }
+
+          const docIds = docs.map((doc) => doc.id).filter(Boolean);
+          if (docIds.length > 0) {
+            const { error: sigError } = await supabase
+              .from('executive_signatures')
+              .delete()
+              .in('document_id', docIds);
+            if (sigError) {
+              console.warn(`Error deleting signatures for ${exec.full_name}:`, sigError);
+            }
+          }
+
+          await purgeStorageFiles(docs.map((doc) => doc.file_url));
+
+          let deleteQuery = supabase.from('executive_documents').delete();
+          if (filterParts.length === 1) {
+            deleteQuery = deleteQuery.eq('executive_id', exec.id);
+          } else {
+            deleteQuery = deleteQuery.or(filterString);
+          }
+
+          const { error: deleteError } = await deleteQuery;
+          if (deleteError) throw deleteError;
+
+          setDocumentStatusMap((prev) => ({
+            ...prev,
+            [exec.id]: (prev[exec.id] || []).map((status) => ({
+              ...status,
+              exists: false,
+              documentId: undefined,
+              status: null,
+              signatureStatus: null,
+              fileUrl: null,
+            })),
+          }));
+
+          message.success(`Purged ${docs.length} document${docs.length === 1 ? '' : 's'} for ${exec.full_name}`);
+          await checkExistingDocuments(executives);
+        } catch (error: any) {
+          console.error(`Error purging documents for ${exec.full_name}:`, error);
+          message.error(error?.message || 'Failed to purge documents');
+        }
+      },
+    });
+  };
+
+  const purgeAllExecutiveDocuments = () => {
+    Modal.confirm({
+      title: 'Purge ALL executive documents?',
+      content:
+        'This will permanently delete every generated executive document, signature, and stored PDF in the system. This action cannot be undone.',
+      okText: 'Yes, purge everything',
+      okButtonProps: { danger: true },
+      cancelText: 'Cancel',
+      onOk: async () => {
+        try {
+          setPurgingAll(true);
+
+          const { data: docs, error: fetchError } = await supabase
+            .from('executive_documents')
+            .select('id, executive_id, file_url');
+
+          if (fetchError) throw fetchError;
+
+          if (!docs || docs.length === 0) {
+            message.info('No executive documents found.');
+            return;
+          }
+
+          const docIds = docs.map((doc) => doc.id).filter(Boolean);
+          if (docIds.length > 0) {
+            const { error: sigError } = await supabase
+              .from('executive_signatures')
+              .delete()
+              .in('document_id', docIds);
+            if (sigError) {
+              console.warn('Error deleting signatures during purge:', sigError);
+            }
+          }
+
+          await purgeStorageFiles(docs.map((doc) => doc.file_url));
+
+          const { error: deleteError } = await supabase
+            .from('executive_documents')
+            .delete()
+            .gte('created_at', '1970-01-01');
+          if (deleteError) throw deleteError;
+
+          message.success(`Purged ${docs.length} document${docs.length === 1 ? '' : 's'} across all executives.`);
+          setDocumentStatusMap({});
+          await checkExistingDocuments(executives);
+        } catch (error: any) {
+          console.error('Error purging all executive documents:', error);
+          message.error(error?.message || 'Failed to purge all executive documents');
+        } finally {
+          setPurgingAll(false);
+        }
+      },
+    });
+  };
+
   const sendDocumentsToExecutive = async (
     exec: Executive,
     isPartOfBatch = false,
@@ -859,7 +907,12 @@ export default function GenerateOfficerDocuments() {
       });
 
       if (options?.forceRegenerate) {
-        await supabase.from('executive_documents').delete().eq('executive_id', exec.id);
+        try {
+          await docsAPI.post('/documents/purge', { executive_id: exec.id });
+        } catch (purgeError: any) {
+          console.warn(`Purge via edge function failed for ${exec.full_name}:`, purgeError);
+          await supabase.from('executive_documents').delete().eq('executive_id', exec.id);
+        }
         docIdMap.clear();
       }
 
@@ -967,10 +1020,12 @@ export default function GenerateOfficerDocuments() {
       }
 
       if (execResults.failed > 0) {
+        const detail = execResults.errors.join(' • ') || 'Unknown error';
         message.warning(
-          `${exec.full_name}: ${execResults.success} successful, ${execResults.failed} failed.`,
-          5
+          `${exec.full_name}: ${execResults.success} successful, ${execResults.failed} failed. ${detail}`,
+          8
         );
+        console.warn(`Document generation/email failures for ${exec.full_name}:`, execResults.errors);
       } else {
         message.success(`Sent executive packet to ${exec.full_name}`);
       }
@@ -1023,7 +1078,6 @@ export default function GenerateOfficerDocuments() {
     setRegenerating(true);
     setProgress(0);
     try {
-      await supabase.from('executive_documents').delete().eq('executive_id', exec.id);
       await sendDocumentsToExecutive(exec, true, { forceRegenerate: true });
       await checkExistingDocuments(executives);
       message.success(`Regenerated documents for ${exec.full_name}`);
@@ -1087,16 +1141,27 @@ export default function GenerateOfficerDocuments() {
         </Space>
       }
       extra={
-        <Button
-          type="primary"
-          icon={<SendOutlined />}
-          onClick={sendDocumentsToAll}
-          loading={sending}
-          disabled={executives.filter((e) => e.email).length === 0 || regenerating}
-          style={{ background: 'linear-gradient(135deg, #ff7a45 0%, #ff8c00 100%)', border: 'none' }}
-        >
-          Send to All ({executives.filter((e) => e.email).length})
-        </Button>
+        <Space>
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+            onClick={purgeAllExecutiveDocuments}
+            loading={purgingAll}
+            disabled={purgingAll || sending || regenerating}
+          >
+            Purge All
+          </Button>
+          <Button
+            type="primary"
+            icon={<SendOutlined />}
+            onClick={sendDocumentsToAll}
+            loading={sending}
+            disabled={executives.filter((e) => e.email).length === 0 || regenerating || purgingAll}
+            style={{ background: 'linear-gradient(135deg, #ff7a45 0%, #ff8c00 100%)', border: 'none' }}
+          >
+            Send to All ({executives.filter((e) => e.email).length})
+          </Button>
+        </Space>
       }
     >
       <Alert
