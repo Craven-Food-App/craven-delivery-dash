@@ -224,6 +224,10 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       padding: 24px 0;
       gap: 24px;
     }
+    .page-separator {
+      height: 48px;
+      width: 100%;
+    }
     .certificate-page {
       width: 8.5in;
       height: 11in;
@@ -572,6 +576,8 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
         </div>
       </div>
     </div>
+
+    <div class="page-separator"></div>
 
     <div class="certificate-page form">
       <div class="form-header">
