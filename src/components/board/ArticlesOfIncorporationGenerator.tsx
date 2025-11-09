@@ -221,7 +221,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       flex-direction: column;
       align-items: center;
       background: #ffffff;
-      padding: 32px 0;
+      padding: 24px 0;
       gap: 24px;
     }
     .certificate-page {
@@ -229,33 +229,22 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       height: 11in;
       padding: 0;
       box-sizing: border-box;
-      position: relative;
-      overflow: hidden;
-      page-break-after: always;
       background: #ffffff;
-      box-shadow: 0 30px 60px rgba(15, 23, 42, 0.15);
+      position: relative;
+      page-break-after: always;
     }
-    .certificate-page:last-of-type {
-      page-break-after: auto;
-    }
-    .certificate-page.cover::before {
-      content: none;
-    }
+    .certificate-page:last-of-type { page-break-after: auto; }
+
     .cover-header {
-      padding: 0.6in 0.8in 0;
+      padding: 0.65in 0.8in 0;
       display: flex;
       flex-direction: column;
       gap: 14px;
       position: relative;
       z-index: 2;
     }
-    .cover-barcode {
-      text-align: center;
-    }
-    .cover-barcode svg {
-      width: 6.9in;
-      height: 1in;
-    }
+    .cover-barcode { text-align: center; }
+    .cover-barcode svg { width: 7in; height: 1in; }
     .barcode-text {
       font-size: 10px;
       text-transform: uppercase;
@@ -283,11 +272,11 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       padding-top: 3px;
     }
     .cover-receipt {
+      margin-top: 6px;
       text-align: center;
       text-transform: uppercase;
-      font-size: 14px;
       letter-spacing: 0.8px;
-      margin-top: 6px;
+      font-size: 14px;
     }
     .cover-receipt-note {
       font-size: 10px;
@@ -300,73 +289,74 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       letter-spacing: 0.6px;
       margin-top: 6px;
     }
-    .certificate-box {
-      margin: 0.35in 0.8in 0.4in;
-      padding: 0.45in;
-      border: 2px solid #000000;
+
+    .certificate-frame {
+      margin: 0.35in 0.55in 0.4in;
+      border: 3px solid #000000;
+      height: calc(11in - 0.35in - 0.4in - 0.65in);
       position: relative;
-      background: #ffffff;
+      display: flex;
     }
-    .certificate-box-header {
+    .certificate-inner {
+      border: 1px solid #000000;
+      margin: 12px;
+      padding: 0.5in 0.55in;
+      width: calc(100% - 24px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       text-align: center;
+    }
+    .certificate-title {
+      font-size: 28px;
       letter-spacing: 6px;
       text-transform: uppercase;
-      font-size: 22px;
+      font-weight: 600;
     }
-    .certificate-box-subheader {
-      text-align: center;
-      font-size: 17px;
-      letter-spacing: 4px;
+    .certificate-subtitle {
+      margin-top: 6px;
+      font-size: 18px;
+      letter-spacing: 3px;
       text-transform: uppercase;
-      margin-top: 4px;
     }
-    .certificate-box-subtitle {
-      text-align: center;
+    .certificate-secretary {
+      margin-top: 16px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .certificate-number {
+      margin-top: 8px;
       font-size: 13px;
       letter-spacing: 1px;
-      text-transform: uppercase;
-      margin-top: 18px;
     }
-    .certificate-box-number {
-      text-align: center;
-      font-size: 12px;
-      margin-top: 6px;
-      letter-spacing: 1px;
-    }
-    .certificate-box-body {
-      margin-top: 24px;
+    .certificate-body {
+      margin-top: 26px;
       font-size: 13px;
       line-height: 1.7;
-      text-align: center;
     }
-    .certificate-box-body p {
+    .certificate-body p {
       margin: 0 0 18px;
-      text-indent: 0;
     }
-    .entity-name {
+    .certificate-body .certificate-entity {
+      font-weight: 700;
       font-size: 14px;
-      font-weight: bold;
-      text-transform: uppercase;
-      margin-bottom: 18px;
+      letter-spacing: 1px;
     }
-    .certificate-box-details {
+    .certificate-details {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 18px;
+      margin-top: 14px;
       font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 0.6px;
     }
-    .certificate-box-details td {
-      padding-top: 8px;
+    .certificate-details td {
+      padding-top: 10px;
     }
-    .certificate-box-details .center {
-      text-align: center;
-    }
-    .certificate-box-details .right {
-      text-align: right;
-    }
-    .certificate-box-details strong {
+    .certificate-details td:first-child { text-align: left; }
+    .certificate-details td:nth-child(2) { text-align: center; }
+    .certificate-details td:last-child { text-align: right; }
+    .certificate-details strong {
       display: block;
       margin-top: 4px;
       font-size: 13px;
@@ -374,26 +364,46 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       text-transform: none;
     }
     .certificate-footer {
-      margin-top: 36px;
+      width: 100%;
+      margin-top: 40px;
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
+      text-align: left;
     }
-    .certificate-left {
+    .certificate-seal-block {
       display: flex;
       align-items: flex-end;
       gap: 14px;
     }
-    .certificate-left-text {
+    .certificate-seal-block img {
+      width: 1.55in;
+      height: 1.55in;
+      object-fit: contain;
+    }
+    .certificate-seal-caption {
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.6px;
       line-height: 1.5;
     }
-    .certificate-signature {
-      text-align: right;
+    .certificate-signature-block {
       font-size: 12px;
       line-height: 1.6;
+      text-align: right;
+    }
+    .certificate-signature-name {
+      margin-top: 10px;
+      font-size: 18px;
+      letter-spacing: 1px;
+      font-family: "Brush Script MT", "Lucida Handwriting", cursive;
+    }
+    .certificate-signature-title {
+      margin-top: 4px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-weight: 600;
     }
 
     .form-header {
@@ -513,52 +523,50 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
         <div class="cover-address">{{recipient_block}}</div>
       </div>
 
-      <div class="certificate-box">
-        <div class="certificate-box-header">S T A T E&nbsp; O F&nbsp; O H I O</div>
-        <div class="certificate-box-subheader">C E R T I F I C A T E</div>
-        <div class="certificate-box-subtitle">Ohio Secretary of State, {{secretary_name}}</div>
-        <div class="certificate-box-number">{{certificate_number}}</div>
+      <div class="certificate-frame">
+        <div class="certificate-inner">
+          <div class="certificate-title">STATE OF OHIO</div>
+          <div class="certificate-subtitle">CERTIFICATE</div>
+          <div class="certificate-secretary">Ohio Secretary of State, {{secretary_name}}</div>
+          <div class="certificate-number">{{certificate_number}}</div>
 
-        <div class="certificate-box-body">
-          <p>It is hereby certified that the Secretary of State of Ohio has custody of the business records for</p>
-          <div class="entity-name">{{entity_name}}</div>
-          <p>and, that said business records show the filing and recording of:</p>
-        </div>
-
-        <table class="certificate-box-details">
-          <tr>
-            <td>
-              Document(s)<br/>
-              <strong>{{filing_document_title_upper}}</strong>
-            </td>
-            <td class="center">
-              Effective Date:<br/>
-              <strong>{{effective_date_short}}</strong>
-            </td>
-            <td class="right">
-              Document No(s):<br/>
-              <strong>{{submission_number}}</strong>
-            </td>
-          </tr>
-        </table>
-
-        <div class="certificate-footer">
-          <div class="certificate-left">
-            <div class="cover-seal">
-              <img src="{{ohio_seal_src}}" alt="Great Seal of the State of Ohio" />
-            </div>
-            <div class="certificate-left-text">
-              United States of America<br/>
-              State of Ohio<br/>
-              Office of the Secretary of State
-            </div>
+          <div class="certificate-body">
+            <p>It is hereby certified that the Secretary of State of Ohio has custody of the business records for</p>
+            <div class="certificate-entity">{{entity_name}}</div>
+            <p>and, that said business records show the filing and recording of:</p>
           </div>
-          <div class="certificate-signature">
-            <div>Witness my hand and the seal of the</div>
-            <div>Secretary of State at Columbus, Ohio this</div>
-            <div>{{filing_date_long}}.</div>
-            <div class="signature-script">{{secretary_name}}</div>
-            <div class="signature-line">Ohio Secretary of State</div>
+
+          <table class="certificate-details">
+            <tr>
+              <td>
+                Document(s)
+                <strong>{{filing_document_title_upper}}</strong>
+              </td>
+              <td>
+                Effective Date:
+                <strong>{{effective_date_short}}</strong>
+              </td>
+              <td>
+                Document No(s):
+                <strong>{{submission_number}}</strong>
+              </td>
+            </tr>
+          </table>
+
+          <div class="certificate-footer">
+            <div class="certificate-seal-block">
+              <img src="{{ohio_seal_src}}" alt="Great Seal of the State of Ohio" />
+              <div class="certificate-seal-caption">
+                United States of America<br/>State of Ohio<br/>Office of the Secretary of State
+              </div>
+            </div>
+            <div class="certificate-signature-block">
+              <div>Witness my hand and the seal of the</div>
+              <div>Secretary of State at Columbus, Ohio this</div>
+              <div>{{filing_date_long}}.</div>
+              <div class="certificate-signature-name">{{secretary_name}}</div>
+              <div class="certificate-signature-title">Ohio Secretary of State</div>
+            </div>
           </div>
         </div>
       </div>
