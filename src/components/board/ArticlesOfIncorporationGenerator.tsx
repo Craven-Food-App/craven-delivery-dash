@@ -239,18 +239,13 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       page-break-after: auto;
     }
     .certificate-page.cover::before {
-      content: "";
-      position: absolute;
-      inset: 1.35in;
-      background: url('{{ohio_seal_src}}') center/3.4in 3.4in no-repeat;
-      opacity: 0.08;
-      pointer-events: none;
+      content: none;
     }
     .cover-header {
-      padding: 0.65in 0.85in 0;
+      padding: 0.6in 0.8in 0;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
       position: relative;
       z-index: 2;
     }
@@ -258,7 +253,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       text-align: center;
     }
     .cover-barcode svg {
-      width: 7.2in;
+      width: 7in;
       height: 1in;
     }
     .barcode-text {
@@ -268,48 +263,49 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       margin-top: 6px;
       text-align: center;
     }
-    .cover-meta {
-      display: flex;
-      gap: 18px;
-      flex-wrap: wrap;
-      font-size: 10px;
+    .cover-meta-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10.5px;
       text-transform: uppercase;
       letter-spacing: 0.6px;
-      justify-content: flex-start;
     }
-    .cover-meta div {
-      min-width: 110px;
+    .cover-meta-table th,
+    .cover-meta-table td {
+      text-align: left;
+      padding-right: 18px;
+      white-space: nowrap;
     }
-    .cover-meta span {
-      display: block;
-      margin-top: 2px;
+    .cover-meta-table td {
+      font-size: 11.5px;
       text-transform: none;
       letter-spacing: 0;
-      font-size: 11px;
+      padding-top: 3px;
     }
     .cover-receipt {
+      text-align: center;
       text-transform: uppercase;
       font-size: 14px;
       letter-spacing: 0.8px;
-      text-align: left;
+      margin-top: 6px;
     }
     .cover-receipt-note {
       font-size: 10px;
+      text-align: center;
     }
     .cover-address {
       font-size: 11px;
       line-height: 1.6;
       text-transform: uppercase;
       letter-spacing: 0.6px;
-      margin-top: 4px;
-      margin-bottom: 18px;
+      margin-top: 6px;
     }
     .certificate-box {
       margin: 0.35in 0.8in 0.4in;
-      padding: 0.4in;
+      padding: 0.45in;
       border: 2px solid #000000;
       position: relative;
-      background: rgba(255, 255, 255, 0.96);
+      background: #ffffff;
     }
     .certificate-box-header {
       text-align: center;
@@ -506,40 +502,28 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
           {{articles_barcode_svg}}
           <div class="barcode-text">{{barcode_human_readable}}</div>
         </div>
-        <div class="cover-meta">
-          <div>
-            DATE
-            <span>{{filing_date_short}}</span>
-          </div>
-          <div>
-            DOCUMENT ID
-            <span>{{submission_number}}</span>
-          </div>
-          <div>
-            DESCRIPTION
-            <span>{{filing_receipt_description}}</span>
-          </div>
-          <div>
-            FILING
-            <span>{{filing_fee}}</span>
-          </div>
-          <div>
-            EXPED
-            <span>{{filing_expedite_fee}}</span>
-          </div>
-          <div>
-            PENALTY
-            <span>{{filing_penalty_fee}}</span>
-          </div>
-          <div>
-            CERT
-            <span>{{filing_certificate_fee}}</span>
-          </div>
-          <div>
-            COPY
-            <span>{{filing_copy_fee}}</span>
-          </div>
-        </div>
+        <table class="cover-meta-table">
+          <tr>
+            <th>DATE</th>
+            <th>DOCUMENT ID</th>
+            <th>DESCRIPTION</th>
+            <th>FILING</th>
+            <th>EXPED</th>
+            <th>PENALTY</th>
+            <th>CERT</th>
+            <th>COPY</th>
+          </tr>
+          <tr>
+            <td>{{filing_date_short}}</td>
+            <td>{{submission_number}}</td>
+            <td>{{filing_receipt_description}}</td>
+            <td>{{filing_fee}}</td>
+            <td>{{filing_expedite_fee}}</td>
+            <td>{{filing_penalty_fee}}</td>
+            <td>{{filing_certificate_fee}}</td>
+            <td>{{filing_copy_fee}}</td>
+          </tr>
+        </table>
         <div class="cover-receipt">Receipt</div>
         <div class="cover-receipt-note">This is not a bill. Please do not remit payment.</div>
         <div class="cover-address">{{recipient_block}}</div>
