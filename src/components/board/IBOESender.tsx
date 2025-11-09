@@ -357,21 +357,38 @@ const IBOESender: React.FC = () => {
       const { data, error } = await supabaseClient
         .from('iboe_templates')
         .select('id, name, template_key, html_content, is_default, is_active, created_at')
-        .eq('is_active', true)
         .order('is_default', { ascending: false })
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const rows = (data as Array<{
+      const rows = ((data as Array<{
         id: string;
         name: string;
         template_key: string;
         html_content: string;
         is_default: boolean;
-      }>) ?? [];
+        is_active: boolean | null;
+      }>) ?? []);
 
-      const available: IboeTemplate[] = rows.map((tpl) => ({
+      if (!rows.length) {
+        setTemplates([]);
+        setSelectedTemplateId(null);
+        setTemplateHtml(DEFAULT_TEMPLATE_HTML);
+        syncHtmlWithForm(undefined, { force: true, template: DEFAULT_TEMPLATE_HTML });
+        message.warning('No IBOE templates found. Using built-in default.');
+        return;
+      }
+
+      const availableRows = rows.filter((tpl) => tpl.is_active !== false);
+
+      const sourceRows = availableRows.length > 0 ? availableRows : rows;
+
+      if (availableRows.length === 0) {
+        message.warning('All saved IBOE templates are inactive. Showing archived templates instead.');
+      }
+
+      const available: IboeTemplate[] = sourceRows.map((tpl) => ({
         id: tpl.id,
         name: tpl.name,
         template_key: tpl.template_key,
