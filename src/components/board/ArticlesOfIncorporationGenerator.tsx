@@ -241,86 +241,137 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
     .certificate-page.cover::before {
       content: "";
       position: absolute;
-      inset: 1.4in;
+      inset: 1.35in;
       background: url('{{ohio_seal_src}}') center/3.4in 3.4in no-repeat;
-      opacity: 0.1;
+      opacity: 0.08;
       pointer-events: none;
     }
     .cover-header {
-      padding: 0.75in 0.8in 0;
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 18px;
+      padding: 0.65in 0.85in 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
       position: relative;
       z-index: 2;
     }
     .cover-barcode {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      font-size: 11px;
-      color: #1f2937;
-      gap: 6px;
-      margin-top: 12px;
+      text-align: center;
+    }
+    .cover-barcode svg {
+      width: 7.2in;
+      height: 1in;
     }
     .barcode-text {
       font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.6px;
       margin-top: 6px;
-      text-align: right;
+      text-align: center;
     }
-    .cover-barcode svg {
-      width: 6.8in;
-      height: 1in;
+    .cover-meta {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      justify-content: flex-start;
+    }
+    .cover-meta div {
+      min-width: 110px;
+    }
+    .cover-meta span {
+      display: block;
+      margin-top: 2px;
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 11px;
     }
     .cover-receipt {
-      margin-top: 2px;
-      font-size: 10.5px;
       text-transform: uppercase;
-      letter-spacing: 0.9px;
+      font-size: 14px;
+      letter-spacing: 0.8px;
+      text-align: left;
     }
-    .cover-body {
-      padding: 0 0.8in;
-      margin-top: 18px;
+    .cover-receipt-note {
+      font-size: 10px;
+    }
+    .cover-address {
+      font-size: 11px;
+      line-height: 1.6;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-top: 4px;
+      margin-bottom: 18px;
+    }
+    .certificate-box {
+      margin: 0.35in 0.8in 0.4in;
+      padding: 0.4in;
+      border: 2px solid #000000;
       position: relative;
-      z-index: 2;
+      background: rgba(255, 255, 255, 0.96);
     }
-    .state-title {
+    .certificate-box-header {
       text-align: center;
       letter-spacing: 6px;
       text-transform: uppercase;
       font-size: 22px;
-      margin-bottom: 4px;
     }
-    .state-subtitle {
+    .certificate-box-subheader {
       text-align: center;
       font-size: 17px;
       letter-spacing: 4px;
       text-transform: uppercase;
-      margin-bottom: 24px;
+      margin-top: 4px;
     }
-    .certificate-content {
+    .certificate-box-subtitle {
+      text-align: center;
+      font-size: 13px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 18px;
+    }
+    .certificate-box-number {
+      text-align: center;
+      font-size: 12px;
+      margin-top: 6px;
+      letter-spacing: 1px;
+    }
+    .certificate-box-body {
+      margin-top: 20px;
       font-size: 14px;
-      line-height: 1.65;
+      line-height: 1.7;
     }
-    .certificate-content p {
+    .certificate-box-body p {
       margin: 0 0 14px;
       text-indent: 32px;
     }
-    .certificate-details {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    .certificate-box-details {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      font-size: 13px;
       margin-top: 24px;
-      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    .certificate-box-details div:nth-child(2) {
+      text-align: center;
+    }
+    .certificate-box-details div:nth-child(3) {
+      text-align: right;
+    }
+    .certificate-box-details strong {
+      display: block;
+      margin-top: 4px;
+      letter-spacing: 0;
     }
     .signature-row {
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
       margin-top: 36px;
-      padding: 0 0.8in 0.9in;
+      padding: 0 0 0.4in;
     }
     .certificate-left {
       display: flex;
@@ -445,146 +496,49 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       display: flex;
       justify-content: space-between;
     }
-    .cover-meta {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(120px, auto));
-      gap: 8px 18px;
-      font-size: 10.5px;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-      margin-bottom: 8px;
-    }
-    .cover-meta span {
-      display: block;
-      margin-top: 2px;
-      text-transform: none;
-      letter-spacing: 0;
-      font-size: 11.5px;
-    }
-    .cover-receipt {
-      margin-top: 12px;
-      text-transform: uppercase;
-      font-size: 14px;
-      letter-spacing: 0.8px;
-      text-align: left;
-    }
-    .cover-receipt-note {
-      font-size: 10px;
-      margin-top: 2px;
-    }
-    .cover-address {
-      margin-top: 18px;
-      margin-bottom: 24px;
-      font-size: 11px;
-      line-height: 1.6;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-    }
-    .certificate-box {
-      margin: 0.5in 0.8in 0.4in;
-      padding: 0.4in;
-      border: 2px solid #000000;
-      position: relative;
-      background: #ffffff;
-    }
-    .certificate-box-header {
-      text-align: center;
-      letter-spacing: 6px;
-      text-transform: uppercase;
-      font-size: 22px;
-    }
-    .certificate-box-subheader {
-      text-align: center;
-      font-size: 17px;
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      margin-top: 4px;
-    }
-    .certificate-box-subtitle {
-      text-align: center;
-      font-size: 13px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      margin-top: 18px;
-    }
-    .certificate-box-number {
-      text-align: center;
-      font-size: 12px;
-      margin-top: 6px;
-      letter-spacing: 1px;
-    }
-    .certificate-box-body {
-      margin-top: 20px;
-      font-size: 14px;
-      line-height: 1.7;
-    }
-    .certificate-box-body p {
-      margin: 0 0 14px;
-      text-indent: 32px;
-    }
-    .certificate-box-details {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      font-size: 13px;
-      margin-top: 24px;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-    }
-    .certificate-box-details div:nth-child(2) {
-      text-align: center;
-    }
-    .certificate-box-details div:nth-child(3) {
-      text-align: right;
-    }
-    .certificate-box-details strong {
-      display: block;
-      margin-top: 4px;
-      letter-spacing: 0;
-    }
   </style>
 </head>
 <body>
   <div class="certificate-container">
     <div class="certificate-page cover">
       <div class="cover-header">
-        <div class="cover-meta">
-          <div>
-            <strong>DATE</strong>
-            <span>{{filing_date_short}}</span>
-          </div>
-          <div>
-            <strong>DOCUMENT ID</strong>
-            <span>{{submission_number}}</span>
-          </div>
-          <div>
-            <strong>DESCRIPTION</strong>
-            <span>{{filing_receipt_description}}</span>
-          </div>
-          <div>
-            <strong>FILING</strong>
-            <span>{{filing_fee}}</span>
-          </div>
-          <div>
-            <strong>EXPED</strong>
-            <span>{{filing_expedite_fee}}</span>
-          </div>
-          <div>
-            <strong>PENALTY</strong>
-            <span>{{filing_penalty_fee}}</span>
-          </div>
-          <div>
-            <strong>CERT</strong>
-            <span>{{filing_certificate_fee}}</span>
-          </div>
-          <div>
-            <strong>COPY</strong>
-            <span>{{filing_copy_fee}}</span>
-          </div>
-        </div>
         <div class="cover-barcode">
           {{articles_barcode_svg}}
           <div class="barcode-text">{{barcode_human_readable}}</div>
+        </div>
+        <div class="cover-meta">
+          <div>
+            DATE
+            <span>{{filing_date_short}}</span>
+          </div>
+          <div>
+            DOCUMENT ID
+            <span>{{submission_number}}</span>
+          </div>
+          <div>
+            DESCRIPTION
+            <span>{{filing_receipt_description}}</span>
+          </div>
+          <div>
+            FILING
+            <span>{{filing_fee}}</span>
+          </div>
+          <div>
+            EXPED
+            <span>{{filing_expedite_fee}}</span>
+          </div>
+          <div>
+            PENALTY
+            <span>{{filing_penalty_fee}}</span>
+          </div>
+          <div>
+            CERT
+            <span>{{filing_certificate_fee}}</span>
+          </div>
+          <div>
+            COPY
+            <span>{{filing_copy_fee}}</span>
+          </div>
         </div>
         <div class="cover-receipt">Receipt</div>
         <div class="cover-receipt-note">This is not a bill. Please do not remit payment.</div>
