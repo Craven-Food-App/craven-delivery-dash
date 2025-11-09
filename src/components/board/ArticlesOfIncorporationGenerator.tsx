@@ -217,7 +217,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       position: relative;
       z-index: 2;
     }
-    .seal { width: 140px; height: 140px; border: 4px double #1f2937; border-radius: 50%; overflow: hidden; background: #ffffff; display: flex; align-items: center; justify-content: center; }
+    .seal { width: 140px; height: 140px; border-radius: 50%; overflow: hidden; background: #ffffff; display: flex; align-items: center; justify-content: center; }
     .seal img {
       width: 100%;
       height: 100%;
@@ -250,15 +250,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       color: #4b5563;
       margin-top: 18px;
     }
-    .barcode-wrapper svg {
-      width: 220px;
-      height: 110px;
-      display: block;
-      margin-left: auto;
-      border: 1px solid #94a3b8;
-      padding: 4px;
-      background: #ffffff;
-    }
+    .barcode-wrapper svg { width: 220px; height: 110px; display: block; margin-left: auto; background: #ffffff; }
     .certificate-body {
       margin-top: 34px;
       line-height: 1.75;
