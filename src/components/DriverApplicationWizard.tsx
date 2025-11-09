@@ -165,14 +165,65 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
       });
       await Promise.all(uploadPromises);
 
+      const documentColumnMap: Record<string, string> = {
+        driversLicenseFront: 'drivers_license_front',
+        driversLicenseBack: 'drivers_license_back',
+        insuranceDocument: 'insurance_document',
+        vehicleRegistration: 'vehicle_registration',
+      };
+
+      const documentColumns = Object.entries(documentPaths).reduce<Record<string, string>>(
+        (acc, [key, value]) => {
+          const column = documentColumnMap[key] ?? key;
+          acc[column] = value;
+          return acc;
+        },
+        {},
+      );
+
       // Step 3: Submit application (goes to waitlist now)
+      const parsedVehicleYear = data.vehicleYear ? parseInt(data.vehicleYear, 10) : NaN;
+      const vehicleYear = Number.isNaN(parsedVehicleYear) ? null : parsedVehicleYear;
+      const sanitizedSsn = data.ssn?.replace(/\D/g, '') ?? '';
+      const applicationPayload = Object.fromEntries(
+        Object.entries({
+          user_id: userId ?? null,
+          first_name: data.firstName?.trim() || null,
+          last_name: data.lastName?.trim() || null,
+          email: data.email?.trim().toLowerCase() || null,
+          phone: data.phone?.trim() || null,
+          date_of_birth: data.dateOfBirth || null,
+          street_address: data.streetAddress?.trim() || null,
+          city: data.city?.trim() || null,
+          state: data.state || null,
+          zip_code: data.zipCode?.trim() || null,
+          vehicle_type: data.vehicleType || null,
+          vehicle_make: data.vehicleMake || null,
+          vehicle_model: data.vehicleModel || null,
+          vehicle_year: vehicleYear,
+          vehicle_color: data.vehicleColor || null,
+          license_plate: data.licensePlate || null,
+          license_number: data.licenseNumber || null,
+          license_state: data.licenseState || null,
+          license_expiry: data.licenseExpiry || null,
+          payout_method: data.payoutMethod || null,
+          bank_account_type: data.bankAccountType || null,
+          routing_number: data.routingNumber?.trim() || null,
+          account_number_last_four: data.accountNumber
+            ? data.accountNumber.replace(/\D/g, '').slice(-4)
+            : null,
+          cash_tag: data.cashTag?.trim() || null,
+          ssn_last_four: sanitizedSsn ? sanitizedSsn.slice(-4) : null,
+          background_check_consent: Boolean(data.backgroundCheckConsent),
+          background_check_consent_date: data.backgroundCheckConsent ? new Date().toISOString() : null,
+          ...documentColumns,
+          status: 'pending',
+        }).filter(([, value]) => value !== undefined)
+      );
+
       const { data: application, error: appError } = await supabase
         .from('craver_applications')
-        .insert({
-          ...data,
-          ...documentPaths,
-          status: 'pending',
-        } as any)
+        .insert(applicationPayload as any)
         .select()
         .single();
 

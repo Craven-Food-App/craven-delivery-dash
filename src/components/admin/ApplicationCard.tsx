@@ -110,8 +110,17 @@ const ApplicationCard: React.FC<ApplicationCardProps> = ({
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  const formatApplicationDate = (dateString: string) => {
-    return formatDate(new Date(dateString), 'MMM dd, yyyy');
+  const formatApplicationDate = (dateString?: string | null) => {
+    if (!dateString) {
+      return 'Not provided';
+    }
+
+    const parsed = new Date(dateString);
+    if (Number.isNaN(parsed.getTime())) {
+      return 'Not provided';
+    }
+
+    return formatDate(parsed, 'MMM dd, yyyy');
   };
 
   const handleViewDocument = (documentPath: string | undefined, documentName: string) => {
