@@ -579,6 +579,8 @@ const ArticlesOfIncorporationGenerator: React.FC = () => {
       container.style.left = '-10000px';
       container.style.width = '816px';
       container.style.padding = '32px';
+      container.style.backgroundColor = '#ffffff';
+      container.style.color = '#111827';
       container.innerHTML = htmlContent;
       document.body.appendChild(container);
 
@@ -589,7 +591,11 @@ const ArticlesOfIncorporationGenerator: React.FC = () => {
           document.body.removeChild(container);
         },
         margin: [24, 24, 24, 24],
-        html2canvas: { scale: 0.62 },
+        html2canvas: {
+          backgroundColor: '#ffffff',
+          scale: 0.8,
+          useCORS: true,
+        },
       });
     } catch (error) {
       console.error('Failed to export Articles to PDF:', error);
