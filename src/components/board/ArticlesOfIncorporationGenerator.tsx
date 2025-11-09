@@ -184,287 +184,360 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
   <style>
     * { box-sizing: border-box; }
     @page { size: 8.5in 11in; margin: 0; }
-    @media print { body { margin: 0; } }
+    @media print { body { margin: 0; } .certificate-page { box-shadow: none; } }
     body {
       margin: 0;
       padding: 0;
       font-family: "Times New Roman", "Georgia", serif;
       background: #ffffff;
       color: #111827;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
     }
-    .certificate {
+    .certificate-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #ffffff;
+      padding: 32px 0;
+      gap: 24px;
+    }
+    .certificate-page {
       width: 8.5in;
       height: 11in;
-      background: #ffffff;
       border: 18px double #1f2937;
-      padding: 0.85in 0.9in;
+      padding: 0.8in;
+      box-sizing: border-box;
       position: relative;
       overflow: hidden;
-      box-sizing: border-box;
+      page-break-after: always;
+      background: #ffffff;
+      box-shadow: 0 30px 60px rgba(15, 23, 42, 0.15);
     }
-    .certificate::before {
+    .certificate-page:last-of-type {
+      page-break-after: auto;
+    }
+    .certificate-page.cover::before {
       content: "";
       position: absolute;
-      inset: 64px;
-      background: url('{{ohio_seal_src}}') center/260px 260px no-repeat;
-      opacity: 0.12;
+      inset: 1.4in;
+      background: url('{{ohio_seal_src}}') center/3.4in 3.4in no-repeat;
+      opacity: 0.1;
       pointer-events: none;
     }
-    .border-inner {
+    .certificate-page .border-inner {
       position: absolute;
-      inset: 26px;
+      inset: 0.32in;
       border: 2px solid rgba(30, 41, 59, 0.6);
       pointer-events: none;
     }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .cover-header {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
       position: relative;
       z-index: 2;
     }
-    .seal { width: 140px; height: 140px; border-radius: 50%; overflow: hidden; background: #ffffff; display: flex; align-items: center; justify-content: center; }
-    .seal img {
+    .cover-barcode {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      font-size: 12px;
+      color: #1f2937;
+    }
+    .cover-barcode svg {
+      width: 6.5in;
+      height: 0.95in;
+    }
+    .cover-receipt {
+      margin-top: 4px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .cover-body {
+      margin-top: 28px;
+      position: relative;
+      z-index: 2;
+    }
+    .state-title {
+      text-align: center;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      font-size: 22px;
+      margin-bottom: 4px;
+    }
+    .state-subtitle {
+      text-align: center;
+      font-size: 17px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+    .certificate-content {
+      font-size: 14px;
+      line-height: 1.65;
+    }
+    .certificate-content p {
+      margin: 0 0 16px;
+      text-indent: 30px;
+    }
+    .certificate-details {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 24px;
+      font-size: 14px;
+    }
+    .signature-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: 60px;
+    }
+    .cover-seal {
+      width: 1.6in;
+      height: 1.6in;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #111827;
+    }
+    .cover-seal img {
       width: 100%;
       height: 100%;
       object-fit: contain;
     }
-    .title-block {
-      flex: 1;
-      text-align: center;
-      color: #111827;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-    }
-    .title-block h1 {
-      margin: 0;
-      font-size: 32px;
-      font-weight: 700;
-    }
-    .title-block .subtitle {
-      font-size: 15px;
-      margin-top: 8px;
-    }
-    .certificate-number {
-      margin-top: 12px;
-      font-size: 13px;
-      letter-spacing: 1px;
-    }
-    .barcode-wrapper {
+    .cover-signature {
       text-align: right;
-      font-size: 11px;
-      color: #4b5563;
-      margin-top: 18px;
-    }
-    .barcode-wrapper svg { width: 220px; height: 110px; display: block; margin-left: auto; background: #ffffff; }
-    .certificate-body {
-      margin-top: 34px;
-      line-height: 1.75;
-      font-size: 15px;
-      position: relative;
-      z-index: 2;
-    }
-    .certificate-body .salutation {
-      font-size: 16px;
-      text-align: center;
-      font-weight: 600;
-      letter-spacing: 1.2px;
-      margin-bottom: 16px;
-    }
-    .certificate-body .paragraph {
-      margin-bottom: 18px;
-      text-indent: 28px;
-    }
-    .certificate-body .centered {
-      text-align: center;
-      margin: 26px 0 18px;
-      font-size: 18px;
-      font-weight: bold;
-      letter-spacing: 1.4px;
-      text-transform: uppercase;
-    }
-    .certificate-body strong {
-      font-weight: 700;
-    }
-    .info-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 20px 0;
-      font-size: 14px;
-      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
-    }
-    .info-table th {
-      width: 33%;
-      background: #f8fafc;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-    }
-    .info-table th,
-    .info-table td {
-      border: 1px solid rgba(30, 41, 59, 0.25);
-      padding: 12px 16px;
-      vertical-align: top;
-    }
-    .share-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 12px;
       font-size: 13px;
-    }
-    .share-table th,
-    .share-table td {
-      border: 1px solid rgba(30, 41, 59, 0.25);
-      padding: 10px 12px;
-    }
-    .share-table th {
-      background: #e2e8f0;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-size: 12px;
-    }
-    .signature-block {
-      margin-top: 46px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 32px;
-    }
-    .signature-card {
-      border-top: 2px solid #1f2937;
-      padding-top: 14px;
-      font-size: 13px;
-      letter-spacing: 0.4px;
-    }
-    .signature-line {
-      margin-top: 22px;
-      border-top: 1px solid rgba(30, 41, 59, 0.6);
-      padding-top: 6px;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      line-height: 1.6;
     }
     .signature-script {
       font-family: "Brush Script MT", "Lucida Handwriting", cursive;
-      font-size: 26px;
+      font-size: 28px;
       letter-spacing: 1px;
-      margin-top: 14px;
+      margin: 4px 0;
     }
-    footer {
-      margin-top: 48px;
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      color: #334155;
+    .signature-line {
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 1px;
+    }
+
+    .form-header {
       position: relative;
       z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
     }
-    footer .left {
-      max-width: 62%;
+    .form-header-left {
+      max-width: 60%;
+      font-size: 11px;
     }
-    footer .right {
+    .form-header-left img {
+      width: 1.2in;
+      margin-bottom: 8px;
+    }
+    .form-header-right {
       text-align: right;
-      line-height: 1.5;
+      font-size: 11px;
+    }
+    .form-title {
+      text-align: center;
+      font-size: 18px;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+      margin: 12px 0 6px;
+    }
+    .form-subtitle {
+      text-align: center;
+      font-size: 12px;
+      margin-bottom: 16px;
+    }
+    .form-section {
+      border: 1px solid #1f2937;
+      margin-bottom: 12px;
+      padding: 8px 10px;
+      font-size: 11px;
+    }
+    .form-section h4 {
+      margin: 0 0 6px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px 16px;
+      font-size: 11px;
+    }
+    .checkbox-row {
+      display: flex;
+      gap: 18px;
+      margin-bottom: 8px;
+    }
+    .checkbox {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .checkbox-square {
+      width: 12px;
+      height: 12px;
+      border: 1px solid #1f2937;
+    }
+    .signature-area {
+      margin-top: 18px;
+      font-size: 11px;
+    }
+    .signature-area .line {
+      border-bottom: 1px solid #1f2937;
+      height: 18px;
+      margin-top: 8px;
+    }
+    footer.form-footer {
+      margin-top: 24px;
+      font-size: 10px;
+      display: flex;
+      justify-content: space-between;
     }
   </style>
 </head>
 <body>
-  <div class="certificate">
-    <div class="border-inner"></div>
-    <div class="header">
-        <div class="seal">
-          <img src="{{ohio_seal_src}}" alt="Seal of the Secretary of State of Ohio" />
+  <div class="certificate-container">
+    <div class="certificate-page cover">
+      <div class="border-inner"></div>
+      <div class="cover-header">
+        <div class="cover-barcode">
+          <div>
+            <div class="cover-receipt">Receipt</div>
+            <div>Filing #: {{submission_number}}</div>
+            <div>Document #: {{charter_number}}</div>
+            <div>Charter/Registration #: {{entity_number}}</div>
+            <div>Filed: {{filing_date_long}}</div>
+          </div>
+          <div>
+            {{articles_barcode_svg}}
+            <div>{{barcode_human_readable}}</div>
+          </div>
         </div>
-        <div class="title-block">
-          <h1>State of Ohio</h1>
-          <div class="subtitle">Office of the Secretary of State</div>
-          <div class="certificate-number">Certificate of Incorporation • Charter No. {{charter_number}}</div>
+      </div>
+
+      <div class="cover-body">
+        <div class="state-title">State of Ohio</div>
+        <div class="state-subtitle">Certificate</div>
+        <div style="text-align:center;text-transform:uppercase;letter-spacing:2px;font-size:13px;margin-bottom:24px;">
+          Ohio Secretary of State
         </div>
-    </div>
-    <div class="barcode-wrapper">
-      {{articles_barcode_svg}}
-      <div>{{barcode_human_readable}}</div>
-    </div>
 
-    <div class="certificate-body">
-      <div class="salutation">To all to whom these Presents shall come, Greetings:</div>
-      <div class="paragraph">
-        I hereby certify that the attached is a true and correct copy of the <strong>Articles of Incorporation</strong> for <strong>{{entity_name}}</strong>, an Ohio {{entity_type}}, as filed and
-        recorded in this office on {{filing_timestamp}}.
-      </div>
-      <div class="paragraph">
-        I further certify that said entity is duly formed and authorized to transact business in the State of Ohio pursuant to the laws thereof and that the information set forth below appears on the records of this office.
-      </div>
+        <div class="certificate-content">
+          <p>It is hereby certified that the Secretary of State of Ohio has received the record of the business filings for <strong>{{entity_name}}</strong>.</p>
+          <p>Said document has been numbered and the filing date recorded as noted above. The certificate set forth on the following page reflects the information on file relating to the entity at the time of this filing.</p>
+        </div>
 
-      <div class="centered">Certificate Details</div>
-      <table class="info-table">
-        <tr>
-          <th>Corporate Name</th>
-          <td>{{entity_name}}</td>
-        </tr>
-        <tr>
-          <th>Entity Classification</th>
-          <td>{{entity_type}}</td>
-        </tr>
-        <tr>
-          <th>Entity Number</th>
-          <td>{{entity_number}}</td>
-        </tr>
-        <tr>
-          <th>Filing Date & Time</th>
-          <td>{{filing_timestamp}}</td>
-        </tr>
-        <tr>
-          <th>Principal Office</th>
-          <td>{{principal_office}}<br/>County: {{principal_county}}<br/>Contact: {{contact_email}} • {{contact_phone}}</td>
-        </tr>
-        <tr>
-          <th>Purpose & Duration</th>
-          <td><strong>Purpose:</strong> {{purpose}}<br/><strong>Duration:</strong> {{duration}}</td>
-        </tr>
-        <tr>
-          <th>Statutory Agent of Record</th>
-          <td><strong>{{statutory_agent_name}}</strong><br/>{{statutory_agent_address}}<br/><em>Acceptance on file:</em> {{statutory_agent_acceptance}}</td>
-        </tr>
-      </table>
+        <div class="certificate-details">
+          <div><strong>Document(s):</strong> Articles of Incorporation</div>
+          <div><strong>Entity Name:</strong> {{entity_name}}</div>
+          <div><strong>Document Number:</strong> {{charter_number}}</div>
+          <div><strong>Filing Date:</strong> {{filing_date_long}}</div>
+        </div>
 
-      <div class="centered">Share Structure</div>
-      {{share_classes_table}}
-
-      <div class="centered">Additional Provisions</div>
-      {{optional_provisions_block}}
-
-      <div class="centered">Incorporator(s) of Record</div>
-      {{incorporators_block}}
-    </div>
-
-    <div class="signature-block">
-      <div class="signature-card">
-        Given under my hand and the seal of the Secretary of State at Columbus, Ohio on {{filing_timestamp}}.
-        <div class="signature-script">Secretary of State</div>
-        <div class="signature-line">Ohio Secretary of State</div>
-      </div>
-      <div class="signature-card">
-        Document Reference: {{submission_number}}<br/>
-        Receipt Number: {{receipt_number}}<br/>
-        Document Type: {{doc_type_code}}<br/>
-        Filing Location: Columbus, Ohio
+        <div class="signature-row">
+          <div class="cover-seal">
+            <img src="{{ohio_seal_src}}" alt="Great Seal of the State of Ohio" />
+          </div>
+          <div class="cover-signature">
+            <div>Witness my hand and the seal of</div>
+            <div>To the Secretary of State at Columbus,</div>
+            <div>Ohio, this {{filing_date_long}}.</div>
+            <div class="signature-script">Ohio Secretary of State</div>
+            <div class="signature-line">Secretary of State</div>
+            <div class="signature-line">State of Ohio</div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <footer>
-      <div class="left">
-        This certificate is issued pursuant to the laws of the State of Ohio and is prima facie evidence that the entity named herein is organized and existing under the laws of this
-        state. Verification of authenticity may be obtained at https://businesssearch.ohiosos.gov using the entity number provided above.
+    <div class="certificate-page form">
+      <div class="border-inner"></div>
+      <div class="form-header">
+        <div class="form-header-left">
+          <img src="{{ohio_seal_src}}" alt="Great Seal of the State of Ohio" />
+          <div><strong>Presented by:</strong><br/>The Ohio Secretary of State<br/>Business Services Division<br/>P.O. Box 788 • Columbus, OH 43216<br/>Telephone: 1-877-767-3453 (Ohio SOS)</div>
+        </div>
+        <div class="form-header-right">
+          <div><strong>Mail this filing to:</strong></div>
+          <div>Ohio Secretary of State</div>
+          <div>P.O. Box 788</div>
+          <div>Columbus, OH 43216</div>
+          <div style="margin-top:10px;"><strong>Expedite this form, use:</strong></div>
+          <div>P.O. Box 1390</div>
+          <div>Columbus, OH 43216</div>
+        </div>
       </div>
-      <div class="right">
-        Secretary of State • Business Services Division<br/>
-        22 North Fourth Street • Columbus, Ohio 43215<br/>
-        877.767.3453 • www.OhioSoS.gov
+
+      <div class="form-title">Articles of Incorporation</div>
+      <div class="form-subtitle">Ohio Revised Code §§ 1701.04, 1702.04</div>
+
+      <div class="form-section">
+        <h4>Entity Information</h4>
+        <div class="form-grid">
+          <div><strong>Name of Corporation:</strong><br/>{{entity_name}}</div>
+          <div><strong>Charter Number:</strong><br/>{{charter_number}}</div>
+          <div><strong>Document Number:</strong><br/>{{charter_number}}</div>
+          <div><strong>Filing Date:</strong><br/>{{filing_date_long}}</div>
+        </div>
       </div>
-    </footer>
+
+      <div class="form-section">
+        <h4>Principal Office Location</h4>
+        <div>{{principal_office}}</div>
+        <div>County: {{principal_county}}</div>
+      </div>
+
+      <div class="form-section">
+        <h4>Statutory Agent Information</h4>
+        <div><strong>Name:</strong> {{statutory_agent_name}}</div>
+        <div><strong>Address:</strong><br/>{{statutory_agent_address}}</div>
+      </div>
+
+      <div class="form-section">
+        <h4>Share Structure</h4>
+        {{share_classes_table}}
+      </div>
+
+      <div class="form-section">
+        <h4>Purpose &amp; Duration</h4>
+        <div><strong>Purpose:</strong> {{purpose}}</div>
+        <div><strong>Duration:</strong> {{duration}}</div>
+      </div>
+
+      <div class="form-section">
+        <h4>Incorporators</h4>
+        {{incorporators_block}}
+      </div>
+
+      <div class="form-section">
+        <h4>Additional Provisions</h4>
+        {{optional_provisions_block}}
+      </div>
+
+      <div class="signature-area">
+        <div>I certify that the statements contained herein are true and accurate.</div>
+        <div class="line"></div>
+        <div>Incorporator Signature & Date</div>
+      </div>
+
+      <footer class="form-footer">
+        <div>Form 532A • Last Revised May 2020</div>
+        <div>Page 2 of 2</div>
+      </footer>
+    </div>
   </div>
 </body>
 </html>`;
@@ -607,6 +680,7 @@ const buildArticlesHtml = (template: string, values: ArticlesFormValues, barcode
     '{{entity_number}}': sanitizeText(values.barcode.entityNumber),
     '{{receipt_number}}': sanitizeText(values.barcode.receiptNumber),
     '{{filing_timestamp}}': `${formatDayjs(values.barcode.filingDate)} ${sanitizeText(values.barcode.filingTime)}`,
+    '{{filing_date_long}}': formatDayjs(values.barcode.filingDate, 'MMMM D, YYYY'),
     '{{doc_type_code}}': sanitizeText(values.barcode.docTypeCode),
   };
 
