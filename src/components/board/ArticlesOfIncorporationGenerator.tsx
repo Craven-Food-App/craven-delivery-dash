@@ -186,13 +186,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
     @media print {
       body { margin: 0; }
     }
-    body {
-      margin: 0;
-      padding: 48px;
-      font-family: "Times New Roman", "Georgia", serif;
-      background: radial-gradient(circle at center, #f3f4f6 0%, #e2e8f0 55%, #cbd5f5 100%);
-      color: #111827;
-    }
+    body { margin: 0; padding: 48px; font-family: "Times New Roman", "Georgia", serif; background: #ffffff; color: #111827; }
     .certificate {
       max-width: 880px;
       margin: 0 auto;
@@ -200,15 +194,14 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       border: 18px double #1f2937;
       padding: 42px 54px;
       position: relative;
-      box-shadow: 0 40px 80px rgba(15, 23, 42, 0.18);
       overflow: hidden;
     }
     .certificate::before {
       content: "";
       position: absolute;
-      inset: 60px;
-      background: url('{{ohio_seal_src}}') center/320px 320px no-repeat;
-      opacity: 0.08;
+      inset: 64px;
+      background: url('{{ohio_seal_src}}') center/260px 260px no-repeat;
+      opacity: 0.12;
       pointer-events: none;
     }
     .border-inner {
@@ -224,18 +217,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       position: relative;
       z-index: 2;
     }
-    .seal {
-      width: 140px;
-      height: 140px;
-      border: 4px double #1f2937;
-      border-radius: 50%;
-      overflow: hidden;
-      background: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.25);
-    }
+    .seal { width: 140px; height: 140px; border: 4px double #1f2937; border-radius: 50%; overflow: hidden; background: #ffffff; display: flex; align-items: center; justify-content: center; }
     .seal img {
       width: 100%;
       height: 100%;
