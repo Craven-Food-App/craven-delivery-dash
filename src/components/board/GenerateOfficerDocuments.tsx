@@ -1004,13 +1004,37 @@ export default function GenerateOfficerDocuments() {
             if (error) throw error;
             if (data?.success) {
               execResults.success += 1;
+            } else if (data?.configurationRequired) {
+              // Email configuration missing - don't treat as failure
+              toast.warning(
+                `Email service not configured`,
+                {
+                  description: data?.details || 'Please configure Google Workspace email settings.',
+                  duration: 8000,
+                }
+              );
             } else {
               throw new Error(data?.error || 'Unknown error sending email');
             }
           } catch (emailErr: any) {
             console.error(`Email failed for ${exec.full_name}:`, emailErr);
-            execResults.failed += 1;
-            execResults.errors.push(`Email failed: ${emailErr.message || emailErr}`);
+            
+            // Check if it's a configuration error
+            const errorData = emailErr?.context?.body;
+            if (errorData?.configurationRequired) {
+              toast.warning(
+                `Email service not configured`,
+                {
+                  description: `Documents generated successfully, but email couldn't be sent. Please configure Google Workspace in CEO Portal → Email Settings.`,
+                  duration: 8000,
+                }
+              );
+              // Don't count as failed since documents were generated
+              console.log('Documents generated but email skipped due to configuration');
+            } else {
+              execResults.failed += 1;
+              execResults.errors.push(`Email failed: ${emailErr.message || emailErr}`);
+            }
           }
         } else if (execResults.failed > 0) {
           console.warn(`No documents generated for ${exec.full_name}; skipping email send.`);

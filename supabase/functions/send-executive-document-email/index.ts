@@ -104,7 +104,23 @@ serve(async (req: Request) => {
 
     console.log(`Sending ${documentTitle} to ${executiveName} at ${to}`);
 
-    const config = await getGoogleWorkspaceConfig();
+    let config;
+    try {
+      config = await getGoogleWorkspaceConfig();
+    } catch (configError: any) {
+      console.error("Google Workspace configuration error:", configError.message);
+      return new Response(
+        JSON.stringify({ 
+          error: "Email service not configured",
+          details: "Please configure Google Workspace email settings in CEO Portal → Email Settings before sending emails.",
+          configurationRequired: true
+        }),
+        {
+          status: 503,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
     const fromEmail = config.executiveFrom ?? config.defaultFrom ?? "Crave'N HR <hr@craven.com>";
 
     // Prepare attachments and links
