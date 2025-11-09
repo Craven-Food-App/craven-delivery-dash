@@ -14,6 +14,7 @@ import {
   PieChartOutlined,
   CodeOutlined,
   AuditOutlined,
+  FileAddOutlined,
 } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -34,6 +35,7 @@ import { IncorporationStatusToggle } from '@/components/board/IncorporationStatu
 import { CompanySettingsManager } from '@/components/board/CompanySettingsManager';
 import IBOETemplateManager from '@/components/board/IBOETemplateManager';
 import IBOESender from '@/components/board/IBOESender';
+import ArticlesOfIncorporationGenerator from '@/components/board/ArticlesOfIncorporationGenerator';
 import { executiveTheme } from '@/config/antd-theme';
 import { useExecAuth } from '@/hooks/useExecAuth';
 
@@ -408,6 +410,16 @@ const BoardPortal: React.FC = () => {
                     </span>
                   ),
                   children: <DocumentVault />,
+                },
+                {
+                  key: 'articles',
+                  label: (
+                    <span className="flex items-center gap-1 sm:gap-2">
+                      <FileAddOutlined />
+                      <span className="text-xs sm:text-base">Articles Generator</span>
+                    </span>
+                  ),
+                  children: <ArticlesOfIncorporationGenerator />,
                 },
                 {
                   key: 'iboe',
