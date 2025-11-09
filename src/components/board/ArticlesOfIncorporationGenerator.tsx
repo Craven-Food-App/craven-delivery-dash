@@ -183,31 +183,50 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
   <title>State of Ohio – Certificate of Incorporation</title>
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; padding: 48px; font-family: "Times New Roman", serif; background: #f8fafc; color: #111827; }
+    @media print {
+      body { margin: 0; }
+    }
+    body {
+      margin: 0;
+      padding: 48px;
+      font-family: "Times New Roman", "Georgia", serif;
+      background: radial-gradient(circle at center, #f3f4f6 0%, #e2e8f0 55%, #cbd5f5 100%);
+      color: #111827;
+    }
     .certificate {
-      max-width: 900px;
+      max-width: 880px;
       margin: 0 auto;
       background: #ffffff;
-      border: 12px double #1f2937;
-      padding: 36px 48px;
+      border: 18px double #1f2937;
+      padding: 42px 54px;
       position: relative;
-      box-shadow: 0 30px 60px rgba(15, 23, 42, 0.15);
+      box-shadow: 0 40px 80px rgba(15, 23, 42, 0.18);
+      overflow: hidden;
+    }
+    .certificate::before {
+      content: "";
+      position: absolute;
+      inset: 60px;
+      background: url('{{ohio_seal_src}}') center/320px 320px no-repeat;
+      opacity: 0.08;
+      pointer-events: none;
     }
     .border-inner {
       position: absolute;
-      inset: 28px;
-      border: 2px solid #1f2937;
+      inset: 26px;
+      border: 2px solid rgba(30, 41, 59, 0.6);
       pointer-events: none;
     }
     .header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 32px;
+      align-items: center;
+      position: relative;
+      z-index: 2;
     }
     .seal {
-      width: 120px;
-      height: 120px;
+      width: 140px;
+      height: 140px;
       border: 4px double #1f2937;
       border-radius: 50%;
       overflow: hidden;
@@ -215,7 +234,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-right: 24px;
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.25);
     }
     .seal img {
       width: 100%;
@@ -224,25 +243,30 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
     }
     .title-block {
       flex: 1;
-      text-align: right;
-      color: #1f2937;
+      text-align: center;
+      color: #111827;
+      text-transform: uppercase;
+      letter-spacing: 2px;
     }
     .title-block h1 {
       margin: 0;
-      font-size: 30px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
+      font-size: 32px;
+      font-weight: 700;
     }
     .title-block .subtitle {
-      font-size: 14px;
+      font-size: 15px;
+      margin-top: 8px;
+    }
+    .certificate-number {
+      margin-top: 12px;
+      font-size: 13px;
       letter-spacing: 1px;
-      margin-top: 6px;
     }
     .barcode-wrapper {
       text-align: right;
       font-size: 11px;
       color: #4b5563;
-      margin-top: 12px;
+      margin-top: 18px;
     }
     .barcode-wrapper svg {
       width: 220px;
@@ -253,19 +277,19 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       padding: 4px;
       background: #ffffff;
     }
-
     .certificate-body {
-      margin-top: 28px;
-      line-height: 1.8;
+      margin-top: 34px;
+      line-height: 1.75;
       font-size: 15px;
+      position: relative;
+      z-index: 2;
     }
-    .certificate-body .opening {
+    .certificate-body .salutation {
       font-size: 16px;
       text-align: center;
-      font-weight: bold;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      margin-bottom: 20px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      margin-bottom: 16px;
     }
     .certificate-body .paragraph {
       margin-bottom: 18px;
@@ -273,115 +297,139 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
     }
     .certificate-body .centered {
       text-align: center;
-      margin: 20px 0;
+      margin: 26px 0 18px;
       font-size: 18px;
       font-weight: bold;
-      letter-spacing: 1.2px;
+      letter-spacing: 1.4px;
       text-transform: uppercase;
     }
-
+    .certificate-body strong {
+      font-weight: 700;
+    }
     .info-table {
       width: 100%;
       border-collapse: collapse;
-      margin: 24px 0;
+      margin: 20px 0;
       font-size: 14px;
-    }
-    .info-table th, .info-table td {
-      border: 1px solid #1f2937;
-      padding: 10px 14px;
-      text-align: left;
-      vertical-align: top;
+      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
     }
     .info-table th {
-      background: #f1f5f9;
+      width: 33%;
+      background: #f8fafc;
       text-transform: uppercase;
       letter-spacing: 0.8px;
-      width: 32%;
     }
-
-    .share-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-    .share-table th, .share-table td { border: 1px solid #1f2937; padding: 8px 10px; font-size: 13px; text-align: left; }
-    .share-table th { background: #e5e7eb; text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px; }
-
+    .info-table th,
+    .info-table td {
+      border: 1px solid rgba(30, 41, 59, 0.25);
+      padding: 12px 16px;
+      vertical-align: top;
+    }
+    .share-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+    .share-table th,
+    .share-table td {
+      border: 1px solid rgba(30, 41, 59, 0.25);
+      padding: 10px 12px;
+    }
+    .share-table th {
+      background: #e2e8f0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 12px;
+    }
     .signature-block {
-      margin-top: 40px;
+      margin-top: 46px;
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 32px;
     }
     .signature-card {
       border-top: 2px solid #1f2937;
-      padding-top: 12px;
+      padding-top: 14px;
       font-size: 13px;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.4px;
     }
     .signature-line {
-      margin-top: 18px;
-      border-top: 1px solid #1f2937;
+      margin-top: 22px;
+      border-top: 1px solid rgba(30, 41, 59, 0.6);
       padding-top: 6px;
-      font-size: 12px;
+      font-size: 11px;
       text-transform: uppercase;
-      letter-spacing: 0.8px;
+      letter-spacing: 1px;
     }
-
+    .signature-script {
+      font-family: "Brush Script MT", "Lucida Handwriting", cursive;
+      font-size: 26px;
+      letter-spacing: 1px;
+      margin-top: 14px;
+    }
     footer {
       margin-top: 48px;
       display: flex;
       justify-content: space-between;
       font-size: 12px;
       color: #334155;
+      position: relative;
+      z-index: 2;
     }
-    footer .left { max-width: 65%; }
-    footer .right { text-align: right; }
+    footer .left {
+      max-width: 62%;
+    }
+    footer .right {
+      text-align: right;
+      line-height: 1.5;
+    }
   </style>
 </head>
 <body>
   <div class="certificate">
     <div class="border-inner"></div>
     <div class="header">
-      <div class="seal">
-        <img src="{{ohio_seal_src}}" alt="Seal of the Secretary of State of Ohio" />
-      </div>
-      <div class="title-block">
-        <h1>Certificate of Incorporation</h1>
-        <div class="subtitle">Ohio Secretary of State • Business Services Division</div>
-        <div class="barcode-wrapper">
-          {{articles_barcode_svg}}
-          <div>{{barcode_human_readable}}</div>
+        <div class="seal">
+          <img src="{{ohio_seal_src}}" alt="Seal of the Secretary of State of Ohio" />
         </div>
-      </div>
+        <div class="title-block">
+          <h1>State of Ohio</h1>
+          <div class="subtitle">Office of the Secretary of State</div>
+          <div class="certificate-number">Certificate of Incorporation • Charter No. {{charter_number}}</div>
+        </div>
+    </div>
+    <div class="barcode-wrapper">
+      {{articles_barcode_svg}}
+      <div>{{barcode_human_readable}}</div>
     </div>
 
     <div class="certificate-body">
-      <div class="opening">To All to Whom These Presents Shall Come, Greetings:</div>
+      <div class="salutation">To all to whom these Presents shall come, Greetings:</div>
       <div class="paragraph">
-        I, the Secretary of State of the State of Ohio, do hereby certify that the foregoing is a true and correct copy of the <strong>Articles of Incorporation</strong> filed for
-        <strong>{{entity_name}}</strong>, an Ohio {{entity_type}}, duly organized under the laws of the State of Ohio.
+        I hereby certify that the attached is a true and correct copy of the <strong>Articles of Incorporation</strong> for <strong>{{entity_name}}</strong>, an Ohio {{entity_type}}, as filed and
+        recorded in this office on {{filing_timestamp}}.
       </div>
       <div class="paragraph">
-        It is hereby certified that the entity name appears on the records of this office as of the filing date indicated below, and that said entity is authorized to transact business pursuant to the provisions of the Ohio Revised Code.
+        I further certify that said entity is duly formed and authorized to transact business in the State of Ohio pursuant to the laws thereof and that the information set forth below appears on the records of this office.
       </div>
-      <div class="centered">Certificate Information</div>
 
+      <div class="centered">Certificate Details</div>
       <table class="info-table">
         <tr>
           <th>Corporate Name</th>
           <td>{{entity_name}}</td>
         </tr>
         <tr>
-          <th>Entity Type</th>
+          <th>Entity Classification</th>
           <td>{{entity_type}}</td>
         </tr>
         <tr>
-          <th>Ohio Charter / Document Number</th>
-          <td>{{charter_number}}</td>
-        </tr>
-        <tr>
-          <th>Entity / Registration Number</th>
+          <th>Entity Number</th>
           <td>{{entity_number}}</td>
         </tr>
         <tr>
-          <th>Filing Date and Time</th>
+          <th>Filing Date & Time</th>
           <td>{{filing_timestamp}}</td>
         </tr>
         <tr>
@@ -393,7 +441,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
           <td><strong>Purpose:</strong> {{purpose}}<br/><strong>Duration:</strong> {{duration}}</td>
         </tr>
         <tr>
-          <th>Statutory Agent</th>
+          <th>Statutory Agent of Record</th>
           <td><strong>{{statutory_agent_name}}</strong><br/>{{statutory_agent_address}}<br/><em>Acceptance on file:</em> {{statutory_agent_acceptance}}</td>
         </tr>
       </table>
@@ -410,9 +458,9 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
 
     <div class="signature-block">
       <div class="signature-card">
-        In testimony whereof, I have hereunto subscribed my name and affixed my official seal on {{filing_timestamp}}.
-        <div class="signature-line">Secretary of State</div>
-        <div class="signature-line">State of Ohio</div>
+        Given under my hand and the seal of the Secretary of State at Columbus, Ohio on {{filing_timestamp}}.
+        <div class="signature-script">Secretary of State</div>
+        <div class="signature-line">Ohio Secretary of State</div>
       </div>
       <div class="signature-card">
         Document Reference: {{submission_number}}<br/>
@@ -424,7 +472,8 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
 
     <footer>
       <div class="left">
-        This certificate evidences incorporation and authorization of the above-named entity under the laws of the State of Ohio. Verification of authenticity is available at https://businesssearch.ohiosos.gov using the entity number provided.
+        This certificate is issued pursuant to the laws of the State of Ohio and is prima facie evidence that the entity named herein is organized and existing under the laws of this
+        state. Verification of authenticity may be obtained at https://businesssearch.ohiosos.gov using the entity number provided above.
       </div>
       <div class="right">
         Secretary of State • Business Services Division<br/>
