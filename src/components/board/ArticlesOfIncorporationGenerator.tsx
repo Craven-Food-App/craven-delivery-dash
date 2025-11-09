@@ -234,6 +234,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       page-break-after: always;
     }
     .certificate-page:last-of-type { page-break-after: auto; }
+    .certificate-page.form { page-break-before: always; }
 
     .cover-header {
       padding: 0.65in 0.8in 0;
