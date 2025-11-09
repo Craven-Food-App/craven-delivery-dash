@@ -437,25 +437,30 @@ const ArticlesOfIncorporationGenerator: React.FC = () => {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [barcodeReadable, setBarcodeReadable] = useState<string>('');
 
-  const buildBarcodePayload = useCallback((values: ArticlesFormValues): { payload: string; humanReadable: string } => {
-    const filingDatePart = values.barcode.filingDate ? values.barcode.filingDate.format('YYYYMMDD') : '';
+  const buildBarcodePayload = useCallback((values: Partial<ArticlesFormValues> | undefined): { payload: string; humanReadable: string } => {
+    const meta: BarcodeMeta = {
+      ...DEFAULT_BARCODE_META,
+      ...(values?.barcode ?? {}),
+    };
+
+    const filingDatePart = meta.filingDate ? meta.filingDate.format('YYYYMMDD') : '';
     const parts = [
       'OH',
-      sanitizeText(values.barcode.docTypeCode).toUpperCase(),
+      sanitizeText(meta.docTypeCode).toUpperCase(),
       filingDatePart,
-      sanitizeText(values.barcode.filingTime),
-      sanitizeText(values.barcode.submissionNumber),
-      sanitizeText(values.barcode.charterNumber),
-      sanitizeText(values.barcode.entityNumber),
+      sanitizeText(meta.filingTime),
+      sanitizeText(meta.submissionNumber),
+      sanitizeText(meta.charterNumber),
+      sanitizeText(meta.entityNumber),
     ].filter(Boolean);
 
     const payload = parts.join('|');
     const humanReadable = [
-      `Type: ${sanitizeText(values.barcode.docTypeCode).toUpperCase()}`,
-      `Filed: ${values.barcode.filingDate ? values.barcode.filingDate.format('MM/DD/YYYY') : '—'} ${sanitizeText(values.barcode.filingTime)}`,
-      `Submission: ${sanitizeText(values.barcode.submissionNumber)}`,
-      `Charter: ${sanitizeText(values.barcode.charterNumber)}`,
-      `Entity: ${sanitizeText(values.barcode.entityNumber)}`,
+      `Type: ${sanitizeText(meta.docTypeCode).toUpperCase()}`,
+      `Filed: ${meta.filingDate ? meta.filingDate.format('MM/DD/YYYY') : '—'} ${sanitizeText(meta.filingTime)}`,
+      `Submission: ${sanitizeText(meta.submissionNumber)}`,
+      `Charter: ${sanitizeText(meta.charterNumber)}`,
+      `Entity: ${sanitizeText(meta.entityNumber)}`,
     ]
       .filter((text) => !text.endsWith(': '))
       .join(' • ');
@@ -471,10 +476,11 @@ const ArticlesOfIncorporationGenerator: React.FC = () => {
         ...currentFormValues,
         ...values,
         barcode: {
+          ...DEFAULT_BARCODE_META,
           ...DEFAULT_FORM_VALUES.barcode,
-          ...currentFormValues.barcode,
+          ...(currentFormValues.barcode ?? {}),
           ...(values?.barcode ?? {}),
-        },
+        } as BarcodeMeta,
       } as ArticlesFormValues;
 
       const templateSource = options?.forceTemplate ?? templateHtml;
