@@ -179,111 +179,154 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Articles of Incorporation</title>
+  <title>State of Ohio – Articles of Incorporation (Form 532A)</title>
   <style>
-    body { font-family: "Times New Roman", serif; background: #ffffff; color: #111827; margin: 0; padding: 32px; }
-    .page { max-width: 960px; margin: 0 auto; border: 1px solid #d1d5db; padding: 48px; box-shadow: 0 10px 40px rgba(15, 23, 42, 0.12); position: relative; }
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
-    .barcode { width: 220px; text-align: right; font-size: 11px; color: #4b5563; }
-    .barcode svg { width: 100%; height: 110px; }
-    h1 { text-transform: uppercase; letter-spacing: 2px; font-size: 26px; margin: 0 0 8px; text-align: center; }
-    h2 { font-size: 20px; margin: 32px 0 12px; color: #1f2937; }
-    h3 { font-size: 16px; margin: 24px 0 8px; color: #1f2937; }
-    .state-heading { text-align: center; font-size: 15px; letter-spacing: 1px; color: #334155; text-transform: uppercase; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-    table th, table td { border: 1px solid #cbd5f5; padding: 10px 14px; text-align: left; vertical-align: top; font-size: 14px; }
-    table th { background: #f1f5f9; font-weight: bold; }
-    .two-column { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; row-gap: 12px; }
-    .section { margin-bottom: 32px; }
-    .label { font-weight: bold; font-size: 14px; color: #1f2937; }
-    .value { font-size: 14px; color: #0f172a; white-space: pre-line; }
-    .incorporators { margin-top: 16px; }
-    .incorporator { margin-bottom: 16px; }
-    .signature-line { margin-top: 48px; border-top: 1px solid #000; width: 260px; padding-top: 6px; }
-    .footer { margin-top: 48px; font-size: 12px; color: #475569; text-align: right; }
-    .badge { font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 12px; color: #1d4ed8; }
+    * { box-sizing: border-box; }
+    body { font-family: "Times New Roman", serif; background: #ffffff; color: #111827; margin: 0; padding: 36px; }
+    .page { max-width: 960px; margin: 0 auto; border: 1px solid #1f2937; padding: 36px 42px; position: relative; }
+    header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+    .header-left { max-width: 480px; }
+    .header-left h1 { font-size: 24px; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+    .header-left .subtitle { font-size: 14px; margin-top: 4px; color: #374151; }
+    .header-left .form-id { font-size: 13px; margin-top: 12px; font-weight: bold; }
+    .header-right { text-align: right; font-size: 11px; color: #4b5563; }
+    .header-right svg { width: 210px; height: 110px; display: block; margin-left: auto; border: 1px solid #94a3b8; padding: 4px; }
+
+    .instruction { background: #f9fafb; border: 1px solid #cbd5f5; padding: 12px; font-size: 13px; margin-bottom: 18px; line-height: 1.5; }
+
+    table.layout { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+    table.layout td:first-child { width: 42px; vertical-align: top; font-weight: bold; font-size: 14px; border-right: 1px solid #1f2937; text-align: center; padding: 10px 6px; background: #f3f4f6; }
+    table.layout td:nth-child(2) { padding: 12px 16px; border-bottom: 1px solid #1f2937; }
+    table.layout tr:last-child td { border-bottom: none; }
+    .field-label { font-weight: bold; font-size: 14px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .field-value { font-size: 14px; line-height: 1.6; white-space: pre-line; }
+    .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 32px; margin-top: 8px; }
+
+    .share-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    .share-table th, .share-table td { border: 1px solid #1f2937; padding: 8px 10px; font-size: 13px; text-align: left; }
+    .share-table th { background: #e5e7eb; text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px; }
+
+    .agent-acceptance { border: 1px solid #1f2937; padding: 12px 16px; margin-top: 12px; font-size: 13px; line-height: 1.5; background: #fdfdfd; }
+    .signature-block { margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+    .signature-card { border: 1px solid #1f2937; padding: 12px 16px; min-height: 140px; }
+    .signature-card .name { font-weight: bold; font-size: 14px; margin-bottom: 6px; }
+    .signature-line { margin-top: 24px; border-top: 1px solid #1f2937; padding-top: 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; }
+
+    footer { margin-top: 28px; font-size: 11px; color: #374151; line-height: 1.6; display: flex; justify-content: space-between; flex-wrap: wrap; }
+    footer .left { max-width: 60%; }
+    footer .right { text-align: right; }
   </style>
 </head>
 <body>
   <div class="page">
     <header>
-      <div>
-        <div class="badge">State of Ohio</div>
+      <div class="header-left">
         <h1>Articles of Incorporation</h1>
-        <div class="state-heading">Ohio Secretary of State • Business Services Division</div>
+        <div class="subtitle">State of Ohio • Ohio Secretary of State • Business Services Division</div>
+        <div class="form-id">Form 532A • Filing Fee $125.00</div>
       </div>
-      <div class="barcode">
+      <div class="header-right">
         {{articles_barcode_svg}}
         <div>{{barcode_human_readable}}</div>
       </div>
     </header>
 
-    <div class="section">
-      <h2>Corporation Information</h2>
-      <div class="two-column">
-        <div>
-          <div class="label">Entity Name</div>
-          <div class="value">{{entity_name}}</div>
-        </div>
-        <div>
-          <div class="label">Entity Type</div>
-          <div class="value">{{entity_type}}</div>
-        </div>
-        <div>
-          <div class="label">State of Formation</div>
-          <div class="value">{{formation_state}}</div>
-        </div>
-        <div>
-          <div class="label">Effective Date</div>
-          <div class="value">{{effective_date}}</div>
-        </div>
-        <div>
-          <div class="label">Duration</div>
-          <div class="value">{{duration}}</div>
-        </div>
+    <div class="instruction">
+      Please provide the information requested below pursuant to Ohio Revised Code Chapters 1701 or 1702. If additional space is required, attach 8.5" x 11" sheets referencing the relevant item number.
+    </div>
+
+    <table class="layout">
+      <tr>
+        <td>1</td>
+        <td>
+          <div class="field-label">Entity Name and Type</div>
+          <div class="field-grid">
+            <div>
+              <div class="field-label">Name of Corporation</div>
+              <div class="field-value">{{entity_name}}</div>
+            </div>
+            <div>
+              <div class="field-label">Entity Type</div>
+              <div class="field-value">{{entity_type}}</div>
+            </div>
+            <div>
+              <div class="field-label">State of Formation</div>
+              <div class="field-value">{{formation_state}}</div>
+            </div>
+            <div>
+              <div class="field-label">Effective Date</div>
+              <div class="field-value">{{effective_date}}</div>
+            </div>
+            <div>
+              <div class="field-label">Period of Existence</div>
+              <div class="field-value">{{duration}}</div>
+            </div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>
+          <div class="field-label">Principal Office Location</div>
+          <div class="field-value">{{principal_office}}</div>
+          <div class="field-value">County: {{principal_county}}</div>
+          <div class="field-value">Contact Email: {{contact_email}} • Contact Phone: {{contact_phone}}</div>
+        </td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>
+          <div class="field-label">Purpose Statement</div>
+          <div class="field-value">{{purpose}}</div>
+        </td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>
+          <div class="field-label">Authorized Shares</div>
+          {{share_classes_table}}
+        </td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>
+          <div class="field-label">Statutory Agent Appointment</div>
+          <div class="field-value"><strong>{{statutory_agent_name}}</strong></div>
+          <div class="field-value">{{statutory_agent_address}}</div>
+          <div class="agent-acceptance">
+            <strong>Original Appointment of Statutory Agent</strong><br/>
+            The corporation appoints the above-named statutory agent. The agent must be an Ohio resident or a corporation authorized to transact business in Ohio.<br/><br/>
+            <strong>Acceptance of Appointment</strong><br/>
+            {{statutory_agent_acceptance}}
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td>
+          <div class="field-label">Optional Provisions / Attachments</div>
+          {{optional_provisions_block}}
+        </td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td>
+          <div class="field-label">Incorporator(s)</div>
+          <div class="field-value">Attach additional sheets if necessary. Each incorporator must sign.</div>
+          {{incorporators_block}}
+        </td>
+      </tr>
+    </table>
+
+    <footer>
+      <div class="left">
+        Submission Reference: {{submission_number}} • Charter/Document No.: {{charter_number}} • Entity No.: {{entity_number}} • Receipt No.: {{receipt_number}}<br/>
+        Filed pursuant to Chapter 1701, Ohio Revised Code • Filing Date/Time: {{filing_timestamp}} • Document Type Code: {{doc_type_code}}
       </div>
-    </div>
-
-    <div class="section">
-      <h2>Principal Office</h2>
-      <div class="value">{{principal_office}}</div>
-      <div class="value">County: {{principal_county}}</div>
-      <div class="value">Contact Email: {{contact_email}}</div>
-      <div class="value">Contact Phone: {{contact_phone}}</div>
-    </div>
-
-    <div class="section">
-      <h2>Purpose Clause</h2>
-      <div class="value">{{purpose}}</div>
-    </div>
-
-    <div class="section">
-      <h2>Authorized Shares</h2>
-      {{share_classes_table}}
-    </div>
-
-    <div class="section">
-      <h2>Statutory Agent Acceptance</h2>
-      <div class="value"><strong>{{statutory_agent_name}}</strong></div>
-      <div class="value">{{statutory_agent_address}}</div>
-      <div class="value">Agent Acceptance Statement:</div>
-      <div class="value">{{statutory_agent_acceptance}}</div>
-    </div>
-
-    <div class="section">
-      <h2>Incorporators</h2>
-      {{incorporators_block}}
-    </div>
-
-    <div class="section">
-      <h2>Optional Provisions</h2>
-      {{optional_provisions_block}}
-    </div>
-
-    <div class="footer">
-      Submission Reference: {{submission_number}} • Charter No.: {{charter_number}} • Entity No.: {{entity_number}} • Receipt: {{receipt_number}}<br/>
-      Filed with the Ohio Secretary of State on {{filing_timestamp}} (Doc Type: {{doc_type_code}})
-    </div>
+      <div class="right">
+        Mail filing to: P.O. Box 788, Columbus, OH 43216 • Expedited filings: 401 High Street, Suite 120, Columbus, OH 43215
+      </div>
+    </footer>
   </div>
 </body>
 </html>`;
@@ -302,7 +345,7 @@ const escapeRegExp = (input: string): string => input.replace(/[.*+?^${}()|[\]\\
 
 const buildShareClassesTable = (shareClasses: ShareClass[]): string => {
   if (!shareClasses?.length) {
-    return `<p>No share class information provided.</p>`;
+    return `<p class="field-value">No share class information provided.</p>`;
   }
 
   const rows = shareClasses
@@ -317,7 +360,7 @@ const buildShareClassesTable = (shareClasses: ShareClass[]): string => {
     )
     .join('');
 
-  return `<table>
+  return `<table class="share-table">
     <thead>
       <tr>
         <th>Class</th>
@@ -332,28 +375,30 @@ const buildShareClassesTable = (shareClasses: ShareClass[]): string => {
 
 const buildIncorporatorsBlock = (incorporators: Incorporator[]): string => {
   if (!incorporators?.length) {
-    return '<p>No incorporators listed.</p>';
+    return '<p class="field-value">No incorporators listed.</p>';
   }
 
-  return incorporators
+  const cards = incorporators
     .filter((inc) => inc.name)
     .map(
-      (inc) => `<div class="incorporator">
-        <div class="label">${sanitizeText(inc.name)}</div>
-        <div class="value">
+      (inc) => `<div class="signature-card">
+        <div class="name">${sanitizeText(inc.name)}</div>
+        <div class="field-value">
           ${sanitizeText(inc.addressLine1)}${inc.addressLine2 ? `<br/>${sanitizeText(inc.addressLine2)}` : ''}
           <br/>${sanitizeText(inc.city)}, ${sanitizeText(inc.state)} ${sanitizeText(inc.postalCode)}
           ${inc.email ? `<br/>Email: ${sanitizeText(inc.email)}` : ''}
         </div>
-        <div class="signature-line">Signature</div>
+        <div class="signature-line">Signature of Incorporator</div>
+        <div class="signature-line">Date (MM/DD/YYYY)</div>
       </div>`,
-    )
-    .join('');
+    );
+
+  return `<div class="signature-block">${cards.join('')}</div>`;
 };
 
 const buildOptionalProvisionsBlock = (provisions: string[]): string => {
   if (!provisions?.length) {
-    return '<p>No optional provisions elected.</p>';
+    return '<p class="field-value">No optional provisions elected.</p>';
   }
 
   const items = provisions
