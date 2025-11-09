@@ -179,152 +179,262 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>State of Ohio – Articles of Incorporation (Form 532A)</title>
+  <title>State of Ohio – Certificate of Incorporation</title>
   <style>
     * { box-sizing: border-box; }
-    body { font-family: "Times New Roman", serif; background: #ffffff; color: #111827; margin: 0; padding: 36px; }
-    .page { max-width: 960px; margin: 0 auto; border: 1px solid #1f2937; padding: 36px 42px; position: relative; }
-    header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
-    .header-left { max-width: 480px; }
-    .header-left h1 { font-size: 24px; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
-    .header-left .subtitle { font-size: 14px; margin-top: 4px; color: #374151; }
-    .header-left .form-id { font-size: 13px; margin-top: 12px; font-weight: bold; }
-    .header-right { text-align: right; font-size: 11px; color: #4b5563; }
-    .header-right svg { width: 210px; height: 110px; display: block; margin-left: auto; border: 1px solid #94a3b8; padding: 4px; }
+    body { margin: 0; padding: 48px; font-family: "Times New Roman", serif; background: #f8fafc; color: #111827; }
+    .certificate {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 12px double #1f2937;
+      padding: 36px 48px;
+      position: relative;
+      box-shadow: 0 30px 60px rgba(15, 23, 42, 0.15);
+    }
+    .border-inner {
+      position: absolute;
+      inset: 28px;
+      border: 2px solid #1f2937;
+      pointer-events: none;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 32px;
+    }
+    .seal {
+      width: 120px;
+      height: 120px;
+      border: 4px double #1f2937;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 13px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      background: radial-gradient(circle at center, #f8fafc, #e2e8f0);
+      margin-right: 24px;
+    }
+    .seal strong {
+      display: block;
+      font-size: 16px;
+      margin-top: 6px;
+    }
+    .title-block {
+      flex: 1;
+      text-align: right;
+      color: #1f2937;
+    }
+    .title-block h1 {
+      margin: 0;
+      font-size: 30px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .title-block .subtitle {
+      font-size: 14px;
+      letter-spacing: 1px;
+      margin-top: 6px;
+    }
+    .barcode-wrapper {
+      text-align: right;
+      font-size: 11px;
+      color: #4b5563;
+      margin-top: 12px;
+    }
+    .barcode-wrapper svg {
+      width: 220px;
+      height: 110px;
+      display: block;
+      margin-left: auto;
+      border: 1px solid #94a3b8;
+      padding: 4px;
+      background: #ffffff;
+    }
 
-    .instruction { background: #f9fafb; border: 1px solid #cbd5f5; padding: 12px; font-size: 13px; margin-bottom: 18px; line-height: 1.5; }
+    .certificate-body {
+      margin-top: 28px;
+      line-height: 1.8;
+      font-size: 15px;
+    }
+    .certificate-body .opening {
+      font-size: 16px;
+      text-align: center;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .certificate-body .paragraph {
+      margin-bottom: 18px;
+      text-indent: 28px;
+    }
+    .certificate-body .centered {
+      text-align: center;
+      margin: 20px 0;
+      font-size: 18px;
+      font-weight: bold;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
 
-    table.layout { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-    table.layout td:first-child { width: 42px; vertical-align: top; font-weight: bold; font-size: 14px; border-right: 1px solid #1f2937; text-align: center; padding: 10px 6px; background: #f3f4f6; }
-    table.layout td:nth-child(2) { padding: 12px 16px; border-bottom: 1px solid #1f2937; }
-    table.layout tr:last-child td { border-bottom: none; }
-    .field-label { font-weight: bold; font-size: 14px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .field-value { font-size: 14px; line-height: 1.6; white-space: pre-line; }
-    .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 32px; margin-top: 8px; }
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 24px 0;
+      font-size: 14px;
+    }
+    .info-table th, .info-table td {
+      border: 1px solid #1f2937;
+      padding: 10px 14px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .info-table th {
+      background: #f1f5f9;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      width: 32%;
+    }
 
     .share-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
     .share-table th, .share-table td { border: 1px solid #1f2937; padding: 8px 10px; font-size: 13px; text-align: left; }
     .share-table th { background: #e5e7eb; text-transform: uppercase; letter-spacing: 0.5px; font-size: 12px; }
 
-    .agent-acceptance { border: 1px solid #1f2937; padding: 12px 16px; margin-top: 12px; font-size: 13px; line-height: 1.5; background: #fdfdfd; }
-    .signature-block { margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
-    .signature-card { border: 1px solid #1f2937; padding: 12px 16px; min-height: 140px; }
-    .signature-card .name { font-weight: bold; font-size: 14px; margin-bottom: 6px; }
-    .signature-line { margin-top: 24px; border-top: 1px solid #1f2937; padding-top: 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; }
+    .signature-block {
+      margin-top: 40px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 32px;
+    }
+    .signature-card {
+      border-top: 2px solid #1f2937;
+      padding-top: 12px;
+      font-size: 13px;
+      letter-spacing: 0.3px;
+    }
+    .signature-line {
+      margin-top: 18px;
+      border-top: 1px solid #1f2937;
+      padding-top: 6px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
 
-    footer { margin-top: 28px; font-size: 11px; color: #374151; line-height: 1.6; display: flex; justify-content: space-between; flex-wrap: wrap; }
-    footer .left { max-width: 60%; }
+    footer {
+      margin-top: 48px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #334155;
+    }
+    footer .left { max-width: 65%; }
     footer .right { text-align: right; }
   </style>
 </head>
 <body>
-  <div class="page">
-    <header>
-      <div class="header-left">
-        <h1>Articles of Incorporation</h1>
-        <div class="subtitle">State of Ohio • Ohio Secretary of State • Business Services Division</div>
-        <div class="form-id">Form 532A • Filing Fee $125.00</div>
+  <div class="certificate">
+    <div class="border-inner"></div>
+    <div class="header">
+      <div class="seal">
+        State of<br/>Ohio
+        <strong>Seal</strong>
+        1803
       </div>
-      <div class="header-right">
-        {{articles_barcode_svg}}
-        <div>{{barcode_human_readable}}</div>
+      <div class="title-block">
+        <h1>Certificate of Incorporation</h1>
+        <div class="subtitle">Ohio Secretary of State • Business Services Division</div>
+        <div class="barcode-wrapper">
+          {{articles_barcode_svg}}
+          <div>{{barcode_human_readable}}</div>
+        </div>
       </div>
-    </header>
-
-    <div class="instruction">
-      Please provide the information requested below pursuant to Ohio Revised Code Chapters 1701 or 1702. If additional space is required, attach 8.5" x 11" sheets referencing the relevant item number.
     </div>
 
-    <table class="layout">
-      <tr>
-        <td>1</td>
-        <td>
-          <div class="field-label">Entity Name and Type</div>
-          <div class="field-grid">
-            <div>
-              <div class="field-label">Name of Corporation</div>
-              <div class="field-value">{{entity_name}}</div>
-            </div>
-            <div>
-              <div class="field-label">Entity Type</div>
-              <div class="field-value">{{entity_type}}</div>
-            </div>
-            <div>
-              <div class="field-label">State of Formation</div>
-              <div class="field-value">{{formation_state}}</div>
-            </div>
-            <div>
-              <div class="field-label">Effective Date</div>
-              <div class="field-value">{{effective_date}}</div>
-            </div>
-            <div>
-              <div class="field-label">Period of Existence</div>
-              <div class="field-value">{{duration}}</div>
-            </div>
-          </div>
-        </td>
-      </tr>
-      <tr>
-        <td>2</td>
-        <td>
-          <div class="field-label">Principal Office Location</div>
-          <div class="field-value">{{principal_office}}</div>
-          <div class="field-value">County: {{principal_county}}</div>
-          <div class="field-value">Contact Email: {{contact_email}} • Contact Phone: {{contact_phone}}</div>
-        </td>
-      </tr>
-      <tr>
-        <td>3</td>
-        <td>
-          <div class="field-label">Purpose Statement</div>
-          <div class="field-value">{{purpose}}</div>
-        </td>
-      </tr>
-      <tr>
-        <td>4</td>
-        <td>
-          <div class="field-label">Authorized Shares</div>
-          {{share_classes_table}}
-        </td>
-      </tr>
-      <tr>
-        <td>5</td>
-        <td>
-          <div class="field-label">Statutory Agent Appointment</div>
-          <div class="field-value"><strong>{{statutory_agent_name}}</strong></div>
-          <div class="field-value">{{statutory_agent_address}}</div>
-          <div class="agent-acceptance">
-            <strong>Original Appointment of Statutory Agent</strong><br/>
-            The corporation appoints the above-named statutory agent. The agent must be an Ohio resident or a corporation authorized to transact business in Ohio.<br/><br/>
-            <strong>Acceptance of Appointment</strong><br/>
-            {{statutory_agent_acceptance}}
-          </div>
-        </td>
-      </tr>
-      <tr>
-        <td>6</td>
-        <td>
-          <div class="field-label">Optional Provisions / Attachments</div>
-          {{optional_provisions_block}}
-        </td>
-      </tr>
-      <tr>
-        <td>7</td>
-        <td>
-          <div class="field-label">Incorporator(s)</div>
-          <div class="field-value">Attach additional sheets if necessary. Each incorporator must sign.</div>
-          {{incorporators_block}}
-        </td>
-      </tr>
-    </table>
+    <div class="certificate-body">
+      <div class="opening">To All to Whom These Presents Shall Come, Greetings:</div>
+      <div class="paragraph">
+        I, the Secretary of State of the State of Ohio, do hereby certify that the foregoing is a true and correct copy of the <strong>Articles of Incorporation</strong> filed for
+        <strong>{{entity_name}}</strong>, an Ohio {{entity_type}}, duly organized under the laws of the State of Ohio.
+      </div>
+      <div class="paragraph">
+        It is hereby certified that the entity name appears on the records of this office as of the filing date indicated below, and that said entity is authorized to transact business pursuant to the provisions of the Ohio Revised Code.
+      </div>
+      <div class="centered">Certificate Information</div>
+
+      <table class="info-table">
+        <tr>
+          <th>Corporate Name</th>
+          <td>{{entity_name}}</td>
+        </tr>
+        <tr>
+          <th>Entity Type</th>
+          <td>{{entity_type}}</td>
+        </tr>
+        <tr>
+          <th>Ohio Charter / Document Number</th>
+          <td>{{charter_number}}</td>
+        </tr>
+        <tr>
+          <th>Entity / Registration Number</th>
+          <td>{{entity_number}}</td>
+        </tr>
+        <tr>
+          <th>Filing Date and Time</th>
+          <td>{{filing_timestamp}}</td>
+        </tr>
+        <tr>
+          <th>Principal Office</th>
+          <td>{{principal_office}}<br/>County: {{principal_county}}<br/>Contact: {{contact_email}} • {{contact_phone}}</td>
+        </tr>
+        <tr>
+          <th>Purpose & Duration</th>
+          <td><strong>Purpose:</strong> {{purpose}}<br/><strong>Duration:</strong> {{duration}}</td>
+        </tr>
+        <tr>
+          <th>Statutory Agent</th>
+          <td><strong>{{statutory_agent_name}}</strong><br/>{{statutory_agent_address}}<br/><em>Acceptance on file:</em> {{statutory_agent_acceptance}}</td>
+        </tr>
+      </table>
+
+      <div class="centered">Share Structure</div>
+      {{share_classes_table}}
+
+      <div class="centered">Additional Provisions</div>
+      {{optional_provisions_block}}
+
+      <div class="centered">Incorporator(s) of Record</div>
+      {{incorporators_block}}
+    </div>
+
+    <div class="signature-block">
+      <div class="signature-card">
+        In testimony whereof, I have hereunto subscribed my name and affixed my official seal on {{filing_timestamp}}.
+        <div class="signature-line">Secretary of State</div>
+        <div class="signature-line">State of Ohio</div>
+      </div>
+      <div class="signature-card">
+        Document Reference: {{submission_number}}<br/>
+        Receipt Number: {{receipt_number}}<br/>
+        Document Type: {{doc_type_code}}<br/>
+        Filing Location: Columbus, Ohio
+      </div>
+    </div>
 
     <footer>
       <div class="left">
-        Submission Reference: {{submission_number}} • Charter/Document No.: {{charter_number}} • Entity No.: {{entity_number}} • Receipt No.: {{receipt_number}}<br/>
-        Filed pursuant to Chapter 1701, Ohio Revised Code • Filing Date/Time: {{filing_timestamp}} • Document Type Code: {{doc_type_code}}
+        This certificate evidences incorporation and authorization of the above-named entity under the laws of the State of Ohio. Verification of authenticity is available at https://businesssearch.ohiosos.gov using the entity number provided.
       </div>
       <div class="right">
-        Mail filing to: P.O. Box 788, Columbus, OH 43216 • Expedited filings: 401 High Street, Suite 120, Columbus, OH 43215
+        Secretary of State • Business Services Division<br/>
+        22 North Fourth Street • Columbus, Ohio 43215<br/>
+        877.767.3453 • www.OhioSoS.gov
       </div>
     </footer>
   </div>
