@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Google API credentials (keep out of version control)
+service_account_credentials.json
