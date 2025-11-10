@@ -103,13 +103,12 @@ async function applyCeoSignatureToPdf(
 
   const pdfDoc = await PDFDocument.load(pdfBytes);
   const pages = pdfDoc.getPages();
-  if (pages.length === 0) {
-    return pdfBytes;
-  }
-
-  const targetPage = pages[pages.length - 1];
-  const { width } = targetPage.getSize();
-  const margin = 48;
+  const referencePage = pages.length > 0 ? pages[pages.length - 1] : undefined;
+  const { width, height } = referencePage
+    ? referencePage.getSize()
+    : { width: 612, height: 792 };
+  const targetPage = pdfDoc.addPage([width, height]);
+  const margin = 72;
 
   const signatureBytes = base64ToUint8Array(signature.signature_png_base64);
   const pngImage = await pdfDoc.embedPng(signatureBytes);
@@ -124,7 +123,19 @@ async function applyCeoSignatureToPdf(
   const imageWidth = pngImage.width * scale;
   const imageHeight = pngImage.height * scale;
   const imageX = (width - imageWidth) / 2;
-  const imageY = margin + 68;
+  const imageY = margin + 140;
+
+  const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const headingY = height - margin - 24;
+
+  targetPage.drawText('Authorized Executive Signature', {
+    x: margin,
+    y: headingY,
+    size: 14,
+    font: fontBold,
+    color: rgb(0.09, 0.09, 0.1),
+  });
 
   targetPage.drawImage(pngImage, {
     x: imageX,
@@ -133,25 +144,25 @@ async function applyCeoSignatureToPdf(
     height: imageHeight,
   });
 
-  const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const textYStart = imageY + imageHeight + 12;
+  const blockCenterX = width / 2;
+  const textWidth = 280;
+  let textY = imageY - 28;
   const lines: Array<{ text: string; bold?: boolean }> = [
     { text: `Signed electronically by: ${signature.typed_name ?? 'Chief Executive Officer'}`, bold: true },
     { text: `Title: ${signature.title ?? 'Chief Executive Officer'}` },
-    { text: `Date: ${new Date().toLocaleString('en-US')}` },
+    { text: `Signed on: ${new Date().toLocaleString('en-US')} (UTC)` },
+    { text: 'Authentication: CEO Portal registered signature on file' },
   ];
 
-  let textY = textYStart;
   lines.forEach((line, index) => {
     targetPage.drawText(line.text, {
-      x: margin,
+      x: blockCenterX - textWidth / 2,
       y: textY,
       size: index === 0 ? 12 : 11,
       font: line.bold ? fontBold : fontRegular,
       color: rgb(0.09, 0.09, 0.1),
     });
-    textY += 14;
+    textY -= 16;
   });
 
   return await pdfDoc.save();
@@ -165,11 +176,15 @@ function buildCeoSignatureBlock(signature: CeoSignatureSetting): string {
   }
 
   return `
-    <div style="margin-top: 12px; margin-bottom: 12px; width: 220px;">
-      <img src="${signatureDataUrl}" alt="${typedName} signature" style="width: 180px; height: auto; display: block;" />
-      <div style="margin-top: 4px; font-weight: 600; color: #0f172a; font-size: 13px;">${typedName}</div>
-      <div style="margin-top: 3px; width: 180px; border-top: 1px solid #0f172a;"></div>
-      <div style="margin-top: 4px; color: #475569; font-size: 11px;">Chief Executive Officer</div>
+    <div style="page-break-before: always; break-before: page; padding: 48px 32px; display: flex; flex-direction: column; align-items: center;">
+      <h2 style="margin: 0 0 24px; font-size: 20px; color: #0f172a; font-weight: 700;">Authorized Executive Signature</h2>
+      <div style="width: 220px; text-align: center;">
+        <img src="${signatureDataUrl}" alt="${typedName} signature" style="width: 180px; height: auto; display: block; margin: 0 auto 16px;" />
+        <div style="font-weight: 600; color: #0f172a; font-size: 13px;">${typedName}</div>
+        <div style="margin-top: 6px; width: 180px; height: 1px; background: #0f172a; margin-left: auto; margin-right: auto;"></div>
+        <div style="margin-top: 6px; color: #475569; font-size: 11px;">Chief Executive Officer</div>
+        <div style="margin-top: 10px; color: #64748b; font-size: 11px;">Authentication: CEO Portal registered signature on file</div>
+      </div>
     </div>
   `;
 }
