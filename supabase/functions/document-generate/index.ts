@@ -93,7 +93,20 @@ interface CeoSignatureRow {
   setting_value: CeoSignatureSetting;
 }
 
-async function applyCeoSignatureToPdf(
+interface TemplateSignatureField {
+  id: string;
+  field_type: 'signature' | 'initials' | 'date' | 'text';
+  signer_role: string;
+  page_number: number;
+  x_percent: number;
+  y_percent: number;
+  width_percent: number;
+  height_percent: number;
+  label?: string | null;
+  required?: boolean | null;
+}
+
+async function appendCeoSignaturePage(
   pdfBytes: Uint8Array,
   signature: CeoSignatureSetting,
 ): Promise<Uint8Array> {
@@ -278,9 +291,70 @@ serve(async (req) => {
     );
 
     let htmlForPdf = String(html_content);
-    let ceoSignatureSetting: CeoSignatureSetting | null = null;
-    let htmlEmbeddedSignature = false;
 
+    let templateIdentifier: string | null = template_id ?? null;
+    if (!templateIdentifier && template_key) {
+      const { data: templateRow } = await supabaseClient
+        .from('document_templates')
+        .select('id')
+        .eq('template_key', template_key)
+        .maybeSingle();
+      templateIdentifier = templateRow?.id ?? null;
+    }
+
+    const { data: signatureFieldsData, error: signatureFieldsError } = templateIdentifier
+      ? await supabaseClient
+          .from('document_template_signature_fields')
+          .select('*')
+          .eq('template_id', templateIdentifier)
+          .order('page_number')
+          .order('created_at', { ascending: true })
+      : { data: [], error: null };
+
+    if (signatureFieldsError) {
+      throw signatureFieldsError;
+    }
+
+    const signatureFields = (signatureFieldsData as TemplateSignatureField[]) ?? [];
+
+    const normalizedSigners = Array.isArray(required_signers)
+      ? required_signers.map((signer: string) => String(signer || '').toLowerCase())
+      : [];
+
+    const manualSignerRoles = normalizedSigners.filter(
+      (role) => !['ceo', 'board', 'incorporator'].includes(role),
+    );
+    if (manualSignerRoles.length > 0) {
+      const signatureFieldRoles = signatureFields
+        .filter((field) => String(field.field_type || '').toLowerCase() === 'signature')
+        .map((field) => String(field.signer_role || '').toLowerCase());
+
+      const matchesRole = (role: string) => {
+        if (signatureFieldRoles.length === 0) return false;
+        return signatureFieldRoles.some((fieldRole) => {
+          if (!fieldRole) return true; // global signature field
+          if (fieldRole === role) return true;
+          if (role === 'officer' && fieldRole.includes('officer')) return true;
+          if (fieldRole.includes('executive') && role.includes('executive')) return true;
+          if (fieldRole.includes('employee') && role.includes('employee')) return true;
+          if (fieldRole.includes('signer')) return true;
+          return false;
+        });
+      };
+
+      const missingRoles = manualSignerRoles.filter((role) => !matchesRole(role));
+      if (missingRoles.length > 0) {
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            error: `Missing signature fields for required signer roles: ${missingRoles.join(', ')}`,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 },
+        );
+      }
+    }
+
+    let ceoSignatureSetting: CeoSignatureSetting | null = null;
     try {
       const { data: ceoSigRow, error: ceoSigError } = await supabaseClient
         .from('ceo_system_settings')
@@ -291,9 +365,6 @@ serve(async (req) => {
       if (ceoSigError) throw ceoSigError;
       if (ceoSigRow?.setting_value?.signature_png_base64) {
         ceoSignatureSetting = ceoSigRow.setting_value;
-        const enhanced = enhanceHtmlWithCeoSignature(htmlForPdf, ceoSignatureSetting);
-        htmlForPdf = enhanced.html;
-        htmlEmbeddedSignature = enhanced.embedded;
       } else {
         console.warn('CEO signature setting found but missing image data.');
       }
@@ -301,18 +372,14 @@ serve(async (req) => {
       console.error('Failed to load CEO signature setting:', signatureFetchError);
     }
 
-    const normalizedSigners = Array.isArray(required_signers)
-      ? required_signers.map((signer: string) => String(signer || '').toLowerCase())
-      : [];
+    if (signatureFields.length === 0 && ceoSignatureSetting?.signature_png_base64) {
+      const enhanced = enhanceHtmlWithCeoSignature(htmlForPdf, ceoSignatureSetting);
+      htmlForPdf = enhanced.html;
+    }
+
     let computedSignerRoles = signer_roles ?? (normalizedSigners.length > 0
       ? Object.fromEntries(normalizedSigners.map((signer) => [signer, false]))
       : null);
-
-    const htmlContainsCeoName = htmlForPdf.toLowerCase().includes('torrance') && htmlForPdf.toLowerCase().includes('stroman');
-    const requiresCeoSignature = htmlEmbeddedSignature
-      || htmlContainsCeoName
-      || normalizedSigners.some((signer) => ['board', 'ceo', 'incorporator'].includes(signer));
-    let ceoSignatureApplied = htmlEmbeddedSignature;
 
     // Generate a unique filename for PDF
     const filename = `executive_docs/${crypto.randomUUID()}.pdf`;
@@ -321,23 +388,201 @@ serve(async (req) => {
     let pdfBuffer: Uint8Array = await convertHtmlToPdf(htmlForPdf);
     console.log('PDF generated successfully, size:', pdfBuffer.length, 'bytes');
 
-    if (!ceoSignatureApplied && requiresCeoSignature && ceoSignatureSetting?.signature_png_base64) {
-      try {
-        pdfBuffer = await applyCeoSignatureToPdf(pdfBuffer, ceoSignatureSetting);
-        ceoSignatureApplied = true;
-        console.log('Applied CEO signature automatically to document.');
-      } catch (autoSignError) {
-        console.error('Failed to apply CEO signature automatically:', autoSignError);
-      }
+    const pdfDoc = await PDFDocument.load(pdfBuffer);
+    let pages = pdfDoc.getPages();
+    if (pages.length === 0) {
+      pdfDoc.addPage([612, 792]);
+      pages = pdfDoc.getPages();
     }
 
-    if (ceoSignatureApplied) {
+    const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const ceoSignatureImage = ceoSignatureSetting?.signature_png_base64
+      ? await pdfDoc.embedPng(base64ToUint8Array(ceoSignatureSetting.signature_png_base64))
+      : null;
+
+    const signatureLayout: Array<Record<string, any>> = [];
+    let ceoSignatureApplied = false;
+
+    if (signatureFields.length > 0) {
+      for (const field of signatureFields) {
+        const pageNumber = Math.max(1, Number(field.page_number) || 1);
+        const pageIndex = Math.min(pageNumber - 1, pages.length - 1);
+        const page = pages[pageIndex];
+        const { width: pageWidth, height: pageHeight } = page.getSize();
+
+        const widthPercent = Number(field.width_percent) || 0;
+        const heightPercent = Number(field.height_percent) || 0;
+        const xPercent = Number(field.x_percent) || 0;
+        const yPercent = Number(field.y_percent) || 0;
+
+        const boxWidth = Math.min(pageWidth, Math.max(pageWidth * (widthPercent / 100), 10));
+        const boxHeight = Math.min(pageHeight, Math.max(pageHeight * (heightPercent / 100), 10));
+        const rawX = pageWidth * (xPercent / 100);
+        const rawYTop = pageHeight * (yPercent / 100);
+
+        const boxX = Math.min(Math.max(rawX, 0), pageWidth - boxWidth);
+        const boxY = Math.min(Math.max(pageHeight - rawYTop - boxHeight, 0), pageHeight - boxHeight);
+
+        const roleLabel = (field.signer_role || '').trim() || 'Signer';
+        const roleLower = roleLabel.toLowerCase();
+        const fieldType = (field.field_type || 'signature') as TemplateSignatureField['field_type'];
+
+        let autoFilled = false;
+
+        const drawPlaceholder = () => {
+          page.drawRectangle({
+            x: boxX,
+            y: boxY,
+            width: boxWidth,
+            height: boxHeight,
+            borderColor: rgb(0.2, 0.35, 0.65),
+            borderWidth: 1.4,
+            color: fieldType === 'signature' ? rgb(0.82, 0.87, 0.97) : rgb(0.86, 0.93, 0.94),
+            opacity: 0.25,
+          });
+
+          const upperLabel = `${roleLabel.toUpperCase()} ${fieldType === 'signature' ? 'SIGNATURE' : fieldType === 'date' ? 'DATE' : 'FIELD'}`;
+          page.drawText(upperLabel, {
+            x: boxX + 6,
+            y: boxY + boxHeight - 14,
+            size: 10,
+            font: fontBold,
+            color: rgb(0.16, 0.24, 0.45),
+          });
+          page.drawText(field.label || 'Sign Here', {
+            x: boxX + 6,
+            y: boxY + 6,
+            size: 9,
+            font: fontRegular,
+            color: rgb(0.2, 0.3, 0.55),
+          });
+        };
+
+        const drawCeoSignature = () => {
+          if (!ceoSignatureImage) {
+            drawPlaceholder();
+            return;
+          }
+          page.drawRectangle({
+            x: boxX,
+            y: boxY,
+            width: boxWidth,
+            height: boxHeight,
+            borderColor: rgb(0.15, 0.32, 0.58),
+            borderWidth: 1.6,
+            color: rgb(0.9, 0.95, 1),
+            opacity: 0.2,
+          });
+
+          const aspectRatio = ceoSignatureImage.width / ceoSignatureImage.height;
+          let drawWidth = boxWidth * 0.88;
+          let drawHeight = drawWidth / aspectRatio;
+          if (drawHeight > boxHeight * 0.65) {
+            drawHeight = boxHeight * 0.65;
+            drawWidth = drawHeight * aspectRatio;
+          }
+          const imageX = boxX + (boxWidth - drawWidth) / 2;
+          const imageY = boxY + (boxHeight - drawHeight) / 2 + boxHeight * 0.08;
+
+          page.drawImage(ceoSignatureImage, {
+            x: imageX,
+            y: imageY,
+            width: drawWidth,
+            height: drawHeight,
+          });
+
+          if (ceoSignatureSetting?.typed_name) {
+            page.drawText(ceoSignatureSetting.typed_name, {
+              x: boxX + 6,
+              y: boxY + 6,
+              size: 10,
+              font: fontBold,
+              color: rgb(0.18, 0.28, 0.46),
+            });
+          }
+          ceoSignatureApplied = true;
+          autoFilled = true;
+        };
+
+        if (fieldType === 'signature' && ['ceo', 'board', 'incorporator'].includes(roleLower)) {
+          drawCeoSignature();
+        } else {
+          drawPlaceholder();
+        }
+
+        signatureLayout.push({
+          id: field.id,
+          field_type: fieldType,
+          signer_role: roleLabel,
+          page_number: pageNumber,
+          x_percent: xPercent,
+          y_percent: yPercent,
+          width_percent: widthPercent,
+          height_percent: heightPercent,
+          label: field.label,
+          required: field.required ?? true,
+          auto_filled: autoFilled,
+          rendered_value: autoFilled ? ceoSignatureSetting?.typed_name ?? null : null,
+        });
+      }
+
+      pdfBuffer = await pdfDoc.save();
+
+      if (!computedSignerRoles) {
+        computedSignerRoles = {};
+      }
+      for (const layout of signatureLayout) {
+        const roleKey = (layout.signer_role || '').toLowerCase();
+        if (!roleKey) continue;
+        if (!(roleKey in computedSignerRoles)) {
+          computedSignerRoles[roleKey] = false;
+        }
+        if (layout.auto_filled) {
+          computedSignerRoles[roleKey] = true;
+        }
+      }
+    } else if (ceoSignatureSetting?.signature_png_base64 && normalizedSigners.some((signer) => ['board', 'ceo', 'incorporator'].includes(signer))) {
+      pdfBuffer = await appendCeoSignaturePage(pdfBuffer, ceoSignatureSetting);
+      ceoSignatureApplied = true;
+      signatureLayout.push({
+        id: 'auto_ceo_page',
+        field_type: 'signature',
+        signer_role: 'CEO',
+        page_number: pages.length + 1,
+        x_percent: 0,
+        y_percent: 0,
+        width_percent: 100,
+        height_percent: 100,
+        label: 'CEO Signature Page',
+        required: false,
+        auto_filled: true,
+        rendered_value: ceoSignatureSetting.typed_name ?? null,
+      });
       if (!computedSignerRoles) {
         computedSignerRoles = {};
       }
       ['board', 'ceo', 'incorporator'].forEach((roleKey) => {
         computedSignerRoles![roleKey] = true;
       });
+    } else {
+      pdfBuffer = await pdfDoc.save();
+    }
+
+    const manualSignatureNeeded = signatureLayout.some(
+      (field) => field.field_type === 'signature' && !field.auto_filled,
+    );
+    const requiresSignatureFromTemplate =
+      !signatureLayout.length &&
+      ['employment_agreement', 'offer_letter', 'stock_issuance', 'founders_agreement', 'confidentiality_ip', 'deferred_comp_addendum'].includes(
+        template_key || template_id,
+      );
+    const requiresSignatureNeeded = manualSignatureNeeded || requiresSignatureFromTemplate || normalizedSigners.some(
+      (role) => !['ceo', 'board', 'incorporator'].includes(role),
+    );
+
+    if (computedSignerRoles && Object.keys(computedSignerRoles).length === 0) {
+      computedSignerRoles = null;
     }
 
     // Upload PDF to storage
@@ -356,11 +601,10 @@ serve(async (req) => {
 
     // Generate signature token if executive_id is provided (for documents requiring signature)
     const resolvedTemplateKey = template_key || template_id;
-    const requiresSignature = ['employment_agreement', 'offer_letter', 'stock_issuance', 'founders_agreement', 'confidentiality_ip', 'deferred_comp_addendum'].includes(resolvedTemplateKey);
     let signatureToken: string | null = null;
     let tokenExpiresAt: Date | null = null;
     
-    if (executive_id && requiresSignature) {
+    if (executive_id && requiresSignatureNeeded) {
       // Generate unique token (32 chars)
       signatureToken = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '').slice(0, 16);
       // Token expires in 30 days
@@ -382,13 +626,14 @@ serve(async (req) => {
         executive_id: executive_id || null,
         signature_token: signatureToken,
         signature_token_expires_at: tokenExpiresAt ? tokenExpiresAt.toISOString() : null,
-        signature_status: requiresSignature && executive_id ? 'pending' : null,
+        signature_status: requiresSignatureNeeded && executive_id ? 'pending' : null,
         packet_id: packet_id || null,
         signing_stage: signing_stage ?? null,
         signing_order: signing_order ?? null,
         depends_on_document_id: depends_on_document_id ?? null,
         required_signers: Array.isArray(required_signers) ? required_signers : null,
         signer_roles: computedSignerRoles,
+        signature_field_layout: signatureLayout,
       })
       .select()
       .single();
@@ -417,6 +662,7 @@ serve(async (req) => {
         ok: true,
         document,
         file_url: publicUrl,
+        signature_layout: signatureLayout,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

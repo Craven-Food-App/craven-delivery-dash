@@ -37,6 +37,7 @@ import { seedEmailTemplatesFromUI } from '@/utils/seedEmailTemplatesFromCode';
 import { clearAllDocumentTemplates, verifyRequiredTemplates } from '@/utils/clearDocumentTemplates';
 import { fixTemplatePlaceholdersFromUI } from '@/utils/fixTemplatePlaceholders';
 import { VisualTemplateEditor } from './VisualTemplateEditor';
+import { SignatureFieldEditor } from './SignatureFieldEditor';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -114,6 +115,7 @@ export const TemplateManager: React.FC = () => {
   const [documentModalVisible, setDocumentModalVisible] = useState(false);
   const [usageModalVisible, setUsageModalVisible] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
+  const [signatureEditorTemplate, setSignatureEditorTemplate] = useState<DocumentTemplate | null>(null);
 
   // Form states
   const [editingEmailTemplate, setEditingEmailTemplate] = useState<EmailTemplate | null>(null);
@@ -724,6 +726,13 @@ export const TemplateManager: React.FC = () => {
             Edit
           </Button>
           <Button
+            icon={<SettingOutlined />}
+            size="small"
+            onClick={() => setSignatureEditorTemplate(record)}
+          >
+            Signature Fields
+          </Button>
+          <Button
             icon={<DeleteOutlined />}
             size="small"
             danger
@@ -1247,6 +1256,21 @@ export const TemplateManager: React.FC = () => {
           dangerouslySetInnerHTML={{ __html: previewContent }}
         />
       </Modal>
+
+      {signatureEditorTemplate && (
+        <SignatureFieldEditor
+          visible
+          templateId={signatureEditorTemplate.id}
+          templateName={signatureEditorTemplate.name}
+          htmlContent={signatureEditorTemplate.html_content}
+          onClose={(refresh) => {
+            setSignatureEditorTemplate(null);
+            if (refresh) {
+              fetchTemplates();
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
