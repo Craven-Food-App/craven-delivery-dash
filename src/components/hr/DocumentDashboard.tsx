@@ -1,10 +1,11 @@
 // @ts-nocheck
 import React, { useEffect, useState } from "react";
 import { Table, Button, Tag, Space, Modal, Input, message, Select, Card, Collapse, Typography } from "antd";
-import { EyeOutlined, MailOutlined, DownloadOutlined, ReloadOutlined, DeleteOutlined, ExclamationCircleOutlined, FolderOutlined, FileTextOutlined, ClockCircleOutlined } from "@ant-design/icons";
+import { EyeOutlined, MailOutlined, DownloadOutlined, ReloadOutlined, DeleteOutlined, ExclamationCircleOutlined, FolderOutlined, FileTextOutlined, ClockCircleOutlined, EditOutlined } from "@ant-design/icons";
 import { supabase } from "@/integrations/supabase/client";
 import { docsAPI } from "./api";
 import dayjs from "dayjs";
+import ExecutiveDocumentSignatureTagger from "./ExecutiveDocumentSignatureTagger";
 
 const { Panel } = Collapse;
 const { Text } = Typography;
@@ -14,6 +15,7 @@ export default function DocumentDashboard() {
   const [loading, setLoading] = useState(false);
   const [emailModalVisible, setEmailModalVisible] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<any>(null);
+  const [taggingDoc, setTaggingDoc] = useState<any>(null);
   const [emailForm] = React.useState({ to: "", subject: "Crave'n Executive Document", message: "" });
   const [isCEO, setIsCEO] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -306,17 +308,24 @@ export default function DocumentDashboard() {
                               {doc.status?.toUpperCase() || "GENERATED"}
                             </Tag>
                             <Space>
-                              {doc.file_url && (
-                                <Button
-                                  icon={<EyeOutlined />}
-                                  size="small"
-                                  href={doc.file_url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  View
-                                </Button>
-                              )}
+          {doc.file_url && (
+            <Button
+              icon={<EyeOutlined />}
+              size="small"
+              href={doc.file_url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View
+            </Button>
+          )}
+          <Button
+            icon={<EditOutlined />}
+            size="small"
+            onClick={() => setTaggingDoc(doc)}
+          >
+            Tag Signatures
+          </Button>
                               {doc.signed_file_url && (
                                 <Button
                                   icon={<DownloadOutlined />}
@@ -385,6 +394,18 @@ export default function DocumentDashboard() {
           />
         </div>
       </Modal>
+      {taggingDoc && (
+        <ExecutiveDocumentSignatureTagger
+          open={Boolean(taggingDoc)}
+          document={taggingDoc}
+          onClose={async (refresh) => {
+            setTaggingDoc(null);
+            if (refresh) {
+              await fetchDocuments();
+            }
+          }}
+        />
+      )}
     </>
   );
 }

@@ -1,14 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Steps, Form, Input, Select, DatePicker, InputNumber, Button, message, Upload, Row, Col, Typography, Divider } from 'antd';
+import {
+  Card,
+  Steps,
+  Form,
+  Input,
+  Select,
+  DatePicker,
+  InputNumber,
+  Button,
+  message,
+  Upload,
+  Row,
+  Col,
+  Typography,
+  Divider,
+  Alert,
+  List,
+  Space,
+  Spin,
+  Tag,
+  Modal,
+} from 'antd';
 import { supabase } from '@/integrations/supabase/client';
 import dayjs from 'dayjs';
-import { UploadOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import { UploadOutlined, SafetyCertificateOutlined, FileOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
 import { renderDocumentHtml } from '@/utils/templateUtils';
 import { docsAPI } from '../hr/api';
 import { getExecutiveData, formatExecutiveForDocuments } from '@/utils/getExecutiveData';
 import { FlowExecutive } from '@/types/executiveDocuments';
 import { DocumentFlowNode, PACKET_LABELS, getExpectedNodesForExecutive } from '@/utils/executiveDocumentFlow';
+import ExecutiveDocumentSignatureTagger from '@/components/hr/ExecutiveDocumentSignatureTagger';
 import { buildFoundersTableHtml } from '@/utils/foundersTable';
 
 const { Step } = Steps;
@@ -46,6 +68,12 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
   const [photoFile, setPhotoFile] = useState<UploadFile | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string>('');
   const [incorporationStatus, setIncorporationStatus] = useState<'pre_incorporation' | 'incorporated'>('pre_incorporation');
+  const [generatedDocuments, setGeneratedDocuments] = useState<any[]>([]);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [taggingDocument, setTaggingDocument] = useState<any | null>(null);
+  const [executiveContext, setExecutiveContext] = useState<{ id: string; name: string; email: string } | null>(null);
+  const [appointmentMeta, setAppointmentMeta] = useState<{ pricePerShare?: string; totalPurchasePrice?: string } | null>(null);
+  const [sendingDocuments, setSendingDocuments] = useState(false);
 
   // Fetch incorporation status on mount
   useEffect(() => {
@@ -57,7 +85,9 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
     { title: 'Equity Allocation', description: 'Shares and vesting' },
     { title: 'Compensation', description: 'Salary structure' },
     { title: 'Identity Verification', description: 'SSN and address' },
-    { title: 'Review & Appoint', description: 'Generate documents' },
+    { title: 'Review Appointment', description: 'Confirm information' },
+    { title: 'Signature Tabs', description: 'Assign signature requirements' },
+    { title: 'Finalize & Send', description: 'Generate and deliver documents' },
   ];
 
   const buildFlowExecutive = (values: OfficerFormData): FlowExecutive => {
@@ -113,7 +143,8 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
     formValues: OfficerFormData,
     executiveId: string,
     equityGrantId?: string
-  ) => {
+  ): Promise<any[]> => {
+    const errors: string[] = [];
     try {
       const appointmentDate = formValues.appointment_date
         ? (dayjs.isDayjs(formValues.appointment_date)
@@ -132,6 +163,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
       const flowExecutive = buildFlowExecutive(formValues);
       const expectedNodes = getExpectedNodesForExecutive(flowExecutive);
       const documentIdMap = new Map<string, string>();
+      const generatedDocs: any[] = [];
 
       for (const node of expectedNodes) {
         try {
@@ -169,17 +201,52 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
 
           if (resp?.ok && resp?.document?.id) {
             documentIdMap.set(node.type, resp.document.id);
+            generatedDocs.push({
+              ...resp.document,
+              file_url: resp.file_url,
+            });
             console.log(`✓ Generated ${node.title}`);
           } else {
             console.warn(`Failed to generate ${node.title}:`, resp?.error);
+            errors.push(`${node.title}: ${resp?.error || 'Unknown error'}`);
           }
         } catch (error: any) {
           console.error(`Error generating ${node.title}:`, error);
+          errors.push(`${node.title}: ${error?.message || error}`);
         }
       }
+
+      if (errors.length > 0) {
+        throw new Error(errors.join('\n'));
+      }
+
+      return generatedDocs;
     } catch (error: any) {
       console.error('Error generating documents:', error);
-      message.warning('Officer appointed but some documents may not have been generated. You can regenerate them from the document dashboard.');
+      message.error(
+        error?.message ||
+          'Officer appointed but documents could not be generated. Please review the officer data and try again.'
+      );
+      return [];
+    }
+  };
+
+  const refreshGeneratedDocuments = async (executiveId: string) => {
+    setDocumentsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('executive_documents')
+        .select('id, executive_id, document_title, template_key, file_url, signed_file_url, signature_status, status, signature_field_layout, signer_roles, created_at')
+        .eq('executive_id', executiveId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setGeneratedDocuments(data || []);
+    } catch (error: any) {
+      console.error('Failed to load generated documents:', error);
+      message.error(error?.message || 'Failed to load generated documents');
+    } finally {
+      setDocumentsLoading(false);
     }
   };
 
@@ -425,6 +492,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
   };
 
   const handleNext = async () => {
+    if (currentStep >= 4) return;
     try {
       // Validate only fields in the current step
       const fieldNames =
@@ -455,7 +523,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
     setCurrentStep(currentStep - 1);
   };
 
-  const handleSubmit = async () => {
+  const handleGenerateDraft = async () => {
     try {
       setLoading(true);
       const values = form.getFieldsValue() as OfficerFormData;
@@ -527,10 +595,27 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
           context: error.context,
           status: error.status,
         });
-        throw error;
+      if (error?.status) {
+        throw new Error(`Appointment failed (HTTP ${error.status}): ${error.message || 'Edge function error.'}`);
+      }
+      throw new Error(error?.message || 'Appointment edge function failed.');
       }
 
       console.log('Edge function response:', data);
+
+      if (!data?.officer_id) {
+        throw new Error('Officer ID was not returned from appointment function.');
+      }
+
+      setExecutiveContext({
+        id: data.officer_id,
+        name: values.full_name,
+        email: values.email,
+      });
+      setAppointmentMeta({
+        pricePerShare: data?.price_per_share,
+        totalPurchasePrice: data?.total_purchase_price,
+      });
 
       // Save SSN securely via edge function (if provided)
       if (data.officer_id) {
@@ -571,23 +656,25 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
         }
       }
 
-      // Generate documents using templates from src/lib/templates.ts
-      if (data.officer_id) {
-        message.info('Generating documents...', 2);
-        await generateDocumentsForOfficer(values, data.officer_id, data.equity_grant_id);
+      if (!data?.officer_id) {
+        throw new Error('Appointment succeeded but officer ID was missing.');
       }
 
-      // Show success message with details
+      message.info('Generating documents...', 2);
+      const generated = await generateDocumentsForOfficer(values, data.officer_id, data.equity_grant_id);
+      if (generated.length === 0) {
+        message.error('Document generation failed. Check Supabase Edge Function logs for details and try again.');
+        return;
+      }
+      setGeneratedDocuments(generated);
+      await refreshGeneratedDocuments(data.officer_id);
+
       message.success({
-        content: `${values.full_name} has been successfully appointed as ${values.position_title}. Documents have been generated. Price per Share: $${data.price_per_share || '0.0000'}, Total Purchase Price: $${data.total_purchase_price || '0.00'}`,
-        duration: 6,
+        content: `${values.full_name} has been appointed as ${values.position_title}. Place signature requirements next.`,
+        duration: 5,
       });
 
-      // Reset form and return to first step instead of navigating away
-      form.resetFields();
-      setPhotoFile(null);
-      setPhotoUrl('');
-      setCurrentStep(0);
+      setCurrentStep(5);
     } catch (error: any) {
       console.error('Error appointing officer:', error);
 
@@ -619,9 +706,31 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
     }
   };
 
+  const getSignatureProgress = (doc: any) => {
+    const layout = Array.isArray(doc?.signature_field_layout) ? doc.signature_field_layout : [];
+    const signatureFields = layout.filter(
+      (field: any) => String(field?.field_type || '').toLowerCase() === 'signature'
+    );
+    const requiredCount = signatureFields.length;
+    const filledCount = signatureFields.filter(
+      (field: any) => field?.auto_filled || field?.filled || field?.signed_at
+    ).length;
+    return { requiredCount, filledCount };
+  };
+
+  const promptSendDocuments = () => {
+    message.info(
+      'Email delivery is temporarily disabled. Please download the generated PDFs and send them manually from the Document Dashboard.'
+    );
+  };
+
   const renderStepContent = () => {
     // Get current form values for review step
     const values = form.getFieldsValue() as OfficerFormData;
+    const hasPendingSignatureTabs = generatedDocuments.some((doc: any) => {
+      const { requiredCount, filledCount } = getSignatureProgress(doc);
+      return requiredCount > 0 && filledCount < requiredCount;
+    });
 
     return (
       <>
@@ -1015,11 +1124,201 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
             }}
           </Form.Item>
         </div>
+
+        {/* Step 5: Assign Signature Tabs */}
+        <div style={{ display: currentStep === 5 ? 'block' : 'none' }}>
+          <Alert
+            type="info"
+            showIcon
+            style={{ marginBottom: 16 }}
+            message="Assign Signature Tabs"
+            description="Drag and drop signature, initials, and date fields onto each document before sending them to the executive."
+          />
+
+          {documentsLoading ? (
+            <div style={{ textAlign: 'center', padding: '48px 0' }}>
+              <Spin tip="Loading generated documents..." />
+            </div>
+          ) : generatedDocuments.length === 0 ? (
+            <div style={{ padding: 24, background: '#fafafa', borderRadius: 8, textAlign: 'center' }}>
+              <Text type="secondary">No documents have been generated yet.</Text>
+            </div>
+          ) : (
+            <List
+              itemLayout="horizontal"
+              dataSource={generatedDocuments}
+              renderItem={(doc: any) => {
+                const progress = getSignatureProgress(doc);
+                const completionTag =
+                  progress.requiredCount === 0 ? (
+                    <Tag color="blue">No Signature Fields</Tag>
+                  ) : progress.filledCount >= progress.requiredCount ? (
+                    <Tag color="green">Ready</Tag>
+                  ) : (
+                    <Tag color="orange">
+                      {progress.filledCount}/{progress.requiredCount} Fields Tagged
+                    </Tag>
+                  );
+
+                return (
+                  <List.Item
+                    actions={[
+                      <Button key="tag" type="link" onClick={() => setTaggingDocument(doc)}>
+                        Tag Signatures
+                      </Button>,
+                      doc.file_url ? (
+                        <Button key="preview" type="link" href={doc.file_url} target="_blank" rel="noreferrer">
+                          Preview
+                        </Button>
+                      ) : null,
+                    ].filter(Boolean)}
+                  >
+                    <List.Item.Meta
+                      avatar={<FileOutlined style={{ fontSize: 20, color: '#1677ff' }} />}
+                      title={doc.document_title || doc.template_key}
+                      description={
+                        <Space direction="vertical" size={0}>
+                          <Text type="secondary">
+                            Created {doc.created_at ? dayjs(doc.created_at).format('MMM D, YYYY h:mm A') : 'recently'}
+                          </Text>
+                          {completionTag}
+                        </Space>
+                      }
+                    />
+                    {doc.signature_status === 'signed' && <Tag color="green">Signed</Tag>}
+                  </List.Item>
+                );
+              }}
+            />
+          )}
+        </div>
+
+        {/* Step 6: Finalize & Send */}
+        <div style={{ display: currentStep === 6 ? 'block' : 'none' }}>
+          <Space direction="vertical" size="large" style={{ width: '100%' }}>
+            <Alert
+              type="success"
+              showIcon
+              message="Send Documents to Executive"
+              description="Review the generated packet and send it when you're ready. Documents are not sent automatically."
+            />
+
+          <div style={{ padding: 16, background: '#fafafa', borderRadius: 8 }}>
+              <h3 style={{ marginTop: 0 }}>Document Summary</h3>
+              {generatedDocuments.length === 0 ? (
+                <Text type="secondary">No documents available.</Text>
+              ) : (
+                <List
+                  size="small"
+                  dataSource={generatedDocuments}
+                  renderItem={(doc: any) => {
+                    const progress = getSignatureProgress(doc);
+                    return (
+                      <List.Item>
+                        <Space direction="vertical" size={0}>
+                          <Text>{doc.document_title || doc.template_key}</Text>
+                          <Text type="secondary">
+                            Signatures: {progress.filledCount}/{progress.requiredCount}{' '}
+                            {progress.requiredCount === 0 && '(auto-filled)'}
+                          </Text>
+                        </Space>
+                      </List.Item>
+                    );
+                  }}
+                />
+              )}
+            </div>
+
+            <div style={{ padding: 16, background: '#fff', borderRadius: 8, border: '1px solid #f0f0f0' }}>
+              <Space direction="vertical">
+                <Text>
+                  <strong>Executive:</strong> {executiveContext?.name || form.getFieldValue('full_name') || 'Pending'}
+                </Text>
+                <Text>
+                  <strong>Email:</strong> {executiveContext?.email || form.getFieldValue('email') || 'Not provided'}
+                </Text>
+                {appointmentMeta?.pricePerShare && (
+                  <Text>
+                    <strong>Price per Share:</strong> ${appointmentMeta.pricePerShare}
+                  </Text>
+                )}
+                {appointmentMeta?.totalPurchasePrice && (
+                  <Text>
+                    <strong>Total Purchase Price:</strong> ${appointmentMeta.totalPurchasePrice}
+                  </Text>
+                )}
+                <Button
+                  type="primary"
+                  icon={<CheckCircleOutlined />}
+                  loading={sendingDocuments}
+                  onClick={() => promptSendDocuments()}
+                  disabled={
+                    !executiveContext?.email ||
+                    generatedDocuments.length === 0 ||
+                    hasPendingSignatureTabs
+                  }
+                >
+                  Send Documents
+                </Button>
+                {hasPendingSignatureTabs && (
+                  <Text type="danger">
+                    Complete all signature tabs before sending.
+                  </Text>
+                )}
+              </Space>
+            </div>
+          </Space>
+        </div>
       </>
     );
   };
 
+  const renderActions = () => {
+    const previousButton =
+      currentStep > 0 ? <Button onClick={handlePrevious}>Previous</Button> : null;
+
+    if (currentStep <= 3) {
+      return (
+        <>
+          {previousButton}
+          <Button type="primary" onClick={handleNext}>
+            Next
+          </Button>
+        </>
+      );
+    }
+
+    if (currentStep === 4) {
+      return (
+        <>
+          {previousButton}
+          <Button type="primary" onClick={handleGenerateDraft} loading={loading}>
+            Appoint Officer & Generate Documents
+          </Button>
+        </>
+      );
+    }
+
+    if (currentStep === 5) {
+      return (
+        <>
+          {previousButton}
+          <Button
+            type="primary"
+            disabled={documentsLoading || generatedDocuments.length === 0}
+            onClick={() => setCurrentStep(6)}
+          >
+            Continue
+          </Button>
+        </>
+      );
+    }
+
+    return <>{previousButton}</>;
+  };
+
   return (
+    <>
     <Card title="Appoint Corporate Officer" style={{ maxWidth: 900, margin: '0 auto' }}>
       <Steps current={currentStep} style={{ marginBottom: 32 }}>
         {steps.map(item => (
@@ -1032,20 +1331,26 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
       </Form>
 
       <div style={{ marginTop: 24, display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-        {currentStep > 0 && (
-          <Button onClick={handlePrevious}>Previous</Button>
-        )}
-        {currentStep < steps.length - 1 && (
-          <Button type="primary" onClick={handleNext}>
-            Next
-          </Button>
-        )}
-        {currentStep === steps.length - 1 && (
-          <Button type="primary" onClick={handleSubmit} loading={loading}>
-            Appoint Officer & Generate Documents
-          </Button>
-        )}
+        {renderActions()}
       </div>
     </Card>
+    {taggingDocument && (
+      <ExecutiveDocumentSignatureTagger
+        open={Boolean(taggingDocument)}
+        document={taggingDocument}
+        onClose={async (refresh) => {
+          setTaggingDocument(null);
+          if (refresh) {
+            const targetExecutiveId =
+              taggingDocument?.executive_id || executiveContext?.id;
+            if (targetExecutiveId) {
+              await refreshGeneratedDocuments(targetExecutiveId);
+            }
+          }
+        }}
+      />
+    )}
+    </>
   );
 };
+
