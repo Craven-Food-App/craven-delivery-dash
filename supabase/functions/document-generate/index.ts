@@ -280,10 +280,25 @@ serve(async (req) => {
         signature_field_layout: signatureLayout,
     };
 
-    const typeUuid = normalizedTemplateId
-      ? normalizedTemplateId
-      : await uuidFromString(resolvedTemplateKey || document_title || 'document-template');
+    // Ensure type UUID is always generated
+    let typeUuid: string;
+    if (normalizedTemplateId) {
+      typeUuid = normalizedTemplateId;
+      console.log('Using normalizedTemplateId for type:', typeUuid);
+    } else {
+      const sourceForUuid = resolvedTemplateKey || document_title || 'document-template';
+      console.log('Generating UUID from source:', sourceForUuid);
+      typeUuid = await uuidFromString(sourceForUuid);
+      console.log('Generated type UUID:', typeUuid);
+    }
+    
+    if (!typeUuid) {
+      console.error('CRITICAL: typeUuid is null/undefined, using fallback');
+      typeUuid = await uuidFromString('document-template-fallback');
+    }
+    
     documentInsertPayload.type = typeUuid;
+    console.log('Final documentInsertPayload.type:', documentInsertPayload.type);
 
     const { data: document, error: dbError } = await supabaseClient
       .from('executive_documents')
