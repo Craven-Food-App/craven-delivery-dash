@@ -236,7 +236,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('executive_documents')
-        .select('id, executive_id, document_title, template_key, file_url, signed_file_url, signature_status, status, signature_field_layout, signer_roles, created_at')
+        .select('id, executive_id, officer_name, template_key, file_url, signed_file_url, signature_status, status, signature_field_layout, signer_roles, created_at')
         .eq('executive_id', executiveId)
         .order('created_at', { ascending: false });
 
@@ -1175,7 +1175,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
                   >
                     <List.Item.Meta
                       avatar={<FileOutlined style={{ fontSize: 20, color: '#1677ff' }} />}
-                      title={doc.document_title || doc.template_key}
+                      title={doc.officer_name || doc.template_key}
                       description={
                         <Space direction="vertical" size={0}>
                           <Text type="secondary">
@@ -1216,7 +1216,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
                     return (
                       <List.Item>
                         <Space direction="vertical" size={0}>
-                          <Text>{doc.document_title || doc.template_key}</Text>
+                          <Text>{doc.officer_name || doc.template_key}</Text>
                           <Text type="secondary">
                             Signatures: {progress.filledCount}/{progress.requiredCount}{' '}
                             {progress.requiredCount === 0 && '(auto-filled)'}
