@@ -8,20 +8,21 @@ import {
   InputNumber,
   Switch,
   Alert,
-  Divider,
   Typography,
   message,
   Segmented,
   Tooltip,
   Spin,
 } from 'antd';
-import { PlusOutlined, DeleteOutlined, ZoomInOutlined, ZoomOutOutlined, AimOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, ZoomInOutlined, ZoomOutOutlined, AimOutlined, FileAddOutlined } from '@ant-design/icons';
 import { supabase } from '@/integrations/supabase/client';
 
 const { Text } = Typography;
 
 const DEFAULT_WIDTH = 24;
 const DEFAULT_HEIGHT = 12;
+const PAGE_WIDTH_PX = 816;
+const PAGE_HEIGHT_PX = 1056;
 
 const FIELD_TYPE_OPTIONS = [
   { value: 'signature', label: 'Signature' },
@@ -65,6 +66,7 @@ export const SignatureFieldEditor: React.FC<SignatureFieldEditorProps> = ({
   const [saving, setSaving] = useState(false);
   const [activeFieldId, setActiveFieldId] = useState<string | null>(null);
   const [activePage, setActivePage] = useState(1);
+  const [pageCount, setPageCount] = useState(1);
   const [zoom, setZoom] = useState(1);
   const [draggingFieldId, setDraggingFieldId] = useState<string | null>(null);
 
@@ -100,10 +102,15 @@ export const SignatureFieldEditor: React.FC<SignatureFieldEditorProps> = ({
     [fields, activePage],
   );
 
-  const totalPages = useMemo(() => {
-    const highest = fields.reduce((max, field) => Math.max(max, field.page_number), 1);
-    return Math.max(1, highest);
-  }, [fields]);
+  const highestFieldPage = useMemo(
+    () => fields.reduce((max, field) => Math.max(max, field.page_number ?? 1), 1),
+    [fields],
+  );
+
+  const totalPages = useMemo(
+    () => Math.max(pageCount, highestFieldPage, 1),
+    [pageCount, highestFieldPage],
+  );
 
   useEffect(() => {
     fieldsRef.current = fields;
@@ -121,16 +128,25 @@ export const SignatureFieldEditor: React.FC<SignatureFieldEditorProps> = ({
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setFields(
+      const normalizedFields =
         (data || []).map((field) => ({
           ...field,
           width_percent: Number(field.width_percent) || DEFAULT_WIDTH,
           height_percent: Number(field.height_percent) || DEFAULT_HEIGHT,
           x_percent: Number(field.x_percent) || 10,
           y_percent: Number(field.y_percent) || 70,
-        })),
-      );
-      setActivePage(1);
+        })) ?? [];
+
+      setFields(normalizedFields);
+
+      const fetchedHighestPage =
+        normalizedFields.reduce((max, field) => Math.max(max, field.page_number ?? 1), 1) || 1;
+      setPageCount((prev) => Math.max(prev, fetchedHighestPage, 1));
+
+      setActivePage((prev) => {
+        const maxPage = Math.max(fetchedHighestPage, 1);
+        return Math.min(prev, maxPage);
+      });
       setActiveFieldId(null);
     } catch (err: any) {
       console.error('Failed to fetch signature fields', err);
@@ -426,8 +442,8 @@ export const SignatureFieldEditor: React.FC<SignatureFieldEditorProps> = ({
     >
       <div style={{ display: 'flex', gap: 16, minHeight: '70vh' }}>
         <div style={{ flex: 1.1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-          <Space align="center" style={{ marginBottom: 12, justifyContent: 'space-between' }}>
-            <Space>
+          <Space align="center" style={{ marginBottom: 12, justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+            <Space wrap>
               <Button icon={<PlusOutlined />} onClick={() => addField('signature')} loading={saving}>
                 Add Signature
               </Button>
@@ -436,6 +452,18 @@ export const SignatureFieldEditor: React.FC<SignatureFieldEditorProps> = ({
               </Button>
               <Button onClick={() => addField('text')} loading={saving}>
                 Add Text
+              </Button>
+              <Button
+                icon={<FileAddOutlined />}
+                onClick={() => {
+                  setPageCount((prev) => {
+                    const nextCount = prev + 1;
+                    setActivePage(nextCount);
+                    return nextCount;
+                  });
+                }}
+              >
+                Add Page
               </Button>
             </Space>
             <Space>
@@ -471,28 +499,40 @@ export const SignatureFieldEditor: React.FC<SignatureFieldEditorProps> = ({
               ref={pageRef}
               style={{
                 position: 'relative',
-                width: 816,
-                minHeight: 1056,
+                width: PAGE_WIDTH_PX,
+                height: PAGE_HEIGHT_PX,
                 transform: `scale(${zoom})`,
                 transformOrigin: 'top left',
                 background: '#ffffff',
                 boxShadow: '0 12px 24px rgba(148, 163, 184, 0.18)',
                 borderRadius: 8,
+                overflow: 'hidden',
               }}
             >
               <div
                 style={{
                   position: 'absolute',
                   inset: 0,
-                  overflow: 'hidden',
                   pointerEvents: 'none',
                 }}
               >
                 <div
-                  style={{ width: '100%', height: '100%', pointerEvents: 'none', padding: 24, boxSizing: 'border-box' }}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    minHeight: `${totalPages * PAGE_HEIGHT_PX}px`,
+                    pointerEvents: 'none',
+                padding: 24,
+                    boxSizing: 'border-box',
+                    transform: `translateY(-${(activePage - 1) * PAGE_HEIGHT_PX}px)`,
+                    transition: 'transform 0.2s ease-out',
+                  }}
                   dangerouslySetInnerHTML={{ __html: normalizedHtml }}
                 />
               </div>
+
               <div
                 style={{
                   position: 'absolute',
@@ -585,7 +625,7 @@ export const SignatureFieldEditor: React.FC<SignatureFieldEditorProps> = ({
                   setActiveFieldId(null);
                   setActivePage(Number(value));
                 }}
-                options={Array.from({ length: Math.max(totalPages, activePage) }).map((_, index) => ({
+                  options={Array.from({ length: Math.max(totalPages, activePage) }).map((_, index) => ({
                   label: `Page ${index + 1}`,
                   value: index + 1,
                 }))}
@@ -597,10 +637,16 @@ export const SignatureFieldEditor: React.FC<SignatureFieldEditorProps> = ({
         <div style={{ width: 320 }}>
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
             <CardSection title="Instructions">
-              <Text type="secondary">
-                Drag fields onto the document to mark required signatures, initials, or dates. Each signer will only
-                see fields assigned to their role.
-              </Text>
+              <Space direction="vertical" size={8}>
+                <Text type="secondary">
+                  Drag fields onto the document to mark required signatures, initials, or dates. Each signer will only
+                  see fields assigned to their role.
+                </Text>
+                <Text type="secondary">
+                  Use <Text strong>Add Page</Text> if you need to position fields on a page that has no fields yet.
+                  Switch pages with the selector below the preview.
+                </Text>
+              </Space>
             </CardSection>
             {fieldControls}
           </Space>
