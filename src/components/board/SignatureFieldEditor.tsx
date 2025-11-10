@@ -54,6 +54,27 @@ interface SignatureFieldEditorProps {
   onClose: (refresh?: boolean) => void;
 }
 
+interface CardSectionProps {
+  title: string;
+  children: React.ReactNode;
+}
+
+const CardSection: React.FC<CardSectionProps> = ({ title, children }) => (
+  <div
+    style={{
+      border: '1px solid #e5e7eb',
+      borderRadius: 12,
+      padding: 16,
+      background: '#ffffff',
+    }}
+  >
+    <Text strong style={{ display: 'block', marginBottom: 12 }}>
+      {title}
+    </Text>
+    {children}
+  </div>
+);
+
 export const SignatureFieldEditor: React.FC<SignatureFieldEditorProps> = ({
   templateId,
   templateName,
@@ -655,25 +676,4 @@ export const SignatureFieldEditor: React.FC<SignatureFieldEditorProps> = ({
     </Modal>
   );
 };
-
-interface CardSectionProps {
-  title: string;
-  children: React.ReactNode;
-}
-
-const CardSection: React.FC<CardSectionProps> = ({ title, children }) => (
-  <div
-    style={{
-      border: '1px solid #e5e7eb',
-      borderRadius: 12,
-      padding: 16,
-      background: '#ffffff',
-    }}
-  >
-    <Text strong style={{ display: 'block', marginBottom: 12 }}>
-      {title}
-    </Text>
-    {children}
-  </div>
-);
 
