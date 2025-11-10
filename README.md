@@ -71,3 +71,31 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Google Sheets Sync Helper
+
+This project includes an optional Python utility (`scripts/sync_google_sheet.py`) for reading or writing data to Google Sheets. It does **not** replace the Resend-based executive document emails; it is a standalone helper you can run whenever you need sheet data.
+
+1. **Enable the API**
+   - In Google Cloud Console, enable the **Google Sheets API** (same project you already use is fine).
+
+2. **Create a service account**
+   - Generate a service account and download its JSON key.
+   - Save the key next to the script as `service_account_credentials.json` (or update the path in the script).
+   - Share the target spreadsheet with the service account email so it has access.
+
+3. **Install dependencies**
+   ```bash
+   pip install google-auth google-auth-oauthlib google-api-python-client
+   ```
+
+4. **Configure the script**
+   - Edit `SPREADSHEET_ID` and `RANGE_NAME` at the top of `scripts/sync_google_sheet.py`.
+   - The script is currently set up to read rows; extend it to write data if needed.
+
+5. **Run it**
+   ```bash
+   python scripts/sync_google_sheet.py
+   ```
+
+The script logs the rows it reads. Use the returned list to drive any additional processing or updates you need.
