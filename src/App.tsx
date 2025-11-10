@@ -79,6 +79,7 @@ import { WaitlistReveal } from "./pages/driverOnboarding/WaitlistReveal";
 import { ActivationReady } from "./pages/driverOnboarding/ActivationReady";
 import { DriverApplicationWizard } from "./pages/driverOnboarding/DriverApplicationWizard";
 import { PostWaitlistOnboarding } from "./pages/driverOnboarding/PostWaitlistOnboarding";
+import ExecutiveDocumentSign from "./pages/ExecutiveDocumentSign";
 
 // Lazy load guide pages
 const AdminGuide = lazy(() => import("./pages/AdminGuide"));
@@ -531,7 +532,7 @@ const App = () => {
           <Route path="/track-order/:orderId" element={<TrackOrder />} />
           <Route path="/payment-canceled" element={<PaymentCanceled />} />
           {/* Executive signature route */}
-          <Route path="/executive-sign" element={<ExecutiveSignature />} />
+          <Route path="/executive/sign" element={<ExecutiveDocumentSign />} />
           <Route path="/executive-portal/documents" element={<ExecutiveDocumentPortal />} />
           <Route path="/thank-you" element={<ThankYou />} />
 

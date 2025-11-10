@@ -13,6 +13,7 @@ interface SubmitSignaturePayload {
   signature_png_base64?: string | null;
   signer_ip?: string | null;
   signer_user_agent?: string | null;
+  signature_token?: string | null;
 }
 
 serve(async (req) => {
@@ -22,7 +23,7 @@ serve(async (req) => {
 
   try {
     const body: SubmitSignaturePayload = await req.json();
-    const { document_id, typed_name, signature_png_base64, signer_ip, signer_user_agent } = body;
+    const { document_id, typed_name, signature_png_base64, signer_ip, signer_user_agent, signature_token } = body;
 
     if (!document_id) {
       return new Response(
@@ -36,7 +37,6 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 1. Verify document exists and is pending signature
     const { data: document, error: docError } = await supabaseClient
       .from('executive_documents')
       .select('*')
@@ -50,6 +50,34 @@ serve(async (req) => {
       );
     }
 
+    const authHeader = req.headers.get('Authorization');
+    const tokenProvided = Boolean(signature_token && signature_token.trim().length > 0);
+
+    if (!authHeader && !tokenProvided) {
+      return new Response(
+        JSON.stringify({ ok: false, error: 'Signature token required' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
+    if (tokenProvided) {
+      if (!document.signature_token || document.signature_token !== signature_token) {
+        return new Response(
+          JSON.stringify({ ok: false, error: 'Invalid signature token' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+        );
+      }
+      if (document.signature_token_expires_at) {
+        const expires = new Date(document.signature_token_expires_at);
+        if (Number.isFinite(expires.getTime()) && expires.getTime() < Date.now()) {
+          return new Response(
+            JSON.stringify({ ok: false, error: 'This signing link has expired' }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 410 }
+          );
+        }
+      }
+    }
+
     if (document.signature_status === 'signed') {
       return new Response(
         JSON.stringify({ ok: false, error: 'Document already signed' }),
@@ -57,7 +85,6 @@ serve(async (req) => {
       );
     }
 
-    // 2. Create signature record
     const { data: signature, error: sigError } = await supabaseClient
       .from('signatures')
       .insert({
@@ -76,12 +103,11 @@ serve(async (req) => {
 
     const signedAtISO = new Date().toISOString();
 
-    // 3. Also create entry in executive_signatures for legacy compatibility
     if (document.signature_token) {
       await supabaseClient
         .from('executive_signatures')
         .upsert({
-          employee_email: document.officer_name, // Fallback
+          employee_email: document.officer_name,
           employee_name: document.officer_name,
           position: document.role,
           document_type: document.type,
@@ -97,11 +123,6 @@ serve(async (req) => {
         });
     }
 
-    // 4. Generate signed PDF (embed signature into original PDF)
-    // For now, we'll store the signature separately and update the document status
-    // In a production system, you'd use a PDF library to embed the signature
-    
-    // Helper to convert base64 data URL to Uint8Array
     const base64ToUint8Array = (base64: string): Uint8Array => {
       const cleaned = base64.includes(',') ? base64.split(',').pop() ?? '' : base64;
       const binaryString = atob(cleaned);
@@ -113,14 +134,12 @@ serve(async (req) => {
       return bytes;
     };
 
-    // Download original PDF
     const pdfResponse = await fetch(document.file_url);
     if (!pdfResponse.ok) {
       throw new Error('Failed to fetch original PDF');
     }
     const pdfBlob = await pdfResponse.arrayBuffer();
 
-    // Embed signature + metadata into PDF (if pdf-lib fails, we still continue with original)
     let signedPdfBytes: Uint8Array | null = null;
     try {
       const pdfDoc = await PDFDocument.load(pdfBlob);
@@ -183,7 +202,6 @@ serve(async (req) => {
       console.error('Failed to embed signature into PDF, using original file:', pdfErr);
     }
 
-    // Upload signed PDF (either modified or original)
     const finalPdfBytes = signedPdfBytes ?? new Uint8Array(pdfBlob);
     const signedPath = `executive_docs/signed/${document_id}.pdf`;
     const { error: signedUploadError } = await supabaseClient.storage
@@ -207,7 +225,6 @@ serve(async (req) => {
       : {};
     const updatedSignerRoles = { ...existingSignerRoles, officer: true };
 
-    // 5. Update document status to 'signed'
     const { error: updateError } = await supabaseClient
       .from('executive_documents')
       .update({
@@ -215,6 +232,8 @@ serve(async (req) => {
         status: 'signed',
         signed_file_url: signedPublicUrl,
         signer_roles: updatedSignerRoles,
+        signature_token: null,
+        signature_token_expires_at: null,
       })
       .eq('id', document_id);
 
