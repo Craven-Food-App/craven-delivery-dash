@@ -90,7 +90,7 @@ const normalizeRole = (role: string | null | undefined) => String(role || "").tr
 
 const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTaggerProps> = ({
   open,
-  document,
+  document: doc,
   onClose,
 }) => {
   const [loading, setLoading] = useState(false);
@@ -113,7 +113,7 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
   const fieldsRef = useRef<SignatureFieldLayout[]>([]);
   const pagesRef = useRef<RenderedPage[]>([]);
 
-  const [docDetails, setDocDetails] = useState<any>(document);
+  const [docDetails, setDocDetails] = useState<any>(doc);
 
   useEffect(() => {
     fieldsRef.current = fields;
@@ -167,19 +167,19 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
   }, [activePageData]);
 
   const fetchDocumentDetails = useCallback(async () => {
-    if (!document?.id) return;
+    if (!doc?.id) return;
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from("executive_documents")
         .select("*")
-        .eq("id", document.id)
+        .eq("id", doc.id)
         .maybeSingle();
 
       if (error) throw error;
 
-      setDocDetails(data || document);
-      const layout = (data?.signature_field_layout || document?.signature_field_layout || []) as SignatureFieldLayout[];
+      setDocDetails(data || doc);
+      const layout = (data?.signature_field_layout || doc?.signature_field_layout || []) as SignatureFieldLayout[];
       setFields(
         (layout || []).map((field, idx) => ({
           ...field,
@@ -202,7 +202,7 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
     } finally {
       setLoading(false);
     }
-  }, [document]);
+  }, [doc]);
 
   const renderPdfPages = useCallback(async () => {
     if (!docDetails?.file_url) return;
