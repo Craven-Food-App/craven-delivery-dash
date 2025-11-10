@@ -1126,7 +1126,6 @@ const buildArticlesHtml = (
     '{{secretary_name}}': secretaryName,
     '{{secretary_signature_svg}}': secretarySignatureMarkup,
     '{{certificate_number}}': sanitizeText(values.certificateNumber || values.barcode.submissionNumber),
-    '{{entity_name}}': sanitizeText(values.entityName),
   };
 
   let output = template;
@@ -1498,8 +1497,8 @@ const ArticlesOfIncorporationGenerator: React.FC = () => {
             description={
               <Space direction="vertical">
                 <span>The Articles of Incorporation PDF has been generated and stored.</span>
-                <Typography.Link href={generatedFileUrl} target="_blank" rel="noopener noreferrer" icon={<LinkOutlined />}>
-                  View Generated Document
+                <Typography.Link href={generatedFileUrl} target="_blank" rel="noopener noreferrer">
+                  <LinkOutlined /> View Generated Document
                 </Typography.Link>
               </Space>
             }

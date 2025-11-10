@@ -172,19 +172,20 @@ export const CEOSignatureManager: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('ceo_system_settings')
-        .select<StoredSignatureResponse>('setting_value')
+        .select('setting_value')
         .eq('setting_key', 'ceo_signature')
         .maybeSingle();
 
       if (error) throw error;
 
       if (data?.setting_value) {
-        setStoredSignature(data.setting_value);
-        setTypedName(data.setting_value.typed_name || '');
-        setSignatureDataUrl(data.setting_value.signature_png_base64 || null);
-        setCanvasToImage(data.setting_value.signature_png_base64 || null);
-        setLastUpdated(data.setting_value.updated_at || null);
-        setLastUpdatedBy(data.setting_value.updated_by || null);
+        const sigValue = data.setting_value as CeoSignatureSetting;
+        setStoredSignature(sigValue);
+        setTypedName(sigValue.typed_name || '');
+        setSignatureDataUrl(sigValue.signature_png_base64 || null);
+        setCanvasToImage(sigValue.signature_png_base64 || null);
+        setLastUpdated(sigValue.updated_at || null);
+        setLastUpdatedBy(sigValue.updated_by || null);
       } else {
         setStoredSignature(null);
         setTypedName('');
@@ -321,20 +322,20 @@ export const CEOSignatureManager: React.FC = () => {
     setSignatureDataUrl(null);
   };
 
-  const handleUpload: (file: UploadFile) => boolean = (file) => {
+  const handleUpload = (file: UploadFile): boolean | string => {
     if (!file.originFileObj) {
       message.error('Unable to read file');
-      return Upload.LIST_IGNORE;
+      return false;
     }
     const isImage = file.type?.startsWith('image/');
     if (!isImage) {
       message.error('Please upload an image file');
-      return Upload.LIST_IGNORE;
+      return false;
     }
     const isLt2M = file.size ? file.size / 1024 / 1024 < 2 : true;
     if (!isLt2M) {
       message.error('Image must be smaller than 2MB');
-      return Upload.LIST_IGNORE;
+      return false;
     }
     dataUrlFromFile(file.originFileObj)
       .then((dataUrl) => {
@@ -345,7 +346,7 @@ export const CEOSignatureManager: React.FC = () => {
         console.error('Failed to read file:', err);
         message.error('Unable to read uploaded file');
       });
-    return Upload.LIST_IGNORE;
+    return false;
   };
 
   const handleSaveSignature = async () => {
@@ -394,14 +395,14 @@ export const CEOSignatureManager: React.FC = () => {
       const { error } = await supabase
         .from('ceo_system_settings')
         .upsert(
-          {
+          [{
             setting_key: 'ceo_signature',
-            setting_value: payload,
+            setting_value: payload as any,
             category: 'operations',
             description: 'Stored CEO signature used for automatic document signing',
             is_critical: false,
             requires_confirmation: false,
-          },
+          }],
           { onConflict: 'setting_key' }
         );
 

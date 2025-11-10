@@ -121,7 +121,7 @@ export const SignatureFieldEditor: React.FC<SignatureFieldEditorProps> = ({
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('document_template_signature_fields')
+        .from('document_template_signature_fields' as any)
         .select('*')
         .eq('template_id', templateId)
         .order('page_number')
@@ -129,7 +129,7 @@ export const SignatureFieldEditor: React.FC<SignatureFieldEditorProps> = ({
 
       if (error) throw error;
       const normalizedFields =
-        (data || []).map((field) => ({
+        (data || []).map((field: any) => ({
           ...field,
           width_percent: Number(field.width_percent) || DEFAULT_WIDTH,
           height_percent: Number(field.height_percent) || DEFAULT_HEIGHT,
@@ -137,10 +137,10 @@ export const SignatureFieldEditor: React.FC<SignatureFieldEditorProps> = ({
           y_percent: Number(field.y_percent) || 70,
         })) ?? [];
 
-      setFields(normalizedFields);
+      setFields(normalizedFields as SignatureFieldRecord[]);
 
       const fetchedHighestPage =
-        normalizedFields.reduce((max, field) => Math.max(max, field.page_number ?? 1), 1) || 1;
+        normalizedFields.reduce((max: number, field: any) => Math.max(max, field.page_number ?? 1), 1) || 1;
       setPageCount((prev) => Math.max(prev, fetchedHighestPage, 1));
 
       setActivePage((prev) => {
@@ -211,11 +211,11 @@ export const SignatureFieldEditor: React.FC<SignatureFieldEditorProps> = ({
 
       try {
         await supabase
-          .from('document_template_signature_fields')
+          .from('document_template_signature_fields' as any)
           .update({
             x_percent: updatedField.x_percent,
             y_percent: updatedField.y_percent,
-          })
+          } as any)
           .eq('id', updatedField.id);
       } catch (error: any) {
         console.error('Failed to persist field position', error);
@@ -261,7 +261,7 @@ export const SignatureFieldEditor: React.FC<SignatureFieldEditorProps> = ({
     setSaving(true);
     try {
       const { data, error } = await supabase
-        .from('document_template_signature_fields')
+        .from('document_template_signature_fields' as any)
         .insert({
           template_id: templateId,
           field_type: fieldType,
@@ -273,13 +273,13 @@ export const SignatureFieldEditor: React.FC<SignatureFieldEditorProps> = ({
           height_percent: DEFAULT_HEIGHT,
           label: fieldType === 'date' ? 'Execution Date' : 'Executive Signature',
           required: true,
-        })
+        } as any)
         .select('*')
         .single();
 
       if (error) throw error;
-      setFields((prev) => [...prev, data as SignatureFieldRecord]);
-      setActiveFieldId(data.id);
+      setFields((prev) => [...prev, data as any as SignatureFieldRecord]);
+      setActiveFieldId((data as any).id);
       message.success('Field added');
     } catch (err: any) {
       console.error('Failed to add field', err);
@@ -295,8 +295,8 @@ export const SignatureFieldEditor: React.FC<SignatureFieldEditorProps> = ({
     );
     try {
       await supabase
-        .from('document_template_signature_fields')
-        .update(updates)
+        .from('document_template_signature_fields' as any)
+        .update(updates as any)
         .eq('id', fieldId);
     } catch (err: any) {
       console.error('Failed to update field', err);
@@ -312,7 +312,7 @@ export const SignatureFieldEditor: React.FC<SignatureFieldEditorProps> = ({
       okType: 'danger',
       onOk: async () => {
         try {
-          await supabase.from('document_template_signature_fields').delete().eq('id', fieldId);
+          await supabase.from('document_template_signature_fields' as any).delete().eq('id', fieldId);
           setFields((prev) => prev.filter((field) => field.id !== fieldId));
           if (activeFieldId === fieldId) {
             setActiveFieldId(null);
