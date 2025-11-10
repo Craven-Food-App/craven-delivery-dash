@@ -5,7 +5,18 @@ async function invokeEdgeFunction(functionName: string, data?: any) {
     body: data,
   });
 
-  if (error) throw error;
+  if (error) {
+    const contextBody = (error as any)?.context?.body;
+    const details = typeof contextBody === 'string'
+      ? contextBody
+      : contextBody
+      ? JSON.stringify(contextBody)
+      : '';
+    const message = details ? `${error.message}: ${details}` : error.message;
+    const enrichedError = new Error(message);
+    (enrichedError as any).status = (error as any)?.status;
+    throw enrichedError;
+  }
   return result;
 }
 

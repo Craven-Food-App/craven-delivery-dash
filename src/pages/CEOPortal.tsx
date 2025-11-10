@@ -12,6 +12,7 @@ import {
   ShieldAlert,
   FileText,
   Mail,
+  PenTool,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -27,6 +28,7 @@ import { ExecutiveInboxIMessage } from '@/components/executive/ExecutiveInboxIMe
 import ExecutiveCommunicationsCenter from '@/components/executive/ExecutiveCommunicationsCenter';
 import ExecutivePortalLayout, { ExecutiveNavItem } from '@/components/executive/ExecutivePortalLayout';
 import { useExecAuth } from '@/hooks/useExecAuth';
+import CEOSignatureManager from '@/components/ceo/CEOSignatureManager';
 // No Card components: full-page Ant layout
 
 interface CEOMetrics {
@@ -75,6 +77,7 @@ const CEOPortal: React.FC = () => {
       { id: 'mindmap', label: 'Mind Map', icon: Lightbulb },
       { id: 'emergency', label: 'Emergency Controls', icon: ShieldAlert },
       { id: 'audit', label: 'Audit Trail', icon: FileText },
+      { id: 'signature', label: 'Signature', icon: PenTool },
       { id: 'communications', label: 'Executive Communications', icon: Mail },
     ];
   }, [metrics?.totalEmployees, metrics?.pendingApprovals]);
@@ -125,6 +128,8 @@ const CEOPortal: React.FC = () => {
         return <EmergencyControls />;
       case 'audit':
         return <AuditTrail />;
+      case 'signature':
+        return <CEOSignatureManager />;
       case 'communications':
         return <ExecutiveCommunicationsCenter defaultTab="messages" />;
       default:

@@ -89,6 +89,7 @@ const EMAIL_USAGE_CONTEXTS = [
 const DOCUMENT_USAGE_CONTEXTS = [
   { value: 'employment_agreement', label: 'Employment Agreement' },
   { value: 'board_resolution', label: 'Board Resolution' },
+  { value: 'pre_incorporation_consent', label: 'Pre-Incorporation Consent (Conditional Appointments)' },
   { value: 'founders_agreement', label: "Founders' Agreement" },
   { value: 'stock_issuance', label: 'Stock Issuance' },
   { value: 'confidentiality_ip', label: 'Confidentiality & IP' },

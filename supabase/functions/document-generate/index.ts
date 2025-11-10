@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { PDFDocument, StandardFonts, rgb } from "https://esm.sh/pdf-lib@1.17.1?bundle";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -70,6 +71,87 @@ async function convertHtmlToPdf(htmlContent: string): Promise<Uint8Array> {
   }
 }
 
+const base64ToUint8Array = (base64: string): Uint8Array => {
+  const cleaned = base64.includes(',') ? base64.split(',').pop() ?? '' : base64;
+  const binaryString = atob(cleaned);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+};
+
+interface CeoSignatureSetting {
+  typed_name?: string;
+  signature_png_base64?: string;
+  title?: string;
+  updated_at?: string;
+}
+
+interface CeoSignatureRow {
+  setting_value: CeoSignatureSetting;
+}
+
+async function applyCeoSignatureToPdf(
+  pdfBytes: Uint8Array,
+  signature: CeoSignatureSetting,
+): Promise<Uint8Array> {
+  if (!signature.signature_png_base64) {
+    return pdfBytes;
+  }
+
+  const pdfDoc = await PDFDocument.load(pdfBytes);
+  const pages = pdfDoc.getPages();
+  if (pages.length === 0) {
+    return pdfBytes;
+  }
+
+  const targetPage = pages[pages.length - 1];
+  const { width } = targetPage.getSize();
+  const margin = 48;
+
+  const signatureBytes = base64ToUint8Array(signature.signature_png_base64);
+  const pngImage = await pdfDoc.embedPng(signatureBytes);
+
+  const maxImageWidth = width - margin * 2;
+  const scale = Math.min(1, maxImageWidth / pngImage.width);
+  const imageWidth = pngImage.width * scale;
+  const imageHeight = pngImage.height * scale;
+  const imageX = (width - imageWidth) / 2;
+  const imageY = margin + 68;
+
+  targetPage.drawImage(pngImage, {
+    x: imageX,
+    y: imageY,
+    width: imageWidth,
+    height: imageHeight,
+  });
+
+  const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const textYStart = imageY + imageHeight + 12;
+  const lines: Array<{ text: string; bold?: boolean }> = [
+    { text: `Signed electronically by: ${signature.typed_name ?? 'Chief Executive Officer'}`, bold: true },
+    { text: `Title: ${signature.title ?? 'Chief Executive Officer'}` },
+    { text: `Date: ${new Date().toLocaleString('en-US')}` },
+  ];
+
+  let textY = textYStart;
+  lines.forEach((line, index) => {
+    targetPage.drawText(line.text, {
+      x: margin,
+      y: textY,
+      size: index === 0 ? 12 : 11,
+      font: line.bold ? fontBold : fontRegular,
+      color: rgb(0.09, 0.09, 0.1),
+    });
+    textY += 14;
+  });
+
+  return await pdfDoc.save();
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -112,13 +194,55 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    const normalizedSigners = Array.isArray(required_signers)
+      ? required_signers.map((signer: string) => String(signer || '').toLowerCase())
+      : [];
+    let computedSignerRoles = signer_roles ?? (normalizedSigners.length > 0
+      ? Object.fromEntries(normalizedSigners.map((signer) => [signer, false]))
+      : null);
+
+    const requiresCeoSignature = normalizedSigners.some((signer) =>
+      ['board', 'ceo', 'incorporator'].includes(signer)
+    );
+    let ceoSignatureSetting: CeoSignatureSetting | null = null;
+    let ceoSignatureApplied = false;
+
     // Generate a unique filename for PDF
     const filename = `executive_docs/${crypto.randomUUID()}.pdf`;
 
-    // Convert HTML to PDF - NO HTML FALLBACK
     console.log('Converting HTML to PDF...');
-    const pdfBuffer: Uint8Array = await convertHtmlToPdf(html_content);
+    let pdfBuffer: Uint8Array = await convertHtmlToPdf(html_content);
     console.log('PDF generated successfully, size:', pdfBuffer.length, 'bytes');
+
+    if (requiresCeoSignature) {
+      try {
+        const { data: ceoSigRow, error: ceoSigError } = await supabaseClient
+          .from('ceo_system_settings')
+          .select<CeoSignatureRow>('setting_value')
+          .eq('setting_key', 'ceo_signature')
+          .maybeSingle();
+
+        if (ceoSigError) throw ceoSigError;
+        if (ceoSigRow?.setting_value?.signature_png_base64 && ceoSigRow.setting_value.typed_name) {
+          ceoSignatureSetting = ceoSigRow.setting_value;
+          pdfBuffer = await applyCeoSignatureToPdf(pdfBuffer, ceoSignatureSetting);
+          ceoSignatureApplied = true;
+          console.log('Applied CEO signature automatically to document.');
+
+          if (computedSignerRoles) {
+            ['board', 'ceo', 'incorporator'].forEach((roleKey) => {
+              if (roleKey in computedSignerRoles) {
+                computedSignerRoles[roleKey] = true;
+              }
+            });
+          }
+        } else {
+          console.warn('CEO signature not configured; skipping automatic signing.');
+        }
+      } catch (autoSignError) {
+        console.error('Failed to apply CEO signature automatically:', autoSignError);
+      }
+    }
 
     // Upload PDF to storage
     const { data: upload, error: uploadError } = await supabaseClient.storage
@@ -167,12 +291,8 @@ serve(async (req) => {
         signing_stage: signing_stage ?? null,
         signing_order: signing_order ?? null,
         depends_on_document_id: depends_on_document_id ?? null,
-        required_signers: required_signers ?? null,
-        signer_roles:
-          signer_roles ??
-          (Array.isArray(required_signers)
-            ? Object.fromEntries(required_signers.map((r: string) => [r.toLowerCase(), false]))
-            : null),
+        required_signers: Array.isArray(required_signers) ? required_signers : null,
+        signer_roles: computedSignerRoles,
       })
       .select()
       .single();
@@ -180,6 +300,21 @@ serve(async (req) => {
     if (dbError) throw dbError;
 
     console.log('Document created successfully:', document.id);
+
+    if (ceoSignatureApplied && document?.id && ceoSignatureSetting) {
+      try {
+        await supabaseClient.from('signatures').insert({
+          document_id: document.id,
+          signed_by: ceoSignatureSetting.typed_name ?? 'Chief Executive Officer',
+          signature_data_url: ceoSignatureSetting.signature_png_base64 ?? null,
+          signed_at: new Date().toISOString(),
+          ip: 'SYSTEM_AUTOSIGN',
+        });
+        console.log('Recorded automatic CEO signature for document', document.id);
+      } catch (signatureInsertError) {
+        console.error('Failed to record CEO signature metadata:', signatureInsertError);
+      }
+    }
 
     return new Response(
       JSON.stringify({

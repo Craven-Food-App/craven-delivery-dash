@@ -30,7 +30,8 @@ import {
 } from '@ant-design/icons';
 import JsBarcode from 'jsbarcode';
 import { docsAPI } from '@/components/hr/api';
-import ohioSealImage from '@/assets/thereal-ohio-state-seal.png?url';
+import ohioSealImageUrl from '@/assets/thereal-ohio-state-seal.png';
+import frankSignatureImageUrl from '@/assets/frank-sig.png';
 
 const { TextArea } = Input;
 const { Title, Text, Paragraph } = Typography;
@@ -269,16 +270,20 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       overflow: hidden;
     }
 
+    /* COVER PAGE STYLES */
     .certificate-page.cover {
       display: flex;
       flex-direction: column;
-      padding: 0.65in 0.8in 0.5in;
     }
 
     .cover-header {
+      padding: 0.65in 0.8in 0;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 2px;
+      position: relative;
+      z-index: 2;
+      flex-shrink: 0;
     }
 
     .cover-barcode {
@@ -288,14 +293,8 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
     .cover-barcode svg {
       width: 7in;
       height: 1in;
-    }
-
-    .barcode-text {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-      margin-top: 6px;
-      text-align: center;
+      display: block;
+      margin: 0 auto;
     }
 
     .cover-meta-table {
@@ -339,159 +338,245 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       text-transform: uppercase;
       letter-spacing: 0.6px;
       margin-top: 6px;
-      margin-left: 0.6in;
     }
 
     .certificate-frame {
-      margin: 0.35in 0.55in 0.4in;
-      border: 3px solid #000000;
+      margin: 0.4in;
+      border: 4px solid #000000;
       flex: 1;
+      position: relative;
       display: flex;
     }
 
     .certificate-inner {
       border: 1px solid #000000;
-      margin: 12px;
-      padding: 0.5in 0.55in;
+      margin: 12px 12px 36px;
+      padding: 0.18in 0.55in 0.22in;
       width: calc(100% - 24px);
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
+      height: 100%;
     }
 
     .certificate-title {
-      font-size: 28px;
+      font-size: 40px;
       letter-spacing: 6px;
       text-transform: uppercase;
-      font-weight: 600;
+      font-weight: 700;
+      font-family: "Times New Roman", "Georgia", serif;
+      margin-bottom: -6px;
     }
 
     .certificate-subtitle {
-      margin-top: 6px;
-      font-size: 18px;
-      letter-spacing: 3px;
+      margin-top: -6px;
+      font-size: 24px;
+      letter-spacing: 4px;
       text-transform: uppercase;
       font-weight: 600;
+      font-family: "Times New Roman", "Georgia", serif;
+      margin-bottom: 2px;
     }
 
     .certificate-secretary {
-      margin-top: 16px;
-      font-size: 15px;
-      font-weight: 600;
+      margin-top: -10px;
+      font-size: 21px;
+      font-weight: 700;
+      font-family: "Times New Roman", "Georgia", serif;
     }
 
     .certificate-number {
-      margin-top: 8px;
-      font-size: 13px;
+      margin-top: -8px;
+      font-size: 19px;
       letter-spacing: 1px;
-      font-weight: 600;
+      font-weight: 700;
+      font-family: "Times New Roman", "Georgia", serif;
     }
 
     .certificate-body {
-      margin-top: 26px;
+      margin-top: 10px;
       font-size: 13px;
       line-height: 1.7;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: "Times New Roman", "Georgia", serif;
     }
 
     .certificate-body p {
-      margin: 0 0 18px;
+      margin: 0 0 6px;
+      font-family: "Times New Roman", "Georgia", serif;
     }
 
-    .certificate-entity {
+    .certificate-body .certificate-entity {
       font-weight: 700;
       font-size: 14px;
       letter-spacing: 1px;
-      margin-bottom: 18px;
+      font-family: "Times New Roman", "Georgia", serif;
+      margin-bottom: 4px;
     }
 
     .certificate-details {
       width: 100%;
-      border-collapse: collapse;
-      margin-top: 14px;
+      max-width: 6.25in;
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
       font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 0.6px;
+      font-family: "Times New Roman", "Georgia", serif;
     }
 
-    .certificate-details td {
-      padding-top: 10px;
+    .certificate-details .details-doc {
+      flex: 1 1 auto;
+      text-align: left;
+      font-family: "Times New Roman", "Georgia", serif;
     }
 
-    .certificate-details td:first-child { text-align: left; }
-    .certificate-details td:nth-child(2) { text-align: center; }
-    .certificate-details td:last-child { text-align: right; }
+    .certificate-details .details-doc .label {
+      font-size: 11px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
 
-    .certificate-details strong {
-      display: block;
+    .certificate-details .details-doc .doc-title {
+      font-size: 13px;
+      letter-spacing: 0.6px;
+      font-weight: 700;
+      text-transform: none;
+      margin-top: 2px;
+    }
+
+    .certificate-details .details-doc .effective-line {
+      margin-top: 3px;
+      font-size: 11px;
+      text-transform: none;
+      letter-spacing: 0.3px;
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      font-family: "Times New Roman", "Georgia", serif;
+    }
+
+    .certificate-details .details-doc .effective-line .label {
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .certificate-details .details-number {
+      flex: 0 0 auto;
+      text-align: right;
+      font-family: "Times New Roman", "Georgia", serif;
+    }
+
+    .certificate-details .details-number .label {
+      font-size: 11px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+
+    .certificate-details .details-number .value {
       margin-top: 4px;
       font-size: 13px;
       letter-spacing: 0;
       text-transform: none;
+      font-weight: 700;
+      font-family: "Times New Roman", "Georgia", serif;
     }
 
     .certificate-footer {
-      width: 100%;
-      margin-top: 40px;
+      margin-top: auto;
+      padding-bottom: 6px;
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
       text-align: left;
+      gap: 180px;
     }
 
     .certificate-seal-block {
       display: flex;
-      align-items: flex-end;
-      gap: 14px;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-top: 32px;
+      width: 3in;
     }
 
     .certificate-seal-block img {
-      width: 1.55in;
-      height: 1.55in;
+      width: 1in;
+      height: 1in;
       object-fit: contain;
-      background: #e0e0e0;
-      border-radius: 50%;
     }
 
     .certificate-seal-caption {
-      font-size: 11px;
+      font-size: 10px;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.6px;
-      line-height: 1.5;
+      line-height: 1.8;
+      text-align: center;
+      font-family: "Times New Roman", "Georgia", serif;
+      margin-top: 8px;
+      width: 100%;
     }
 
     .certificate-signature-block {
       font-size: 12px;
       line-height: 1.6;
-      text-align: right;
+      text-align: left;
+      font-family: "Times New Roman", "Georgia", serif;
+      width: 3.4in;
     }
 
-    .certificate-signature-name {
+    .certificate-signature-block .attestation-text {
+      font-size: 12px;
+      line-height: 1.4;
+      margin: 0;
+      font-family: "Times New Roman", "Georgia", serif;
+      text-align: justify;
+      text-align-last: left;
+    }
+
+    .certificate-signature-image {
       margin-top: 10px;
-      font-size: 18px;
-      letter-spacing: 1px;
-      font-family: "Brush Script MT", "Lucida Handwriting", cursive;
+      width: 2in;
+    }
+
+    .certificate-signature-image svg,
+    .certificate-signature-image img {
+      width: 100%;
+      height: auto;
+      display: block;
     }
 
     .certificate-signature-title {
       margin-top: 4px;
-      font-size: 12px;
+      font-size: 10px;
       text-transform: uppercase;
-      letter-spacing: 0.8px;
-      font-weight: 600;
+      letter-spacing: 0.6px;
+      font-weight: 700;
+      font-family: "Times New Roman", "Georgia", serif;
+      color: #000000;
+      text-align: left;
     }
 
+    /* FORM PAGE STYLES */
     .certificate-page.form {
       padding: 0.65in 0.8in 0.5in;
-      background: #ffffff;
     }
 
     .form-header {
+      position: relative;
+      z-index: 2;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       margin-bottom: 12px;
-      font-family: Arial, Helvetica, sans-serif;
     }
 
     .form-header-left {
@@ -518,7 +603,6 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       text-transform: uppercase;
       letter-spacing: 1.4px;
       margin: 12px 0 6px;
-      font-family: "Times New Roman", "Georgia", serif;
       font-weight: 600;
     }
 
@@ -526,7 +610,6 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       text-align: center;
       font-size: 12px;
       margin-bottom: 16px;
-      font-family: "Times New Roman", "Georgia", serif;
     }
 
     .form-section {
@@ -534,7 +617,6 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       margin-bottom: 12px;
       padding: 8px 10px;
       font-size: 11px;
-      font-family: Arial, Helvetica, sans-serif;
     }
 
     .form-section h4 {
@@ -615,7 +697,6 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
     .signature-area {
       margin-top: 18px;
       font-size: 11px;
-      font-family: Arial, Helvetica, sans-serif;
     }
 
     .signature-area .line {
@@ -630,17 +711,16 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
       display: flex;
       justify-content: space-between;
       color: #6b7280;
-      font-family: Arial, Helvetica, sans-serif;
     }
   </style>
 </head>
 <body>
   <div class="certificate-container">
+    <!-- PAGE 1: COVER/CERTIFICATE -->
     <div class="certificate-page cover">
       <div class="cover-header">
         <div class="cover-barcode">
           {{articles_barcode_svg}}
-          <div class="barcode-text">{{barcode_human_readable}}</div>
         </div>
 
         <table class="cover-meta-table">
@@ -684,35 +764,30 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
             <p>and, that said business records show the filing and recording of:</p>
           </div>
 
-          <table class="certificate-details">
-            <tr>
-              <td>
-                Document(s)
-                <strong>{{filing_document_title_upper}}</strong>
-              </td>
-              <td>
-                Effective Date:
-                <strong>{{effective_date_short}}</strong>
-              </td>
-              <td>
-                Document No(s):
-                <strong>{{submission_number}}</strong>
-              </td>
-            </tr>
-          </table>
+          <div class="certificate-details">
+            <div class="details-doc">
+              <div class="label">Document(s)</div>
+              <div class="doc-title">{{filing_document_title_upper}}</div>
+              <div class="effective-line"><span class="label">Effective Date:</span><span>{{effective_date_short}}</span></div>
+            </div>
+            <div class="details-number">
+              <div class="label">Document No(s):</div>
+              <div class="value">{{submission_number}}</div>
+            </div>
+          </div>
 
           <div class="certificate-footer">
             <div class="certificate-seal-block">
               <img src="{{ohio_seal_src}}" alt="Great Seal of the State of Ohio" />
               <div class="certificate-seal-caption">
-                United States of America<br/>State of Ohio<br/>Office of the Secretary of State
+                United States of America<br/>State of Ohio&nbsp;<br/>Office of the&nbsp;Secretary&nbsp;of the&nbsp;State
               </div>
             </div>
             <div class="certificate-signature-block">
-              <div>Witness my hand and the seal of the</div>
-              <div>Secretary of State at Columbus, Ohio this</div>
-              <div>{{filing_date_long}}.</div>
-              <div class="certificate-signature-name">{{secretary_name}}</div>
+              <div class="attestation-text">Witness my hand and the seal of the</div>
+              <div class="attestation-text">Secretary of State at Columbus, Ohio this</div>
+              <div class="attestation-text">{{filing_date_long}}.</div>
+              <div class="certificate-signature-image">{{secretary_signature_svg}}</div>
               <div class="certificate-signature-title">Ohio Secretary of State</div>
             </div>
           </div>
@@ -722,6 +797,7 @@ const DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>
 
     <div class="page-separator"></div>
 
+    <!-- PAGE 2: FORM -->
     <div class="certificate-page form">
       <div class="form-header">
         <div class="form-header-left">
@@ -948,7 +1024,32 @@ const createBarcodeSvgMarkup = (payload: string): string => {
   return svg.outerHTML;
 };
 
-const buildArticlesHtml = (template: string, values: ArticlesFormValues, barcodeSvg: string, barcodeHumanReadable: string): string => {
+const loadAssetAsDataUrl = async (assetUrl: string): Promise<string> => {
+  if (!assetUrl) return '';
+  try {
+    const response = await fetch(assetUrl);
+    if (!response.ok) throw new Error(`Failed to fetch asset: ${assetUrl}`);
+    const blob = await response.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+      reader.onerror = () => reject(new Error(`Unable to read asset blob: ${assetUrl}`));
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error('loadAssetAsDataUrl error:', error);
+    return '';
+  }
+};
+
+const buildArticlesHtml = (
+  template: string,
+  values: ArticlesFormValues,
+  barcodeSvg: string,
+  barcodeHumanReadable: string,
+  sealImageSrc: string,
+  signatureImageSrc: string,
+): string => {
   const filingOption = FILING_OPTIONS[values.filingType] ?? FILING_OPTIONS.corporation;
   const principalAddress = [`${sanitizeText(values.principalAddressLine1)}`]
     .concat(
@@ -977,6 +1078,13 @@ const buildArticlesHtml = (template: string, values: ArticlesFormValues, barcode
     .filter((line) => line && line.length > 0)
     .join('<br/>');
 
+  const secretaryName = sanitizeText(values.secretaryOfStateName);
+  const sealSrc = sealImageSrc ? sanitizeText(sealImageSrc) : '';
+  const signatureSrc = signatureImageSrc ? sanitizeText(signatureImageSrc) : '';
+  const secretarySignatureMarkup = signatureSrc
+    ? `<img src="${signatureSrc}" alt="Signature of ${secretaryName || 'Ohio Secretary of State'}" style="width:100%;height:auto;display:block;" />`
+    : '';
+
   const replacements: Record<string, string> = {
     '{{entity_name}}': sanitizeText(values.entityName),
     '{{entity_type}}': sanitizeText(values.entityType),
@@ -997,7 +1105,7 @@ const buildArticlesHtml = (template: string, values: ArticlesFormValues, barcode
     '{{optional_provisions_block}}': buildOptionalProvisionsBlock(values.optionalProvisions),
     '{{articles_barcode_svg}}': barcodeSvg || '<div style="height:110px;border:1px dashed #94a3b8;display:flex;align-items:center;justify-content:center;color:#94a3b8;">Barcode Pending</div>',
     '{{barcode_human_readable}}': barcodeHumanReadable,
-    '{{ohio_seal_src}}': ohioSealImage,
+    '{{ohio_seal_src}}': sealSrc || '',
     '{{submission_number}}': sanitizeText(values.barcode.submissionNumber),
     '{{charter_number}}': sanitizeText(values.barcode.charterNumber),
     '{{entity_number}}': sanitizeText(values.barcode.entityNumber),
@@ -1015,7 +1123,8 @@ const buildArticlesHtml = (template: string, values: ArticlesFormValues, barcode
     '{{filing_certificate_fee}}': sanitizeText(values.certificateFee),
     '{{filing_copy_fee}}': sanitizeText(values.copyFee),
     '{{recipient_block}}': recipientBlock || '&nbsp;',
-    '{{secretary_name}}': sanitizeText(values.secretaryOfStateName),
+    '{{secretary_name}}': secretaryName,
+    '{{secretary_signature_svg}}': secretarySignatureMarkup,
     '{{certificate_number}}': sanitizeText(values.certificateNumber || values.barcode.submissionNumber),
     '{{entity_name}}': sanitizeText(values.entityName),
   };
@@ -1040,6 +1149,27 @@ const ArticlesOfIncorporationGenerator: React.FC = () => {
   const [barcodeReadable, setBarcodeReadable] = useState<string>('');
   const [generating, setGenerating] = useState(false);
   const [generatedFileUrl, setGeneratedFileUrl] = useState<string | null>(null);
+  const [sealDataUrl, setSealDataUrl] = useState<string>('');
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string>('');
+
+  useEffect(() => {
+    let isActive = true;
+    const loadAssets = async () => {
+      const [seal, signature] = await Promise.all([
+        loadAssetAsDataUrl(ohioSealImageUrl),
+        loadAssetAsDataUrl(frankSignatureImageUrl),
+      ]);
+      if (!isActive) return;
+      setSealDataUrl(seal);
+      setSignatureDataUrl(signature);
+    };
+
+    loadAssets();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   const buildBarcodePayload = useCallback((values: Partial<ArticlesFormValues> | undefined): { payload: string; humanReadable: string } => {
     const meta: BarcodeMeta = {
@@ -1101,11 +1231,22 @@ const ArticlesOfIncorporationGenerator: React.FC = () => {
       }
 
       setBarcodeReadable(humanReadable);
-      const compiled = buildArticlesHtml(templateSource, merged, svgMarkup, humanReadable);
+      const compiled = buildArticlesHtml(
+        templateSource,
+        merged,
+        svgMarkup,
+        humanReadable,
+        sealDataUrl,
+        signatureDataUrl,
+      );
+      console.debug('Articles template compiled length:', compiled.length, {
+        hasSeal: Boolean(sealDataUrl?.length),
+        hasSignature: Boolean(signatureDataUrl?.length),
+      });
       setHtmlContent(compiled);
       return compiled;
     },
-    [buildBarcodePayload, form, templateHtml],
+    [buildBarcodePayload, form, templateHtml, sealDataUrl, signatureDataUrl],
   );
 
   const loadTemplates = useCallback(async () => {
@@ -1151,6 +1292,11 @@ const ArticlesOfIncorporationGenerator: React.FC = () => {
     loadTemplates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!sealDataUrl || !signatureDataUrl) return;
+    syncHtmlWithForm(form.getFieldsValue(true) as ArticlesFormValues);
+  }, [sealDataUrl, signatureDataUrl, form, syncHtmlWithForm]);
 
   const handleTemplateSelect = (templateId?: string) => {
     if (!templateId) {
@@ -1304,7 +1450,7 @@ const ArticlesOfIncorporationGenerator: React.FC = () => {
           type="info"
           showIcon
           message="State of Ohio Compliance"
-          description="Populate the form with the corporation’s charter, statutory agent, and share structure details. The document preview mirrors the Ohio Secretary of State Form 532A layout, including a Code 128 barcode with filing metadata."
+          description="Populate the form with the corporation's charter, statutory agent, and share structure details. The document preview mirrors the Ohio Secretary of State Form 532A layout, including a Code 128 barcode with filing metadata."
         />
 
         <Space align="center" wrap>
