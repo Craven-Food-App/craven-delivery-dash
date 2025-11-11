@@ -56,14 +56,39 @@ const ExecutiveProfile: React.FC = () => {
     return typeof location.hash === 'string' && location.hash.includes('type=recovery');
   }, [location.hash, location.search]);
 
+  const ensureRecoverySession = async () => {
+    if (typeof window === 'undefined') return;
+    const hash = window.location.hash;
+    if (!hash || !hash.includes('access_token')) return;
+
+    const hashParams = new URLSearchParams(hash.substring(1));
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+
+    if (accessToken && refreshToken) {
+      const { error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      if (error) {
+        console.error('Failed to establish recovery session', error);
+        return;
+      }
+
+      window.history.replaceState(
+        {},
+        document.title,
+        `${window.location.pathname}${window.location.search}`
+      );
+    }
+  };
+
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        // If this is a recovery flow from password reset email, 
-        // ensure the session is established from the URL hash first
-        if (isResetFlow && location.hash.includes('access_token')) {
-          // Give Supabase time to process the hash and establish session
-          await new Promise(resolve => setTimeout(resolve, 500));
+        if (isResetFlow) {
+          await ensureRecoverySession();
         }
 
         const {
