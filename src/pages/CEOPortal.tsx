@@ -59,28 +59,28 @@ const CEOPortal: React.FC = () => {
     const pendingApprovals = metrics?.pendingApprovals ?? 0;
 
     return [
-      { id: 'overview', label: 'Quick Actions', icon: BarChart3 },
+      { id: 'overview', label: 'Command Center', icon: BarChart3 },
       {
         id: 'personnel',
-        label: `Personnel (${totalEmployees})`,
+        label: `Manage People (${totalEmployees})`,
         icon: UsersIcon,
       },
       {
         id: 'financial',
         label:
           pendingApprovals > 0
-            ? `Financial Approvals (${pendingApprovals})`
-            : 'Financial Approvals',
+            ? `Approve Spend (${pendingApprovals})`
+            : 'Approve Spend',
         icon: DollarSign,
       },
-      { id: 'equity', label: 'Equity Ownership', icon: Trophy },
-      { id: 'strategic', label: 'Strategic Planning', icon: Rocket },
-      { id: 'mindmap', label: 'Mind Map', icon: Lightbulb },
-      { id: 'emergency', label: 'Emergency Controls', icon: ShieldAlert },
-      { id: 'audit', label: 'Audit Trail', icon: FileText },
-      { id: 'signature', label: 'Signature', icon: PenTool },
-      { id: 'communications', label: 'Executive Communications', icon: Mail },
-      { id: 'word', label: 'Word Processor', icon: FileText },
+      { id: 'equity', label: 'Review Equity', icon: Trophy },
+      { id: 'strategic', label: 'Drive Strategy', icon: Rocket },
+      { id: 'mindmap', label: 'Map Decisions', icon: Lightbulb },
+      { id: 'emergency', label: 'Run Emergency Playbooks', icon: ShieldAlert },
+      { id: 'audit', label: 'Audit Activity', icon: FileText },
+      { id: 'signature', label: 'Sign Documents', icon: PenTool },
+      { id: 'communications', label: 'Direct Communications', icon: Mail },
+      { id: 'word', label: 'Draft Briefings', icon: FileText },
     ];
   }, [metrics?.totalEmployees, metrics?.pendingApprovals]);
 
@@ -115,7 +115,7 @@ const CEOPortal: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'overview':
-        return <QuickActions />;
+        return <QuickActions onNavigate={setActiveTab} />;
       case 'personnel':
         return <PersonnelManager />;
       case 'financial':

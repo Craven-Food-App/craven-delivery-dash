@@ -10,6 +10,38 @@ import { Truck, Car } from "lucide-react";
 import { WelcomeConfetti } from "@/components/driver/WelcomeConfetti";
 import { BackgroundCheckStatus } from "@/components/driver/BackgroundCheckStatus";
 
+interface ApplicationRecord {
+  status: string | null;
+  first_name: string | null;
+  welcome_screen_shown: boolean | null;
+  onboarding_completed_at: string | null;
+  contract_signed_at: string | null;
+  payout_method: string | null;
+  vehicle_make: string | null;
+  vehicle_model: string | null;
+  vehicle_year: number | null;
+  vehicle_color: string | null;
+  vehicle_type: string | null;
+  license_plate: string | null;
+  date_of_birth: string | null;
+  street_address: string | null;
+  drivers_license: string | null;
+  license_state: string | null;
+  license_expiry: string | null;
+  drivers_license_front: string | null;
+  drivers_license_back: string | null;
+  insurance_provider: string | null;
+  insurance_policy: string | null;
+  insurance_document: string | null;
+  background_check_consent: boolean | null;
+  criminal_history_consent: boolean | null;
+  facial_image_consent: boolean | null;
+  electronic_1099_consent: boolean | null;
+  w9_signed: boolean | null;
+  background_check: boolean | null;
+  background_check_approved_at: string | null;
+}
+
 const DriverAuth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,11 +66,49 @@ const DriverAuth = () => {
   const handlePostLoginRouting = async (userId: string) => {
     try {
       // Fetch application data
-      const { data: application } = await supabase
+      const { data, error } = await supabase
         .from('craver_applications')
-        .select('status, first_name, background_check, background_check_approved_at, welcome_screen_shown, onboarding_completed_at')
+        .select(`
+          status,
+          first_name,
+          welcome_screen_shown,
+          onboarding_completed_at,
+          contract_signed_at,
+          payout_method,
+          vehicle_make,
+          vehicle_model,
+          vehicle_year,
+          vehicle_color,
+          vehicle_type,
+          license_plate,
+          date_of_birth,
+          street_address,
+          drivers_license,
+          license_state,
+          license_expiry,
+          drivers_license_front,
+          drivers_license_back,
+          insurance_provider,
+          insurance_policy,
+          insurance_document,
+          background_check_consent,
+          criminal_history_consent,
+          facial_image_consent,
+          electronic_1099_consent,
+          w9_signed,
+          background_check,
+          background_check_approved_at
+        `)
         .eq('user_id', userId)
-        .single();
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle<ApplicationRecord>();
+
+      if (error) {
+        throw error;
+      }
+
+      const application = data;
       
       if (!application) {
         navigate('/feeder');
@@ -47,21 +117,64 @@ const DriverAuth = () => {
 
       // If approved but haven't shown welcome confetti, show it!
       if (application.status === 'approved' && !application.welcome_screen_shown) {
-        setFirstName(application.first_name);
+        setFirstName(application.first_name ?? "");
         setShowWelcomeConfetti(true);
         return;
       }
 
-      // Check if they need to complete required onboarding steps first
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: fullApp } = await supabase
-        .from('craver_applications')
-        .select('contract_signed_at, payout_method, vehicle_make')
-        .eq('user_id', user.id)
-        .single();
+      if (application.status !== 'approved') {
+        setShowBackgroundCheckStatus(true);
+        return;
+      }
+
+      const requiredStrings: Array<keyof ApplicationRecord> = [
+        'date_of_birth',
+        'street_address',
+        'drivers_license',
+        'license_state',
+        'license_expiry',
+        'vehicle_type',
+        'vehicle_make',
+        'vehicle_model',
+        'vehicle_color',
+        'license_plate',
+        'insurance_provider',
+        'insurance_policy',
+        'payout_method',
+      ];
+
+      const requiredDocuments: Array<keyof ApplicationRecord> = [
+        'drivers_license_front',
+        'drivers_license_back',
+        'insurance_document',
+      ];
+
+      const requiredConsents: Array<keyof ApplicationRecord> = [
+        'background_check_consent',
+        'criminal_history_consent',
+        'facial_image_consent',
+        'electronic_1099_consent',
+        'w9_signed',
+      ];
+
+      const hasAllStrings = requiredStrings.every((field) => {
+        const value = application[field];
+        return typeof value === 'string' && value.trim().length > 0;
+      });
+
+      const hasAllDocuments = requiredDocuments.every((field) => {
+        const value = application[field];
+        return typeof value === 'string' && value.trim().length > 0;
+      });
+
+      const hasAllConsents = requiredConsents.every((field) => application[field] === true);
+      const hasVehicleYear = Boolean(application.vehicle_year);
+      const hasContract = typeof application.contract_signed_at === 'string' && application.contract_signed_at.length > 0;
 
       // If required info not collected, go to post-waitlist onboarding
-      if (fullApp && (!fullApp.contract_signed_at || !fullApp.payout_method || !fullApp.vehicle_make)) {
+      const needsPostWaitlist = !hasAllStrings || !hasAllDocuments || !hasAllConsents || !hasVehicleYear || !hasContract;
+
+      if (needsPostWaitlist) {
         navigate('/driver/post-waitlist-onboarding');
         return;
       }

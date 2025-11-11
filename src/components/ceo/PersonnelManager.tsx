@@ -83,6 +83,36 @@ export const PersonnelManager: React.FC = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  useEffect(() => {
+    const openHireModal = () => {
+      setSelectedEmployee(null);
+      form.resetFields();
+      setIsModalVisible(true);
+      setIsPreviewVisible(false);
+      setIsEditModalVisible(false);
+    };
+
+    const openPromoteModal = (event: Event) => {
+      const custom = event as CustomEvent<Employee>;
+      if (custom.detail) {
+        setSelectedEmployee(custom.detail);
+        promoteForm.setFieldsValue({
+          new_position: custom.detail.position,
+          salary_adjustment: custom.detail.salary,
+          effective_date: dayjs(),
+        });
+      }
+      setIsPromoteModalVisible(true);
+    };
+
+    window.addEventListener('ceo-open-hire-modal', openHireModal as EventListener);
+    window.addEventListener('ceo-open-promote-modal', openPromoteModal as EventListener);
+    return () => {
+      window.removeEventListener('ceo-open-hire-modal', openHireModal as EventListener);
+      window.removeEventListener('ceo-open-promote-modal', openPromoteModal as EventListener);
+    };
+  }, [form, promoteForm]);
+
   const fetchDepartments = async () => {
     try {
       const { data, error } = await supabase

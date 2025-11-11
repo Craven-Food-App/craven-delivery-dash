@@ -70,13 +70,6 @@ import MainHub from "./pages/MainHub";
 import BusinessAuth from "./pages/BusinessAuth";
 import BusinessAuthWrapper from "./components/BusinessAuthWrapper";
 import BusinessAuthGuard from "./components/BusinessAuthGuard";
-import { DriverSignup } from "./pages/driverOnboarding/Signup";
-import { LegalConsent } from "./pages/driverOnboarding/LegalConsent";
-import { IdentityForm } from "./pages/driverOnboarding/IdentityForm";
-import { BackgroundCheckPending } from "./pages/driverOnboarding/BackgroundCheckPending";
-import { SignAgreement } from "./pages/driverOnboarding/SignAgreement";
-import { WaitlistReveal } from "./pages/driverOnboarding/WaitlistReveal";
-import { ActivationReady } from "./pages/driverOnboarding/ActivationReady";
 import { DriverApplicationWizard } from "./pages/driverOnboarding/DriverApplicationWizard";
 import { PostWaitlistOnboarding } from "./pages/driverOnboarding/PostWaitlistOnboarding";
 import ExecutiveDocumentSign from "./pages/ExecutiveDocumentSign";
@@ -529,15 +522,6 @@ const App = () => {
           {/* New Driver Application Wizard (Full Page Flow) */}
           <Route path="/driver-onboarding/apply" element={<DriverApplicationWizard />} />
           <Route path="/driver/post-waitlist-onboarding" element={<PostWaitlistOnboarding />} />
-          
-          {/* Legacy Driver Onboarding Flow */}
-          <Route path="/driver-onboarding/signup" element={<DriverSignup />} />
-          <Route path="/driver-onboarding/consent" element={<LegalConsent />} />
-          <Route path="/driver-onboarding/identity" element={<IdentityForm />} />
-          <Route path="/driver-onboarding/background-check" element={<BackgroundCheckPending />} />
-          <Route path="/driver-onboarding/sign-agreement" element={<SignAgreement />} />
-          <Route path="/driver-onboarding/waitlist" element={<WaitlistReveal />} />
-          <Route path="/driver-onboarding/activation" element={<ActivationReady />} />
           
           {/* Legacy Enhanced Onboarding */}
           <Route path="/enhanced-onboarding" element={<EnhancedDriverOnboarding />} />

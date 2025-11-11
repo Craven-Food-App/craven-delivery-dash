@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
-import { Typography, Row, Col, Statistic, Table, DatePicker, Space, Button, Divider, Alert, Modal, InputNumber, Form, message, Select, Input, Tooltip, Popover } from "antd";
+import { Typography, Row, Col, Statistic, Table, DatePicker, Space, Button, Divider, Alert, Modal, InputNumber, Form, message, Select, Input, Tooltip, Popover, Slider, Checkbox, Tag } from "antd";
 import {
   DollarOutlined,
   BarChartOutlined,
@@ -686,20 +686,20 @@ export default function CFOPortal() {
   }, [fetchData]);
 
   const navItems = useMemo<ExecutiveNavItem[]>(() => [
-    { id: 'overview', label: 'Overview Dashboard', icon: BarChart3 },
-    { id: 'transactions', label: `Transactions (${transactions.length})`, icon: FileText },
-    { id: 'payouts', label: `Payouts (${payouts.length})`, icon: DollarSign },
-    { id: 'manager', label: 'Manager Console', icon: Users },
-    { id: 'ap', label: 'Accounts Payable', icon: FileText },
-    { id: 'ar', label: 'Accounts Receivable', icon: FileText },
-    { id: 'approvals', label: 'Approvals', icon: ShieldAlert },
-    { id: 'forecast', label: 'Forecast', icon: Rocket },
-    { id: 'bva', label: 'Budget vs Actuals', icon: Lightbulb },
+    { id: 'overview', label: 'Command Dashboard', icon: BarChart3 },
+    { id: 'transactions', label: `Review Transactions (${transactions.length})`, icon: FileText },
+    { id: 'payouts', label: `Process Payouts (${payouts.length})`, icon: DollarSign },
+    { id: 'manager', label: 'Manage Team', icon: Users },
+    { id: 'ap', label: 'Run Payables', icon: FileText },
+    { id: 'ar', label: 'Collect Receivables', icon: FileText },
+    { id: 'approvals', label: 'Approve Spend', icon: ShieldAlert },
+    { id: 'forecast', label: 'Model Forecast', icon: Rocket },
+    { id: 'bva', label: 'Track Budget vs Actuals', icon: Lightbulb },
     { id: 'close', label: 'Close Checklist', icon: FileText },
-    { id: 'treasury', label: 'Treasury', icon: DollarSign },
+    { id: 'treasury', label: 'Manage Treasury', icon: DollarSign },
     { id: 'communications', label: 'Executive Communications', icon: Mail },
     { id: 'messages', label: 'Message Center', icon: Mail },
-    { id: 'wordprocessor', label: 'Word Processor', icon: FileText },
+    { id: 'wordprocessor', label: 'Draft Documents', icon: FileText },
   ], [transactions.length, payouts.length]);
 
   const openPortal = (path: string, subdomain?: string) => {
@@ -861,16 +861,16 @@ export default function CFOPortal() {
         </SectionCard>
 
         <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(1, minmax(0,1fr))' : 'repeat(4, minmax(0,1fr))', gap:12 }}>
-          <BigNavButton color="#2563eb" hover="#1d4ed8" title="Manager Console" subtitle="Team & KPIs" onClick={()=> setActiveSection('manager')} infoContent="Access team management tools, view team KPIs, assign roles, and manage team performance metrics." />
-          <BigNavButton color="#16a34a" hover="#15803d" title="Accounts Payable" subtitle="Invoices & Runs" onClick={()=> setActiveSection('ap')} infoContent="Manage vendor invoices, create payment runs, approve expenses, and track accounts payable aging." />
-          <BigNavButton color="#f97316" hover="#ea580c" title="Accounts Receivable" subtitle="Aging & Collections" onClick={()=> setActiveSection('ar')} infoContent="View customer invoices, track receivables aging, manage collections, and monitor payment status." />
-          <BigNavButton color="#dc2626" hover="#b91c1c" title="Approvals" subtitle="Spend Reviews" onClick={()=> setActiveSection('approvals')} infoContent="Review and approve pending financial transactions, expense requests, and spending authorizations." />
+          <BigNavButton color="#2563eb" hover="#1d4ed8" title="Manager Console" subtitle="Assign roles & track KPIs" onClick={()=> setActiveSection('manager')} infoContent="Access team management tools, view team KPIs, assign roles, and manage team performance metrics." />
+          <BigNavButton color="#16a34a" hover="#15803d" title="Accounts Payable" subtitle="Approve invoices & run payments" onClick={()=> setActiveSection('ap')} infoContent="Manage vendor invoices, create payment runs, approve expenses, and track accounts payable aging." />
+          <BigNavButton color="#f97316" hover="#ea580c" title="Accounts Receivable" subtitle="Collect cash faster" onClick={()=> setActiveSection('ar')} infoContent="View customer invoices, track receivables aging, manage collections, and monitor payment status." />
+          <BigNavButton color="#dc2626" hover="#b91c1c" title="Approvals" subtitle="Sign off on spend" onClick={()=> setActiveSection('approvals')} infoContent="Review and approve pending financial transactions, expense requests, and spending authorizations." />
         </div>
         <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(1, minmax(0,1fr))' : 'repeat(4, minmax(0,1fr))', gap:12 }}>
-          <BigNavButton color="#0ea5e9" hover="#0284c7" title="Forecast" subtitle="Cash Flow" onClick={()=> setActiveSection('forecast')} infoContent="View cash flow projections, financial forecasts, and predictive analytics for future planning." />
-          <BigNavButton color="#7c3aed" hover="#6d28d9" title="Budget vs Actuals" subtitle="Variance" onClick={()=> setActiveSection('bva')} infoContent="Compare budgeted amounts against actual expenses and revenue to identify variances and trends." />
-          <BigNavButton color="#9333ea" hover="#7e22ce" title="Close" subtitle="Checklist & Recs" onClick={()=> setActiveSection('close')} infoContent="Monthly and quarterly closing checklist, journal entries, reconciliations, and closing procedures." />
-          <BigNavButton color="#0891b2" hover="#0e7490" title="Treasury" subtitle="Bank Balances" onClick={()=> setActiveSection('treasury')} infoContent="Monitor bank account balances, cash positions, and treasury management operations." />
+          <BigNavButton color="#0ea5e9" hover="#0284c7" title="Forecast" subtitle="Adjust cash levers" onClick={()=> setActiveSection('forecast')} infoContent="View cash flow projections, financial forecasts, and predictive analytics for future planning." />
+          <BigNavButton color="#7c3aed" hover="#6d28d9" title="Budget vs Actuals" subtitle="Investigate variances" onClick={()=> setActiveSection('bva')} infoContent="Compare budgeted amounts against actual expenses and revenue to identify variances and trends." />
+          <BigNavButton color="#9333ea" hover="#7e22ce" title="Close" subtitle="Complete monthly close" onClick={()=> setActiveSection('close')} infoContent="Monthly and quarterly closing checklist, journal entries, reconciliations, and closing procedures." />
+          <BigNavButton color="#0891b2" hover="#0e7490" title="Treasury" subtitle="Update bank positions" onClick={()=> setActiveSection('treasury')} infoContent="Monitor bank account balances, cash positions, and treasury management operations." />
         </div>
 
         {shouldWrapContent ? (
@@ -892,6 +892,35 @@ function ManagerConsole() {
   const [roleModal, setRoleModal] = useState(false);
   const [form] = Form.useForm();
   const [isMobile, setIsMobile] = useState(false);
+  const refreshRoles = useCallback(async () => {
+    const { data } = await supabase.from('finance_roles').select('user_id, role, user_label');
+    setRoles((data || []).map((r:any, idx:number)=> ({ key: `${r.user_id}-${r.role}-${idx}`, ...r })));
+  }, []);
+
+  const handleRemoveRole = useCallback((record: any) => {
+    Modal.confirm({
+      title: `Remove ${record.role} role`,
+      content: `Remove ${record.user_label || 'this user'} from ${record.role}?`,
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        setLoading(true);
+        try {
+          const base = supabase.from('finance_roles').delete().eq('role', record.role);
+          const query = record.user_id ? base.eq('user_id', record.user_id) : base.is('user_id', null);
+          const { error } = await query;
+          if (error) throw error;
+          message.success('Role removed');
+          await refreshRoles();
+        } catch (err) {
+          console.error('Error removing role', err);
+          message.error('Failed to remove role');
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
+  }, [refreshRoles, setLoading]);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -968,6 +997,31 @@ function ManagerConsole() {
             { title: 'User', dataIndex: 'user_label' },
             { title: 'User ID', dataIndex: 'user_id' },
             { title: 'Role', dataIndex: 'role' },
+          {
+            title: 'Actions',
+            key: 'actions',
+            width: 160,
+            render: (_: any, record: any) => (
+              <Space>
+                <Button
+                  size="small"
+                  onClick={() => {
+                    form.setFieldsValue({
+                      user_label: record.user_label,
+                      user_id: record.user_id,
+                      role: record.role,
+                    });
+                    setRoleModal(true);
+                  }}
+                >
+                  Reassign
+                </Button>
+                <Button size="small" danger onClick={() => handleRemoveRole(record)}>
+                  Remove
+                </Button>
+              </Space>
+            ),
+          },
           ]}
         />
       </div>
@@ -982,8 +1036,7 @@ function ManagerConsole() {
           try {
             const { error } = await supabase.from('finance_roles').insert({ user_id: vals.user_id, user_label: vals.user_label, role: vals.role });
             if (error) throw error;
-            const { data } = await supabase.from('finance_roles').select('user_id, role, user_label');
-            setRoles((data || []).map((r:any, idx:number)=> ({ key: `${r.user_id}-${r.role}-${idx}`, ...r })));
+            await refreshRoles();
             setRoleModal(false);
             form.resetFields();
             message.success('Role assigned');
@@ -1152,9 +1205,42 @@ function BudgetVsActuals() {
 }
 
 function CashFlowForecast() {
-  const [series, setSeries] = useState<Array<{ period: string, cash: number }>>([]);
+  const [series, setSeries] = useState<Array<{ period: string; cash: number; revenue: number; expenses: number }>>([]);
   const [loading, setLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [expenseRatio, setExpenseRatio] = useState(0.65);
+  const [growthRate, setGrowthRate] = useState(0.05);
+  const [revenueByMonth, setRevenueByMonth] = useState<Record<string, number>>({});
+
+  const buildForecast = useCallback(() => {
+    const months = 6;
+    const now = new Date();
+    const sortedPeriods = Object.keys(revenueByMonth).sort();
+    let lastActualRevenue = sortedPeriods.length
+      ? revenueByMonth[sortedPeriods[sortedPeriods.length - 1]]
+      : 0;
+    const forecast: Array<{ period: string; cash: number; revenue: number; expenses: number }> = [];
+    let cash = 0;
+
+    for (let i = -3; i < months; i++) {
+      const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + i, 1));
+      const period = d.toISOString().slice(0, 7);
+      let revenue = revenueByMonth[period];
+      if (typeof revenue === 'number') {
+        lastActualRevenue = revenue;
+      } else if (i >= 0) {
+        revenue = Math.max(0, lastActualRevenue * (1 + growthRate));
+        lastActualRevenue = revenue;
+      } else {
+        revenue = 0;
+      }
+      const expenses = Math.round(revenue * expenseRatio);
+      cash += revenue - expenses;
+      forecast.push({ period, cash, revenue, expenses });
+    }
+    return forecast;
+  }, [revenueByMonth, expenseRatio, growthRate]);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -1162,45 +1248,86 @@ function CashFlowForecast() {
         const { data: orders } = await supabase
           .from('orders')
           .select('total_amount, created_at')
-          .gte('created_at', new Date(Date.now() - 180*24*60*60*1000).toISOString());
-        const revenueByMonth: Record<string, number> = (orders || []).reduce((m: Record<string, number>, o: any) => {
-          const key = new Date(o.created_at).toISOString().slice(0,7);
-          m[key] = (m[key] || 0) + (o.total_amount || 0);
-          return m;
-        }, {});
-        // Simple expense model: 65% of revenue
-        const months = 6;
-        const now = new Date();
-        const forecast: Array<{ period: string, cash: number }> = [];
-        let cash = 0;
-        for (let i = -3; i < months; i++) {
-          const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + i, 1));
-          const period = d.toISOString().slice(0,7);
-          const revenue = revenueByMonth[period] || (i >= 0 ? (revenueByMonth[Object.keys(revenueByMonth).slice(-1)[0]] || 0) : 0);
-          const expenses = Math.round(revenue * 0.65);
-          cash += Math.max(0, revenue - expenses);
-          forecast.push({ period, cash });
-        }
-        setSeries(forecast);
+          .gte('created_at', new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString());
+        const revenueMap: Record<string, number> = (orders || []).reduce(
+          (m: Record<string, number>, o: any) => {
+            const key = new Date(o.created_at).toISOString().slice(0, 7);
+            m[key] = (m[key] || 0) + (o.total_amount || 0);
+            return m;
+          },
+          {}
+        );
+        setRevenueByMonth(revenueMap);
       } finally {
         setLoading(false);
       }
     })();
-    
+
     const checkMobile = () => setIsMobile(window.innerWidth < 640);
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  useEffect(() => {
+    setSeries(buildForecast());
+  }, [buildForecast]);
+
+  const scenarioCash = useMemo(
+    () => (series.length ? series[series.length - 1].cash : 0),
+    [series]
+  );
+
   return (
     <div>
-      <Typography.Paragraph style={{ color: '#334155' }}>Projected cumulative cash over time based on recent revenue and estimated expenses.</Typography.Paragraph>
+      <Typography.Paragraph style={{ color: '#334155' }}>
+        Adjust expense ratio and forward revenue growth to model cash runway in real time.
+      </Typography.Paragraph>
+      <Space
+        direction={isMobile ? 'vertical' : 'horizontal'}
+        wrap
+        style={{ marginBottom: 16, width: '100%' }}
+        size={isMobile ? 12 : 20}
+      >
+        <div style={{ minWidth: isMobile ? '100%' : 240 }}>
+          <Typography.Text strong>Expense Ratio</Typography.Text>
+          <Slider
+            min={30}
+            max={90}
+            step={1}
+            value={Math.round(expenseRatio * 100)}
+            onChange={(val) => setExpenseRatio((Array.isArray(val) ? val[0] : val) / 100)}
+          />
+          <Typography.Text type="secondary">{Math.round(expenseRatio * 100)}%</Typography.Text>
+        </div>
+        <div style={{ minWidth: isMobile ? '100%' : 240 }}>
+          <Typography.Text strong>Forward Growth Rate</Typography.Text>
+          <Slider
+            min={-20}
+            max={40}
+            step={1}
+            value={Math.round(growthRate * 100)}
+            onChange={(val) => setGrowthRate((Array.isArray(val) ? val[0] : val) / 100)}
+          />
+          <Typography.Text type="secondary">{Math.round(growthRate * 100)}%</Typography.Text>
+        </div>
+        <div style={{ minWidth: isMobile ? '100%' : 220 }}>
+          <Typography.Text strong>Cash After Scenario</Typography.Text>
+          <div style={{ fontSize: isMobile ? 20 : 24, fontWeight: 700, color: '#047857' }}>
+            ${Math.round(scenarioCash).toLocaleString()}
+          </div>
+          <Typography.Text type="secondary">6-month cumulative outlook</Typography.Text>
+        </div>
+        <Button onClick={() => { setExpenseRatio(0.65); setGrowthRate(0.05); }} disabled={expenseRatio === 0.65 && growthRate === 0.05}>
+          Reset Scenario
+        </Button>
+      </Space>
       <div style={{ height: 320, marginBottom: 16 }}>
         <ChartContainer config={{ cash: { label: 'Cash', color: '#16a34a' } }}>
           <LineChart data={series} margin={{ left: 12, right: 12, top: 8, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="period" tick={{ fontSize: 12 }} />
-            <YAxis tickFormatter={(v)=>`$${v.toLocaleString()}`} width={72} />
+            <YAxis tickFormatter={(v) => `$${v.toLocaleString()}`} width={72} />
             <ChartTooltip content={<ChartTooltipContent />} />
             <Line type="monotone" dataKey="cash" stroke="var(--color-cash)" strokeWidth={2} dot={false} />
           </LineChart>
@@ -1214,7 +1341,9 @@ function CashFlowForecast() {
           size={isMobile ? 'small' : 'default'}
           columns={[
             { title: 'Period', dataIndex: 'period' },
-            { title: 'Projected Cash', dataIndex: 'cash', render: (v: number) => `$${(v||0).toLocaleString()}` },
+            { title: 'Revenue', dataIndex: 'revenue', render: (v: number) => `$${(v || 0).toLocaleString()}` },
+            { title: 'Expenses', dataIndex: 'expenses', render: (v: number) => `$${(v || 0).toLocaleString()}` },
+            { title: 'Projected Cash', dataIndex: 'cash', render: (v: number) => `$${(v || 0).toLocaleString()}` },
           ]}
         />
       </div>
@@ -1227,16 +1356,44 @@ function ApprovalsPanel() {
   const [status, setStatus] = useState<string>('pending');
   const [loading, setLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const statusColors = useMemo(() => ({
+    pending: 'gold',
+    approved: 'green',
+    rejected: 'red',
+  }), []);
+
+  const loadApprovals = useCallback(async (statusFilter: string) => {
+    const { data } = await supabase
+      .from('ceo_financial_approvals')
+      .select('id, requester, description, amount, status, created_at')
+      .eq('status', statusFilter)
+      .order('created_at', { ascending: false });
+    setRows((data || []).map((d: any) => ({ key: d.id, ...d })));
+  }, []);
+
+  const handleApprovalAction = useCallback(async (record: any, nextStatus: 'approved' | 'rejected') => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('ceo_financial_approvals')
+        .update({ status: nextStatus })
+        .eq('id', record.id);
+      if (error) throw error;
+      message.success(`Request ${nextStatus}`);
+      await loadApprovals(status);
+    } catch (err) {
+      console.error('Failed to update approval', err);
+      message.error('Unable to update approval');
+    } finally {
+      setLoading(false);
+    }
+  }, [loadApprovals, status]);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
-        const { data } = await supabase
-          .from('ceo_financial_approvals')
-          .select('id, requester, description, amount, status, created_at')
-          .eq('status', status)
-          .order('created_at', { ascending: false });
-        setRows((data || []).map((d: any) => ({ key: d.id, ...d })));
+        await loadApprovals(status);
       } finally {
         setLoading(false);
       }
@@ -1246,7 +1403,7 @@ function ApprovalsPanel() {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, [status]);
+  }, [status, loadApprovals]);
   return (
     <div style={{ position: 'relative' }}>
       <InfoIcon content="Review and approve pending financial transactions, expense requests, and spending authorizations. Filter by status to view pending, approved, or rejected items." title="Financial Approvals" />
@@ -1268,8 +1425,34 @@ function ApprovalsPanel() {
             { title: 'Requester', dataIndex: 'requester' },
             { title: 'Description', dataIndex: 'description' },
             { title: 'Amount', dataIndex: 'amount', render: (v: number) => `$${(v||0).toLocaleString()}` },
-            { title: 'Status', dataIndex: 'status' },
+            { title: 'Status', dataIndex: 'status', render: (value: string) => <Tag color={statusColors[value] || 'default'} style={{ textTransform: 'capitalize' }}>{value}</Tag> },
             { title: 'Created', dataIndex: 'created_at', render: (v: string) => new Date(v).toLocaleString(), width: 180 },
+            {
+              title: 'Actions',
+              key: 'actions',
+              width: 220,
+              render: (_: any, record: any) => (
+                <Space wrap>
+                  <Button size="small" type="primary" onClick={() => handleApprovalAction(record, 'approved')}>
+                    Approve
+                  </Button>
+                  <Button
+                    size="small"
+                    danger
+                    onClick={() =>
+                      Modal.confirm({
+                        title: 'Reject request?',
+                        content: 'This will mark the request as rejected.',
+                        okButtonProps: { danger: true },
+                        onOk: () => handleApprovalAction(record, 'rejected'),
+                      })
+                    }
+                  >
+                    Reject
+                  </Button>
+                </Space>
+              ),
+            },
           ]}
         />
       </div>
@@ -1288,23 +1471,76 @@ function AccountsPayable() {
   const [selectedInvoices, setSelectedInvoices] = useState<any[]>([]);
   const [selectedRun, setSelectedRun] = useState<string | undefined>(undefined);
   const [isMobile, setIsMobile] = useState(false);
+  const statusColors: Record<string, string> = useMemo(() => ({
+    pending: 'gold',
+    approved: 'blue',
+    paid: 'green',
+    rejected: 'red',
+  }), []);
+
+  const loadInvoicesAndRuns = useCallback(async (statusFilter: string) => {
+    const [inv, pr] = await Promise.all([
+      supabase
+        .from('invoices')
+        .select('id, vendor, invoice_number, amount, due_date, status, invoice_date, payment_run_id')
+        .eq('status', statusFilter)
+        .order('due_date', { ascending: true }),
+      supabase
+        .from('payment_runs')
+        .select('id, scheduled_date, status, total_amount, processed_at')
+        .order('scheduled_date', { ascending: false })
+    ]);
+    setInvoices((inv.data || []).map((d: any) => ({ key: d.id, ...d })));
+    setRuns((pr.data || []).map((r: any) => ({ key: r.id, ...r })));
+    setSelectedInvoices([]);
+  }, []);
+
+  const handleInvoiceStatusChange = useCallback(async (invoiceId: string, nextStatus: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .update({ status: nextStatus })
+        .eq('id', invoiceId);
+      if (error) throw error;
+      message.success(`Invoice marked ${nextStatus}`);
+      await loadInvoicesAndRuns(status);
+    } catch (err) {
+      console.error('Error updating invoice status', err);
+      message.error('Unable to update invoice');
+    } finally {
+      setLoading(false);
+    }
+  }, [loadInvoicesAndRuns, status]);
+
+  const handleBulkStatusChange = useCallback(async (nextStatus: string) => {
+    if (!selectedInvoices.length) {
+      message.info('Select at least one invoice');
+      return;
+    }
+    setLoading(true);
+    try {
+      const ids = selectedInvoices.map((i) => i.key);
+      const { error } = await supabase
+        .from('invoices')
+        .update({ status: nextStatus })
+        .in('id', ids);
+      if (error) throw error;
+      message.success(`Updated ${ids.length} invoices to ${nextStatus}`);
+      await loadInvoicesAndRuns(status);
+    } catch (err) {
+      console.error('Bulk invoice update failed', err);
+      message.error('Failed to update invoices');
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedInvoices, loadInvoicesAndRuns, status]);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
-        const [inv, pr] = await Promise.all([
-          supabase
-          .from('invoices')
-          .select('id, vendor, invoice_number, amount, due_date, status, invoice_date')
-          .eq('status', status)
-          .order('due_date', { ascending: true }),
-          supabase
-            .from('payment_runs')
-            .select('id, scheduled_date, status, total_amount, processed_at')
-            .order('scheduled_date', { ascending: false })
-        ]);
-        setInvoices((inv.data || []).map((d: any) => ({ key: d.id, ...d })));
-        setRuns((pr.data || []).map((r: any) => ({ key: r.id, ...r })));
+        await loadInvoicesAndRuns(status);
       } finally {
         setLoading(false);
       }
@@ -1382,6 +1618,8 @@ function AccountsPayable() {
           setCreatingRun(true);
         }}>Create Payment Run</Button>
         <Button onClick={() => setLinking(true)} disabled={!selectedInvoices.length}>Link to Run</Button>
+        <Button onClick={() => handleBulkStatusChange('approved')} disabled={!selectedInvoices.length}>Approve Selected</Button>
+        <Button onClick={() => handleBulkStatusChange('paid')} disabled={!selectedInvoices.length}>Mark Selected Paid</Button>
         <Button onClick={async () => {
           // Approve all pending invoices (demo flow)
           setLoading(true);
@@ -1391,12 +1629,7 @@ function AccountsPayable() {
               const { error } = await supabase.from('invoices').update({ status: 'approved' }).in('id', pendingIds);
               if (error) throw error;
               message.success('Approved pending invoices');
-              const { data } = await supabase
-                .from('invoices')
-                .select('id, vendor, invoice_number, amount, due_date, status, invoice_date')
-                .eq('status', status)
-                .order('due_date', { ascending: true });
-              setInvoices((data || []).map((d: any) => ({ key: d.id, ...d })));
+              await loadInvoicesAndRuns(status);
             } else {
               message.info('No pending invoices');
             }
@@ -1419,6 +1652,7 @@ function AccountsPayable() {
             const { error } = await supabase.from('payment_runs').insert({ scheduled_date: dueBefore.toISOString().slice(0,10), status: 'draft', total_amount: total });
             if (error) throw error;
             message.success(`Payment run created for $${total.toLocaleString()}`);
+            await loadInvoicesAndRuns(status);
             setCreatingRun(false);
           } finally {
             setLoading(false);
@@ -1445,12 +1679,7 @@ function AccountsPayable() {
             if (error) throw error;
             message.success('Invoices linked to run');
             setLinking(false);
-            const { data } = await supabase
-              .from('invoices')
-              .select('id, vendor, invoice_number, amount, due_date, status, invoice_date')
-              .eq('status', status)
-              .order('due_date', { ascending: true });
-            setInvoices((data || []).map((d: any) => ({ key: d.id, ...d })));
+            await loadInvoicesAndRuns(status);
           } finally {
             setLoading(false);
           }
@@ -1482,7 +1711,30 @@ function AccountsPayable() {
             { title: 'Invoice Date', dataIndex: 'invoice_date', render: (v: string) => new Date(v).toLocaleDateString() },
             { title: 'Due', dataIndex: 'due_date', render: (v: string) => new Date(v).toLocaleDateString() },
             { title: 'Amount', dataIndex: 'amount', render: (v: number) => `$${(v||0).toLocaleString()}` },
-            { title: 'Status', dataIndex: 'status' },
+            {
+              title: 'Status',
+              dataIndex: 'status',
+              render: (value: string) => <Tag color={statusColors[value] || 'default'} style={{ textTransform: 'capitalize' }}>{value}</Tag>,
+            },
+            {
+              title: 'Actions',
+              key: 'actions',
+              width: 220,
+              render: (_: any, record: any) => (
+                <Space wrap>
+                  {record.status !== 'approved' && (
+                    <Button size="small" onClick={() => handleInvoiceStatusChange(record.key, 'approved')}>
+                      Approve
+                    </Button>
+                  )}
+                  {record.status !== 'paid' && (
+                    <Button size="small" type="primary" onClick={() => handleInvoiceStatusChange(record.key, 'paid')}>
+                      Mark Paid
+                    </Button>
+                  )}
+                </Space>
+              ),
+            },
           ]}
         />
       </div>
@@ -1512,19 +1764,7 @@ function AccountsPayable() {
                     const { error: e2 } = await supabase.from('invoices').update({ status: 'paid' }).eq('payment_run_id', rec.id);
                     if (e2) throw e2;
                     message.success('Run processed');
-                    const [inv, pr] = await Promise.all([
-                      supabase
-                        .from('invoices')
-                        .select('id, vendor, invoice_number, amount, due_date, status, invoice_date')
-                        .eq('status', status)
-                        .order('due_date', { ascending: true }),
-                      supabase
-                        .from('payment_runs')
-                        .select('id, scheduled_date, status, total_amount, processed_at')
-                        .order('scheduled_date', { ascending: false })
-                    ]);
-                    setInvoices((inv.data || []).map((d: any) => ({ key: d.id, ...d })));
-                    setRuns((pr.data || []).map((r: any) => ({ key: r.id, ...r })));
+                    await loadInvoicesAndRuns(status);
                   } finally {
                     setLoading(false);
                   }
@@ -1543,20 +1783,95 @@ function AccountsReceivable() {
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<any[]>([]);
   const [isMobile, setIsMobile] = useState(false);
+  const statusColors = useMemo(() => ({
+    open: 'gold',
+    pending: 'gold',
+    overdue: 'red',
+    paid: 'green',
+    partial: 'blue',
+  }), []);
+
+  const loadReceivables = useCallback(async () => {
+    const { data } = await supabase
+      .from('receivables')
+      .select('id, customer, reference, amount, due_date, status, issue_date')
+      .order('due_date', { ascending: true });
+    const list = (data || []).map((r: any) => {
+      const daysPast = Math.max(0, Math.floor((Date.now() - new Date(r.due_date).getTime()) / 86400000));
+      const bucket = daysPast === 0 ? 'Current' : daysPast <= 30 ? '0-30' : daysPast <= 60 ? '31-60' : daysPast <= 90 ? '61-90' : '90+';
+      return { key: r.id, ...r, daysPast, bucket };
+    });
+    setRows(list);
+    setSelected([]);
+  }, []);
+
+  const logReminder = useCallback(async (records: any[]) => {
+    if (!records.length) {
+      message.info('Select at least one receivable');
+      return;
+    }
+    setLoading(true);
+    try {
+      const inserts = records.map((r) => ({
+        receivable_id: r.key,
+        action: 'reminder_sent',
+        notes: `Reminder sent ${new Date().toISOString()}`,
+      }));
+      const { error } = await supabase.from('dunning_events').insert(inserts);
+      if (error) throw error;
+      message.success('Reminder logged');
+    } catch (err) {
+      console.error('Failed to log reminder', err);
+      message.error('Unable to log reminder');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleLogReminder = useCallback(async () => {
+    await logReminder(selected);
+  }, [logReminder, selected]);
+
+  const markCollected = useCallback(async (records: any[]) => {
+    if (!records.length) {
+      message.info('Select receivables to mark as collected');
+      return;
+    }
+    setLoading(true);
+    try {
+      const ids = records.map((r) => r.key);
+      const { error } = await supabase
+        .from('receivables')
+        .update({ status: 'paid' })
+        .in('id', ids);
+      if (error) throw error;
+      message.success('Receivables marked as collected');
+      await loadReceivables();
+    } catch (err) {
+      console.error('Failed to mark collected', err);
+      message.error('Unable to mark receivables collected');
+    } finally {
+      setLoading(false);
+    }
+  }, [loadReceivables]);
+
+  const handleMarkCollected = useCallback(async () => {
+    await markCollected(selected);
+  }, [markCollected, selected]);
+
+  const handleRowReminder = useCallback(async (record: any) => {
+    await logReminder([record]);
+  }, [logReminder]);
+
+  const handleRowCollected = useCallback(async (record: any) => {
+    await markCollected([record]);
+  }, [markCollected]);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
-        const { data } = await supabase
-          .from('receivables')
-          .select('id, customer, reference, amount, due_date, status, issue_date')
-          .order('due_date', { ascending: true });
-        const list = (data || []).map((r: any) => {
-          const daysPast = Math.max(0, Math.floor((Date.now() - new Date(r.due_date).getTime()) / 86400000));
-          const bucket = daysPast === 0 ? 'Current' : daysPast <= 30 ? '0-30' : daysPast <= 60 ? '31-60' : daysPast <= 90 ? '61-90' : '90+';
-          return { key: r.id, ...r, daysPast, bucket };
-        });
-        setRows(list);
+        await loadReceivables();
       } finally {
         setLoading(false);
       }
@@ -1566,7 +1881,7 @@ function AccountsReceivable() {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  }, [loadReceivables]);
   return (
     <div>
       <Row gutter={[16,16]} style={{ marginBottom: 12 }}>
@@ -1624,18 +1939,8 @@ function AccountsReceivable() {
         </Col>
       </Row>
       <Space style={{ marginBottom: 12 }}>
-        <Button onClick={async () => {
-          if (!selected.length) { message.info('Select at least one receivable'); return; }
-          setLoading(true);
-          try {
-            const inserts = selected.map((r) => ({ receivable_id: r.key, action: 'email_1', notes: 'Automated dunning email 1' }));
-            const { error } = await supabase.from('dunning_events').insert(inserts);
-            if (error) throw error;
-            message.success('Dunning events logged');
-          } finally {
-            setLoading(false);
-          }
-        }}>Log Dunning (Email 1)</Button>
+        <Button onClick={handleLogReminder}>Send Reminder</Button>
+        <Button onClick={handleMarkCollected} type="primary">Mark Collected</Button>
         <Button onClick={() => {
           // CSV export of current grid
           const headers = ['Customer','Reference','Issue Date','Due Date','Days Past Due','Bucket','Amount','Status'];
@@ -1676,7 +1981,20 @@ function AccountsReceivable() {
             { title: 'Days Past Due', dataIndex: 'daysPast' },
             { title: 'Bucket', dataIndex: 'bucket' },
             { title: 'Amount', dataIndex: 'amount', render: (v: number) => `$${(v||0).toLocaleString()}` },
-            { title: 'Status', dataIndex: 'status' },
+            { title: 'Status', dataIndex: 'status', render: (value: string) => <Tag color={statusColors[value] || 'default'} style={{ textTransform: 'capitalize' }}>{value}</Tag> },
+            {
+              title: 'Actions',
+              key: 'actions',
+              width: 220,
+              render: (_: any, record: any) => (
+                <Space wrap>
+                  <Button size="small" onClick={() => handleRowReminder(record)}>Remind</Button>
+                  {record.status !== 'paid' && (
+                    <Button size="small" type="primary" onClick={() => handleRowCollected(record)}>Mark Paid</Button>
+                  )}
+                </Space>
+              ),
+            },
           ]}
         />
       </div>
@@ -1690,16 +2008,58 @@ function CloseManagement() {
   const [loading, setLoading] = useState(false);
   const [rolling, setRolling] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const loadCloseData = useCallback(async () => {
+    const [t, r] = await Promise.all([
+      supabase.from('close_tasks').select('id, period, name, owner, status, due_day').order('due_day', { ascending: true }),
+      supabase.from('reconciliations').select('id, period, type, status, notes').order('type', { ascending: true }),
+    ]);
+    setTasks((t.data || []).map((x: any) => ({ key: x.id, ...x })));
+    setRecs((r.data || []).map((x: any) => ({ key: x.id, ...x })));
+  }, []);
+
+  const handleTaskStatusChange = useCallback(async (record: any, nextStatus?: string) => {
+    setLoading(true);
+    try {
+      const statusToSet = nextStatus || (record.status === 'done' ? 'todo' : 'done');
+      const { error } = await supabase
+        .from('close_tasks')
+        .update({ status: statusToSet })
+        .eq('id', record.id);
+      if (error) throw error;
+      message.success(`Task marked ${statusToSet}`);
+      await loadCloseData();
+    } catch (err) {
+      console.error('Failed to update close task', err);
+      message.error('Unable to update task');
+    } finally {
+      setLoading(false);
+    }
+  }, [loadCloseData]);
+
+  const handleReconStatusChange = useCallback(async (record: any, nextStatus?: string) => {
+    setLoading(true);
+    try {
+      const statusToSet = nextStatus || (record.status === 'tied' ? 'open' : 'tied');
+      const { error } = await supabase
+        .from('reconciliations')
+        .update({ status: statusToSet })
+        .eq('id', record.id);
+      if (error) throw error;
+      message.success(`Reconciliation ${statusToSet}`);
+      await loadCloseData();
+    } catch (err) {
+      console.error('Failed to update reconciliation', err);
+      message.error('Unable to update reconciliation');
+    } finally {
+      setLoading(false);
+    }
+  }, [loadCloseData]);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
-        const [t, r] = await Promise.all([
-          supabase.from('close_tasks').select('id, period, name, owner, status, due_day').order('due_day', { ascending: true }),
-          supabase.from('reconciliations').select('id, period, type, status, notes').order('type', { ascending: true }),
-        ]);
-        setTasks((t.data || []).map((x: any) => ({ key: x.id, ...x })));
-        setRecs((r.data || []).map((x: any) => ({ key: x.id, ...x })));
+        await loadCloseData();
       } finally {
         setLoading(false);
       }
@@ -1727,8 +2087,7 @@ function CloseManagement() {
                 const inserts = prevTasks.map((t: any) => ({ period: currentPeriod, name: t.name, owner: t.owner, status: 'todo', due_day: t.due_day }));
                 await supabase.from('close_tasks').insert(inserts);
                 message.success('Rolled close tasks forward');
-                const t = await supabase.from('close_tasks').select('id, period, name, owner, status, due_day').order('due_day', { ascending: true });
-                setTasks((t.data || []).map((x: any) => ({ key: x.id, ...x })));
+                await loadCloseData();
               } else {
                 message.info('No previous tasks to roll');
               }
@@ -1749,7 +2108,33 @@ function CloseManagement() {
               { title: 'Task', dataIndex: 'name' },
               { title: 'Owner', dataIndex: 'owner', width: 140 },
               { title: 'Due (Day)', dataIndex: 'due_day', width: 100 },
+              {
+                title: 'Done',
+                dataIndex: 'status',
+                width: 80,
+                render: (_: any, record: any) => (
+                  <Checkbox
+                    checked={record.status === 'done'}
+                    onChange={() => handleTaskStatusChange(record)}
+                  />
+                ),
+              },
               { title: 'Status', dataIndex: 'status', width: 120 },
+              {
+                title: 'Actions',
+                key: 'actions',
+                width: 160,
+                render: (_: any, record: any) => (
+                  <Space>
+                    <Button size="small" onClick={() => handleTaskStatusChange(record, 'in_progress')}>
+                      Start
+                    </Button>
+                    <Button size="small" type="primary" onClick={() => handleTaskStatusChange(record, 'done')}>
+                      Complete
+                    </Button>
+                  </Space>
+                ),
+              },
             ]}
           />
         </div>
@@ -1767,6 +2152,25 @@ function CloseManagement() {
               { title: 'Period', dataIndex: 'period', width: 110 },
               { title: 'Type', dataIndex: 'type', width: 140 },
               { title: 'Status', dataIndex: 'status', width: 120 },
+              {
+                title: 'Actions',
+                key: 'actions',
+                width: 160,
+                render: (_: any, record: any) => (
+                  <Space>
+                    <Button size="small" onClick={() => handleReconStatusChange(record, 'in_progress')}>
+                      Work
+                    </Button>
+                    <Button
+                      size="small"
+                      type="primary"
+                      onClick={() => handleReconStatusChange(record, 'tied')}
+                    >
+                      Tie Out
+                    </Button>
+                  </Space>
+                ),
+              },
               { title: 'Notes', dataIndex: 'notes' },
             ]}
           />
@@ -1782,12 +2186,18 @@ function TreasuryView() {
   const [editAcc, setEditAcc] = useState<any | null>(null);
   const [form] = Form.useForm();
   const [isMobile, setIsMobile] = useState(false);
+  const [newAccountModal, setNewAccountModal] = useState(false);
+  const [newAccountForm] = Form.useForm();
+  const loadAccounts = useCallback(async () => {
+    const { data } = await supabase.from('bank_accounts').select('id, name, institution, currency, current_balance, updated_at');
+    setAccounts((data || []).map((x: any) => ({ key: x.id, ...x })));
+  }, []);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
-        const { data } = await supabase.from('bank_accounts').select('id, name, institution, currency, current_balance, updated_at');
-        setAccounts((data || []).map((x: any) => ({ key: x.id, ...x })));
+        await loadAccounts();
       } finally {
         setLoading(false);
       }
@@ -1797,12 +2207,26 @@ function TreasuryView() {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  }, [loadAccounts]);
   const total = accounts.reduce((s, a) => s + (a.current_balance || 0), 0);
   return (
     <div>
       <Row gutter={[16,16]} style={{ marginBottom: 12 }}>
         <Col xs={24} md={8}><div style={{ background:'#ecfeff', padding: isMobile ? 12 : 16, borderRadius:8 }}><div style={{ color:'#0891b2', fontSize: isMobile ? 12 : 14 }}>Total Cash</div><div style={{ fontWeight:700, fontSize: isMobile ? 16 : 18 }}>$ {total.toLocaleString()}</div></div></Col>
+        <Col xs={24} md={8}>
+          <div style={{ background:'#f5f3ff', padding: isMobile ? 12 : 16, borderRadius:8 }}>
+            <div style={{ color:'#6d28d9', fontSize: isMobile ? 12 : 14 }}>Accounts</div>
+            <div style={{ fontWeight:700, fontSize: isMobile ? 16 : 18 }}>{accounts.length}</div>
+          </div>
+        </Col>
+        <Col xs={24} md={8}>
+          <div style={{ background:'#ecfeff', padding: isMobile ? 12 : 16, borderRadius:8, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+            <span style={{ color:'#0369a1', fontWeight:600 }}>Actions</span>
+            <Button size={isMobile ? 'small' : 'middle'} type="primary" onClick={() => { newAccountForm.resetFields(); setNewAccountModal(true); }}>
+              Add Account
+            </Button>
+          </div>
+        </Col>
       </Row>
       <div className="overflow-hidden">
         <Table
@@ -1833,8 +2257,7 @@ function TreasuryView() {
             const { error } = await supabase.from('bank_accounts').update({ current_balance: vals.current_balance, updated_at: new Date().toISOString() }).eq('id', editAcc.id);
             if (error) throw error;
             message.success('Balance updated');
-            const { data } = await supabase.from('bank_accounts').select('id, name, institution, currency, current_balance, updated_at');
-            setAccounts((data || []).map((x: any) => ({ key: x.id, ...x })));
+            await loadAccounts();
             setEditAcc(null);
           } finally {
             setLoading(false);
@@ -1843,6 +2266,46 @@ function TreasuryView() {
       >
         <Form form={form} layout="vertical">
           <Form.Item label="Current Balance" name="current_balance" rules={[{ required: true, message: 'Enter balance' }]}>
+            <InputNumber style={{ width: '100%' }} min={0} step={100} formatter={(v)=> String(v)} />
+          </Form.Item>
+        </Form>
+      </Modal>
+      <Modal
+        title="Add Bank Account"
+        open={newAccountModal}
+        width={isMobile ? '90%' : 600}
+        onCancel={() => setNewAccountModal(false)}
+        onOk={async () => {
+          const vals = await newAccountForm.validateFields();
+          setLoading(true);
+          try {
+            const { error } = await supabase.from('bank_accounts').insert({
+              name: vals.name,
+              institution: vals.institution,
+              currency: vals.currency || 'USD',
+              current_balance: vals.current_balance || 0,
+              updated_at: new Date().toISOString(),
+            });
+            if (error) throw error;
+            message.success('Account created');
+            setNewAccountModal(false);
+            await loadAccounts();
+          } finally {
+            setLoading(false);
+          }
+        }}
+      >
+        <Form layout="vertical" form={newAccountForm}>
+          <Form.Item name="name" label="Account Name" rules={[{ required: true, message: 'Enter account name' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="institution" label="Institution" rules={[{ required: true, message: 'Enter institution' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="currency" label="Currency" initialValue="USD">
+            <Input />
+          </Form.Item>
+          <Form.Item name="current_balance" label="Opening Balance" initialValue={0}>
             <InputNumber style={{ width: '100%' }} min={0} step={100} formatter={(v)=> String(v)} />
           </Form.Item>
         </Form>

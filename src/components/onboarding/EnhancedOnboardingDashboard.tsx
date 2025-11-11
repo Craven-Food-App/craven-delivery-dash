@@ -55,19 +55,50 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
   useEffect(() => {
     // Auto-complete tasks that were done during application
     if (progress?.application && progress.tasks.length > 0) {
-      autoCompleteApplicationTasks();
+      void autoCompleteApplicationTasks();
     }
-  }, [progress?.application]);
+  }, [progress]);
 
   const autoCompleteApplicationTasks = async () => {
     if (!progress) return;
     
     const { application, tasks } = progress;
-    
-    // Check for documents upload task
-    const documentsTask = tasks.find(t => t.task_key === 'upload_documents' && !t.completed);
-    if (documentsTask && application.drivers_license_front && application.drivers_license_back) {
-      await completeTask(documentsTask.id, documentsTask.task_key);
+
+    const tasksToComplete: OnboardingTask[] = [];
+
+    const documentsTask = tasks.find((task) => task.task_key === 'upload_documents' && !task.completed);
+    const hasAllDocuments =
+      Boolean(application.drivers_license_front) &&
+      Boolean(application.drivers_license_back) &&
+      Boolean(application.insurance_document);
+    if (documentsTask && hasAllDocuments) {
+      tasksToComplete.push(documentsTask);
+    }
+
+    const payoutTask = tasks.find((task) => task.task_key === 'setup_cashapp_payouts' && !task.completed);
+    const payoutMethod = (application.payout_method || '').toLowerCase();
+    const hasCashAppDetails = payoutMethod === 'cash_app' && Boolean(application.cash_tag);
+    const hasDirectDepositDetails =
+      payoutMethod !== 'cash_app' &&
+      Boolean(application.routing_number) &&
+      Boolean(application.account_number_last_four);
+    if (payoutTask && payoutMethod && (hasCashAppDetails || hasDirectDepositDetails)) {
+      tasksToComplete.push(payoutTask);
+    }
+
+    const profileTask = tasks.find((task) => task.task_key === 'complete_profile' && !task.completed);
+    const hasProfileBasics =
+      Boolean(application.date_of_birth) &&
+      Boolean(application.street_address) &&
+      Boolean(application.drivers_license) &&
+      Boolean(application.vehicle_make) &&
+      Boolean(application.vehicle_model);
+    if (profileTask && hasProfileBasics) {
+      tasksToComplete.push(profileTask);
+    }
+
+    for (const task of tasksToComplete) {
+      await completeTask(task.id, task.task_key);
     }
   };
 
