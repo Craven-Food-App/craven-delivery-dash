@@ -198,7 +198,7 @@ const BusinessAuth: React.FC = () => {
         // Development - use production URL so email links work
         // For local testing, set VITE_APP_BASE_URL environment variable to your production URL
         // or use a tunnel service like ngrok
-        return `https://cravenusa.com/executive/profile?reset=true`;
+        return `https://hq.cravenusa.com/executive/profile?reset=true`;
       };
       
       const redirectUrl = getRedirectUrl();
