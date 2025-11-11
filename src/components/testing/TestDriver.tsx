@@ -4,19 +4,21 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  Car, 
-  MapPin, 
-  DollarSign, 
+import {
+  Car,
+  MapPin,
+  DollarSign,
   Clock,
   Navigation,
   Smartphone,
   Star,
   Plus
 } from 'lucide-react';
+import { MockEnhancedDriverFlow } from './MockEnhancedDriverFlow';
 
 export const TestDriver = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [showMockFlow, setShowMockFlow] = useState(false);
   const { toast } = useToast();
 
   const createTestDriverProfile = async () => {
@@ -244,6 +246,27 @@ export const TestDriver = () => {
         </CardContent>
       </Card>
 
+      {/* Feeder Application Flow */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Test Feeder Application Flow
+          </CardTitle>
+          <CardDescription>
+            Run a full simulated enhanced onboarding journey end-to-end with no production data.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted-foreground">
+            Watch the enhanced flow auto-progress from submission to activation and review each milestone at your own pace.
+          </p>
+          <Button onClick={() => setShowMockFlow(true)}>
+            Launch Mock Enhanced Flow
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Testing Scenarios */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {testingScenarios.map((scenario, index) => (
@@ -308,6 +331,8 @@ export const TestDriver = () => {
           </div>
         </CardContent>
       </Card>
+
+      <MockEnhancedDriverFlow open={showMockFlow} onOpenChange={setShowMockFlow} />
     </div>
   );
 };

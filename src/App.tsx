@@ -283,6 +283,11 @@ const App = () => {
                     <Route path="/marketing-portal" element={<MarketingPortal />} />
                     <Route path="/hr-portal" element={<BusinessAuthGuard><HRPortal /></BusinessAuthGuard>} />
                     <Route path="/board" element={<BoardPortal />} />
+                  <Route path="/enhanced-onboarding" element={<EnhancedDriverOnboarding />} />
+                  <Route path="/enhanced-onboarding/profile" element={<ProfileCompletionForm />} />
+                  <Route path="/enhanced-onboarding/vehicle-photos" element={<VehiclePhotosUpload />} />
+                  <Route path="/enhanced-onboarding/payout" element={<PayoutSetup />} />
+                  <Route path="/enhanced-onboarding/safety-quiz" element={<SafetyQuiz />} />
                   <Route path="/ceo" element={<BusinessAuthGuard><CEOPortal /></BusinessAuthGuard>} />
                   <Route path="/cfo" element={<BusinessAuthGuard><CFOPortal /></BusinessAuthGuard>} />
                   <Route path="/coo" element={<BusinessAuthGuard><COOPortal /></BusinessAuthGuard>} />
