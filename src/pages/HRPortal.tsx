@@ -36,6 +36,7 @@ import SystemAdminView from '@/components/hr/SystemAdminView';
 import EquityManagement from '@/components/hr/EquityManagement';
 import { useExecAuth } from '@/hooks/useExecAuth';
 import BusinessEmailSystem from '@/components/executive/BusinessEmailSystem';
+import ExecutiveWordProcessor from '@/components/executive/ExecutiveWordProcessor';
 
 const { Header, Content, Sider } = Layout;
 const { TabPane } = Tabs;
@@ -561,6 +562,18 @@ const HRPortal: React.FC = () => {
             key="documents_dashboard"
           >
             <DocumentDashboard />
+          </TabPane>
+
+          <TabPane
+            tab={
+              <span>
+                <FileTextOutlined />
+                Word Processor
+              </span>
+            }
+            key="word_processor"
+          >
+            <ExecutiveWordProcessor storageKey="hr" />
           </TabPane>
 
           <TabPane

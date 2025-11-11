@@ -29,6 +29,7 @@ import ExecutiveCommunicationsCenter from '@/components/executive/ExecutiveCommu
 import ExecutivePortalLayout, { ExecutiveNavItem } from '@/components/executive/ExecutivePortalLayout';
 import { useExecAuth } from '@/hooks/useExecAuth';
 import CEOSignatureManager from '@/components/ceo/CEOSignatureManager';
+import ExecutiveWordProcessor from '@/components/executive/ExecutiveWordProcessor';
 // No Card components: full-page Ant layout
 
 interface CEOMetrics {
@@ -79,6 +80,7 @@ const CEOPortal: React.FC = () => {
       { id: 'audit', label: 'Audit Trail', icon: FileText },
       { id: 'signature', label: 'Signature', icon: PenTool },
       { id: 'communications', label: 'Executive Communications', icon: Mail },
+      { id: 'word', label: 'Word Processor', icon: FileText },
     ];
   }, [metrics?.totalEmployees, metrics?.pendingApprovals]);
 
@@ -132,6 +134,8 @@ const CEOPortal: React.FC = () => {
         return <CEOSignatureManager />;
       case 'communications':
         return <ExecutiveCommunicationsCenter defaultTab="messages" />;
+      case 'word':
+        return <ExecutiveWordProcessor storageKey="ceo" />;
       default:
         return <QuickActions />;
     }

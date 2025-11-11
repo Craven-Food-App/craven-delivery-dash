@@ -10,6 +10,7 @@ import {
   SafetyOutlined,
   TrophyOutlined,
   FileOutlined,
+  FileTextOutlined,
   ArrowLeftOutlined,
   PieChartOutlined,
   CodeOutlined,
@@ -38,6 +39,7 @@ import IBOESender from '@/components/board/IBOESender';
 import ArticlesOfIncorporationGenerator from '@/components/board/ArticlesOfIncorporationGenerator';
 import { executiveTheme } from '@/config/antd-theme';
 import { useExecAuth } from '@/hooks/useExecAuth';
+import ExecutiveWordProcessor from '@/components/executive/ExecutiveWordProcessor';
 
 interface DashboardMetrics {
   revenue: number;
@@ -410,6 +412,16 @@ const BoardPortal: React.FC = () => {
                     </span>
                   ),
                   children: <DocumentVault />,
+                },
+                {
+                  key: 'wordprocessor',
+                  label: (
+                    <span className="flex items-center gap-1 sm:gap-2">
+                      <FileTextOutlined />
+                      <span className="text-xs sm:text-base">Word Processor</span>
+                    </span>
+                  ),
+                  children: <ExecutiveWordProcessor storageKey="board" />,
                 },
                 {
                   key: 'articles',

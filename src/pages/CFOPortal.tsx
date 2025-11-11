@@ -61,6 +61,7 @@ import {
 import { FuturisticChart } from '@/components/cfo/FuturisticChart';
 import BusinessEmailSystem from '@/components/executive/BusinessEmailSystem';
 import ExecutivePortalLayout, { ExecutiveNavItem } from '@/components/executive/ExecutivePortalLayout';
+import ExecutiveWordProcessor from '@/components/executive/ExecutiveWordProcessor';
 
 const { RangePicker } = DatePicker;
 
@@ -806,7 +807,7 @@ export default function CFOPortal() {
       case 'communications':
         return <BusinessEmailSystem />;
       case 'wordprocessor':
-        return <WordProcessor />;
+        return <ExecutiveWordProcessor storageKey="cfo" supabaseTable="cfo_documents" />;
       default:
         return <CFODashboard />;
     }

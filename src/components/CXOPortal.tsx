@@ -12,11 +12,13 @@ import {
   X,
   ChevronRight,
   Mail,
+  FileText,
 } from 'lucide-react';
 
 import { supabase } from '@/integrations/supabase/client';
 import BusinessEmailSystem from '@/components/executive/BusinessEmailSystem';
 import ExecutivePortalLayout, { ExecutiveNavItem } from '@/components/executive/ExecutivePortalLayout';
+import ExecutiveWordProcessor from '@/components/executive/ExecutiveWordProcessor';
 
 
 // --- ICONS MAPPING ---
@@ -29,7 +31,8 @@ type IconKey =
   | 'MessageSquare'
   | 'Briefcase'
   | 'Settings'
-  | 'Mail';
+  | 'Mail'
+  | 'FileText';
 
 
 const IconMap = {
@@ -41,6 +44,7 @@ const IconMap = {
   Briefcase,
   Settings,
   Mail,
+  FileText,
 };
 
 
@@ -56,7 +60,8 @@ interface NavItem {
     | 'team'
     | 'initiatives'
     | 'communications'
-    | 'settings';
+    | 'settings'
+    | 'wordprocessor';
   name: string;
   icon: IconKey;
 }
@@ -101,6 +106,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'team', name: 'Team Alignment', icon: 'Users' },
   { id: 'initiatives', name: 'Strategic Initiatives', icon: 'Briefcase' },
   { id: 'communications', name: 'Executive Communications', icon: 'Mail' },
+  { id: 'wordprocessor', name: 'Word Processor', icon: 'FileText' },
   { id: 'settings', name: 'Portal Settings', icon: 'Settings' },
 ];
 
@@ -393,6 +399,8 @@ const App: React.FC = () => {
         return <PlaceholderView title="Strategic Initiatives Tracker" />;
       case 'communications':
         return <CommunicationsView />;
+      case 'wordprocessor':
+        return <ExecutiveWordProcessor storageKey="cxo" />;
       case 'settings':
         return <PlaceholderView title="Portal Configuration Settings" />;
       default:

@@ -1,12 +1,13 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Row, Col, Statistic, Tabs, Table, Badge, Card, Button, Space, Progress, Alert, Modal, Form, Input, InputNumber, Select, message, Popconfirm, Divider } from 'antd';
-import { CloudOutlined, BugOutlined, LockOutlined, DatabaseOutlined, DashboardOutlined, PlusOutlined, EditOutlined, DeleteOutlined, ArrowLeftOutlined, MailOutlined } from '@ant-design/icons';
+import { CloudOutlined, BugOutlined, LockOutlined, DatabaseOutlined, DashboardOutlined, PlusOutlined, EditOutlined, DeleteOutlined, ArrowLeftOutlined, MailOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useExecAuth } from '@/hooks/useExecAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { ExecutiveInboxIMessage } from '@/components/executive/ExecutiveInboxIMessage';
 import BusinessEmailSystem from '@/components/executive/BusinessEmailSystem';
+import ExecutiveWordProcessor from '@/components/executive/ExecutiveWordProcessor';
 
 const { Header, Content } = Layout;
 const { TabPane } = Tabs;
@@ -148,6 +149,9 @@ export default function CTOPortal() {
           </TabPane>
           <TabPane tab={<><DatabaseOutlined /> Assets</>} key="assets">
             <AssetManagement />
+          </TabPane>
+          <TabPane tab={<><FileTextOutlined /> Word Processor</>} key="word">
+            <ExecutiveWordProcessor storageKey="cto" />
           </TabPane>
         </Tabs>
       </Content>
