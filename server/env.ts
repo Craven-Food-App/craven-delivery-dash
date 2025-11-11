@@ -11,6 +11,6 @@ export const env = {
   SMTP_PASS: process.env.SMTP_PASS!,    // app password or OAuth2 token
   SMTP_FROM: process.env.SMTP_FROM || "Crave'n Docs <no-reply@cravenusa.com>",
   
-  ORIGIN: process.env.ORIGIN || "http://localhost:5173"
+  ORIGIN: process.env.ORIGIN || "http://localhost:8080"
 };
 

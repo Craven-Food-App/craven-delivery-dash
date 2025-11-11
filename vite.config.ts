@@ -21,9 +21,19 @@ const stripLovableAttributes = (): any => ({
 });
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  // Use relative paths in production so Capacitor (file assets) can load bundles
-  base: mode === 'production' ? './' : '/',
+export default defineConfig(({ mode }) => {
+  const isCapacitorBuild =
+    process.env.CAPACITOR === 'true' ||
+    process.env.BUILD_TARGET === 'capacitor';
+
+  const base =
+    mode === 'production'
+      ? (isCapacitorBuild ? './' : '/')
+      : '/';
+
+  return {
+    // Use relative paths only when building for Capacitor so native apps can load bundles
+    base,
   server: {
     host: "::",
     port: 8080,
@@ -44,4 +54,5 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-}));
+  };
+});
