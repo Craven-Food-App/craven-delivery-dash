@@ -107,14 +107,25 @@ serve(async (req: Request) => {
       );
     }
 
-    // Generate temporary password
-    const tempPassword = generateTemporaryPassword();
+    // Generate a password recovery link instead of temporary password
+    const redirectUrl = `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '')}/executive-profile?reset=true`;
+    
+    const { data: recoveryData, error: recoveryError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'recovery',
+      email: email,
+      options: {
+        redirectTo: redirectUrl
+      }
+    });
 
-    // Update user password and set temporary password flag
-    const { data: updatedUser, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+    if (recoveryError) {
+      throw new Error(`Failed to generate recovery link: ${recoveryError.message}`);
+    }
+
+    // Update user metadata to track the reset
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
       userFound.id,
       {
-        password: tempPassword,
         user_metadata: {
           ...userFound.user_metadata,
           temp_password: true,
@@ -125,17 +136,17 @@ serve(async (req: Request) => {
     );
 
     if (updateError) {
-      throw new Error(`Failed to update password: ${updateError.message}`);
+      console.warn(`Failed to update user metadata: ${updateError.message}`);
     }
 
-    console.log(`Password reset successfully for ${email}`);
+    console.log(`Recovery link generated for ${email}`);
 
     return new Response(
       JSON.stringify({
         success: true,
         email,
-        tempPassword,
-        message: "Password reset successfully. Temporary password generated.",
+        recoveryLink: recoveryData.properties.action_link,
+        message: "Password recovery link generated. Email will be sent automatically.",
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

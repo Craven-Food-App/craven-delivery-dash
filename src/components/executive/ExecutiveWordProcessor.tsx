@@ -136,7 +136,7 @@ const ExecutiveWordProcessor: React.FC<ExecutiveWordProcessorProps> = ({
 
         if (supabaseTable) {
           const { data, error } = await supabase
-            .from(supabaseTable)
+            .from(supabaseTable as any)
             .select('id, title, content, created_at, updated_at')
             .order('updated_at', { ascending: false })
             .order('created_at', { ascending: false });
@@ -221,13 +221,13 @@ const ExecutiveWordProcessor: React.FC<ExecutiveWordProcessorProps> = ({
       setSaving(true);
       try {
         const { data, error } = await supabase
-          .from(supabaseTable)
+          .from(supabaseTable as any)
           .insert({ title: titleValue, content: '' })
           .select()
           .single();
 
         if (error) throw error;
-        await loadDocuments({ selectId: data?.id ? String(data.id) : undefined });
+        await loadDocuments({ selectId: (data as any)?.id ? String((data as any).id) : undefined });
         message.success('Document created');
       } catch (error: any) {
         console.error('Failed to create document', error);
@@ -268,13 +268,13 @@ const ExecutiveWordProcessor: React.FC<ExecutiveWordProcessorProps> = ({
         setSaving(true);
         try {
           const { data, error } = await supabase
-            .from(supabaseTable)
+            .from(supabaseTable as any)
             .insert({ title: trimmedTitle, content: editorContent })
             .select()
             .single();
 
           if (error) throw error;
-          await loadDocuments({ selectId: data?.id ? String(data.id) : undefined });
+          await loadDocuments({ selectId: (data as any)?.id ? String((data as any).id) : undefined });
           message.success('Document saved');
           setIsDirty(false);
         } catch (error: any) {
@@ -289,7 +289,7 @@ const ExecutiveWordProcessor: React.FC<ExecutiveWordProcessorProps> = ({
       setSaving(true);
       try {
         const { error } = await supabase
-          .from(supabaseTable)
+          .from(supabaseTable as any)
           .update({ title: trimmedTitle, content: editorContent })
           .eq('id', currentDocumentId);
 
@@ -334,7 +334,7 @@ const ExecutiveWordProcessor: React.FC<ExecutiveWordProcessorProps> = ({
         if (supabaseTable) {
           setSaving(true);
           try {
-            const { error } = await supabase.from(supabaseTable).delete().eq('id', doc.id);
+            const { error } = await supabase.from(supabaseTable as any).delete().eq('id', doc.id);
             if (error) throw error;
             await loadDocuments({ selectId: undefined });
             message.success('Document deleted');
