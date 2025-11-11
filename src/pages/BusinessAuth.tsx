@@ -180,25 +180,25 @@ const BusinessAuth: React.FC = () => {
 
         if (appBaseUrl) {
           const normalizedBase = appBaseUrl.replace(/\/+$/, '');
-          return `${normalizedBase}/executive/profile?reset=true`;
+          return `${normalizedBase}/executive/reset-password`;
         }
         
         const hostname = window.location.hostname;
         
         // Production URLs - always use production URL for password reset emails
-        if (hostname.includes('hq.cravenusa.com') || hostname.includes('cravenusa.com')) {
-          return `https://${hostname}/executive/profile?reset=true`;
+        if (hostname.includes('cravenusa.com')) {
+          return `https://cravenusa.com/executive/reset-password`;
         }
         
         // Lovable project URL (if deployed there)
         if (hostname.includes('lovableproject.com')) {
-          return `https://${hostname}/executive/profile?reset=true`;
+          return `https://${hostname}/executive/reset-password`;
         }
         
         // Development - use production URL so email links work
         // For local testing, set VITE_APP_BASE_URL environment variable to your production URL
         // or use a tunnel service like ngrok
-        return `https://cravenusa.com/executive/profile?reset=true`;
+        return `https://cravenusa.com/executive/reset-password`;
       };
       
       const redirectUrl = getRedirectUrl();

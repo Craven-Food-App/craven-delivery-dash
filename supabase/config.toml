@@ -37,7 +37,8 @@ file_size_limit = "50MiB"
 enabled = true
 site_url = "https://cravenusa.com"
 additional_redirect_urls = [
-  "https://cravenusa.com/executive/profile"
+  "https://cravenusa.com/executive/profile",
+  "https://cravenusa.com/executive/reset-password"
 ]
 jwt_expiry = 3600
 enable_signup = true
