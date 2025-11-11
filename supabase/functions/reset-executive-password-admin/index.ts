@@ -107,8 +107,9 @@ serve(async (req: Request) => {
       );
     }
 
-    // Generate a password recovery link instead of temporary password
-    const redirectUrl = `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '')}/executive-profile?reset=true`;
+    // Generate a password recovery link pointing to production executive profile
+    const baseUrl = Deno.env.get('APP_BASE_URL') || 'https://cravenusa.com';
+    const redirectUrl = `${baseUrl}/executive-profile?reset=true`;
     
     const { data: recoveryData, error: recoveryError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
