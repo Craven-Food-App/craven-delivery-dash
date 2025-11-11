@@ -1,0 +1,166 @@
+[1mdiff --git a/src/components/board/ArticlesOfIncorporationGenerator.tsx b/src/components/board/ArticlesOfIncorporationGenerator.tsx[m
+[1mindex f460dc4..53ede0a 100644[m
+[1m--- a/src/components/board/ArticlesOfIncorporationGenerator.tsx[m
+[1m+++ b/src/components/board/ArticlesOfIncorporationGenerator.tsx[m
+[36m@@ -269,16 +269,20 @@[m [mconst DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>[m
+       overflow: hidden;[m
+     }[m
+ [m
+[32m+[m[32m    /* COVER PAGE STYLES */[m
+     .certificate-page.cover {[m
+       display: flex;[m
+       flex-direction: column;[m
+[31m-      padding: 0.65in 0.8in 0.5in;[m
+     }[m
+ [m
+     .cover-header {[m
+[32m+[m[32m      padding: 0.65in 0.8in 0;[m
+       display: flex;[m
+       flex-direction: column;[m
+       gap: 14px;[m
+[32m+[m[32m      position: relative;[m
+[32m+[m[32m      z-index: 2;[m
+[32m+[m[32m      flex-shrink: 0;[m
+     }[m
+ [m
+     .cover-barcode {[m
+[36m@@ -339,13 +343,13 @@[m [mconst DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>[m
+       text-transform: uppercase;[m
+       letter-spacing: 0.6px;[m
+       margin-top: 6px;[m
+[31m-      margin-left: 0.6in;[m
+     }[m
+ [m
+     .certificate-frame {[m
+       margin: 0.35in 0.55in 0.4in;[m
+       border: 3px solid #000000;[m
+       flex: 1;[m
+[32m+[m[32m      position: relative;[m
+       display: flex;[m
+     }[m
+ [m
+[36m@@ -372,7 +376,6 @@[m [mconst DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>[m
+       font-size: 18px;[m
+       letter-spacing: 3px;[m
+       text-transform: uppercase;[m
+[31m-      font-weight: 600;[m
+     }[m
+ [m
+     .certificate-secretary {[m
+[36m@@ -385,7 +388,6 @@[m [mconst DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>[m
+       margin-top: 8px;[m
+       font-size: 13px;[m
+       letter-spacing: 1px;[m
+[31m-      font-weight: 600;[m
+     }[m
+ [m
+     .certificate-body {[m
+[36m@@ -398,11 +400,10 @@[m [mconst DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>[m
+       margin: 0 0 18px;[m
+     }[m
+ [m
+[31m-    .certificate-entity {[m
+[32m+[m[32m    .certificate-body .certificate-entity {[m
+       font-weight: 700;[m
+       font-size: 14px;[m
+       letter-spacing: 1px;[m
+[31m-      margin-bottom: 18px;[m
+     }[m
+ [m
+     .certificate-details {[m
+[36m@@ -418,9 +419,17 @@[m [mconst DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>[m
+       padding-top: 10px;[m
+     }[m
+ [m
+[31m-    .certificate-details td:first-child { text-align: left; }[m
+[31m-    .certificate-details td:nth-child(2) { text-align: center; }[m
+[31m-    .certificate-details td:last-child { text-align: right; }[m
+[32m+[m[32m    .certificate-details td:first-child {[m
+[32m+[m[32m      text-align: left;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    .certificate-details td:nth-child(2) {[m
+[32m+[m[32m      text-align: center;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    .certificate-details td:last-child {[m
+[32m+[m[32m      text-align: right;[m
+[32m+[m[32m    }[m
+ [m
+     .certificate-details strong {[m
+       display: block;[m
+[36m@@ -481,17 +490,18 @@[m [mconst DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>[m
+       font-weight: 600;[m
+     }[m
+ [m
+[32m+[m[32m    /* FORM PAGE STYLES */[m
+     .certificate-page.form {[m
+       padding: 0.65in 0.8in 0.5in;[m
+[31m-      background: #ffffff;[m
+     }[m
+ [m
+     .form-header {[m
+[32m+[m[32m      position: relative;[m
+[32m+[m[32m      z-index: 2;[m
+       display: flex;[m
+       justify-content: space-between;[m
+       align-items: flex-start;[m
+       margin-bottom: 12px;[m
+[31m-      font-family: Arial, Helvetica, sans-serif;[m
+     }[m
+ [m
+     .form-header-left {[m
+[36m@@ -518,7 +528,6 @@[m [mconst DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>[m
+       text-transform: uppercase;[m
+       letter-spacing: 1.4px;[m
+       margin: 12px 0 6px;[m
+[31m-      font-family: "Times New Roman", "Georgia", serif;[m
+       font-weight: 600;[m
+     }[m
+ [m
+[36m@@ -526,7 +535,6 @@[m [mconst DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>[m
+       text-align: center;[m
+       font-size: 12px;[m
+       margin-bottom: 16px;[m
+[31m-      font-family: "Times New Roman", "Georgia", serif;[m
+     }[m
+ [m
+     .form-section {[m
+[36m@@ -534,7 +542,6 @@[m [mconst DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>[m
+       margin-bottom: 12px;[m
+       padding: 8px 10px;[m
+       font-size: 11px;[m
+[31m-      font-family: Arial, Helvetica, sans-serif;[m
+     }[m
+ [m
+     .form-section h4 {[m
+[36m@@ -615,7 +622,6 @@[m [mconst DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>[m
+     .signature-area {[m
+       margin-top: 18px;[m
+       font-size: 11px;[m
+[31m-      font-family: Arial, Helvetica, sans-serif;[m
+     }[m
+ [m
+     .signature-area .line {[m
+[36m@@ -630,12 +636,12 @@[m [mconst DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>[m
+       display: flex;[m
+       justify-content: space-between;[m
+       color: #6b7280;[m
+[31m-      font-family: Arial, Helvetica, sans-serif;[m
+     }[m
+   </style>[m
+ </head>[m
+ <body>[m
+   <div class="certificate-container">[m
+[32m+[m[32m    <!-- PAGE 1: COVER/CERTIFICATE -->[m
+     <div class="certificate-page cover">[m
+       <div class="cover-header">[m
+         <div class="cover-barcode">[m
+[36m@@ -722,6 +728,7 @@[m [mconst DEFAULT_OHIO_TEMPLATE = `<!DOCTYPE html>[m
+ [m
+     <div class="page-separator"></div>[m
+ [m
+[32m+[m[32m    <!-- PAGE 2: FORM -->[m
+     <div class="certificate-page form">[m
+       <div class="form-header">[m
+         <div class="form-header-left">[m

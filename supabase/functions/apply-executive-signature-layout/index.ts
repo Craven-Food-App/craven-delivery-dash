@@ -290,7 +290,6 @@ serve(async (req) => {
         file_url: publicUrl ?? document.file_url,
         signature_field_layout: updatedLayout,
         signer_roles: updatedRoles,
-        updated_at: new Date().toISOString(),
       })
       .eq("id", document_id)
       .select()

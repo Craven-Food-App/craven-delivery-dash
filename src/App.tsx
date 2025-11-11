@@ -80,6 +80,7 @@ import { ActivationReady } from "./pages/driverOnboarding/ActivationReady";
 import { DriverApplicationWizard } from "./pages/driverOnboarding/DriverApplicationWizard";
 import { PostWaitlistOnboarding } from "./pages/driverOnboarding/PostWaitlistOnboarding";
 import ExecutiveDocumentSign from "./pages/ExecutiveDocumentSign";
+import ExecutiveProfile from "./pages/ExecutiveProfile";
 
 // Lazy load guide pages
 const AdminGuide = lazy(() => import("./pages/AdminGuide"));
@@ -194,6 +195,18 @@ const App = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const { hash, pathname, search, origin } = window.location;
+    if (hash && hash.includes('type=recovery') && pathname !== '/executive/profile') {
+      const params = new URLSearchParams(search);
+      params.set('reset', 'true');
+      const searchSuffix = params.toString();
+      const target = `${origin}/executive/profile${searchSuffix ? `?${searchSuffix}` : ''}${hash}`;
+      window.location.replace(target);
+    }
+  }, []);
+
   // Helper to check if current route is driver-related
   const isDriverRoute = (path: string) => {
     return path.startsWith('/mobile') || 
@@ -262,6 +275,8 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<BusinessAuth />} />
                   <Route path="/auth" element={<BusinessAuth />} />
+                  <Route path="/business-auth" element={<BusinessAuth />} />
+                  <Route path="/executive/profile" element={<ExecutiveProfile />} />
                   <Route path="/hub" element={<BusinessAuthGuard><MainHub /></BusinessAuthGuard>} />
                   <Route path="/main-hub" element={<BusinessAuthGuard><MainHub /></BusinessAuthGuard>} />
                   <Route path="/admin" element={<Admin />} />
@@ -298,6 +313,7 @@ const App = () => {
                   <Route path="/" element={<FeederHub />} />
                   <Route path="/driver/auth" element={<DriverAuth />} />
                   <Route path="/driver/post-waitlist-onboarding" element={<PostWaitlistOnboarding />} />
+                  <Route path="/executive/profile" element={<ExecutiveProfile />} />
                   <Route path="/enhanced-onboarding" element={<EnhancedDriverOnboarding />} />
                   <Route path="/enhanced-onboarding/profile" element={<ProfileCompletionForm />} />
                   <Route path="/enhanced-onboarding/vehicle-photos" element={<VehiclePhotosUpload />} />
@@ -329,6 +345,7 @@ const App = () => {
                   <Route path="/" element={<PartnerWithUs />} />
                   <Route path="/register" element={<RestaurantRegister />} />
                   <Route path="/auth" element={<RestaurantAuth />} />
+                  <Route path="/executive/profile" element={<ExecutiveProfile />} />
                   <Route path="/dashboard" element={<RestaurantDashboard />} />
                   <Route path="/portal" element={<MerchantPortal />} />
                   <Route path="/solutions" element={<SolutionsCenter />} />
@@ -357,6 +374,8 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<BoardPortal />} />
                   <Route path="/auth" element={<BusinessAuth />} />
+                  <Route path="/business-auth" element={<BusinessAuth />} />
+                  <Route path="/executive/profile" element={<ExecutiveProfile />} />
                   <Route path="/executive-portal/documents" element={<BusinessAuthGuard><ExecutiveDocumentPortal /></BusinessAuthGuard>} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
@@ -381,6 +400,8 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<CFOPortal />} />
                   <Route path="/auth" element={<BusinessAuth />} />
+                  <Route path="/business-auth" element={<BusinessAuth />} />
+                  <Route path="/executive/profile" element={<ExecutiveProfile />} />
                   <Route path="/executive-portal/documents" element={<BusinessAuthGuard><ExecutiveDocumentPortal /></BusinessAuthGuard>} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
@@ -405,6 +426,8 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<CEOPortal />} />
                   <Route path="/auth" element={<BusinessAuth />} />
+                  <Route path="/business-auth" element={<BusinessAuth />} />
+                  <Route path="/executive/profile" element={<ExecutiveProfile />} />
                   <Route path="/executive-portal/documents" element={<BusinessAuthGuard><ExecutiveDocumentPortal /></BusinessAuthGuard>} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
@@ -429,6 +452,8 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<COOPortal />} />
                   <Route path="/auth" element={<BusinessAuth />} />
+                  <Route path="/business-auth" element={<BusinessAuth />} />
+                  <Route path="/executive/profile" element={<ExecutiveProfile />} />
                   <Route path="/executive-portal/documents" element={<BusinessAuthGuard><ExecutiveDocumentPortal /></BusinessAuthGuard>} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
@@ -453,6 +478,8 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<CTOPortal />} />
                   <Route path="/auth" element={<BusinessAuth />} />
+                  <Route path="/business-auth" element={<BusinessAuth />} />
+                  <Route path="/executive/profile" element={<ExecutiveProfile />} />
                   <Route path="/executive-portal/documents" element={<BusinessAuthGuard><ExecutiveDocumentPortal /></BusinessAuthGuard>} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
@@ -478,6 +505,7 @@ const App = () => {
             
             <Routes>
               <Route path="/auth" element={<BusinessAuthWrapper />} />
+              <Route path="/business-auth" element={<BusinessAuthWrapper />} />
               <Route path="/" element={<Index />} />
           <Route path="/restaurants" element={<Restaurants />} />
           <Route path="/crave-more" element={<CraveMore />} />
@@ -533,6 +561,7 @@ const App = () => {
           <Route path="/payment-canceled" element={<PaymentCanceled />} />
           {/* Executive signature route */}
           <Route path="/executive/sign" element={<ExecutiveDocumentSign />} />
+          <Route path="/executive/profile" element={<ExecutiveProfile />} />
           <Route path="/executive-portal/documents" element={<ExecutiveDocumentPortal />} />
           <Route path="/thank-you" element={<ThankYou />} />
 

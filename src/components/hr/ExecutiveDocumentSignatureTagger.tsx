@@ -388,7 +388,6 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
         .from("executive_documents")
         .update({
           signature_field_layout: payload,
-          updated_at: new Date().toISOString(),
         })
         .eq("id", docDetails.id);
 

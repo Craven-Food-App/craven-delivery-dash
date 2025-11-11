@@ -29,20 +29,25 @@ const BusinessAuth: React.FC = () => {
     return redirect || '/hub';
   };
 
+  const redirectToExecutiveProfile = () => {
+    const origin = window.location.origin;
+    window.location.href = `${origin}/executive/profile?reset=true`;
+  };
+
   // Check if user is already signed in
   useEffect(() => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // Check for temporary password
-        if (user.user_metadata?.temp_password === true) {
-          setShowUpdatePassword(true);
-          setUser(null); // Don't redirect yet
-        } else {
-          setUser(user);
-          const redirectPath = getRedirectPath();
-          window.location.href = redirectPath;
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const isRecovery = hashParams.get('type') === 'recovery';
+        if (user.user_metadata?.temp_password === true || isRecovery) {
+          redirectToExecutiveProfile();
+          return;
         }
+        setUser(user);
+        const redirectPath = getRedirectPath();
+        window.location.href = redirectPath;
       }
     };
     
@@ -60,18 +65,11 @@ const BusinessAuth: React.FC = () => {
           const isRecovery = hashParams.get('type') === 'recovery';
           
           if (hasTempPassword || isRecovery) {
-            // This is a password reset flow or temporary password, show update password form
-            setShowUpdatePassword(true);
             setShowResetPassword(false);
             setResetSent(false);
-            setUser(null); // Don't redirect yet
-            if (hasTempPassword) {
-              toast({
-                title: "Temporary Password Detected",
-                description: "Please set a new password to continue.",
-                variant: "default",
-              });
-            }
+            setUser(null);
+            redirectToExecutiveProfile();
+            return;
           } else {
             // Normal sign in
             setUser(session.user);
@@ -126,14 +124,7 @@ const BusinessAuth: React.FC = () => {
         const hasTempPassword = data.user.user_metadata?.temp_password === true;
         
         if (hasTempPassword) {
-          // Force password change
-          setShowUpdatePassword(true);
-          setUser(null); // Don't redirect yet
-          toast({
-            title: "Temporary Password Detected",
-            description: "Please set a new password to continue.",
-            variant: "default",
-          });
+          redirectToExecutiveProfile();
           return;
         }
 
@@ -340,10 +331,7 @@ const BusinessAuth: React.FC = () => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
-          // User clicked the reset link and has a valid session, show password update form
-          setShowUpdatePassword(true);
-          setShowResetPassword(false);
-          setResetSent(false);
+          redirectToExecutiveProfile();
         }
       }
     };
