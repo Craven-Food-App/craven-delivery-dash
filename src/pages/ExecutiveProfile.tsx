@@ -59,6 +59,13 @@ const ExecutiveProfile: React.FC = () => {
   useEffect(() => {
     const loadProfile = async () => {
       try {
+        // If this is a recovery flow from password reset email, 
+        // ensure the session is established from the URL hash first
+        if (isResetFlow && location.hash.includes('access_token')) {
+          // Give Supabase time to process the hash and establish session
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
         const {
           data: { user: currentUser },
           error,
@@ -87,7 +94,7 @@ const ExecutiveProfile: React.FC = () => {
     };
 
     loadProfile();
-  }, []);
+  }, [isResetFlow, location.hash]);
 
   const redirectToBusinessAuth = () => {
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
