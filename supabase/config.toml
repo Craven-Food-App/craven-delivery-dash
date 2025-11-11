@@ -35,8 +35,11 @@ file_size_limit = "50MiB"
 
 [auth]
 enabled = true
-site_url = "https://44d88461-c1ea-4d22-93fe-ebc1a7d81db9.lovableproject.com"
-additional_redirect_urls = ["https://localhost:3000"]
+site_url = "https://cravenusa.com"
+additional_redirect_urls = [
+  "https://cravenusa.com/executive/profile",
+  "https://hq.cravenusa.com/executive/profile"
+]
 jwt_expiry = 3600
 enable_signup = true
 

@@ -172,27 +172,33 @@ const BusinessAuth: React.FC = () => {
       // Priority: Environment variable > Production detection > Current origin
       const getRedirectUrl = () => {
         // Check for environment variable first (useful for development/testing)
-        const siteUrl = import.meta.env.VITE_SITE_URL || import.meta.env.VITE_APP_URL;
-        if (siteUrl) {
-          return `${siteUrl}/business-auth?reset=true`;
+        const appBaseUrl =
+          import.meta.env.VITE_APP_BASE_URL ||
+          import.meta.env.APP_BASE_URL ||
+          import.meta.env.VITE_SITE_URL ||
+          import.meta.env.VITE_APP_URL;
+
+        if (appBaseUrl) {
+          const normalizedBase = appBaseUrl.replace(/\/+$/, '');
+          return `${normalizedBase}/executive/profile?reset=true`;
         }
         
         const hostname = window.location.hostname;
         
         // Production URLs - always use production URL for password reset emails
         if (hostname.includes('hq.cravenusa.com') || hostname.includes('cravenusa.com')) {
-          return `https://hq.cravenusa.com/business-auth?reset=true`;
+          return `https://${hostname}/executive/profile?reset=true`;
         }
         
         // Lovable project URL (if deployed there)
         if (hostname.includes('lovableproject.com')) {
-          return `https://${hostname}/business-auth?reset=true`;
+          return `https://${hostname}/executive/profile?reset=true`;
         }
         
         // Development - use production URL so email links work
-        // For local testing, set VITE_SITE_URL environment variable to your production URL
+        // For local testing, set VITE_APP_BASE_URL environment variable to your production URL
         // or use a tunnel service like ngrok
-        return `https://hq.cravenusa.com/business-auth?reset=true`;
+        return `https://cravenusa.com/executive/profile?reset=true`;
       };
       
       const redirectUrl = getRedirectUrl();
