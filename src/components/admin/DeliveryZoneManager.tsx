@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import AdminZoneMap from './AdminZoneMap';
 import {
-  ArrowClockwise,
+  RefreshCw,
   CircleDashed,
   MapPin,
   PencilLine,
@@ -419,7 +419,7 @@ const DeliveryZoneManager: React.FC = () => {
           <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
             {loading ? (
               <div className="flex items-center justify-center py-10 text-gray-500 text-sm gap-2">
-                <ArrowClockwise className="h-4 w-4 animate-spin" />
+                <RefreshCw className="h-4 w-4 animate-spin" />
                 Loading zones...
               </div>
             ) : filteredZones.length === 0 ? (
