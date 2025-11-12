@@ -20,26 +20,8 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
     todayTips: 40
   };
 
-    return (
+  return (
     <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-orange-500 overflow-y-auto pb-20">
-      {/* Status Bar */}
-      <div className="px-6 pt-3 flex items-center justify-between text-white">
-        <span className="text-lg font-semibold">9:17</span>
-        <div className="flex items-center gap-1">
-          <div className="flex gap-0.5">
-            <div className="w-0.5 h-3 bg-white rounded-full"></div>
-            <div className="w-0.5 h-3 bg-white rounded-full"></div>
-            <div className="w-0.5 h-3 bg-white rounded-full"></div>
-            <div className="w-0.5 h-3 bg-white rounded-full"></div>
-          </div>
-          <svg className="w-4 h-4" fill="white" viewBox="0 0 20 20">
-            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
-            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
-          </svg>
-          <div className="w-6 h-3 bg-white rounded-sm"></div>
-        </div>
-      </div>
-
       {/* Header */}
       <div className="px-6 py-4 flex items-center justify-between">
         <button 
