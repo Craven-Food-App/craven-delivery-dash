@@ -21,17 +21,17 @@ type ScheduleRecord = {
 type ScheduleMap = Record<string, ScheduleRecord>;
 
 const SHIFT_SLOTS = [
-  { id: 'slot-0' as const, startTime: '06:00', endTime: '09:00', displayStart: '6:00 AM', displayEnd: '9:00 AM' },
-  { id: 'slot-1' as const, startTime: '09:00', endTime: '12:00', displayStart: '9:00 AM', displayEnd: '12:00 PM' },
-  { id: 'slot-2' as const, startTime: '10:00', endTime: '13:00', displayStart: '10:00 AM', displayEnd: '1:00 PM' },
-  { id: 'slot-3' as const, startTime: '12:00', endTime: '15:00', displayStart: '12:00 PM', displayEnd: '3:00 PM' },
-  { id: 'slot-4' as const, startTime: '14:00', endTime: '17:00', displayStart: '2:00 PM', displayEnd: '5:00 PM' },
-  { id: 'slot-5' as const, startTime: '15:00', endTime: '18:00', displayStart: '3:00 PM', displayEnd: '6:00 PM' },
-  { id: 'slot-6' as const, startTime: '17:30', endTime: '20:00', displayStart: '5:30 PM', displayEnd: '8:00 PM' },
-  { id: 'slot-7' as const, startTime: '18:00', endTime: '21:00', displayStart: '6:00 PM', displayEnd: '9:00 PM' },
-  { id: 'slot-8' as const, startTime: '20:30', endTime: '23:00', displayStart: '8:30 PM', displayEnd: '11:00 PM' },
-  { id: 'slot-9' as const, startTime: '21:00', endTime: '24:00', displayStart: '9:00 PM', displayEnd: '12:00 AM' }
-] as const;
+  { id: 'slot-0', startTime: '06:00', endTime: '09:00', displayStart: '6:00 AM', displayEnd: '9:00 AM' },
+  { id: 'slot-1', startTime: '09:00', endTime: '12:00', displayStart: '9:00 AM', displayEnd: '12:00 PM' },
+  { id: 'slot-2', startTime: '10:00', endTime: '13:00', displayStart: '10:00 AM', displayEnd: '1:00 PM' },
+  { id: 'slot-3', startTime: '12:00', endTime: '15:00', displayStart: '12:00 PM', displayEnd: '3:00 PM' },
+  { id: 'slot-4', startTime: '14:00', endTime: '17:00', displayStart: '2:00 PM', displayEnd: '5:00 PM' },
+  { id: 'slot-5', startTime: '15:00', endTime: '18:00', displayStart: '3:00 PM', displayEnd: '6:00 PM' },
+  { id: 'slot-6', startTime: '17:30', endTime: '20:00', displayStart: '5:30 PM', displayEnd: '8:00 PM' },
+  { id: 'slot-7', startTime: '18:00', endTime: '21:00', displayStart: '6:00 PM', displayEnd: '9:00 PM' },
+  { id: 'slot-8', startTime: '20:30', endTime: '23:00', displayStart: '8:30 PM', displayEnd: '11:00 PM' },
+  { id: 'slot-9', startTime: '21:00', endTime: '24:00', displayStart: '9:00 PM', displayEnd: '12:00 AM' }
+];
 
 type SlotId = typeof SHIFT_SLOTS[number]['id'];
 
@@ -47,7 +47,7 @@ const CravenDriverSchedule: React.FC<CravenDriverScheduleProps> = ({
   const [selectedDateIndex, setSelectedDateIndex] = useState(0);
   const [scheduleMap, setScheduleMap] = useState<ScheduleMap>({});
   const [loading, setLoading] = useState(true);
-  const [processingShiftId, setProcessingShiftId] = useState<SlotId | null>(null);
+  const [processingShiftId, setProcessingShiftId] = useState<string | null>(null);
   const [authWarningShown, setAuthWarningShown] = useState(false);
 
   const today = useMemo(() => new Date(), []);

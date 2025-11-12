@@ -20,7 +20,7 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
     todayTips: 40
   };
 
-  return (
+    return (
     <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-orange-500 overflow-y-auto pb-20">
       {/* Status Bar */}
       <div className="px-6 pt-3 flex items-center justify-between text-white">
@@ -122,7 +122,7 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
             </div>
           </div>
         </div>
-      </div>
+                </div>
 
       {/* UP FOR GRABS */}
       <div className="px-6 mb-4">
@@ -132,23 +132,23 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-red-400 to-orange-400 rounded-bl-full opacity-80"></div>
           
           <div className="relative flex items-center justify-between">
-            <div>
+                <div>
               <p className="text-orange-800 text-sm font-semibold mb-1">11:48 ETA</p>
               <h4 className="text-3xl font-black text-gray-900 mb-1">$8.90 Pay</h4>
               <p className="text-orange-800 text-sm font-semibold">3.2mi</p>
-            </div>
+                </div>
             <div className="flex flex-col items-end gap-2">
               <div className="bg-red-600 rounded-full px-4 py-1.5 flex items-center gap-1 shadow-lg">
                 <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                 <span className="text-white text-sm font-bold">IVE</span>
-              </div>
+                  </div>
               <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl px-4 py-2 shadow-lg rotate-3">
                 <span className="text-red-800 text-sm font-black italic">ON FIRE</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+                  </div>
+                </div>
+                          </div>
+                        </div>
+                      </div>
 
       {/* EARNINGS SNAPSHOT */}
       <div className="px-6 mb-4">
@@ -156,8 +156,8 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
         <div className="bg-orange-50 rounded-3xl p-6 shadow-xl">
           <h4 className="text-3xl font-black text-gray-900 mb-1">${earnings.today.toFixed(2)}</h4>
           <p className="text-orange-800 text-sm font-semibold">Today</p>
-        </div>
-      </div>
+                    </div>
+                  </div>
 
       {/* TODAY'S FEED FLOW */}
       <div className="px-6 pb-24">
@@ -166,7 +166,7 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
           <div className="border-r border-white/30">
             <p className="text-4xl font-black text-white mb-1">{earnings.todayDeliveries}</p>
             <p className="text-white text-xs font-semibold">Delivered</p>
-          </div>
+                </div>
           <div className="border-r border-white/30">
             <p className="text-4xl font-black text-white mb-1">{earnings.todayAcceptance}%</p>
             <p className="text-white text-xs font-semibold">Acceptance</p>
