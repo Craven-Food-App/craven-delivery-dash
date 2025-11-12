@@ -31,7 +31,9 @@ const SHIFT_SLOTS = [
   { id: 'slot-7', startTime: '18:00', endTime: '21:00', displayStart: '6:00 PM', displayEnd: '9:00 PM' },
   { id: 'slot-8', startTime: '20:30', endTime: '23:00', displayStart: '8:30 PM', displayEnd: '11:00 PM' },
   { id: 'slot-9', startTime: '21:00', endTime: '24:00', displayStart: '9:00 PM', displayEnd: '12:00 AM' }
-] as const;
+];
+
+type SlotId = typeof SHIFT_SLOTS[number]['id'];
 
 const getScheduleKey = (dayOfWeek: number, startTime: string, endTime: string) =>
   `${dayOfWeek}-${startTime}-${endTime}`;
@@ -128,7 +130,7 @@ const CravenDriverSchedule: React.FC<CravenDriverScheduleProps> = ({
     }).map((slot) => slot.id);
   }, [scheduleMap, selectedDayOfWeek]);
 
-  const toggleShift = useCallback(async (shiftId: string) => {
+  const toggleShift = useCallback(async (shiftId: SlotId) => {
     const slot = SHIFT_SLOTS.find((s) => s.id === shiftId);
     if (!slot) {
       return;

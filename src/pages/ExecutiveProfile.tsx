@@ -185,19 +185,23 @@ const ExecutiveProfile: React.FC = () => {
         if (source === 'exec_users' || !source) {
           const { data, error } = await supabase
             .from('exec_users')
-            .select('id, role, title, department, photo_url, last_login, created_at, user_id, email, phone')
+            .select('id, role, title, department, photo_url, last_login, created_at, user_id, first_name, last_name')
             .eq('id', execId)
             .maybeSingle();
 
-          if (data) {
+          if (data && typeof data === 'object' && 'id' in data) {
+            const fullName = data.first_name && data.last_name 
+              ? `${data.first_name} ${data.last_name}`.trim()
+              : data.title || data.role?.toUpperCase();
+            
             setTargetExec({
               id: data.id,
-              name: data.title || data.role?.toUpperCase(),
+              name: fullName,
               role: data.role,
               title: data.title,
               department: data.department,
-              email: data.email ?? targetEmailParam,
-              phone: data.phone ?? undefined,
+              email: targetEmailParam,
+              phone: undefined,
               photo_url: data.photo_url ?? undefined,
               last_login: data.last_login,
               created_at: data.created_at,
@@ -221,7 +225,7 @@ const ExecutiveProfile: React.FC = () => {
           throw employeeError;
         }
 
-        if (employeeData) {
+        if (employeeData && typeof employeeData === 'object' && 'id' in employeeData) {
           const execRole = getExecRoleFromPosition(employeeData.position);
           setTargetExec({
             id: employeeData.id,
@@ -259,19 +263,23 @@ const ExecutiveProfile: React.FC = () => {
         if (targetUserIdParam) {
           const { data } = await supabase
             .from('exec_users')
-            .select('id, role, title, department, photo_url, last_login, created_at, email, phone')
+            .select('id, role, title, department, photo_url, last_login, created_at, first_name, last_name')
             .eq('user_id', targetUserIdParam)
             .maybeSingle();
 
-          if (data) {
+          if (data && typeof data === 'object' && 'id' in data) {
+            const fullName = data.first_name && data.last_name 
+              ? `${data.first_name} ${data.last_name}`.trim()
+              : data.title || data.role?.toUpperCase();
+            
             setTargetExec({
               id: data.id,
-              name: data.title || data.role?.toUpperCase(),
+              name: fullName,
               role: data.role,
               title: data.title,
               department: data.department,
-              email: data.email ?? targetEmailParam,
-              phone: data.phone ?? undefined,
+              email: targetEmailParam,
+              phone: undefined,
               photo_url: data.photo_url ?? undefined,
               last_login: data.last_login,
               created_at: data.created_at,
