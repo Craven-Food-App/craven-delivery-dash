@@ -189,7 +189,7 @@ const ExecutiveProfile: React.FC = () => {
             .eq('id', execId)
             .maybeSingle();
 
-          if (data && typeof data === 'object' && 'id' in data) {
+          if (data !== null && typeof data === 'object' && 'id' in data) {
             const dataObj = data!;
             const firstName = (dataObj as any).first_name;
             const lastName = (dataObj as any).last_name;
@@ -230,7 +230,7 @@ const ExecutiveProfile: React.FC = () => {
           throw employeeError;
         }
 
-        if (employeeData && typeof employeeData === 'object' && 'id' in employeeData) {
+        if (employeeData !== null && typeof employeeData === 'object' && 'id' in employeeData) {
           const empData = employeeData as any;
           const execRole = getExecRoleFromPosition(empData.position || null);
           const firstName = empData.first_name || '';
@@ -277,7 +277,7 @@ const ExecutiveProfile: React.FC = () => {
             .eq('user_id', targetUserIdParam)
             .maybeSingle();
 
-          if (data && typeof data === 'object' && 'id' in data) {
+          if (data !== null && typeof data === 'object' && 'id' in data) {
             const dataObj = data!;
             const firstName = (dataObj as any).first_name;
             const lastName = (dataObj as any).last_name;
