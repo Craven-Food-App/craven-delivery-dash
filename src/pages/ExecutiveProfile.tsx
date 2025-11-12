@@ -309,6 +309,7 @@ const ExecutiveProfile: React.FC = () => {
               return;
             }
           }
+        }
 
         setTargetExec(null);
         message.warning('Unable to load the requested executive profile.');
