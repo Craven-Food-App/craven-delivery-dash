@@ -192,26 +192,25 @@ const ExecutiveProfile: React.FC = () => {
           if (data !== null && typeof data === 'object') {
             const dataObj = data as Record<string, any>;
             if ('id' in dataObj) {
-              const execData = dataObj as any;
-              const firstName = execData.first_name;
-              const lastName = execData.last_name;
-              const title = execData.title;
-              const role = execData.role;
+              const firstName = dataObj.first_name;
+              const lastName = dataObj.last_name;
+              const title = dataObj.title;
+              const role = dataObj.role;
               const fullName = (firstName && lastName)
                 ? `${firstName} ${lastName}`.trim()
                 : (title || role?.toUpperCase() || 'Executive');
               
               setTargetExec({
-                id: execData.id,
+                id: dataObj.id,
                 name: fullName,
                 role: role || undefined,
                 title: title || undefined,
-                department: execData.department || undefined,
+                department: dataObj.department || undefined,
                 email: targetEmailParam,
                 phone: undefined,
-                photo_url: execData.photo_url || undefined,
-                last_login: execData.last_login || undefined,
-                created_at: execData.created_at || undefined,
+                photo_url: dataObj.photo_url || undefined,
+                last_login: dataObj.last_login || undefined,
+                created_at: dataObj.created_at || undefined,
                 source: 'exec_users',
               });
               return;
@@ -236,7 +235,7 @@ const ExecutiveProfile: React.FC = () => {
         if (employeeData !== null && typeof employeeData === 'object') {
           const dataObj = employeeData as Record<string, any>;
           if ('id' in dataObj) {
-            const empData = dataObj as any;
+            const empData = dataObj;
             const execRole = getExecRoleFromPosition(empData.position || null);
             const firstName = empData.first_name || '';
             const lastName = empData.last_name || '';
@@ -284,9 +283,8 @@ const ExecutiveProfile: React.FC = () => {
             .maybeSingle();
 
           if (data !== null && typeof data === 'object') {
-            const obj = data as Record<string, any>;
-            if ('id' in obj) {
-              const dataObj = obj as any;
+            const dataObj = data as Record<string, any>;
+            if ('id' in dataObj) {
               const firstName = dataObj.first_name;
               const lastName = dataObj.last_name;
               const title = dataObj.title;

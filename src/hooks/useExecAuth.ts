@@ -188,19 +188,13 @@ export const useExecAuth = (requiredRole?: 'ceo' | 'board_member' | 'cfo' | 'coo
         const dataObj = execData as Record<string, any>;
         if ('id' in dataObj) {
           const execRow = dataObj as unknown as ExecUser;
-          setExecUser(execRow);
-          if (requiredRole) {
-            setIsAuthorized(execRow.role === requiredRole || execRow.role === 'ceo');
-          } else {
-            setIsAuthorized(true);
-          }
+        setExecUser(execRow);
+        if (requiredRole) {
+          setIsAuthorized(execRow.role === requiredRole || execRow.role === 'ceo');
         } else {
-          const resolved = await resolveExecFromEmployee(currentUser);
-          if (!resolved) {
-            setIsAuthorized(false);
-            setExecUser(null);
-          }
+          setIsAuthorized(true);
         }
+      }
       } else {
         const resolved = await resolveExecFromEmployee(currentUser);
         if (!resolved) {
