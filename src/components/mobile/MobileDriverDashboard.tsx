@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { MapPin, Settings, Pause, Play, Square, Clock, Car, DollarSign, Calendar, Bell, User, Star, ChevronRight, Menu, X, Home, TrendingUp, HelpCircle, LogOut, MessageCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,8 @@ import MobileDriverWelcomeScreen from './MobileDriverWelcomeScreen';
 import { SpeedLimitSign } from './SpeedLimitSign';
 import { useDriverLocation } from '@/hooks/useDriverLocation';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { DriverPromosPage } from './DriverPromosPage';
+import { DeliveryZone, getZoneForLocation } from '@/data/deliveryZones';
 import DoorDashStyleScheduleDashboard from './DoorDashStyleScheduleDashboard';
 import CorporateEarningsDashboard from './CorporateEarningsDashboard';
 import { AccountSection } from './AccountSection';
@@ -113,24 +115,18 @@ export const MobileDriverDashboard: React.FC = () => {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isInDeliveryZone, setIsInDeliveryZone] = useState(true);
   const [lastZoneCheck, setLastZoneCheck] = useState<Date | null>(null);
+  const handleZoneStatusChange = useCallback(({ isInZone, zone }: { isInZone: boolean; zone: DeliveryZone | null }) => {
+    setIsInDeliveryZone(isInZone);
+    setLastZoneCheck(new Date());
+    if (zone) {
+      setCurrentCity(zone.name);
+    }
+  }, []);
   
   // Check delivery availability
   const checkDeliveryAvailability = async (lat: number, lng: number) => {
-    try {
-      const response = await supabase.functions.invoke('check-delivery-availability', {
-        body: { latitude: lat, longitude: lng }
-      });
-      
-      if (response.error) {
-        console.error('Error checking delivery availability:', response.error);
-        return false;
-      }
-      
-      return response.data.available;
-    } catch (error) {
-      console.error('Error checking delivery availability:', error);
-      return false;
-    }
+    const zone = getZoneForLocation([lat, lng]);
+    return Boolean(zone);
   };
   
   const [userLocation, setUserLocation] = useState<{
@@ -886,10 +882,13 @@ export const MobileDriverDashboard: React.FC = () => {
           };
           setUserLocation(location);
 
-          // Check delivery zone availability
-          const isInZone = await checkDeliveryAvailability(location.lat, location.lng);
+          const zone = getZoneForLocation([location.lat, location.lng]);
+          const isInZone = Boolean(zone);
           setIsInDeliveryZone(isInZone);
           setLastZoneCheck(new Date());
+          if (zone) {
+            setCurrentCity(zone.name);
+          }
 
           if (!isInZone) {
             toast.error('You are outside the delivery zone. Orders may not be available in your current location.');
@@ -1159,7 +1158,7 @@ export const MobileDriverDashboard: React.FC = () => {
       
       {/* Full Screen Map Background - Full height */}
       <div className="absolute inset-0 z-0 map-touch">
-        <MobileMapbox />
+        <MobileMapbox onZoneStatusChange={handleZoneStatusChange} />
       </div>
 
       {/* Hamburger Menu Button - Top Left - Only on Home Tab */}
