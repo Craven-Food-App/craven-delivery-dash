@@ -34,7 +34,7 @@
     "performance:budget": "bundlesize",
     "analyze": "vite-bundle-analyzer",
     "clean": "rm -rf dist node_modules/.vite",
-    "postinstall": "cap sync",
+    "postinstall": "node scripts/postinstall.js || true",
     "load:pre-incorporation-template": "tsx scripts/load-pre-incorporation-template.ts",
     "reset-exec-password": "tsx scripts/reset-executive-password.ts"
   },
@@ -161,6 +161,7 @@
     "vite": "^7.1.12",
     "vite-bundle-analyzer": "^0.7.0",
     "vitest": "^4.0.5",
-    "@rollup/rollup-linux-x64-gnu": "^4.52.5"
+    "@rollup/rollup-linux-x64-gnu": "^4.52.5",
+    "@esbuild/linux-x64": "^0.25.11"
   }
 }
