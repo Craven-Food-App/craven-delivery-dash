@@ -15,7 +15,7 @@ type AdminZone = {
   state: string;
   zip_code: string;
   active: boolean;
-  geom: ZoneGeometry;
+  geom?: ZoneGeometry;
   demand: number;
 };
 
@@ -131,7 +131,7 @@ const AdminZoneMap: React.FC<AdminZoneMapProps> = ({
           },
         });
 
-        mapRef.current.on('click', 'admin-zones-fill', (event: mapboxgl.MapMouseEvent & mapboxgl.EventData) => {
+        mapRef.current.on('click', 'admin-zones-fill', (event: any) => {
           const feature = event.features?.[0];
           const zoneId = feature?.properties?.id as string | undefined;
           if (zoneId) {
