@@ -160,6 +160,7 @@
     "typescript-eslint": "^8.0.1",
     "vite": "^7.1.12",
     "vite-bundle-analyzer": "^0.7.0",
-    "vitest": "^4.0.5"
+    "vitest": "^4.0.5",
+    "@rollup/rollup-linux-x64-gnu": "^4.52.5"
   }
 }
