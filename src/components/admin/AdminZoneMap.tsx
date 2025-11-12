@@ -173,6 +173,8 @@ const AdminZoneMap: React.FC<AdminZoneMapProps> = ({
         mapRef.current.remove();
         mapRef.current = null;
       }
+      drawRef.current = null;
+      setMapReady(false);
     };
   }, [mode, onPolygonChange, onZoneSelect, selectedZoneId]);
 
@@ -263,7 +265,14 @@ const AdminZoneMap: React.FC<AdminZoneMapProps> = ({
   }, [selectedZoneId, mapReady]);
 
   useEffect(() => {
-    if (!mapReady || !drawRef.current) return;
+    if (
+      !mapReady ||
+      !drawRef.current ||
+      typeof drawRef.current.deleteAll !== 'function' ||
+      typeof drawRef.current.changeMode !== 'function'
+    ) {
+      return;
+    }
     if (mode === 'create') {
       drawRef.current.deleteAll();
       drawRef.current.changeMode('draw_polygon');
