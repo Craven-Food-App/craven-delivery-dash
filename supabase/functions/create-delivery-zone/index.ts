@@ -16,9 +16,22 @@ serve(async (req) => {
   try {
     const { name, city, state, zip_code, geojson } = await req.json()
     
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+      return new Response(JSON.stringify({ error: 'Supabase environment variables are not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      supabaseUrl,
+      supabaseServiceRoleKey,
+      {
+        auth: { persistSession: false },
+      }
     )
 
     // Convert GeoJSON to PostGIS geometry using the function
@@ -42,7 +55,8 @@ serve(async (req) => {
         geom: geomResult,
         active: true
       })
-      .select()
+      .select('id, name, city, state, zip_code, active')
+      .single()
 
     if (error) {
       return new Response(JSON.stringify({ error: error.message || 'Failed to create zone' }), {
@@ -51,7 +65,7 @@ serve(async (req) => {
       })
     }
 
-    return new Response(JSON.stringify({ zone: data[0] }), {
+    return new Response(JSON.stringify({ zone: data }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   } catch (error) {

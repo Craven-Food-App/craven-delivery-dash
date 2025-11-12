@@ -16,6 +16,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { Polygon } from 'geojson';
+import { MAPBOX_CONFIG } from '@/config/mapbox';
 
 interface DeliveryZone {
   id: string;
@@ -34,12 +35,109 @@ type ZoneWithMeta = DeliveryZone & { demand: number };
 
 type Mode = 'create' | 'edit';
 
-const driverLocations: [number, number][] = [
-  [41.95, -87.65],
-  [41.86, -87.72],
-  [41.76, -87.71],
-  [41.99, -87.8],
-];
+const fallbackDriverLocation: [number, number] = [MAPBOX_CONFIG.center[1], MAPBOX_CONFIG.center[0]];
+
+const parseWktPolygon = (value: string): Polygon | null => {
+  const trimmed = value.trim();
+  const cleaned = trimmed.startsWith('SRID=')
+    ? trimmed.slice(trimmed.indexOf(';') + 1).trim()
+    : trimmed;
+  if (!cleaned.toUpperCase().startsWith('POLYGON')) return null;
+
+  const startIndex = cleaned.indexOf('((');
+  const endIndex = cleaned.lastIndexOf('))');
+  if (startIndex === -1 || endIndex === -1) return null;
+
+  const body = cleaned.slice(startIndex + 2, endIndex);
+  const rings = body.split('),(');
+  const coordinates = rings.map((ring) => {
+    const points = ring.split(',').map((segment) => {
+      const [x, y] = segment
+        .trim()
+        .split(/\s+/)
+        .map((part) => Number.parseFloat(part));
+      return [x, y] as [number, number];
+    });
+    if (points.length && (points[0][0] !== points[points.length - 1][0] || points[0][1] !== points[points.length - 1][1])) {
+      points.push([...points[0]] as [number, number]);
+    }
+    return points;
+  });
+
+  return {
+    type: 'Polygon',
+    coordinates,
+  };
+};
+
+const ensurePolygon = (geom: DeliveryZone['geom']): Polygon | null => {
+  if (!geom) return null;
+  const geo = geom as any;
+  if (geo?.type === 'Polygon') {
+    return geo as Polygon;
+  }
+  if (geo?.type === 'MultiPolygon' && Array.isArray(geo.coordinates)) {
+    const firstPolygon = geo.coordinates[0];
+    if (firstPolygon) {
+      return {
+        type: 'Polygon',
+        coordinates: firstPolygon,
+      };
+    }
+  }
+  if (typeof geo === 'string') {
+    try {
+      const parsed = JSON.parse(geo);
+      if (parsed?.type === 'Polygon') {
+        return parsed as Polygon;
+      }
+      if (parsed?.type === 'MultiPolygon' && Array.isArray(parsed.coordinates)) {
+        const firstPolygon = parsed.coordinates[0];
+        if (firstPolygon) {
+          return {
+            type: 'Polygon',
+            coordinates: firstPolygon,
+          };
+        }
+      }
+    } catch (error) {
+      const wktPolygon = parseWktPolygon(geo);
+      if (wktPolygon) return wktPolygon;
+      console.warn('Unable to parse stored zone geometry', error);
+    }
+    const wktPolygon = parseWktPolygon(geo);
+    if (wktPolygon) return wktPolygon;
+  }
+  return null;
+};
+
+const getPolygonCentroid = (polygon: Polygon): [number, number] | null => {
+  const ring = polygon.coordinates?.[0];
+  if (!ring || ring.length === 0) return null;
+
+  let area = 0;
+  let centroidX = 0;
+  let centroidY = 0;
+
+  for (let i = 0; i < ring.length - 1; i += 1) {
+    const [x1, y1] = ring[i];
+    const [x2, y2] = ring[i + 1];
+    const cross = x1 * y2 - x2 * y1;
+    area += cross;
+    centroidX += (x1 + x2) * cross;
+    centroidY += (y1 + y2) * cross;
+  }
+
+  area *= 0.5;
+  if (area === 0) {
+    const [lng, lat] = ring[0];
+    return [lat, lng];
+  }
+
+  centroidX /= 6 * area;
+  centroidY /= 6 * area;
+  return [centroidY, centroidX];
+};
 
 const DeliveryZoneManager: React.FC = () => {
   const [zones, setZones] = useState<ZoneWithMeta[]>([]);
@@ -49,6 +147,7 @@ const DeliveryZoneManager: React.FC = () => {
   const [mode, setMode] = useState<Mode>('create');
   const [form, setForm] = useState({ name: '', city: '', state: '', zip_code: '' });
   const [currentPolygon, setCurrentPolygon] = useState<Polygon | null>(null);
+  const [driverLocations, setDriverLocations] = useState<[number, number][]>([fallbackDriverLocation]);
   const [driverIndex, setDriverIndex] = useState(0);
   const [statusMessage, setStatusMessage] = useState('Map loaded. Move the driver to check their current zone.');
   const [isSaving, setIsSaving] = useState(false);
@@ -62,10 +161,14 @@ const DeliveryZoneManager: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      const withMeta = (data || []).map((zone) => ({
-        ...zone,
-        demand: Math.random(),
-      }));
+      const withMeta = (data || []).map((zone) => {
+        const polygon = ensurePolygon(zone.geom);
+        return {
+          ...zone,
+          geom: polygon ?? zone.geom ?? null,
+          demand: Math.random(),
+        };
+      });
       setZones(withMeta);
     } catch (error) {
       console.error('Error loading zones:', error);
@@ -80,6 +183,31 @@ const DeliveryZoneManager: React.FC = () => {
   }, []);
 
   const selectedZone = useMemo(() => zones.find((zone) => zone.id === selectedZoneId) ?? null, [zones, selectedZoneId]);
+
+  useEffect(() => {
+    if (!zones.length) {
+      setDriverLocations([fallbackDriverLocation]);
+      setDriverIndex(0);
+      return;
+    }
+
+    const centroids = zones
+      .map((zone) => {
+        const polygon = ensurePolygon(zone.geom);
+        if (!polygon) return null;
+        const centroid = getPolygonCentroid(polygon);
+        return centroid;
+      })
+      .filter(Boolean) as [number, number][];
+
+    if (centroids.length) {
+      setDriverLocations(centroids);
+      setDriverIndex(0);
+    } else {
+      setDriverLocations([fallbackDriverLocation]);
+      setDriverIndex(0);
+    }
+  }, [zones]);
 
   useEffect(() => {
     if (selectedZone) {
@@ -227,7 +355,7 @@ const DeliveryZoneManager: React.FC = () => {
       return;
     }
 
-    const geojson = currentPolygon ?? (selectedZone?.geom as Polygon | undefined) ?? null;
+    const geojson = currentPolygon ?? ensurePolygon(selectedZone?.geom) ?? null;
     if (!geojson) {
       toast.error('Draw a delivery zone on the map before saving');
       return;
@@ -255,7 +383,11 @@ const DeliveryZoneManager: React.FC = () => {
   };
 
   const handleMoveDriver = () => {
-    setDriverIndex((prev) => (prev + 1) % driverLocations.length);
+    setDriverIndex((prev) => {
+      if (driverLocations.length <= 1) return prev;
+      return (prev + 1) % driverLocations.length;
+    });
+    setStatusMessage('Driver location updated.');
   };
 
   const filteredZones = zones.filter((zone) => {
@@ -268,7 +400,7 @@ const DeliveryZoneManager: React.FC = () => {
     );
   });
 
-  const driverLocation = driverLocations[driverIndex];
+  const driverLocation = driverLocations[driverIndex] ?? fallbackDriverLocation;
 
   return (
     <div className="space-y-6">

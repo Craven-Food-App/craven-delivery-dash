@@ -296,6 +296,23 @@ const AdminZoneMap: React.FC<AdminZoneMapProps> = ({
   }, [mode, selectedGeometry, selectedZoneId, mapReady, onPolygonChange]);
 
   useEffect(() => {
+    if (!mapReady || !mapRef.current || !selectedGeometry) return;
+    try {
+      const bounds = new mapboxgl.LngLatBounds();
+      let hasBounds = false;
+      selectedGeometry.coordinates[0]?.forEach(([lng, lat]) => {
+        bounds.extend([lng, lat]);
+        hasBounds = true;
+      });
+      if (hasBounds) {
+        mapRef.current.fitBounds(bounds, { padding: 40, maxZoom: 14 });
+      }
+    } catch (error) {
+      console.warn('Failed to adjust map bounds for selected zone', error);
+    }
+  }, [selectedGeometry, mapReady]);
+
+  useEffect(() => {
     if (!mapReady || !mapRef.current) return;
     if (!markerRef.current) {
       markerRef.current = new mapboxgl.Marker({
