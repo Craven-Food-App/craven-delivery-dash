@@ -21,7 +21,7 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-red-600 via-orange-600 to-orange-500">
+    <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-orange-500 overflow-y-auto pb-20">
       {/* Status Bar */}
       <div className="px-6 pt-3 flex items-center justify-between text-white">
         <span className="text-lg font-semibold">9:17</span>

@@ -1204,16 +1204,14 @@ export const MobileDriverDashboard: React.FC = () => {
         )}
         
         {activeTab === 'earnings' && (
-          <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
-            <div className="min-h-screen">
-              <CorporateEarningsDashboard 
-                onOpenMenu={() => setIsMenuOpen(true)}
-                onOpenNotifications={() => {
-                  setActiveTab('notifications');
-                  navigate('/mobile?tab=notifications');
-                }}
-              />
-            </div>
+          <div className="fixed inset-0 z-20 overflow-hidden">
+            <CorporateEarningsDashboard 
+              onOpenMenu={() => setIsMenuOpen(true)}
+              onOpenNotifications={() => {
+                setActiveTab('notifications');
+                navigate('/mobile?tab=notifications');
+              }}
+            />
           </div>
         )}
         
