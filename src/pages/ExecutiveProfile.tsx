@@ -185,25 +185,36 @@ const ExecutiveProfile: React.FC = () => {
         if (source === 'exec_users' || !source) {
           const { data, error } = await supabase
             .from('exec_users')
-            .select('id, role, title, department, photo_url, last_login, created_at, user_id, email, phone')
+            .select('id, role, title, department, photo_url, last_login, created_at, user_id, first_name, last_name')
             .eq('id', execId)
             .maybeSingle();
 
-          if (data) {
-            setTargetExec({
-              id: data.id,
-              name: data.title || data.role?.toUpperCase(),
-              role: data.role,
-              title: data.title,
-              department: data.department,
-              email: data.email ?? targetEmailParam,
-              phone: data.phone ?? undefined,
-              photo_url: data.photo_url ?? undefined,
-              last_login: data.last_login,
-              created_at: data.created_at,
-              source: 'exec_users',
-            });
-            return;
+          if (data !== null && typeof data === 'object') {
+            const dataObj = data as Record<string, any>;
+            if ('id' in dataObj) {
+              const firstName = dataObj.first_name;
+              const lastName = dataObj.last_name;
+              const title = dataObj.title;
+              const role = dataObj.role;
+              const fullName = (firstName && lastName)
+                ? `${firstName} ${lastName}`.trim()
+                : (title || role?.toUpperCase() || 'Executive');
+              
+              setTargetExec({
+                id: dataObj.id,
+                name: fullName,
+                role: role || undefined,
+                title: title || undefined,
+                department: dataObj.department || undefined,
+                email: targetEmailParam,
+                phone: undefined,
+                photo_url: dataObj.photo_url || undefined,
+                last_login: dataObj.last_login || undefined,
+                created_at: dataObj.created_at || undefined,
+                source: 'exec_users',
+              });
+              return;
+            }
           }
 
           if (error && source === 'exec_users') {
@@ -221,22 +232,30 @@ const ExecutiveProfile: React.FC = () => {
           throw employeeError;
         }
 
-        if (employeeData) {
-          const execRole = getExecRoleFromPosition(employeeData.position);
-          setTargetExec({
-            id: employeeData.id,
-            name: `${employeeData.first_name ?? ''} ${employeeData.last_name ?? ''}`.trim() || employeeData.position,
-            role: execRole ?? employeeData.position,
-            title: employeeData.position,
-            department: employeeData.department,
-            email: employeeData.email || employeeData.work_email,
-            phone: employeeData.phone ?? undefined,
-            photo_url: employeeData.photo_url ?? undefined,
-            hire_date: employeeData.hire_date ?? undefined,
-            created_at: employeeData.created_at ?? undefined,
-            source: 'employees',
-          });
-          return;
+        if (employeeData !== null && typeof employeeData === 'object') {
+          const dataObj = employeeData as Record<string, any>;
+          if ('id' in dataObj) {
+            const empData = dataObj;
+            const execRole = getExecRoleFromPosition(empData.position || null);
+            const firstName = empData.first_name || '';
+            const lastName = empData.last_name || '';
+            const fullName = `${firstName} ${lastName}`.trim() || empData.position || 'Executive';
+            
+            setTargetExec({
+              id: empData.id,
+              name: fullName,
+              role: execRole || empData.position || undefined,
+              title: empData.position || undefined,
+              department: empData.department || undefined,
+              email: empData.email || empData.work_email || undefined,
+              phone: empData.phone || undefined,
+              photo_url: empData.photo_url || undefined,
+              hire_date: empData.hire_date || undefined,
+              created_at: empData.created_at || undefined,
+              source: 'employees',
+            });
+            return;
+          }
         }
 
         const fallback = findFallbackByIdOrEmail(execId, targetEmailParam ?? undefined);
@@ -259,25 +278,36 @@ const ExecutiveProfile: React.FC = () => {
         if (targetUserIdParam) {
           const { data } = await supabase
             .from('exec_users')
-            .select('id, role, title, department, photo_url, last_login, created_at, email, phone')
+            .select('id, role, title, department, photo_url, last_login, created_at, first_name, last_name')
             .eq('user_id', targetUserIdParam)
             .maybeSingle();
 
-          if (data) {
-            setTargetExec({
-              id: data.id,
-              name: data.title || data.role?.toUpperCase(),
-              role: data.role,
-              title: data.title,
-              department: data.department,
-              email: data.email ?? targetEmailParam,
-              phone: data.phone ?? undefined,
-              photo_url: data.photo_url ?? undefined,
-              last_login: data.last_login,
-              created_at: data.created_at,
-              source: 'exec_users',
-            });
-            return;
+          if (data !== null && typeof data === 'object') {
+            const dataObj = data as Record<string, any>;
+            if ('id' in dataObj) {
+              const firstName = dataObj.first_name;
+              const lastName = dataObj.last_name;
+              const title = dataObj.title;
+              const role = dataObj.role;
+              const fullName = (firstName && lastName)
+                ? `${firstName} ${lastName}`.trim()
+                : (title || role?.toUpperCase() || 'Executive');
+              
+              setTargetExec({
+                id: dataObj.id,
+                name: fullName,
+                role: role || undefined,
+                title: title || undefined,
+                department: dataObj.department || undefined,
+                email: targetEmailParam,
+                phone: undefined,
+                photo_url: dataObj.photo_url || undefined,
+                last_login: dataObj.last_login || undefined,
+                created_at: dataObj.created_at || undefined,
+                source: 'exec_users',
+              });
+              return;
+            }
           }
         }
 
