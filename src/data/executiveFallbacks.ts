@@ -1,0 +1,39 @@
+export interface FallbackExecutive {
+  id: string;
+  user_id?: string;
+  role: string;
+  title: string;
+  department: string;
+  name: string;
+  email: string;
+  phone?: string;
+  photo_url?: string;
+}
+
+export const FALLBACK_EXECUTIVES: FallbackExecutive[] = [
+  {
+    id: 'fallback-torrance-stroman',
+    role: 'ceo',
+    title: 'Chief Executive Officer',
+    department: 'Executive Office',
+    name: 'Torrance Stroman',
+    email: 'craven@usa.com',
+  },
+  {
+    id: 'fallback-justin-sweet',
+    role: 'cfo',
+    title: 'Chief Financial Officer',
+    department: 'Finance',
+    name: 'Justin Sweet',
+    email: 'justin.sweet@cravenusa.com',
+  },
+  {
+    id: 'fallback-terri-crawford',
+    role: 'cxo',
+    title: 'Chief Experience Officer',
+    department: 'Experience',
+    name: 'Terri Crawford',
+    email: 'terri.crawford@cravenusa.com',
+  },
+];
+

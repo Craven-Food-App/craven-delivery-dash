@@ -90,17 +90,17 @@ export function DriverPreferencesPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data } = await supabase
+      const { data: existingPreferences, error } = await supabase
         .from('driver_preferences')
         .select('*')
         .eq('driver_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (data) {
-        setPrefs(data);
+      if (existingPreferences) {
+        setPrefs(existingPreferences);
         // Save map_style to localStorage for immediate access
-        if (data.map_style) {
-          localStorage.setItem('driver_map_style', data.map_style);
+        if (existingPreferences.map_style) {
+          localStorage.setItem('driver_map_style', existingPreferences.map_style);
         }
       }
     } catch (error) {

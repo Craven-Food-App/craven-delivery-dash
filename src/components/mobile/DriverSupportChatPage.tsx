@@ -59,7 +59,7 @@ export function DriverSupportChatPage() {
         .select('*')
         .eq('driver_id', user.id)
         .eq('status', 'open')
-        .single();
+        .maybeSingle();
 
       if (!chat) {
         // Create new chat

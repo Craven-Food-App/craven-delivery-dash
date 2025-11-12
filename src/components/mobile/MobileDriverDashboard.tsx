@@ -171,7 +171,7 @@ export const MobileDriverDashboard: React.FC = () => {
           .select('session_data, is_online')
           .eq('driver_id', user.id)
           .eq('is_online', true)
-          .single();
+          .maybeSingle();
           
         const timeoutPromise = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Session check timeout')), 2000)
@@ -360,7 +360,7 @@ export const MobileDriverDashboard: React.FC = () => {
           .from('driver_profiles')
           .select('rating, total_deliveries')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (profile) {
           setDriverRating(Number(profile.rating) || 5.0);
@@ -672,7 +672,7 @@ export const MobileDriverDashboard: React.FC = () => {
         .from('craver_applications')
         .select('onboarding_completed_at')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       // If onboarding not complete, redirect to enhanced onboarding
       if (!application?.onboarding_completed_at) {
@@ -1194,7 +1194,13 @@ export const MobileDriverDashboard: React.FC = () => {
         {activeTab === 'schedule' && (
           <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
             <div className="min-h-screen">
-              <DoorDashStyleScheduleDashboard />
+              <DoorDashStyleScheduleDashboard 
+                onOpenMenu={() => setIsMenuOpen(true)}
+                onOpenNotifications={() => {
+                  setActiveTab('notifications');
+                  navigate('/mobile?tab=notifications');
+                }}
+              />
             </div>
           </div>
         )}
@@ -1202,7 +1208,13 @@ export const MobileDriverDashboard: React.FC = () => {
         {activeTab === 'earnings' && (
           <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
             <div className="min-h-screen">
-              <CorporateEarningsDashboard />
+              <CorporateEarningsDashboard 
+                onOpenMenu={() => setIsMenuOpen(true)}
+                onOpenNotifications={() => {
+                  setActiveTab('notifications');
+                  navigate('/mobile?tab=notifications');
+                }}
+              />
             </div>
           </div>
         )}
@@ -1221,7 +1233,13 @@ export const MobileDriverDashboard: React.FC = () => {
         {activeTab === 'ratings' && (
           <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
             <div className="min-h-screen">
-              <DriverRatingsPage />
+              <DriverRatingsPage 
+                onOpenMenu={() => setIsMenuOpen(true)}
+                onOpenNotifications={() => {
+                  setActiveTab('notifications');
+                  navigate('/mobile?tab=notifications');
+                }}
+              />
             </div>
           </div>
         )}
@@ -1229,7 +1247,13 @@ export const MobileDriverDashboard: React.FC = () => {
         {activeTab === 'promos' && (
           <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
             <div className="min-h-screen">
-              <DriverPromosPage />
+              <DriverPromosPage 
+                onOpenMenu={() => setIsMenuOpen(true)}
+                onOpenNotifications={() => {
+                  setActiveTab('notifications');
+                  navigate('/mobile?tab=notifications');
+                }}
+              />
             </div>
           </div>
         )}

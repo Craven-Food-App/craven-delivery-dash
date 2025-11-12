@@ -1,286 +1,425 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Calendar, 
-  Clock, 
-  Plus, 
-  ChevronRight, 
-  MapPin,
-  DollarSign,
-  Target,
-  TrendingUp,
-  Edit3,
-  Trash2,
-  Check,
-  X,
-  Zap,
-  Star,
-  AlertCircle,
-  Settings,
-  MoreHorizontal,
-  Play,
-  Pause,
-  BarChart3,
-  Users,
-  Timer,
-  Bell,
-  Filter,
-  Search,
-  ChevronDown,
-  ChevronUp
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { Check, Menu, Bell, Filter, Plus } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-interface ScheduleBlock {
+type CravenDriverScheduleProps = {
+  onOpenMenu?: () => void;
+  onOpenNotifications?: () => void;
+};
+
+type ScheduleRecord = {
   id: string;
-  day: string;
+  dayOfWeek: number;
   startTime: string;
   endTime: string;
-  date: string;
-  status: 'scheduled' | 'active' | 'completed' | 'cancelled';
-  earnings: number;
-  deliveries: number;
-  rating: number;
-  notes?: string;
-}
+  isActive: boolean;
+  isRecurring: boolean;
+};
 
-interface PeakHours {
-  day: string;
-  hours: string[];
-  multiplier: number;
-  color: string;
-}
+type ScheduleMap = Record<string, ScheduleRecord>;
 
-const DoorDashStyleScheduleDashboard: React.FC = () => {
-  const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showQuickStart, setShowQuickStart] = useState(false);
-  const [activeTab, setActiveTab] = useState<'schedule' | 'availability'>('schedule');
-  const [expandedDay, setExpandedDay] = useState<number | null>(null);
-  
+const SHIFT_SLOTS = [
+  { id: 'slot-0', startTime: '06:00', endTime: '09:00', displayStart: '6:00 AM', displayEnd: '9:00 AM' },
+  { id: 'slot-1', startTime: '09:00', endTime: '12:00', displayStart: '9:00 AM', displayEnd: '12:00 PM' },
+  { id: 'slot-2', startTime: '10:00', endTime: '13:00', displayStart: '10:00 AM', displayEnd: '1:00 PM' },
+  { id: 'slot-3', startTime: '12:00', endTime: '15:00', displayStart: '12:00 PM', displayEnd: '3:00 PM' },
+  { id: 'slot-4', startTime: '14:00', endTime: '17:00', displayStart: '2:00 PM', displayEnd: '5:00 PM' },
+  { id: 'slot-5', startTime: '15:00', endTime: '18:00', displayStart: '3:00 PM', displayEnd: '6:00 PM' },
+  { id: 'slot-6', startTime: '17:30', endTime: '20:00', displayStart: '5:30 PM', displayEnd: '8:00 PM' },
+  { id: 'slot-7', startTime: '18:00', endTime: '21:00', displayStart: '6:00 PM', displayEnd: '9:00 PM' },
+  { id: 'slot-8', startTime: '20:30', endTime: '23:00', displayStart: '8:30 PM', displayEnd: '11:00 PM' },
+  { id: 'slot-9', startTime: '21:00', endTime: '24:00', displayStart: '9:00 PM', displayEnd: '12:00 AM' }
+] as const;
 
-  // Sample data
-  const peakHours: PeakHours[] = [
-    { day: 'Monday', hours: ['11:00 AM - 2:00 PM', '5:00 PM - 9:00 PM'], multiplier: 1.5, color: 'bg-orange-500' },
-    { day: 'Tuesday', hours: ['11:00 AM - 2:00 PM', '5:00 PM - 9:00 PM'], multiplier: 1.5, color: 'bg-orange-500' },
-    { day: 'Wednesday', hours: ['11:00 AM - 2:00 PM', '5:00 PM - 9:00 PM'], multiplier: 1.5, color: 'bg-orange-500' },
-    { day: 'Thursday', hours: ['11:00 AM - 2:00 PM', '5:00 PM - 9:00 PM'], multiplier: 1.5, color: 'bg-orange-500' },
-    { day: 'Friday', hours: ['11:00 AM - 2:00 PM', '5:00 PM - 10:00 PM'], multiplier: 2.0, color: 'bg-red-500' },
-    { day: 'Saturday', hours: ['10:00 AM - 2:00 PM', '5:00 PM - 10:00 PM'], multiplier: 2.0, color: 'bg-red-500' },
-    { day: 'Sunday', hours: ['10:00 AM - 2:00 PM', '5:00 PM - 9:00 PM'], multiplier: 1.8, color: 'bg-yellow-500' }
-  ];
+const getScheduleKey = (dayOfWeek: number, startTime: string, endTime: string) =>
+  `${dayOfWeek}-${startTime}-${endTime}`;
 
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const todayIndex = new Date().getDay();
+const normalizeTime = (time: string) => time.slice(0, 5);
+
+const CravenDriverSchedule: React.FC<CravenDriverScheduleProps> = ({
+  onOpenMenu,
+  onOpenNotifications
+}) => {
+  const [selectedDateIndex, setSelectedDateIndex] = useState(0);
+  const [scheduleMap, setScheduleMap] = useState<ScheduleMap>({});
+  const [loading, setLoading] = useState(true);
+  const [processingShiftId, setProcessingShiftId] = useState<string | null>(null);
+  const [authWarningShown, setAuthWarningShown] = useState(false);
+
+  const today = useMemo(() => new Date(), []);
+
+  const dates = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = new Date();
+      date.setHours(0, 0, 0, 0);
+      date.setDate(today.getDate() + i);
+      return date;
+    });
+  }, [today]);
+
+  const selectedDate = dates[selectedDateIndex] ?? today;
+  const selectedDayOfWeek = selectedDate.getDay();
+
+  const fetchSchedule = useCallback(async () => {
+    setLoading(true);
+    try {
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        if (!authWarningShown) {
+          toast.error('Please sign in to manage your schedule.');
+          setAuthWarningShown(true);
+        }
+        setScheduleMap({});
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('driver_schedules')
+        .select('id, day_of_week, start_time, end_time, is_active, is_recurring')
+        .eq('driver_id', user.id);
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data) {
+        setScheduleMap({});
+        return;
+      }
+
+      const nextMap: ScheduleMap = {};
+      data.forEach((record) => {
+        const startTime = normalizeTime(record.start_time);
+        const endTime = normalizeTime(record.end_time === '00:00:00' ? '24:00:00' : record.end_time);
+        const key = getScheduleKey(record.day_of_week, startTime, endTime);
+
+        nextMap[key] = {
+          id: record.id,
+          dayOfWeek: record.day_of_week,
+          startTime,
+          endTime,
+          isActive: record.is_active,
+          isRecurring: record.is_recurring
+        };
+      });
+
+      setScheduleMap(nextMap);
+    } catch (error) {
+      console.error('Error fetching schedule', error);
+      toast.error('Unable to load your schedule. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [authWarningShown]);
 
   useEffect(() => {
-    // Simulate loading existing schedule
-    setScheduleBlocks([
-      {
-        id: '1',
-        day: 'Friday',
-        startTime: '5:00 PM',
-        endTime: '9:00 PM',
-        date: '2024-01-26',
-        status: 'scheduled',
-        earnings: 0,
-        deliveries: 0,
-        rating: 0
-      },
-      {
-        id: '2',
-        day: 'Saturday',
-        startTime: '10:00 AM',
-        endTime: '2:00 PM',
-        date: '2024-01-27',
-        status: 'scheduled',
-        earnings: 0,
-        deliveries: 0,
-        rating: 0
+    fetchSchedule();
+  }, [fetchSchedule]);
+
+  const selectedShiftIds = useMemo(() => {
+    return SHIFT_SLOTS.filter((slot) => {
+      const key = getScheduleKey(selectedDayOfWeek, slot.startTime, slot.endTime);
+      return scheduleMap[key]?.isActive;
+    }).map((slot) => slot.id);
+  }, [scheduleMap, selectedDayOfWeek]);
+
+  const toggleShift = useCallback(async (shiftId: string) => {
+    const slot = SHIFT_SLOTS.find((s) => s.id === shiftId);
+    if (!slot) {
+      return;
+    }
+
+    try {
+      setProcessingShiftId(shiftId);
+
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        toast.error('Please sign in to manage your schedule.');
+        return;
       }
-    ]);
+
+      const key = getScheduleKey(selectedDayOfWeek, slot.startTime, slot.endTime);
+      const existingRecord = scheduleMap[key];
+      const startTimeSql = `${slot.startTime}:00`;
+      const endTimeSql = slot.endTime === '24:00' ? '00:00:00' : `${slot.endTime}:00`;
+
+      const isCurrentlySelected = selectedShiftIds.includes(shiftId);
+
+      if (isCurrentlySelected && existingRecord) {
+        const { error } = await supabase
+          .from('driver_schedules')
+          .update({ is_active: false })
+          .eq('id', existingRecord.id);
+
+        if (error) {
+          throw error;
+        }
+
+        setScheduleMap((prev) => ({
+          ...prev,
+          [key]: {
+            ...existingRecord,
+            isActive: false
+          }
+        }));
+
+        toast.success('Shift removed from your schedule.');
+      } else if (existingRecord) {
+        const { error } = await supabase
+          .from('driver_schedules')
+          .update({ is_active: true })
+          .eq('id', existingRecord.id);
+
+        if (error) {
+          throw error;
+        }
+
+        setScheduleMap((prev) => ({
+          ...prev,
+          [key]: {
+            ...existingRecord,
+            isActive: true
+          }
+        }));
+
+        toast.success('Shift reactivated.');
+      } else {
+        const { data, error } = await supabase
+          .from('driver_schedules')
+          .insert({
+            driver_id: user.id,
+            day_of_week: selectedDayOfWeek,
+            start_time: startTimeSql,
+            end_time: endTimeSql,
+            is_active: true,
+            is_recurring: false
+          })
+          .select('id, day_of_week, start_time, end_time, is_active, is_recurring')
+          .maybeSingle();
+
+        if (error) {
+          throw error;
+        }
+
+        const startTime = normalizeTime(data.start_time);
+        const endTime = normalizeTime(data.end_time === '00:00:00' ? '24:00:00' : data.end_time);
+        const newKey = getScheduleKey(data.day_of_week, startTime, endTime);
+
+        setScheduleMap((prev) => ({
+          ...prev,
+          [newKey]: {
+            id: data.id,
+            dayOfWeek: data.day_of_week,
+            startTime,
+            endTime,
+            isActive: data.is_active,
+            isRecurring: data.is_recurring
+          }
+        }));
+
+        toast.success('Shift added to your schedule.');
+      }
+    } catch (error) {
+      console.error('Error updating shift', error);
+      toast.error('Unable to update shift. Please try again.');
+    } finally {
+      setProcessingShiftId(null);
+    }
+  }, [scheduleMap, selectedDayOfWeek, selectedShiftIds]);
+
+  const handleAddRecommendedShift = useCallback(async () => {
+    const nextSlot = SHIFT_SLOTS.find((slot) => {
+      const key = getScheduleKey(selectedDayOfWeek, slot.startTime, slot.endTime);
+      return !scheduleMap[key]?.isActive;
+    });
+
+    if (!nextSlot) {
+      toast.success('All available shifts are already scheduled for this day.');
+      return;
+    }
+
+    await toggleShift(nextSlot.id);
+  }, [scheduleMap, selectedDayOfWeek, toggleShift]);
+
+  const handleFilterClick = useCallback(() => {
+    toast.info('Filter options coming soon.');
   }, []);
 
+  const formatDate = useCallback(
+    (date: Date) => {
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      return {
+        day: days[date.getDay()].substring(0, 2),
+        date: date.getDate(),
+        isToday: date.toDateString() === today.toDateString()
+      };
+    },
+    [today]
+  );
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'scheduled': return 'bg-blue-100 text-blue-800';
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'completed': return 'bg-gray-100 text-gray-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'scheduled': return <Clock className="h-4 w-4" />;
-      case 'active': return <Play className="h-4 w-4" />;
-      case 'completed': return <Check className="h-4 w-4" />;
-      case 'cancelled': return <X className="h-4 w-4" />;
-      default: return <Clock className="h-4 w-4" />;
-    }
-  };
-
+  if (loading) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mb-4" />
+        <p className="text-sm text-gray-600">Loading your schedule…</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="max-w-4xl mx-auto">
-        {/* DoorDash-style Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4 safe-area-top">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
-              <p className="text-sm text-gray-600">Manage your delivery shifts</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" className="border-gray-300">
-                <Filter className="h-4 w-4 mr-1" />
-                Filter
-              </Button>
-              <Button size="sm" className="bg-orange-600 hover:bg-orange-700 text-white">
-                <Plus className="h-4 w-4 mr-1" />
-                Add Shift
-              </Button>
-            </div>
+    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+      <div className="bg-white">
+        <div className="px-5 pt-6 pb-4">
+          <div className="flex items-center justify-between mb-6">
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenMenu) {
+                  onOpenMenu();
+                } else {
+                  toast.info('Menu coming soon.');
+                }
+              }}
+              className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow flex items-center justify-center hover:bg-white transition"
+            >
+              <Menu className="w-6 h-6 text-gray-700" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenNotifications) {
+                  onOpenNotifications();
+                } else {
+                  toast.info('Notifications coming soon.');
+                }
+              }}
+              className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow flex items-center justify-center hover:bg-white transition"
+            >
+              <Bell className="w-6 h-6 text-gray-700" />
+            </button>
           </div>
+          <h1 className="text-3xl font-bold text-gray-900">Schedule</h1>
+        </div>
+      </div>
+
+      <div className="px-5 py-6 flex-1 flex flex-col overflow-hidden">
+        <div className="grid grid-cols-7 gap-2 mb-6 flex-shrink-0">
+          {dates.map((date, idx) => {
+            const { day, date: dateNum } = formatDate(date);
+            const isSelected = selectedDateIndex === idx;
+            return (
+              <button
+                key={`${date.toISOString()}-${idx}`}
+                onClick={() => setSelectedDateIndex(idx)}
+                className="flex flex-col items-center justify-center"
+              >
+                <span className="text-sm font-medium text-gray-900 mb-2">{day}</span>
+                <div
+                  className={`w-12 h-12 flex items-center justify-center rounded-full text-lg font-bold transition-all ${
+                    isSelected ? 'bg-orange-500 text-white' : 'text-gray-900'
+                  }`}
+                >
+                  {dateNum}
+                </div>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Quick Stats - DoorDash Style */}
-        <div className="p-6">
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <Card className="bg-white border-gray-200">
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-gray-900">2</div>
-                <div className="text-sm text-gray-600">Scheduled</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-white border-gray-200">
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-green-600">$127</div>
-                <div className="text-sm text-gray-600">This Week</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-white border-gray-200">
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-blue-600">4.8</div>
-                <div className="text-sm text-gray-600">Rating</div>
-              </CardContent>
-            </Card>
-          </div>
+        <div
+          className="flex-1 overflow-y-auto space-y-3 pb-4"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          <style
+            dangerouslySetInnerHTML={{
+              __html: `
+            .overflow-y-auto::-webkit-scrollbar {
+              display: none;
+            }
+          `
+            }}
+          />
 
-          {/* DoorDash-style Tabs */}
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-white border border-gray-200">
-              <TabsTrigger value="schedule" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">Schedule</TabsTrigger>
-              <TabsTrigger value="availability" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">Availability</TabsTrigger>
-            </TabsList>
+          <div className="bg-white border border-gray-200 rounded-3xl shadow-sm p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Upcoming Shifts</h2>
+                <p className="text-sm text-gray-500">Tap a slot to add or remove it from your schedule.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="gap-2" onClick={handleFilterClick}>
+                  <Filter className="h-4 w-4" />
+                  Filter
+                </Button>
+                <Button size="sm" className="gap-2 bg-orange-600 hover:bg-orange-700 text-white" onClick={handleAddRecommendedShift} disabled={processingShiftId !== null}>
+                  <Plus className="h-4 w-4" />
+                  Add Shift
+                </Button>
+              </div>
+            </div>
 
-            <TabsContent value="schedule" className="space-y-4 mt-6">
-              {/* Upcoming Shifts - DoorDash Style */}
-              <Card className="bg-white border-gray-200">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center space-x-2 text-lg">
-                    <Calendar className="h-5 w-5 text-orange-600" />
-                    <span>Upcoming Shifts</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {scheduleBlocks.length === 0 ? (
-                    <div className="text-center py-8">
-                      <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-500 mb-4">No shifts scheduled</p>
-                      <Button className="bg-orange-600 hover:bg-orange-700 text-white">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Schedule Your First Shift
-                      </Button>
+            <div className="space-y-3">
+              {SHIFT_SLOTS.map((shift) => {
+                const key = getScheduleKey(selectedDayOfWeek, shift.startTime, shift.endTime);
+                const isSelected = selectedShiftIds.includes(shift.id);
+                const record = scheduleMap[key];
+                const isConfirmed = Boolean(record?.isRecurring);
+                const isProcessing = processingShiftId === shift.id;
+
+                return (
+                  <button
+                    key={shift.id}
+                    onClick={() => toggleShift(shift.id)}
+                    disabled={isProcessing}
+                    className={`w-full px-6 py-5 rounded-2xl transition-all text-left ${
+                      isSelected ? 'bg-orange-500 shadow-lg' : 'bg-white border border-gray-200'
+                    } ${isProcessing ? 'opacity-70 cursor-wait' : ''}`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className={`text-2xl font-bold ${isSelected ? 'text-white' : 'text-gray-900'}`}>
+                        {shift.displayStart}
+                      </span>
+                      <span className={`text-2xl font-bold ${isSelected ? 'text-white' : 'text-gray-900'}`}>
+                        {shift.displayEnd}
+                      </span>
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {scheduleBlocks.map((block) => (
-                        <div key={block.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50">
-                          <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-orange-100 rounded-lg">
-                              <Calendar className="h-5 w-5 text-orange-600" />
-                            </div>
-                            <div>
-                              <div className="font-semibold text-gray-900">{block.day}</div>
-                              <div className="text-sm text-gray-600">{block.startTime} - {block.endTime}</div>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge className={getStatusColor(block.status)}>
-                              {getStatusIcon(block.status)}
-                              <span className="ml-1 capitalize">{block.status}</span>
-                            </Badge>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </div>
+                    {(isConfirmed || isSelected) && (
+                      <div className="flex items-center space-x-2">
+                        <div
+                          className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                            isSelected ? 'bg-white' : 'bg-green-500'
+                          }`}
+                        >
+                          <Check
+                            className={`w-3 h-3 ${isSelected ? 'text-orange-500' : 'text-white'}`}
+                          />
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Peak Hours - DoorDash Style */}
-              <Card className="bg-white border-gray-200">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center space-x-2 text-lg">
-                    <TrendingUp className="h-5 w-5 text-orange-600" />
-                    <span>Peak Hours</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {peakHours.map((day, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-gray-50">
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-3 h-3 rounded-full ${day.color}`}></div>
-                          <div>
-                            <div className="font-medium text-gray-900">{day.day}</div>
-                            <div className="text-sm text-gray-600">{day.hours.join(', ')}</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-medium text-gray-900">{day.multiplier}x</div>
-                          <div className="text-xs text-gray-500">Multiplier</div>
-                        </div>
+                        <span
+                          className={`text-base font-semibold ${
+                            isSelected ? 'text-white' : 'text-green-600'
+                          }`}
+                        >
+                          {isConfirmed ? 'Confirmed' : isSelected ? 'Scheduled' : 'Active'}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="availability" className="space-y-4 mt-6">
-              <Card className="bg-white border-gray-200">
-                <CardHeader>
-                  <CardTitle className="text-lg">Set Your Availability</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8">
-                    <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 mb-4">Set your weekly availability</p>
-                    <Button className="bg-orange-600 hover:bg-orange-700 text-white">
-                      <Settings className="h-4 w-4 mr-2" />
-                      Manage Availability
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-          </Tabs>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default DoorDashStyleScheduleDashboard;
+export default CravenDriverSchedule;

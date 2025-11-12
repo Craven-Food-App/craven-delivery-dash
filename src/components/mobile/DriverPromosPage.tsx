@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,12 +13,19 @@ import {
   CheckCircle,
   Zap,
   Gift,
-  Target
+  Target,
+  Menu,
+  Bell
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-export function DriverPromosPage() {
+ type DriverPromosPageProps = {
+  onOpenMenu?: () => void;
+  onOpenNotifications?: () => void;
+};
+
+export function DriverPromosPage({ onOpenMenu, onOpenNotifications }: DriverPromosPageProps) {
   const [loading, setLoading] = useState(true);
   const [activePromos, setActivePromos] = useState<any[]>([]);
   const [myPromos, setMyPromos] = useState<any[]>([]);
@@ -36,7 +43,7 @@ export function DriverPromosPage() {
       if (!user) return;
 
       // Fetch active promotions
-      const { data: promos } = await supabase
+      const { data: promos, error: promosError } = await supabase
         .from('driver_promotions')
         .select('*')
         .eq('is_active', true)
@@ -44,10 +51,14 @@ export function DriverPromosPage() {
         .lte('starts_at', new Date().toISOString())
         .order('priority', { ascending: true });
 
-      setActivePromos(promos || []);
+      if (promosError) {
+        console.error('DriverPromosPage: error fetching active promos', promosError);
+      } else {
+        setActivePromos(promos || []);
+      }
 
       // Fetch driver's enrolled promotions
-      const { data: enrolled } = await supabase
+      const { data: enrolled, error: enrolledError } = await supabase
         .from('driver_promotion_participation')
         .select(`
           *,
@@ -56,10 +67,14 @@ export function DriverPromosPage() {
         .eq('driver_id', user.id)
         .eq('is_completed', false);
 
-      setMyPromos(enrolled || []);
+      if (enrolledError) {
+        console.error('DriverPromosPage: error fetching enrolled promos', enrolledError);
+      } else {
+        setMyPromos(enrolled || []);
+      }
 
       // Fetch completed promotions (this month)
-      const { data: completed } = await supabase
+      const { data: completed, error: completedError } = await supabase
         .from('driver_promotion_participation')
         .select(`
           *,
@@ -69,32 +84,43 @@ export function DriverPromosPage() {
         .eq('is_completed', true)
         .gte('completed_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString());
 
-      setCompletedPromos(completed || []);
+      if (completedError) {
+        console.error('DriverPromosPage: error fetching completed promos', completedError);
+      } else {
+        setCompletedPromos(completed || []);
+      }
 
       // Fetch active surge zones
-      const { data: zones } = await supabase
+      const { data: zones, error: zonesError } = await supabase
         .from('driver_surge_zones')
         .select('*')
         .eq('is_active', true)
         .gte('active_until', new Date().toISOString());
 
-      setSurgeZones(zones || []);
+      if (zonesError) {
+        console.error('DriverPromosPage: error fetching surge zones', zonesError);
+      } else {
+        setSurgeZones(zones || []);
+      }
 
       // Fetch referral data
-      const { data: referrals } = await supabase
+      const { data: referrals, error: referralsError } = await supabase
         .from('driver_referrals')
         .select('*')
         .eq('referrer_driver_id', user.id);
+      if (referralsError) {
+        console.error('DriverPromosPage: error fetching referrals', referralsError);
+      } else {
+        const totalEarned = referrals
+          ?.filter(r => r.referrer_paid)
+          .reduce((sum, r) => sum + (r.referrer_reward_cents || 0), 0) || 0;
 
-      const totalEarned = referrals
-        ?.filter(r => r.referrer_paid)
-        .reduce((sum, r) => sum + (r.referrer_reward_cents || 0), 0) || 0;
-
-      setReferralData({
-        code: referrals?.[0]?.referral_code || `REFER_${user.id.slice(0, 8).toUpperCase()}`,
-        activeReferrals: referrals?.filter(r => r.status === 'qualified').length || 0,
-        totalEarned: totalEarned / 100,
-      });
+        setReferralData({
+          code: referrals?.[0]?.referral_code || `REFER_${user.id.slice(0, 8).toUpperCase()}`,
+          activeReferrals: referrals?.filter(r => r.status === 'qualified').length || 0,
+          totalEarned: totalEarned / 100,
+        });
+      }
 
     } catch (error) {
       console.error('Error fetching promos:', error);
@@ -177,6 +203,34 @@ export function DriverPromosPage() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white border-b shadow-sm safe-area-top">
         <div className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenMenu) {
+                  onOpenMenu();
+                } else {
+                  toast.info('Menu coming soon.');
+                }
+              }}
+              className="w-10 h-10 bg-white/90 rounded-full shadow flex items-center justify-center hover:bg-white transition"
+            >
+              <Menu className="h-5 w-5 text-gray-700" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenNotifications) {
+                  onOpenNotifications();
+                } else {
+                  toast.info('Notifications coming soon.');
+                }
+              }}
+              className="w-10 h-10 bg-white/90 rounded-full shadow flex items-center justify-center hover:bg-white transition"
+            >
+              <Bell className="h-5 w-5 text-gray-700" />
+            </button>
+          </div>
           <h1 className="text-3xl font-bold text-slate-900 text-right mb-2">
             Promos
           </h1>

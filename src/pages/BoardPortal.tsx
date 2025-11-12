@@ -354,7 +354,7 @@ const BoardPortal: React.FC = () => {
                       <span className="text-xs sm:text-base">Directory</span>
                     </span>
                   ),
-                  children: <ExecutiveDirectory />,
+                  children: <ExecutiveDirectory viewerRole={execUser?.role?.toLowerCase()} />,
                 },
                 {
                   key: 'officers',
