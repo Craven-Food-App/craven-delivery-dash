@@ -231,7 +231,7 @@ const ExecutiveProfile: React.FC = () => {
         }
 
         if (employeeData && typeof employeeData === 'object' && 'id' in employeeData) {
-          const empData = employeeData!;
+          const empData = employeeData as any;
           const execRole = getExecRoleFromPosition(empData.position || null);
           const firstName = empData.first_name || '';
           const lastName = empData.last_name || '';
