@@ -190,21 +190,21 @@ const ExecutiveProfile: React.FC = () => {
             .maybeSingle();
 
           if (data && typeof data === 'object' && 'id' in data) {
-            const fullName = data.first_name && data.last_name 
+            const fullName = (data.first_name && data.last_name)
               ? `${data.first_name} ${data.last_name}`.trim()
-              : data.title || data.role?.toUpperCase();
+              : (data.title || data.role?.toUpperCase() || 'Executive');
             
             setTargetExec({
               id: data.id,
               name: fullName,
-              role: data.role,
-              title: data.title,
-              department: data.department,
+              role: data.role || undefined,
+              title: data.title || undefined,
+              department: data.department || undefined,
               email: targetEmailParam,
               phone: undefined,
-              photo_url: data.photo_url ?? undefined,
-              last_login: data.last_login,
-              created_at: data.created_at,
+              photo_url: data.photo_url || undefined,
+              last_login: data.last_login || undefined,
+              created_at: data.created_at || undefined,
               source: 'exec_users',
             });
             return;
@@ -226,18 +226,22 @@ const ExecutiveProfile: React.FC = () => {
         }
 
         if (employeeData && typeof employeeData === 'object' && 'id' in employeeData) {
-          const execRole = getExecRoleFromPosition(employeeData.position);
+          const execRole = getExecRoleFromPosition(employeeData.position || null);
+          const firstName = employeeData.first_name || '';
+          const lastName = employeeData.last_name || '';
+          const fullName = `${firstName} ${lastName}`.trim() || employeeData.position || 'Executive';
+          
           setTargetExec({
             id: employeeData.id,
-            name: `${employeeData.first_name ?? ''} ${employeeData.last_name ?? ''}`.trim() || employeeData.position,
-            role: execRole ?? employeeData.position,
-            title: employeeData.position,
-            department: employeeData.department,
-            email: employeeData.email || employeeData.work_email,
-            phone: employeeData.phone ?? undefined,
-            photo_url: employeeData.photo_url ?? undefined,
-            hire_date: employeeData.hire_date ?? undefined,
-            created_at: employeeData.created_at ?? undefined,
+            name: fullName,
+            role: execRole || employeeData.position || undefined,
+            title: employeeData.position || undefined,
+            department: employeeData.department || undefined,
+            email: employeeData.email || employeeData.work_email || undefined,
+            phone: employeeData.phone || undefined,
+            photo_url: employeeData.photo_url || undefined,
+            hire_date: employeeData.hire_date || undefined,
+            created_at: employeeData.created_at || undefined,
             source: 'employees',
           });
           return;
@@ -268,21 +272,21 @@ const ExecutiveProfile: React.FC = () => {
             .maybeSingle();
 
           if (data && typeof data === 'object' && 'id' in data) {
-            const fullName = data.first_name && data.last_name 
+            const fullName = (data.first_name && data.last_name)
               ? `${data.first_name} ${data.last_name}`.trim()
-              : data.title || data.role?.toUpperCase();
+              : (data.title || data.role?.toUpperCase() || 'Executive');
             
             setTargetExec({
               id: data.id,
               name: fullName,
-              role: data.role,
-              title: data.title,
-              department: data.department,
+              role: data.role || undefined,
+              title: data.title || undefined,
+              department: data.department || undefined,
               email: targetEmailParam,
               phone: undefined,
-              photo_url: data.photo_url ?? undefined,
-              last_login: data.last_login,
-              created_at: data.created_at,
+              photo_url: data.photo_url || undefined,
+              last_login: data.last_login || undefined,
+              created_at: data.created_at || undefined,
               source: 'exec_users',
             });
             return;
