@@ -20,7 +20,7 @@ import { useDriverLocation } from '@/hooks/useDriverLocation';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { DriverPromosPage } from './DriverPromosPage';
 import { DeliveryZone, getZoneForLocation } from '@/data/deliveryZones';
-import DoorDashStyleScheduleDashboard from './DoorDashStyleScheduleDashboard';
+import FeederScheduleTab from './FeederScheduleTab';
 import CorporateEarningsDashboard from './CorporateEarningsDashboard';
 import { AccountSection } from './AccountSection';
 import { DriverRatingsPage } from './DriverRatingsPage';
@@ -1190,16 +1190,14 @@ export const MobileDriverDashboard: React.FC = () => {
         
         {/* Tab-based Content Rendering */}
         {activeTab === 'schedule' && (
-          <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
-            <div className="min-h-screen">
-              <DoorDashStyleScheduleDashboard 
-                onOpenMenu={() => setIsMenuOpen(true)}
-                onOpenNotifications={() => {
-                  setActiveTab('notifications');
-                  navigate('/mobile?tab=notifications');
-                }}
-              />
-            </div>
+          <div className="fixed inset-0 z-20 overflow-hidden">
+            <FeederScheduleTab 
+              onOpenMenu={() => setIsMenuOpen(true)}
+              onOpenNotifications={() => {
+                setActiveTab('notifications');
+                navigate('/mobile?tab=notifications');
+              }}
+            />
           </div>
         )}
         
