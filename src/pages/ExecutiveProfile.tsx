@@ -190,25 +190,26 @@ const ExecutiveProfile: React.FC = () => {
             .maybeSingle();
 
           if (data && typeof data === 'object' && 'id' in data) {
-            const firstName = (data as any).first_name;
-            const lastName = (data as any).last_name;
-            const title = (data as any).title;
-            const role = (data as any).role;
+            const dataObj = data!;
+            const firstName = (dataObj as any).first_name;
+            const lastName = (dataObj as any).last_name;
+            const title = (dataObj as any).title;
+            const role = (dataObj as any).role;
             const fullName = (firstName && lastName)
               ? `${firstName} ${lastName}`.trim()
               : (title || role?.toUpperCase() || 'Executive');
             
             setTargetExec({
-              id: (data as any).id,
+              id: (dataObj as any).id,
               name: fullName,
               role: role || undefined,
               title: title || undefined,
-              department: (data as any).department || undefined,
+              department: (dataObj as any).department || undefined,
               email: targetEmailParam,
               phone: undefined,
-              photo_url: (data as any).photo_url || undefined,
-              last_login: (data as any).last_login || undefined,
-              created_at: (data as any).created_at || undefined,
+              photo_url: (dataObj as any).photo_url || undefined,
+              last_login: (dataObj as any).last_login || undefined,
+              created_at: (dataObj as any).created_at || undefined,
               source: 'exec_users',
             });
             return;
@@ -230,7 +231,7 @@ const ExecutiveProfile: React.FC = () => {
         }
 
         if (employeeData && typeof employeeData === 'object' && 'id' in employeeData) {
-          const empData = employeeData as any;
+          const empData = employeeData!;
           const execRole = getExecRoleFromPosition(empData.position || null);
           const firstName = empData.first_name || '';
           const lastName = empData.last_name || '';
@@ -277,25 +278,26 @@ const ExecutiveProfile: React.FC = () => {
             .maybeSingle();
 
           if (data && typeof data === 'object' && 'id' in data) {
-            const firstName = (data as any).first_name;
-            const lastName = (data as any).last_name;
-            const title = (data as any).title;
-            const role = (data as any).role;
+            const dataObj = data!;
+            const firstName = (dataObj as any).first_name;
+            const lastName = (dataObj as any).last_name;
+            const title = (dataObj as any).title;
+            const role = (dataObj as any).role;
             const fullName = (firstName && lastName)
               ? `${firstName} ${lastName}`.trim()
               : (title || role?.toUpperCase() || 'Executive');
             
             setTargetExec({
-              id: (data as any).id,
+              id: (dataObj as any).id,
               name: fullName,
               role: role || undefined,
               title: title || undefined,
-              department: (data as any).department || undefined,
+              department: (dataObj as any).department || undefined,
               email: targetEmailParam,
               phone: undefined,
-              photo_url: (data as any).photo_url || undefined,
-              last_login: (data as any).last_login || undefined,
-              created_at: (data as any).created_at || undefined,
+              photo_url: (dataObj as any).photo_url || undefined,
+              last_login: (dataObj as any).last_login || undefined,
+              created_at: (dataObj as any).created_at || undefined,
               source: 'exec_users',
             });
             return;
