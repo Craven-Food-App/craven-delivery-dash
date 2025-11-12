@@ -8,19 +8,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Search, MapPin, Save, X, Edit3 } from "lucide-react";
+import { Search, MapPin, Save, X } from "lucide-react";
 
 interface ZoneDrawingMapProps {
-  onZoneCreated: (zone: { name: string; city: string; state: string; zip_code: string; geojson: any }) => void;
+  mode: "create" | "edit";
+  onSave: (zone: { id?: string; name: string; city: string; state: string; zip_code: string; geojson: any }) => void;
   onCancel: () => void;
   initialZone?: any;
+  isSaving?: boolean;
 }
 
-const ZoneDrawingMap: React.FC<ZoneDrawingMapProps> = ({ onZoneCreated, onCancel, initialZone }) => {
+const ZoneDrawingMap: React.FC<ZoneDrawingMapProps> = ({ onSave, onCancel, initialZone, mode, isSaving }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const draw = useRef<MapboxDraw | null>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
+  const [hasPolygon, setHasPolygon] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [zoneData, setZoneData] = useState({
     name: initialZone?.name || "",
@@ -28,6 +30,7 @@ const ZoneDrawingMap: React.FC<ZoneDrawingMapProps> = ({ onZoneCreated, onCancel
     state: initialZone?.state || "",
     zip_code: initialZone?.zip_code || "",
   });
+  const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -85,6 +88,7 @@ const ZoneDrawingMap: React.FC<ZoneDrawingMapProps> = ({ onZoneCreated, onCancel
       // boxZoom may not exist on some versions
       // @ts-ignore
       map.current?.boxZoom?.disable?.();
+      setMapReady(true);
     });
 
     // Toggle interactions based on draw mode
@@ -101,15 +105,15 @@ const ZoneDrawingMap: React.FC<ZoneDrawingMapProps> = ({ onZoneCreated, onCancel
 
     // Handle drawing events
     map.current.on("draw.create", () => {
-      setIsDrawing(true);
+      setHasPolygon(true);
     });
 
     map.current.on("draw.update", () => {
-      setIsDrawing(true);
+      setHasPolygon(true);
     });
 
     map.current.on("draw.delete", () => {
-      setIsDrawing(false);
+      setHasPolygon(false);
     });
 
     return () => {
@@ -118,6 +122,55 @@ const ZoneDrawingMap: React.FC<ZoneDrawingMapProps> = ({ onZoneCreated, onCancel
       }
     };
   }, []);
+
+  useEffect(() => {
+    setZoneData({
+      name: initialZone?.name || "",
+      city: initialZone?.city || "",
+      state: initialZone?.state || "",
+      zip_code: initialZone?.zip_code || "",
+    });
+  }, [initialZone?.id]);
+
+  useEffect(() => {
+    if (!mapReady || !draw.current) return;
+
+    // Reset any existing drawings
+    draw.current.deleteAll();
+    setHasPolygon(false);
+
+    if (initialZone?.geom) {
+      const feature = {
+        id: initialZone.id || "editing-zone",
+        type: "Feature",
+        properties: {},
+        geometry: initialZone.geom,
+      };
+
+      try {
+        draw.current.add(feature as any);
+        setHasPolygon(true);
+
+        // Fit map to feature bounds
+        const coordinates = (initialZone.geom?.coordinates?.[0] || []) as [number, number][];
+        if (coordinates.length > 0 && map.current) {
+          const bounds = coordinates.reduce((b, coord) => b.extend(coord as [number, number]), new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+          map.current.fitBounds(bounds, { padding: 40 });
+        }
+
+        draw.current.changeMode("direct_select", { featureIds: [feature.id] });
+      } catch (error) {
+        console.error("Failed to load existing zone geometry:", error);
+        toast.error("Unable to load existing zone polygon for editing.");
+      }
+    } else if (map.current) {
+      // Reset map back to default view for new zone creation
+      map.current.flyTo({
+        center: MAPBOX_CONFIG.center as [number, number],
+        zoom: MAPBOX_CONFIG.zoom,
+      });
+    }
+  }, [initialZone, mapReady]);
 
   const searchLocation = async () => {
     if (!searchQuery || !map.current) {
@@ -200,24 +253,28 @@ const ZoneDrawingMap: React.FC<ZoneDrawingMapProps> = ({ onZoneCreated, onCancel
   };
 
   const saveZone = () => {
-    if (!draw.current || !isDrawing) return;
+    if (!draw.current) return;
 
     const features = draw.current.getAll();
-    if (features.features.length === 0) return;
+    if (!features || features.features.length === 0) {
+      toast.error("Draw a delivery zone on the map before saving.");
+      return;
+    }
 
     const polygon = features.features[0];
 
     // Validate polygon
-    if (polygon.geometry.type !== "Polygon") return;
-    if (polygon.geometry.coordinates[0].length < 4) return;
-
-    // Ensure polygon is closed
-    const coords = polygon.geometry.coordinates[0];
-    if (coords[0][0] !== coords[coords.length - 1][0] || coords[0][1] !== coords[coords.length - 1][1]) {
-      coords.push(coords[0]);
+    if (polygon.geometry.type !== "Polygon") {
+      toast.error("Only polygon shapes are supported for delivery zones.");
+      return;
+    }
+    if (polygon.geometry.coordinates[0].length < 4) {
+      toast.error("The polygon must have at least three points.");
+      return;
     }
 
-    onZoneCreated({
+    onSave({
+      id: initialZone?.id,
       ...zoneData,
       geojson: polygon.geometry,
     });
@@ -314,11 +371,11 @@ const ZoneDrawingMap: React.FC<ZoneDrawingMapProps> = ({ onZoneCreated, onCancel
         </Button>
         <Button
           onClick={saveZone}
-          disabled={!isDrawing || !zoneData.name}
+          disabled={!hasPolygon || !zoneData.name || Boolean(isSaving)}
           className="bg-orange-500 hover:bg-orange-600"
         >
           <Save className="h-4 w-4 mr-2" />
-          Save Zone
+          {mode === "edit" ? "Update Zone" : "Save Zone"}
         </Button>
       </div>
     </div>
