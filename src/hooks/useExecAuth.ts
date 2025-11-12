@@ -62,8 +62,9 @@ export const useExecAuth = (requiredRole?: 'ceo' | 'board_member' | 'cfo' | 'coo
       for (const promise of queries) {
         const { data } = await promise;
         if (data !== null && typeof data === 'object') {
-          if ('id' in data) {
-            employeeData = data as unknown as EmployeeRecord;
+          const dataObj = data as Record<string, any>;
+          if ('id' in dataObj) {
+            employeeData = dataObj as unknown as EmployeeRecord;
             break;
           }
         }
@@ -184,8 +185,9 @@ export const useExecAuth = (requiredRole?: 'ceo' | 'board_member' | 'cfo' | 'coo
         .maybeSingle();
 
       if (execData !== null && typeof execData === 'object') {
-        if ('id' in execData) {
-          const execRow = execData as unknown as ExecUser;
+        const dataObj = execData as Record<string, any>;
+        if ('id' in dataObj) {
+          const execRow = dataObj as unknown as ExecUser;
           setExecUser(execRow);
           if (requiredRole) {
             setIsAuthorized(execRow.role === requiredRole || execRow.role === 'ceo');

@@ -190,8 +190,9 @@ const ExecutiveProfile: React.FC = () => {
             .maybeSingle();
 
           if (data !== null && typeof data === 'object') {
-            if ('id' in data) {
-              const execData = data as any;
+            const dataObj = data as Record<string, any>;
+            if ('id' in dataObj) {
+              const execData = dataObj as any;
               const firstName = execData.first_name;
               const lastName = execData.last_name;
               const title = execData.title;
@@ -233,8 +234,9 @@ const ExecutiveProfile: React.FC = () => {
         }
 
         if (employeeData !== null && typeof employeeData === 'object') {
-          if ('id' in employeeData) {
-            const empData = employeeData as any;
+          const dataObj = employeeData as Record<string, any>;
+          if ('id' in dataObj) {
+            const empData = dataObj as any;
             const execRole = getExecRoleFromPosition(empData.position || null);
             const firstName = empData.first_name || '';
             const lastName = empData.last_name || '';
@@ -282,8 +284,9 @@ const ExecutiveProfile: React.FC = () => {
             .maybeSingle();
 
           if (data !== null && typeof data === 'object') {
-            if ('id' in data) {
-              const dataObj = data as any;
+            const obj = data as Record<string, any>;
+            if ('id' in obj) {
+              const dataObj = obj as any;
               const firstName = dataObj.first_name;
               const lastName = dataObj.last_name;
               const title = dataObj.title;
