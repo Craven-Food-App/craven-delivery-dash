@@ -24,7 +24,6 @@ import DoorDashStyleScheduleDashboard from './DoorDashStyleScheduleDashboard';
 import CorporateEarningsDashboard from './CorporateEarningsDashboard';
 import { AccountSection } from './AccountSection';
 import { DriverRatingsPage } from './DriverRatingsPage';
-import { DriverPromosPage } from './DriverPromosPage';
 import { DriverSupportChatPage } from './DriverSupportChatPage';
 import { getRatingColor, getRatingTier, formatRating, getTrendIcon, getTrendColor } from '@/utils/ratingHelpers';
 import { DriverBottomNav } from './DriverBottomNav';
