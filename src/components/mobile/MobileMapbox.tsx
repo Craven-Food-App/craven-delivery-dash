@@ -92,18 +92,17 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
     const normalizedHeading = ((heading % 360) + 360) % 360;
     
     // For North (0°) and South (180°), keep right-side up (0° rotation)
-    if (normalizedHeading >= 315 || normalizedHeading < 45) return 0; // North
-    if (normalizedHeading >= 135 && normalizedHeading < 225) return 0; // South
+    if (normalizedHeading >= 315 || normalizedHeading < 45) return 0; // North (0°)
+    if (normalizedHeading >= 135 && normalizedHeading < 225) return 0; // South (180°)
     
-    // For East (90°) and West (270°), rotate to point direction
-    // East: rotate 90° clockwise, West: rotate 270° clockwise (or -90°)
+    // For East (90°), rotate 90° clockwise so hand points East
     if (normalizedHeading >= 45 && normalizedHeading < 135) {
-      // Northeast to Southeast - rotate based on heading
-      return normalizedHeading - 90; // Point East
+      return 90; // Point East
     }
+    
+    // For West (270°), rotate -90° (or 270° clockwise) so hand points West
     if (normalizedHeading >= 225 && normalizedHeading < 315) {
-      // Southwest to Northwest - rotate based on heading
-      return normalizedHeading - 90; // Point West
+      return -90; // Point West
     }
     
     return 0;
