@@ -49,7 +49,6 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
 
   const startCamera = async () => {
     try {
-      console.log('Starting camera initialization...');
       setCameraError(false);
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { 
@@ -59,14 +58,10 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
         }
       });
       
-      console.log('Camera stream obtained:', mediaStream);
       setStream(mediaStream);
       
       if (videoRef.current) {
-        console.log('Setting video srcObject');
         videoRef.current.srcObject = mediaStream;
-      } else {
-        console.log('videoRef.current is null');
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
@@ -85,11 +80,8 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
   };
 
   const capturePhoto = () => {
-    console.log('capturePhoto called, cameraError:', cameraError);
-    
     if (cameraError) {
       // Demo mode - create a placeholder image
-      console.log('Using demo mode for photo capture');
       setIsCapturing(true);
       setTimeout(() => {
         const canvas = canvasRef.current;
@@ -110,19 +102,14 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
         const imageData = canvas?.toDataURL('image/jpeg', 0.8) || 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=';
         setCapturedImage(imageData);
         setIsCapturing(false);
-        console.log('Demo photo captured');
       }, 500);
       return;
     }
 
     if (!videoRef.current || !canvasRef.current) {
-      console.log('Video or canvas ref not available');
-      console.log('videoRef.current:', videoRef.current);
-      console.log('canvasRef.current:', canvasRef.current);
       return;
     }
 
-    console.log('Starting photo capture process');
     setIsCapturing(true);
     
     const video = videoRef.current;
@@ -130,36 +117,25 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
     const context = canvas.getContext('2d');
     
     if (!context) {
-      console.log('Canvas context not available');
       setIsCapturing(false);
       return;
     }
 
     // Wait for video to be ready
     if (video.readyState < 2) {
-      console.log('Video not ready, readyState:', video.readyState);
-      console.log('Waiting for video to be ready...');
       setTimeout(() => {
         if (video.readyState >= 2) {
-          console.log('Video is now ready, retrying capture');
           capturePhoto();
         } else {
-          console.log('Video still not ready after timeout');
           setIsCapturing(false);
         }
       }, 1000);
       return;
     }
-
-    console.log('Video is ready, capturing photo');
-    console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
-    console.log('Video client dimensions:', video.clientWidth, 'x', video.clientHeight);
     
     // Set canvas dimensions to match video
     canvas.width = video.videoWidth || video.clientWidth;
     canvas.height = video.videoHeight || video.clientHeight;
-    
-    console.log('Canvas dimensions set to:', canvas.width, 'x', canvas.height);
     
     // Draw video frame to canvas
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -168,19 +144,13 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
     const imageData = canvas.toDataURL('image/jpeg', 0.8);
     setCapturedImage(imageData);
     setIsCapturing(false);
-    
-    console.log('Photo captured successfully, imageData length:', imageData.length);
   };
 
   const confirmPhoto = () => {
-    console.log('confirmPhoto called, capturedImage exists:', !!capturedImage);
     if (capturedImage) {
-      console.log('Calling onCapture with image data');
       onCapture(capturedImage);
       setCapturedImage(null);
       onClose();
-    } else {
-      console.log('No captured image to confirm');
     }
   };
 
@@ -191,7 +161,6 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
   const toggleFlash = () => {
     setFlashOn(!flashOn);
     // In a real implementation, you would control the device flash here
-    console.log('Flash toggled:', !flashOn);
   };
 
   const handleDoubleTap = () => {
@@ -272,12 +241,8 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
               muted
               className="w-full h-full object-cover"
               onLoadedMetadata={() => {
-                console.log('Video metadata loaded');
-                console.log('Video dimensions:', videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
-                console.log('Video ready state:', videoRef.current?.readyState);
               }}
               onCanPlay={() => {
-                console.log('Video can play - ready for capture');
               }}
               onError={(e) => {
                 console.error('Video error:', e);

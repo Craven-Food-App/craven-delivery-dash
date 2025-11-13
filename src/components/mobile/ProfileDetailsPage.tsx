@@ -147,7 +147,6 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
       };
 
       if (existingDriver) {
-        console.log('Updating driver:', existingDriver.id, updateData);
         const { data, error } = await supabase
           .from('drivers')
           .update(updateData)
@@ -158,7 +157,6 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
           console.error('Update error:', error);
           throw error;
         }
-        console.log('Update successful:', data);
       } else {
         // Create driver record
         // Validate required fields for insert (city, zip, phone are NOT NULL)
@@ -177,7 +175,6 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
           status: 'started',
         };
 
-        console.log('Inserting driver:', insertData);
         const { data, error } = await supabase
           .from('drivers')
           .insert(insertData)
@@ -187,7 +184,6 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
           console.error('Insert error:', error);
           throw error;
         }
-        console.log('Insert successful:', data);
       }
 
       // Update auth user metadata

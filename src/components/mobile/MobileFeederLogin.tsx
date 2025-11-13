@@ -25,9 +25,6 @@ const MobileFeederLogin: React.FC<MobileFeederLoginProps> = ({ onBack, onLoginSu
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    console.log('MobileFeederLogin: Component mounted');
-  }, []);
 
   // Format phone number as user types
   const handlePhoneChange = (value: string) => {
@@ -47,8 +44,6 @@ const MobileFeederLogin: React.FC<MobileFeederLoginProps> = ({ onBack, onLoginSu
 
   const handlePostLoginRouting = async (userId: string) => {
     try {
-      console.log('MobileFeederLogin: Checking application status for user', userId);
-      
       const { data: application, error } = await supabase
         .from('craver_applications')
         .select('status, first_name, background_check, background_check_approved_at, background_check_initiated_at, welcome_screen_shown, onboarding_completed_at')
@@ -66,7 +61,6 @@ const MobileFeederLogin: React.FC<MobileFeederLoginProps> = ({ onBack, onLoginSu
       }
       
       if (!application) {
-        console.log('MobileFeederLogin: No application found');
         toast({
           title: "No Application Found",
           description: "Please apply to become a Feeder first.",
@@ -75,13 +69,8 @@ const MobileFeederLogin: React.FC<MobileFeederLoginProps> = ({ onBack, onLoginSu
         return;
       }
 
-      console.log('MobileFeederLogin: Application status:', application.status);
-      console.log('MobileFeederLogin: Background check approved:', application.background_check_approved_at);
-      console.log('MobileFeederLogin: Onboarding completed:', application.onboarding_completed_at);
-
       // Check if background check is pending or in progress
       if (application.background_check_initiated_at && !application.background_check_approved_at) {
-        console.log('MobileFeederLogin: Background check in progress, showing status screen');
         // Background check is in progress - navigate to mobile background check status
         navigate('/mobile/background-check-status');
         return;
@@ -89,7 +78,6 @@ const MobileFeederLogin: React.FC<MobileFeederLoginProps> = ({ onBack, onLoginSu
 
       // Check if background check hasn't been initiated yet
       if (!application.background_check && !application.background_check_approved_at) {
-        console.log('MobileFeederLogin: Application pending, showing pending message');
         toast({
           title: "Application Pending",
           description: "Your application is being reviewed. We'll notify you when your background check begins!",
@@ -100,13 +88,11 @@ const MobileFeederLogin: React.FC<MobileFeederLoginProps> = ({ onBack, onLoginSu
 
       // Background check is approved, check onboarding
       if (!application.onboarding_completed_at) {
-        console.log('MobileFeederLogin: Onboarding incomplete, navigating to onboarding');
         navigate('/onboarding');
         return;
       }
 
       // All checks passed, proceed to dashboard
-      console.log('MobileFeederLogin: All checks passed, proceeding to dashboard');
       if (onLoginSuccess) {
         onLoginSuccess();
       } else {

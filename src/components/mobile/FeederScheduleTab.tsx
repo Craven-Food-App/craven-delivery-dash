@@ -78,15 +78,11 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
         throw error;
       }
       
-      console.log('Fetched schedules from DB:', data);
-      console.log('Number of schedules fetched:', data?.length || 0);
-      
       const fetchedSchedules = data || [];
       setSchedules(fetchedSchedules);
       
       // IMMEDIATELY reset time to next shift if no schedules
       if (fetchedSchedules.length === 0) {
-        console.log('NO SCHEDULES FETCHED - Immediately setting timeToNextShift to null');
         setTimeToNextShift(null);
       }
     } catch (error) {
@@ -95,39 +91,6 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
     }
   }, []);
 
-  // Clear ALL schedules (both active and inactive) for debugging
-  const clearAllSchedules = useCallback(async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('Please sign in to clear schedules');
-        return;
-      }
-
-      // Delete ALL schedules for this user (not just active ones)
-      const { error } = await supabase
-        .from('driver_schedules')
-        .delete()
-        .eq('driver_id', user.id);
-
-      if (error) {
-        console.error('Error clearing schedules:', error);
-        throw error;
-      }
-
-      console.log('ALL SCHEDULES CLEARED for user:', user.id);
-      toast.success('All schedules cleared');
-      
-      // Refresh schedules list
-      await fetchSchedules();
-      
-      // Force reset time to next shift
-      setTimeToNextShift(null);
-    } catch (error) {
-      console.error('Error clearing schedules:', error);
-      toast.error('Failed to clear schedules');
-    }
-  }, [fetchSchedules]);
 
   // Fetch high demand zones
   const fetchSurgeZones = useCallback(async () => {
@@ -151,13 +114,11 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
   useEffect(() => {
     // Don't calculate while loading
     if (loading) {
-      console.log('Still loading, skipping calculation');
       return;
     }
 
     // CRITICAL: Don't calculate if no schedules exist
     if (!schedules || !Array.isArray(schedules) || schedules.length === 0) {
-      console.log('NO SCHEDULES - Skipping calculation, setting to null');
       setTimeToNextShift(null);
       return;
     }
@@ -165,21 +126,13 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
     // CRITICAL: Don't calculate if no active schedules exist
     const activeSchedules = schedules.filter(s => s && s.is_active === true);
     if (activeSchedules.length === 0) {
-      console.log('NO ACTIVE SCHEDULES - Skipping calculation, setting to null');
       setTimeToNextShift(null);
       return;
     }
 
     const calculateTimeToNextShift = () => {
-      console.log('=== CALCULATING TIME TO NEXT SHIFT ===');
-      console.log('Loading state:', loading);
-      console.log('Raw schedules array:', schedules);
-      console.log('Schedules length:', schedules?.length);
-      console.log('Active schedules count:', activeSchedules.length);
-      
       // Double-check before calculating
       if (!schedules || schedules.length === 0 || activeSchedules.length === 0) {
-        console.log('DOUBLE-CHECK FAILED - No schedules, setting to null');
         setTimeToNextShift(null);
         return;
       }
@@ -187,8 +140,6 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       const now = new Date();
       const currentDay = now.getDay();
       const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
-      
-      console.log('Current time:', now.toISOString(), 'Day:', currentDay, 'Minutes:', currentTimeMinutes, 'Active schedules:', activeSchedules.length);
 
       // Helper to parse time string (handles "HH:MM" or "HH:MM:SS" formats)
       const parseTime = (timeStr: string): { hour: number; minute: number } => {
@@ -221,20 +172,16 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
           
           const diffMs = shiftDateTime.getTime() - now.getTime();
           
-          console.log(`Checking shift: day ${checkDay}, time ${shift.start_time}, datetime ${shiftDateTime.toISOString()}, diff ${diffMs}ms`);
-          
           // Only consider future shifts
           if (diffMs > 0 && diffMs < minDiffMs) {
             minDiffMs = diffMs;
             nextShiftDateTime = shiftDateTime;
-            console.log('Found closer shift:', shiftDateTime.toISOString());
           }
         }
       }
 
       // If no future shift found in 2 weeks, wrap to next occurrence of earliest shift
       if (!nextShiftDateTime && activeSchedules.length > 0) {
-        console.log('No shift found in 14 days, checking next week');
         const sortedSchedules = [...activeSchedules].sort((a, b) => {
           if (a.day_of_week !== b.day_of_week) {
             return a.day_of_week - b.day_of_week;
@@ -259,27 +206,22 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
           
           nextShiftDateTime.setDate(now.getDate() + daysUntil);
           nextShiftDateTime.setHours(startHour, startMin, 0, 0);
-          console.log('Using earliest shift next week:', nextShiftDateTime.toISOString(), 'daysUntil:', daysUntil);
         }
       }
 
       if (nextShiftDateTime) {
         const diffMs = nextShiftDateTime.getTime() - now.getTime();
-        console.log('Final shift datetime:', nextShiftDateTime.toISOString(), 'diff:', diffMs, 'ms');
         
         if (diffMs > 0) {
           const totalMinutes = Math.floor(diffMs / (1000 * 60));
           const diffHours = Math.floor(totalMinutes / 60);
           const diffMinutes = totalMinutes % 60;
           
-          console.log('Setting time to next shift:', { hours: diffHours, minutes: diffMinutes });
           setTimeToNextShift({ hours: diffHours, minutes: diffMinutes });
         } else {
-          console.log('Diff is negative or zero, setting to null');
           setTimeToNextShift(null);
         }
       } else {
-        console.log('No next shift datetime found, setting to null');
         setTimeToNextShift(null);
       }
     };
@@ -291,7 +233,6 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       return () => clearInterval(interval);
     } else {
       // No schedules - ensure it's null and don't set up interval
-      console.log('No active schedules - not setting up calculation interval');
       setTimeToNextShift(null);
       return () => {}; // No cleanup needed
     }
@@ -316,15 +257,11 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
 
   // Reset time to next shift IMMEDIATELY when schedules are empty
   useEffect(() => {
-    console.log('Checking schedules for reset. Loading:', loading, 'Schedules length:', schedules.length);
-    
     if (!loading && (!schedules || schedules.length === 0)) {
-      console.log('FORCING RESET - No schedules, setting timeToNextShift to null');
       setTimeToNextShift(null);
     } else if (!loading && schedules.length > 0) {
       const activeSchedules = schedules.filter(s => s && s.is_active === true);
       if (activeSchedules.length === 0) {
-        console.log('FORCING RESET - No active schedules, setting timeToNextShift to null');
         setTimeToNextShift(null);
       }
     }
@@ -712,16 +649,6 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
         {/* Zone Banner */}
         <div className="bg-orange-50 rounded-2xl py-2.5 px-4 text-center mb-6 shadow-lg">
           <p className="text-red-800 font-bold text-base">🔥 High Demand Zone: {highDemandZone.name}</p>
-        </div>
-
-        {/* Debug: Clear All Schedules Button */}
-        <div className="mb-4">
-          <button
-            onClick={clearAllSchedules}
-            className="w-full bg-red-600 text-white px-4 py-2 rounded-full font-bold text-sm shadow-lg hover:bg-red-700 transition-colors"
-          >
-            Clear All Schedules (Debug)
-          </button>
         </div>
 
         {/* Week Strip - Always visible */}

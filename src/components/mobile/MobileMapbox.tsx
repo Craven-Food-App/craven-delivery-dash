@@ -45,7 +45,6 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
       
       // Check if map style is loaded before adding sources
       if (!map.current.isStyleLoaded()) {
-        console.log('Map style not loaded yet, waiting...');
         // Wait for style to load
         map.current.once('style.load', () => {
           updateZoneLayers(zonesData);
@@ -162,7 +161,6 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
   // Start location tracking immediately when component mounts
   useEffect(() => {
     if (!isTracking) {
-      console.log('Starting location tracking...');
       startTracking();
     }
   }, [startTracking, isTracking]);
@@ -183,8 +181,6 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
         // Use config default for initial center - location will update via separate effect
         const initialCenter = [MAPBOX_CONFIG.center[0], MAPBOX_CONFIG.center[1]];
         
-        console.log('Initializing map with center:', initialCenter);
-        
         map.current = new (window as any).mapboxgl.Map({
           container: mapContainer.current,
           style: MAPBOX_CONFIG.style,
@@ -193,7 +189,6 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
         });
 
         map.current.on('load', () => {
-          console.log('Mapbox loaded successfully');
           setIsMapReady(true);
           if (map.current) {
             try {
@@ -277,8 +272,6 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
   useEffect(() => {
     if (!isMapReady || !map.current || !marker.current) return;
     if (!location) return;
-
-    console.log('Updating map with driver location:', location);
     
     // Update marker position
     marker.current.setLngLat([location.longitude, location.latitude]);
@@ -330,7 +323,6 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('Recenter button clicked', { driverLocation, mapReady: !!map.current, markerReady: !!marker.current });
             
             // Try to get location from multiple sources
             let lat: number | null = null;
@@ -339,25 +331,19 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
             if (location) {
               lat = location.latitude;
               lng = location.longitude;
-              console.log('Using location from hook:', lat, lng);
             } else if (driverLocation) {
               lat = driverLocation[0];
               lng = driverLocation[1];
-              console.log('Using driverLocation:', lat, lng);
             } else if (marker.current) {
               // Fallback: get current marker position
               const currentPos = marker.current.getLngLat();
               lat = currentPos.lat;
               lng = currentPos.lng;
-              console.log('Using marker position:', lat, lng);
             }
             
             if (lat !== null && lng !== null && map.current && marker.current) {
-              console.log('Calling applyDriverLocation with:', lat, lng);
               const currentHeading = location?.heading;
               applyDriverLocation(lat, lng, true, currentHeading);
-            } else {
-              console.error('Cannot recenter: missing data', { lat, lng, map: !!map.current, marker: !!marker.current });
             }
           }}
           className="absolute z-[100] w-12 h-12 rounded-full bg-white/95 backdrop-blur shadow-xl flex items-center justify-center hover:bg-white active:scale-95 transition-all cursor-pointer"

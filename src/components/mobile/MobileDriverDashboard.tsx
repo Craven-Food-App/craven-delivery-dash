@@ -7,7 +7,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { OrderAssignmentModal } from './OrderAssignmentModal';
 import ActiveDeliveryFlow from './ActiveDeliveryFlow';
-import TestCompletionModal from './TestCompletionModal';
 import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { useIOSNotifications } from '@/hooks/useIOSNotifications';
 import { IOSNotificationBanner } from './IOSNotificationBanner';
@@ -176,7 +175,6 @@ export const MobileDriverDashboard: React.FC = () => {
         const { data: session, error } = await Promise.race([sessionPromise, timeoutPromise]) as any;
           
         if (session && !error && session.session_data?.online_since) {
-          console.log('Fast session restore:', session.session_data);
           setSessionData(session.session_data);
           setDriverState('online_searching');
           
@@ -208,7 +206,6 @@ export const MobileDriverDashboard: React.FC = () => {
     
     // Fallback: force restore after 3 seconds if still loading
     const fallbackTimer = setTimeout(() => {
-      console.log('Session restore fallback - forcing restore');
       setIsSessionRestored(true);
     }, 3000);
     
@@ -275,7 +272,6 @@ export const MobileDriverDashboard: React.FC = () => {
   // Listen for pause after delivery event
   useEffect(() => {
     const handlePauseAfterDelivery = () => {
-      console.log('Pause after delivery requested');
       handlePause();
     };
 
@@ -462,7 +458,6 @@ export const MobileDriverDashboard: React.FC = () => {
   const [todayEarnings, setTodayEarnings] = useState(0);
   const [tripCount, setTripCount] = useState(0);
   const [isAvailable, setIsAvailable] = useState(false);
-  const [showTestCompletionModal, setShowTestCompletionModal] = useState(false);
   const [showTimeSelector, setShowTimeSelector] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showWelcomeScreen, setShowWelcomeScreen] = useState(false);
@@ -473,18 +468,14 @@ export const MobileDriverDashboard: React.FC = () => {
   const { showNotification, notifications: iosNotifications, dismissNotification } = useIOSNotifications();
 
   const handleStartFeeding = async () => {
-    console.log('handleStartFeeding: Checking authentication status');
-    
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session && session.user) {
-        console.log('handleStartFeeding: User is authenticated, proceeding to dashboard');
         setShowWelcomeScreen(false);
         // Initialize session persistence after welcome screen is dismissed
         await checkSessionPersistence();
       } else {
-        console.log('handleStartFeeding: No active session, user needs to login');
         // The welcome screen will handle showing the login
         // This shouldn't normally be reached since login is handled in welcome screen
         setShowWelcomeScreen(false);
@@ -598,10 +589,7 @@ export const MobileDriverDashboard: React.FC = () => {
     
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change:', event, session?.user?.id);
-      
       if (event === 'SIGNED_OUT') {
-        console.log('User signed out, redirecting to auth');
         // Clear any ongoing timers/intervals
         if (loadingTimer) clearTimeout(loadingTimer);
         if (failsafeTimer) clearTimeout(failsafeTimer);
@@ -609,20 +597,12 @@ export const MobileDriverDashboard: React.FC = () => {
         navigate('/driver/auth');
         return;
       }
-      
-      if (event === 'SIGNED_IN' && session?.user) {
-        console.log('User signed in, checking application status');
-        // Don't redirect here, let the existing logic handle it
-      }
     });
     
     const initializeDashboard = async () => {
-      console.log('MobileDriverDashboard: Starting initialization');
-      
       // Failsafe: If loading takes more than 5 seconds, force show welcome screen
       failsafeTimer = setTimeout(() => {
         if (isMounted && isLoading) {
-          console.warn('MobileDriverDashboard: Loading timeout reached, forcing welcome screen');
           setIsLoading(false);
           setShowWelcomeScreen(true);
           setLoadingError(true);
@@ -631,7 +611,6 @@ export const MobileDriverDashboard: React.FC = () => {
       
       try {
         await checkOnboardingAndSession();
-        console.log('MobileDriverDashboard: Onboarding check complete');
       } catch (error) {
         console.error('MobileDriverDashboard: Error during initialization:', error);
         // Continue anyway - don't block the user
@@ -639,7 +618,6 @@ export const MobileDriverDashboard: React.FC = () => {
         // Ensure loading screen shows for at least 2.5 seconds for smooth UX
         loadingTimer = setTimeout(() => {
           if (isMounted) {
-            console.log('MobileDriverDashboard: Loading complete, showing welcome screen');
             setIsLoading(false);
             setShowWelcomeScreen(true);
           }
@@ -695,7 +673,6 @@ export const MobileDriverDashboard: React.FC = () => {
       }
       
       if (!session?.user) {
-        console.log('No valid session found, redirecting to login');
         navigate('/driver/auth');
         return;
       }
@@ -793,7 +770,6 @@ export const MobileDriverDashboard: React.FC = () => {
     
     try {
       setIsGoingOnline(true);
-      console.log('CRAVE NOW button clicked - starting go online process');
       trackUserAction('driver_go_online');
       
       const {
@@ -810,11 +786,8 @@ export const MobileDriverDashboard: React.FC = () => {
         setIsGoingOnline(false);
         return;
       }
-      
-      console.log('User authenticated:', user.id);
 
       // Use the database function to ensure driver can go online
-      console.log('Checking if driver can go online...');
       const {
         error: ensureError
       } = await supabase.rpc('ensure_driver_can_go_online', {
@@ -826,7 +799,6 @@ export const MobileDriverDashboard: React.FC = () => {
         setIsGoingOnline(false);
         return;
       }
-      console.log('Driver can go online - proceeding');
 
       // Create session data with online timestamp
       const sessionData: Record<string, any> = {
@@ -920,7 +892,6 @@ export const MobileDriverDashboard: React.FC = () => {
       const interval = startSessionHeartbeat(user.id);
       setHeartbeatInterval(interval);
       
-      console.log('Successfully went online - driver state changed to online_searching');
       toast.success('You are now online and searching for orders!');
     } catch (error) {
       console.error('Error going online:', error);
@@ -931,7 +902,6 @@ export const MobileDriverDashboard: React.FC = () => {
     }
   };
   const handleGoOffline = async () => {
-    console.log('handleGoOffline called');
     try {
       // Clear session heartbeat when going offline
       if (heartbeatInterval) {
@@ -975,7 +945,6 @@ export const MobileDriverDashboard: React.FC = () => {
       setDriverState('offline');
       setOnlineTime(0);
       setEndTime(null); // Clear end time
-      console.log('handleGoOffline completed successfully');
     } catch (error) {
       console.error('Error going offline:', error);
     }
@@ -1015,7 +984,6 @@ export const MobileDriverDashboard: React.FC = () => {
     }
   };
   const handleUnpause = async () => {
-    console.log('handleUnpause called');
     try {
       const {
         data: {
@@ -1045,23 +1013,19 @@ export const MobileDriverDashboard: React.FC = () => {
       }));
       
       setDriverState('online_searching');
-      console.log('handleUnpause completed successfully');
     } catch (error) {
       console.error('Error unpausing:', error);
     }
   };
 
   const handleAddTime = () => {
-    console.log('Adding 30 minutes to end time');
     if (endTime) {
       const newEndTime = new Date(endTime.getTime() + 30 * 60 * 1000); // Add 30 minutes
       setEndTime(newEndTime);
-      console.log('End time extended to:', newEndTime);
     }
   };
 
   const handleContactSupport = () => {
-    console.log('Opening customer service chat');
     // TODO: Implement customer service chat functionality
     // This could open a modal or navigate to a support page
   };
@@ -1133,9 +1097,6 @@ export const MobileDriverDashboard: React.FC = () => {
     {showWelcomeScreen && (
       <MobileDriverWelcomeScreen onStartFeeding={handleStartFeeding} />
     )}
-    
-    {/* Debug info */}
-    {console.log('Render state - isLoading:', isLoading, 'showWelcomeScreen:', showWelcomeScreen)}
     
     {/* Session restoration loading */}
     {!isSessionRestored && (
@@ -1423,7 +1384,6 @@ export const MobileDriverDashboard: React.FC = () => {
         {/* PAUSED STATE - DoorDash Style */}
         {activeTab === 'home' && driverState === 'online_paused' && (
           <div className="fixed inset-0 bg-white z-50" style={{ pointerEvents: 'auto' }}>
-            {(() => { console.log('Pause interface rendered, driverState:', driverState, 'activeTab:', activeTab); return null; })()}
 
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 safe-area-top">
@@ -1471,20 +1431,14 @@ export const MobileDriverDashboard: React.FC = () => {
               {/* Action Buttons */}
               <div className="w-full max-w-sm space-y-4">
                  <button 
-                   onClick={() => {
-                     console.log('Resume button clicked');
-                     handleUnpause();
-                   }}
+                   onClick={handleUnpause}
                    className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-300 shadow-lg active:scale-95 touch-manipulation"
                    style={{ touchAction: 'manipulation' }}
                  >
                    Resume Feeding
                  </button>
                  <button 
-                   onClick={() => {
-                     console.log('End button clicked');
-                     handleGoOffline();
-                   }}
+                   onClick={handleGoOffline}
                    className="w-full text-orange-600 hover:text-orange-700 font-semibold py-2 border border-orange-200 hover:border-orange-300 rounded-lg transition-all duration-300 active:scale-95 touch-manipulation"
                    style={{ touchAction: 'manipulation' }}
                  >
@@ -1521,34 +1475,26 @@ export const MobileDriverDashboard: React.FC = () => {
               price_cents: activeDelivery.subtotal_cents || 1200
             }],
             isTestOrder: activeDelivery.isTestOrder || false // Only true if explicitly marked as test
-          }} onCompleteDelivery={() => {
-            // Check if this was a test order
-            if (activeDelivery?.isTestOrder) {
-              setShowTestCompletionModal(true);
-              // Don't reset state here - let the test completion modal handle it
-            } else {
-              // Record final driver earnings for real orders
-              (async () => {
-                try {
-                  const {
-                    data: {
-                      user
-                    }
-                  } = await supabase.auth.getUser();
-                  await supabase.functions.invoke('finalize-delivery', {
-                    body: {
-                      orderId: activeDelivery.order_id,
-                      driverId: user?.id
-                    }
-                  });
-                } catch (e) {
-                  console.error('finalize-delivery failed', e);
+          }} onCompleteDelivery={async () => {
+            // Record final driver earnings
+            try {
+              const {
+                data: {
+                  user
                 }
-              })();
-              // Reset state for real orders
-              setActiveDelivery(null);
-              setDriverState('online_searching');
+              } = await supabase.auth.getUser();
+              await supabase.functions.invoke('finalize-delivery', {
+                body: {
+                  orderId: activeDelivery.order_id,
+                  driverId: user?.id
+                }
+              });
+            } catch (e) {
+              console.error('finalize-delivery failed', e);
             }
+            // Reset state
+            setActiveDelivery(null);
+            setDriverState('online_searching');
           }} 
           onCameraStateChange={setIsCameraOpen}
         />
@@ -1584,22 +1530,6 @@ export const MobileDriverDashboard: React.FC = () => {
       <DriveTimeSelector open={showTimeSelector} onClose={() => setShowTimeSelector(false)} onSelect={handleSelectDriveTime} />
 
 
-      {/* Test Completion Modal */}
-      {showTestCompletionModal && <TestCompletionModal 
-        orderDetails={{
-          restaurant_name: 'Test Restaurant',
-          pickup_address: 'Test Pickup Address',
-          dropoff_address: 'Test Dropoff Address',
-          payout_cents: 1500,
-          estimated_time: 30,
-          isTestOrder: true
-        }}
-        onCompleteDelivery={() => {
-          setShowTestCompletionModal(false);
-          setDriverState('online_searching');
-          setActiveDelivery(null);
-        }}
-      />}
 
       {/* Side Menu Overlay */}
       <FeederSidebarMenu
