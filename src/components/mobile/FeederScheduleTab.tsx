@@ -80,7 +80,15 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       
       console.log('Fetched schedules from DB:', data);
       console.log('Number of schedules fetched:', data?.length || 0);
-      setSchedules(data || []);
+      
+      const fetchedSchedules = data || [];
+      setSchedules(fetchedSchedules);
+      
+      // IMMEDIATELY reset time to next shift if no schedules
+      if (fetchedSchedules.length === 0) {
+        console.log('NO SCHEDULES FETCHED - Immediately setting timeToNextShift to null');
+        setTimeToNextShift(null);
+      }
     } catch (error) {
       console.error('Error fetching schedules:', error);
       toast.error('Failed to load schedule');
@@ -261,19 +269,21 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
     };
   }, [fetchSchedules, fetchSurgeZones]);
 
-  // Reset time to next shift when loading or when schedules change
+  // Reset time to next shift IMMEDIATELY when schedules are empty
   useEffect(() => {
-    if (loading) {
-      // Don't calculate while loading
-      return;
-    }
+    console.log('Checking schedules for reset. Loading:', loading, 'Schedules length:', schedules.length);
     
-    // Force recalculation after schedules are loaded
-    if (schedules.length === 0) {
-      console.log('Schedules array is empty, setting timeToNextShift to null');
+    if (!loading && (!schedules || schedules.length === 0)) {
+      console.log('FORCING RESET - No schedules, setting timeToNextShift to null');
       setTimeToNextShift(null);
+    } else if (!loading && schedules.length > 0) {
+      const activeSchedules = schedules.filter(s => s && s.is_active === true);
+      if (activeSchedules.length === 0) {
+        console.log('FORCING RESET - No active schedules, setting timeToNextShift to null');
+        setTimeToNextShift(null);
+      }
     }
-  }, [loading, schedules.length]);
+  }, [loading, schedules]);
 
   // Get shifts for selected day
   const getShiftsForDay = (dayOfWeek: number) => {
@@ -512,7 +522,15 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
 
   // Format time remaining
   const formatTimeRemaining = () => {
-    if (!timeToNextShift) return 'No upcoming shifts';
+    // Check if schedules exist first
+    const activeSchedules = schedules.filter(s => s && s.is_active === true);
+    if (!schedules || schedules.length === 0 || activeSchedules.length === 0) {
+      return 'No upcoming shifts';
+    }
+    
+    if (!timeToNextShift) {
+      return 'No upcoming shifts';
+    }
     
     const { hours, minutes } = timeToNextShift;
     
