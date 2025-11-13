@@ -119,7 +119,7 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
                             style={{ height: `${(day.tips / maxValue) * 100}%` }}
                           />
                         </div>
-                        <span className="text-white text-[8px] mt-0.5">{['M', 'T', 'W', 'T', 'F', 'S', 'S'][idx]}</span>
+                        <span className="text-white text-[8px] mt-0.5">{['S', 'M', 'T', 'W', 'T', 'F', 'S'][idx]}</span>
                       </div>
                     );
                   })}
