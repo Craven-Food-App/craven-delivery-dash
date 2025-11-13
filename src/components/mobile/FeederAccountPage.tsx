@@ -41,10 +41,11 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
   const [driverRating, setDriverRating] = useState(0);
   const [totalDeliveries, setTotalDeliveries] = useState(0);
   const [memberSince, setMemberSince] = useState('');
-  const [cardBalance, setCardBalance] = useState(0);
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
-  const [cvv, setCvv] = useState('');
+  // Feeder Card placeholder data
+  const [cardBalance] = useState(3573.21);
+  const [cardNumber] = useState('5399 2833 0939 0129');
+  const [expiryDate] = useState('12/28');
+  const [cvv] = useState('847');
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -98,7 +99,7 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
         setMemberSince(date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
       }
 
-      // Fetch earnings for card balance
+      // Fetch earnings for transaction history only (card balance is placeholder)
       const { data: earnings } = await supabase
         .from('driver_earnings')
         .select('total_cents, amount_cents, tip_cents, earned_at, paid_out_at')
@@ -106,25 +107,6 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
         .order('earned_at', { ascending: false });
 
       if (earnings) {
-        // Calculate available balance (unpaid earnings)
-        const unpaidEarnings = earnings
-          .filter(e => !e.paid_out_at)
-          .reduce((sum, e) => sum + (e.total_cents || e.amount_cents + (e.tip_cents || 0)), 0);
-        setCardBalance(unpaidEarnings / 100);
-
-        // Generate card number from user ID (for display)
-        const userIdHash = user.id.replace(/-/g, '').slice(0, 16);
-        const formattedCardNumber = userIdHash.match(/.{1,4}/g)?.join(' ') || '4532 1234 5678 4829';
-        setCardNumber(formattedCardNumber);
-
-        // Set expiry date (2 years from now)
-        const expiry = new Date();
-        expiry.setFullYear(expiry.getFullYear() + 2);
-        setExpiryDate(`${String(expiry.getMonth() + 1).padStart(2, '0')}/${String(expiry.getFullYear()).slice(-2)}`);
-
-        // Generate CVV from user ID
-        setCvv(userIdHash.slice(-3));
-
         // Format transactions
         const formattedTransactions = earnings.slice(0, 10).map(earning => ({
           date: new Date(earning.earned_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
