@@ -133,11 +133,17 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
         throw checkError;
       }
 
+      // Validate required fields
+      if (!formData.city || !formData.zipCode) {
+        toast.error('City and Zip Code are required');
+        return;
+      }
+
       const updateData: any = {
         full_name: fullName,
         phone: formData.phone || null,
-        city: formData.city || null,
-        zip: formData.zipCode || null,
+        city: formData.city,
+        zip: formData.zipCode,
       };
 
       if (existingDriver) {
@@ -155,13 +161,19 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
         console.log('Update successful:', data);
       } else {
         // Create driver record
+        // Validate required fields for insert
+        if (!formData.city || !formData.zipCode) {
+          toast.error('City and Zip Code are required');
+          return;
+        }
+
         const insertData: any = {
           auth_user_id: authUser.id,
           full_name: fullName,
-          email: formData.email || authUser.email,
+          email: formData.email || authUser.email || '',
           phone: formData.phone || null,
-          city: formData.city || null,
-          zip: formData.zipCode || null,
+          city: formData.city,
+          zip: formData.zipCode,
           status: 'started',
         };
 
