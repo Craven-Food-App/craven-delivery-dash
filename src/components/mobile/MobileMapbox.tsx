@@ -19,13 +19,6 @@ const ZONE_SOURCE_ID = 'delivery-zones';
 const ZONE_FILL_LAYER_ID = 'delivery-zones-fill';
 const ZONE_LINE_LAYER_ID = 'delivery-zones-outline';
 
-const SIMULATED_LOCATIONS: [number, number][] = [
-  [41.95, -87.65],
-  [41.86, -87.72],
-  [41.76, -87.71],
-  [41.99, -87.8],
-];
-
 export const MobileMapbox: React.FC<MobileMapboxProps> = ({
   className = '',
   onZoneStatusChange,
@@ -34,21 +27,16 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
   const map = useRef<any>(null);
   const marker = useRef<any>(null);
   const [isMapReady, setIsMapReady] = useState(false);
-  const { location } = useDriverLocation();
+  const { location, startTracking, isTracking } = useDriverLocation();
   const [showRecenter, setShowRecenter] = useState(false);
   const [zones, setZones] = useState<DeliveryZone[]>(() => DELIVERY_ZONES.map((zone) => ({ ...zone })));
-  const [statusMessage, setStatusMessage] = useState('Map loaded. Move the driver to check their current zone.');
-  const [manualLocationIndex, setManualLocationIndex] = useState<number | null>(null);
 
   const driverLocation = useMemo<[number, number] | null>(() => {
-    if (manualLocationIndex !== null) {
-      return SIMULATED_LOCATIONS[manualLocationIndex];
-    }
     if (location) {
       return [location.latitude, location.longitude];
     }
     return null;
-  }, [location, manualLocationIndex]);
+  }, [location]);
 
   const updateZoneLayers = useCallback(
     (zonesData: DeliveryZone[]) => {
@@ -121,6 +109,14 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
     [onZoneStatusChange, zones]
   );
 
+  // Start location tracking immediately when component mounts
+  useEffect(() => {
+    if (!isTracking) {
+      console.log('Starting location tracking...');
+      startTracking();
+    }
+  }, [startTracking, isTracking]);
+
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
@@ -133,10 +129,17 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
       (window as any).mapboxgl.accessToken = MAPBOX_CONFIG.accessToken;
 
       try {
+        // Use driver's actual location if available, otherwise use config default
+        const initialCenter = driverLocation 
+          ? [driverLocation[1], driverLocation[0]] // Mapbox uses [lng, lat]
+          : [MAPBOX_CONFIG.center[0], MAPBOX_CONFIG.center[1]];
+        
+        console.log('Initializing map with center:', initialCenter, 'driverLocation:', driverLocation);
+        
         map.current = new (window as any).mapboxgl.Map({
           container: mapContainer.current,
           style: MAPBOX_CONFIG.style,
-          center: [MAPBOX_CONFIG.center[0], MAPBOX_CONFIG.center[1]],
+          center: initialCenter,
           zoom: MAPBOX_CONFIG.zoom,
         });
 
@@ -150,7 +153,9 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
             console.error('Failed to add navigation control', error);
           }
           updateZoneLayers(zones);
+          // If we have driver location, center on it
           if (driverLocation) {
+            console.log('Centering map on driver location:', driverLocation);
             applyDriverLocation(driverLocation[0], driverLocation[1], true);
           }
         });
@@ -159,10 +164,15 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
           console.error('Mapbox error:', e);
         });
 
+        // Initialize marker at driver's location if available, otherwise use config default
+        const initialMarkerPos = driverLocation 
+          ? [driverLocation[1], driverLocation[0]] // Mapbox uses [lng, lat]
+          : [MAPBOX_CONFIG.center[0], MAPBOX_CONFIG.center[1]];
+        
         marker.current = new (window as any).mapboxgl.Marker({
           color: '#1d4ed8',
         })
-          .setLngLat([MAPBOX_CONFIG.center[0], MAPBOX_CONFIG.center[1]])
+          .setLngLat(initialMarkerPos)
           .addTo(map.current);
       } catch (error) {
         console.error('Error initializing Mapbox:', error);
@@ -200,35 +210,16 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
     updateZoneLayers(zones);
   }, [isMapReady, updateZoneLayers, zones]);
 
+  // Update map when driver location changes (real-time updates)
   useEffect(() => {
     if (!isMapReady) return;
-    if (manualLocationIndex !== null) return;
     if (!location) return;
 
-    applyDriverLocation(location.latitude, location.longitude, true);
+    console.log('Updating map with driver location:', location);
+    applyDriverLocation(location.latitude, location.longitude, false); // Don't animate on every update to avoid jarring movement
     setShowRecenter(true);
-  }, [applyDriverLocation, isMapReady, location, manualLocationIndex]);
+  }, [applyDriverLocation, isMapReady, location]);
 
-  useEffect(() => {
-    if (!isMapReady) return;
-    if (manualLocationIndex === null) return;
-
-    const coords = SIMULATED_LOCATIONS[manualLocationIndex];
-    applyDriverLocation(coords[0], coords[1], true);
-    setShowRecenter(true);
-  }, [applyDriverLocation, isMapReady, manualLocationIndex]);
-
-  const handleUpdateDemand = useCallback(() => {
-    setZones((prev) => randomizeZoneDemand(prev));
-    setStatusMessage('✅ Zone demand levels have been randomly updated!');
-  }, []);
-
-  const handleMoveDriver = useCallback(() => {
-    setManualLocationIndex((prev) => {
-      const nextIndex = prev === null ? 0 : (prev + 1) % SIMULATED_LOCATIONS.length;
-      return nextIndex;
-    });
-  }, []);
 
   const legendItems = useMemo(() => {
     return zones.map((zone) => {
