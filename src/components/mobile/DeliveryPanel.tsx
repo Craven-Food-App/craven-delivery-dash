@@ -111,7 +111,7 @@ const MapboxStaticMap = ({ destinationName, type, currentCoords, destinationCoor
 
 // --- MOCK HOOKS AND UTILITIES ---
 const useToast = () => ({
-  toast: (options) => console.log(`[TOAST]: ${options.title} - ${options.description}`),
+  toast: (options) => {},
 });
 const useNavigation = () => ({
   navigationSettings: { provider: 'external' } // Force external nav for simplicity

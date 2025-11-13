@@ -112,7 +112,7 @@ const MapboxStaticMap = ({ destinationName, type, currentCoords, destinationCoor
 
 // --- MOCK HOOKS AND UTILITIES ---
 const useToast = () => ({
-  toast: (options) => console.log(`[TOAST]: ${options.title} - ${options.description}`),
+  toast: (options) => {},
 });
 // Remove mock useNavigation - using real one from imports
 const supabase = {

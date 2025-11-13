@@ -206,16 +206,12 @@ const DoorDashStyleDeliveryFlow: React.FC<DoorDashStyleDeliveryFlowProps> = ({
   };
 
   const handlePhotoCapture = (type: 'pickup' | 'delivery') => {
-    console.log('handlePhotoCapture called with type:', type);
     setPhotoType(type);
     setShowCamera(true);
     onCameraStateChange?.(true);
-    console.log('Camera should be opening, showCamera:', true);
   };
 
   const handlePhotoConfirm = (photoUrl: string) => {
-    console.log('handlePhotoConfirm called with photoUrl:', photoUrl ? 'Photo received' : 'No photo');
-    console.log('photoType:', photoType);
     if (photoType === 'pickup') {
       setPickupPhoto(photoUrl);
       handleStageComplete('pickup_photo_verification');
@@ -225,13 +221,11 @@ const DoorDashStyleDeliveryFlow: React.FC<DoorDashStyleDeliveryFlowProps> = ({
     }
     setShowCamera(false);
     onCameraStateChange?.(false);
-    console.log('Photo confirmed and camera closed');
   };
 
   const handleNavigation = () => {
     // In a real app, this would open the selected navigation app
     const address = currentStage.includes('restaurant') ? restaurant.address : customer.address;
-    console.log(`Opening ${selectedNavigationApp} navigation to: ${address}`);
     
     // For demo purposes, we'll just complete the stage
     if (currentStage === 'navigate_to_restaurant') {
@@ -522,7 +516,7 @@ const DoorDashStyleDeliveryFlow: React.FC<DoorDashStyleDeliveryFlowProps> = ({
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Contact Customer</h3>
               <div className="space-y-3">
                 <DeliveryButton
-                  onClick={() => console.log('Calling customer')}
+                  onClick={() => {}}
                   variant="outline"
                   fullWidth
                   icon={<Phone className="w-5 h-5" />}
@@ -530,7 +524,7 @@ const DoorDashStyleDeliveryFlow: React.FC<DoorDashStyleDeliveryFlowProps> = ({
                   Call Customer
                 </DeliveryButton>
                 <DeliveryButton
-                  onClick={() => console.log('Messaging customer')}
+                  onClick={() => {}}
                   variant="outline"
                   fullWidth
                   icon={<MessageCircle className="w-5 h-5" />}

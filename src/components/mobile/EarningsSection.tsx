@@ -505,7 +505,7 @@ export const EarningsSection = () => {
               <Button 
                 className="h-16 sm:h-20 flex flex-col items-center justify-center gap-1 bg-white/20 border-white/50 text-white hover:bg-white/30"
                 variant="outline"
-                onClick={() => console.log("Navigating to Payment Settings")}
+                onClick={() => {}}
               >
                 <CreditCard className="h-5 w-5 sm:h-6 sm:w-6" />
                 <span className="text-xs sm:text-sm">Manage</span>
