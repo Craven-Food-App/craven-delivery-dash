@@ -109,7 +109,7 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
       <div className="h-screen w-full bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 overflow-y-auto safe-area-top" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
         {/* Header */}
         <div
-          className="px-6 py-4 flex items-center justify-between flex-shrink-0"
+          className="px-6 pb-4 flex items-center justify-between flex-shrink-0"
           style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
         >
           <button onClick={() => setShowCardPage(false)} className="text-gray-900">
@@ -377,7 +377,7 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
     <div className="h-screen w-full bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 overflow-y-auto safe-area-top" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
       {/* Diamond Header */}
       <div
-        className={`relative px-6 pt-4 pb-8 bg-gradient-to-br ${status.gradient} overflow-hidden flex-shrink-0`}
+        className={`relative px-6 pb-8 bg-gradient-to-br ${status.gradient} overflow-hidden flex-shrink-0`}
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
         {/* Diamond sparkle effect */}
