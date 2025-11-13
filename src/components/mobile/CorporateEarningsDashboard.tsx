@@ -69,7 +69,9 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
             <div className="absolute top-1 right-3 w-12 h-16 bg-gradient-to-b from-red-400 to-transparent rounded-full blur-2xl opacity-60"></div>
           </div>
           
-          <p className="text-white text-sm font-semibold mb-4">Cravings spike in 12m</p>
+          <p className="text-white text-sm font-semibold mb-4">
+            {cravingLevel > 70 ? 'Cravings spike active!' : 'Normal activity'}
+          </p>
           
           {/* Craving Circle, Graphs, and Buttons */}
           <div className="flex items-start gap-3 mb-4">
@@ -77,7 +79,17 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
             <div className="relative w-28 h-28 flex-shrink-0">
               <svg className="w-full h-full transform -rotate-90">
                 <circle cx="56" cy="56" r="50" fill="none" stroke="rgba(139, 0, 0, 0.3)" strokeWidth="12"/>
-                <circle cx="56" cy="56" r="50" fill="none" stroke="url(#gradient)" strokeWidth="12" strokeDasharray="314" strokeDashoffset="94" strokeLinecap="round"/>
+                <circle 
+                  cx="56" 
+                  cy="56" 
+                  r="50" 
+                  fill="none" 
+                  stroke="url(#gradient)" 
+                  strokeWidth="12" 
+                  strokeDasharray="314" 
+                  strokeDashoffset={314 - (314 * cravingLevel / 100)} 
+                  strokeLinecap="round"
+                />
                 <defs>
                   <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="#FCD34D" />
@@ -95,34 +107,39 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-2">
                 <p className="text-white text-[10px] font-semibold mb-1">Daily Earnings</p>
                 <div className="flex items-end gap-0.5 h-16">
-                  {[
-                    { payments: 20, tips: 15 },
-                    { payments: 35, tips: 22 },
-                    { payments: 28, tips: 18 },
-                    { payments: 42, tips: 25 },
-                    { payments: 38, tips: 20 },
-                    { payments: 30, tips: 16 },
-                    { payments: 25, tips: 12 }
-                  ].map((day, idx) => {
-                    const maxValue = 50; // Max value for scaling
+                  {weeklyData.length > 0 ? weeklyData.map((day, idx) => {
+                    const maxValue = Math.max(50, ...weeklyData.flatMap(d => [d.payments, d.tips])); // Dynamic max
+                    const paymentsHeight = maxValue > 0 ? (day.payments / maxValue) * 100 : 0;
+                    const tipsHeight = maxValue > 0 ? (day.tips / maxValue) * 100 : 0;
                     return (
                       <div key={idx} className="flex-1 flex flex-col items-center gap-0.5">
                         <div className="w-full flex gap-0.5 items-end justify-center">
                           {/* Payment bar */}
                           <div 
-                            className="flex-1 bg-gradient-to-t from-orange-500 to-yellow-400 rounded-t"
-                            style={{ height: `${(day.payments / maxValue) * 100}%` }}
+                            className="flex-1 bg-gradient-to-t from-orange-500 to-yellow-400 rounded-t min-h-[2px]"
+                            style={{ height: `${Math.max(paymentsHeight, 2)}%` }}
                           />
                           {/* Tips bar */}
                           <div 
-                            className="flex-1 bg-gradient-to-t from-yellow-400 to-orange-300 rounded-t"
-                            style={{ height: `${(day.tips / maxValue) * 100}%` }}
+                            className="flex-1 bg-gradient-to-t from-yellow-400 to-orange-300 rounded-t min-h-[2px]"
+                            style={{ height: `${Math.max(tipsHeight, 2)}%` }}
                           />
                         </div>
                         <span className="text-white text-[8px] mt-0.5">{['S', 'M', 'T', 'W', 'T', 'F', 'S'][idx]}</span>
                       </div>
                     );
-                  })}
+                  }) : (
+                    // Loading or empty state
+                    Array.from({ length: 7 }).map((_, idx) => (
+                      <div key={idx} className="flex-1 flex flex-col items-center gap-0.5">
+                        <div className="w-full flex gap-0.5 items-end justify-center h-full">
+                          <div className="flex-1 bg-white/20 rounded-t min-h-[2px]" />
+                          <div className="flex-1 bg-white/20 rounded-t min-h-[2px]" />
+                        </div>
+                        <span className="text-white text-[8px] mt-0.5">{['S', 'M', 'T', 'W', 'T', 'F', 'S'][idx]}</span>
+                      </div>
+                    ))
+                  )}
                 </div>
                 {/* Legend */}
                 <div className="flex items-center justify-center gap-3 mt-1.5">
@@ -152,30 +169,34 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
       </div>
 
       {/* UP FOR GRABS */}
-      <div className="px-5 mb-3">
-        <h3 className="text-white text-sm font-bold mb-2 tracking-wide">UP FOR GRABS</h3>
-        <div className="bg-orange-50 rounded-2xl p-4 relative overflow-hidden shadow-xl">
-          {/* Decorative blob */}
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-red-400 to-orange-400 rounded-bl-full opacity-80"></div>
-          
-          <div className="relative flex items-center justify-between">
-            <div>
-              <p className="text-orange-800 text-xs font-semibold mb-0.5">11:48 ETA</p>
-              <h4 className="text-2xl font-black text-gray-900 mb-0.5">$8.90 Pay</h4>
-              <p className="text-orange-800 text-xs font-semibold">3.2mi</p>
-            </div>
-            <div className="flex flex-col items-end gap-1.5">
-              <div className="bg-red-600 rounded-full px-3 py-1 flex items-center gap-1 shadow-lg">
-                <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
-                <span className="text-white text-xs font-bold">LIVE</span>
+      {availableOrder && (
+        <div className="px-5 mb-3">
+          <h3 className="text-white text-sm font-bold mb-2 tracking-wide">UP FOR GRABS</h3>
+          <div className="bg-orange-50 rounded-2xl p-4 relative overflow-hidden shadow-xl">
+            {/* Decorative blob */}
+            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-red-400 to-orange-400 rounded-bl-full opacity-80"></div>
+            
+            <div className="relative flex items-center justify-between">
+              <div>
+                <p className="text-orange-800 text-xs font-semibold mb-0.5">{availableOrder.eta} ETA</p>
+                <h4 className="text-2xl font-black text-gray-900 mb-0.5">${availableOrder.pay.toFixed(2)} Pay</h4>
+                <p className="text-orange-800 text-xs font-semibold">{availableOrder.distance}</p>
               </div>
-              <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl px-3 py-1.5 shadow-lg rotate-3">
-                <span className="text-red-800 text-xs font-black italic">ON FIRE</span>
+              <div className="flex flex-col items-end gap-1.5">
+                <div className="bg-red-600 rounded-full px-3 py-1 flex items-center gap-1 shadow-lg">
+                  <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
+                  <span className="text-white text-xs font-bold">LIVE</span>
+                </div>
+                {cravingLevel > 70 && (
+                  <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl px-3 py-1.5 shadow-lg rotate-3">
+                    <span className="text-red-800 text-xs font-black italic">ON FIRE</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* EARNINGS SNAPSHOT */}
       <div className="px-5 mb-3">
