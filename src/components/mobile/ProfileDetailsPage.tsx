@@ -109,64 +109,96 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
     try {
       setSaving(true);
       const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) return;
+      if (!authUser) {
+        toast.error('Not authenticated');
+        return;
+      }
+
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+      if (!fullName) {
+        toast.error('Name is required');
+        return;
+      }
 
       // Update drivers table if exists
       // Note: drivers table uses auth_user_id and full_name (not first_name/last_name)
-      const { data: existingDriver } = await supabase
+      const { data: existingDriver, error: checkError } = await supabase
         .from('drivers')
         .select('id')
         .eq('auth_user_id', authUser.id)
         .maybeSingle();
 
-      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+      if (checkError) {
+        console.error('Error checking driver:', checkError);
+        throw checkError;
+      }
+
       const updateData: any = {
         full_name: fullName,
-        phone: formData.phone,
+        phone: formData.phone || null,
         city: formData.city || null,
         zip: formData.zipCode || null,
-        updated_at: new Date().toISOString(),
       };
 
       if (existingDriver) {
-        const { error } = await supabase
+        console.log('Updating driver:', existingDriver.id, updateData);
+        const { data, error } = await supabase
           .from('drivers')
           .update(updateData)
-          .eq('auth_user_id', authUser.id);
+          .eq('auth_user_id', authUser.id)
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Update error:', error);
+          throw error;
+        }
+        console.log('Update successful:', data);
       } else {
         // Create driver record
         const insertData: any = {
           auth_user_id: authUser.id,
           full_name: fullName,
-          email: formData.email,
-          phone: formData.phone,
-          city: formData.city || '',
-          zip: formData.zipCode || '',
+          email: formData.email || authUser.email,
+          phone: formData.phone || null,
+          city: formData.city || null,
+          zip: formData.zipCode || null,
           status: 'started',
         };
 
-        const { error } = await supabase
+        console.log('Inserting driver:', insertData);
+        const { data, error } = await supabase
           .from('drivers')
-          .insert(insertData);
+          .insert(insertData)
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Insert error:', error);
+          throw error;
+        }
+        console.log('Insert successful:', data);
       }
 
       // Update auth user metadata
-      await supabase.auth.updateUser({
+      const { error: authError } = await supabase.auth.updateUser({
         data: {
-          full_name: `${formData.firstName} ${formData.lastName}`,
+          full_name: fullName,
           phone: formData.phone,
         }
       });
 
+      if (authError) {
+        console.error('Auth update error:', authError);
+        // Don't fail the whole operation if auth update fails
+      }
+
       toast.success('Profile updated successfully');
-      onBack();
+      // Refresh the data
+      await fetchProfileData();
+      setTimeout(() => onBack(), 500);
     } catch (error: any) {
       console.error('Error saving profile:', error);
-      toast.error(error.message || 'Failed to save profile');
+      const errorMessage = error?.message || error?.details || 'Failed to save profile';
+      toast.error(`Error: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
