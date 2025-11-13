@@ -257,7 +257,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
             }
           }}
           className="fixed z-50 w-12 h-12 rounded-full bg-white/95 backdrop-blur shadow-xl flex items-center justify-center hover:bg-white active:scale-95 transition-all pointer-events-auto"
-          style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+          style={{ top: '50%', right: '16px', transform: 'translateY(-50%)' }}
           aria-label="Recenter on driver location"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-6 h-6 text-gray-700">
