@@ -94,7 +94,18 @@ const FeederSidebarMenu: React.FC<FeederSidebarMenuProps> = ({
   const handleMenuClick = (path: string) => {
     if (onNavigate) {
       // Convert path to capitalized format expected by handleMenuNavigation
-      const capitalizedPath = path.charAt(0).toUpperCase() + path.slice(1);
+      // Map lowercase paths to the capitalized format
+      const pathMap: Record<string, string> = {
+        'home': 'Home',
+        'schedule': 'Schedule',
+        'earnings': 'Earnings',
+        'notifications': 'Notifications',
+        'account': 'Account',
+        'ratings': 'Ratings',
+        'promos': 'Promos',
+        'help': 'Help'
+      };
+      const capitalizedPath = pathMap[path] || path.charAt(0).toUpperCase() + path.slice(1);
       onNavigate(capitalizedPath);
     }
     onClose();
