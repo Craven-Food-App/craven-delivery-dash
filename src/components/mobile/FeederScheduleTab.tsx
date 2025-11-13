@@ -450,9 +450,9 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
   }
 
   return (
-    <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-pink-600 overflow-y-auto pb-20 safe-area-top">
-      {/* Header */}
-      <div className="px-6 py-4 flex items-center justify-between" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}>
+    <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-pink-600 flex flex-col safe-area-top">
+      {/* Header - Fixed at top */}
+      <div className="px-6 py-4 flex items-center justify-between flex-shrink-0" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <button 
           onClick={() => {
             if (onOpenMenu) {
@@ -568,12 +568,48 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
           </div>
         )}
 
+        {/* Section Title - Fixed */}
+        {viewMode === 'schedule' && (
+          <h3 className="text-white text-lg font-bold mb-3 flex-shrink-0">
+            {weekDays[activeDay]?.day === weekDays[0]?.day ? "Today's Shifts" : `${weekDays[activeDay]?.day}'s Shifts`}
+          </h3>
+        )}
+
+        {/* Available/Scheduled View Headers - Fixed */}
+        {viewMode === 'available' && (
+          <div className="flex items-center justify-between mb-3 flex-shrink-0">
+            <h3 className="text-white text-lg font-bold">
+              Available Shifts - {weekDays[activeDay]?.day}
+            </h3>
+            <button
+              onClick={() => setViewMode('schedule')}
+              className="text-white text-sm underline"
+            >
+              Back
+            </button>
+          </div>
+        )}
+
+        {viewMode === 'scheduled' && (
+          <div className="flex items-center justify-between mb-3 flex-shrink-0">
+            <h3 className="text-white text-lg font-bold">
+              Scheduled Shifts - {weekDays[activeDay]?.day}
+            </h3>
+            <button
+              onClick={() => setViewMode('schedule')}
+              className="text-white text-sm underline"
+            >
+              Back
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Scrollable Content Area - Only the list scrolls */}
+      <div className="flex-1 overflow-y-auto px-6 pb-20">
         {/* Content based on view mode */}
         {viewMode === 'schedule' && (
-          <div className="space-y-3 pb-24">
-            <h3 className="text-white text-lg font-bold mb-3">
-              {weekDays[activeDay]?.day === weekDays[0]?.day ? "Today's Shifts" : `${weekDays[activeDay]?.day}'s Shifts`}
-            </h3>
+          <div className="space-y-3">
             {selectedDayShifts.length > 0 ? (
               selectedDayShifts.map((shift, index) => (
                 <div key={shift.id || index} className="bg-orange-50 rounded-2xl p-4 shadow-lg hover:shadow-xl transition-shadow">
@@ -593,18 +629,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
         )}
 
         {viewMode === 'available' && (
-          <div className="space-y-3 pb-24">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-white text-lg font-bold">
-                Available Shifts - {weekDays[activeDay]?.day}
-              </h3>
-              <button
-                onClick={() => setViewMode('schedule')}
-                className="text-white text-sm underline"
-              >
-                Back
-              </button>
-            </div>
+          <div className="space-y-3">
             {getAvailableShifts.length > 0 ? (
               getAvailableShifts.map((shift, index) => (
                 <div key={index} className="bg-orange-50 rounded-2xl p-4 shadow-lg">
@@ -636,18 +661,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
         )}
 
         {viewMode === 'scheduled' && (
-          <div className="space-y-3 pb-24">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-white text-lg font-bold">
-                Scheduled Shifts - {weekDays[activeDay]?.day}
-              </h3>
-              <button
-                onClick={() => setViewMode('schedule')}
-                className="text-white text-sm underline"
-              >
-                Back
-              </button>
-            </div>
+          <div className="space-y-3">
             {selectedDayShifts.length > 0 ? (
               selectedDayShifts.map((shift, index) => (
                 <div key={shift.id || index} className="bg-orange-50 rounded-2xl p-4 shadow-lg">

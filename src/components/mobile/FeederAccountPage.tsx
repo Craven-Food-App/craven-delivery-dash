@@ -109,8 +109,8 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
       <div className="h-screen w-full bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 overflow-y-auto pb-20 safe-area-top">
         {/* Header */}
         <div
-          className="px-6 py-4 flex items-center justify-between"
-          style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)" }}
+          className="px-6 py-4 flex items-center justify-between flex-shrink-0"
+          style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
         >
           <button onClick={() => setShowCardPage(false)} className="text-gray-900">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -377,8 +377,8 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
     <div className="h-screen w-full bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 overflow-y-auto pb-20 safe-area-top">
       {/* Diamond Header */}
       <div
-        className={`relative px-6 pt-4 pb-8 bg-gradient-to-br ${status.gradient} overflow-hidden`}
-        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)" }}
+        className={`relative px-6 pt-4 pb-8 bg-gradient-to-br ${status.gradient} overflow-hidden flex-shrink-0`}
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
         {/* Diamond sparkle effect */}
         <div className="absolute inset-0 opacity-30">

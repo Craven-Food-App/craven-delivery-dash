@@ -189,7 +189,7 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
   return (
     <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-orange-500 overflow-y-auto pb-20 safe-area-top">
       {/* Header */}
-      <div className="px-6 py-4 flex items-center justify-between" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}>
+      <div className="px-6 py-4 flex items-center justify-between flex-shrink-0" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <button 
           onClick={() => {
             if (onOpenMenu) {
