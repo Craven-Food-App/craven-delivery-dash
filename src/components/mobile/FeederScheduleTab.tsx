@@ -104,8 +104,11 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
     const calculateTimeToNextShift = () => {
       console.log('Calculating time to next shift. Schedules:', schedules);
       
-      if (!schedules || schedules.length === 0) {
-        console.log('No schedules found, setting to null');
+      // Filter to only active schedules
+      const activeSchedules = schedules.filter(s => s.is_active);
+      
+      if (!activeSchedules || activeSchedules.length === 0) {
+        console.log('No active schedules found, setting to null');
         setTimeToNextShift(null);
         return;
       }
@@ -114,7 +117,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       const currentDay = now.getDay();
       const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
       
-      console.log('Current time:', now.toISOString(), 'Day:', currentDay, 'Minutes:', currentTimeMinutes);
+      console.log('Current time:', now.toISOString(), 'Day:', currentDay, 'Minutes:', currentTimeMinutes, 'Active schedules:', activeSchedules.length);
 
       // Helper to parse time string (handles "HH:MM" or "HH:MM:SS" formats)
       const parseTime = (timeStr: string): { hour: number; minute: number } => {
@@ -136,8 +139,8 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
         checkDate.setHours(0, 0, 0, 0);
         const checkDay = checkDate.getDay();
         
-        const dayShifts = schedules
-          .filter(s => s.day_of_week === checkDay && s.is_active)
+        const dayShifts = activeSchedules
+          .filter(s => s.day_of_week === checkDay)
           .sort((a, b) => a.start_time.localeCompare(b.start_time));
         
         for (const shift of dayShifts) {
@@ -159,16 +162,14 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       }
 
       // If no future shift found in 2 weeks, wrap to next occurrence of earliest shift
-      if (!nextShiftDateTime) {
+      if (!nextShiftDateTime && activeSchedules.length > 0) {
         console.log('No shift found in 14 days, checking next week');
-        const sortedSchedules = [...schedules]
-          .filter(s => s.is_active)
-          .sort((a, b) => {
-            if (a.day_of_week !== b.day_of_week) {
-              return a.day_of_week - b.day_of_week;
-            }
-            return a.start_time.localeCompare(b.start_time);
-          });
+        const sortedSchedules = [...activeSchedules].sort((a, b) => {
+          if (a.day_of_week !== b.day_of_week) {
+            return a.day_of_week - b.day_of_week;
+          }
+          return a.start_time.localeCompare(b.start_time);
+        });
         
         if (sortedSchedules.length > 0) {
           const earliestShift = sortedSchedules[0];
