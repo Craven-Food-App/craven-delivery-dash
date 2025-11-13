@@ -21,9 +21,9 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
   };
 
   return (
-    <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-orange-500 overflow-y-auto pb-20">
+    <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-orange-500 overflow-y-auto pb-20 safe-area-top">
       {/* Header */}
-      <div className="px-6 py-4 flex items-center justify-between">
+      <div className="px-6 py-4 flex items-center justify-between" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}>
         <button 
           onClick={() => {
             if (onOpenMenu) {
@@ -38,7 +38,7 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <h1 className="text-white text-2xl font-bold">Feeder</h1>
+        <h1 className="text-white text-2xl font-bold">Earnings</h1>
         <button 
           onClick={() => {
             if (onOpenNotifications) {
