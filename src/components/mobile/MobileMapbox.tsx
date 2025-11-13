@@ -99,12 +99,6 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
       if (onZoneStatusChange) {
         onZoneStatusChange({ isInZone, zone });
       }
-
-      if (zone) {
-        setStatusMessage(`✅ GEOLOCATION SUCCESS: Driver is currently in the ${zone.name}.`);
-      } else {
-        setStatusMessage('⚠️ STATUS: Driver is outside all defined delivery zones.');
-      }
     },
     [onZoneStatusChange, zones]
   );
