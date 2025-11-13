@@ -42,6 +42,16 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
   const updateZoneLayers = useCallback(
     (zonesData: DeliveryZone[]) => {
       if (!map.current) return;
+      
+      // Check if map style is loaded before adding sources
+      if (!map.current.isStyleLoaded()) {
+        console.log('Map style not loaded yet, waiting...');
+        // Wait for style to load
+        map.current.once('style.load', () => {
+          updateZoneLayers(zonesData);
+        });
+        return;
+      }
 
       const geoJson = zonesToGeoJSON(zonesData);
       const source = map.current.getSource(ZONE_SOURCE_ID);
@@ -51,33 +61,43 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
         return;
       }
 
-      map.current.addSource(ZONE_SOURCE_ID, {
-        type: 'geojson',
-        data: geoJson,
-      });
-
-      if (!map.current.getLayer(ZONE_FILL_LAYER_ID)) {
-        map.current.addLayer({
-          id: ZONE_FILL_LAYER_ID,
-          type: 'fill',
-          source: ZONE_SOURCE_ID,
-          paint: {
-            'fill-color': ['get', 'fillColor'],
-            'fill-opacity': ['coalesce', ['get', 'fillOpacity'], 0.4],
-          },
+      try {
+        map.current.addSource(ZONE_SOURCE_ID, {
+          type: 'geojson',
+          data: geoJson,
         });
-      }
 
-      if (!map.current.getLayer(ZONE_LINE_LAYER_ID)) {
-        map.current.addLayer({
-          id: ZONE_LINE_LAYER_ID,
-          type: 'line',
-          source: ZONE_SOURCE_ID,
-          paint: {
-            'line-width': 2,
-            'line-color': ['get', 'strokeColor'],
-          },
-        });
+        if (!map.current.getLayer(ZONE_FILL_LAYER_ID)) {
+          map.current.addLayer({
+            id: ZONE_FILL_LAYER_ID,
+            type: 'fill',
+            source: ZONE_SOURCE_ID,
+            paint: {
+              'fill-color': ['get', 'fillColor'],
+              'fill-opacity': ['coalesce', ['get', 'fillOpacity'], 0.4],
+            },
+          });
+        }
+
+        if (!map.current.getLayer(ZONE_LINE_LAYER_ID)) {
+          map.current.addLayer({
+            id: ZONE_LINE_LAYER_ID,
+            type: 'line',
+            source: ZONE_SOURCE_ID,
+            paint: {
+              'line-width': 2,
+              'line-color': ['get', 'strokeColor'],
+            },
+          });
+        }
+      } catch (error) {
+        console.error('Error adding zone layers:', error);
+        // Retry after a short delay if style isn't ready
+        setTimeout(() => {
+          if (map.current && map.current.isStyleLoaded()) {
+            updateZoneLayers(zonesData);
+          }
+        }, 100);
       }
     },
     []
@@ -182,7 +202,14 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
             } catch (error) {
               console.error('Failed to add navigation control', error);
             }
-            updateZoneLayers(zones);
+            // Wait for style to be fully loaded before adding zones
+            if (map.current.isStyleLoaded()) {
+              updateZoneLayers(zones);
+            } else {
+              map.current.once('style.load', () => {
+                updateZoneLayers(zones);
+              });
+            }
           }
         });
 
@@ -243,10 +270,8 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
     };
   }, []); // Only run once on mount
 
-  useEffect(() => {
-    if (!isMapReady) return;
-    updateZoneLayers(zones);
-  }, [isMapReady, updateZoneLayers, zones]);
+  // Remove this useEffect - zones are updated in the map load handler
+  // This was causing duplicate calls and race conditions
 
   // Update map when driver location changes (real-time updates)
   useEffect(() => {
