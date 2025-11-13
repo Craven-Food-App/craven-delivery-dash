@@ -102,7 +102,10 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
   // Calculate time to next shift using real schedule data
   useEffect(() => {
     const calculateTimeToNextShift = () => {
-      if (schedules.length === 0) {
+      console.log('Calculating time to next shift. Schedules:', schedules);
+      
+      if (!schedules || schedules.length === 0) {
+        console.log('No schedules found, setting to null');
         setTimeToNextShift(null);
         return;
       }
@@ -110,6 +113,17 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       const now = new Date();
       const currentDay = now.getDay();
       const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
+      
+      console.log('Current time:', now.toISOString(), 'Day:', currentDay, 'Minutes:', currentTimeMinutes);
+
+      // Helper to parse time string (handles "HH:MM" or "HH:MM:SS" formats)
+      const parseTime = (timeStr: string): { hour: number; minute: number } => {
+        const parts = timeStr.split(':');
+        return {
+          hour: parseInt(parts[0], 10),
+          minute: parseInt(parts[1] || '0', 10)
+        };
+      };
 
       // Find the next upcoming shift across all days
       let nextShiftDateTime: Date | null = null;
@@ -127,22 +141,26 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
           .sort((a, b) => a.start_time.localeCompare(b.start_time));
         
         for (const shift of dayShifts) {
-          const [startHour, startMin] = shift.start_time.split(':').map(Number);
+          const { hour: startHour, minute: startMin } = parseTime(shift.start_time);
           const shiftDateTime = new Date(checkDate);
           shiftDateTime.setHours(startHour, startMin, 0, 0);
           
           const diffMs = shiftDateTime.getTime() - now.getTime();
           
+          console.log(`Checking shift: day ${checkDay}, time ${shift.start_time}, datetime ${shiftDateTime.toISOString()}, diff ${diffMs}ms`);
+          
           // Only consider future shifts
           if (diffMs > 0 && diffMs < minDiffMs) {
             minDiffMs = diffMs;
             nextShiftDateTime = shiftDateTime;
+            console.log('Found closer shift:', shiftDateTime.toISOString());
           }
         }
       }
 
       // If no future shift found in 2 weeks, wrap to next occurrence of earliest shift
       if (!nextShiftDateTime) {
+        console.log('No shift found in 14 days, checking next week');
         const sortedSchedules = [...schedules]
           .filter(s => s.is_active)
           .sort((a, b) => {
@@ -154,7 +172,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
         
         if (sortedSchedules.length > 0) {
           const earliestShift = sortedSchedules[0];
-          const [startHour, startMin] = earliestShift.start_time.split(':').map(Number);
+          const { hour: startHour, minute: startMin } = parseTime(earliestShift.start_time);
           nextShiftDateTime = new Date(now);
           
           // Calculate days until next occurrence
@@ -169,19 +187,27 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
           
           nextShiftDateTime.setDate(now.getDate() + daysUntil);
           nextShiftDateTime.setHours(startHour, startMin, 0, 0);
+          console.log('Using earliest shift next week:', nextShiftDateTime.toISOString(), 'daysUntil:', daysUntil);
         }
       }
 
       if (nextShiftDateTime) {
         const diffMs = nextShiftDateTime.getTime() - now.getTime();
+        console.log('Final shift datetime:', nextShiftDateTime.toISOString(), 'diff:', diffMs, 'ms');
+        
         if (diffMs > 0) {
-          const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-          const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+          const totalMinutes = Math.floor(diffMs / (1000 * 60));
+          const diffHours = Math.floor(totalMinutes / 60);
+          const diffMinutes = totalMinutes % 60;
+          
+          console.log('Setting time to next shift:', { hours: diffHours, minutes: diffMinutes });
           setTimeToNextShift({ hours: diffHours, minutes: diffMinutes });
         } else {
+          console.log('Diff is negative or zero, setting to null');
           setTimeToNextShift(null);
         }
       } else {
+        console.log('No next shift datetime found, setting to null');
         setTimeToNextShift(null);
       }
     };
@@ -420,10 +446,24 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
   // Format time remaining
   const formatTimeRemaining = () => {
     if (!timeToNextShift) return 'No upcoming shifts';
-    if (timeToNextShift.hours === 0) {
-      return `${timeToNextShift.minutes}m remaining`;
+    
+    const { hours, minutes } = timeToNextShift;
+    
+    // If more than 24 hours, show days
+    if (hours >= 24) {
+      const days = Math.floor(hours / 24);
+      const remainingHours = hours % 24;
+      if (remainingHours === 0) {
+        return `${days}d remaining`;
+      }
+      return `${days}d ${remainingHours}h remaining`;
     }
-    return `${timeToNextShift.hours}h ${timeToNextShift.minutes}m remaining`;
+    
+    // Less than 24 hours
+    if (hours === 0) {
+      return `${minutes}m remaining`;
+    }
+    return `${hours}h ${minutes}m remaining`;
   };
 
   // Calculate progress percentage for circular progress based on real time to next shift
