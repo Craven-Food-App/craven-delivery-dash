@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   User,
   Car,
@@ -17,6 +17,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import ProfileDetailsPage from "./ProfileDetailsPage";
+import VehicleDocumentsPage from "./VehicleDocumentsPage";
+import AppSettingsPage from "./AppSettingsPage";
+import SecuritySafetyPage from "./SecuritySafetyPage";
+import { useNavigate } from "react-router-dom";
 
 type FeederAccountPageProps = {
   onOpenMenu?: () => void;
@@ -28,13 +33,113 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
   const [showCardDetails, setShowCardDetails] = useState(false);
   const [isCardLocked, setIsCardLocked] = useState(false);
   const [showPinDialog, setShowPinDialog] = useState(false);
+  const [currentPage, setCurrentPage] = useState<'main' | 'profile' | 'vehicle' | 'settings' | 'security'>('main');
+  
+  // Driver stats - will be fetched from database
+  const [driverPoints, setDriverPoints] = useState(0);
+  const [driverName, setDriverName] = useState('');
+  const [driverRating, setDriverRating] = useState(0);
+  const [totalDeliveries, setTotalDeliveries] = useState(0);
+  const [memberSince, setMemberSince] = useState('');
+  const [cardBalance, setCardBalance] = useState(0);
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [cvv, setCvv] = useState('');
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Driver stats
-  const driverPoints = 87; // Diamond status (85+)
-  const driverName = "Marcus Rivera";
-  const driverRating = 4.9;
-  const totalDeliveries = 847;
-  const memberSince = "Jan 2023";
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchDriverData();
+  }, []);
+
+  const fetchDriverData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Fetch driver profile
+      const { data: driverProfile } = await supabase
+        .from('driver_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      // Fetch driver data from drivers table
+      const { data: driverData } = await supabase
+        .from('drivers')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      // Get user metadata
+      const fullName = user.user_metadata?.full_name || 
+                      (driverData?.first_name && driverData?.last_name ? `${driverData.first_name} ${driverData.last_name}` : '') ||
+                      user.email?.split('@')[0] || 'Driver';
+      setDriverName(fullName);
+
+      // Set driver stats
+      if (driverProfile) {
+        setDriverRating(Number(driverProfile.rating) || 0);
+        setTotalDeliveries(driverProfile.total_deliveries || 0);
+        
+        // Calculate points based on rating and deliveries
+        const points = Math.round((Number(driverProfile.rating) || 0) * 17 + (driverProfile.total_deliveries || 0) * 0.1);
+        setDriverPoints(points);
+      }
+
+      // Set member since date
+      if (driverProfile?.created_at) {
+        const date = new Date(driverProfile.created_at);
+        setMemberSince(date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
+      } else if (user.created_at) {
+        const date = new Date(user.created_at);
+        setMemberSince(date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
+      }
+
+      // Fetch earnings for card balance
+      const { data: earnings } = await supabase
+        .from('driver_earnings')
+        .select('total_cents, amount_cents, tip_cents, earned_at, paid_out_at')
+        .eq('driver_id', user.id)
+        .order('earned_at', { ascending: false });
+
+      if (earnings) {
+        // Calculate available balance (unpaid earnings)
+        const unpaidEarnings = earnings
+          .filter(e => !e.paid_out_at)
+          .reduce((sum, e) => sum + (e.total_cents || e.amount_cents + (e.tip_cents || 0)), 0);
+        setCardBalance(unpaidEarnings / 100);
+
+        // Generate card number from user ID (for display)
+        const userIdHash = user.id.replace(/-/g, '').slice(0, 16);
+        const formattedCardNumber = userIdHash.match(/.{1,4}/g)?.join(' ') || '4532 1234 5678 4829';
+        setCardNumber(formattedCardNumber);
+
+        // Set expiry date (2 years from now)
+        const expiry = new Date();
+        expiry.setFullYear(expiry.getFullYear() + 2);
+        setExpiryDate(`${String(expiry.getMonth() + 1).padStart(2, '0')}/${String(expiry.getFullYear()).slice(-2)}`);
+
+        // Generate CVV from user ID
+        setCvv(userIdHash.slice(-3));
+
+        // Format transactions
+        const formattedTransactions = earnings.slice(0, 10).map(earning => ({
+          date: new Date(earning.earned_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          description: earning.paid_out_at ? 'Payout Processed' : 'Daily Earnings Deposit',
+          amount: (earning.total_cents || earning.amount_cents + (earning.tip_cents || 0)) / 100,
+          type: 'credit' as const,
+        }));
+        setTransactions(formattedTransactions);
+      }
+    } catch (error) {
+      console.error('Error fetching driver data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Determine status based on points
   const getStatus = (points: number) => {
@@ -76,8 +181,20 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
   };
 
   const menuItems = [
-    { icon: User, label: "Profile Information", desc: "Personal details & preferences", color: "blue" },
-    { icon: Car, label: "Vehicle & Documents", desc: "Registration, insurance, inspection", color: "green" },
+    { 
+      icon: User, 
+      label: "Profile Information", 
+      desc: "Personal details & preferences", 
+      color: "blue",
+      action: () => setCurrentPage('profile')
+    },
+    { 
+      icon: Car, 
+      label: "Vehicle & Documents", 
+      desc: "Registration, insurance, inspection", 
+      color: "green",
+      action: () => setCurrentPage('vehicle')
+    },
     {
       icon: CreditCard,
       label: "Feeder Card",
@@ -86,10 +203,37 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
       badge: `$${cardBalance.toFixed(2)}`,
       action: () => setShowCardPage(true),
     },
-    { icon: Settings, label: "App Settings", desc: "Notifications, language, preferences", color: "gray" },
-    { icon: Shield, label: "Security & Safety", desc: "Password, 2FA, emergency contacts", color: "red" },
-    { icon: Phone, label: "Call Support", desc: "24/7 driver assistance hotline", color: "orange" },
-    { icon: MessageCircle, label: "Message Support", desc: "Live chat with support team", color: "blue" },
+    { 
+      icon: Settings, 
+      label: "App Settings", 
+      desc: "Notifications, language, preferences", 
+      color: "gray",
+      action: () => setCurrentPage('settings')
+    },
+    { 
+      icon: Shield, 
+      label: "Security & Safety", 
+      desc: "Password, 2FA, emergency contacts", 
+      color: "red",
+      action: () => setCurrentPage('security')
+    },
+    { 
+      icon: Phone, 
+      label: "Call Support", 
+      desc: "24/7 driver assistance hotline", 
+      color: "orange",
+      action: () => window.location.href = 'tel:+18005551234'
+    },
+    { 
+      icon: MessageCircle, 
+      label: "Message Support", 
+      desc: "Live chat with support team", 
+      color: "blue",
+      action: () => {
+        navigate('/mobile?tab=help');
+        if (onOpenNotifications) onOpenNotifications();
+      }
+    },
   ];
 
   const handleSignOut = async () => {
@@ -102,6 +246,23 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
       toast.error("Failed to sign out");
     }
   };
+
+  // Show sub-pages
+  if (currentPage === 'profile') {
+    return <ProfileDetailsPage onBack={() => setCurrentPage('main')} />;
+  }
+
+  if (currentPage === 'vehicle') {
+    return <VehicleDocumentsPage onBack={() => setCurrentPage('main')} />;
+  }
+
+  if (currentPage === 'settings') {
+    return <AppSettingsPage onBack={() => setCurrentPage('main')} />;
+  }
+
+  if (currentPage === 'security') {
+    return <SecuritySafetyPage onBack={() => setCurrentPage('main')} />;
+  }
 
   // If card page is open, show that instead
   if (showCardPage) {
@@ -338,8 +499,14 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
         {/* Transactions List */}
         <div className="px-6 pb-24">
           <h3 className="text-gray-900 text-xl font-bold mb-4">Transaction History</h3>
-          <div className="space-y-3">
-            {transactions.map((txn, idx) => (
+          {transactions.length === 0 ? (
+            <div className="bg-white rounded-2xl p-8 text-center">
+              <p className="text-gray-500">No transactions yet</p>
+              <p className="text-sm text-gray-400 mt-2">Your earnings will appear here</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {transactions.map((txn, idx) => (
               <div key={idx} className="bg-white rounded-2xl p-4 shadow-md">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -368,8 +535,17 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="h-screen w-full bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
       </div>
     );
   }
