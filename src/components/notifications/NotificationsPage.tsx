@@ -383,6 +383,43 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
     }
   };
 
+  const deleteNotification = async (notificationId: string) => {
+    try {
+      await supabase
+        .from('order_notifications')
+        .delete()
+        .eq('id', notificationId);
+      
+      setNotifications(prev => 
+        prev.filter(notif => notif.id !== notificationId)
+      );
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
+  };
+
+  const deleteAllTestNotifications = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Delete all notifications for this user that are test-related
+      // This includes notifications with test order IDs or test-related messages
+      const { error } = await supabase
+        .from('order_notifications')
+        .delete()
+        .eq('user_id', user.id)
+        .or('notification_type.eq.delivery_late,notification_type.eq.delivery_time_near,notification_type.eq.order_ready_pickup');
+
+      if (error) throw error;
+      
+      // Refresh notifications
+      fetchNotifications();
+    } catch (error) {
+      console.error('Error deleting test notifications:', error);
+    }
+  };
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'order_assigned':
@@ -475,16 +512,26 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
           <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
           <p className="text-sm text-gray-600">Stay updated with your deliveries</p>
         </div>
-        {unreadCount > 0 && (
+        <div className="flex gap-2">
+          {unreadCount > 0 && (
+            <Button 
+              onClick={markAllAsRead}
+              variant="outline" 
+              size="sm"
+              className="text-orange-600 border-orange-200 hover:bg-orange-50"
+            >
+              Mark all read
+            </Button>
+          )}
           <Button 
-            onClick={markAllAsRead}
+            onClick={deleteAllTestNotifications}
             variant="outline" 
             size="sm"
-            className="text-orange-600 border-orange-200 hover:bg-orange-50"
+            className="text-red-600 border-red-200 hover:bg-red-50"
           >
-            Mark all read
+            Clear Test Alerts
           </Button>
-        )}
+        </div>
       </div>
 
       {/* Unread count badge */}
@@ -555,16 +602,26 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
                           <p className="text-xs text-gray-400">
                             {formatTimeAgo(notification.created_at)}
                           </p>
-                          {!notification.is_read && (
+                          <div className="flex gap-2">
+                            {!notification.is_read && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => markAsRead(notification.id)}
+                                className="text-xs text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                              >
+                                Mark as read
+                              </Button>
+                            )}
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => markAsRead(notification.id)}
-                              className="text-xs text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                              onClick={() => deleteNotification(notification.id)}
+                              className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
-                              Mark as read
+                              Delete
                             </Button>
-                          )}
+                          </div>
                         </div>
                       </div>
                     </div>
