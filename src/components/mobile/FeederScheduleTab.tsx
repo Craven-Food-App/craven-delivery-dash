@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Menu, Bell, MapPin, Pencil, X } from 'lucide-react';
+import { Menu, Bell, MapPin, Pencil, X, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -253,10 +253,36 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
         return {
           time: `${formatTime(shift.start_time)} – ${formatTime(shift.end_time)}`,
           location: location,
-          id: shift.id
+          id: shift.id,
+          scheduleRecord: shift // Keep reference to original schedule record
         };
       })
       .sort((a, b) => a.time.localeCompare(b.time));
+  };
+
+  // Handle deleting a shift
+  const handleDeleteShift = async (shiftId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Please sign in to delete shifts');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('driver_schedules')
+        .delete()
+        .eq('id', shiftId)
+        .eq('driver_id', user.id);
+
+      if (error) throw error;
+
+      toast.success('Shift removed successfully');
+      await fetchSchedules();
+    } catch (error) {
+      console.error('Error deleting shift:', error);
+      toast.error('Failed to remove shift');
+    }
   };
 
   const selectedDayShifts = getShiftsForDay(weekDays[activeDay]?.dayOfWeek || today.getDay());
@@ -654,10 +680,25 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
             {selectedDayShifts.length > 0 ? (
               selectedDayShifts.map((shift, index) => (
                 <div key={shift.id || index} className="bg-orange-50 rounded-2xl p-4 shadow-lg hover:shadow-xl transition-shadow">
-                  <p className="text-gray-900 font-bold text-lg mb-1">{shift.time}</p>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-orange-600" />
-                    <p className="text-orange-800 font-semibold">{shift.location}</p>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-gray-900 font-bold text-lg mb-1">{shift.time}</p>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-orange-600" />
+                        <p className="text-orange-800 font-semibold">{shift.location}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (shift.id && confirm('Are you sure you want to remove this shift?')) {
+                          handleDeleteShift(shift.id);
+                        }
+                      }}
+                      className="ml-3 p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                      aria-label="Delete shift"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
                   </div>
                 </div>
               ))
@@ -706,10 +747,25 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
             {selectedDayShifts.length > 0 ? (
               selectedDayShifts.map((shift, index) => (
                 <div key={shift.id || index} className="bg-orange-50 rounded-2xl p-4 shadow-lg">
-                  <p className="text-gray-900 font-bold text-lg mb-1">{shift.time}</p>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-orange-600" />
-                    <p className="text-orange-800 font-semibold">{shift.location}</p>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-gray-900 font-bold text-lg mb-1">{shift.time}</p>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-orange-600" />
+                        <p className="text-orange-800 font-semibold">{shift.location}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (shift.id && confirm('Are you sure you want to remove this shift?')) {
+                          handleDeleteShift(shift.id);
+                        }
+                      }}
+                      className="ml-3 p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                      aria-label="Delete shift"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
                   </div>
                 </div>
               ))
