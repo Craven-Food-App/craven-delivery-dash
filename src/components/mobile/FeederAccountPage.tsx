@@ -103,45 +103,44 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({
             <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
             
             <div className="relative h-full flex flex-col justify-between">
-              {/* Balance */}
-              <div className="mb-4">
+              {/* Top Section - Balance */}
+              <div>
                 <p className="text-orange-100 text-xs mb-1">Available Balance</p>
                 <h2 className="text-white text-3xl font-black">${cardBalance.toFixed(2)}</h2>
               </div>
 
-              {/* Card Number */}
-              <div className="mb-4">
-                <p className="text-orange-100 text-xs mb-1">Card Number</p>
-                <p className="text-white text-lg font-mono tracking-widest">
+              {/* Middle Section - Card Number (centered) */}
+              <div className="flex items-center justify-center py-2">
+                <p className="text-white text-xl font-mono tracking-widest">
                   {showCardDetails ? cardNumber : cardNumber.replace(/\d(?=\d{4})/g, "*")}
                 </p>
               </div>
 
-              {/* Bottom Row */}
+              {/* Bottom Section - Expiry, CVV, Name, Brand */}
               <div className="flex items-end justify-between">
                 <div className="flex-1">
                   {/* Expiry and CVV */}
-                  <div className="flex gap-6 mb-2">
+                  <div className="flex gap-4 mb-1">
                     <div>
-                      <p className="text-orange-100 text-xs mb-0.5">Expiry Date</p>
+                      <p className="text-orange-100 text-[10px] mb-0.5">EXP</p>
                       <p className="text-white text-sm font-mono">
                         {showCardDetails ? expiryDate : "**/**"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-orange-100 text-xs mb-0.5">CVV</p>
+                      <p className="text-orange-100 text-[10px] mb-0.5">CVV</p>
                       <p className="text-white text-sm font-mono">
                         {showCardDetails ? cvv : "***"}
                       </p>
                     </div>
                   </div>
-                  {/* Cardholder */}
+                  {/* Cardholder Name */}
                   <div>
-                    <p className="text-orange-100 text-xs">Cardholder Name</p>
-                    <p className="text-white text-sm font-bold tracking-wide">{driverName.toUpperCase()}</p>
+                    <p className="text-white text-xs font-bold tracking-wider">{driverName.toUpperCase()}</p>
                   </div>
                 </div>
-                <div className="text-white text-xl font-black">FEEDER</div>
+                {/* Brand Logo */}
+                <div className="text-white text-lg font-black">FEEDER</div>
               </div>
             </div>
           </div>
