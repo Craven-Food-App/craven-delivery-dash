@@ -584,28 +584,30 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
           <p className="text-red-800 font-bold text-base">🔥 High Demand Zone: {highDemandZone.name}</p>
         </div>
 
-        {/* Week Strip - Only show in schedule view */}
-        {viewMode === 'schedule' && (
-          <div className="grid grid-cols-7 gap-2 mb-6">
-            {weekDays.map((item, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  setActiveDay(index);
+        {/* Week Strip - Always visible */}
+        <div className="grid grid-cols-7 gap-2 mb-6">
+          {weekDays.map((item, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                setActiveDay(index);
+                if (viewMode === 'available' || viewMode === 'scheduled') {
+                  // Keep current view mode when clicking days
+                } else {
                   setViewMode('schedule');
-                }}
-                className={`rounded-full py-3 text-center transition-all ${
-                  activeDay === index
-                    ? 'bg-red-900 text-white shadow-lg scale-105'
-                    : 'bg-orange-400/60 text-white hover:bg-orange-400/80'
-                }`}
-              >
-                <p className="text-xs font-semibold">{item.day}</p>
-                <p className="text-lg font-bold">{item.date}</p>
-              </button>
-            ))}
-          </div>
-        )}
+                }
+              }}
+              className={`rounded-full py-3 text-center transition-all ${
+                activeDay === index
+                  ? 'bg-red-900 text-white shadow-lg scale-105'
+                  : 'bg-orange-400/60 text-white hover:bg-orange-400/80'
+              }`}
+            >
+              <p className="text-xs font-semibold">{item.day}</p>
+              <p className="text-lg font-bold">{item.date}</p>
+            </button>
+          ))}
+        </div>
 
         {/* Section Title - Fixed */}
         {viewMode === 'schedule' && (
