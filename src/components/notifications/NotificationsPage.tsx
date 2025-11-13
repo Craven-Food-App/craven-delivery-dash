@@ -369,25 +369,6 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
     }
   };
 
-  const deleteAllTestNotifications = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Delete all test alert notifications (delivery alerts)
-      const { error } = await supabase
-        .from('order_notifications')
-        .delete()
-        .eq('user_id', user.id)
-        .in('notification_type', ['delivery_late', 'delivery_time_near', 'order_ready_pickup']);
-
-      if (error) throw error;
-      
-      fetchNotifications();
-    } catch (error) {
-      console.error('Error deleting test notifications:', error);
-    }
-  };
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -481,26 +462,16 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
           <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
           <p className="text-sm text-gray-600">Stay updated with your deliveries</p>
         </div>
-        <div className="flex gap-2">
-          {unreadCount > 0 && (
-            <Button 
-              onClick={markAllAsRead}
-              variant="outline" 
-              size="sm"
-              className="text-orange-600 border-orange-200 hover:bg-orange-50"
-            >
-              Mark all read
-            </Button>
-          )}
+        {unreadCount > 0 && (
           <Button 
-            onClick={deleteAllTestNotifications}
+            onClick={markAllAsRead}
             variant="outline" 
             size="sm"
-            className="text-red-600 border-red-200 hover:bg-red-50"
+            className="text-orange-600 border-orange-200 hover:bg-orange-50"
           >
-            Clear Test Alerts
+            Mark all read
           </Button>
-        </div>
+        )}
       </div>
 
       {/* Unread count badge */}
