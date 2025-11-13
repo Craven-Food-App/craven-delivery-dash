@@ -119,10 +119,14 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
         </div>
 
         {/* Card Display */}
-        <div className="px-6 mb-6">
+        <div className="px-6 mb-6 flex justify-center">
           <div
             className="bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 rounded-3xl p-6 shadow-2xl relative overflow-hidden"
-            style={{ aspectRatio: "1.586 / 1" }}
+            style={{ 
+              aspectRatio: "1.586 / 1",
+              width: "100%",
+              maxWidth: "340px"
+            }}
           >
             {/* Card shine effect */}
             <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
