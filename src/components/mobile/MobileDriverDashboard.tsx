@@ -28,6 +28,7 @@ import { DriverSupportChatPage } from './DriverSupportChatPage';
 import { getRatingColor, getRatingTier, formatRating, getTrendIcon, getTrendColor } from '@/utils/ratingHelpers';
 import { DriverBottomNav } from './DriverBottomNav';
 import NotificationsPage from '@/components/notifications/NotificationsPage';
+import FeederSidebarMenu from './FeederSidebarMenu';
 import CravenFillCountdownFlow from '@/components/CravenFillCountdownFlow';
 // Production readiness imports
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
@@ -1601,103 +1602,12 @@ export const MobileDriverDashboard: React.FC = () => {
       />}
 
       {/* Side Menu Overlay */}
-      {isMenuOpen && (
-        <div className="fixed inset-0 z-50">
-          {/* Backdrop */}
-          <div 
-            className="absolute inset-0 bg-black/50" 
-            onClick={() => setIsMenuOpen(false)}
-          />
-          
-          {/* Menu Panel */}
-          <div className="absolute left-0 top-0 h-full w-80 bg-white shadow-2xl">
-            {/* Header */}
-            <div className="p-6 border-b border-gray-100 bg-gradient-to-br from-gray-50 to-white safe-area-top">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xl font-bold text-gray-900">Torrance S</h2>
-                <button
-                  onClick={() => setIsMenuOpen(false)}
-                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200"
-                >
-                  <X className="h-4 w-4 text-gray-600" />
-                </button>
-              </div>
-              
-              {/* Rating Badge */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Star 
-                    className="h-5 w-5 fill-current" 
-                    style={{ color: getRatingColor(driverRating) }}
-                  />
-                  <span className="text-2xl font-bold" style={{ color: getRatingColor(driverRating) }}>
-                    {formatRating(driverRating)}
-                  </span>
-                  <Badge 
-                    className="text-white"
-                    style={{ backgroundColor: getRatingTier(driverRating, driverDeliveries).color }}
-                  >
-                    {getRatingTier(driverRating, driverDeliveries).icon} {getRatingTier(driverRating, driverDeliveries).name}
-                  </Badge>
-                  {ratingTrend !== 0 && (
-                    <span 
-                      className="text-sm font-semibold"
-                      style={{ color: getTrendColor(ratingTrend) }}
-                    >
-                      {getTrendIcon(ratingTrend)} {ratingTrend > 0 ? '+' : ''}{ratingTrend.toFixed(2)}
-                    </span>
-                  )}
-                </div>
-                
-                {/* Progress bar to next tier */}
-                <div className="space-y-1">
-                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full transition-all duration-300"
-                      style={{ 
-                        width: `${((driverRating / 5) * 100)}%`,
-                        backgroundColor: getRatingColor(driverRating)
-                      }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-gray-600">
-                    <span>{driverDeliveries} deliveries</span>
-                    <span>{((driverRating / 5) * 100).toFixed(0)}% perfect</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Menu Items */}
-            <div className="p-4 space-y-2">
-              {[
-                { icon: Home, label: 'Home', active: activeTab === 'home', path: 'Home' },
-                { icon: Calendar, label: 'Schedule', active: activeTab === 'schedule', path: 'Schedule' },
-                { icon: DollarSign, label: 'Earnings', active: activeTab === 'earnings', path: 'Earnings' },
-                { icon: Bell, label: 'Notifications', active: activeTab === 'notifications', path: 'Notifications' },
-                { icon: User, label: 'Account', active: activeTab === 'account', path: 'Account' },
-                { icon: Star, label: 'Ratings', active: activeTab === 'ratings', path: 'Ratings' },
-                { icon: TrendingUp, label: 'Promos', active: activeTab === 'promos', path: 'Promos' },
-                { icon: MessageCircle, label: 'Help', active: activeTab === 'help', path: 'Help' },
-                { icon: LogOut, label: 'Logout', active: false, path: 'Logout' }
-              ].map((item, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleMenuNavigation(item.path)}
-                  className={`w-full flex items-center gap-4 p-3 rounded-xl text-left transition-all ${
-                    item.active 
-                      ? 'bg-gray-100 text-gray-900' 
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <item.icon className="h-5 w-5" />
-                  <span className="font-medium">{item.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <FeederSidebarMenu
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        activeTab={activeTab}
+        onNavigate={(path) => handleMenuNavigation(path)}
+      />
 
       {/* Driver Bottom Navigation */}
       {!isCameraOpen && (
