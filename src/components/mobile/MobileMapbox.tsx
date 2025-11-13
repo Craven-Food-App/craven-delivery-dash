@@ -252,9 +252,29 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
       {isMapReady && (
         <button
           onClick={() => {
-            if (driverLocation && map.current) {
-              applyDriverLocation(driverLocation[0], driverLocation[1], true);
+            if (!map.current || !marker.current) return;
+            
+            // Get current location - prefer real location over manual
+            let currentLat: number;
+            let currentLng: number;
+            
+            if (location) {
+              currentLat = location.latitude;
+              currentLng = location.longitude;
+            } else if (driverLocation) {
+              currentLat = driverLocation[0];
+              currentLng = driverLocation[1];
+            } else {
+              return;
             }
+            
+            // Update marker and recenter map
+            marker.current.setLngLat([currentLng, currentLat]);
+            map.current.flyTo({ 
+              center: [currentLng, currentLat], 
+              zoom: Math.max(map.current.getZoom() || 14, 14), 
+              essential: true 
+            });
           }}
           className="fixed z-50 w-12 h-12 rounded-full bg-white/95 backdrop-blur shadow-xl flex items-center justify-center hover:bg-white active:scale-95 transition-all pointer-events-auto"
           style={{ top: '50%', right: '16px', transform: 'translateY(-50%)' }}
