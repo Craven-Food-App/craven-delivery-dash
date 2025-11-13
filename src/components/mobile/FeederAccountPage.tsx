@@ -102,16 +102,16 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({
             {/* Card shine effect */}
             <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
             
-            <div className="relative h-full flex flex-col justify-between">
+            <div className="relative h-full flex flex-col justify-between py-2">
               {/* Top Section - Balance */}
               <div>
-                <p className="text-orange-100 text-xs mb-1">Available Balance</p>
-                <h2 className="text-white text-3xl font-black">${cardBalance.toFixed(2)}</h2>
+                <p className="text-orange-100 text-xs mb-0.5">Available Balance</p>
+                <h2 className="text-white text-2xl font-black">${cardBalance.toFixed(2)}</h2>
               </div>
 
               {/* Middle Section - Card Number (centered) */}
-              <div className="flex items-center justify-center py-2">
-                <p className="text-white text-xl font-mono tracking-widest">
+              <div className="flex items-center justify-center py-1">
+                <p className="text-white text-lg font-mono tracking-widest">
                   {showCardDetails ? cardNumber : cardNumber.replace(/\d(?=\d{4})/g, "*")}
                 </p>
               </div>
@@ -120,27 +120,27 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({
               <div className="flex items-end justify-between">
                 <div className="flex-1">
                   {/* Expiry and CVV */}
-                  <div className="flex gap-4 mb-1">
+                  <div className="flex gap-3 mb-0.5">
                     <div>
-                      <p className="text-orange-100 text-[10px] mb-0.5">EXP</p>
-                      <p className="text-white text-sm font-mono">
+                      <p className="text-orange-100 text-[9px] mb-0.5">EXP</p>
+                      <p className="text-white text-xs font-mono">
                         {showCardDetails ? expiryDate : "**/**"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-orange-100 text-[10px] mb-0.5">CVV</p>
-                      <p className="text-white text-sm font-mono">
+                      <p className="text-orange-100 text-[9px] mb-0.5">CVV</p>
+                      <p className="text-white text-xs font-mono">
                         {showCardDetails ? cvv : "***"}
                       </p>
                     </div>
                   </div>
                   {/* Cardholder Name */}
                   <div>
-                    <p className="text-white text-xs font-bold tracking-wider">{driverName.toUpperCase()}</p>
+                    <p className="text-white text-[10px] font-bold tracking-wider">{driverName.toUpperCase()}</p>
                   </div>
                 </div>
                 {/* Brand Logo */}
-                <div className="text-white text-lg font-black">FEEDER</div>
+                <div className="text-white text-base font-black">FEEDER</div>
               </div>
             </div>
           </div>
