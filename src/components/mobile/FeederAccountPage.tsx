@@ -146,7 +146,7 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
               </div>
 
               {/* Bottom Section - Expiry, CVV, Name, Brand */}
-              <div className="flex items-end justify-between flex-shrink-0">
+              <div className="flex items-end justify-between flex-shrink-0" style={{ marginTop: '-30px' }}>
                 <div className="flex-1 min-w-0">
                   {/* Expiry and CVV */}
                   <div className="flex gap-2 mb-0.5">
