@@ -44,6 +44,32 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
     fetchNotifications();
   }, [fetchNotifications]);
 
+  // Set up real-time subscription for notifications
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel(`notifications_${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'order_notifications',
+          filter: `user_id=eq.${userId}`
+        },
+        () => {
+          console.log('Notification update received, refreshing...');
+          fetchNotifications();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, fetchNotifications]);
+
   // Monitor orders for driver-specific alerts
   useEffect(() => {
     if (!userId) return;
@@ -51,28 +77,46 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
     const checkOrderAlerts = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          console.log('No user found for alert checking');
+          return;
+        }
+
+        console.log('Checking order alerts for driver:', user.id);
 
         // Get assigned orders for this driver - check both order_assignments and orders tables
-        const { data: assignedOrders } = await supabase
+        const { data: assignedOrders, error: assignedError } = await supabase
           .from('order_assignments')
           .select('*, order:orders(*)')
           .eq('driver_id', user.id)
           .eq('status', 'accepted');
 
+        if (assignedError) {
+          console.error('Error fetching assigned orders:', assignedError);
+        }
+
         // Also check orders table directly for driver_id
-        const { data: directOrders } = await supabase
+        const { data: directOrders, error: directError } = await supabase
           .from('orders')
           .select('*')
           .eq('driver_id', user.id)
           .in('order_status', ['confirmed', 'preparing', 'ready', 'picked_up', 'in_transit']);
+
+        if (directError) {
+          console.error('Error fetching direct orders:', directError);
+        }
 
         const allOrders = [
           ...(assignedOrders?.map(a => a.order).filter(Boolean) || []),
           ...(directOrders || [])
         ];
 
-        if (allOrders.length === 0) return;
+        console.log(`Found ${allOrders.length} active orders to monitor`);
+
+        if (allOrders.length === 0) {
+          console.log('No active orders found');
+          return;
+        }
 
         const now = new Date();
         const alertsToCreate: Partial<Notification>[] = [];
@@ -157,8 +201,9 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
         }
 
         // Create notifications
+        console.log(`Creating ${alertsToCreate.length} new alerts`);
         for (const alert of alertsToCreate) {
-          await supabase
+          const { data, error } = await supabase
             .from('order_notifications')
             .insert({
               user_id: user.id,
@@ -167,7 +212,15 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
               title: alert.title || '',
               message: alert.message || '',
               is_read: false
-            });
+            })
+            .select()
+            .single();
+
+          if (error) {
+            console.error('Error creating notification:', error, alert);
+          } else {
+            console.log('Created notification:', data);
+          }
         }
 
         // Check for challenge notifications
@@ -222,11 +275,69 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
       }
     };
 
-    // Check alerts immediately and then every 30 seconds
+    // Check alerts immediately and then every 10 seconds for more responsive alerts
     checkOrderAlerts();
-    const interval = setInterval(checkOrderAlerts, 30000);
+    const interval = setInterval(checkOrderAlerts, 10000);
 
     return () => clearInterval(interval);
+  }, [userId, fetchNotifications]);
+
+  // Set up real-time subscription for order status changes
+  useEffect(() => {
+    if (!userId) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const orderChannel = supabase
+      .channel(`driver_orders_${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `driver_id=eq.${user.id}`
+        },
+        async (payload) => {
+          console.log('Order status changed:', payload);
+          const order = payload.new as any;
+          
+          // Immediately check if we need to create alerts for this order
+          const now = new Date();
+          
+          // Check if order is ready for pickup
+          if (order.order_status === 'ready') {
+            const { data: existingNotif } = await supabase
+              .from('order_notifications')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('order_id', order.id)
+              .eq('notification_type', 'order_ready_pickup')
+              .eq('is_read', false)
+              .limit(1);
+
+            if (!existingNotif || existingNotif.length === 0) {
+              await supabase
+                .from('order_notifications')
+                .insert({
+                  user_id: user.id,
+                  order_id: order.id,
+                  notification_type: 'order_ready_pickup',
+                  title: 'Order Ready for Pickup',
+                  message: `Order #${order.id.slice(0, 8)} is ready for pickup`,
+                  is_read: false
+                });
+              fetchNotifications();
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(orderChannel);
+    };
   }, [userId, fetchNotifications]);
 
   const markAsRead = async (notificationId: string) => {
