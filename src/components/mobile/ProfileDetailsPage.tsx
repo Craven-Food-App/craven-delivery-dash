@@ -43,11 +43,12 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
         .single();
 
       // Fetch user profile from drivers table if exists
+      // Only select columns that exist to avoid schema errors
       const { data: driverData } = await supabase
         .from('drivers')
-        .select('*')
+        .select('id, first_name, last_name, email, phone, street_address, city, state, zip_code')
         .eq('user_id', authUser.id)
-        .single();
+        .maybeSingle();
 
       if (driverData) {
         setProfile(driverData);
@@ -56,7 +57,7 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
           lastName: driverData.last_name || '',
           email: authUser.email || driverData.email || '',
           phone: driverData.phone || '',
-          dateOfBirth: driverData.date_of_birth || '',
+          dateOfBirth: '', // date_of_birth is encrypted, not accessible directly
           streetAddress: driverData.street_address || '',
           city: driverData.city || '',
           state: driverData.state || '',
@@ -106,45 +107,44 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
       if (!authUser) return;
 
       // Update drivers table if exists
+      // Only update columns that exist in the schema
       const { data: existingDriver } = await supabase
         .from('drivers')
         .select('id')
         .eq('user_id', authUser.id)
-        .single();
+        .maybeSingle();
+
+      const updateData: any = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        phone: formData.phone,
+        street_address: formData.streetAddress || null,
+        city: formData.city || null,
+        state: formData.state || null,
+        zip_code: formData.zipCode || null,
+      };
+
+      // Only add updated_at if column exists
+      updateData.updated_at = new Date().toISOString();
 
       if (existingDriver) {
         const { error } = await supabase
           .from('drivers')
-          .update({
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            phone: formData.phone,
-            date_of_birth: formData.dateOfBirth || null,
-            street_address: formData.streetAddress || null,
-            city: formData.city || null,
-            state: formData.state || null,
-            zip_code: formData.zipCode || null,
-            updated_at: new Date().toISOString(),
-          })
+          .update(updateData)
           .eq('user_id', authUser.id);
 
         if (error) throw error;
       } else {
         // Create driver record
+        const insertData: any = {
+          user_id: authUser.id,
+          ...updateData,
+          email: formData.email,
+        };
+
         const { error } = await supabase
           .from('drivers')
-          .insert({
-            user_id: authUser.id,
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            email: formData.email,
-            phone: formData.phone,
-            date_of_birth: formData.dateOfBirth || null,
-            street_address: formData.streetAddress || null,
-            city: formData.city || null,
-            state: formData.state || null,
-            zip_code: formData.zipCode || null,
-          });
+          .insert(insertData);
 
         if (error) throw error;
       }
