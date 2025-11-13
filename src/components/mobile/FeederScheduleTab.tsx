@@ -117,6 +117,22 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
   useEffect(() => {
     // Don't calculate while loading
     if (loading) {
+      console.log('Still loading, skipping calculation');
+      return;
+    }
+
+    // CRITICAL: Don't calculate if no schedules exist
+    if (!schedules || !Array.isArray(schedules) || schedules.length === 0) {
+      console.log('NO SCHEDULES - Skipping calculation, setting to null');
+      setTimeToNextShift(null);
+      return;
+    }
+
+    // CRITICAL: Don't calculate if no active schedules exist
+    const activeSchedules = schedules.filter(s => s && s.is_active === true);
+    if (activeSchedules.length === 0) {
+      console.log('NO ACTIVE SCHEDULES - Skipping calculation, setting to null');
+      setTimeToNextShift(null);
       return;
     }
 
@@ -125,24 +141,11 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       console.log('Loading state:', loading);
       console.log('Raw schedules array:', schedules);
       console.log('Schedules length:', schedules?.length);
-      console.log('Schedules type:', typeof schedules, Array.isArray(schedules));
+      console.log('Active schedules count:', activeSchedules.length);
       
-      // Early return if no schedules
-      if (!schedules || !Array.isArray(schedules) || schedules.length === 0) {
-        console.log('NO SCHEDULES ARRAY OR EMPTY - Setting timeToNextShift to null');
-        setTimeToNextShift(null);
-        return;
-      }
-      
-      // Filter to only active schedules
-      const activeSchedules = schedules.filter(s => s && s.is_active === true);
-      
-      console.log('Active schedules after filter:', activeSchedules);
-      console.log('Active schedules length:', activeSchedules.length);
-      console.log('Active schedules details:', activeSchedules.map(s => ({ id: s.id, day: s.day_of_week, time: s.start_time, active: s.is_active })));
-      
-      if (activeSchedules.length === 0) {
-        console.log('NO ACTIVE SCHEDULES FOUND - Setting timeToNextShift to null');
+      // Double-check before calculating
+      if (!schedules || schedules.length === 0 || activeSchedules.length === 0) {
+        console.log('DOUBLE-CHECK FAILED - No schedules, setting to null');
         setTimeToNextShift(null);
         return;
       }
