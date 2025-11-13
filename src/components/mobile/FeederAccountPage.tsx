@@ -154,20 +154,6 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
 
   const status = getStatus(driverPoints);
 
-  // Feeder Card data
-  const cardBalance = 3247.8;
-  const cardNumber = "4532 1234 5678 4829";
-  const expiryDate = "12/27";
-  const cvv = "842";
-
-  const transactions = [
-    { date: "Nov 12", description: "Daily Earnings Deposit", amount: 124.4, type: "credit" },
-    { date: "Nov 11", description: "Gas Station", amount: -45.0, type: "debit" },
-    { date: "Nov 11", description: "Daily Earnings Deposit", amount: 167.9, type: "credit" },
-    { date: "Nov 10", description: "Restaurant", amount: -28.5, type: "debit" },
-    { date: "Nov 10", description: "Daily Earnings Deposit", amount: 134.6, type: "credit" },
-  ];
-
   const getMenuItemColors = (color: string) => {
     const colors: Record<string, { bg: string; icon: string }> = {
       blue: { bg: "bg-blue-100", icon: "text-blue-600" },
