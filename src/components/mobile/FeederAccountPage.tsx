@@ -136,7 +136,7 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
 
               {/* Middle Section - Card Number (centered) */}
               <div className="flex items-center justify-center py-0.5 flex-shrink-0">
-                <p className="text-white text-sm font-mono tracking-wider break-all text-center leading-tight">
+                <p className="text-white text-lg font-mono tracking-widest break-all text-center leading-tight">
                   {showCardDetails ? cardNumber : "**** **** **** " + cardNumber.replace(/\s/g, "").slice(-4)}
                 </p>
               </div>
