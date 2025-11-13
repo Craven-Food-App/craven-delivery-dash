@@ -71,8 +71,8 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
           
           <p className="text-white text-sm font-semibold mb-4">Cravings spike in 12m</p>
           
-          {/* Craving Circle and Buttons */}
-          <div className="flex items-center gap-3 mb-4">
+          {/* Craving Circle, Graphs, and Buttons */}
+          <div className="flex items-start gap-3 mb-4">
             {/* Circular Progress */}
             <div className="relative w-28 h-28 flex-shrink-0">
               <svg className="w-full h-full transform -rotate-90">
@@ -90,15 +90,50 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
               </div>
             </div>
             
-            {/* Action Buttons */}
-            <div className="flex-1 space-y-1.5">
-              <button className="w-full bg-white rounded-full py-2 px-4 font-bold text-red-700 text-xs shadow-lg">
-                Go Online
-              </button>
-              <button className="w-full bg-white rounded-full py-2 px-4 font-bold text-red-700 text-xs shadow-lg">
-                Payout Req
-              </button>
+            {/* Earnings Graphs */}
+            <div className="flex-1 space-y-2">
+              {/* Delivery Payments Graph */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-2">
+                <p className="text-white text-[10px] font-semibold mb-1">Delivery Payments</p>
+                <div className="flex items-end gap-1 h-12">
+                  {[20, 35, 28, 42, 38, 30, 25].map((height, idx) => (
+                    <div key={idx} className="flex-1 flex flex-col items-center">
+                      <div 
+                        className="w-full bg-gradient-to-t from-orange-500 to-yellow-400 rounded-t"
+                        style={{ height: `${(height / 50) * 100}%` }}
+                      />
+                      <span className="text-white text-[8px] mt-0.5">{['M', 'T', 'W', 'T', 'F', 'S', 'S'][idx]}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Tips Graph */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-2">
+                <p className="text-white text-[10px] font-semibold mb-1">Tips</p>
+                <div className="flex items-end gap-1 h-12">
+                  {[15, 22, 18, 25, 20, 16, 12].map((height, idx) => (
+                    <div key={idx} className="flex-1 flex flex-col items-center">
+                      <div 
+                        className="w-full bg-gradient-to-t from-yellow-400 to-orange-300 rounded-t"
+                        style={{ height: `${(height / 30) * 100}%` }}
+                      />
+                      <span className="text-white text-[8px] mt-0.5">{['M', 'T', 'W', 'T', 'F', 'S', 'S'][idx]}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
+          </div>
+          
+          {/* Action Buttons - Side by Side */}
+          <div className="flex gap-2 mb-4">
+            <button className="flex-1 bg-white rounded-full py-2 px-4 font-bold text-red-700 text-xs shadow-lg">
+              Go Online
+            </button>
+            <button className="flex-1 bg-white rounded-full py-2 px-4 font-bold text-red-700 text-xs shadow-lg">
+              Payout Req
+            </button>
           </div>
         </div>
       </div>
