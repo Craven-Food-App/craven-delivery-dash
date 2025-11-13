@@ -246,39 +246,46 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
 
   return (
     <div className={`relative w-full h-full ${className}`}>
-      <div ref={mapContainer} className="w-full h-full" />
-
+      <div ref={mapContainer} className="w-full h-full" style={{ pointerEvents: 'auto' }} />
 
       {isMapReady && (
         <button
-          onClick={() => {
-            if (!map.current || !marker.current) return;
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Recenter button clicked', { driverLocation, mapReady: !!map.current, markerReady: !!marker.current });
             
-            // Get current location - prefer real location over manual
-            let currentLat: number;
-            let currentLng: number;
+            // Try to get location from multiple sources
+            let lat: number | null = null;
+            let lng: number | null = null;
             
             if (location) {
-              currentLat = location.latitude;
-              currentLng = location.longitude;
+              lat = location.latitude;
+              lng = location.longitude;
+              console.log('Using location from hook:', lat, lng);
             } else if (driverLocation) {
-              currentLat = driverLocation[0];
-              currentLng = driverLocation[1];
-            } else {
-              return;
+              lat = driverLocation[0];
+              lng = driverLocation[1];
+              console.log('Using driverLocation:', lat, lng);
+            } else if (marker.current) {
+              // Fallback: get current marker position
+              const currentPos = marker.current.getLngLat();
+              lat = currentPos.lat;
+              lng = currentPos.lng;
+              console.log('Using marker position:', lat, lng);
             }
             
-            // Update marker and recenter map
-            marker.current.setLngLat([currentLng, currentLat]);
-            map.current.flyTo({ 
-              center: [currentLng, currentLat], 
-              zoom: Math.max(map.current.getZoom() || 14, 14), 
-              essential: true 
-            });
+            if (lat !== null && lng !== null && map.current && marker.current) {
+              console.log('Calling applyDriverLocation with:', lat, lng);
+              applyDriverLocation(lat, lng, true);
+            } else {
+              console.error('Cannot recenter: missing data', { lat, lng, map: !!map.current, marker: !!marker.current });
+            }
           }}
-          className="fixed z-50 w-12 h-12 rounded-full bg-white/95 backdrop-blur shadow-xl flex items-center justify-center hover:bg-white active:scale-95 transition-all pointer-events-auto"
-          style={{ top: '50%', right: '16px', transform: 'translateY(-50%)' }}
+          className="absolute z-[100] w-12 h-12 rounded-full bg-white/95 backdrop-blur shadow-xl flex items-center justify-center hover:bg-white active:scale-95 transition-all cursor-pointer"
+          style={{ top: '50%', right: '16px', transform: 'translateY(-50%)', pointerEvents: 'auto' }}
           aria-label="Recenter on driver location"
+          type="button"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-6 h-6 text-gray-700">
             <path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" />
