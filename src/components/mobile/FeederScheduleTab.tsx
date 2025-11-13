@@ -73,7 +73,13 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
         .order('day_of_week')
         .order('start_time');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching schedules:', error);
+        throw error;
+      }
+      
+      console.log('Fetched schedules from DB:', data);
+      console.log('Number of schedules fetched:', data?.length || 0);
       setSchedules(data || []);
     } catch (error) {
       console.error('Error fetching schedules:', error);
@@ -102,13 +108,18 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
   // Calculate time to next shift using real schedule data
   useEffect(() => {
     const calculateTimeToNextShift = () => {
-      console.log('Calculating time to next shift. Schedules:', schedules);
+      console.log('=== CALCULATING TIME TO NEXT SHIFT ===');
+      console.log('Raw schedules array:', schedules);
+      console.log('Schedules length:', schedules?.length);
       
       // Filter to only active schedules
-      const activeSchedules = schedules.filter(s => s.is_active);
+      const activeSchedules = schedules?.filter(s => s.is_active) || [];
       
-      if (!activeSchedules || activeSchedules.length === 0) {
-        console.log('No active schedules found, setting to null');
+      console.log('Active schedules after filter:', activeSchedules);
+      console.log('Active schedules length:', activeSchedules.length);
+      
+      if (!schedules || schedules.length === 0 || activeSchedules.length === 0) {
+        console.log('NO ACTIVE SCHEDULES - Setting timeToNextShift to null');
         setTimeToNextShift(null);
         return;
       }
