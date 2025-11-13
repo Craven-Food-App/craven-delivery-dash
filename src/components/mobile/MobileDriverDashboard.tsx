@@ -18,11 +18,11 @@ import MobileDriverWelcomeScreen from './MobileDriverWelcomeScreen';
 import { SpeedLimitSign } from './SpeedLimitSign';
 import { useDriverLocation } from '@/hooks/useDriverLocation';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { DriverPromosPage } from './DriverPromosPage';
+import FeederPromotionsTab from './FeederPromotionsTab';
 import { DeliveryZone, getZoneForLocation } from '@/data/deliveryZones';
 import FeederScheduleTab from './FeederScheduleTab';
 import CorporateEarningsDashboard from './CorporateEarningsDashboard';
-import { AccountSection } from './AccountSection';
+import FeederAccountPage from './FeederAccountPage';
 import FeederRatingsTab from './FeederRatingsTab';
 import { DriverSupportChatPage } from './DriverSupportChatPage';
 import { getRatingColor, getRatingTier, formatRating, getTrendIcon, getTrendColor } from '@/utils/ratingHelpers';
@@ -1214,13 +1214,14 @@ export const MobileDriverDashboard: React.FC = () => {
         )}
         
         {activeTab === 'account' && (
-          <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
-            <div className="min-h-screen">
-              <AccountSection 
-                activeTab={activeTab}
-                onTabChange={(tab) => setActiveTab(tab as any)}
-              />
-            </div>
+          <div className="fixed inset-0 z-20 overflow-hidden">
+            <FeederAccountPage 
+              onOpenMenu={() => setIsMenuOpen(true)}
+              onOpenNotifications={() => {
+                setActiveTab('notifications');
+                navigate('/mobile?tab=notifications');
+              }}
+            />
           </div>
         )}
         
@@ -1237,16 +1238,14 @@ export const MobileDriverDashboard: React.FC = () => {
         )}
         
         {activeTab === 'promos' && (
-          <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
-            <div className="min-h-screen">
-              <DriverPromosPage 
-                onOpenMenu={() => setIsMenuOpen(true)}
-                onOpenNotifications={() => {
-                  setActiveTab('notifications');
-                  navigate('/mobile?tab=notifications');
-                }}
-              />
-            </div>
+          <div className="fixed inset-0 z-20 overflow-hidden">
+            <FeederPromotionsTab 
+              onOpenMenu={() => setIsMenuOpen(true)}
+              onOpenNotifications={() => {
+                setActiveTab('notifications');
+                navigate('/mobile?tab=notifications');
+              }}
+            />
           </div>
         )}
         
