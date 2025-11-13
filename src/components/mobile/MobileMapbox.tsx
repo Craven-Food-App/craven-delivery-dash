@@ -9,6 +9,7 @@ import {
   randomizeZoneDemand,
   zonesToGeoJSON,
 } from '@/data/deliveryZones';
+import driverNavIcon from '@/assets/driver_nav_icon.png';
 
 interface MobileMapboxProps {
   className?: string;
@@ -208,7 +209,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
         el.style.cssText = `
           width: 41px;
           height: 41px;
-          background-image: url('/src/assets/driver_nav_icon.png');
+          background-image: url('${driverNavIcon}');
           background-size: contain;
           background-repeat: no-repeat;
           background-position: center;
