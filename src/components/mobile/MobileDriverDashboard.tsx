@@ -889,10 +889,6 @@ export const MobileDriverDashboard: React.FC = () => {
             setCurrentCity(zone.name);
           }
 
-          if (!isInZone) {
-            toast.error('You are outside the delivery zone. Orders may not be available in your current location.');
-          }
-
           // Update driver location in database for auto-assignment
           const {
             error: locationError
@@ -1265,34 +1261,8 @@ export const MobileDriverDashboard: React.FC = () => {
         
         {/* OFFLINE STATE */}
         {activeTab === 'home' && driverState === 'offline' && <>
-            {/* Change Zone Button - Top Left */}
-            <div className="fixed left-4 z-20 pointer-events-auto" style={{ top: 'calc(env(safe-area-inset-top, 150px) + 16px)' }}>
-              
-            </div>
-
             {/* Content Container */}
             <div className="flex flex-col justify-end h-full px-4 space-y-4 pointer-events-auto" style={{ paddingBottom: '100px' }}>
-              {/* Delivery Zone Status */}
-              {lastZoneCheck && (
-                <div className={`bg-card/95 backdrop-blur-sm rounded-2xl p-3 shadow-sm border border-border/10 ${
-                  isInDeliveryZone ? 'border-green-200 bg-green-50/50' : 'border-red-200 bg-red-50/50'
-                }`}>
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-2 h-2 rounded-full ${isInDeliveryZone ? 'bg-green-500' : 'bg-red-500'}`} />
-                    <span className={`text-sm font-medium ${isInDeliveryZone ? 'text-green-700' : 'text-red-700'}`}>
-                      {isInDeliveryZone ? 'In Delivery Zone' : 'Outside Delivery Zone'}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {lastZoneCheck.toLocaleTimeString()}
-                    </span>
-                  </div>
-                  {!isInDeliveryZone && (
-                    <p className="text-xs text-red-600 mt-1">
-                      Move to a delivery zone to receive orders
-                    </p>
-                  )}
-                </div>
-              )}
 
               {/* Popular Times Chart with CRAVE NOW Button */}
               <div className="bg-card/95 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-border/10 overflow-hidden">

@@ -248,78 +248,19 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
     <div className={`relative w-full h-full ${className}`}>
       <div ref={mapContainer} className="w-full h-full" />
 
+
       {isMapReady && (
-        <div className="absolute inset-x-4 bottom-4 space-y-4 pointer-events-none">
-          <div className="bg-white/95 backdrop-blur rounded-2xl p-4 shadow-xl pointer-events-auto">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                type="button"
-                onClick={handleUpdateDemand}
-                className="flex-1 bg-sky-600 text-white font-semibold py-3 rounded-xl shadow hover:bg-sky-700 active:scale-[0.98] transition"
-              >
-                Update Zone Demand
-              </button>
-              <button
-                type="button"
-                onClick={handleMoveDriver}
-                className="flex-1 bg-indigo-600 text-white font-semibold py-3 rounded-xl shadow hover:bg-indigo-700 active:scale-[0.98] transition"
-              >
-                Change Driver Location
-              </button>
-            </div>
-            <div className="mt-4 p-3 rounded-xl font-medium text-center bg-gray-100 border border-gray-200 text-gray-700">
-              {statusMessage}
-            </div>
-            <div className="mt-4 text-sm text-gray-600">
-              <h3 className="font-semibold mb-2">Legend</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div className="flex items-center gap-2 text-red-600">
-                  <span className="w-3 h-3 rounded-full bg-red-500" /> High Demand (Red)
-                </div>
-                <div className="flex items-center gap-2 text-amber-600">
-                  <span className="w-3 h-3 rounded-full bg-amber-500" /> Moderate Demand (Orange)
-                </div>
-                <div className="flex items-center gap-2 text-emerald-600">
-                  <span className="w-3 h-3 rounded-full bg-emerald-500" /> Low Demand (Green)
-                </div>
-                <div className="flex items-center gap-2 text-blue-600">
-                  <span className="w-3 h-3 rounded-full bg-blue-500" /> Driver Location
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white/95 backdrop-blur rounded-2xl p-4 shadow-xl pointer-events-auto">
-            <h2 className="text-lg font-semibold text-gray-800 mb-3">Zone Details</h2>
-            <ul className="space-y-3 text-sm">
-              {legendItems.map((item) => (
-                <li
-                  key={item.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border-l-4"
-                  style={{ borderColor: item.borderColor }}
-                >
-                  <span className="font-medium text-gray-800">{item.name}</span>
-                  <span className={`text-xs font-semibold text-white px-2 py-1 rounded-full ${item.badgeClass}`}>
-                    {item.demand}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-
-      {isMapReady && showRecenter && (
         <button
           onClick={() => {
             if (driverLocation && map.current) {
               applyDriverLocation(driverLocation[0], driverLocation[1], true);
             }
           }}
-          className="absolute right-4 bottom-28 z-40 w-11 h-11 rounded-full bg-white/90 backdrop-blur shadow-lg flex items-center justify-center active:scale-95"
-          aria-label="Recenter on my location"
+          className="fixed right-4 z-50 w-12 h-12 rounded-full bg-white/95 backdrop-blur shadow-xl flex items-center justify-center hover:bg-white active:scale-95 transition-all pointer-events-auto"
+          style={{ bottom: '120px' }}
+          aria-label="Recenter on driver location"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-gray-700">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-6 h-6 text-gray-700">
             <path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" />
             <circle cx="12" cy="12" r="3" />
           </svg>
