@@ -100,7 +100,7 @@ export const MobileDriverDashboard: React.FC = () => {
   const [earningMode, setEarningMode] = useState<EarningMode>('perHour');
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [onlineTime, setOnlineTime] = useState(0);
-  const [currentCity, setCurrentCity] = useState('Toledo');
+  const [currentCity, setCurrentCity] = useState<string>('');
   const [user, setUser] = useState<any>(null);
   
   // Persistent session management

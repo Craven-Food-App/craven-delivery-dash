@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Menu, Bell, Star, TrendingUp, ThumbsUp, Clock, Package } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 type FeederRatingsTabProps = {
   onOpenMenu?: () => void;
@@ -12,48 +13,192 @@ const FeederRatingsTab: React.FC<FeederRatingsTabProps> = ({
   onOpenNotifications
 }) => {
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [overallRating, setOverallRating] = useState(0);
+  const [totalRatings, setTotalRatings] = useState(0);
+  const [stats, setStats] = useState({
+    onTime: 0,
+    accuracy: 0,
+    quality: 0,
+    satisfaction: 0
+  });
+  const [ratingBreakdown, setRatingBreakdown] = useState<Array<{ stars: number; count: number; percentage: number }>>([]);
+  const [recentReviews, setRecentReviews] = useState<Array<{
+    rating: number;
+    customer: string;
+    time: string;
+    comment: string;
+    tags: string[];
+  }>>([]);
+  const [cityPercentile, setCityPercentile] = useState<number | null>(null);
 
-  const overallRating = 4.9;
-  const totalRatings = 847;
-  
-  const stats = {
-    onTime: 98,
-    accuracy: 96,
-    quality: 99,
-    satisfaction: 94
+  useEffect(() => {
+    fetchRatingsData();
+  }, [selectedFilter]);
+
+  const fetchRatingsData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Fetch driver profile for overall rating
+      const { data: profile } = await supabase
+        .from('driver_profiles')
+        .select('rating, total_deliveries')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profile) {
+        setOverallRating(Number(profile.rating) || 0);
+        setTotalRatings(profile.total_deliveries || 0);
+      }
+
+      // Fetch performance metrics
+      const { data: metrics } = await supabase
+        .from('driver_performance_metrics')
+        .select('*')
+        .eq('driver_id', user.id)
+        .single();
+
+      if (metrics) {
+        setStats({
+          onTime: Math.round(Number(metrics.on_time_rate) || 0),
+          accuracy: Math.round(Number(metrics.avg_professionalism || metrics.avg_communication || 0) * 20),
+          quality: Math.round(Number(metrics.avg_food_care || 0) * 20),
+          satisfaction: Math.round(Number(metrics.overall_rating || 0) * 20)
+        });
+        setCityPercentile(metrics.city_percentile || null);
+      } else {
+        // Fallback: calculate from order_feedback
+        const { data: feedback } = await supabase
+          .from('order_feedback')
+          .select('rating, comment, created_at, customer_id')
+          .eq('driver_id', user.id)
+          .eq('feedback_type', 'customer_to_driver')
+          .not('rating', 'is', null)
+          .order('created_at', { ascending: false });
+
+        if (feedback && feedback.length > 0) {
+          const avgRating = feedback.reduce((sum, f) => sum + (f.rating || 0), 0) / feedback.length;
+          setStats({
+            onTime: Math.round(avgRating * 20),
+            accuracy: Math.round(avgRating * 20),
+            quality: Math.round(avgRating * 20),
+            satisfaction: Math.round(avgRating * 20)
+          });
+        }
+      }
+
+      // Fetch rating breakdown from order_feedback
+      const { data: allFeedback } = await supabase
+        .from('order_feedback')
+        .select('rating')
+        .eq('driver_id', user.id)
+        .eq('feedback_type', 'customer_to_driver')
+        .not('rating', 'is', null);
+
+      if (allFeedback && allFeedback.length > 0) {
+        const breakdown = [5, 4, 3, 2, 1].map(stars => {
+          const count = allFeedback.filter(f => f.rating === stars).length;
+          const percentage = (count / allFeedback.length) * 100;
+          return { stars, count, percentage: Math.round(percentage * 10) / 10 };
+        });
+        setRatingBreakdown(breakdown);
+        setTotalRatings(allFeedback.length);
+      } else {
+        // Default empty breakdown
+        setRatingBreakdown([
+          { stars: 5, count: 0, percentage: 0 },
+          { stars: 4, count: 0, percentage: 0 },
+          { stars: 3, count: 0, percentage: 0 },
+          { stars: 2, count: 0, percentage: 0 },
+          { stars: 1, count: 0, percentage: 0 }
+        ]);
+      }
+
+      // Fetch recent reviews with customer info
+      let reviewsQuery = supabase
+        .from('order_feedback')
+        .select('rating, comment, created_at, customer_id, order_id, customer:users!order_feedback_customer_id_fkey(email, full_name)')
+        .eq('driver_id', user.id)
+        .eq('feedback_type', 'customer_to_driver')
+        .not('rating', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      // Apply filter
+      if (selectedFilter === '5stars') {
+        reviewsQuery = reviewsQuery.eq('rating', 5);
+      } else if (selectedFilter === '4stars') {
+        reviewsQuery = reviewsQuery.eq('rating', 4);
+      } else if (selectedFilter === 'recent') {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        reviewsQuery = reviewsQuery.gte('created_at', weekAgo.toISOString());
+      }
+
+      const { data: reviews } = await reviewsQuery;
+
+      if (reviews) {
+        const formattedReviews = reviews.map(review => {
+          const customer = review.customer as any;
+          const customerName = customer?.full_name || customer?.email?.split('@')[0] || 'Customer';
+          const nameParts = customerName.split(' ');
+          const displayName = nameParts.length > 1 
+            ? `${nameParts[0]} ${nameParts[nameParts.length - 1].charAt(0)}.`
+            : customerName;
+
+          const timeAgo = getTimeAgo(new Date(review.created_at));
+          
+          // Extract tags from comment or use defaults
+          const tags: string[] = [];
+          if (review.comment) {
+            const commentLower = review.comment.toLowerCase();
+            if (commentLower.includes('fast') || commentLower.includes('quick')) tags.push('Fast');
+            if (commentLower.includes('friendly') || commentLower.includes('nice')) tags.push('Friendly');
+            if (commentLower.includes('professional')) tags.push('Professional');
+            if (commentLower.includes('careful') || commentLower.includes('care')) tags.push('Careful');
+            if (commentLower.includes('on time') || commentLower.includes('timely')) tags.push('On Time');
+          }
+          if (tags.length === 0 && review.rating === 5) {
+            tags.push('Great Service');
+          }
+
+          return {
+            rating: review.rating || 5,
+            customer: displayName,
+            time: timeAgo,
+            comment: review.comment || 'No comment provided',
+            tags: tags.length > 0 ? tags : ['Satisfied']
+          };
+        });
+        setRecentReviews(formattedReviews);
+      }
+    } catch (error) {
+      console.error('Error fetching ratings:', error);
+      toast.error('Failed to load ratings');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const ratingBreakdown = [
-    { stars: 5, count: 789, percentage: 93 },
-    { stars: 4, count: 45, percentage: 5 },
-    { stars: 3, count: 10, percentage: 1 },
-    { stars: 2, count: 2, percentage: 0.5 },
-    { stars: 1, count: 1, percentage: 0.5 }
-  ];
+  const getTimeAgo = (date: Date): string => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
 
-  const recentReviews = [
-    {
-      rating: 5,
-      customer: "Sarah M.",
-      time: "2 hours ago",
-      comment: "Amazing service! Food arrived hot and the driver was super friendly.",
-      tags: ["On Time", "Professional"]
-    },
-    {
-      rating: 5,
-      customer: "Mike T.",
-      time: "5 hours ago",
-      comment: "Always reliable! Best delivery driver in Detroit.",
-      tags: ["Fast", "Careful"]
-    },
-    {
-      rating: 4,
-      customer: "Lisa R.",
-      time: "1 day ago",
-      comment: "Good service, just took a bit longer than expected.",
-      tags: ["Friendly"]
+    if (diffMins < 60) {
+      return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    } else if (diffDays < 7) {
+      return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+    } else {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
-  ];
+  };
 
   const getStatIconColor = (color: string) => {
     const colors: Record<string, { bg: string; icon: string }> = {
@@ -64,6 +209,14 @@ const FeederRatingsTab: React.FC<FeederRatingsTabProps> = ({
     };
     return colors[color] || colors.blue;
   };
+
+  if (loading) {
+    return (
+      <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-orange-500 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-orange-500 overflow-y-auto" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
@@ -108,21 +261,23 @@ const FeederRatingsTab: React.FC<FeederRatingsTabProps> = ({
           
           <div className="relative">
             <p className="text-white/90 text-sm font-semibold mb-2">Your Feeder Score</p>
-            <h2 className="text-8xl font-black text-white mb-2">{overallRating}</h2>
+            <h2 className="text-8xl font-black text-white mb-2">{overallRating.toFixed(1)}</h2>
             <div className="flex items-center justify-center gap-1 mb-3">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                   key={star}
-                  className="w-6 h-6 text-yellow-200"
-                  fill="currentColor"
+                  className={`w-6 h-6 ${star <= Math.round(overallRating) ? 'text-yellow-200' : 'text-white/30'}`}
+                  fill={star <= Math.round(overallRating) ? 'currentColor' : 'none'}
                 />
               ))}
             </div>
-            <p className="text-white font-semibold">Based on {totalRatings} feeds</p>
-            <div className="mt-4 inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
-              <TrendingUp className="w-4 h-4 text-white" />
-              <span className="text-white text-sm font-bold">Top 5% in Detroit</span>
-            </div>
+            <p className="text-white font-semibold">Based on {totalRatings} {totalRatings === 1 ? 'feed' : 'feeds'}</p>
+            {cityPercentile && (
+              <div className="mt-4 inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
+                <TrendingUp className="w-4 h-4 text-white" />
+                <span className="text-white text-sm font-bold">Top {cityPercentile}% in your city</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -158,7 +313,7 @@ const FeederRatingsTab: React.FC<FeederRatingsTabProps> = ({
       <div className="px-6 mb-6">
         <h3 className="text-white text-xl font-bold mb-3 tracking-wide">RATING BREAKDOWN</h3>
         <div className="bg-orange-50 rounded-2xl p-5 shadow-lg">
-          {ratingBreakdown.map((item) => (
+          {ratingBreakdown.length > 0 ? ratingBreakdown.map((item) => (
             <div key={item.stars} className="flex items-center gap-3 mb-3 last:mb-0">
               <div className="flex items-center gap-1 w-16">
                 <span className="text-gray-900 font-bold">{item.stars}</span>
@@ -174,7 +329,9 @@ const FeederRatingsTab: React.FC<FeederRatingsTabProps> = ({
               </div>
               <span className="text-gray-700 text-sm font-semibold w-12 text-right">{item.count}</span>
             </div>
-          ))}
+          )) : (
+            <p className="text-gray-500 text-center py-4">No ratings yet</p>
+          )}
         </div>
       </div>
 
@@ -204,40 +361,48 @@ const FeederRatingsTab: React.FC<FeederRatingsTabProps> = ({
       {/* Recent Reviews */}
       <div className="px-6 pb-24">
         <h3 className="text-white text-xl font-bold mb-3 tracking-wide">RECENT REVIEWS</h3>
-        <div className="space-y-3">
-          {recentReviews.map((review, idx) => (
-            <div key={idx} className="bg-orange-50 rounded-2xl p-4 shadow-lg">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-bold">
-                    {review.customer.charAt(0)}
+        {recentReviews.length > 0 ? (
+          <div className="space-y-3">
+            {recentReviews.map((review, idx) => (
+              <div key={idx} className="bg-orange-50 rounded-2xl p-4 shadow-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-bold">
+                      {review.customer.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-gray-900 font-bold text-sm">{review.customer}</p>
+                      <p className="text-gray-500 text-xs">{review.time}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-gray-900 font-bold text-sm">{review.customer}</p>
-                    <p className="text-gray-500 text-xs">{review.time}</p>
+                  <div className="flex items-center gap-1">
+                    {[...Array(review.rating)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 text-yellow-500" fill="currentColor" />
+                    ))}
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  {[...Array(review.rating)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 text-yellow-500" fill="currentColor" />
-                  ))}
-                </div>
+                <p className="text-gray-700 text-sm mb-3">{review.comment}</p>
+                {review.tags.length > 0 && (
+                  <div className="flex gap-2 flex-wrap">
+                    {review.tags.map((tag, i) => (
+                      <span key={i} className="bg-orange-200 text-orange-800 px-3 py-1 rounded-full text-xs font-semibold">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
-              <p className="text-gray-700 text-sm mb-3">{review.comment}</p>
-              <div className="flex gap-2 flex-wrap">
-                {review.tags.map((tag, i) => (
-                  <span key={i} className="bg-orange-200 text-orange-800 px-3 py-1 rounded-full text-xs font-semibold">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-orange-50 rounded-2xl p-8 text-center shadow-lg">
+            <p className="text-gray-500">No reviews yet</p>
+            <p className="text-sm text-gray-400 mt-2">Your customer reviews will appear here</p>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 export default FeederRatingsTab;
-

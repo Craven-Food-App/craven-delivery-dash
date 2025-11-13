@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Menu, Bell, Flame, MapPin, Clock, Target, TrendingUp, Users, Zap, Award, ChevronRight, Package } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 type FeederPromotionsTabProps = {
   onOpenMenu?: () => void;
@@ -12,125 +13,129 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
   onOpenNotifications
 }) => {
   const [activeTab, setActiveTab] = useState('promos');
+  const [loading, setLoading] = useState(true);
+  const [promotions, setPromotions] = useState<any[]>([]);
+  const [challenges, setChallenges] = useState<any[]>([]);
 
-  const promotions = [
-    {
-      zone: "Downtown Detroit",
-      date: "11/14/2024",
-      timeframe: "3:30 AM - 5:29 AM",
-      description: "Fire Pay",
-      bonus: "$2.50 on top of deliveries",
-      type: "peak",
-      active: true
-    },
-    {
-      zone: "Airport Zone",
-      date: "11/14/2024",
-      timeframe: "11:00 AM - 2:00 PM",
-      description: "Lunch Rush Boost",
-      bonus: "$1.00 on top of deliveries",
-      type: "peak",
-      active: true
-    },
-    {
-      zone: "Midtown",
-      date: "11/15/2024",
-      timeframe: "5:00 PM - 9:00 PM",
-      description: "Dinner Surge",
-      bonus: "$3.00 on top of deliveries",
-      type: "peak",
-      active: false
-    },
-    {
-      zone: "All Zones",
-      date: "11/14-11/20",
-      timeframe: "All Day",
-      description: "Weekend Warrior",
-      bonus: "$1.50 on top of deliveries",
-      type: "extended",
-      active: true
-    }
-  ];
+  useEffect(() => {
+    fetchPromotionsData();
+  }, [activeTab]);
 
-  const challenges = [
-    {
-      title: "Feed Frenzy",
-      type: "Delivery Count",
-      description: "Complete 50 deliveries this week",
-      progress: 34,
-      total: 50,
-      reward: "$75",
-      icon: Package,
-      color: "orange",
-      deadline: "3 days left"
-    },
-    {
-      title: "Speed Demon",
-      type: "Time-Based",
-      description: "Maintain under 25min average delivery time",
-      progress: 22,
-      total: 25,
-      reward: "$50",
-      icon: Zap,
-      color: "yellow",
-      deadline: "Ongoing"
-    },
-    {
-      title: "Peak Master",
-      type: "Peak Hours",
-      description: "Work 15 hours during peak times",
-      progress: 9,
-      total: 15,
-      reward: "$100",
-      icon: TrendingUp,
-      color: "red",
-      deadline: "5 days left"
-    },
-    {
-      title: "Zone Explorer",
-      type: "Geographic",
-      description: "Deliver to 5 different zones",
-      progress: 3,
-      total: 5,
-      reward: "$40",
-      icon: MapPin,
-      color: "blue",
-      deadline: "2 days left"
-    },
-    {
-      title: "Elite Status",
-      type: "Rank-Based",
-      description: "Stay in top 10% of drivers",
-      progress: 1,
-      total: 1,
-      reward: "$200",
-      icon: Award,
-      color: "purple",
-      deadline: "End of month"
-    },
-    {
-      title: "Hot Streak",
-      type: "Streak-Based",
-      description: "Complete 7 consecutive days",
-      progress: 5,
-      total: 7,
-      reward: "$60",
-      icon: Flame,
-      color: "red",
-      deadline: "2 days left"
-    },
-    {
-      title: "Feeder Recruiter",
-      type: "Referral",
-      description: "Refer 3 new drivers who complete 10 deliveries",
-      progress: 1,
-      total: 3,
-      reward: "$150",
-      icon: Users,
-      color: "green",
-      deadline: "No deadline"
+  const fetchPromotionsData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const now = new Date().toISOString();
+
+      // Fetch active promotions (surge zones)
+      const { data: surgeZones } = await supabase
+        .from('driver_surge_zones')
+        .select('*')
+        .eq('is_active', true)
+        .gte('active_until', now)
+        .order('surge_multiplier', { ascending: false })
+        .limit(10);
+
+      if (surgeZones) {
+        const formattedPromos = surgeZones.map(zone => {
+          const startDate = new Date(zone.active_until);
+          startDate.setHours(0, 0, 0, 0);
+          const endDate = new Date(zone.active_until);
+          endDate.setHours(23, 59, 59, 999);
+
+          return {
+            zone: zone.zone_name || zone.city,
+            date: startDate.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }),
+            timeframe: `${new Date(zone.active_from || zone.active_until).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - ${new Date(zone.active_until).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`,
+            description: `Surge ${zone.surge_multiplier}x`,
+            bonus: `$${(zone.surge_multiplier - 1).toFixed(2)} multiplier`,
+            type: 'peak',
+            active: true,
+            id: zone.id
+          };
+        });
+        setPromotions(formattedPromos);
+      }
+
+      // Fetch challenges (promotions with challenge_type)
+      const { data: activePromotions } = await supabase
+        .from('driver_promotions')
+        .select('*')
+        .eq('is_active', true)
+        .gte('ends_at', now)
+        .lte('starts_at', now)
+        .order('priority', { ascending: true })
+        .limit(20);
+
+      // Fetch user's participation in challenges
+      const { data: participations } = await supabase
+        .from('driver_promotion_participation')
+        .select('*, promotion:driver_promotions(*)')
+        .eq('driver_id', user.id)
+        .eq('is_completed', false);
+
+      if (activePromotions && participations) {
+        const formattedChallenges = activePromotions.map(promo => {
+          const participation = participations.find(p => p.promotion_id === promo.id);
+          const progress = participation?.current_progress || 0;
+          const total = promo.requirement_value || 1;
+          const progressPercentage = total > 0 ? (progress / total) * 100 : 0;
+
+          // Map challenge types to icons and colors
+          const typeMap: Record<string, { icon: any; color: string }> = {
+            delivery_count: { icon: Package, color: 'orange' },
+            time_based: { icon: Zap, color: 'yellow' },
+            peak_hours: { icon: TrendingUp, color: 'red' },
+            geographic: { icon: MapPin, color: 'blue' },
+            rating_based: { icon: Award, color: 'purple' },
+            streak_based: { icon: Flame, color: 'red' },
+            referral: { icon: Users, color: 'green' }
+          };
+
+          const typeInfo = typeMap[promo.challenge_type] || { icon: Target, color: 'orange' };
+
+          // Calculate deadline
+          const endsAt = new Date(promo.ends_at);
+          const daysLeft = Math.ceil((endsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+          const deadline = daysLeft > 0 
+            ? `${daysLeft} day${daysLeft !== 1 ? 's' : ''} left`
+            : 'Ending soon';
+
+          // Format reward
+          let reward = '$0';
+          if (promo.reward_type === 'cash_bonus' && promo.reward_amount_cents) {
+            reward = `$${(promo.reward_amount_cents / 100).toFixed(0)}`;
+          } else if (promo.reward_type === 'per_delivery_bonus' && promo.reward_amount_cents) {
+            reward = `$${(promo.reward_amount_cents / 100).toFixed(2)} per delivery`;
+          } else if (promo.reward_type === 'multiplier' && promo.reward_multiplier) {
+            reward = `${promo.reward_multiplier}x multiplier`;
+          }
+
+          return {
+            id: promo.id,
+            title: promo.title,
+            type: promo.challenge_type?.replace('_', ' ') || 'Challenge',
+            description: promo.description || promo.short_description || '',
+            progress: Math.min(progress, total),
+            total,
+            reward,
+            icon: typeInfo.icon,
+            color: typeInfo.color,
+            deadline,
+            participationId: participation?.id
+          };
+        });
+
+        setChallenges(formattedChallenges);
+      }
+    } catch (error) {
+      console.error('Error fetching promotions:', error);
+      toast.error('Failed to load promotions');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const getChallengeColors = (color: string) => {
     const colors: Record<string, { bg: string; icon: string; badgeBg: string; badgeText: string; progressFrom: string; progressTo: string }> = {
@@ -185,6 +190,14 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
     };
     return colors[color] || colors.orange;
   };
+
+  if (loading) {
+    return (
+      <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-orange-500 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-orange-500 overflow-y-auto" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
@@ -252,9 +265,9 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
               <h3 className="text-white text-xl font-bold tracking-wide">ACTIVE NOW</h3>
             </div>
             
-            {promotions.map((promo, idx) => (
+            {promotions.length > 0 ? promotions.map((promo, idx) => (
               <div 
-                key={idx} 
+                key={promo.id || idx} 
                 className={`rounded-2xl p-5 shadow-xl relative overflow-hidden ${
                   promo.active 
                     ? 'bg-gradient-to-br from-yellow-50 to-orange-50' 
@@ -302,7 +315,12 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
                   </div>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="bg-orange-50 rounded-2xl p-8 text-center shadow-lg">
+                <p className="text-gray-500">No active promotions</p>
+                <p className="text-sm text-gray-400 mt-2">Check back soon for new opportunities</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -313,13 +331,13 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
               <h3 className="text-white text-xl font-bold tracking-wide">YOUR CHALLENGES</h3>
             </div>
 
-            {challenges.map((challenge, idx) => {
+            {challenges.length > 0 ? challenges.map((challenge) => {
               const IconComponent = challenge.icon;
-              const progressPercentage = (challenge.progress / challenge.total) * 100;
+              const progressPercentage = challenge.total > 0 ? (challenge.progress / challenge.total) * 100 : 0;
               const colors = getChallengeColors(challenge.color);
               
               return (
-                <div key={idx} className="bg-orange-50 rounded-2xl p-5 shadow-xl">
+                <div key={challenge.id} className="bg-orange-50 rounded-2xl p-5 shadow-xl">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-start gap-3 flex-1">
                       <div className={`${colors.bg} p-3 rounded-xl`}>
@@ -348,7 +366,7 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
                     <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
                       <div 
                         className={`h-full bg-gradient-to-r ${colors.progressFrom} ${colors.progressTo} rounded-full transition-all duration-500`}
-                        style={{ width: `${progressPercentage}%` }}
+                        style={{ width: `${Math.min(progressPercentage, 100)}%` }}
                       />
                     </div>
                   </div>
@@ -359,7 +377,12 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
                   </button>
                 </div>
               );
-            })}
+            }) : (
+              <div className="bg-orange-50 rounded-2xl p-8 text-center shadow-lg">
+                <p className="text-gray-500">No active challenges</p>
+                <p className="text-sm text-gray-400 mt-2">New challenges will appear here</p>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -368,4 +391,3 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
 };
 
 export default FeederPromotionsTab;
-
