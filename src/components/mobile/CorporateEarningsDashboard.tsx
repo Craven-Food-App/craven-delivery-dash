@@ -90,37 +90,50 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
               </div>
             </div>
             
-            {/* Earnings Graphs */}
-            <div className="flex-1 space-y-2">
-              {/* Delivery Payments Graph */}
+            {/* Earnings Graph - Two bars per day */}
+            <div className="flex-1">
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-2">
-                <p className="text-white text-[10px] font-semibold mb-1">Delivery Payments</p>
-                <div className="flex items-end gap-1 h-12">
-                  {[20, 35, 28, 42, 38, 30, 25].map((height, idx) => (
-                    <div key={idx} className="flex-1 flex flex-col items-center">
-                      <div 
-                        className="w-full bg-gradient-to-t from-orange-500 to-yellow-400 rounded-t"
-                        style={{ height: `${(height / 50) * 100}%` }}
-                      />
-                      <span className="text-white text-[8px] mt-0.5">{['M', 'T', 'W', 'T', 'F', 'S', 'S'][idx]}</span>
-                    </div>
-                  ))}
+                <p className="text-white text-[10px] font-semibold mb-1">Daily Earnings</p>
+                <div className="flex items-end gap-0.5 h-16">
+                  {[
+                    { payments: 20, tips: 15 },
+                    { payments: 35, tips: 22 },
+                    { payments: 28, tips: 18 },
+                    { payments: 42, tips: 25 },
+                    { payments: 38, tips: 20 },
+                    { payments: 30, tips: 16 },
+                    { payments: 25, tips: 12 }
+                  ].map((day, idx) => {
+                    const maxValue = 50; // Max value for scaling
+                    return (
+                      <div key={idx} className="flex-1 flex flex-col items-center gap-0.5">
+                        <div className="w-full flex gap-0.5 items-end justify-center">
+                          {/* Payment bar */}
+                          <div 
+                            className="flex-1 bg-gradient-to-t from-orange-500 to-yellow-400 rounded-t"
+                            style={{ height: `${(day.payments / maxValue) * 100}%` }}
+                          />
+                          {/* Tips bar */}
+                          <div 
+                            className="flex-1 bg-gradient-to-t from-yellow-400 to-orange-300 rounded-t"
+                            style={{ height: `${(day.tips / maxValue) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-white text-[8px] mt-0.5">{['M', 'T', 'W', 'T', 'F', 'S', 'S'][idx]}</span>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
-              
-              {/* Tips Graph */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-2">
-                <p className="text-white text-[10px] font-semibold mb-1">Tips</p>
-                <div className="flex items-end gap-1 h-12">
-                  {[15, 22, 18, 25, 20, 16, 12].map((height, idx) => (
-                    <div key={idx} className="flex-1 flex flex-col items-center">
-                      <div 
-                        className="w-full bg-gradient-to-t from-yellow-400 to-orange-300 rounded-t"
-                        style={{ height: `${(height / 30) * 100}%` }}
-                      />
-                      <span className="text-white text-[8px] mt-0.5">{['M', 'T', 'W', 'T', 'F', 'S', 'S'][idx]}</span>
-                    </div>
-                  ))}
+                {/* Legend */}
+                <div className="flex items-center justify-center gap-3 mt-1.5">
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-gradient-to-t from-orange-500 to-yellow-400 rounded"></div>
+                    <span className="text-white text-[8px]">Payments</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-gradient-to-t from-yellow-400 to-orange-300 rounded"></div>
+                    <span className="text-white text-[8px]">Tips</span>
+                  </div>
                 </div>
               </div>
             </div>
