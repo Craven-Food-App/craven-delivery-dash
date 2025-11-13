@@ -286,57 +286,65 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
   useEffect(() => {
     if (!userId) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    let orderChannel: any;
 
-    const orderChannel = supabase
-      .channel(`driver_orders_${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'orders',
-          filter: `driver_id=eq.${user.id}`
-        },
-        async (payload) => {
-          console.log('Order status changed:', payload);
-          const order = payload.new as any;
-          
-          // Immediately check if we need to create alerts for this order
-          const now = new Date();
-          
-          // Check if order is ready for pickup
-          if (order.order_status === 'ready') {
-            const { data: existingNotif } = await supabase
-              .from('order_notifications')
-              .select('id')
-              .eq('user_id', user.id)
-              .eq('order_id', order.id)
-              .eq('notification_type', 'order_ready_pickup')
-              .eq('is_read', false)
-              .limit(1);
+    const setupOrderSubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-            if (!existingNotif || existingNotif.length === 0) {
-              await supabase
+      orderChannel = supabase
+        .channel(`driver_orders_${user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'orders',
+            filter: `driver_id=eq.${user.id}`
+          },
+          async (payload) => {
+            console.log('Order status changed:', payload);
+            const order = payload.new as any;
+            
+            // Immediately check if we need to create alerts for this order
+            const now = new Date();
+            
+            // Check if order is ready for pickup
+            if (order.order_status === 'ready') {
+              const { data: existingNotif } = await supabase
                 .from('order_notifications')
-                .insert({
-                  user_id: user.id,
-                  order_id: order.id,
-                  notification_type: 'order_ready_pickup',
-                  title: 'Order Ready for Pickup',
-                  message: `Order #${order.id.slice(0, 8)} is ready for pickup`,
-                  is_read: false
-                });
-              fetchNotifications();
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('order_id', order.id)
+                .eq('notification_type', 'order_ready_pickup')
+                .eq('is_read', false)
+                .limit(1);
+
+              if (!existingNotif || existingNotif.length === 0) {
+                await supabase
+                  .from('order_notifications')
+                  .insert({
+                    user_id: user.id,
+                    order_id: order.id,
+                    notification_type: 'order_ready_pickup',
+                    title: 'Order Ready for Pickup',
+                    message: `Order #${order.id.slice(0, 8)} is ready for pickup`,
+                    is_read: false
+                  });
+                fetchNotifications();
+              }
             }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
+    };
+
+    setupOrderSubscription();
 
     return () => {
-      supabase.removeChannel(orderChannel);
+      if (orderChannel) {
+        supabase.removeChannel(orderChannel);
+      }
     };
   }, [userId, fetchNotifications]);
 
