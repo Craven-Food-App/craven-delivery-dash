@@ -21,7 +21,7 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
   };
 
   return (
-    <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-orange-500 overflow-y-auto pb-20 safe-area-top">
+    <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-orange-500 overflow-y-auto safe-area-top" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
       {/* Header */}
       <div className="px-5 py-3 flex items-center justify-between flex-shrink-0" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <button 
@@ -142,7 +142,7 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
       </div>
 
       {/* TODAY'S FEED FLOW */}
-      <div className="px-5 pb-20">
+      <div className="px-5" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
         <h3 className="text-white text-sm font-bold mb-2 tracking-wide">Today's FEED FLOW</h3>
         <div className="grid grid-cols-3 gap-0 text-center">
           <div className="border-r border-white/30 py-2">

@@ -606,7 +606,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       </div>
 
       {/* Scrollable Content Area - Only the list scrolls */}
-      <div className="flex-1 overflow-y-auto px-6 pb-20">
+      <div className="flex-1 overflow-y-auto px-6" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
         {/* Content based on view mode */}
         {viewMode === 'schedule' && (
           <div className="space-y-3">

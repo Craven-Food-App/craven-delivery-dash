@@ -29,9 +29,15 @@ export const DriverBottomNav: React.FC<DriverBottomNavProps> = ({
 
   return (
     <>
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 h-20 shadow-lg safe-area-padding-bottom">
-        <div className="flex h-full">
+      {/* Bottom Navigation - Extends to bottom edge on PWA */}
+      <div 
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 shadow-lg"
+        style={{ 
+          height: 'calc(5rem + env(safe-area-inset-bottom, 0px))',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+        }}
+      >
+        <div className="flex h-20">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             const hasNotification = tab.id === 'notifications' && notificationCount > 0;
@@ -74,8 +80,8 @@ export const DriverBottomNav: React.FC<DriverBottomNavProps> = ({
         </div>
       </div>
 
-      {/* Bottom padding spacer for content */}
-      <div className="h-20" />
+      {/* Bottom padding spacer for content - accounts for extended nav */}
+      <div style={{ height: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }} />
     </>
   );
 };
