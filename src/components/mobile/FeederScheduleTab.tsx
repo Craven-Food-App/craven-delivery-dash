@@ -520,12 +520,6 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
           {/* Buttons in horizontal row */}
           <div className="flex gap-2">
             <button 
-              onClick={handleStartShift}
-              className="flex-1 bg-red-900 text-white px-4 py-2 rounded-full font-bold text-xs shadow-lg hover:bg-red-800 transition-colors"
-            >
-              Start Shift
-            </button>
-            <button 
               onClick={handleAvailable}
               className="flex-1 bg-white text-red-700 px-4 py-2 rounded-full font-bold text-xs shadow-lg hover:bg-gray-50 transition-colors"
             >

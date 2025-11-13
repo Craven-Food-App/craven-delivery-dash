@@ -98,9 +98,6 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
               <button className="w-full bg-white rounded-full py-2 px-4 font-bold text-red-700 text-xs shadow-lg">
                 Payout Req
               </button>
-              <button className="w-full bg-red-900 rounded-full py-2 px-4 font-bold text-white text-xs shadow-lg">
-                Start Shift
-              </button>
             </div>
           </div>
         </div>
