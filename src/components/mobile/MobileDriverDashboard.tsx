@@ -396,8 +396,8 @@ export const MobileDriverDashboard: React.FC = () => {
       // Close menu
       setIsMenuOpen(false);
       
-      // Redirect to driver auth page
-      navigate('/driver/auth');
+      // Redirect to mobile splash page
+      navigate('/mobile');
     } catch (error) {
       console.error('Error during logout:', error);
       // Clear session heartbeat even on error
@@ -408,7 +408,8 @@ export const MobileDriverDashboard: React.FC = () => {
       // Force logout even if there's an error
       await supabase.auth.signOut();
       setIsMenuOpen(false);
-      navigate('/driver/auth');
+      // Redirect to mobile splash page
+      navigate('/mobile');
     }
   };
 

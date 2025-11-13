@@ -114,9 +114,12 @@ const FeederSidebarMenu: React.FC<FeederSidebarMenuProps> = ({
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-      window.location.href = '/';
+      // Redirect to mobile splash page
+      window.location.href = '/mobile';
     } catch (error) {
       console.error('Error logging out:', error);
+      // Still redirect even on error
+      window.location.href = '/mobile';
     }
   };
 

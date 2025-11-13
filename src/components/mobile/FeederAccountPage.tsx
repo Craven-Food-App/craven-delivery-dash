@@ -208,10 +208,12 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
     try {
       await supabase.auth.signOut();
       toast.success("Signed out successfully");
-      window.location.reload();
+      navigate('/mobile');
     } catch (error) {
       console.error("Error signing out:", error);
       toast.error("Failed to sign out");
+      // Still redirect even on error
+      navigate('/mobile');
     }
   };
 
