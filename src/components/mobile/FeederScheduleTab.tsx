@@ -95,6 +95,40 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
     }
   }, []);
 
+  // Clear ALL schedules (both active and inactive) for debugging
+  const clearAllSchedules = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Please sign in to clear schedules');
+        return;
+      }
+
+      // Delete ALL schedules for this user (not just active ones)
+      const { error } = await supabase
+        .from('driver_schedules')
+        .delete()
+        .eq('driver_id', user.id);
+
+      if (error) {
+        console.error('Error clearing schedules:', error);
+        throw error;
+      }
+
+      console.log('ALL SCHEDULES CLEARED for user:', user.id);
+      toast.success('All schedules cleared');
+      
+      // Refresh schedules list
+      await fetchSchedules();
+      
+      // Force reset time to next shift
+      setTimeToNextShift(null);
+    } catch (error) {
+      console.error('Error clearing schedules:', error);
+      toast.error('Failed to clear schedules');
+    }
+  }, [fetchSchedules]);
+
   // Fetch high demand zones
   const fetchSurgeZones = useCallback(async () => {
     try {
@@ -678,6 +712,16 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
         {/* Zone Banner */}
         <div className="bg-orange-50 rounded-2xl py-2.5 px-4 text-center mb-6 shadow-lg">
           <p className="text-red-800 font-bold text-base">🔥 High Demand Zone: {highDemandZone.name}</p>
+        </div>
+
+        {/* Debug: Clear All Schedules Button */}
+        <div className="mb-4">
+          <button
+            onClick={clearAllSchedules}
+            className="w-full bg-red-600 text-white px-4 py-2 rounded-full font-bold text-sm shadow-lg hover:bg-red-700 transition-colors"
+          >
+            Clear All Schedules (Debug)
+          </button>
         </div>
 
         {/* Week Strip - Always visible */}
