@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Bell, Check, Clock, AlertCircle, MapPin, DollarSign, Truck } from 'lucide-react';
+import { Bell, Check, Clock, AlertCircle, MapPin, DollarSign, Truck, Package, Zap, Award, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,11 +23,7 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchNotifications();
-  }, [userId]);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('order_notifications')
@@ -42,7 +38,196 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  // Monitor orders for driver-specific alerts
+  useEffect(() => {
+    if (!userId) return;
+
+    const checkOrderAlerts = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Get assigned orders for this driver - check both order_assignments and orders tables
+        const { data: assignedOrders } = await supabase
+          .from('order_assignments')
+          .select('*, order:orders(*)')
+          .eq('driver_id', user.id)
+          .eq('status', 'accepted');
+
+        // Also check orders table directly for driver_id
+        const { data: directOrders } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('driver_id', user.id)
+          .in('order_status', ['confirmed', 'preparing', 'ready', 'picked_up', 'in_transit']);
+
+        const allOrders = [
+          ...(assignedOrders?.map(a => a.order).filter(Boolean) || []),
+          ...(directOrders || [])
+        ];
+
+        if (allOrders.length === 0) return;
+
+        const now = new Date();
+        const alertsToCreate: Partial<Notification>[] = [];
+
+        for (const order of allOrders) {
+          if (!order) continue;
+
+          // Check if order is ready for pickup
+          if (order.order_status === 'ready' && order.order_status !== 'picked_up') {
+            // Check if notification already exists
+            const { data: existingNotif } = await supabase
+              .from('order_notifications')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('order_id', order.id)
+              .eq('notification_type', 'order_ready_pickup')
+              .eq('is_read', false)
+              .limit(1);
+
+            if (!existingNotif || existingNotif.length === 0) {
+              alertsToCreate.push({
+                title: 'Order Ready for Pickup',
+                message: `Order #${order.id.slice(0, 8)} is ready for pickup`,
+                notification_type: 'order_ready_pickup',
+                order_id: order.id
+              });
+            }
+          }
+
+          // Check if delivery time is near (within 5 minutes)
+          if (order.estimated_delivery_time) {
+            const deliveryTime = new Date(order.estimated_delivery_time);
+            const timeUntilDelivery = deliveryTime.getTime() - now.getTime();
+            const fiveMinutes = 5 * 60 * 1000;
+
+            if (timeUntilDelivery > 0 && timeUntilDelivery <= fiveMinutes && order.order_status === 'in_transit') {
+              const { data: existingNotif } = await supabase
+                .from('order_notifications')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('order_id', order.id)
+                .eq('notification_type', 'delivery_time_near')
+                .eq('is_read', false)
+                .limit(1);
+
+              if (!existingNotif || existingNotif.length === 0) {
+                const minutesLeft = Math.ceil(timeUntilDelivery / 60000);
+                alertsToCreate.push({
+                  title: 'Delivery Time Approaching',
+                  message: `You have ${minutesLeft} minute${minutesLeft !== 1 ? 's' : ''} until delivery time for order #${order.id.slice(0, 8)}`,
+                  notification_type: 'delivery_time_near',
+                  order_id: order.id
+                });
+              }
+            }
+          }
+
+          // Check if delivery is late (past estimated delivery time)
+          if (order.estimated_delivery_time && order.order_status !== 'delivered') {
+            const deliveryTime = new Date(order.estimated_delivery_time);
+            if (now > deliveryTime) {
+              const { data: existingNotif } = await supabase
+                .from('order_notifications')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('order_id', order.id)
+                .eq('notification_type', 'delivery_late')
+                .eq('is_read', false)
+                .limit(1);
+
+              if (!existingNotif || existingNotif.length === 0) {
+                const minutesLate = Math.floor((now.getTime() - deliveryTime.getTime()) / 60000);
+                alertsToCreate.push({
+                  title: 'Delivery Running Late',
+                  message: `Order #${order.id.slice(0, 8)} is ${minutesLate} minute${minutesLate !== 1 ? 's' : ''} past the scheduled delivery time`,
+                  notification_type: 'delivery_late',
+                  order_id: order.id
+                });
+              }
+            }
+          }
+        }
+
+        // Create notifications
+        for (const alert of alertsToCreate) {
+          await supabase
+            .from('order_notifications')
+            .insert({
+              user_id: user.id,
+              order_id: alert.order_id,
+              notification_type: alert.notification_type,
+              title: alert.title || '',
+              message: alert.message || '',
+              is_read: false
+            });
+        }
+
+        // Check for challenge notifications
+        const { data: challenges } = await supabase
+          .from('driver_promotion_participation')
+          .select('*, promotion:driver_promotions(*)')
+          .eq('driver_id', user.id)
+          .eq('is_completed', false);
+
+        if (challenges) {
+          for (const challenge of challenges) {
+            const promotion = challenge.promotion;
+            if (!promotion) continue;
+
+            // Check if challenge deadline is approaching (within 24 hours)
+            if (promotion.ends_at) {
+              const deadline = new Date(promotion.ends_at);
+              const timeUntilDeadline = deadline.getTime() - now.getTime();
+              const twentyFourHours = 24 * 60 * 60 * 1000;
+
+              if (timeUntilDeadline > 0 && timeUntilDeadline <= twentyFourHours) {
+                const { data: existingNotif } = await supabase
+                  .from('order_notifications')
+                  .select('id')
+                  .eq('user_id', user.id)
+                  .eq('notification_type', 'challenge_deadline')
+                  .like('message', `%${promotion.id}%`)
+                  .eq('is_read', false)
+                  .limit(1);
+
+                if (!existingNotif || existingNotif.length === 0) {
+                  const hoursLeft = Math.ceil(timeUntilDeadline / (60 * 60 * 1000));
+                  await supabase
+                    .from('order_notifications')
+                    .insert({
+                      user_id: user.id,
+                      notification_type: 'challenge_deadline',
+                      title: 'Challenge Deadline Approaching',
+                      message: `Challenge "${promotion.title || 'Challenge'}" ends in ${hoursLeft} hour${hoursLeft !== 1 ? 's' : ''}`,
+                      is_read: false
+                    });
+                }
+              }
+            }
+          }
+        }
+
+        // Refresh notifications after creating alerts
+        fetchNotifications();
+      } catch (error) {
+        console.error('Error checking order alerts:', error);
+      }
+    };
+
+    // Check alerts immediately and then every 30 seconds
+    checkOrderAlerts();
+    const interval = setInterval(checkOrderAlerts, 30000);
+
+    return () => clearInterval(interval);
+  }, [userId, fetchNotifications]);
 
   const markAsRead = async (notificationId: string) => {
     try {
@@ -91,6 +276,17 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
         return <MapPin className="h-5 w-5 text-orange-500" />;
       case 'reminder':
         return <Clock className="h-5 w-5 text-orange-500" />;
+      case 'order_ready_pickup':
+        return <Package className="h-5 w-5 text-blue-500" />;
+      case 'delivery_time_near':
+        return <Timer className="h-5 w-5 text-yellow-500" />;
+      case 'delivery_late':
+        return <AlertCircle className="h-5 w-5 text-red-500" />;
+      case 'challenge_deadline':
+      case 'challenge_completed':
+        return <Award className="h-5 w-5 text-purple-500" />;
+      case 'challenge_new':
+        return <Zap className="h-5 w-5 text-yellow-500" />;
       case 'urgent':
       case 'admin_message':
       case 'support_message':
@@ -112,6 +308,16 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
         return 'border-orange-200 bg-orange-50';
       case 'reminder':
         return 'border-orange-200 bg-orange-50';
+      case 'order_ready_pickup':
+        return 'border-blue-200 bg-blue-50';
+      case 'delivery_time_near':
+        return 'border-yellow-200 bg-yellow-50';
+      case 'delivery_late':
+        return 'border-red-200 bg-red-50';
+      case 'challenge_deadline':
+      case 'challenge_completed':
+      case 'challenge_new':
+        return 'border-purple-200 bg-purple-50';
       case 'urgent':
       case 'admin_message':
       case 'support_message':
