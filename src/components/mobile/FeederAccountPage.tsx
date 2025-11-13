@@ -127,41 +127,41 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
             {/* Card shine effect */}
             <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
 
-            <div className="relative h-full flex flex-col justify-between py-2">
+            <div className="relative h-full flex flex-col justify-between py-1.5">
               {/* Top Section - Balance */}
-              <div>
-                <p className="text-orange-100 text-xs mb-0.5">Available Balance</p>
-                <h2 className="text-white text-2xl font-black">${cardBalance.toFixed(2)}</h2>
+              <div className="flex-shrink-0">
+                <p className="text-orange-100 text-[10px] mb-0.5 leading-tight">Available Balance</p>
+                <h2 className="text-white text-xl font-black leading-tight">${cardBalance.toFixed(2)}</h2>
               </div>
 
               {/* Middle Section - Card Number (centered) */}
-              <div className="flex items-center justify-center py-1">
-                <p className="text-white text-lg font-mono tracking-widest">
+              <div className="flex items-center justify-center py-0.5 flex-shrink-0">
+                <p className="text-white text-sm font-mono tracking-wider break-all text-center leading-tight">
                   {showCardDetails ? cardNumber : "**** **** **** " + cardNumber.replace(/\s/g, "").slice(-4)}
                 </p>
               </div>
 
               {/* Bottom Section - Expiry, CVV, Name, Brand */}
-              <div className="flex items-end justify-between">
-                <div className="flex-1">
+              <div className="flex items-end justify-between flex-shrink-0">
+                <div className="flex-1 min-w-0">
                   {/* Expiry and CVV */}
-                  <div className="flex gap-3 mb-0.5">
+                  <div className="flex gap-2 mb-0.5">
                     <div>
-                      <p className="text-orange-100 text-[9px] mb-0.5">EXP</p>
-                      <p className="text-white text-xs font-mono">{showCardDetails ? expiryDate : "**/**"}</p>
+                      <p className="text-orange-100 text-[8px] mb-0.5 leading-tight">EXP</p>
+                      <p className="text-white text-[10px] font-mono leading-tight">{showCardDetails ? expiryDate : "**/**"}</p>
                     </div>
                     <div>
-                      <p className="text-orange-100 text-[9px] mb-0.5">CVV</p>
-                      <p className="text-white text-xs font-mono">{showCardDetails ? cvv : "***"}</p>
+                      <p className="text-orange-100 text-[8px] mb-0.5 leading-tight">CVV</p>
+                      <p className="text-white text-[10px] font-mono leading-tight">{showCardDetails ? cvv : "***"}</p>
                     </div>
                   </div>
                   {/* Cardholder Name */}
-                  <div>
-                    <p className="text-white text-[10px] font-bold tracking-wider">{driverName.toUpperCase()}</p>
+                  <div className="truncate">
+                    <p className="text-white text-[9px] font-bold tracking-wide leading-tight">{driverName.toUpperCase()}</p>
                   </div>
                 </div>
                 {/* Brand Logo */}
-                <div className="text-white text-base font-black">FEEDER</div>
+                <div className="text-white text-sm font-black ml-2 flex-shrink-0">FEEDER</div>
               </div>
             </div>
           </div>
