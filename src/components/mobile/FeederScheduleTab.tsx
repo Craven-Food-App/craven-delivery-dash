@@ -107,19 +107,34 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
 
   // Calculate time to next shift using real schedule data
   useEffect(() => {
+    // Don't calculate while loading
+    if (loading) {
+      return;
+    }
+
     const calculateTimeToNextShift = () => {
       console.log('=== CALCULATING TIME TO NEXT SHIFT ===');
+      console.log('Loading state:', loading);
       console.log('Raw schedules array:', schedules);
       console.log('Schedules length:', schedules?.length);
+      console.log('Schedules type:', typeof schedules, Array.isArray(schedules));
+      
+      // Early return if no schedules
+      if (!schedules || !Array.isArray(schedules) || schedules.length === 0) {
+        console.log('NO SCHEDULES ARRAY OR EMPTY - Setting timeToNextShift to null');
+        setTimeToNextShift(null);
+        return;
+      }
       
       // Filter to only active schedules
-      const activeSchedules = schedules?.filter(s => s.is_active) || [];
+      const activeSchedules = schedules.filter(s => s && s.is_active === true);
       
       console.log('Active schedules after filter:', activeSchedules);
       console.log('Active schedules length:', activeSchedules.length);
+      console.log('Active schedules details:', activeSchedules.map(s => ({ id: s.id, day: s.day_of_week, time: s.start_time, active: s.is_active })));
       
-      if (!schedules || schedules.length === 0 || activeSchedules.length === 0) {
-        console.log('NO ACTIVE SCHEDULES - Setting timeToNextShift to null');
+      if (activeSchedules.length === 0) {
+        console.log('NO ACTIVE SCHEDULES FOUND - Setting timeToNextShift to null');
         setTimeToNextShift(null);
         return;
       }
@@ -245,6 +260,20 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       window.removeEventListener('scheduleUpdated', handleScheduleUpdate);
     };
   }, [fetchSchedules, fetchSurgeZones]);
+
+  // Reset time to next shift when loading or when schedules change
+  useEffect(() => {
+    if (loading) {
+      // Don't calculate while loading
+      return;
+    }
+    
+    // Force recalculation after schedules are loaded
+    if (schedules.length === 0) {
+      console.log('Schedules array is empty, setting timeToNextShift to null');
+      setTimeToNextShift(null);
+    }
+  }, [loading, schedules.length]);
 
   // Get shifts for selected day
   const getShiftsForDay = (dayOfWeek: number) => {
