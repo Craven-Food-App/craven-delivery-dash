@@ -43,25 +43,30 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
         .single();
 
       // Fetch user profile from drivers table if exists
-      // Only select columns that exist to avoid schema errors
+      // Note: drivers table uses auth_user_id and has different column names
       const { data: driverData } = await supabase
         .from('drivers')
-        .select('id, first_name, last_name, email, phone, street_address, city, state, zip_code')
-        .eq('user_id', authUser.id)
+        .select('id, full_name, email, phone, city, zip')
+        .eq('auth_user_id', authUser.id)
         .maybeSingle();
 
       if (driverData) {
         setProfile(driverData);
+        // Parse full_name into first and last name
+        const nameParts = (driverData.full_name || '').split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+        
         setFormData({
-          firstName: driverData.first_name || '',
-          lastName: driverData.last_name || '',
+          firstName,
+          lastName,
           email: authUser.email || driverData.email || '',
           phone: driverData.phone || '',
-          dateOfBirth: '', // date_of_birth is encrypted, not accessible directly
-          streetAddress: driverData.street_address || '',
+          dateOfBirth: '', // date_of_birth is encrypted in driver_identity table, not accessible directly
+          streetAddress: '', // Not stored in drivers table
           city: driverData.city || '',
-          state: driverData.state || '',
-          zipCode: driverData.zip_code || '',
+          state: '', // Not stored in drivers table
+          zipCode: driverData.zip || '',
         });
       } else if (driverProfile) {
         setProfile(driverProfile);
@@ -107,39 +112,39 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
       if (!authUser) return;
 
       // Update drivers table if exists
-      // Only update columns that exist in the schema
+      // Note: drivers table uses auth_user_id and full_name (not first_name/last_name)
       const { data: existingDriver } = await supabase
         .from('drivers')
         .select('id')
-        .eq('user_id', authUser.id)
+        .eq('auth_user_id', authUser.id)
         .maybeSingle();
 
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
       const updateData: any = {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
+        full_name: fullName,
         phone: formData.phone,
-        street_address: formData.streetAddress || null,
         city: formData.city || null,
-        state: formData.state || null,
-        zip_code: formData.zipCode || null,
+        zip: formData.zipCode || null,
+        updated_at: new Date().toISOString(),
       };
-
-      // Only add updated_at if column exists
-      updateData.updated_at = new Date().toISOString();
 
       if (existingDriver) {
         const { error } = await supabase
           .from('drivers')
           .update(updateData)
-          .eq('user_id', authUser.id);
+          .eq('auth_user_id', authUser.id);
 
         if (error) throw error;
       } else {
         // Create driver record
         const insertData: any = {
-          user_id: authUser.id,
-          ...updateData,
+          auth_user_id: authUser.id,
+          full_name: fullName,
           email: formData.email,
+          phone: formData.phone,
+          city: formData.city || '',
+          zip: formData.zipCode || '',
+          status: 'started',
         };
 
         const { error } = await supabase
