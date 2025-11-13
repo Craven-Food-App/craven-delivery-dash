@@ -106,12 +106,9 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
   // If card page is open, show that instead
   if (showCardPage) {
     return (
-      <div className="h-screen w-full bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 overflow-y-auto safe-area-top" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
+      <div className="h-screen w-full bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 overflow-y-auto" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
         {/* Header */}
-        <div
-          className="px-6 pb-4 flex items-center justify-between flex-shrink-0"
-          style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
-        >
+        <div className="px-6 pb-4 flex items-center justify-between flex-shrink-0">
           <button onClick={() => setShowCardPage(false)} className="text-gray-900">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -374,12 +371,9 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
   }
 
   return (
-    <div className="h-screen w-full bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 overflow-y-auto safe-area-top" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
+    <div className="h-screen w-full bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 overflow-y-auto" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
       {/* Diamond Header */}
-      <div
-        className={`relative px-6 pb-8 bg-gradient-to-br ${status.gradient} overflow-hidden flex-shrink-0`}
-        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
-      >
+      <div className={`relative px-6 pb-8 bg-gradient-to-br ${status.gradient} overflow-hidden flex-shrink-0`}>
         {/* Diamond sparkle effect */}
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-4 left-8 w-3 h-3 bg-white rounded-full animate-pulse"></div>

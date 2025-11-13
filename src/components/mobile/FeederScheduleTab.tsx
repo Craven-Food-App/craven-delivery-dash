@@ -450,9 +450,9 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
   }
 
   return (
-    <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-pink-600 flex flex-col safe-area-top">
+    <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-pink-600 flex flex-col">
       {/* Header - Fixed at top */}
-      <div className="px-6 pb-4 flex items-center justify-between flex-shrink-0" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+      <div className="px-6 pb-4 flex items-center justify-between flex-shrink-0">
         <button 
           onClick={() => {
             if (onOpenMenu) {
