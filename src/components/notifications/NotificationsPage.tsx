@@ -59,7 +59,6 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
           filter: `user_id=eq.${userId}`
         },
         () => {
-          console.log('Notification update received, refreshing...');
           fetchNotifications();
         }
       )
@@ -77,12 +76,7 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
     const checkOrderAlerts = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          console.log('No user found for alert checking');
-          return;
-        }
-
-        console.log('Checking order alerts for driver:', user.id);
+        if (!user) return;
 
         // Get assigned orders for this driver - check both order_assignments and orders tables
         const { data: assignedOrders, error: assignedError } = await supabase
@@ -91,32 +85,19 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
           .eq('driver_id', user.id)
           .eq('status', 'accepted');
 
-        if (assignedError) {
-          console.error('Error fetching assigned orders:', assignedError);
-        }
-
         // Also check orders table directly for driver_id
-        const { data: directOrders, error: directError } = await supabase
+        const { data: directOrders } = await supabase
           .from('orders')
           .select('*')
           .eq('driver_id', user.id)
           .in('order_status', ['confirmed', 'preparing', 'ready', 'picked_up', 'in_transit']);
-
-        if (directError) {
-          console.error('Error fetching direct orders:', directError);
-        }
 
         const allOrders = [
           ...(assignedOrders?.map(a => a.order).filter(Boolean) || []),
           ...(directOrders || [])
         ];
 
-        console.log(`Found ${allOrders.length} active orders to monitor`);
-
-        if (allOrders.length === 0) {
-          console.log('No active orders found');
-          return;
-        }
+        if (allOrders.length === 0) return;
 
         const now = new Date();
         const alertsToCreate: Partial<Notification>[] = [];
@@ -201,9 +182,8 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
         }
 
         // Create notifications
-        console.log(`Creating ${alertsToCreate.length} new alerts`);
         for (const alert of alertsToCreate) {
-          const { data, error } = await supabase
+          await supabase
             .from('order_notifications')
             .insert({
               user_id: user.id,
@@ -212,15 +192,7 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
               title: alert.title || '',
               message: alert.message || '',
               is_read: false
-            })
-            .select()
-            .single();
-
-          if (error) {
-            console.error('Error creating notification:', error, alert);
-          } else {
-            console.log('Created notification:', data);
-          }
+            });
         }
 
         // Check for challenge notifications
@@ -303,7 +275,6 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
             filter: `driver_id=eq.${user.id}`
           },
           async (payload) => {
-            console.log('Order status changed:', payload);
             const order = payload.new as any;
             
             // Immediately check if we need to create alerts for this order
@@ -403,17 +374,15 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Delete all notifications for this user that are test-related
-      // This includes notifications with test order IDs or test-related messages
+      // Delete all test alert notifications (delivery alerts)
       const { error } = await supabase
         .from('order_notifications')
         .delete()
         .eq('user_id', user.id)
-        .or('notification_type.eq.delivery_late,notification_type.eq.delivery_time_near,notification_type.eq.order_ready_pickup');
+        .in('notification_type', ['delivery_late', 'delivery_time_near', 'order_ready_pickup']);
 
       if (error) throw error;
       
-      // Refresh notifications
       fetchNotifications();
     } catch (error) {
       console.error('Error deleting test notifications:', error);
