@@ -71,7 +71,7 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
       // Fetch user's participation in challenges
       const { data: participations } = await supabase
         .from('driver_promotion_participation')
-        .select('*, promotion:driver_promotions(*)')
+        .select('*')
         .eq('driver_id', user.id)
         .eq('is_completed', false);
 

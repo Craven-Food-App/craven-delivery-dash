@@ -140,17 +140,19 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
         map.current.on('load', () => {
           console.log('Mapbox loaded successfully');
           setIsMapReady(true);
-          try {
-            const ctrl = new (window as any).mapboxgl.NavigationControl({ visualizePitch: true });
-            map.current.addControl(ctrl, 'top-right');
-          } catch (error) {
-            console.error('Failed to add navigation control', error);
-          }
-          updateZoneLayers(zones);
-          // If we have driver location, center on it
-          if (driverLocation) {
-            console.log('Centering map on driver location:', driverLocation);
-            applyDriverLocation(driverLocation[0], driverLocation[1], true);
+          if (map.current) {
+            try {
+              const ctrl = new (window as any).mapboxgl.NavigationControl({ visualizePitch: true });
+              map.current.addControl(ctrl, 'top-right');
+            } catch (error) {
+              console.error('Failed to add navigation control', error);
+            }
+            updateZoneLayers(zones);
+            // If we have driver location, center on it
+            if (driverLocation) {
+              console.log('Centering map on driver location:', driverLocation);
+              applyDriverLocation(driverLocation[0], driverLocation[1], true);
+            }
           }
         });
 
