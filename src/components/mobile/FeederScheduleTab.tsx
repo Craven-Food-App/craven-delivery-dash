@@ -20,9 +20,7 @@ type ScheduleRecord = {
 type SurgeZone = {
   id: string;
   zone_name: string;
-  city: string;
-  demand_level: string;
-  current_multiplier: number;
+  surge_multiplier: number;
 };
 
 const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
@@ -88,11 +86,9 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
     try {
       const { data, error } = await supabase
         .from('driver_surge_zones')
-        .select('id, zone_name, city, demand_level, current_multiplier')
+        .select('id, zone_name, surge_multiplier')
         .eq('is_active', true)
-        .gte('active_until', new Date().toISOString())
-        .or('demand_level.eq.high,demand_level.eq.very_high')
-        .order('current_multiplier', { ascending: false })
+        .order('surge_multiplier', { ascending: false })
         .limit(1);
 
       if (error) throw error;
@@ -326,7 +322,6 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
         if (!conflicts) {
           availableShifts.push({
             zone: zone.zone_name,
-            city: zone.city,
             startTime: slot.start,
             endTime: slot.end,
             displayStart: slot.displayStart,
@@ -353,7 +348,6 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
         if (!conflicts) {
           availableShifts.push({
             zone: 'Downtown',
-            city: 'Detroit Metro',
             startTime: slot.start,
             endTime: slot.end,
             displayStart: slot.displayStart,
@@ -444,8 +438,8 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
 
   // Get high demand zone display
   const highDemandZone = surgeZones.length > 0 
-    ? { name: surgeZones[0].zone_name, city: surgeZones[0].city }
-    : { name: 'Downtown', city: 'Detroit Metro' }; // Fallback
+    ? { name: surgeZones[0].zone_name }
+    : { name: 'Downtown' }; // Fallback
 
   if (loading) {
     return (
@@ -548,8 +542,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
 
         {/* Zone Banner */}
         <div className="bg-orange-50 rounded-2xl py-2.5 px-4 text-center mb-6 shadow-lg">
-          <p className="text-red-800 font-bold text-base">🔥 High Demand Zone</p>
-          <p className="text-orange-800 text-xs">{highDemandZone.city}</p>
+          <p className="text-red-800 font-bold text-base">🔥 High Demand Zone: {highDemandZone.name}</p>
         </div>
 
         {/* Week Strip - Only show in schedule view */}
