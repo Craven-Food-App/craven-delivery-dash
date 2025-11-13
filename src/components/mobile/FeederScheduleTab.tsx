@@ -242,7 +242,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
     calculateTimeToNextShift();
     const interval = setInterval(calculateTimeToNextShift, 60000); // Update every minute
     return () => clearInterval(interval);
-  }, [schedules]);
+  }, [schedules, loading]);
 
   useEffect(() => {
     setLoading(true);
