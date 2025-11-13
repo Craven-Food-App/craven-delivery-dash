@@ -147,6 +147,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
     }
   }, [startTracking, isTracking]);
 
+  // Initialize map only once on mount
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
@@ -159,12 +160,10 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
       (window as any).mapboxgl.accessToken = MAPBOX_CONFIG.accessToken;
 
       try {
-        // Use driver's actual location if available, otherwise use config default
-        const initialCenter = driverLocation 
-          ? [driverLocation[1], driverLocation[0]] // Mapbox uses [lng, lat]
-          : [MAPBOX_CONFIG.center[0], MAPBOX_CONFIG.center[1]];
+        // Use config default for initial center - location will update via separate effect
+        const initialCenter = [MAPBOX_CONFIG.center[0], MAPBOX_CONFIG.center[1]];
         
-        console.log('Initializing map with center:', initialCenter, 'driverLocation:', driverLocation);
+        console.log('Initializing map with center:', initialCenter);
         
         map.current = new (window as any).mapboxgl.Map({
           container: mapContainer.current,
@@ -184,12 +183,6 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
               console.error('Failed to add navigation control', error);
             }
             updateZoneLayers(zones);
-            // If we have driver location, center on it
-            if (driverLocation) {
-              console.log('Centering map on driver location:', driverLocation);
-              const currentHeading = location?.heading;
-              applyDriverLocation(driverLocation[0], driverLocation[1], true, currentHeading);
-            }
           }
         });
 
@@ -197,10 +190,8 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
           console.error('Mapbox error:', e);
         });
 
-        // Initialize marker at driver's location if available, otherwise use config default
-        const initialMarkerPos = driverLocation 
-          ? [driverLocation[1], driverLocation[0]] // Mapbox uses [lng, lat]
-          : [MAPBOX_CONFIG.center[0], MAPBOX_CONFIG.center[1]];
+        // Initialize marker at config default - will be updated when location is available
+        const initialMarkerPos = [MAPBOX_CONFIG.center[0], MAPBOX_CONFIG.center[1]];
         
         // Create custom marker element with driver icon
         const el = document.createElement('div');
@@ -250,7 +241,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
         map.current = null;
       }
     };
-  }, [applyDriverLocation, updateZoneLayers, zones, driverLocation]);
+  }, []); // Only run once on mount
 
   useEffect(() => {
     if (!isMapReady) return;
@@ -259,13 +250,36 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
 
   // Update map when driver location changes (real-time updates)
   useEffect(() => {
-    if (!isMapReady) return;
+    if (!isMapReady || !map.current || !marker.current) return;
     if (!location) return;
 
     console.log('Updating map with driver location:', location);
-    applyDriverLocation(location.latitude, location.longitude, false, location.heading); // Don't animate on every update to avoid jarring movement
+    
+    // Update marker position
+    marker.current.setLngLat([location.longitude, location.latitude]);
+    
+    // Update rotation if heading is available
+    if (location.heading !== undefined && location.heading !== null) {
+      const rotation = calculateRotation(location.heading);
+      const element = marker.current.getElement();
+      if (element) {
+        element.style.transform = `rotate(${rotation}deg)`;
+      }
+    }
+    
+    // Only update map center if user hasn't manually panned (check if map was recently moved by user)
+    // For now, we'll update the center smoothly without animation to follow driver
+    map.current.setCenter([location.longitude, location.latitude]);
+    
+    // Update zone status
+    const zone = getZoneForLocation([location.latitude, location.longitude], zones);
+    const isInZone = Boolean(zone);
+    if (onZoneStatusChange) {
+      onZoneStatusChange({ isInZone, zone });
+    }
+    
     setShowRecenter(true);
-  }, [applyDriverLocation, isMapReady, location]);
+  }, [isMapReady, location, calculateRotation, zones, onZoneStatusChange]);
 
 
   const legendItems = useMemo(() => {
