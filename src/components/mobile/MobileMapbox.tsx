@@ -82,11 +82,47 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
     []
   );
 
+  // Calculate rotation based on heading
+  // East/West: rotate to point direction, North/South: keep right-side up
+  const calculateRotation = useCallback((heading: number | undefined): number => {
+    if (heading === undefined || heading === null) return 0;
+    
+    // Normalize heading to 0-360
+    const normalizedHeading = ((heading % 360) + 360) % 360;
+    
+    // For North (0°) and South (180°), keep right-side up (0° rotation)
+    if (normalizedHeading >= 315 || normalizedHeading < 45) return 0; // North
+    if (normalizedHeading >= 135 && normalizedHeading < 225) return 0; // South
+    
+    // For East (90°) and West (270°), rotate to point direction
+    // East: rotate 90° clockwise, West: rotate 270° clockwise (or -90°)
+    if (normalizedHeading >= 45 && normalizedHeading < 135) {
+      // Northeast to Southeast - rotate based on heading
+      return normalizedHeading - 90; // Point East
+    }
+    if (normalizedHeading >= 225 && normalizedHeading < 315) {
+      // Southwest to Northwest - rotate based on heading
+      return normalizedHeading - 90; // Point West
+    }
+    
+    return 0;
+  }, []);
+
   const applyDriverLocation = useCallback(
-    (lat: number, lng: number, animate = false) => {
+    (lat: number, lng: number, animate = false, heading?: number) => {
       if (!map.current || !marker.current) return;
 
       marker.current.setLngLat([lng, lat]);
+      
+      // Update rotation if heading is available
+      if (heading !== undefined && heading !== null) {
+        const rotation = calculateRotation(heading);
+        const element = marker.current.getElement();
+        if (element) {
+          element.style.transform = `rotate(${rotation}deg)`;
+        }
+      }
+      
       if (animate) {
         map.current.flyTo({ center: [lng, lat], zoom: Math.max(map.current.getZoom() || 14, 14), essential: true });
       } else {
@@ -100,7 +136,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
         onZoneStatusChange({ isInZone, zone });
       }
     },
-    [onZoneStatusChange, zones]
+    [onZoneStatusChange, zones, calculateRotation]
   );
 
   // Start location tracking immediately when component mounts
@@ -151,7 +187,8 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
             // If we have driver location, center on it
             if (driverLocation) {
               console.log('Centering map on driver location:', driverLocation);
-              applyDriverLocation(driverLocation[0], driverLocation[1], true);
+              const currentHeading = location?.heading;
+              applyDriverLocation(driverLocation[0], driverLocation[1], true, currentHeading);
             }
           }
         });
@@ -165,8 +202,22 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
           ? [driverLocation[1], driverLocation[0]] // Mapbox uses [lng, lat]
           : [MAPBOX_CONFIG.center[0], MAPBOX_CONFIG.center[1]];
         
+        // Create custom marker element with driver icon
+        const el = document.createElement('div');
+        el.className = 'driver-location-marker';
+        el.style.cssText = `
+          width: 41px;
+          height: 41px;
+          background-image: url('/src/assets/driver_nav_icon.png');
+          background-size: contain;
+          background-repeat: no-repeat;
+          background-position: center;
+          cursor: pointer;
+        `;
+        
         marker.current = new (window as any).mapboxgl.Marker({
-          color: '#1d4ed8',
+          element: el,
+          anchor: 'center'
         })
           .setLngLat(initialMarkerPos)
           .addTo(map.current);
@@ -212,7 +263,7 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
     if (!location) return;
 
     console.log('Updating map with driver location:', location);
-    applyDriverLocation(location.latitude, location.longitude, false); // Don't animate on every update to avoid jarring movement
+    applyDriverLocation(location.latitude, location.longitude, false, location.heading); // Don't animate on every update to avoid jarring movement
     setShowRecenter(true);
   }, [applyDriverLocation, isMapReady, location]);
 
@@ -264,7 +315,8 @@ export const MobileMapbox: React.FC<MobileMapboxProps> = ({
             
             if (lat !== null && lng !== null && map.current && marker.current) {
               console.log('Calling applyDriverLocation with:', lat, lng);
-              applyDriverLocation(lat, lng, true);
+              const currentHeading = location?.heading;
+              applyDriverLocation(lat, lng, true, currentHeading);
             } else {
               console.error('Cannot recenter: missing data', { lat, lng, map: !!map.current, marker: !!marker.current });
             }
