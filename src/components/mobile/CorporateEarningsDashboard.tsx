@@ -23,7 +23,7 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
   return (
     <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-orange-500 overflow-y-auto" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
       {/* Header */}
-      <div className="px-5 pb-3 flex items-center justify-between flex-shrink-0">
+      <div className="px-5 pb-3 flex items-center justify-between flex-shrink-0 safe-area-top">
         <button 
           onClick={() => {
             if (onOpenMenu) {
