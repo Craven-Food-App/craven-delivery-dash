@@ -250,9 +250,17 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       }
     };
 
-    calculateTimeToNextShift();
-    const interval = setInterval(calculateTimeToNextShift, 60000); // Update every minute
-    return () => clearInterval(interval);
+    // Only calculate and set up interval if we have active schedules
+    if (activeSchedules.length > 0) {
+      calculateTimeToNextShift();
+      const interval = setInterval(calculateTimeToNextShift, 60000); // Update every minute
+      return () => clearInterval(interval);
+    } else {
+      // No schedules - ensure it's null and don't set up interval
+      console.log('No active schedules - not setting up calculation interval');
+      setTimeToNextShift(null);
+      return () => {}; // No cleanup needed
+    }
   }, [schedules, loading]);
 
   useEffect(() => {
