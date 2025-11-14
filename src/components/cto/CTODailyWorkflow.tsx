@@ -11,7 +11,7 @@ interface DailyTask {
   task_category: string;
   task_name: string;
   task_description?: string;
-  completed: boolean;
+  is_completed: boolean;
   priority: string;
 }
 
@@ -144,7 +144,7 @@ export default function CTODailyWorkflow() {
     }
   };
 
-  const completedCount = tasks.filter(t => t.completed).length;
+  const completedCount = tasks.filter(t => t.is_completed).length;
   const totalCount = tasks.length;
   const completionPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
@@ -180,7 +180,7 @@ export default function CTODailyWorkflow() {
           <Card>
             <Statistic
               title="High Priority Tasks"
-              value={tasks.filter(t => t.priority === 'high' || t.priority === 'urgent').filter(t => !t.completed).length}
+              value={tasks.filter(t => t.priority === 'high' || t.priority === 'urgent').filter(t => !t.is_completed).length}
               valueStyle={{ color: '#fa8c16' }}
               prefix={<ExclamationCircleOutlined />}
             />
@@ -221,7 +221,7 @@ export default function CTODailyWorkflow() {
       <Row gutter={[16, 16]}>
         {taskCategories.map(category => {
           const categoryTasks = tasks.filter(t => t.task_category === category.key);
-          const categoryCompleted = categoryTasks.filter(t => t.completed).length;
+          const categoryCompleted = categoryTasks.filter(t => t.is_completed).length;
           const categoryTotal = categoryTasks.length;
 
           return (
@@ -247,11 +247,11 @@ export default function CTODailyWorkflow() {
                   {categoryTasks.map(task => (
                     <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <Checkbox
-                        checked={task.completed}
-                        onChange={() => toggleTask(task.id, task.completed)}
+                checked={task.is_completed}
+                onChange={() => toggleTask(task.id, task.is_completed)}
                       />
                       <div style={{ flex: 1 }}>
-                        <Text delete={task.completed} style={{ fontSize: '13px' }}>
+                        <Text delete={task.is_completed} style={{ fontSize: '13px' }}>
                           {task.task_name}
                         </Text>
                         {task.task_description && (
