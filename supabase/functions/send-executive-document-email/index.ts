@@ -373,6 +373,18 @@ serve(async (req: Request) => {
 
     emailSubject = applyReplacements(emailSubject, subjectReplacements);
     let emailHtml = applyReplacements(emailHtmlContent, htmlReplacements);
+    
+    // Fallback: Replace any hardcoded app.cravenusa.com URLs with the correct signing portal URL
+    // This handles cases where the template has hardcoded URLs instead of placeholders
+    // Matches: http://app.cravenusa.com, https://app.cravenusa.com, app.cravenusa.com (with or without path)
+    emailHtml = emailHtml.replace(
+      /https?:\/\/app\.cravenusa\.com(\/[^\s"'>]*)?/g,
+      portalUrl
+    );
+    emailHtml = emailHtml.replace(
+      /href=["']https?:\/\/app\.cravenusa\.com(\/[^\s"']*)?["']/g,
+      `href="${portalUrl}"`
+    );
 
     console.log('Using email template from database');
 
