@@ -1685,6 +1685,257 @@ export type Database = {
           },
         ]
       }
+      cto_code_reviews: {
+        Row: {
+          author_id: string | null
+          created_at: string | null
+          id: string
+          lines_changed: number | null
+          pr_number: string
+          pr_title: string
+          pr_url: string | null
+          quality_score: number | null
+          repository: string
+          review_notes: string | null
+          reviewer_id: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          author_id?: string | null
+          created_at?: string | null
+          id?: string
+          lines_changed?: number | null
+          pr_number: string
+          pr_title: string
+          pr_url?: string | null
+          quality_score?: number | null
+          repository: string
+          review_notes?: string | null
+          reviewer_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string | null
+          created_at?: string | null
+          id?: string
+          lines_changed?: number | null
+          pr_number?: string
+          pr_title?: string
+          pr_url?: string | null
+          quality_score?: number | null
+          repository?: string
+          review_notes?: string | null
+          reviewer_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cto_code_reviews_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "cto_developers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cto_code_reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "cto_developers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cto_daily_checklist: {
+        Row: {
+          checklist_date: string
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          is_completed: boolean | null
+          priority: string | null
+          task_category: string
+          task_description: string | null
+          task_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          checklist_date?: string
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_completed?: boolean | null
+          priority?: string | null
+          task_category: string
+          task_description?: string | null
+          task_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          checklist_date?: string
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_completed?: boolean | null
+          priority?: string | null
+          task_category?: string
+          task_description?: string | null
+          task_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      cto_developers: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string
+          id: string
+          is_active: boolean | null
+          role: string
+          skills: Json | null
+          team: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name: string
+          id?: string
+          is_active?: boolean | null
+          role: string
+          skills?: Json | null
+          team?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          is_active?: boolean | null
+          role?: string
+          skills?: Json | null
+          team?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cto_developers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      cto_sprint_tickets: {
+        Row: {
+          assigned_to: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          priority: string | null
+          sprint_id: string | null
+          status: string | null
+          story_points: number | null
+          ticket_number: string
+          title: string
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          priority?: string | null
+          sprint_id?: string | null
+          status?: string | null
+          story_points?: number | null
+          ticket_number: string
+          title: string
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          priority?: string | null
+          sprint_id?: string | null
+          status?: string | null
+          story_points?: number | null
+          ticket_number?: string
+          title?: string
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cto_sprint_tickets_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "cto_developers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cto_sprint_tickets_sprint_id_fkey"
+            columns: ["sprint_id"]
+            isOneToOne: false
+            referencedRelation: "cto_sprints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cto_sprints: {
+        Row: {
+          created_at: string | null
+          end_date: string
+          goal: string | null
+          id: string
+          sprint_name: string
+          sprint_number: number | null
+          start_date: string
+          status: string | null
+          team: string | null
+          updated_at: string | null
+          velocity: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_date: string
+          goal?: string | null
+          id?: string
+          sprint_name: string
+          sprint_number?: number | null
+          start_date: string
+          status?: string | null
+          team?: string | null
+          updated_at?: string | null
+          velocity?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string
+          goal?: string | null
+          id?: string
+          sprint_name?: string
+          sprint_number?: number | null
+          start_date?: string
+          status?: string | null
+          team?: string | null
+          updated_at?: string | null
+          velocity?: number | null
+        }
+        Relationships: []
+      }
       customer_acquisition: {
         Row: {
           acquisition_channel: string

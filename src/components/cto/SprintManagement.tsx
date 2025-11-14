@@ -63,8 +63,7 @@ export default function SprintManagement() {
     try {
       const { data } = await supabase
         .from('cto_developers')
-        .select('user_id, user:auth.users(email)')
-        .eq('availability_status', 'available');
+        .select('id, full_name, email');
 
       setDevelopers(data || []);
     } catch (error) {
