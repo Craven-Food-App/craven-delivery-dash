@@ -376,15 +376,28 @@ serve(async (req: Request) => {
     
     // Fallback: Replace any hardcoded app.cravenusa.com URLs with the correct signing portal URL
     // This handles cases where the template has hardcoded URLs instead of placeholders
-    // Matches: http://app.cravenusa.com, https://app.cravenusa.com, app.cravenusa.com (with or without path)
-    emailHtml = emailHtml.replace(
-      /https?:\/\/app\.cravenusa\.com(\/[^\s"'>]*)?/g,
-      portalUrl
-    );
-    emailHtml = emailHtml.replace(
-      /href=["']https?:\/\/app\.cravenusa\.com(\/[^\s"']*)?["']/g,
-      `href="${portalUrl}"`
-    );
+    // Match various URL formats: http://app.cravenusa.com, https://app.cravenusa.com, app.cravenusa.com
+    const appCravenUrlPatterns = [
+      // Full URLs with protocol
+      /https?:\/\/app\.cravenusa\.com(\/[^\s"'>]*)?/gi,
+      // URLs in href attributes
+      /(href=["'])(https?:\/\/)?app\.cravenusa\.com(\/[^\s"']*)?(["'])/gi,
+      // URLs in src attributes
+      /(src=["'])(https?:\/\/)?app\.cravenusa\.com(\/[^\s"']*)?(["'])/gi,
+      // Plain text URLs (without quotes)
+      /\bapp\.cravenusa\.com(\/[^\s"'>]*)?/gi,
+    ];
+    
+    // Replace all variations
+    emailHtml = emailHtml.replace(/https?:\/\/app\.cravenusa\.com(\/[^\s"'>]*)?/gi, portalUrl);
+    emailHtml = emailHtml.replace(/(href=["'])(https?:\/\/)?app\.cravenusa\.com(\/[^\s"']*)?(["'])/gi, `$1${portalUrl}$4`);
+    emailHtml = emailHtml.replace(/(src=["'])(https?:\/\/)?app\.cravenusa\.com(\/[^\s"']*)?(["'])/gi, `$1${portalUrl}$4`);
+    emailHtml = emailHtml.replace(/\bapp\.cravenusa\.com(\/[^\s"'>]*)?/gi, portalUrl.replace('https://', '').replace('http://', ''));
+    
+    // Log if we found and replaced any URLs (for debugging)
+    if (emailHtmlContent.includes('app.cravenusa.com')) {
+      console.log(`Found hardcoded app.cravenusa.com URLs in template, replacing with: ${portalUrl}`);
+    }
 
     console.log('Using email template from database');
 
