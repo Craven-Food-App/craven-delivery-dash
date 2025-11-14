@@ -106,7 +106,7 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
           if (!order) continue;
 
           // Check if order is ready for pickup
-          if (order.order_status === 'ready' && order.order_status !== 'picked_up') {
+          if (order.order_status === 'ready') {
             // Check if notification already exists
             const { data: existingNotif } = await supabase
               .from('order_notifications')
@@ -198,9 +198,9 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
         // Check for challenge notifications
         const { data: challenges } = await supabase
           .from('driver_promotion_participation')
-          .select('*, promotion:driver_promotions(*)')
+          .select('id, driver_id, promotion_id, progress, completed')
           .eq('driver_id', user.id)
-          .eq('is_completed', false);
+          .eq('completed', false) as any;
 
         if (challenges) {
           for (const challenge of challenges) {
@@ -208,8 +208,8 @@ const NotificationsPage = ({ userId }: NotificationsPageProps) => {
             if (!promotion) continue;
 
             // Check if challenge deadline is approaching (within 24 hours)
-            if (promotion.ends_at) {
-              const deadline = new Date(promotion.ends_at);
+            if (promotion.end_date) {
+              const deadline = new Date(promotion.end_date);
               const timeUntilDeadline = deadline.getTime() - now.getTime();
               const twentyFourHours = 24 * 60 * 60 * 1000;
 
