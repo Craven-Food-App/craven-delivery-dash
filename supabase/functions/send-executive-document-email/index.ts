@@ -316,9 +316,10 @@ serve(async (req: Request) => {
     }
 
     const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    const portalUrl = Deno.env.get('SUPABASE_URL')?.replace('https://xaxbucnjlrfkccsfiddq.supabase.co', 'https://44d88461-c1ea-4d22-93fe-ebc1a7d81db9.lovableproject.com') || 'https://44d88461-c1ea-4d22-93fe-ebc1a7d81db9.lovableproject.com';
-    const currentYear = String(new Date().getFullYear());
     const companyWebsiteUrl = Deno.env.get('COMPANY_WEBSITE_URL') || 'https://cravenusa.com';
+    // Signing portal URL - points to the executive document signing route
+    const portalUrl = `${companyWebsiteUrl}/executive/sign`;
+    const currentYear = String(new Date().getFullYear());
 
     const safeDocumentTitle = escapeHtml(documentTitle);
     const safeExecutiveName = escapeHtml(executiveName);
