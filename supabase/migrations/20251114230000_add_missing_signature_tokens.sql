@@ -25,7 +25,7 @@ SET
 WHERE 
   executive_id IS NOT NULL
   AND signature_token IS NULL
-  AND signature_status IS NULL OR signature_status = 'pending';
+  AND (signature_status IS NULL OR signature_status = 'pending');
 
 -- Clean up the function (optional, but keeps things tidy)
 DROP FUNCTION IF EXISTS generate_signature_token();

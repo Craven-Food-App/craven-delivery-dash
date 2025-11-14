@@ -56,7 +56,7 @@ export const DOCUMENT_FLOW: DocumentFlowNode[] = [
     packetId: 'P1_PREINC',
     signingStage: 1,
     signingOrder: 1,
-    requiredSigners: ['incorporator'],
+    requiredSigners: ['incorporator', 'officer'], // Include 'officer' so executive signature is required
     appliesTo: (exec) => exec.role === 'ceo' && exec.incorporation_status !== 'incorporated',
   },
   {
@@ -76,7 +76,7 @@ export const DOCUMENT_FLOW: DocumentFlowNode[] = [
     signingStage: 2,
     signingOrder: 2,
     dependsOn: 'board_resolution',
-    requiredSigners: ['board'],
+    requiredSigners: ['board', 'officer'], // Include 'officer' so executive signature is required
     appliesTo: () => true,
   },
   {
