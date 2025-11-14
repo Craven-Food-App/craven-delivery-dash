@@ -63,9 +63,8 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
         .from('driver_promotions')
         .select('*')
         .eq('is_active', true)
-        .gte('ends_at', now)
-        .lte('starts_at', now)
-        .order('priority', { ascending: true })
+        .gte('end_date', now)
+        .lte('start_date', now)
         .limit(20);
 
       // Fetch user's participation in challenges
@@ -73,13 +72,13 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
         .from('driver_promotion_participation')
         .select('*')
         .eq('driver_id', user.id)
-        .eq('is_completed', false);
+        .eq('completed', false);
 
       if (activePromotions && participations) {
         const formattedChallenges = activePromotions.map(promo => {
           const participation = participations.find(p => p.promotion_id === promo.id);
-          const progress = participation?.current_progress || 0;
-          const total = promo.requirement_value || 1;
+          const progress = participation?.progress || 0;
+          const total = 100; // Default requirement value
           const progressPercentage = total > 0 ? (progress / total) * 100 : 0;
 
           // Map challenge types to icons and colors
@@ -93,10 +92,10 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
             referral: { icon: Users, color: 'green' }
           };
 
-          const typeInfo = typeMap[promo.challenge_type] || { icon: Target, color: 'orange' };
+          const typeInfo = typeMap[promo.promo_type] || { icon: Target, color: 'orange' };
 
           // Calculate deadline
-          const endsAt = new Date(promo.ends_at);
+          const endsAt = new Date(promo.end_date);
           const daysLeft = Math.ceil((endsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
           const deadline = daysLeft > 0 
             ? `${daysLeft} day${daysLeft !== 1 ? 's' : ''} left`
@@ -104,12 +103,8 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
 
           // Format reward
           let reward = '$0';
-          if (promo.reward_type === 'cash_bonus' && promo.reward_amount_cents) {
-            reward = `$${(promo.reward_amount_cents / 100).toFixed(0)}`;
-          } else if (promo.reward_type === 'per_delivery_bonus' && promo.reward_amount_cents) {
-            reward = `$${(promo.reward_amount_cents / 100).toFixed(2)} per delivery`;
-          } else if (promo.reward_type === 'multiplier' && promo.reward_multiplier) {
-            reward = `${promo.reward_multiplier}x multiplier`;
+          if (promo.reward_amount) {
+            reward = `$${promo.reward_amount.toFixed(0)}`;
           }
 
           return {

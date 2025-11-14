@@ -34,10 +34,10 @@ const AppSettingsPage: React.FC<AppSettingsPageProps> = ({ onBack }) => {
 
       if (preferences) {
         setSettings({
-          pushNotifications: preferences.push_notifications_enabled ?? true,
-          soundEnabled: preferences.sound_enabled ?? true,
-          vibrationEnabled: preferences.vibration_enabled ?? true,
-          darkMode: preferences.theme === 'dark',
+          pushNotifications: preferences.notification_sound ?? true,
+          soundEnabled: preferences.notification_sound ?? true,
+          vibrationEnabled: preferences.notification_sound ?? true,
+          darkMode: false, // Default to light mode as theme field doesn't exist
           language: 'en',
         });
       }
