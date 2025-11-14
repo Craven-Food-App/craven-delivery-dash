@@ -1,13 +1,21 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Row, Col, Statistic, Tabs, Table, Badge, Card, Button, Space, Progress, Alert, Modal, Form, Input, InputNumber, Select, message, Popconfirm, Divider } from 'antd';
-import { CloudOutlined, BugOutlined, LockOutlined, DatabaseOutlined, DashboardOutlined, PlusOutlined, EditOutlined, DeleteOutlined, ArrowLeftOutlined, MailOutlined, FileTextOutlined } from '@ant-design/icons';
+import { 
+  CloudOutlined, BugOutlined, LockOutlined, DatabaseOutlined, DashboardOutlined, PlusOutlined, EditOutlined, DeleteOutlined, 
+  ArrowLeftOutlined, MailOutlined, FileTextOutlined, CheckCircleOutlined, RocketOutlined, TeamOutlined, CodeOutlined,
+  CalendarOutlined, BarChartOutlined, SafetyOutlined, AppstoreOutlined, SettingOutlined
+} from '@ant-design/icons';
 import { useExecAuth } from '@/hooks/useExecAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ExecutiveInboxIMessage } from '@/components/executive/ExecutiveInboxIMessage';
 import BusinessEmailSystem from '@/components/executive/BusinessEmailSystem';
 import ExecutiveWordProcessor from '@/components/executive/ExecutiveWordProcessor';
+import CTODailyWorkflow from '@/components/cto/CTODailyWorkflow';
+import MorningTechnicalReview from '@/components/cto/MorningTechnicalReview';
+import SprintManagement from '@/components/cto/SprintManagement';
+import CodeReviewQueue from '@/components/cto/CodeReviewQueue';
 
 const { Header, Content } = Layout;
 const { TabPane } = Tabs;
@@ -15,6 +23,7 @@ const { TabPane } = Tabs;
 export default function CTOPortal() {
   const { loading, user, execUser, isAuthorized, signOut } = useExecAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [infra, setInfra] = useState({
     uptime: 99.9,
     responseTime: 45,
@@ -25,6 +34,7 @@ export default function CTOPortal() {
     licensesExpiring: 0
   });
   const [isChatCollapsed, setIsChatCollapsed] = useState(true);
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'workflow');
 
   useEffect(() => {
     if (isAuthorized) {
@@ -134,22 +144,53 @@ export default function CTOPortal() {
           </Col>
         </Row>
 
-        <Tabs defaultActiveKey="infra">
+        <Tabs activeKey={activeTab} onChange={setActiveTab}>
+          {/* Daily Workflow - Main Tab */}
+          <TabPane tab={<><CheckCircleOutlined /> Daily Workflow</>} key="workflow">
+            <CTODailyWorkflow />
+          </TabPane>
+          
+          {/* Morning Technical Review */}
+          <TabPane tab={<><DashboardOutlined /> Morning Review</>} key="morning-review">
+            <MorningTechnicalReview />
+          </TabPane>
+          
+          {/* Sprint Management */}
+          <TabPane tab={<><RocketOutlined /> Sprint Management</>} key="sprint">
+            <SprintManagement />
+          </TabPane>
+          
+          {/* Code Review Queue */}
+          <TabPane tab={<><CodeOutlined /> Code Reviews</>} key="code-review">
+            <CodeReviewQueue />
+          </TabPane>
+          
+          {/* Infrastructure */}
           <TabPane tab={<><CloudOutlined /> Infrastructure</>} key="infra">
             <InfrastructureHealth />
           </TabPane>
+          
+          {/* Incidents */}
           <TabPane tab={<><BugOutlined /> Incidents</>} key="incidents">
             <IncidentsDashboard />
           </TabPane>
+          
+          {/* Security */}
           <TabPane tab={<><LockOutlined /> Security</>} key="security">
             <SecurityDashboard />
           </TabPane>
-          <TabPane tab={<><MailOutlined /> Executive Communications</>} key="communications">
-            <BusinessEmailSystem />
-          </TabPane>
+          
+          {/* Assets */}
           <TabPane tab={<><DatabaseOutlined /> Assets</>} key="assets">
             <AssetManagement />
           </TabPane>
+          
+          {/* Executive Communications */}
+          <TabPane tab={<><MailOutlined /> Executive Communications</>} key="communications">
+            <BusinessEmailSystem />
+          </TabPane>
+          
+          {/* Word Processor */}
           <TabPane tab={<><FileTextOutlined /> Word Processor</>} key="word">
             <ExecutiveWordProcessor storageKey="cto" />
           </TabPane>
