@@ -33,34 +33,46 @@ BEGIN
   
   RAISE NOTICE 'Deleted executive documents for non-Torrance executives';
   
-  -- Step 2: Delete executive messages (from/to non-Torrance executives)
-  DELETE FROM public.exec_messages
-  WHERE from_user_id != COALESCE(torrance_exec_id, '00000000-0000-0000-0000-000000000000'::UUID)
-     OR NOT (torrance_exec_id = ANY(to_user_ids))
-     OR from_user_id IN (SELECT id FROM public.exec_users WHERE user_id != torrance_user_id);
+  -- Step 2: Delete executive messages (from/to non-Torrance executives) - only if table exists
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'exec_messages') THEN
+    DELETE FROM public.exec_messages
+    WHERE from_user_id != COALESCE(torrance_exec_id, '00000000-0000-0000-0000-000000000000'::UUID)
+       OR NOT (torrance_exec_id = ANY(to_user_ids))
+       OR from_user_id IN (SELECT id FROM public.exec_users WHERE user_id != torrance_user_id);
+    RAISE NOTICE 'Deleted executive messages';
+  ELSE
+    RAISE NOTICE 'Table exec_messages does not exist, skipping';
+  END IF;
   
-  RAISE NOTICE 'Deleted executive messages';
+  -- Step 3: Delete board meeting participants (non-Torrance) - only if table exists
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'exec_meeting_participants') THEN
+    DELETE FROM public.exec_meeting_participants
+    WHERE user_id != COALESCE(torrance_exec_id, '00000000-0000-0000-0000-000000000000'::UUID)
+       OR user_id IN (SELECT id FROM public.exec_users WHERE user_id != torrance_user_id);
+    RAISE NOTICE 'Deleted board meeting participants';
+  ELSE
+    RAISE NOTICE 'Table exec_meeting_participants does not exist, skipping';
+  END IF;
   
-  -- Step 3: Delete board meeting participants (non-Torrance)
-  DELETE FROM public.exec_meeting_participants
-  WHERE user_id != COALESCE(torrance_exec_id, '00000000-0000-0000-0000-000000000000'::UUID)
-     OR user_id IN (SELECT id FROM public.exec_users WHERE user_id != torrance_user_id);
+  -- Step 4: Delete exec audit logs (non-Torrance) - only if table exists
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'exec_audit_logs') THEN
+    DELETE FROM public.exec_audit_logs
+    WHERE user_id != COALESCE(torrance_exec_id, '00000000-0000-0000-0000-000000000000'::UUID)
+       OR user_id IN (SELECT id FROM public.exec_users WHERE user_id != torrance_user_id);
+    RAISE NOTICE 'Deleted exec audit logs';
+  ELSE
+    RAISE NOTICE 'Table exec_audit_logs does not exist, skipping';
+  END IF;
   
-  RAISE NOTICE 'Deleted board meeting participants';
-  
-  -- Step 4: Delete exec audit logs (non-Torrance)
-  DELETE FROM public.exec_audit_logs
-  WHERE user_id != COALESCE(torrance_exec_id, '00000000-0000-0000-0000-000000000000'::UUID)
-     OR user_id IN (SELECT id FROM public.exec_users WHERE user_id != torrance_user_id);
-  
-  RAISE NOTICE 'Deleted exec audit logs';
-  
-  -- Step 5: Delete exec documents uploaded by non-Torrance
-  DELETE FROM public.exec_documents
-  WHERE uploaded_by != COALESCE(torrance_exec_id, '00000000-0000-0000-0000-000000000000'::UUID)
-     OR uploaded_by IN (SELECT id FROM public.exec_users WHERE user_id != torrance_user_id);
-  
-  RAISE NOTICE 'Deleted exec documents uploaded by non-Torrance';
+  -- Step 5: Delete exec documents uploaded by non-Torrance - only if table exists
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'exec_documents') THEN
+    DELETE FROM public.exec_documents
+    WHERE uploaded_by != COALESCE(torrance_exec_id, '00000000-0000-0000-0000-000000000000'::UUID)
+       OR uploaded_by IN (SELECT id FROM public.exec_users WHERE user_id != torrance_user_id);
+    RAISE NOTICE 'Deleted exec documents uploaded by non-Torrance';
+  ELSE
+    RAISE NOTICE 'Table exec_documents does not exist, skipping';
+  END IF;
   
   -- Step 6: Delete all exec_users except Torrance
   DELETE FROM public.exec_users
