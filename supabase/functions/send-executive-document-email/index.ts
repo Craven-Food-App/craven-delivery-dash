@@ -86,7 +86,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { to, executiveName, documentTitle, documentUrl, pdfBase64, htmlContent, documents }: ExecutiveDocumentEmailRequest = await req.json();
+    const { to, executiveName, documentTitle, documentUrl, pdfBase64, htmlContent, documents, executiveId }: ExecutiveDocumentEmailRequest = await req.json();
 
     if (!to || !executiveName || !documentTitle) {
       return new Response(
@@ -322,44 +322,82 @@ serve(async (req: Request) => {
     
     // Fetch signature tokens for documents
     let signatureToken: string | null = null;
-    if (documents && documents.length > 0) {
+    if (documents && documents.length > 0 || executiveId) {
       try {
-        // Try to find documents by file_url or executive_id
-        const docUrls = documents.map(d => d.url);
-        let query = supabaseClient
-          .from('executive_documents')
-          .select('signature_token, file_url')
-          .in('file_url', docUrls)
-          .not('signature_token', 'is', null)
-          .limit(1);
+        console.log(`Fetching signature token for executiveId: ${executiveId}, documents count: ${documents?.length || 0}`);
         
-        // If executiveId provided, also search by that
+        // First try: Search by executive_id (most reliable)
         if (executiveId) {
-          const { data: execDocs } = await supabaseClient
+          const { data: execDocs, error: execError } = await supabaseClient
             .from('executive_documents')
-            .select('signature_token, file_url')
+            .select('signature_token, file_url, id, created_at')
             .eq('executive_id', executiveId)
             .not('signature_token', 'is', null)
             .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
+            .limit(5);
           
-          if (execDocs?.signature_token) {
-            signatureToken = execDocs.signature_token;
+          if (execError) {
+            console.warn('Error fetching by executive_id:', execError);
+          } else if (execDocs && execDocs.length > 0) {
+            // Use the most recent document's token
+            signatureToken = execDocs[0].signature_token;
+            console.log(`Found token via executive_id: ${signatureToken ? 'Yes' : 'No'}`);
           }
         }
         
-        // If no token found yet, try by URL
-        if (!signatureToken) {
-          const { data: docs } = await query;
-          if (docs && docs.length > 0 && docs[0].signature_token) {
-            signatureToken = docs[0].signature_token;
+        // Second try: Search by file_url if no token found yet
+        if (!signatureToken && documents && documents.length > 0) {
+          const docUrls = documents.map(d => d.url);
+          console.log(`Trying to find tokens by file_url, checking ${docUrls.length} URLs`);
+          
+          // Try exact match first
+          for (const url of docUrls) {
+            const { data: urlDocs, error: urlError } = await supabaseClient
+              .from('executive_documents')
+              .select('signature_token, file_url')
+              .eq('file_url', url)
+              .not('signature_token', 'is', null)
+              .limit(1);
+            
+            if (!urlError && urlDocs && urlDocs.length > 0 && urlDocs[0].signature_token) {
+              signatureToken = urlDocs[0].signature_token;
+              console.log(`Found token via file_url match: ${signatureToken ? 'Yes' : 'No'}`);
+              break;
+            }
+          }
+          
+          // If still no token, try partial URL match (in case URLs differ slightly)
+          if (!signatureToken) {
+            for (const url of docUrls) {
+              // Extract filename from URL
+              const urlParts = url.split('/');
+              const filename = urlParts[urlParts.length - 1].split('?')[0];
+              
+              if (filename) {
+                const { data: partialDocs, error: partialError } = await supabaseClient
+                  .from('executive_documents')
+                  .select('signature_token, file_url')
+                  .like('file_url', `%${filename}%`)
+                  .not('signature_token', 'is', null)
+                  .limit(1);
+                
+                if (!partialError && partialDocs && partialDocs.length > 0 && partialDocs[0].signature_token) {
+                  signatureToken = partialDocs[0].signature_token;
+                  console.log(`Found token via partial URL match: ${signatureToken ? 'Yes' : 'No'}`);
+                  break;
+                }
+              }
+            }
           }
         }
         
-        console.log(`Found signature token: ${signatureToken ? 'Yes' : 'No'}`);
+        if (signatureToken) {
+          console.log(`✓ Successfully found signature token: ${signatureToken.substring(0, 10)}...`);
+        } else {
+          console.warn('⚠ No signature token found for documents');
+        }
       } catch (tokenError) {
-        console.warn('Failed to fetch signature token:', tokenError);
+        console.error('Failed to fetch signature token:', tokenError);
         // Continue without token - template might not need it
       }
     }
