@@ -1,6 +1,28 @@
 -- Add Pre-Incorporation Consent template to document_templates table
 -- This template requires officer signatures, so signature fields are also added
 
+-- First, ensure the table has the required columns
+ALTER TABLE public.document_templates
+ADD COLUMN IF NOT EXISTS template_key TEXT UNIQUE,
+ADD COLUMN IF NOT EXISTS html_content TEXT,
+ADD COLUMN IF NOT EXISTS placeholders JSONB DEFAULT '[]'::jsonb,
+ADD COLUMN IF NOT EXISTS description TEXT;
+
+-- If html_content is null but template_html exists, copy the data
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'document_templates' 
+    AND column_name = 'template_html'
+  ) THEN
+    UPDATE public.document_templates
+    SET html_content = template_html
+    WHERE html_content IS NULL AND template_html IS NOT NULL;
+  END IF;
+END $$;
+
 -- Insert or update the template
 INSERT INTO public.document_templates (
   template_key,
