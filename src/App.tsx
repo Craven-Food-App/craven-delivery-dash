@@ -406,6 +406,7 @@ const App = () => {
                   <Route path="/business-auth" element={<BusinessAuth />} />
                   <Route path="/executive/profile" element={<ExecutiveProfile />} />
                   <Route path="/executive/reset-password" element={<ExecutiveResetPassword />} />
+                  <Route path="/executive/sign" element={<ExecutiveSignature />} />
                   <Route path="/executive-portal/documents" element={<BusinessAuthGuard><ExecutiveDocumentPortal /></BusinessAuthGuard>} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>

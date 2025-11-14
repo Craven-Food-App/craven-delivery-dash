@@ -2287,6 +2287,62 @@ export type Database = {
           },
         ]
       }
+      document_template_signature_fields: {
+        Row: {
+          created_at: string | null
+          field_type: string
+          height_percent: number
+          id: string
+          label: string | null
+          page_number: number
+          required: boolean
+          signer_role: string
+          template_id: string
+          updated_at: string | null
+          width_percent: number
+          x_percent: number
+          y_percent: number
+        }
+        Insert: {
+          created_at?: string | null
+          field_type: string
+          height_percent: number
+          id?: string
+          label?: string | null
+          page_number: number
+          required?: boolean
+          signer_role: string
+          template_id: string
+          updated_at?: string | null
+          width_percent: number
+          x_percent: number
+          y_percent: number
+        }
+        Update: {
+          created_at?: string | null
+          field_type?: string
+          height_percent?: number
+          id?: string
+          label?: string | null
+          page_number?: number
+          required?: boolean
+          signer_role?: string
+          template_id?: string
+          updated_at?: string | null
+          width_percent?: number
+          x_percent?: number
+          y_percent?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_template_signature_fields_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "document_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_templates: {
         Row: {
           category: string
@@ -3758,11 +3814,14 @@ export type Database = {
         Row: {
           authorized_by: string | null
           created_at: string | null
-          employee_id: string
+          employee_id: string | null
           equity_type: string
           grant_date: string | null
           id: string
+          is_majority_shareholder: boolean | null
           notes: string | null
+          shareholder_name: string | null
+          shareholder_type: string | null
           shares_percentage: number
           shares_total: number | null
           strike_price: number | null
@@ -3773,11 +3832,14 @@ export type Database = {
         Insert: {
           authorized_by?: string | null
           created_at?: string | null
-          employee_id: string
+          employee_id?: string | null
           equity_type?: string
           grant_date?: string | null
           id?: string
+          is_majority_shareholder?: boolean | null
           notes?: string | null
+          shareholder_name?: string | null
+          shareholder_type?: string | null
           shares_percentage: number
           shares_total?: number | null
           strike_price?: number | null
@@ -3788,11 +3850,14 @@ export type Database = {
         Update: {
           authorized_by?: string | null
           created_at?: string | null
-          employee_id?: string
+          employee_id?: string | null
           equity_type?: string
           grant_date?: string | null
           id?: string
+          is_majority_shareholder?: boolean | null
           notes?: string | null
+          shareholder_name?: string | null
+          shareholder_type?: string | null
           shares_percentage?: number
           shares_total?: number | null
           strike_price?: number | null
@@ -4721,6 +4786,7 @@ export type Database = {
           packet_id: string | null
           required_signers: string[] | null
           role: string
+          signature_field_layout: Json | null
           signature_status: string | null
           signature_token: string | null
           signature_token_expires_at: string | null
@@ -4745,6 +4811,7 @@ export type Database = {
           packet_id?: string | null
           required_signers?: string[] | null
           role: string
+          signature_field_layout?: Json | null
           signature_status?: string | null
           signature_token?: string | null
           signature_token_expires_at?: string | null
@@ -4769,6 +4836,7 @@ export type Database = {
           packet_id?: string | null
           required_signers?: string[] | null
           role?: string
+          signature_field_layout?: Json | null
           signature_status?: string | null
           signature_token?: string | null
           signature_token_expires_at?: string | null
