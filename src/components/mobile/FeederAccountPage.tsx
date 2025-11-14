@@ -76,7 +76,7 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
 
       // Get user metadata
       const fullName = user.user_metadata?.full_name || 
-                      (driverData?.first_name && driverData?.last_name ? `${driverData.first_name} ${driverData.last_name}` : '') ||
+                      driverData?.full_name ||
                       user.email?.split('@')[0] || 'Driver';
       setDriverName(fullName);
 
@@ -102,16 +102,16 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
       // Fetch earnings for transaction history only (card balance is placeholder)
       const { data: earnings } = await supabase
         .from('driver_earnings')
-        .select('total_cents, amount_cents, tip_cents, earned_at, paid_out_at')
+        .select('amount_cents, created_at')
         .eq('driver_id', user.id)
-        .order('earned_at', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (earnings) {
         // Format transactions
         const formattedTransactions = earnings.slice(0, 10).map(earning => ({
-          date: new Date(earning.earned_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          description: earning.paid_out_at ? 'Payout Processed' : 'Daily Earnings Deposit',
-          amount: (earning.total_cents || earning.amount_cents + (earning.tip_cents || 0)) / 100,
+          date: new Date(earning.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          description: 'Daily Earnings Deposit',
+          amount: (earning.amount_cents || 0) / 100,
           type: 'credit' as const,
         }));
         setTransactions(formattedTransactions);
