@@ -4,12 +4,11 @@
 -- Insert or update the template
 INSERT INTO public.document_templates (
   template_key,
-  title,
+  name,
   description,
   category,
   html_content,
-  is_active,
-  usage_context
+  is_active
 ) VALUES (
   'pre_incorporation_consent',
   'Pre-Incorporation Consent (Conditional Appointments)',
@@ -268,13 +267,12 @@ INSERT INTO public.document_templates (
 </div>
 </body>
 </html>',
-  true,
-  'pre_incorporation_consent'
+  true
 )
 ON CONFLICT (template_key) 
 DO UPDATE SET
   html_content = EXCLUDED.html_content,
-  title = EXCLUDED.title,
+  name = EXCLUDED.name,
   description = EXCLUDED.description,
   updated_at = now();
 
