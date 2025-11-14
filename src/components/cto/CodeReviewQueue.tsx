@@ -1,12 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Modal, Form, Input, InputNumber, Select, Space, Badge, Tag, Typography, message, Popconfirm } from 'antd';
-import { CheckCircleOutlined, CloseCircleOutlined, EditOutlined, PlusOutlined, DeleteOutlined, GithubOutlined } from '@ant-design/icons';
-import { supabase } from '@/integrations/supabase/client';
+import React from 'react';
+import { Card, Typography, Alert } from 'antd';
 
-const { TextArea } = Input;
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 export default function CodeReviewQueue() {
+  return (
+    <div style={{ padding: '24px' }}>
+      <Card>
+        <Title level={2}>Code Review Queue</Title>
+        <Alert
+          message="Feature Under Development"
+          description="The code review queue feature is currently being developed. Database tables need to be created first."
+          type="info"
+          showIcon
+        />
+      </Card>
+    </div>
+  );
+}
   const [reviews, setReviews] = useState<any[]>([]);
   const [developers, setDevelopers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);

@@ -1,14 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Modal, Form, Input, InputNumber, Select, DatePicker, Space, Badge, Tag, Progress, Row, Col, Statistic, Typography, message, Popconfirm } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
-import { supabase } from '@/integrations/supabase/client';
-import { format, parseISO, differenceInDays } from 'date-fns';
-import dayjs from 'dayjs';
+import React from 'react';
+import { Card, Typography, Alert } from 'antd';
 
-const { TextArea } = Input;
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 export default function SprintManagement() {
+  return (
+    <div style={{ padding: '24px' }}>
+      <Card>
+        <Title level={2}>Sprint Management</Title>
+        <Alert
+          message="Feature Under Development"
+          description="The sprint management feature is currently being developed. Database tables need to be created first."
+          type="info"
+          showIcon
+        />
+      </Card>
+    </div>
+  );
+}
   const [sprints, setSprints] = useState<any[]>([]);
   const [tickets, setTickets] = useState<any[]>([]);
   const [developers, setDevelopers] = useState<any[]>([]);

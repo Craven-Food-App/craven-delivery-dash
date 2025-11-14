@@ -1,31 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Checkbox, Row, Col, Progress, Button, Space, Typography, Badge, Alert, Statistic, Divider } from 'antd';
-import { CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined, RocketOutlined, TeamOutlined, BugOutlined, FileTextOutlined } from '@ant-design/icons';
-import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Card, Typography, Alert } from 'antd';
 
-const { Title, Text } = Typography;
-
-interface DailyTask {
-  id: string;
-  task_category: string;
-  task_name: string;
-  task_description?: string;
-  completed: boolean;
-  priority: string;
-}
-
-const taskCategories = [
-  { key: 'morning_review', label: 'Morning Technical Review', icon: <ClockCircleOutlined />, color: '#1890ff' },
-  { key: 'development', label: 'Development Leadership', icon: <RocketOutlined />, color: '#52c41a' },
-  { key: 'strategic', label: 'Strategic Responsibilities', icon: <ExclamationCircleOutlined />, color: '#faad14' },
-  { key: 'coordination', label: 'Executive Coordination', icon: <TeamOutlined />, color: '#722ed1' },
-  { key: 'stability', label: 'Stability & Compliance', icon: <CheckCircleOutlined />, color: '#13c2c2' },
-  { key: 'product', label: 'Product Development', icon: <BugOutlined />, color: '#eb2f96' },
-  { key: 'documentation', label: 'Documentation & Reporting', icon: <FileTextOutlined />, color: '#f5222d' },
-];
+const { Title } = Typography;
 
 export default function CTODailyWorkflow() {
+  return (
+    <div style={{ padding: '24px' }}>
+      <Card>
+        <Title level={2}>CTO Daily Workflow</Title>
+        <Alert
+          message="Feature Under Development"
+          description="The CTO daily workflow feature is currently being developed. Database tables need to be created first."
+          type="info"
+          showIcon
+        />
+      </Card>
+    </div>
+  );
+}
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<DailyTask[]>([]);
   const [loading, setLoading] = useState(false);
