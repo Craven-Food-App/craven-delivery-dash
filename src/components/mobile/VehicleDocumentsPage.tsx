@@ -21,13 +21,8 @@ const VehicleDocumentsPage: React.FC<VehicleDocumentsPageProps> = ({ onBack }) =
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Fetch driver vehicle data
-      const vehicleQuery = await supabase
-        .from('drivers')
-        .select('id, user_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      const driverData = vehicleQuery.data;
+      // TODO: Driver table structure needs update - using placeholder data
+      const driverData: any = null;
 
       if (driverData) {
         setVehicleData(driverData);
