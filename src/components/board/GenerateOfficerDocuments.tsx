@@ -34,7 +34,7 @@ import {
   getExpectedNodesForExecutive,
   stageComparator,
 } from '@/utils/executiveDocumentFlow';
-import { buildFoundersTableHtml } from '@/utils/foundersTable';
+import { buildFoundersTableHtml, buildShareholdersTableHtml } from '@/utils/foundersTable';
 
 const { Title, Text } = Typography;
 
@@ -549,38 +549,109 @@ const generateDocumentData = async (exec: Executive, docType: string) => {
         incorporatorEmail
       );
     case 'founders_agreement': {
-      const foundersTable = await buildFoundersTableHtml({
-        role: exec.role,
-        name: exec.full_name,
-        title: exec.title || exec.role.toUpperCase(),
-        equityPercent: baseData.equity_percentage,
-        shares: baseData.share_count,
-        vesting: baseData.vesting_schedule,
-      });
+      // Founders Agreement: ONLY for Torrance Stroman
+      const isTorrance = exec.full_name?.toLowerCase().includes('torrance') || exec.role === 'ceo';
+      
+      if (isTorrance) {
+        // Use founders table (only Torrance)
+        const foundersTable = await buildFoundersTableHtml({
+          role: exec.role,
+          name: exec.full_name,
+          title: exec.title || exec.role.toUpperCase(),
+          equityPercent: baseData.equity_percentage,
+          shares: baseData.share_count,
+          vesting: baseData.vesting_schedule,
+        });
+        return {
+          ...baseData,
+          founders_table_html: foundersTable.tableHtml,
+          founders_signature_html: foundersTable.signatureHtml,
+          founders_addressed_name: foundersTable.addressed.name,
+          founders_addressed_role: foundersTable.addressed.title,
+          founders_addressed_equity: foundersTable.addressed.equity,
+          founders_addressed_shares: foundersTable.addressed.shares,
+          founders_addressed_vesting: foundersTable.addressed.vesting,
+          founders_ceo_name: foundersTable.ceo.name,
+          founders_ceo_role: foundersTable.ceo.title,
+          founders_ceo_equity: foundersTable.ceo.equity,
+          founders_ceo_shares: foundersTable.ceo.shares,
+          founders_ceo_vesting: foundersTable.ceo.vesting,
+          founders_cfo_name: foundersTable.cfo.name,
+          founders_cfo_role: foundersTable.cfo.title,
+          founders_cfo_equity: foundersTable.cfo.equity,
+          founders_cfo_shares: foundersTable.cfo.shares,
+          founders_cfo_vesting: foundersTable.cfo.vesting,
+          founders_cxo_name: foundersTable.cxo.name,
+          founders_cxo_role: foundersTable.cxo.title,
+          founders_cxo_equity: foundersTable.cxo.equity,
+          founders_cxo_shares: foundersTable.cxo.shares,
+          founders_cxo_vesting: foundersTable.cxo.vesting,
+          vesting_years: '4',
+          cliff_months: '12',
+        };
+      } else {
+        // For non-Torrance executives, use shareholders table (all shareholders except Torrance)
+        const shareholdersTable = await buildShareholdersTableHtml();
+        return {
+          ...baseData,
+          shareholders_table_html: shareholdersTable.tableHtml,
+          shareholders_signature_html: shareholdersTable.signatureHtml,
+          founders_table_html: shareholdersTable.tableHtml, // For template compatibility
+          founders_signature_html: shareholdersTable.signatureHtml, // For template compatibility
+          founders_addressed_name: shareholdersTable.addressed.name,
+          founders_addressed_role: shareholdersTable.addressed.title,
+          founders_addressed_equity: shareholdersTable.addressed.equity,
+          founders_addressed_shares: shareholdersTable.addressed.shares,
+          founders_addressed_vesting: shareholdersTable.addressed.vesting,
+          founders_ceo_name: shareholdersTable.ceo.name,
+          founders_ceo_role: shareholdersTable.ceo.title,
+          founders_ceo_equity: shareholdersTable.ceo.equity,
+          founders_ceo_shares: shareholdersTable.ceo.shares,
+          founders_ceo_vesting: shareholdersTable.ceo.vesting,
+          founders_cfo_name: shareholdersTable.cfo.name,
+          founders_cfo_role: shareholdersTable.cfo.title,
+          founders_cfo_equity: shareholdersTable.cfo.equity,
+          founders_cfo_shares: shareholdersTable.cfo.shares,
+          founders_cfo_vesting: shareholdersTable.cfo.vesting,
+          founders_cxo_name: shareholdersTable.cxo.name,
+          founders_cxo_role: shareholdersTable.cxo.title,
+          founders_cxo_equity: shareholdersTable.cxo.equity,
+          founders_cxo_shares: shareholdersTable.cxo.shares,
+          founders_cxo_vesting: shareholdersTable.cxo.vesting,
+          vesting_years: '4',
+          cliff_months: '12',
+        };
+      }
+    }
+    case 'shareholders_agreement': {
+      // Shareholders Agreement: All shareholders EXCEPT Torrance Stroman (including Invero Business Trust)
+      const shareholdersTable = await buildShareholdersTableHtml();
       return {
         ...baseData,
-        founders_table_html: foundersTable.tableHtml,
-        founders_signature_html: foundersTable.signatureHtml,
-        founders_addressed_name: foundersTable.addressed.name,
-        founders_addressed_role: foundersTable.addressed.title,
-        founders_addressed_equity: foundersTable.addressed.equity,
-        founders_addressed_shares: foundersTable.addressed.shares,
-        founders_addressed_vesting: foundersTable.addressed.vesting,
-        founders_ceo_name: foundersTable.ceo.name,
-        founders_ceo_role: foundersTable.ceo.title,
-        founders_ceo_equity: foundersTable.ceo.equity,
-        founders_ceo_shares: foundersTable.ceo.shares,
-        founders_ceo_vesting: foundersTable.ceo.vesting,
-        founders_cfo_name: foundersTable.cfo.name,
-        founders_cfo_role: foundersTable.cfo.title,
-        founders_cfo_equity: foundersTable.cfo.equity,
-        founders_cfo_shares: foundersTable.cfo.shares,
-        founders_cfo_vesting: foundersTable.cfo.vesting,
-        founders_cxo_name: foundersTable.cxo.name,
-        founders_cxo_role: foundersTable.cxo.title,
-        founders_cxo_equity: foundersTable.cxo.equity,
-        founders_cxo_shares: foundersTable.cxo.shares,
-        founders_cxo_vesting: foundersTable.cxo.vesting,
+        shareholders_table_html: shareholdersTable.tableHtml,
+        shareholders_signature_html: shareholdersTable.signatureHtml,
+        founders_table_html: shareholdersTable.tableHtml, // For template compatibility
+        founders_signature_html: shareholdersTable.signatureHtml, // For template compatibility
+        founders_addressed_name: shareholdersTable.addressed.name,
+        founders_addressed_role: shareholdersTable.addressed.title,
+        founders_addressed_equity: shareholdersTable.addressed.equity,
+        founders_addressed_shares: shareholdersTable.addressed.shares,
+        founders_addressed_vesting: shareholdersTable.addressed.vesting,
+        founders_ceo_name: shareholdersTable.ceo.name,
+        founders_ceo_role: shareholdersTable.ceo.title,
+        founders_ceo_equity: shareholdersTable.ceo.equity,
+        founders_ceo_shares: shareholdersTable.ceo.shares,
+        founders_ceo_vesting: shareholdersTable.ceo.vesting,
+        founders_cfo_name: shareholdersTable.cfo.name,
+        founders_cfo_role: shareholdersTable.cfo.title,
+        founders_cfo_equity: shareholdersTable.cfo.equity,
+        founders_cfo_shares: shareholdersTable.cfo.shares,
+        founders_cfo_vesting: shareholdersTable.cfo.vesting,
+        founders_cxo_name: shareholdersTable.cxo.name,
+        founders_cxo_role: shareholdersTable.cxo.title,
+        founders_cxo_equity: shareholdersTable.cxo.equity,
+        founders_cxo_shares: shareholdersTable.cxo.shares,
+        founders_cxo_vesting: shareholdersTable.cxo.vesting,
         vesting_years: '4',
         cliff_months: '12',
       };
