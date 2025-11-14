@@ -322,12 +322,15 @@ serve(async (req: Request) => {
     
     // Fetch signature tokens for documents
     let signatureToken: string | null = null;
-    if (documents && documents.length > 0 || executiveId) {
+    const hasDocuments = documents && documents.length > 0;
+    const hasExecutiveId = executiveId && typeof executiveId === 'string' && executiveId.length > 0;
+    
+    if (hasDocuments || hasExecutiveId) {
       try {
-        console.log(`Fetching signature token for executiveId: ${executiveId}, documents count: ${documents?.length || 0}`);
+        console.log(`Fetching signature token for executiveId: ${executiveId || 'none'}, documents count: ${documents?.length || 0}`);
         
         // First try: Search by executive_id (most reliable)
-        if (executiveId) {
+        if (hasExecutiveId && executiveId) {
           const { data: execDocs, error: execError } = await supabaseClient
             .from('executive_documents')
             .select('signature_token, file_url, id, created_at')
