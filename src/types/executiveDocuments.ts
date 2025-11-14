@@ -1,6 +1,7 @@
 export interface FlowExecutive {
   role: string;
   title?: string | null;
+  full_name?: string | null;
   equity_percent?: string | number | null;
   equityPercent?: string | number | null;
   shares_issued?: string | number | null;
