@@ -74,20 +74,31 @@ BEGIN
     RAISE NOTICE 'Table exec_documents does not exist, skipping';
   END IF;
   
-  -- Step 6: Delete all exec_users except Torrance
+  -- Step 6: Delete equity_grants for non-Torrance executives (if table exists)
+  -- This must be done before deleting exec_users due to foreign key constraint
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'equity_grants') THEN
+    DELETE FROM public.equity_grants
+    WHERE executive_id != COALESCE(torrance_exec_id, '00000000-0000-0000-0000-000000000000'::UUID)
+       OR executive_id IN (SELECT id FROM public.exec_users WHERE user_id != torrance_user_id);
+    RAISE NOTICE 'Deleted equity_grants for non-Torrance executives';
+  ELSE
+    RAISE NOTICE 'Table equity_grants does not exist, skipping';
+  END IF;
+  
+  -- Step 7: Delete all exec_users except Torrance
   DELETE FROM public.exec_users
   WHERE user_id != torrance_user_id;
   
   RAISE NOTICE 'Deleted all exec_users except Torrance';
   
-  -- Step 7: Ensure Torrance is NOT an employee
+  -- Step 8: Ensure Torrance is NOT an employee
   -- Delete any employee record for Torrance
   DELETE FROM public.employees
   WHERE user_id = torrance_user_id;
   
   RAISE NOTICE 'Removed Torrance from employees table (he is not an employee)';
   
-  -- Step 8: Insert or update Torrance as board_member & Secretary
+  -- Step 9: Insert or update Torrance as board_member & Secretary
   -- He will become an Executive once appointed by the board
   INSERT INTO public.exec_users (
     user_id,
@@ -124,7 +135,7 @@ BEGIN
   
   RAISE NOTICE 'Set Torrance Stroman as board_member & Secretary (NOT an employee)';
   
-  -- Step 9: Clean up any employee_equity records for employees who are no longer executives
+  -- Step 10: Clean up any employee_equity records for employees who are no longer executives
   -- BUT keep Invero Business Trust and any non-employee shareholders
   UPDATE public.employee_equity
   SET employee_id = NULL
@@ -144,7 +155,7 @@ BEGIN
   
   RAISE NOTICE 'Cleaned up employee_equity records for removed executives';
   
-  -- Step 10: Reset any executive-related status fields in employees table
+  -- Step 11: Reset any executive-related status fields in employees table
   -- Note: Torrance is already removed from employees table in Step 7
   UPDATE public.employees
   SET 
