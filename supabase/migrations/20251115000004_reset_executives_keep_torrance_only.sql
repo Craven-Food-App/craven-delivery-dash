@@ -6,6 +6,7 @@ DO $$
 DECLARE
   torrance_user_id UUID;
   torrance_exec_id UUID;
+  torrance_employee_id UUID;
 BEGIN
   -- Get Torrance's user_id from auth.users
   SELECT id INTO torrance_user_id
@@ -92,7 +93,19 @@ BEGIN
   RAISE NOTICE 'Deleted all exec_users except Torrance';
   
   -- Step 8: Ensure Torrance is NOT an employee
-  -- Delete any employee record for Torrance
+  -- First, get Torrance's employee_id if it exists
+  SELECT id INTO torrance_employee_id
+  FROM public.employees
+  WHERE user_id = torrance_user_id;
+  
+  -- Delete equity_grants that reference Torrance's employee record (if table exists)
+  IF torrance_employee_id IS NOT NULL AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'equity_grants') THEN
+    DELETE FROM public.equity_grants
+    WHERE employee_id = torrance_employee_id;
+    RAISE NOTICE 'Deleted equity_grants referencing Torrance''s employee record';
+  END IF;
+  
+  -- Now delete Torrance's employee record
   DELETE FROM public.employees
   WHERE user_id = torrance_user_id;
   
