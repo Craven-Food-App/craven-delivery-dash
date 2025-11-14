@@ -92,6 +92,7 @@ const DOCUMENT_USAGE_CONTEXTS = [
   { value: 'board_resolution', label: 'Board Resolution' },
   { value: 'pre_incorporation_consent', label: 'Pre-Incorporation Consent (Conditional Appointments)' },
   { value: 'founders_agreement', label: "Founders' Agreement" },
+  { value: 'shareholders_agreement', label: "Shareholders' Agreement" },
   { value: 'stock_issuance', label: 'Stock Issuance' },
   { value: 'confidentiality_ip', label: 'Confidentiality & IP' },
   { value: 'deferred_comp_addendum', label: 'Deferred Compensation' },

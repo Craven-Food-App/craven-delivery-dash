@@ -22,9 +22,33 @@ export const templates: TemplateMeta[] = [
   },
   { 
     id: "founders_agreement", 
-    title: "Founders' / Shareholders' Agreement", 
+    title: "Founders' Agreement", 
     placeholders: [
       "company_name",
+      "founders_table_html",
+      "founders_signature_html",
+      "founders_addressed_name",
+      "founders_addressed_role",
+      "founders_addressed_equity",
+      "founders_addressed_shares",
+      "founders_addressed_vesting",
+      "founders_ceo_name",
+      "founders_ceo_role",
+      "founders_ceo_equity",
+      "founders_ceo_shares",
+      "founders_ceo_vesting",
+      "vesting_years",
+      "cliff_months",
+      "governing_law"
+    ]
+  },
+  { 
+    id: "shareholders_agreement", 
+    title: "Shareholders' Agreement", 
+    placeholders: [
+      "company_name",
+      "shareholders_table_html",
+      "shareholders_signature_html",
       "founders_table_html",
       "founders_signature_html",
       "founders_addressed_name",

@@ -131,13 +131,23 @@ export const DOCUMENT_FLOW: DocumentFlowNode[] = [
   },
   {
     type: 'founders_agreement',
-    title: "Founders' / Shareholders' Agreement",
+    title: "Founders' Agreement",
     packetId: 'P4_EQUITY',
     signingStage: 4,
     signingOrder: 3,
     dependsOn: 'stock_issuance',
+    requiredSigners: ['founder', 'officer'],
+    appliesTo: (exec) => hasEquity(exec) && (exec.role === 'ceo' || exec.full_name?.toLowerCase().includes('torrance')),
+  },
+  {
+    type: 'shareholders_agreement',
+    title: "Shareholders' Agreement",
+    packetId: 'P4_EQUITY',
+    signingStage: 4,
+    signingOrder: 4,
+    dependsOn: 'stock_issuance',
     requiredSigners: ['shareholder', 'officer'],
-    appliesTo: (exec) => hasEquity(exec),
+    appliesTo: (exec) => hasEquity(exec) && exec.role !== 'ceo' && !exec.full_name?.toLowerCase().includes('torrance'),
   },
 ];
 
