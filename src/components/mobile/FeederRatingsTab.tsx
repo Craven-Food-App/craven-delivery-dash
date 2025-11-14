@@ -53,24 +53,16 @@ const FeederRatingsTab: React.FC<FeederRatingsTabProps> = ({
         setTotalRatings(profile.total_deliveries || 0);
       }
 
-      // Fetch performance metrics
-      const { data: metrics } = await supabase
-        .from('driver_performance_metrics')
-        .select('*')
-        .eq('driver_id', user.id)
-        .single();
+      // Fetch performance metrics - table not available yet
+      // Using fallback: calculate from order_feedback
+      // const { data: metrics } = await supabase
+      //   .from('driver_performance_metrics')
+      //   .select('*')
+      //   .eq('driver_id', user.id)
+      //   .single();
 
-      if (metrics) {
-        setStats({
-          onTime: Math.round(Number(metrics.on_time_rate) || 0),
-          accuracy: Math.round(Number(metrics.avg_professionalism || metrics.avg_communication || 0) * 20),
-          quality: Math.round(Number(metrics.avg_food_care || 0) * 20),
-          satisfaction: Math.round(Number(metrics.overall_rating || 0) * 20)
-        });
-        setCityPercentile(metrics.city_percentile || null);
-      } else {
-        // Fallback: calculate from order_feedback
-        const { data: feedback } = await supabase
+      // Fallback: calculate from order_feedback
+      const { data: feedback } = await supabase
           .from('order_feedback')
           .select('rating, comment, created_at, customer_id')
           .eq('driver_id', user.id)
@@ -87,7 +79,6 @@ const FeederRatingsTab: React.FC<FeederRatingsTabProps> = ({
             satisfaction: Math.round(avgRating * 20)
           });
         }
-      }
 
       // Fetch rating breakdown from order_feedback
       const { data: allFeedback } = await supabase

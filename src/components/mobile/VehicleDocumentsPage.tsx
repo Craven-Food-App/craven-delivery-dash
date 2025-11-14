@@ -22,22 +22,20 @@ const VehicleDocumentsPage: React.FC<VehicleDocumentsPageProps> = ({ onBack }) =
       if (!user) return;
 
       // Fetch driver vehicle data
-      const { data: driverData } = await supabase
+      const vehicleQuery = await supabase
         .from('drivers')
-        .select('*')
+        .select('id, user_id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
+      const driverData = vehicleQuery.data;
 
       if (driverData) {
         setVehicleData(driverData);
         setDocuments({
-          registration: driverData.vehicle_registration,
-          insurance: driverData.insurance_provider && driverData.insurance_policy ? {
-            provider: driverData.insurance_provider,
-            policy: driverData.insurance_policy,
-          } : null,
-          inspection: driverData.vehicle_inspection,
-          license: driverData.drivers_license,
+          registration: null,
+          insurance: null,
+          inspection: null,
+          license: null,
         });
       }
     } catch (error) {

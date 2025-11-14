@@ -38,20 +38,20 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
         .limit(10);
 
       if (surgeZones) {
-        const formattedPromos = surgeZones.map(zone => {
-          const startDate = new Date(zone.active_until);
+        const formattedPromos = surgeZones.map((zone: any) => {
+          const startDate = new Date(zone.start_time);
           startDate.setHours(0, 0, 0, 0);
-          const endDate = new Date(zone.active_until);
+          const endDate = new Date(zone.end_time);
           endDate.setHours(23, 59, 59, 999);
 
           return {
-            zone: zone.zone_name || zone.city,
+            zone: zone.zone_name || 'Zone',
             date: startDate.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }),
-            timeframe: `${new Date(zone.active_from || zone.active_until).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - ${new Date(zone.active_until).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`,
+            timeframe: `${new Date(zone.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} - ${new Date(zone.end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`,
             description: `Surge ${zone.surge_multiplier}x`,
             bonus: `$${(zone.surge_multiplier - 1).toFixed(2)} multiplier`,
             type: 'peak',
-            active: true,
+            active: zone.is_active,
             id: zone.id
           };
         });
@@ -110,8 +110,8 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
           return {
             id: promo.id,
             title: promo.title,
-            type: promo.challenge_type?.replace('_', ' ') || 'Challenge',
-            description: promo.description || promo.short_description || '',
+            type: promo.promo_type?.replace('_', ' ') || 'Challenge',
+            description: promo.description || '',
             progress: Math.min(progress, total),
             total,
             reward,
