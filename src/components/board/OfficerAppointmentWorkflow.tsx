@@ -783,6 +783,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
             executiveName: executiveContext.name,
             documentTitle: 'Executive Onboarding Packet',
             documents: uniqueDocs,
+            executiveId: executiveContext.id,
           },
         }
       );

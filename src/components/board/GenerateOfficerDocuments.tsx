@@ -1022,6 +1022,7 @@ export default function GenerateOfficerDocuments() {
                   executiveName: exec.full_name,
                   documentTitle: 'Executive Onboarding Packet',
                   documents: uniqueDocs,
+                  executiveId: exec.id,
                 },
               }
             );

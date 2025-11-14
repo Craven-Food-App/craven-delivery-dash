@@ -24,7 +24,8 @@ interface ExecutiveDocumentEmailRequest {
   documentUrl?: string;
   pdfBase64?: string;
   htmlContent?: string;
-  documents?: Array<{ title: string; url: string }>; // multiple docs support
+  documents?: Array<{ title: string; url: string; id?: string }>; // multiple docs support
+  executiveId?: string; // Optional: to help find documents
 }
 
 // Convert HTML to PDF using aPDF.io for legacy .html documents
@@ -317,9 +318,57 @@ serve(async (req: Request) => {
 
     const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const companyWebsiteUrl = Deno.env.get('COMPANY_WEBSITE_URL') || 'https://cravenusa.com';
-    // Signing portal URL - points to the executive document signing route
-    const portalUrl = `${companyWebsiteUrl}/executive/sign`;
     const currentYear = String(new Date().getFullYear());
+    
+    // Fetch signature tokens for documents
+    let signatureToken: string | null = null;
+    if (documents && documents.length > 0) {
+      try {
+        // Try to find documents by file_url or executive_id
+        const docUrls = documents.map(d => d.url);
+        let query = supabaseClient
+          .from('executive_documents')
+          .select('signature_token, file_url')
+          .in('file_url', docUrls)
+          .not('signature_token', 'is', null)
+          .limit(1);
+        
+        // If executiveId provided, also search by that
+        if (executiveId) {
+          const { data: execDocs } = await supabaseClient
+            .from('executive_documents')
+            .select('signature_token, file_url')
+            .eq('executive_id', executiveId)
+            .not('signature_token', 'is', null)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          
+          if (execDocs?.signature_token) {
+            signatureToken = execDocs.signature_token;
+          }
+        }
+        
+        // If no token found yet, try by URL
+        if (!signatureToken) {
+          const { data: docs } = await query;
+          if (docs && docs.length > 0 && docs[0].signature_token) {
+            signatureToken = docs[0].signature_token;
+          }
+        }
+        
+        console.log(`Found signature token: ${signatureToken ? 'Yes' : 'No'}`);
+      } catch (tokenError) {
+        console.warn('Failed to fetch signature token:', tokenError);
+        // Continue without token - template might not need it
+      }
+    }
+    
+    // Signing portal URL - points to the executive document signing route
+    // Include token if available
+    const portalUrl = signatureToken 
+      ? `${companyWebsiteUrl}/executive/sign?token=${signatureToken}`
+      : `${companyWebsiteUrl}/executive/sign`;
 
     const safeDocumentTitle = escapeHtml(documentTitle);
     const safeExecutiveName = escapeHtml(executiveName);
@@ -363,6 +412,7 @@ serve(async (req: Request) => {
       '{{current_year}}': currentYear,
       '{{portalUrl}}': portalUrl,
       '{{signing_portal_url}}': portalUrl,
+      '{{signature_token}}': signatureToken || '',
       '{{company_website_url}}': companyWebsiteUrl,
       '{{dynamicContent}}': dynamicContent,
       '{{linksHtml}}': linksHtml,
