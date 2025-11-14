@@ -103,10 +103,19 @@ export const templates: TemplateMeta[] = [
     ]
   },
   { 
+    id: "pre_incorporation_consent", 
+    title: "Pre-Incorporation Consent (Conditional Appointments)", 
+    placeholders: [
+      "company_name","state_of_incorporation","adoption_date","effective_date","execution_date","secretary_name",
+      "full_name","role","position_title"
+    ]
+  },
+  { 
     id: "bylaws_officers_excerpt", 
     title: "Bylaws – Officers (Excerpt)", 
     placeholders: [
-      "company_name","state_of_incorporation","adoption_date","effective_date","execution_date","secretary_name"
+      "company_name","state_of_incorporation","adoption_date","effective_date","execution_date","secretary_name",
+      "full_name","role","position_title"
     ]
   },
   { 
