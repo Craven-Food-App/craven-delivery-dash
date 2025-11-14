@@ -67,13 +67,8 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
         .eq('user_id', user.id)
         .single();
 
-      // Fetch driver data from drivers table
-      const driverQuery = await supabase
-        .from('drivers')
-        .select('id, user_id, status, region_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      const driverData = driverQuery.data;
+      // TODO: Driver table structure needs update - using placeholder data
+      const driverData: any = null;
 
       // Get user metadata
       const fullName = user.user_metadata?.full_name || 
