@@ -742,10 +742,66 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
     return { requiredCount, filledCount };
   };
 
-  const promptSendDocuments = () => {
-    message.info(
-      'Email delivery is temporarily disabled. Please download the generated PDFs and send them manually from the Document Dashboard.'
-    );
+  const promptSendDocuments = async () => {
+    if (!executiveContext?.email) {
+      message.error('No email address available for this executive');
+      return;
+    }
+
+    if (generatedDocuments.length === 0) {
+      message.warning('No documents available to send');
+      return;
+    }
+
+    setSendingDocuments(true);
+
+    try {
+      // Extract document URLs and titles from generated documents
+      const docsForEmail = generatedDocuments
+        .filter((doc: any) => doc.file_url) // Only include documents with file URLs
+        .map((doc: any) => ({
+          title: doc.template_key || doc.officer_name || 'Document',
+          url: doc.file_url,
+        }));
+
+      if (docsForEmail.length === 0) {
+        message.warning('No documents with file URLs available to send');
+        return;
+      }
+
+      // Remove duplicates by title
+      const uniqueDocs = Array.from(
+        new Map(docsForEmail.map((doc) => [doc.title, doc])).values()
+      );
+
+      // Call the email sending edge function
+      const { data, error } = await supabase.functions.invoke(
+        'send-executive-document-email',
+        {
+          body: {
+            to: executiveContext.email,
+            executiveName: executiveContext.name,
+            documentTitle: 'Executive Onboarding Packet',
+            documents: uniqueDocs,
+          },
+        }
+      );
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.success) {
+        message.success(`Documents sent successfully to ${executiveContext.email}`);
+      } else {
+        throw new Error(data?.error || 'Unknown error sending email');
+      }
+    } catch (error: any) {
+      console.error('Error sending documents via email:', error);
+      message.error(`Failed to send documents: ${error.message || error}`);
+    } finally {
+      setSendingDocuments(false);
+    }
   };
 
   const renderStepContent = () => {
@@ -1224,7 +1280,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
               type="success"
               showIcon
               message="Send Documents to Executive"
-              description="Review the generated packet and send it when you're ready. Documents are not sent automatically."
+              description="Review the generated packet and send it via email when you're ready. Documents are not sent automatically."
             />
 
           <div style={{ padding: 16, background: '#fafafa', borderRadius: 8 }}>
