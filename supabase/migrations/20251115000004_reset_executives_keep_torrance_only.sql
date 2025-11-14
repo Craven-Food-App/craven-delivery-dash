@@ -68,13 +68,23 @@ BEGIN
   
   RAISE NOTICE 'Deleted all exec_users except Torrance';
   
-  -- Step 7: Insert or update Torrance as board_member (so he can appoint himself as CEO)
+  -- Step 7: Ensure Torrance is NOT an employee
+  -- Delete any employee record for Torrance
+  DELETE FROM public.employees
+  WHERE user_id = torrance_user_id;
+  
+  RAISE NOTICE 'Removed Torrance from employees table (he is not an employee)';
+  
+  -- Step 8: Insert or update Torrance as board_member & Secretary
+  -- He will become an Executive once appointed by the board
   INSERT INTO public.exec_users (
     user_id,
     role,
     access_level,
     title,
     department,
+    is_also_employee,
+    linked_employee_id,
     approved_at,
     created_at,
     updated_at
@@ -82,8 +92,10 @@ BEGIN
     torrance_user_id,
     'board_member', -- Set as board_member so he can appoint himself as CEO
     1,
-    'Founder & Board Member',
-    'Executive',
+    'Founder, Board Member & Secretary',
+    'Board',
+    false, -- NOT an employee
+    NULL,  -- No linked employee record
     now(),
     now(),
     now()
@@ -91,14 +103,16 @@ BEGIN
   ON CONFLICT (user_id) DO UPDATE SET
     role = 'board_member',
     access_level = 1,
-    title = 'Founder & Board Member',
-    department = 'Executive',
+    title = 'Founder, Board Member & Secretary',
+    department = 'Board',
+    is_also_employee = false,
+    linked_employee_id = NULL,
     approved_at = now(),
     updated_at = now();
   
-  RAISE NOTICE 'Set Torrance Stroman as board_member';
+  RAISE NOTICE 'Set Torrance Stroman as board_member & Secretary (NOT an employee)';
   
-  -- Step 8: Clean up any employee_equity records for employees who are no longer executives
+  -- Step 9: Clean up any employee_equity records for employees who are no longer executives
   -- BUT keep Invero Business Trust and any non-employee shareholders
   UPDATE public.employee_equity
   SET employee_id = NULL
@@ -118,18 +132,12 @@ BEGIN
   
   RAISE NOTICE 'Cleaned up employee_equity records for removed executives';
   
-  -- Step 9: Reset any executive-related status fields in employees table
-  -- Keep Torrance's employee record if it exists
+  -- Step 10: Reset any executive-related status fields in employees table
+  -- Note: Torrance is already removed from employees table in Step 7
   UPDATE public.employees
   SET 
-    position = CASE 
-      WHEN user_id = torrance_user_id THEN COALESCE(position, 'Founder & CEO')
-      ELSE position
-    END,
-    salary_status = CASE
-      WHEN user_id = torrance_user_id THEN COALESCE(salary_status, 'deferred')
-      ELSE salary_status
-    END
+    position = position, -- Keep existing position
+    salary_status = salary_status -- Keep existing salary status
   WHERE user_id IS NOT NULL
     AND user_id != torrance_user_id
     AND (position ILIKE '%ceo%' 
@@ -140,12 +148,13 @@ BEGIN
   
   RAISE NOTICE 'Reset employee positions for removed executives';
   
-  RAISE NOTICE '✓ Successfully reset executives. Torrance Stroman is now the only board_member.';
+  RAISE NOTICE '✓ Successfully reset executives. Torrance Stroman is now the only board_member & Secretary.';
+  RAISE NOTICE '✓ Torrance is NOT an employee - he is a board member who will become an Executive once appointed.';
   RAISE NOTICE '✓ Torrance can now appoint himself as CEO, then appoint other executives.';
   
 END $$;
 
 -- Add comment explaining the reset
 COMMENT ON TABLE public.exec_users IS 
-  'Executive users table. After reset, only Torrance Stroman (board_member) exists. He can appoint himself as CEO first, then appoint others.';
+  'Executive users table. After reset, only Torrance Stroman (board_member & Secretary) exists. He is NOT an employee. He can appoint himself as CEO first, then appoint others.';
 
