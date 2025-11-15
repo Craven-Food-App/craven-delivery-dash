@@ -1,12 +1,27 @@
-// @ts-nocheck
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
+import {
+  Card,
+  Badge,
+  Button,
+  Tabs,
+  Text,
+  Title,
+  Stack,
+  Group,
+  Box,
+  Loader,
+  ActionIcon,
+  Divider,
+} from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import {
+  IconClock,
+  IconMapPin,
+  IconCurrencyDollar,
+  IconPhone,
+  IconCopy,
+} from "@tabler/icons-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Clock, MapPin, DollarSign, Phone, Copy } from "lucide-react";
 
 interface Order {
   id: string;
@@ -31,7 +46,6 @@ interface RestaurantOrderManagementProps {
 export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManagementProps) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchOrders();
@@ -74,17 +88,18 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
 
       if (error) {
         console.error('Auto-assignment error:', error);
-        toast({
+        notifications.show({
           title: "Assignment Error",
-          description: "Failed to find available drivers. Order will remain pending.",
-          variant: "destructive",
+          message: "Failed to find available drivers. Order will remain pending.",
+          color: 'red',
         });
       } else {
         console.log('Auto-assignment result:', data);
         if (data.success) {
-          toast({
+          notifications.show({
             title: "Driver Assigned",
-            description: "A driver has been notified about this order.",
+            message: "A driver has been notified about this order.",
+            color: 'green',
           });
         }
       }
@@ -107,10 +122,10 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
       setOrders(data || []);
     } catch (error) {
       console.error("Error fetching orders:", error);
-      toast({
+      notifications.show({
         title: "Error",
-        description: "Failed to load orders",
-        variant: "destructive",
+        message: "Failed to load orders",
+        color: 'red',
       });
     } finally {
       setLoading(false);
@@ -126,18 +141,19 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
 
       if (error) throw error;
 
-      toast({
+      notifications.show({
         title: "Success",
-        description: "Order status updated successfully",
+        message: "Order status updated successfully",
+        color: 'green',
       });
 
       fetchOrders();
     } catch (error) {
       console.error("Error updating order status:", error);
-      toast({
+      notifications.show({
         title: "Error",
-        description: "Failed to update order status",
-        variant: "destructive",
+        message: "Failed to update order status",
+        color: 'red',
       });
     }
   };
@@ -181,9 +197,6 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
     return orders.filter(order => order.status === status);
   };
 
-  if (loading) {
-    return <div className="flex justify-center p-8">Loading orders...</div>;
-  }
 
   // Test function to create a sample order
   const createTestOrder = async () => {
@@ -219,25 +232,34 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
       
       console.log('Order created successfully:', data);
       
-      toast({
+      notifications.show({
         title: "Test Order Created",
-        description: "A test order has been created and auto-assignment initiated.",
+        message: "A test order has been created and auto-assignment initiated.",
+        color: 'green',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating test order:', error);
-      toast({
+      notifications.show({
         title: "Error",
-        description: `Failed to create test order: ${error.message}`,
-        variant: "destructive",
+        message: `Failed to create test order: ${error.message}`,
+        color: 'red',
       });
     }
   };
 
+  if (loading) {
+    return (
+      <Box p="xl" style={{ display: 'flex', justifyContent: 'center' }}>
+        <Loader />
+      </Box>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Order Management</h3>
-        <div className="flex items-center gap-4">
+    <Stack gap="xl">
+      <Group justify="space-between" align="center">
+        <Title order={3}>Order Management</Title>
+        <Group gap="md">
           <Button
             variant="outline"
             size="sm"
@@ -245,124 +267,125 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
           >
             Create Test Order
           </Button>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="h-4 w-4" />
-            Updates in real-time
-          </div>
-        </div>
-      </div>
+          <Group gap="xs">
+            <IconClock size={16} style={{ color: 'var(--mantine-color-dimmed)' }} />
+            <Text size="sm" c="dimmed">Updates in real-time</Text>
+          </Group>
+        </Group>
+      </Group>
 
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="all">All ({orders.length})</TabsTrigger>
-          <TabsTrigger value="pending">Pending ({filterOrdersByStatus('pending').length})</TabsTrigger>
-          <TabsTrigger value="assigned">Assigned ({filterOrdersByStatus('assigned').length})</TabsTrigger>
-          <TabsTrigger value="picked_up">Picked Up ({filterOrdersByStatus('picked_up').length})</TabsTrigger>
-          <TabsTrigger value="delivered">Delivered ({filterOrdersByStatus('delivered').length})</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="all">
+        <Tabs.List>
+          <Tabs.Tab value="all">All ({orders.length})</Tabs.Tab>
+          <Tabs.Tab value="pending">Pending ({filterOrdersByStatus('pending').length})</Tabs.Tab>
+          <Tabs.Tab value="assigned">Assigned ({filterOrdersByStatus('assigned').length})</Tabs.Tab>
+          <Tabs.Tab value="picked_up">Picked Up ({filterOrdersByStatus('picked_up').length})</Tabs.Tab>
+          <Tabs.Tab value="delivered">Delivered ({filterOrdersByStatus('delivered').length})</Tabs.Tab>
+        </Tabs.List>
 
         {(['all', 'pending', 'assigned', 'picked_up', 'delivered'] as const).map((tab) => (
-          <TabsContent key={tab} value={tab} className="space-y-4">
+          <Tabs.Panel key={tab} value={tab} pt="md">
             {filterOrdersByStatus(tab).length === 0 ? (
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <p className="text-muted-foreground">No {tab === 'all' ? '' : tab} orders found.</p>
-                </CardContent>
+              <Card p="xl">
+                <Text ta="center" c="dimmed">No {tab === 'all' ? '' : tab} orders found.</Text>
               </Card>
             ) : (
-              <div className="grid gap-4">
+              <Stack gap="md">
                 {filterOrdersByStatus(tab).map((order) => (
-                  <Card key={order.id}>
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="text-base">
+                  <Card key={order.id} p="md" withBorder>
+                    <Stack gap="md">
+                      <Group justify="space-between" align="flex-start">
+                        <Stack gap="xs">
+                          <Title order={4}>
                             Order #{order.order_number || order.id.slice(-8)}
-                          </CardTitle>
-                          <CardDescription>
+                          </Title>
+                          <Text size="sm" c="dimmed">
                             {new Date(order.created_at).toLocaleString()}
-                          </CardDescription>
-                        </div>
-                        <Badge variant={getStatusColor(order.status)}>
+                          </Text>
+                        </Stack>
+                        <Badge color={getStatusColor(order.status) === 'destructive' ? 'red' : getStatusColor(order.status) === 'secondary' ? 'blue' : 'gray'}>
                           {getStatusLabel(order.status)}
                         </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                      </Group>
                       {/* Pickup Code Display - Prominent for restaurant staff */}
                       {order.pickup_code && (
-                        <div className="p-4 bg-gradient-to-r from-orange-50 to-orange-100 border-2 border-orange-300 rounded-lg">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-xs font-semibold text-orange-700 uppercase tracking-wide mb-1">
+                        <Box p="md" style={{ background: 'linear-gradient(to right, var(--mantine-color-orange-0), var(--mantine-color-orange-1))', border: '2px solid var(--mantine-color-orange-3)', borderRadius: '8px' }}>
+                          <Group justify="space-between" align="flex-start">
+                            <Stack gap="xs">
+                              <Text size="xs" fw={600} c="orange.7" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
                                 Pickup Code for Driver
-                              </p>
-                              <p className="text-3xl font-black text-orange-900 font-mono tracking-wider">
+                              </Text>
+                              <Text size="xl" fw={900} c="orange.9" style={{ fontFamily: 'monospace', letterSpacing: '0.1em' }}>
                                 {order.pickup_code}
-                              </p>
-                              <p className="text-xs text-orange-600 mt-1">
+                              </Text>
+                              <Text size="xs" c="orange.6">
                                 Share this code with the driver when order is ready
-                              </p>
-                            </div>
-                            <Button
+                              </Text>
+                            </Stack>
+                            <ActionIcon
                               variant="outline"
                               size="sm"
+                              color="orange"
                               onClick={() => {
                                 navigator.clipboard.writeText(order.pickup_code!);
-                                toast({
+                                notifications.show({
                                   title: "Copied!",
-                                  description: `Pickup code ${order.pickup_code} copied to clipboard`,
+                                  message: `Pickup code ${order.pickup_code} copied to clipboard`,
+                                  color: 'green',
                                 });
                               }}
-                              className="border-orange-300 hover:bg-orange-200"
                             >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
+                              <IconCopy size={16} />
+                            </ActionIcon>
+                          </Group>
+                        </Box>
                       )}
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">Pickup</span>
-                          </div>
-                          <div className="pl-6">
-                            <p className="font-medium">{order.pickup_name}</p>
-                            <p className="text-sm text-muted-foreground">{order.pickup_address}</p>
-                          </div>
-                        </div>
+                      <Grid gutter="md">
+                        <Grid.Col span={{ base: 12, md: 6 }}>
+                          <Stack gap="xs">
+                            <Group gap="xs">
+                              <IconMapPin size={16} style={{ color: 'var(--mantine-color-dimmed)' }} />
+                              <Text size="sm" fw={500}>Pickup</Text>
+                            </Group>
+                            <Box pl="xl">
+                              <Text fw={500}>{order.pickup_name}</Text>
+                              <Text size="sm" c="dimmed">{order.pickup_address}</Text>
+                            </Box>
+                          </Stack>
+                        </Grid.Col>
                         
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">Delivery</span>
-                          </div>
-                          <div className="pl-6">
-                            <p className="font-medium">{order.dropoff_name}</p>
-                            <p className="text-sm text-muted-foreground">{order.dropoff_address}</p>
-                          </div>
-                        </div>
-                      </div>
+                        <Grid.Col span={{ base: 12, md: 6 }}>
+                          <Stack gap="xs">
+                            <Group gap="xs">
+                              <IconMapPin size={16} style={{ color: 'var(--mantine-color-dimmed)' }} />
+                              <Text size="sm" fw={500}>Delivery</Text>
+                            </Group>
+                            <Box pl="xl">
+                              <Text fw={500}>{order.dropoff_name}</Text>
+                              <Text size="sm" c="dimmed">{order.dropoff_address}</Text>
+                            </Box>
+                          </Stack>
+                        </Grid.Col>
+                      </Grid>
 
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1">
-                            <DollarSign className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">${(order.payout_cents / 100).toFixed(2)}</span>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
+                      <Group justify="space-between" align="center">
+                        <Group gap="md">
+                          <Group gap="xs">
+                            <IconCurrencyDollar size={16} style={{ color: 'var(--mantine-color-dimmed)' }} />
+                            <Text fw={500}>${(order.payout_cents / 100).toFixed(2)}</Text>
+                          </Group>
+                          <Text size="sm" c="dimmed">
                             {(order.distance_km * 0.621371).toFixed(1)} mi
-                          </div>
+                          </Text>
                           {order.assigned_craver_id && (
                             <Badge variant="outline">
                               Assigned to Craver
                             </Badge>
                           )}
-                        </div>
+                        </Group>
 
-                        <div className="flex gap-2">
+                        <Group gap="xs">
                           {getNextStatus(order.status) && (
                             <Button
                               size="sm"
@@ -374,22 +397,22 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
                           {order.status === 'pending' && (
                             <Button
                               size="sm"
-                              variant="destructive"
+                              color="red"
                               onClick={() => updateOrderStatus(order.id, 'cancelled')}
                             >
                               Cancel
                             </Button>
                           )}
-                        </div>
-                      </div>
-                    </CardContent>
+                        </Group>
+                      </Group>
+                    </Stack>
                   </Card>
                 ))}
-              </div>
+              </Stack>
             )}
-          </TabsContent>
+          </Tabs.Panel>
         ))}
       </Tabs>
-    </div>
+    </Stack>
   );
 };
