@@ -1,15 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Minus, Trash2, Search, ShoppingCart, User, MapPin, CreditCard, LogOut, Clock } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import {
+  Button,
+  Card,
+  TextInput,
+  Badge,
+  ScrollArea,
+  Textarea,
+  Select,
+  Stack,
+  Group,
+  Text,
+  Title,
+  Box,
+  Divider,
+  Grid,
+  ActionIcon,
+  Tabs,
+  Loader,
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import {
+  IconPlus,
+  IconMinus,
+  IconTrash,
+  IconSearch,
+  IconShoppingCart,
+  IconUser,
+  IconMapPin,
+  IconCreditCard,
+  IconLogout,
+  IconClock,
+} from '@tabler/icons-react';
 import { supabase } from '@/integrations/supabase/client';
 import { MenuItemModal } from './MenuItemModal';
 import { AddressAutocomplete } from '@/components/common/AddressAutocomplete';
@@ -85,7 +106,6 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
-  const { toast } = useToast();
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -130,10 +150,10 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
       setMenuItems(data || []);
     } catch (error) {
       console.error('Error fetching menu items:', error);
-      toast({
+      notifications.show({
         title: "Error loading menu",
-        description: "Could not load menu items. Please refresh and try again.",
-        variant: "destructive"
+        message: "Could not load menu items. Please refresh and try again.",
+        color: 'red',
       });
     } finally {
       setLoading(false);
@@ -157,9 +177,10 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
     
     setCart(prevCart => [...prevCart, cartItem]);
     
-    toast({
+    notifications.show({
       title: "Added to cart",
-      description: `${quantity}x ${item.name} added to cart`,
+      message: `${quantity}x ${item.name} added to cart`,
+      color: 'green',
     });
   };
 
@@ -203,37 +224,37 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
 
   const handleSubmitOrder = async () => {
     if (cart.length === 0) {
-      toast({
+      notifications.show({
         title: "Empty cart",
-        description: "Please add items to the cart before placing an order.",
-        variant: "destructive"
+        message: "Please add items to the cart before placing an order.",
+        color: 'red',
       });
       return;
     }
 
     if (!customerInfo.name || !customerInfo.phone) {
-      toast({
+      notifications.show({
         title: "Missing customer information",
-        description: "Please provide customer name and phone number.",
-        variant: "destructive"
+        message: "Please provide customer name and phone number.",
+        color: 'red',
       });
       return;
     }
 
     if (orderType === 'delivery' && !customerInfo.address) {
-      toast({
+      notifications.show({
         title: "Missing delivery address",
-        description: "Please provide a valid delivery address for delivery orders.",
-        variant: "destructive"
+        message: "Please provide a valid delivery address for delivery orders.",
+        color: 'red',
       });
       return;
     }
 
     if (orderType === 'delivery' && !isValidAddress) {
-      toast({
+      notifications.show({
         title: "Invalid delivery address",
-        description: "Please select a valid address from the suggestions.",
-        variant: "destructive"
+        message: "Please select a valid address from the suggestions.",
+        color: 'red',
       });
       return;
     }
@@ -246,10 +267,10 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
       // Ensure user is authenticated for RLS (orders.customer_id = auth.uid())
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast({
+        notifications.show({
           title: "Not signed in",
-          description: "Please sign in to place an order.",
-          variant: "destructive"
+          message: "Please sign in to place an order.",
+          color: 'red',
         });
         setIsSubmitting(false);
         return;
@@ -263,10 +284,10 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
         .single();
 
       if (restaurantError || !restaurant) {
-        toast({
+        notifications.show({
           title: "Restaurant not found",
-          description: "Could not load restaurant information.",
-          variant: "destructive"
+          message: "Could not load restaurant information.",
+          color: 'red',
         });
         setIsSubmitting(false);
         return;
@@ -379,25 +400,15 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
         }
       }
 
-      toast({
+      const orderMessage = newOrder.pickup_code 
+        ? `Order #${newOrder.order_number || newOrder.id.slice(-8)} created. Pickup Code: ${newOrder.pickup_code}. ${orderType === 'delivery' ? 'Auto-assignment triggered for delivery' : 'Ready for pickup in 20 minutes'}. Payment: ${paymentMethod.toUpperCase()}`
+        : `Order #${newOrder.order_number || newOrder.id.slice(-8)} has been created. ${orderType === 'delivery' ? 'Auto-assignment triggered for delivery' : 'Ready for pickup in 20 minutes'}. Payment: ${paymentMethod.toUpperCase()}`;
+      
+      notifications.show({
         title: "Order placed successfully!",
-        description: (
-          <div className="space-y-2">
-            <p>Order #{(newOrder.order_number || newOrder.id.slice(-8))} has been created.</p>
-            {newOrder.pickup_code && (
-              <div className="p-2 bg-orange-50 border border-orange-300 rounded mt-2">
-                <p className="text-xs font-semibold text-orange-700 uppercase mb-1">Pickup Code</p>
-                <p className="text-xl font-black font-mono text-orange-900">{newOrder.pickup_code}</p>
-                <p className="text-xs text-orange-600 mt-1">Share this code with the driver</p>
-              </div>
-            )}
-            <p className="text-sm">
-              {orderType === 'delivery' ? 'Auto-assignment triggered for delivery' : 'Ready for pickup in 20 minutes'}
-            </p>
-            <p className="text-xs text-muted-foreground">Payment: {paymentMethod.toUpperCase()}</p>
-          </div>
-        ),
-        duration: 10000
+        message: orderMessage,
+        color: 'green',
+        autoClose: 10000,
       });
 
       // Reset form
@@ -407,10 +418,10 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
 
     } catch (error) {
       console.error('Checkout error:', error);
-      toast({
+      notifications.show({
         title: "Checkout failed",
-        description: "Something went wrong placing the order. Please try again.",
-        variant: "destructive"
+        message: "Something went wrong placing the order. Please try again.",
+        color: 'red',
       });
     } finally {
       setIsSubmitting(false);
