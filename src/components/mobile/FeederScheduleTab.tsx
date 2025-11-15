@@ -655,7 +655,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
         </Paper>
 
         {/* Week Strip */}
-        <Group gap="sm" mb="xl" justify="space-between" wrap="nowrap">
+        <Group gap="md" mb="xl" justify="space-between" wrap="nowrap">
           {weekDays.map((item, index) => (
             <Button
               key={index}
@@ -669,23 +669,23 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
               }}
               variant={activeDay === index ? 'filled' : 'light'}
               color={activeDay === index ? 'red.9' : 'transparent'}
-              c={activeDay === index ? 'white' : 'white'}
+              c="white"
               radius="xl"
-              p="md"
               style={{
-                width: '48px',
-                height: '48px',
-                minWidth: '48px',
-                padding: 0,
+                width: '56px',
+                height: '56px',
+                minWidth: '56px',
+                padding: '8px 4px',
                 transform: activeDay === index ? 'scale(1.05)' : 'scale(1)',
                 backgroundColor: activeDay === index 
                   ? 'var(--mantine-color-red-9)' 
-                  : 'rgba(255, 255, 255, 0.2)',
+                  : 'rgba(255, 255, 255, 0.25)',
+                border: activeDay === index ? 'none' : '1px solid rgba(255, 255, 255, 0.3)',
               }}
             >
-              <Stack gap={2} align="center">
-                <Text size="9px" fw={600} style={{ lineHeight: 1, opacity: 0.8 }}>{item.day}</Text>
-                <Text size="md" fw={700} style={{ lineHeight: 1 }}>{item.date}</Text>
+              <Stack gap={4} align="center" justify="center" style={{ height: '100%' }}>
+                <Text size="xs" fw={600} c="white" style={{ lineHeight: 1, opacity: 0.9, fontSize: '10px' }}>{item.day}</Text>
+                <Text size="xl" fw={900} c="white" style={{ lineHeight: 1, fontSize: '20px' }}>{item.date}</Text>
               </Stack>
             </Button>
           ))}
