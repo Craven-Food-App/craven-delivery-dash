@@ -25,6 +25,7 @@ import {
   ZoomOutOutlined,
   AimOutlined,
   FileImageOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons";
 import { supabase } from "@/integrations/supabase/client";
 import dayjs from "dayjs";
@@ -134,6 +135,7 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
   const [activeFieldId, setActiveFieldId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(0.95);
   const [draggingFieldId, setDraggingFieldId] = useState<string | null>(null);
+  const [autoDetecting, setAutoDetecting] = useState(false);
 
   const pageContainerRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{
@@ -351,6 +353,241 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
       prev.map((field) => (field.id === fieldId ? { ...field, ...updates } : field)),
     );
   };
+
+  // Auto-detect signature fields from PDF text
+  const autoDetectSignatureFields = useCallback(async () => {
+    if (!docDetails?.file_url || pages.length === 0) {
+      message.warning('Please load document pages first');
+      return;
+    }
+
+    setAutoDetecting(true);
+    try {
+      // Fetch PDF
+      const pdfResponse = await fetch(docDetails.file_url);
+      if (!pdfResponse.ok) {
+        throw new Error('Failed to fetch PDF');
+      }
+      const pdfBlob = await pdfResponse.blob();
+      const pdfDoc = await pdfjsLib.getDocument({ data: await pdfBlob.arrayBuffer() }).promise;
+      
+      const detectedFields: SignatureFieldLayout[] = [];
+      
+      // Role detection patterns
+      const rolePatterns: Record<string, RegExp> = {
+        founder: /founder/i,
+        ceo: /ceo|chief\s+executive\s+officer/i,
+        cfo: /cfo|chief\s+financial\s+officer/i,
+        coo: /coo|chief\s+operating\s+officer/i,
+        cto: /cto|chief\s+technology\s+officer/i,
+        officer: /officer/i,
+        board_member: /board|director/i,
+        secretary: /secretary/i,
+        treasurer: /treasurer/i,
+        shareholder: /shareholder/i,
+        incorporator: /incorporator/i,
+      };
+      
+      // Process each page
+      for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+        const page = await pdfDoc.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        const viewport = page.getViewport({ scale: 1.0 });
+        const { width, height } = viewport;
+        
+        // Collect text items with positions
+        const textItems: Array<{ text: string; x: number; y: number; width: number; height: number }> = [];
+        
+        textContent.items.forEach((item: any) => {
+          const text = item.str || '';
+          if (!text.trim()) return;
+          
+          const transform = item.transform || [1, 0, 0, 1, 0, 0];
+          const x = transform[4] || 0;
+          const y = height - (transform[5] || 0); // Convert to top-down coordinates
+          const itemWidth = item.width || 0;
+          const itemHeight = item.height || 0;
+          
+          textItems.push({ text, x, y, width: itemWidth, height: itemHeight });
+        });
+        
+        // Look for signature patterns
+        textItems.forEach((item, index) => {
+          const text = item.text.toLowerCase();
+          
+          // Check for signature indicators
+          const isSignatureLabel = 
+            /signature\s+of/i.test(item.text) ||
+            /sign\s+here/i.test(item.text) ||
+            /signature\s*:?/i.test(item.text) ||
+            /(?:sign|signature)\s+(?:of|by)/i.test(item.text);
+          
+          // Check for date indicators
+          const isDateLabel = 
+            /^date\s*:?$/i.test(item.text.trim()) ||
+            /signed\s+on/i.test(item.text) ||
+            /dated\s*:?/i.test(item.text);
+          
+          if (isSignatureLabel) {
+            // Determine role from context
+            let detectedRole = 'officer';
+            let roleConfidence = 0;
+            
+            // Check current text for role
+            for (const [role, pattern] of Object.entries(rolePatterns)) {
+              if (pattern.test(item.text)) {
+                detectedRole = role;
+                roleConfidence = 1.0;
+                break;
+              }
+            }
+            
+            // Check nearby text (within 200px) for role hints
+            if (roleConfidence < 0.8) {
+              const nearbyText = textItems
+                .filter((other, idx) => {
+                  const distance = Math.sqrt(
+                    Math.pow(other.x - item.x, 2) + Math.pow(other.y - item.y, 2)
+                  );
+                  return distance < 200 && Math.abs(idx - index) < 10;
+                })
+                .map(i => i.text)
+                .join(' ');
+              
+              for (const [role, pattern] of Object.entries(rolePatterns)) {
+                if (pattern.test(nearbyText)) {
+                  detectedRole = role;
+                  roleConfidence = 0.7;
+                  break;
+                }
+              }
+            }
+            
+            // Check document context for role hints
+            if (roleConfidence < 0.7 && docDetails) {
+              // Check required_signers
+              if (docDetails.required_signers && Array.isArray(docDetails.required_signers)) {
+                const requiredRole = docDetails.required_signers.find((r: string) => 
+                  rolePatterns[r.toLowerCase()]?.test(item.text)
+                );
+                if (requiredRole) {
+                  detectedRole = requiredRole.toLowerCase();
+                  roleConfidence = 0.8;
+                }
+              }
+              
+              // Check officer_name for name-based matching
+              if (docDetails.officer_name) {
+                const nameParts = docDetails.officer_name.toLowerCase().split(' ');
+                const hasNameMatch = nameParts.some(part => 
+                  part.length > 3 && item.text.toLowerCase().includes(part)
+                );
+                if (hasNameMatch && !detectedRole || detectedRole === 'officer') {
+                  // Try to infer role from document type
+                  if (docDetails.type?.includes('founder')) {
+                    detectedRole = 'founder';
+                  } else if (docDetails.role) {
+                    detectedRole = docDetails.role.toLowerCase();
+                  }
+                }
+              }
+            }
+            
+            // Create signature field below the detected text
+            const fieldX = (item.x / width) * 100;
+            const fieldY = ((item.y + item.height + 10) / height) * 100; // Place field below text
+            
+            detectedFields.push({
+              field_type: 'signature',
+              signer_role: detectedRole,
+              page_number: pageNum,
+              x_percent: Math.max(5, Math.min(95, fieldX)),
+              y_percent: Math.max(5, Math.min(95, fieldY)),
+              width_percent: DEFAULT_FIELD_WIDTH,
+              height_percent: DEFAULT_FIELD_HEIGHT,
+              label: `Signature - ${detectedRole}`,
+              required: true,
+            });
+          }
+          
+          // Check for date fields near signature fields
+          if (isDateLabel) {
+            // Find nearest signature field on same page
+            const signatureFields = detectedFields.filter(
+              f => f.page_number === pageNum && f.field_type === 'signature'
+            );
+            
+            if (signatureFields.length > 0) {
+              // Find the closest signature field to this date label
+              let nearestSig = signatureFields[0];
+              let minDistance = Infinity;
+              
+              signatureFields.forEach(sig => {
+                const sigX = (sig.x_percent / 100) * width;
+                const sigY = (sig.y_percent / 100) * height;
+                const distance = Math.sqrt(
+                  Math.pow(sigX - item.x, 2) + Math.pow(sigY - item.y, 2)
+                );
+                if (distance < minDistance) {
+                  minDistance = distance;
+                  nearestSig = sig;
+                }
+              });
+              
+              // Only create date field if it's reasonably close (within 300px)
+              if (minDistance < 300) {
+                const dateX = (item.x / width) * 100;
+                const dateY = ((item.y + item.height + 5) / height) * 100;
+                
+                detectedFields.push({
+                  field_type: 'date',
+                  signer_role: nearestSig.signer_role,
+                  page_number: pageNum,
+                  x_percent: Math.max(5, Math.min(95, dateX)),
+                  y_percent: Math.max(5, Math.min(95, dateY)),
+                  width_percent: 15,
+                  height_percent: DEFAULT_FIELD_HEIGHT,
+                  label: 'Date',
+                  required: true,
+                });
+              }
+            }
+          }
+        });
+      }
+      
+      if (detectedFields.length > 0) {
+        // Merge with existing fields (avoid duplicates)
+        setFields(prev => {
+          const merged = [...prev];
+          detectedFields.forEach(newField => {
+            // Check if field already exists at similar position (within 5% tolerance)
+            const exists = merged.some(existing => 
+              existing.page_number === newField.page_number &&
+              Math.abs(existing.x_percent - newField.x_percent) < 5 &&
+              Math.abs(existing.y_percent - newField.y_percent) < 5 &&
+              existing.field_type === newField.field_type
+            );
+            if (!exists) {
+              merged.push({
+                ...newField,
+                id: `auto_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              });
+            }
+          });
+          return merged;
+        });
+        message.success(`Auto-detected ${detectedFields.length} signature fields`);
+      } else {
+        message.info('No signature fields detected. You may need to add them manually.');
+      }
+    } catch (error: any) {
+      console.error('Auto-detection error:', error);
+      message.error('Failed to auto-detect fields: ' + (error?.message || 'Unknown error'));
+    } finally {
+      setAutoDetecting(false);
+    }
+  }, [docDetails, pages, fields]);
 
   const handlePointerDown = (field: SignatureFieldLayout, event: React.PointerEvent<HTMLDivElement>) => {
     if (!pageContainerRef.current) return;
@@ -683,6 +920,16 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
             style={{ marginBottom: 12, justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}
           >
             <Space wrap>
+              <Button 
+                icon={<ThunderboltOutlined />} 
+                onClick={autoDetectSignatureFields}
+                disabled={pageLoading || autoDetecting || pages.length === 0}
+                loading={autoDetecting}
+                type="dashed"
+                style={{ borderColor: '#52c41a', color: '#52c41a' }}
+              >
+                Auto-Detect Fields
+              </Button>
               <Button icon={<PlusOutlined />} onClick={() => handleAddField("signature")} disabled={pageLoading}>
                 Signature
               </Button>
