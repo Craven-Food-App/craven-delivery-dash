@@ -405,263 +405,265 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
           </Stack>
         </Tabs.Panel>
 
-        <TabsContent value="images" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Image className="h-5 w-5" />
-                Restaurant Images
-              </CardTitle>
-              <CardDescription>
-                Upload your restaurant logo and photos
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="restaurant-logo">Restaurant Logo</Label>
-                  <div className="flex flex-col gap-2 mt-2">
-                    <Input
-                      id="restaurant-logo"
-                      type="file"
+        <Tabs.Panel value="images" pt="md">
+          <Stack gap="md">
+            <Card p="md" withBorder>
+              <Stack gap="md">
+                <Stack gap="xs">
+                  <Group gap="xs">
+                    <IconPhoto size={20} />
+                    <Title order={4}>Restaurant Images</Title>
+                  </Group>
+                  <Text size="sm" c="dimmed">
+                    Upload your restaurant logo and photos
+                  </Text>
+                </Stack>
+                <Stack gap="lg">
+                  <Stack gap="xs">
+                    <Text fw={500}>Restaurant Logo</Text>
+                    <FileButton
+                      onChange={(file) => file && handleImageSelect({ target: { files: [file] } } as any, 'logo')}
                       accept="image/*"
-                      onChange={(e) => handleImageSelect(e, 'logo')}
                       disabled={uploadingImage || removingBackground}
-                    />
-                    <div className="flex gap-2">
-                      {formData.logo_url && (
+                    >
+                      {(props) => (
+                        <Button {...props} variant="outline" leftSection={<IconUpload size={16} />}>
+                          Upload Logo
+                        </Button>
+                      )}
+                    </FileButton>
+                    {formData.logo_url && (
+                      <Group gap="xs">
                         <Button
-                          type="button"
                           variant="outline"
                           size="sm"
                           onClick={() => handleRemoveBackground('logo')}
                           disabled={uploadingImage || removingBackground}
+                          leftSection={removingBackground ? <Loader size="xs" /> : <IconScissors size={16} />}
                         >
-                          <Scissors className="h-4 w-4 mr-2" />
                           {removingBackground ? 'Removing...' : 'Remove Background'}
                         </Button>
-                      )}
-                    </div>
+                      </Group>
+                    )}
                     {(uploadingImage || removingBackground) && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Upload className="h-4 w-4 animate-spin" />
-                        {uploadingImage ? 'Uploading logo...' : 'Processing image...'}
-                      </div>
+                      <Group gap="xs">
+                        <Loader size="sm" />
+                        <Text size="sm" c="dimmed">
+                          {uploadingImage ? 'Uploading logo...' : 'Processing image...'}
+                        </Text>
+                      </Group>
                     )}
                     {formData.logo_url && (
-                      <div className="relative w-32 h-32">
-                        <img
+                      <Box style={{ position: 'relative', width: '128px', height: '128px' }}>
+                        <MantineImage
                           src={formData.logo_url}
                           alt="Restaurant logo"
-                          className="w-full h-full object-cover rounded-md border"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }}
+                          fit="cover"
                         />
-                        <Button
-                          type="button"
-                          variant="destructive"
+                        <ActionIcon
+                          color="red"
                           size="sm"
-                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                          style={{ position: 'absolute', top: -8, right: -8 }}
                           onClick={() => handleInputChange('logo_url', '')}
                         >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
+                          <IconX size={12} />
+                        </ActionIcon>
+                      </Box>
                     )}
-                  </div>
-                </div>
+                  </Stack>
 
-                <div>
-                  <Label htmlFor="restaurant-image">Restaurant Photo</Label>
-                  <div className="flex flex-col gap-2 mt-2">
-                    <Input
-                      id="restaurant-image"
-                      type="file"
+                  <Stack gap="xs">
+                    <Text fw={500}>Restaurant Photo</Text>
+                    <FileButton
+                      onChange={(file) => file && handleImageSelect({ target: { files: [file] } } as any, 'image')}
                       accept="image/*"
-                      onChange={(e) => handleImageSelect(e, 'image')}
                       disabled={uploadingImage || removingBackground}
-                    />
+                    >
+                      {(props) => (
+                        <Button {...props} variant="outline" leftSection={<IconUpload size={16} />}>
+                          Upload Photo
+                        </Button>
+                      )}
+                    </FileButton>
                     {(uploadingImage || removingBackground) && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Upload className="h-4 w-4 animate-spin" />
-                        {uploadingImage ? 'Uploading image...' : 'Processing image...'}
-                      </div>
+                      <Group gap="xs">
+                        <Loader size="sm" />
+                        <Text size="sm" c="dimmed">
+                          {uploadingImage ? 'Uploading image...' : 'Processing image...'}
+                        </Text>
+                      </Group>
                     )}
                     {formData.image_url && (
-                      <div className="relative w-48 h-32">
-                        <img
+                      <Box style={{ position: 'relative', width: '192px', height: '128px' }}>
+                        <MantineImage
                           src={formData.image_url}
                           alt="Restaurant photo"
-                          className="w-full h-full object-cover rounded-md border"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }}
+                          fit="cover"
                         />
-                        <Button
-                          type="button"
-                          variant="destructive"
+                        <ActionIcon
+                          color="red"
                           size="sm"
-                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                          style={{ position: 'absolute', top: -8, right: -8 }}
                           onClick={() => handleInputChange('image_url', '')}
                         >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
+                          <IconX size={12} />
+                        </ActionIcon>
+                      </Box>
                     )}
-                  </div>
-                </div>
-              </div>
+                  </Stack>
+                </Stack>
 
-              <Button onClick={saveBasicInfo} disabled={saving || uploadingImage || removingBackground}>
-                <Save className="h-4 w-4 mr-2" />
-                {saving ? "Saving..." : "Save Images"}
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                <Button onClick={saveBasicInfo} disabled={saving || uploadingImage || removingBackground} leftSection={saving ? <Loader size="sm" /> : <IconDeviceFloppy size={16} />}>
+                  {saving ? "Saving..." : "Save Images"}
+                </Button>
+              </Stack>
+            </Card>
+          </Stack>
+        </Tabs.Panel>
 
-        <TabsContent value="address" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Address Information
-              </CardTitle>
-              <CardDescription>
-                Update your restaurant's address
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="address">Street Address</Label>
-                <AddressAutocomplete
-                  value={formData.address}
-                  onChange={(value) => handleInputChange('address', value)}
-                  onAddressParsed={(parsed) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      address: parsed.street,
-                      city: parsed.city,
-                      state: parsed.state,
-                      zip_code: parsed.zipCode
-                    }));
-                  }}
-                  placeholder="123 Main St, City, State 12345"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
-                  <Input
-                    id="city"
-                    value={formData.city}
-                    onChange={(e) => handleInputChange('city', e.target.value)}
+        <Tabs.Panel value="address" pt="md">
+          <Stack gap="md">
+            <Card p="md" withBorder>
+              <Stack gap="md">
+                <Stack gap="xs">
+                  <Group gap="xs">
+                    <IconMapPin size={20} />
+                    <Title order={4}>Address Information</Title>
+                  </Group>
+                  <Text size="sm" c="dimmed">
+                    Update your restaurant's address
+                  </Text>
+                </Stack>
+                <Stack gap="md">
+                  <AddressAutocomplete
+                    value={formData.address}
+                    onChange={(value) => handleInputChange('address', value)}
+                    onAddressParsed={(parsed) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        address: parsed.street,
+                        city: parsed.city,
+                        state: parsed.state,
+                        zip_code: parsed.zipCode
+                      }));
+                    }}
+                    placeholder="123 Main St, City, State 12345"
+                    required
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="state">State</Label>
-                  <Input
-                    id="state"
-                    value={formData.state}
-                    onChange={(e) => handleInputChange('state', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="zip">ZIP Code</Label>
-                  <Input
-                    id="zip"
-                    value={formData.zip_code}
-                    onChange={(e) => handleInputChange('zip_code', e.target.value)}
-                  />
-                </div>
-              </div>
 
-              <Button onClick={saveAddress} disabled={saving}>
-                <Save className="h-4 w-4 mr-2" />
-                {saving ? "Saving..." : "Save Address"}
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  <Grid gutter="md">
+                    <Grid.Col span={{ base: 12, md: 4 }}>
+                      <TextInput
+                        label="City"
+                        value={formData.city}
+                        onChange={(e) => handleInputChange('city', e.target.value)}
+                      />
+                    </Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 4 }}>
+                      <TextInput
+                        label="State"
+                        value={formData.state}
+                        onChange={(e) => handleInputChange('state', e.target.value)}
+                      />
+                    </Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 4 }}>
+                      <TextInput
+                        label="ZIP Code"
+                        value={formData.zip_code}
+                        onChange={(e) => handleInputChange('zip_code', e.target.value)}
+                      />
+                    </Grid.Col>
+                  </Grid>
+                </Stack>
 
-        <TabsContent value="delivery" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Delivery Settings
-              </CardTitle>
-              <CardDescription>
-                Configure your delivery options and timing
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="delivery-fee">Delivery Fee ($)</Label>
-                <div className="flex items-center">
-                  <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <Input
-                    id="delivery-fee"
+                <Button onClick={saveAddress} disabled={saving} leftSection={saving ? <Loader size="sm" /> : <IconDeviceFloppy size={16} />}>
+                  {saving ? "Saving..." : "Save Address"}
+                </Button>
+              </Stack>
+            </Card>
+          </Stack>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="delivery" pt="md">
+          <Stack gap="md">
+            <Card p="md" withBorder>
+              <Stack gap="md">
+                <Stack gap="xs">
+                  <Group gap="xs">
+                    <IconClock size={20} />
+                    <Title order={4}>Delivery Settings</Title>
+                  </Group>
+                  <Text size="sm" c="dimmed">
+                    Configure your delivery options and timing
+                  </Text>
+                </Stack>
+                <Stack gap="md">
+                  <TextInput
+                    label="Delivery Fee ($)"
                     type="number"
                     step="0.01"
                     value={formData.delivery_fee_cents / 100}
                     onChange={(e) => handleInputChange('delivery_fee_cents', Math.round(parseFloat(e.target.value) * 100))}
+                    leftSection={<IconCurrencyDollar size={16} />}
                   />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="min-time">Minimum Delivery Time (minutes)</Label>
-                  <Input
-                    id="min-time"
-                    type="number"
-                    value={formData.min_delivery_time}
-                    onChange={(e) => handleInputChange('min_delivery_time', parseInt(e.target.value))}
+                  <Grid gutter="md">
+                    <Grid.Col span={{ base: 12, md: 6 }}>
+                      <TextInput
+                        label="Minimum Delivery Time (minutes)"
+                        type="number"
+                        value={formData.min_delivery_time}
+                        onChange={(e) => handleInputChange('min_delivery_time', parseInt(e.target.value))}
+                      />
+                    </Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 6 }}>
+                      <TextInput
+                        label="Maximum Delivery Time (minutes)"
+                        type="number"
+                        value={formData.max_delivery_time}
+                        onChange={(e) => handleInputChange('max_delivery_time', parseInt(e.target.value))}
+                      />
+                    </Grid.Col>
+                  </Grid>
+                </Stack>
+
+                <Button onClick={saveDeliverySettings} disabled={saving} leftSection={saving ? <Loader size="sm" /> : <IconDeviceFloppy size={16} />}>
+                  {saving ? "Saving..." : "Save Delivery Settings"}
+                </Button>
+              </Stack>
+            </Card>
+          </Stack>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="status" pt="md">
+          <Stack gap="md">
+            <Card p="md" withBorder>
+              <Stack gap="md">
+                <Stack gap="xs">
+                  <Title order={4}>Restaurant Status</Title>
+                  <Text size="sm" c="dimmed">
+                    Control whether your restaurant is accepting orders
+                  </Text>
+                </Stack>
+                <Group justify="space-between" align="flex-start">
+                  <Stack gap="xs">
+                    <Text fw={500}>Restaurant Active</Text>
+                    <Text size="sm" c="dimmed">
+                      When active, customers can view and order from your restaurant
+                    </Text>
+                  </Stack>
+                  <Switch
+                    checked={formData.is_active}
+                    onChange={() => toggleActiveStatus()}
+                    disabled={saving}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="max-time">Maximum Delivery Time (minutes)</Label>
-                  <Input
-                    id="max-time"
-                    type="number"
-                    value={formData.max_delivery_time}
-                    onChange={(e) => handleInputChange('max_delivery_time', parseInt(e.target.value))}
-                  />
-                </div>
-              </div>
-
-              <Button onClick={saveDeliverySettings} disabled={saving}>
-                <Save className="h-4 w-4 mr-2" />
-                {saving ? "Saving..." : "Save Delivery Settings"}
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="status" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Restaurant Status</CardTitle>
-              <CardDescription>
-                Control whether your restaurant is accepting orders
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="active-status">Restaurant Active</Label>
-                  <p className="text-sm text-muted-foreground">
-                    When active, customers can view and order from your restaurant
-                  </p>
-                </div>
-                <Switch
-                  id="active-status"
-                  checked={formData.is_active}
-                  onCheckedChange={toggleActiveStatus}
-                  disabled={saving}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                </Group>
+              </Stack>
+            </Card>
+          </Stack>
+        </Tabs.Panel>
       </Tabs>
 
       <ImageCropper
@@ -675,6 +677,6 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
         aspectRatio={cropperImageType === 'logo' ? 1 : undefined}
         cropShape={cropperImageType === 'logo' ? 'round' : 'rect'}
       />
-    </div>
+    </Stack>
   );
 };
