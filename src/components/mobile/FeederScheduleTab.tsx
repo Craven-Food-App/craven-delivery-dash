@@ -658,35 +658,41 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
         </Paper>
 
         {/* Week Strip */}
-        <Grid gutter="xs" mb="xl">
+        <Group gap="sm" mb="xl" justify="space-between" wrap="nowrap">
           {weekDays.map((item, index) => (
-            <Grid.Col span={1} key={index}>
-              <Button
-                onClick={() => {
-                  setActiveDay(index);
-                  if (viewMode === 'available' || viewMode === 'scheduled') {
-                    // Keep current view mode
-                  } else {
-                    setViewMode('schedule');
-                  }
-                }}
-                variant={activeDay === index ? 'filled' : 'light'}
-                color={activeDay === index ? 'red.9' : 'transparent'}
-                c={activeDay === index ? 'white' : 'white'}
-                radius="xl"
-                p="xs"
-                style={{
-                  transform: activeDay === index ? 'scale(1.05)' : 'scale(1)',
-                }}
-              >
-                <Stack gap={0} align="center">
-                  <Text size="xs" fw={600}>{item.day}</Text>
-                  <Text size="lg" fw={700}>{item.date}</Text>
-                </Stack>
-              </Button>
-            </Grid.Col>
+            <Button
+              key={index}
+              onClick={() => {
+                setActiveDay(index);
+                if (viewMode === 'available' || viewMode === 'scheduled') {
+                  // Keep current view mode
+                } else {
+                  setViewMode('schedule');
+                }
+              }}
+              variant={activeDay === index ? 'filled' : 'light'}
+              color={activeDay === index ? 'red.9' : 'transparent'}
+              c={activeDay === index ? 'white' : 'white'}
+              radius="xl"
+              p="md"
+              style={{
+                width: '48px',
+                height: '48px',
+                minWidth: '48px',
+                padding: 0,
+                transform: activeDay === index ? 'scale(1.05)' : 'scale(1)',
+                backgroundColor: activeDay === index 
+                  ? 'var(--mantine-color-red-9)' 
+                  : 'rgba(255, 255, 255, 0.2)',
+              }}
+            >
+              <Stack gap={2} align="center">
+                <Text size="9px" fw={600} style={{ lineHeight: 1, opacity: 0.8 }}>{item.day}</Text>
+                <Text size="md" fw={700} style={{ lineHeight: 1 }}>{item.date}</Text>
+              </Stack>
+            </Button>
           ))}
-        </Grid>
+        </Group>
 
         {/* Section Title */}
         {viewMode === 'schedule' && (
