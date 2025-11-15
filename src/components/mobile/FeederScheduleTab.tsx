@@ -1,7 +1,22 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Menu, Bell, MapPin, Pencil, X, Trash2 } from 'lucide-react';
+import { IconMenu2, IconBell, IconMapPin, IconPencil, IconX, IconTrash } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import {
+  Box,
+  Stack,
+  Text,
+  Button,
+  Group,
+  ActionIcon,
+  Loader,
+  Paper,
+  Title,
+  Modal,
+  TextInput,
+  Grid,
+  RingProgress,
+} from '@mantine/core';
 
 type FeederScheduleTabProps = {
   onOpenMenu?: () => void;
@@ -28,7 +43,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
   onOpenNotifications
 }) => {
   const today = useMemo(() => new Date(), []);
-  const [activeDay, setActiveDay] = useState(0); // Start with today (first day in weekDays array)
+  const [activeDay, setActiveDay] = useState(0);
   const [schedules, setSchedules] = useState<ScheduleRecord[]>([]);
   const [surgeZones, setSurgeZones] = useState<SurgeZone[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,7 +54,6 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
   const [selectedStartTime, setSelectedStartTime] = useState('09:00');
   const [selectedEndTime, setSelectedEndTime] = useState('17:00');
 
-  // Generate week days starting from today
   const weekDays = useMemo(() => {
     const days = [];
     for (let i = 0; i < 7; i++) {
@@ -56,7 +70,6 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
     return days;
   }, [today]);
 
-  // Fetch schedules from database
   const fetchSchedules = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -81,18 +94,18 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       const fetchedSchedules = data || [];
       setSchedules(fetchedSchedules);
       
-      // IMMEDIATELY reset time to next shift if no schedules
       if (fetchedSchedules.length === 0) {
         setTimeToNextShift(null);
       }
     } catch (error) {
       console.error('Error fetching schedules:', error);
-      toast.error('Failed to load schedule');
+      notifications.show({
+        title: 'Failed to load schedule',
+        color: 'red',
+      });
     }
   }, []);
 
-
-  // Fetch high demand zones
   const fetchSurgeZones = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -106,24 +119,19 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       setSurgeZones(data || []);
     } catch (error) {
       console.error('Error fetching surge zones:', error);
-      // Don't show error toast for surge zones, just use fallback
     }
   }, []);
 
-  // Calculate time to next shift using real schedule data
   useEffect(() => {
-    // Don't calculate while loading
     if (loading) {
       return;
     }
 
-    // CRITICAL: Don't calculate if no schedules exist
     if (!schedules || !Array.isArray(schedules) || schedules.length === 0) {
       setTimeToNextShift(null);
       return;
     }
 
-    // CRITICAL: Don't calculate if no active schedules exist
     const activeSchedules = schedules.filter(s => s && s.is_active === true);
     if (activeSchedules.length === 0) {
       setTimeToNextShift(null);
@@ -131,7 +139,6 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
     }
 
     const calculateTimeToNextShift = () => {
-      // Double-check before calculating
       if (!schedules || schedules.length === 0 || activeSchedules.length === 0) {
         setTimeToNextShift(null);
         return;
@@ -141,7 +148,6 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       const currentDay = now.getDay();
       const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
 
-      // Helper to parse time string (handles "HH:MM" or "HH:MM:SS" formats)
       const parseTime = (timeStr: string): { hour: number; minute: number } => {
         const parts = timeStr.split(':');
         return {
@@ -150,11 +156,9 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
         };
       };
 
-      // Find the next upcoming shift across all days
       let nextShiftDateTime: Date | null = null;
       let minDiffMs = Infinity;
 
-      // Check all shifts in the next 14 days (2 weeks) to find the closest one
       for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
         const checkDate = new Date(now);
         checkDate.setDate(now.getDate() + dayOffset);
@@ -172,7 +176,6 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
           
           const diffMs = shiftDateTime.getTime() - now.getTime();
           
-          // Only consider future shifts
           if (diffMs > 0 && diffMs < minDiffMs) {
             minDiffMs = diffMs;
             nextShiftDateTime = shiftDateTime;
@@ -180,7 +183,6 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
         }
       }
 
-      // If no future shift found in 2 weeks, wrap to next occurrence of earliest shift
       if (!nextShiftDateTime && activeSchedules.length > 0) {
         const sortedSchedules = [...activeSchedules].sort((a, b) => {
           if (a.day_of_week !== b.day_of_week) {
@@ -194,13 +196,11 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
           const { hour: startHour, minute: startMin } = parseTime(earliestShift.start_time);
           nextShiftDateTime = new Date(now);
           
-          // Calculate days until next occurrence
           let daysUntil = (earliestShift.day_of_week - currentDay + 7) % 7;
           if (daysUntil === 0) {
-            // Same day - check if time has passed
             const shiftTimeMinutes = startHour * 60 + startMin;
             if (shiftTimeMinutes <= currentTimeMinutes) {
-              daysUntil = 7; // Next week
+              daysUntil = 7;
             }
           }
           
@@ -226,15 +226,13 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       }
     };
 
-    // Only calculate and set up interval if we have active schedules
     if (activeSchedules.length > 0) {
       calculateTimeToNextShift();
-      const interval = setInterval(calculateTimeToNextShift, 60000); // Update every minute
+      const interval = setInterval(calculateTimeToNextShift, 60000);
       return () => clearInterval(interval);
     } else {
-      // No schedules - ensure it's null and don't set up interval
       setTimeToNextShift(null);
-      return () => {}; // No cleanup needed
+      return () => {};
     }
   }, [schedules, loading]);
 
@@ -244,7 +242,6 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       setLoading(false);
     });
 
-    // Listen for schedule updates
     const handleScheduleUpdate = () => {
       fetchSchedules();
     };
@@ -255,7 +252,6 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
     };
   }, [fetchSchedules, fetchSurgeZones]);
 
-  // Reset time to next shift IMMEDIATELY when schedules are empty
   useEffect(() => {
     if (!loading && (!schedules || schedules.length === 0)) {
       setTimeToNextShift(null);
@@ -267,7 +263,6 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
     }
   }, [loading, schedules]);
 
-  // Get shifts for selected day
   const getShiftsForDay = (dayOfWeek: number) => {
     return schedules
       .filter(s => s.day_of_week === dayOfWeek)
@@ -280,25 +275,26 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
           return `${displayHour}:${minutes} ${ampm}`;
         };
 
-        // Try to get location from surge zones or use default
         const location = surgeZones.length > 0 ? surgeZones[0].zone_name : 'Downtown';
 
         return {
           time: `${formatTime(shift.start_time)} – ${formatTime(shift.end_time)}`,
           location: location,
           id: shift.id,
-          scheduleRecord: shift // Keep reference to original schedule record
+          scheduleRecord: shift
         };
       })
       .sort((a, b) => a.time.localeCompare(b.time));
   };
 
-  // Handle deleting a shift
   const handleDeleteShift = async (shiftId: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error('Please sign in to delete shifts');
+        notifications.show({
+          title: 'Please sign in to delete shifts',
+          color: 'red',
+        });
         return;
       }
 
@@ -310,26 +306,33 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
 
       if (error) throw error;
 
-      toast.success('Shift removed successfully');
+      notifications.show({
+        title: 'Shift removed successfully',
+        color: 'green',
+      });
       await fetchSchedules();
     } catch (error) {
       console.error('Error deleting shift:', error);
-      toast.error('Failed to remove shift');
+      notifications.show({
+        title: 'Failed to remove shift',
+        color: 'red',
+      });
     }
   };
 
   const selectedDayShifts = getShiftsForDay(weekDays[activeDay]?.dayOfWeek || today.getDay());
 
-  // Handle Start Shift button
   const handleStartShift = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error('Please sign in to start a shift');
+        notifications.show({
+          title: 'Please sign in to start a shift',
+          color: 'red',
+        });
         return;
       }
 
-      // Update driver profile to online
       const { error: profileError } = await supabase
         .from('driver_profiles')
         .update({
@@ -341,7 +344,6 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
 
       if (profileError) throw profileError;
 
-      // Update session
       await supabase
         .from('driver_sessions')
         .upsert({
@@ -352,15 +354,20 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
           onConflict: 'driver_id'
         });
 
-      toast.success('Shift started! You are now online.');
+      notifications.show({
+        title: 'Shift started! You are now online.',
+        color: 'green',
+      });
       window.dispatchEvent(new CustomEvent('driverStatusChange', { detail: { status: 'online' } }));
     } catch (error) {
       console.error('Error starting shift:', error);
-      toast.error('Failed to start shift');
+      notifications.show({
+        title: 'Failed to start shift',
+        color: 'red',
+      });
     }
   };
 
-  // Generate time slots from 12:00 AM to 11:59 PM
   const timeSlots = useMemo(() => {
     const slots = [];
     for (let hour = 0; hour < 24; hour++) {
@@ -382,15 +389,12 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
     return slots;
   }, []);
 
-  // Get available shifts for selected day (based on surge zones)
   const getAvailableShifts = useMemo(() => {
     const selectedDayOfWeek = weekDays[activeDay]?.dayOfWeek || today.getDay();
     const availableShifts = [];
     
-    // For each surge zone, create available time slots
     surgeZones.forEach(zone => {
       timeSlots.forEach(slot => {
-        // Check if this slot conflicts with existing schedules
         const conflicts = schedules.some(s => {
           if (s.day_of_week !== selectedDayOfWeek || !s.is_active) return false;
           const [sStartHour] = s.start_time.split(':').map(Number);
@@ -398,7 +402,6 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
           const [slotStartHour] = slot.start.split(':').map(Number);
           const [slotEndHour] = slot.end.split(':').map(Number);
           
-          // Check for overlap
           return (slotStartHour >= sStartHour && slotStartHour < sEndHour) ||
                  (slotEndHour > sStartHour && slotEndHour <= sEndHour) ||
                  (slotStartHour <= sStartHour && slotEndHour >= sEndHour);
@@ -416,7 +419,6 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       });
     });
     
-    // If no surge zones, show default zones
     if (availableShifts.length === 0) {
       timeSlots.forEach(slot => {
         const conflicts = schedules.some(s => {
@@ -445,17 +447,14 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
     return availableShifts;
   }, [surgeZones, timeSlots, schedules, activeDay, weekDays, today]);
 
-  // Handle Available button - switch to available view
   const handleAvailable = () => {
     setViewMode('available');
   };
 
-  // Handle Scheduled button - switch to scheduled view
   const handleScheduled = () => {
     setViewMode('scheduled');
   };
 
-  // Handle pencil icon click - open time picker
   const handleEditTimeSlot = (slot: { zone: string; city: string; startTime: string; endTime: string; displayStart: string; displayEnd: string }) => {
     setSelectedSlot(slot);
     setSelectedStartTime(slot.startTime);
@@ -463,14 +462,16 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
     setShowTimePicker(true);
   };
 
-  // Handle scheduling a shift
   const handleScheduleShift = async () => {
     if (!selectedSlot) return;
     
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error('Please sign in to schedule a shift');
+        notifications.show({
+          title: 'Please sign in to schedule a shift',
+          color: 'red',
+        });
         return;
       }
 
@@ -491,20 +492,24 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
 
       if (error) throw error;
 
-      toast.success('Shift scheduled successfully!');
+      notifications.show({
+        title: 'Shift scheduled successfully!',
+        color: 'green',
+      });
       setShowTimePicker(false);
       setSelectedSlot(null);
       await fetchSchedules();
       setViewMode('schedule');
     } catch (error) {
       console.error('Error scheduling shift:', error);
-      toast.error('Failed to schedule shift');
+      notifications.show({
+        title: 'Failed to schedule shift',
+        color: 'red',
+      });
     }
   };
 
-  // Format time remaining
   const formatTimeRemaining = () => {
-    // Check if schedules exist first
     const activeSchedules = schedules.filter(s => s && s.is_active === true);
     if (!schedules || schedules.length === 0 || activeSchedules.length === 0) {
       return 'No upcoming shifts';
@@ -516,7 +521,6 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
     
     const { hours, minutes } = timeToNextShift;
     
-    // If more than 24 hours, show days
     if (hours >= 24) {
       const days = Math.floor(hours / 24);
       const remainingHours = hours % 24;
@@ -526,370 +530,362 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       return `${days}d ${remainingHours}h remaining`;
     }
     
-    // Less than 24 hours
     if (hours === 0) {
       return `${minutes}m remaining`;
     }
     return `${hours}h ${minutes}m remaining`;
   };
 
-  // Calculate progress percentage for circular progress based on real time to next shift
   const progressPercentage = useMemo(() => {
-    if (!timeToNextShift) return 0; // No shift = 0% progress
+    if (!timeToNextShift) return 0;
     
     const totalMinutes = timeToNextShift.hours * 60 + timeToNextShift.minutes;
-    
-    // Use a dynamic max based on the furthest shift in the week (max 7 days = 168 hours)
-    // For display purposes, cap at 24 hours (1440 minutes) for better visual feedback
-    // Less time remaining = more progress filled
-    const maxMinutes = 24 * 60; // 24 hours max for progress calculation
+    const maxMinutes = 24 * 60;
     const progress = Math.min(100, Math.max(0, ((maxMinutes - totalMinutes) / maxMinutes) * 100));
     
     return Math.round(progress);
   }, [timeToNextShift]);
 
-  // Get high demand zone display
   const highDemandZone = surgeZones.length > 0 
     ? { name: surgeZones[0].zone_name }
-    : { name: 'Downtown' }; // Fallback
+    : { name: 'Downtown' };
 
   if (loading) {
     return (
-      <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-pink-600 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-      </div>
+      <Box h="100vh" w="100%" style={{ background: 'linear-gradient(to bottom, var(--mantine-color-red-6), var(--mantine-color-orange-6), var(--mantine-color-pink-6))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader size="lg" color="white" />
+      </Box>
     );
   }
 
   return (
-    <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-pink-600 flex flex-col">
-      {/* Header - Fixed at top */}
-      <div className="px-6 pb-4 flex items-center justify-between flex-shrink-0 safe-area-top">
-        <button 
+    <Box h="100vh" w="100%" style={{ background: 'linear-gradient(to bottom, var(--mantine-color-red-6), var(--mantine-color-orange-6), var(--mantine-color-pink-6))', display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
+      <Group px="xl" pb="md" justify="space-between" align="center" className="safe-area-top">
+        <ActionIcon
           onClick={() => {
             if (onOpenMenu) {
               onOpenMenu();
             } else {
-              toast.info('Menu coming soon.');
+              notifications.show({
+                title: 'Menu coming soon.',
+                color: 'blue',
+              });
             }
           }}
-          className="text-white"
+          variant="subtle"
+          color="white"
         >
-          <Menu className="w-6 h-6" />
-        </button>
-        <h1 className="text-orange-400 text-3xl font-bold tracking-wide">SCHEDULE</h1>
-        <button 
+          <IconMenu2 size={24} />
+        </ActionIcon>
+        <Title order={1} c="orange.3" fw={700} style={{ letterSpacing: '0.05em' }}>SCHEDULE</Title>
+        <ActionIcon
           onClick={() => {
             if (onOpenNotifications) {
               onOpenNotifications();
             } else {
-              toast.info('Notifications coming soon.');
+              notifications.show({
+                title: 'Notifications coming soon.',
+                color: 'blue',
+              });
             }
           }}
-          className="text-white"
+          variant="subtle"
+          color="white"
         >
-          <Bell className="w-7 h-7" />
-        </button>
-      </div>
+          <IconBell size={28} />
+        </ActionIcon>
+      </Group>
 
       {/* Container */}
-      <div className="px-6">
+      <Box px="xl">
         {/* Next Shift Row */}
-        <div className="mb-4">
-          <div className="flex items-center gap-3 mb-4">
-            {/* Circular Progress */}
-            <div className="relative w-20 h-20 flex-shrink-0">
-              <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
-                <circle 
-                  cx="18" 
-                  cy="18" 
-                  r="15.916" 
-                  fill="none" 
-                  stroke="rgba(255,255,255,0.3)" 
-                  strokeWidth="3"
-                />
-                <circle 
-                  cx="18" 
-                  cy="18" 
-                  r="15.916" 
-                  fill="none" 
-                  stroke="white" 
-                  strokeWidth="2.5" 
-                  strokeDasharray={`${progressPercentage}, 100`}
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-white text-[9px] font-bold text-center leading-tight">NEXT<br/>SHIFT</span>
-              </div>
-            </div>
-            <div className="flex-1">
-              <p className="text-white text-lg font-semibold">Time To Next Shift</p>
-              <p className="text-white/80 text-sm">{formatTimeRemaining()}</p>
-            </div>
-          </div>
+        <Box mb="md">
+          <Group gap="md" mb="md">
+            <RingProgress
+              size={80}
+              thickness={8}
+              sections={[{ value: progressPercentage, color: 'white' }]}
+              label={
+                <Text c="white" size="9px" fw={700} ta="center" style={{ lineHeight: 1.2 }}>
+                  NEXT<br/>SHIFT
+                </Text>
+              }
+              styles={{
+                root: {
+                  transform: 'rotate(-90deg)',
+                },
+                curve: {
+                  stroke: 'rgba(255,255,255,0.3)',
+                },
+              }}
+            />
+            <Box style={{ flex: 1 }}>
+              <Text c="white" size="lg" fw={600}>Time To Next Shift</Text>
+              <Text c="white" size="sm" opacity={0.8}>{formatTimeRemaining()}</Text>
+            </Box>
+          </Group>
           
-          {/* Buttons in horizontal row */}
-          <div className="flex gap-2">
-            <button 
+          <Group gap="xs">
+            <Button
               onClick={handleAvailable}
-              className="flex-1 bg-white text-red-700 px-4 py-2 rounded-full font-bold text-xs shadow-lg hover:bg-gray-50 transition-colors"
+              flex={1}
+              color="white"
+              c="red.7"
+              size="sm"
+              radius="xl"
+              fw={700}
             >
               Available
-            </button>
-            <button 
+            </Button>
+            <Button
               onClick={handleScheduled}
-              className="flex-1 bg-white text-red-700 px-4 py-2 rounded-full font-bold text-xs shadow-lg hover:bg-gray-50 transition-colors"
+              flex={1}
+              color="white"
+              c="red.7"
+              size="sm"
+              radius="xl"
+              fw={700}
             >
               Scheduled
-            </button>
-          </div>
-        </div>
+            </Button>
+          </Group>
+        </Box>
 
         {/* Zone Banner */}
-        <div className="bg-orange-50 rounded-2xl py-2.5 px-4 text-center mb-6 shadow-lg">
-          <p className="text-red-800 font-bold text-base">🔥 High Demand Zone: {highDemandZone.name}</p>
-        </div>
+        <Paper p="sm" radius="xl" bg="orange.0" mb="xl" shadow="md">
+          <Text c="red.8" fw={700} size="md" ta="center">🔥 High Demand Zone: {highDemandZone.name}</Text>
+        </Paper>
 
-        {/* Week Strip - Always visible */}
-        <div className="grid grid-cols-7 gap-2 mb-6">
+        {/* Week Strip */}
+        <Grid gutter="xs" mb="xl">
           {weekDays.map((item, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                setActiveDay(index);
-                if (viewMode === 'available' || viewMode === 'scheduled') {
-                  // Keep current view mode when clicking days
-                } else {
-                  setViewMode('schedule');
-                }
-              }}
-              className={`rounded-full py-3 text-center transition-all ${
-                activeDay === index
-                  ? 'bg-red-900 text-white shadow-lg scale-105'
-                  : 'bg-orange-400/60 text-white hover:bg-orange-400/80'
-              }`}
-            >
-              <p className="text-xs font-semibold">{item.day}</p>
-              <p className="text-lg font-bold">{item.date}</p>
-            </button>
+            <Grid.Col span={1} key={index}>
+              <Button
+                onClick={() => {
+                  setActiveDay(index);
+                  if (viewMode === 'available' || viewMode === 'scheduled') {
+                    // Keep current view mode
+                  } else {
+                    setViewMode('schedule');
+                  }
+                }}
+                variant={activeDay === index ? 'filled' : 'light'}
+                color={activeDay === index ? 'red.9' : 'transparent'}
+                c={activeDay === index ? 'white' : 'white'}
+                radius="xl"
+                p="xs"
+                style={{
+                  transform: activeDay === index ? 'scale(1.05)' : 'scale(1)',
+                }}
+              >
+                <Stack gap={0} align="center">
+                  <Text size="xs" fw={600}>{item.day}</Text>
+                  <Text size="lg" fw={700}>{item.date}</Text>
+                </Stack>
+              </Button>
+            </Grid.Col>
           ))}
-        </div>
+        </Grid>
 
-        {/* Section Title - Fixed */}
+        {/* Section Title */}
         {viewMode === 'schedule' && (
-          <h3 className="text-white text-lg font-bold mb-3 flex-shrink-0">
+          <Title order={3} c="white" fw={700} mb="md">
             {weekDays[activeDay]?.day === weekDays[0]?.day ? "Today's Shifts" : `${weekDays[activeDay]?.day}'s Shifts`}
-          </h3>
+          </Title>
         )}
 
-        {/* Available/Scheduled View Headers - Fixed */}
         {viewMode === 'available' && (
-          <div className="flex items-center justify-between mb-3 flex-shrink-0">
-            <h3 className="text-white text-lg font-bold">
+          <Group justify="space-between" mb="md">
+            <Title order={3} c="white" fw={700}>
               Available Shifts - {weekDays[activeDay]?.day}
-            </h3>
-            <button
-              onClick={() => setViewMode('schedule')}
-              className="text-white text-sm underline"
-            >
+            </Title>
+            <Button variant="subtle" color="white" onClick={() => setViewMode('schedule')} size="sm">
               Back
-            </button>
-          </div>
+            </Button>
+          </Group>
         )}
 
         {viewMode === 'scheduled' && (
-          <div className="flex items-center justify-between mb-3 flex-shrink-0">
-            <h3 className="text-white text-lg font-bold">
+          <Group justify="space-between" mb="md">
+            <Title order={3} c="white" fw={700}>
               Scheduled Shifts - {weekDays[activeDay]?.day}
-            </h3>
-            <button
-              onClick={() => setViewMode('schedule')}
-              className="text-white text-sm underline"
-            >
+            </Title>
+            <Button variant="subtle" color="white" onClick={() => setViewMode('schedule')} size="sm">
               Back
-            </button>
-          </div>
+            </Button>
+          </Group>
         )}
-      </div>
+      </Box>
 
-      {/* Scrollable Content Area - Only the list scrolls */}
-      <div className="flex-1 overflow-y-auto px-6" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
-        {/* Content based on view mode */}
+      {/* Scrollable Content Area */}
+      <Box style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }} px="xl">
         {viewMode === 'schedule' && (
-          <div className="space-y-3">
+          <Stack gap="md">
             {selectedDayShifts.length > 0 ? (
               selectedDayShifts.map((shift, index) => (
-                <div key={shift.id || index} className="bg-orange-50 rounded-2xl p-4 shadow-lg hover:shadow-xl transition-shadow">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <p className="text-gray-900 font-bold text-lg mb-1">{shift.time}</p>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-orange-600" />
-                        <p className="text-orange-800 font-semibold">{shift.location}</p>
-                      </div>
-                    </div>
-                    <button
+                <Paper key={shift.id || index} p="md" radius="xl" bg="orange.0" shadow="md">
+                  <Group justify="space-between" align="flex-start">
+                    <Box style={{ flex: 1 }}>
+                      <Text c="dark" fw={700} size="lg" mb="xs">{shift.time}</Text>
+                      <Group gap="xs">
+                        <IconMapPin size={16} color="var(--mantine-color-orange-6)" />
+                        <Text c="orange.8" fw={600}>{shift.location}</Text>
+                      </Group>
+                    </Box>
+                    <ActionIcon
                       onClick={() => {
                         if (shift.id && confirm('Are you sure you want to remove this shift?')) {
                           handleDeleteShift(shift.id);
                         }
                       }}
-                      className="ml-3 p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                      aria-label="Delete shift"
+                      color="red"
+                      variant="subtle"
+                      size="lg"
                     >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
+                      <IconTrash size={20} />
+                    </ActionIcon>
+                  </Group>
+                </Paper>
               ))
             ) : (
-              <div className="bg-orange-50 rounded-2xl p-4 shadow-lg text-center">
-                <p className="text-orange-800 font-semibold">No shifts scheduled for this day</p>
-              </div>
+              <Paper p="md" radius="xl" bg="orange.0" shadow="md">
+                <Text c="orange.8" fw={600} ta="center">No shifts scheduled for this day</Text>
+              </Paper>
             )}
-          </div>
+          </Stack>
         )}
 
         {viewMode === 'available' && (
-          <div className="space-y-3">
+          <Stack gap="md">
             {getAvailableShifts.length > 0 ? (
               getAvailableShifts.map((shift, index) => (
-                <div key={index} className="bg-orange-50 rounded-2xl p-4 shadow-lg">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <p className="text-gray-900 font-bold text-lg mb-1">
+                <Paper key={index} p="md" radius="xl" bg="orange.0" shadow="md">
+                  <Group justify="space-between">
+                    <Box style={{ flex: 1 }}>
+                      <Text c="dark" fw={700} size="lg" mb="xs">
                         {shift.displayStart} – {shift.displayEnd}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-orange-600" />
-                        <p className="text-orange-800 font-semibold">{shift.zone}</p>
-                      </div>
-                    </div>
-                    <button
+                      </Text>
+                      <Group gap="xs">
+                        <IconMapPin size={16} color="var(--mantine-color-orange-6)" />
+                        <Text c="orange.8" fw={600}>{shift.zone}</Text>
+                      </Group>
+                    </Box>
+                    <ActionIcon
                       onClick={() => handleEditTimeSlot(shift)}
-                      className="ml-4 p-2 bg-white rounded-full shadow hover:bg-gray-50 transition-colors"
+                      color="white"
+                      variant="filled"
+                      size="lg"
+                      radius="xl"
                     >
-                      <Pencil className="w-5 h-5 text-red-700" />
-                    </button>
-                  </div>
-                </div>
+                      <IconPencil size={20} color="var(--mantine-color-red-7)" />
+                    </ActionIcon>
+                  </Group>
+                </Paper>
               ))
             ) : (
-              <div className="bg-orange-50 rounded-2xl p-4 shadow-lg text-center">
-                <p className="text-orange-800 font-semibold">No available shifts for this day</p>
-              </div>
+              <Paper p="md" radius="xl" bg="orange.0" shadow="md">
+                <Text c="orange.8" fw={600} ta="center">No available shifts for this day</Text>
+              </Paper>
             )}
-          </div>
+          </Stack>
         )}
 
         {viewMode === 'scheduled' && (
-          <div className="space-y-3">
+          <Stack gap="md">
             {selectedDayShifts.length > 0 ? (
               selectedDayShifts.map((shift, index) => (
-                <div key={shift.id || index} className="bg-orange-50 rounded-2xl p-4 shadow-lg">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <p className="text-gray-900 font-bold text-lg mb-1">{shift.time}</p>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-orange-600" />
-                        <p className="text-orange-800 font-semibold">{shift.location}</p>
-                      </div>
-                    </div>
-                    <button
+                <Paper key={shift.id || index} p="md" radius="xl" bg="orange.0" shadow="md">
+                  <Group justify="space-between" align="flex-start">
+                    <Box style={{ flex: 1 }}>
+                      <Text c="dark" fw={700} size="lg" mb="xs">{shift.time}</Text>
+                      <Group gap="xs">
+                        <IconMapPin size={16} color="var(--mantine-color-orange-6)" />
+                        <Text c="orange.8" fw={600}>{shift.location}</Text>
+                      </Group>
+                    </Box>
+                    <ActionIcon
                       onClick={() => {
                         if (shift.id && confirm('Are you sure you want to remove this shift?')) {
                           handleDeleteShift(shift.id);
                         }
                       }}
-                      className="ml-3 p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                      aria-label="Delete shift"
+                      color="red"
+                      variant="subtle"
+                      size="lg"
                     >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
+                      <IconTrash size={20} />
+                    </ActionIcon>
+                  </Group>
+                </Paper>
               ))
             ) : (
-              <div className="bg-orange-50 rounded-2xl p-4 shadow-lg text-center">
-                <p className="text-orange-800 font-semibold">No shifts scheduled for this day</p>
-              </div>
+              <Paper p="md" radius="xl" bg="orange.0" shadow="md">
+                <Text c="orange.8" fw={600} ta="center">No shifts scheduled for this day</Text>
+              </Paper>
             )}
-          </div>
+          </Stack>
         )}
+      </Box>
 
-        {/* Time Picker Modal */}
-        {showTimePicker && selectedSlot && (
-          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-gray-900">Select Time Slot</h3>
-                <button
-                  onClick={() => {
-                    setShowTimePicker(false);
-                    setSelectedSlot(null);
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <X className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
-              
-              <div className="mb-4">
-                <p className="text-sm text-gray-600 mb-2">Zone: <span className="font-semibold text-gray-900">{selectedSlot.zone}</span></p>
-                <p className="text-sm text-gray-600 mb-2">City: <span className="font-semibold text-gray-900">{selectedSlot.city}</span></p>
-                <p className="text-sm text-gray-600">Available: {selectedSlot.displayStart} – {selectedSlot.displayEnd}</p>
-              </div>
+      {/* Time Picker Modal */}
+      <Modal
+        opened={showTimePicker}
+        onClose={() => {
+          setShowTimePicker(false);
+          setSelectedSlot(null);
+        }}
+        title="Select Time Slot"
+        radius="xl"
+        centered
+      >
+        {selectedSlot && (
+          <Stack gap="md">
+            <Box>
+              <Text size="sm" c="dimmed" mb="xs">Zone: <Text component="span" fw={600} c="dark">{selectedSlot.zone}</Text></Text>
+              <Text size="sm" c="dimmed" mb="xs">City: <Text component="span" fw={600} c="dark">{selectedSlot.city}</Text></Text>
+              <Text size="sm" c="dimmed">Available: {selectedSlot.displayStart} – {selectedSlot.displayEnd}</Text>
+            </Box>
 
-              <div className="space-y-4 mb-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Start Time</label>
-                  <input
-                    type="time"
-                    value={selectedStartTime}
-                    onChange={(e) => setSelectedStartTime(e.target.value)}
-                    min={selectedSlot.startTime}
-                    max={selectedSlot.endTime}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600 focus:outline-none text-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">End Time</label>
-                  <input
-                    type="time"
-                    value={selectedEndTime}
-                    onChange={(e) => setSelectedEndTime(e.target.value)}
-                    min={selectedStartTime}
-                    max={selectedSlot.endTime}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-red-600 focus:outline-none text-lg"
-                  />
-                </div>
-              </div>
+            <TextInput
+              label="Start Time"
+              type="time"
+              value={selectedStartTime}
+              onChange={(e) => setSelectedStartTime(e.target.value)}
+            />
 
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowTimePicker(false);
-                    setSelectedSlot(null);
-                  }}
-                  className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleScheduleShift}
-                  className="flex-1 px-4 py-3 bg-red-900 text-white rounded-xl font-bold hover:bg-red-800 transition-colors"
-                >
-                  Schedule Shift
-                </button>
-              </div>
-            </div>
-          </div>
+            <TextInput
+              label="End Time"
+              type="time"
+              value={selectedEndTime}
+              onChange={(e) => setSelectedEndTime(e.target.value)}
+            />
+
+            <Group gap="md" mt="md">
+              <Button
+                variant="light"
+                color="gray"
+                flex={1}
+                onClick={() => {
+                  setShowTimePicker(false);
+                  setSelectedSlot(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                color="red.9"
+                flex={1}
+                onClick={handleScheduleShift}
+              >
+                Schedule Shift
+              </Button>
+            </Group>
+          </Stack>
         )}
-      </div>
-    </div>
+      </Modal>
+    </Box>
   );
 };
 
 export default FeederScheduleTab;
-
