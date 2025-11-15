@@ -142,7 +142,6 @@ export default function ExecutiveSignature() {
       setIsSigning(false);
     }
   };
-  };
 
   if (loading) return <div className="p-6">Loading...</div>;
   if (!token) return <div className="p-6">Invalid or expired link.</div>;
