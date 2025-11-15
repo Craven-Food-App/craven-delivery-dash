@@ -694,9 +694,9 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
                   borderRadius: '8px',
                 }}
               >
-                <Stack gap={1} align="center" justify="center" style={{ height: '100%', width: '100%' }}>
-                  <Text size="xs" fw={600} c="white" style={{ lineHeight: 1, opacity: 0.9, fontSize: '7px', letterSpacing: '0.2px' }}>{item.day}</Text>
-                  <Text size="lg" fw={900} c="white" style={{ lineHeight: 1, fontSize: '14px' }}>{item.date}</Text>
+                <Stack gap={2} align="center" justify="center" style={{ height: '100%', width: '100%' }}>
+                  <Text size="xs" fw={700} c="white" style={{ lineHeight: 1, opacity: 0.95, fontSize: '9px', letterSpacing: '0.3px' }}>{item.day}</Text>
+                  <Text size="lg" fw={900} c="white" style={{ lineHeight: 1, fontSize: '16px' }}>{item.date}</Text>
                 </Stack>
               </Button>
             );
