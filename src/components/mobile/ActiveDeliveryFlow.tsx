@@ -1,5 +1,5 @@
 import React from 'react';
-import DoorDashStyleDeliveryFlow from './DoorDashStyleDeliveryFlow';
+import CravenDeliveryFlow from './CravenDeliveryFlow';
 
 // ===== TYPES =====
 
@@ -29,7 +29,7 @@ interface ActiveDeliveryProps {
 }
 
 const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = (props) => {
-  return <DoorDashStyleDeliveryFlow {...props} />;
+  return <CravenDeliveryFlow {...props} />;
 };
 
 export default ActiveDeliveryFlow;

@@ -770,14 +770,34 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
 
   const getSignatureProgress = (doc: any) => {
     const layout = Array.isArray(doc?.signature_field_layout) ? doc.signature_field_layout : [];
+    
+    // Count signature fields that need to be tagged
     const signatureFields = layout.filter(
       (field: any) => String(field?.field_type || '').toLowerCase() === 'signature'
     );
+    
     const requiredCount = signatureFields.length;
+    
+    // Count how many signature fields have been TAGGED (exist in layout with valid position)
+    // A field is considered "tagged" if it has x_percent and y_percent set
+    const taggedCount = signatureFields.filter(
+      (field: any) => 
+        typeof field?.x_percent === 'number' && 
+        typeof field?.y_percent === 'number' &&
+        field.x_percent > 0 && 
+        field.y_percent > 0
+    ).length;
+    
+    // Count how many are actually filled/signed (for completion status)
     const filledCount = signatureFields.filter(
       (field: any) => field?.auto_filled || field?.filled || field?.signed_at
     ).length;
-    return { requiredCount, filledCount };
+    
+    return { 
+      requiredCount, 
+      filledCount, // For completion status (after signing)
+      taggedCount  // For tagging progress display (during staging)
+    };
   };
 
   const promptSendDocuments = async () => {
@@ -847,8 +867,9 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
     // Get current form values for review step
     const values = form.getFieldsValue() as OfficerFormData;
     const hasPendingSignatureTabs = generatedDocuments.some((doc: any) => {
-      const { requiredCount, filledCount } = getSignatureProgress(doc);
-      return requiredCount > 0 && filledCount < requiredCount;
+      const { requiredCount, taggedCount } = getSignatureProgress(doc);
+      // Check if fields are tagged (placed), not filled (signed)
+      return requiredCount > 0 && taggedCount < requiredCount;
     });
 
     return (
@@ -1271,11 +1292,11 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
                 const completionTag =
                   progress.requiredCount === 0 ? (
                     <Tag color="blue">No Signature Fields</Tag>
-                  ) : progress.filledCount >= progress.requiredCount ? (
+                  ) : progress.taggedCount >= progress.requiredCount ? (
                     <Tag color="green">Ready</Tag>
                   ) : (
                     <Tag color="orange">
-                      {progress.filledCount}/{progress.requiredCount} Fields Tagged
+                      {progress.taggedCount}/{progress.requiredCount} Fields Tagged
                     </Tag>
                   );
 
@@ -1337,7 +1358,7 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
                         <Space direction="vertical" size={0}>
                           <Text>{doc.officer_name || doc.template_key}</Text>
                           <Text type="secondary">
-                            Signatures: {progress.filledCount}/{progress.requiredCount}{' '}
+                            Signatures: {progress.taggedCount}/{progress.requiredCount}{' '}
                             {progress.requiredCount === 0 && '(auto-filled)'}
                           </Text>
                         </Space>
