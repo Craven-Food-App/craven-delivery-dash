@@ -605,16 +605,13 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
             <RingProgress
               size={80}
               thickness={8}
-              sections={[{ value: progressPercentage, color: 'white' }]}
+              sections={timeToNextShift ? [{ value: progressPercentage, color: 'white' }] : []}
               label={
                 <Text c="white" size="9px" fw={700} ta="center" style={{ lineHeight: 1.2 }}>
                   NEXT<br/>SHIFT
                 </Text>
               }
               styles={{
-                root: {
-                  transform: 'rotate(-90deg)',
-                },
                 curve: {
                   stroke: 'rgba(255,255,255,0.3)',
                 },
