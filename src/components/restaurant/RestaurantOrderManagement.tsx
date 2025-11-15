@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Clock, MapPin, DollarSign, Phone } from "lucide-react";
+import { Clock, MapPin, DollarSign, Phone, Copy } from "lucide-react";
 
 interface Order {
   id: string;
@@ -20,6 +20,8 @@ interface Order {
   payout_cents: number;
   distance_km: number;
   assigned_craver_id?: string;
+  order_number?: string;
+  pickup_code?: string;
 }
 
 interface RestaurantOrderManagementProps {
@@ -274,7 +276,9 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <div>
-                          <CardTitle className="text-base">Order #{order.id.slice(-8)}</CardTitle>
+                          <CardTitle className="text-base">
+                            Order #{order.order_number || order.id.slice(-8)}
+                          </CardTitle>
                           <CardDescription>
                             {new Date(order.created_at).toLocaleString()}
                           </CardDescription>
@@ -285,6 +289,39 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
+                      {/* Pickup Code Display - Prominent for restaurant staff */}
+                      {order.pickup_code && (
+                        <div className="p-4 bg-gradient-to-r from-orange-50 to-orange-100 border-2 border-orange-300 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs font-semibold text-orange-700 uppercase tracking-wide mb-1">
+                                Pickup Code for Driver
+                              </p>
+                              <p className="text-3xl font-black text-orange-900 font-mono tracking-wider">
+                                {order.pickup_code}
+                              </p>
+                              <p className="text-xs text-orange-600 mt-1">
+                                Share this code with the driver when order is ready
+                              </p>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                navigator.clipboard.writeText(order.pickup_code!);
+                                toast({
+                                  title: "Copied!",
+                                  description: `Pickup code ${order.pickup_code} copied to clipboard`,
+                                });
+                              }}
+                              className="border-orange-300 hover:bg-orange-200"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">

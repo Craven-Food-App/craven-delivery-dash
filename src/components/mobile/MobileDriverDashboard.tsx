@@ -1459,24 +1459,25 @@ export const MobileDriverDashboard: React.FC = () => {
         {activeTab === 'home' && driverState === 'on_delivery' && activeDelivery && <div className="pointer-events-auto">
           <ActiveDeliveryFlow 
             orderDetails={{
-            id: activeDelivery.id || activeDelivery.order_id || 'missing-order-id',
-            order_number: activeDelivery.order_number || 'MISSING-ORDER',
-            restaurant_name: activeDelivery.restaurant_name || 'Restaurant',
-            pickup_address: activeDelivery.pickup_address || 'Pickup Address',
-            dropoff_address: activeDelivery.dropoff_address || 'Delivery Address',
-            customer_name: activeDelivery.customer_name || 'Customer',
-            customer_phone: activeDelivery.customer_phone,
-            delivery_notes: activeDelivery.delivery_notes,
-            payout_cents: activeDelivery.payout_cents || 0,
-            subtotal_cents: activeDelivery.subtotal_cents || activeDelivery.payout_cents || 1200,
-            estimated_time: activeDelivery.estimated_time || 30,
-            items: activeDelivery.items && activeDelivery.items.length > 0 ? activeDelivery.items : [{
-              name: 'Order Items',
-              quantity: 1,
-              price_cents: activeDelivery.subtotal_cents || 1200
-            }],
-            isTestOrder: activeDelivery.isTestOrder || false // Only true if explicitly marked as test
-          }} onCompleteDelivery={async () => {
+              id: activeDelivery.id || activeDelivery.order_id || 'missing-order-id',
+              order_id: activeDelivery.order_id || activeDelivery.id, // Ensure order_id is passed for pickup code lookup
+              order_number: activeDelivery.order_number || 'MISSING-ORDER',
+              restaurant_name: activeDelivery.restaurant_name || 'Restaurant',
+              pickup_address: activeDelivery.pickup_address || 'Pickup Address',
+              dropoff_address: activeDelivery.dropoff_address || 'Delivery Address',
+              customer_name: activeDelivery.customer_name || 'Customer',
+              customer_phone: activeDelivery.customer_phone,
+              delivery_notes: activeDelivery.delivery_notes,
+              payout_cents: activeDelivery.payout_cents || 0,
+              subtotal_cents: activeDelivery.subtotal_cents || activeDelivery.payout_cents || 1200,
+              estimated_time: activeDelivery.estimated_time || 30,
+              items: activeDelivery.items && activeDelivery.items.length > 0 ? activeDelivery.items : [{
+                name: 'Order Items',
+                quantity: 1,
+                price_cents: activeDelivery.subtotal_cents || 1200
+              }],
+              isTestOrder: activeDelivery.isTestOrder || false // Only true if explicitly marked as test
+            }} onCompleteDelivery={async () => {
             // Record final driver earnings
             try {
               const {

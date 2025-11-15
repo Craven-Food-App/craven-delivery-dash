@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Separator } from "@/components/ui/separator";
-import { Clock, MapPin, Phone, Mail, Package, Truck } from "lucide-react";
+import { Clock, MapPin, Phone, Mail, Package, Truck, Copy } from "lucide-react";
 
 interface CustomerOrder {
   id: string;
@@ -27,6 +27,8 @@ interface CustomerOrder {
   estimated_pickup_time?: string;
   estimated_delivery_time?: string;
   created_at: string;
+  order_number?: string;
+  pickup_code?: string;
 }
 
 interface RestaurantCustomerOrderManagementProps {
@@ -307,7 +309,7 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-lg">Order #{order.id.slice(-8)}</CardTitle>
+                      <CardTitle className="text-lg">Order #{order.order_number || order.id.slice(-8)}</CardTitle>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
@@ -326,6 +328,47 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
                 </CardHeader>
 
                 <CardContent className="space-y-4">
+                  {/* Order Number and Pickup Code */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Order Number */}
+                    <div className="p-3 bg-gray-50 rounded-lg border">
+                      <p className="text-xs font-semibold text-gray-600 uppercase mb-1">
+                        Order Number
+                      </p>
+                      <p className="text-lg font-bold font-mono">
+                        {order.order_number || order.id.slice(-8)}
+                      </p>
+                    </div>
+                    
+                    {/* Pickup Code */}
+                    {order.pickup_code && (
+                      <div className="p-3 bg-orange-50 rounded-lg border-2 border-orange-300">
+                        <p className="text-xs font-semibold text-orange-700 uppercase mb-1">
+                          Pickup Code
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-lg font-black font-mono text-orange-900">
+                            {order.pickup_code}
+                          </p>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(order.pickup_code!);
+                              toast({
+                                title: "Copied!",
+                                description: `Pickup code copied`,
+                              });
+                            }}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
                   {/* Customer Information */}
                   <div>
                     <h4 className="font-medium mb-2">Customer</h4>

@@ -103,8 +103,13 @@ const OrdersDashboard = () => {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <span className="font-bold text-lg">{order.order_number}</span>
+              <span className="font-bold text-lg">{order.order_number || order.id.slice(-8)}</span>
               {getStatusBadge(order.status)}
+              {order.pickup_code && (
+                <Badge variant="outline" className="bg-orange-50 text-orange-900 border-orange-300 font-mono">
+                  Code: {order.pickup_code}
+                </Badge>
+              )}
             </div>
             <p className="text-sm text-muted-foreground mb-1">
               ${((order.total_cents || 0) / 100).toFixed(2)}

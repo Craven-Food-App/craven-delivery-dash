@@ -18,8 +18,10 @@ import {
   Zap,
   Shield,
   Truck,
-  Settings
+  Settings,
+  Copy
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 // Import Design System Components
 import { 
@@ -152,6 +154,30 @@ const DoorDashStyleDeliveryFlow: React.FC<DoorDashStyleDeliveryFlowProps> = ({
   const [selectedNavigationApp, setSelectedNavigationApp] = useState<'apple' | 'google' | 'waze'>('apple');
   const [showNavigationSettings, setShowNavigationSettings] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [pickupCode, setPickupCode] = useState<string | null>(null);
+
+  // Fetch pickup code from order
+  useEffect(() => {
+    const fetchPickupCode = async () => {
+      if (!orderDetails?.order_id) return;
+      
+      try {
+        const { data } = await supabase
+          .from('orders')
+          .select('pickup_code')
+          .eq('id', orderDetails.order_id)
+          .maybeSingle();
+        
+        if (data?.pickup_code) {
+          setPickupCode(data.pickup_code);
+        }
+      } catch (error) {
+        console.error('Error fetching pickup code:', error);
+      }
+    };
+    
+    fetchPickupCode();
+  }, [orderDetails?.order_id]);
 
   // Mock data - in real app, this would come from props
   const customer: Customer = {
@@ -386,6 +412,33 @@ const DoorDashStyleDeliveryFlow: React.FC<DoorDashStyleDeliveryFlowProps> = ({
       case 'verify_pickup':
         return (
           <div className="space-y-6">
+            {/* Pickup Code Display */}
+            {pickupCode && (
+              <DeliveryCard className="p-6 bg-gradient-to-r from-orange-50 to-orange-100 border-2 border-orange-300">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold text-orange-700 uppercase tracking-wide mb-1">
+                      Pickup Code
+                    </p>
+                    <p className="text-3xl font-black text-orange-900 font-mono tracking-wider">
+                      {pickupCode}
+                    </p>
+                    <p className="text-xs text-orange-600 mt-1">
+                      Show this code to the restaurant staff
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(pickupCode);
+                    }}
+                    className="p-2 hover:bg-orange-200 rounded-lg transition-colors"
+                  >
+                    <Copy className="h-5 w-5 text-orange-700" />
+                  </button>
+                </div>
+              </DeliveryCard>
+            )}
+            
             <DeliveryCard className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Verify Your Order</h3>
               <p className="text-sm text-gray-600 mb-6">
