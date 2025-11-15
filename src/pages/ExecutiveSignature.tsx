@@ -22,23 +22,40 @@ export default function ExecutiveSignature() {
   const [isSigning, setIsSigning] = useState(false);
 
   useEffect(() => {
-    const fetchRecord = async () => {
+    const fetchDocuments = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase.functions.invoke('get-executive-signature-by-token', {
+        const { data, error } = await supabase.functions.invoke('get-executive-documents-by-token', {
           body: { token }
         });
         if (error) throw error;
-        const rec = (data as any)?.record || null;
-        setRecord(rec);
+        
+        // Extract the first document that needs signing
+        const response = data as any;
+        if (response?.stages) {
+          // Find first unsigned document across all stages
+          for (const stage of response.stages) {
+            const unsignedDoc = stage.documents?.find((d: any) => d.signature_status !== 'signed');
+            if (unsignedDoc) {
+              setRecord({
+                ...unsignedDoc,
+                employee_name: response.executive?.name || unsignedDoc.officer_name,
+                employee_email: response.executive?.email || '',
+                position: response.executive?.role || unsignedDoc.role,
+                document_type: unsignedDoc.type
+              });
+              break;
+            }
+          }
+        }
       } catch (e) {
-        console.error('Failed to load signature record', e);
+        console.error('Failed to load documents', e);
         setRecord(null);
       } finally {
         setLoading(false);
       }
     };
-    if (token) fetchRecord();
+    if (token) fetchDocuments();
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
   }, [token]);
 
