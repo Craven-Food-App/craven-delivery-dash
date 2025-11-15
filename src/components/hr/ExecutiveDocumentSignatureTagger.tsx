@@ -413,52 +413,101 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
         
         // Look for signature patterns
         textItems.forEach((item, index) => {
-          const text = item.text.toLowerCase();
+          const text = item.text.toLowerCase().trim();
+          const originalText = item.text;
           
-          // Check for signature indicators
+          // Expanded signature indicators - catch more patterns
           const isSignatureLabel = 
-            /signature\s+of/i.test(item.text) ||
-            /sign\s+here/i.test(item.text) ||
-            /signature\s*:?/i.test(item.text) ||
-            /(?:sign|signature)\s+(?:of|by)/i.test(item.text);
+            /signature\s+of/i.test(originalText) ||
+            /sign\s+here/i.test(originalText) ||
+            /signature\s*:?/i.test(originalText) ||
+            /(?:sign|signature)\s+(?:of|by)/i.test(originalText) ||
+            /^signature$/i.test(text) ||
+            /^sign$/i.test(text) ||
+            /signature\s+line/i.test(originalText) ||
+            /signature\s+block/i.test(originalText) ||
+            // Look for role names followed by colon (e.g., "CEO:", "Founder:", "Officer:")
+            /^(ceo|cfo|coo|cto|officer|founder|board|director|secretary|treasurer|shareholder|incorporator)\s*:?$/i.test(text) ||
+            // Look for "By:" which often precedes signatures
+            /^by\s*:?$/i.test(text) ||
+            // Look for "Name:" which often appears before signature lines
+            /^name\s*:?$/i.test(text);
           
           // Check for date indicators
           const isDateLabel = 
-            /^date\s*:?$/i.test(item.text.trim()) ||
-            /signed\s+on/i.test(item.text) ||
-            /dated\s*:?/i.test(item.text);
+            /^date\s*:?$/i.test(text) ||
+            /signed\s+on/i.test(originalText) ||
+            /dated\s*:?/i.test(originalText) ||
+            /date\s+signed/i.test(originalText);
           
-          if (isSignatureLabel) {
+          // Also look for signature lines (horizontal lines/underscores)
+          // These appear as empty or very short text items with specific positioning
+          const isSignatureLine = 
+            (item.width > 100 && item.height < 5) || // Wide, thin element (likely a line)
+            /^_{3,}$/.test(originalText) || // Underscores
+            /^-{3,}$/.test(originalText); // Dashes
+          
+          if (isSignatureLabel || isSignatureLine) {
             // Determine role from context
             let detectedRole = 'officer';
             let roleConfidence = 0;
             
-            // Check current text for role
+            // Get nearby text first (used in multiple places)
+            const nearbyText = textItems
+              .filter((other, idx) => {
+                const distance = Math.sqrt(
+                  Math.pow(other.x - item.x, 2) + Math.pow(other.y - item.y, 2)
+                );
+                return distance < 300 && Math.abs(idx - index) < 15;
+              })
+              .map(i => i.text)
+              .join(' ');
+            
+            // Check current text for role (including role names like "CEO:", "Founder:")
             for (const [role, pattern] of Object.entries(rolePatterns)) {
-              if (pattern.test(item.text)) {
+              if (pattern.test(originalText)) {
                 detectedRole = role;
                 roleConfidence = 1.0;
                 break;
               }
             }
             
-            // Check nearby text (within 200px) for role hints
+            // Check for role name directly in text (e.g., "CEO:", "Founder:")
+            if (roleConfidence < 1.0) {
+              const roleMatch = originalText.match(/^(ceo|cfo|coo|cto|officer|founder|board|director|secretary|treasurer|shareholder|incorporator)\s*:?$/i);
+              if (roleMatch) {
+                const matchedRole = roleMatch[1].toLowerCase();
+                // Map variations
+                if (matchedRole === 'board' || matchedRole === 'director') {
+                  detectedRole = 'board_member';
+                } else {
+                  detectedRole = matchedRole;
+                }
+                roleConfidence = 1.0;
+              }
+            }
+            
+            // Check nearby text (within 300px) for role hints - expanded search
             if (roleConfidence < 0.8) {
-              const nearbyText = textItems
-                .filter((other, idx) => {
-                  const distance = Math.sqrt(
-                    Math.pow(other.x - item.x, 2) + Math.pow(other.y - item.y, 2)
-                  );
-                  return distance < 200 && Math.abs(idx - index) < 10;
-                })
-                .map(i => i.text)
-                .join(' ');
-              
               for (const [role, pattern] of Object.entries(rolePatterns)) {
                 if (pattern.test(nearbyText)) {
                   detectedRole = role;
                   roleConfidence = 0.7;
                   break;
+                }
+              }
+              
+              // Also check for role names in nearby text
+              if (roleConfidence < 0.7) {
+                const nearbyRoleMatch = nearbyText.match(/\b(ceo|cfo|coo|cto|officer|founder|board|director|secretary|treasurer|shareholder|incorporator)\b/i);
+                if (nearbyRoleMatch) {
+                  const matchedRole = nearbyRoleMatch[1].toLowerCase();
+                  if (matchedRole === 'board' || matchedRole === 'director') {
+                    detectedRole = 'board_member';
+                  } else {
+                    detectedRole = matchedRole;
+                  }
+                  roleConfidence = 0.6;
                 }
               }
             }
@@ -467,12 +516,27 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
             if (roleConfidence < 0.7 && docDetails) {
               // Check required_signers
               if (docDetails.required_signers && Array.isArray(docDetails.required_signers)) {
-                const requiredRole = docDetails.required_signers.find((r: string) => 
-                  rolePatterns[r.toLowerCase()]?.test(item.text)
-                );
+                const requiredRole = docDetails.required_signers.find((r: string) => {
+                  const roleLower = r.toLowerCase();
+                  return rolePatterns[roleLower]?.test(originalText) || 
+                         rolePatterns[roleLower]?.test(nearbyText);
+                });
                 if (requiredRole) {
                   detectedRole = requiredRole.toLowerCase();
                   roleConfidence = 0.8;
+                }
+              }
+              
+              // Check signer_roles
+              if (docDetails.signer_roles && Array.isArray(docDetails.signer_roles)) {
+                const signerRole = docDetails.signer_roles.find((r: string) => {
+                  const roleLower = r.toLowerCase();
+                  return rolePatterns[roleLower]?.test(originalText) || 
+                         rolePatterns[roleLower]?.test(nearbyText);
+                });
+                if (signerRole) {
+                  detectedRole = signerRole.toLowerCase();
+                  roleConfidence = 0.75;
                 }
               }
               
@@ -480,22 +544,41 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
               if (docDetails.officer_name) {
                 const nameParts = docDetails.officer_name.toLowerCase().split(' ');
                 const hasNameMatch = nameParts.some(part => 
-                  part.length > 3 && item.text.toLowerCase().includes(part)
+                  part.length > 3 && originalText.toLowerCase().includes(part)
                 );
-                if (hasNameMatch && !detectedRole || detectedRole === 'officer') {
+                if (hasNameMatch && (roleConfidence < 0.6 || detectedRole === 'officer')) {
                   // Try to infer role from document type
                   if (docDetails.type?.includes('founder')) {
                     detectedRole = 'founder';
+                    roleConfidence = 0.7;
                   } else if (docDetails.role) {
                     detectedRole = docDetails.role.toLowerCase();
+                    roleConfidence = 0.7;
                   }
+                }
+              }
+              
+              // Infer from document type
+              if (roleConfidence < 0.6) {
+                const docType = (docDetails.type || '').toLowerCase();
+                if (docType.includes('founder')) {
+                  detectedRole = 'founder';
+                  roleConfidence = 0.6;
+                } else if (docType.includes('shareholder')) {
+                  detectedRole = 'shareholder';
+                  roleConfidence = 0.6;
+                } else if (docType.includes('incorporation') || docType.includes('incorporator')) {
+                  detectedRole = 'incorporator';
+                  roleConfidence = 0.6;
                 }
               }
             }
             
-            // Create signature field below the detected text
+            // Create signature field below the detected text (or on the line if it's a signature line)
             const fieldX = (item.x / width) * 100;
-            const fieldY = ((item.y + item.height + 10) / height) * 100; // Place field below text
+            const fieldY = isSignatureLine 
+              ? (item.y / height) * 100 // Place on the line itself
+              : ((item.y + item.height + 10) / height) * 100; // Place field below text
             
             detectedFields.push({
               field_type: 'signature',
@@ -534,8 +617,8 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
                 }
               });
               
-              // Only create date field if it's reasonably close (within 300px)
-              if (minDistance < 300) {
+              // Only create date field if it's reasonably close (within 400px)
+              if (minDistance < 400) {
                 const dateX = (item.x / width) * 100;
                 const dateY = ((item.y + item.height + 5) / height) * 100;
                 
@@ -551,6 +634,24 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
                   required: true,
                 });
               }
+            } else {
+              // No signature field found yet, but create a date field anyway
+              // It will be paired later or can be manually adjusted
+              const detectedRole = docDetails?.role?.toLowerCase() || 'officer';
+              const dateX = (item.x / width) * 100;
+              const dateY = ((item.y + item.height + 5) / height) * 100;
+              
+              detectedFields.push({
+                field_type: 'date',
+                signer_role: detectedRole,
+                page_number: pageNum,
+                x_percent: Math.max(5, Math.min(95, dateX)),
+                y_percent: Math.max(5, Math.min(95, dateY)),
+                width_percent: 15,
+                height_percent: DEFAULT_FIELD_HEIGHT,
+                label: 'Date',
+                required: true,
+              });
             }
           }
         });
