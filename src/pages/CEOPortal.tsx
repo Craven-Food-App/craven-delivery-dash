@@ -336,7 +336,7 @@ const CEOPortal: React.FC = () => {
         role: 'Executive Leadership',
       }}
     >
-      <Stack gap="xl">
+      <Stack gap="md">
         {metrics?.criticalAlerts && metrics.criticalAlerts > 0 && (
           <Alert
             title={`${metrics.criticalAlerts} Critical Alert${metrics.criticalAlerts > 1 ? 's' : ''}`}
@@ -359,7 +359,7 @@ const CEOPortal: React.FC = () => {
           </Alert>
         )}
 
-        <Stack gap="md" mt={metrics?.criticalAlerts && metrics.criticalAlerts > 0 ? 0 : 0}>
+        <Stack gap="md">
           <Group justify="space-between" wrap="wrap" gap="md">
             <Title order={3}>Company Health</Title>
             <Badge color="blue" variant="light">
@@ -445,7 +445,6 @@ const CEOPortal: React.FC = () => {
             </Grid.Col>
           </Grid>
         </Stack>
-
 
         <Stack gap="xl">{renderContent()}</Stack>
 
