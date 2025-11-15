@@ -369,7 +369,7 @@ const CEOPortal: React.FC = () => {
             </Badge>
           </Group>
           <Grid gutter="md">
-            <Grid.Col xs={24} sm={12} md={8}>
+            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
               <Paper bg="green.6" p="md" h="100%" style={{ borderRadius: '8px' }}>
                 <Stack gap="xs">
                   <Text c="white" fw={600} size="sm">Monthly Revenue</Text>
@@ -382,7 +382,7 @@ const CEOPortal: React.FC = () => {
                 </Stack>
               </Paper>
             </Grid.Col>
-            <Grid.Col xs={24} sm={12} md={8}>
+            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
               <Paper bg="blue.6" p="md" h="100%" style={{ borderRadius: '8px' }}>
                 <Stack gap="xs">
                   <Text c="white" fw={600} size="sm">Cash Flow</Text>
@@ -395,7 +395,7 @@ const CEOPortal: React.FC = () => {
                 </Stack>
               </Paper>
             </Grid.Col>
-            <Grid.Col xs={24} sm={12} md={8}>
+            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
               <Paper bg="violet.6" p="md" h="100%" style={{ borderRadius: '8px' }}>
                 <Stack gap="xs">
                   <Text c="white" fw={600} size="sm">Runway</Text>
@@ -408,7 +408,7 @@ const CEOPortal: React.FC = () => {
                 </Stack>
               </Paper>
             </Grid.Col>
-            <Grid.Col xs={24} sm={12} md={8}>
+            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
               <Paper bg="indigo.6" p="md" h="100%" style={{ borderRadius: '8px' }}>
                 <Stack gap="xs">
                   <Text c="white" fw={600} size="sm">Headcount</Text>
@@ -421,7 +421,7 @@ const CEOPortal: React.FC = () => {
                 </Stack>
               </Paper>
             </Grid.Col>
-            <Grid.Col xs={24} sm={12} md={8}>
+            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
               <Paper bg="yellow.6" p="md" h="100%" style={{ borderRadius: '8px' }}>
                 <Stack gap="xs">
                   <Text c="white" fw={600} size="sm">Pending Approvals</Text>
@@ -434,7 +434,7 @@ const CEOPortal: React.FC = () => {
                 </Stack>
               </Paper>
             </Grid.Col>
-            <Grid.Col xs={24} sm={12} md={8}>
+            <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
               <Paper bg="teal.6" p="md" h="100%" style={{ borderRadius: '8px' }}>
                 <Stack gap="xs">
                   <Text c="white" fw={600} size="sm">Merchants</Text>
