@@ -56,14 +56,22 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
 
   const weekDays = useMemo(() => {
     const days = [];
+    // Get Sunday of the current week
+    const sunday = new Date(today);
+    const dayOfWeek = sunday.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    sunday.setDate(today.getDate() - dayOfWeek); // Go back to Sunday
+    sunday.setHours(0, 0, 0, 0);
+    
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    // Generate 7 days starting from Sunday
     for (let i = 0; i < 7; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const date = new Date(sunday);
+      date.setDate(sunday.getDate() + i);
       days.push({
-        day: dayNames[date.getDay()],
+        day: dayNames[i], // Use index to ensure correct order
         date: date.getDate().toString().padStart(2, '0'),
-        dayOfWeek: date.getDay(),
+        dayOfWeek: i, // 0 = Sunday, 1 = Monday, etc.
         fullDate: date
       });
     }
@@ -655,42 +663,48 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
         </Paper>
 
         {/* Week Strip */}
-        <Group gap="md" mb="xl" justify="space-between" wrap="nowrap">
-          {weekDays.map((item, index) => (
-            <Button
-              key={index}
-              onClick={() => {
-                setActiveDay(index);
-                if (viewMode === 'available' || viewMode === 'scheduled') {
-                  // Keep current view mode
-                } else {
-                  setViewMode('schedule');
-                }
-              }}
-              variant={activeDay === index ? 'filled' : 'light'}
-              color={activeDay === index ? 'red.9' : 'transparent'}
-              c="white"
-              radius="md"
-              style={{
-                width: '56px',
-                height: '56px',
-                minWidth: '56px',
-                padding: '6px 4px',
-                transform: activeDay === index ? 'scale(1.05)' : 'scale(1)',
-                backgroundColor: activeDay === index 
-                  ? 'var(--mantine-color-red-9)' 
-                  : 'rgba(255, 255, 255, 0.25)',
-                border: activeDay === index ? 'none' : '1px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: '8px',
-              }}
-            >
-              <Stack gap={2} align="center" justify="center" style={{ height: '100%', width: '100%' }}>
-                <Text size="xs" fw={600} c="white" style={{ lineHeight: 1, opacity: 0.9, fontSize: '9px', letterSpacing: '0.5px' }}>{item.day}</Text>
-                <Text size="xl" fw={900} c="white" style={{ lineHeight: 1, fontSize: '18px' }}>{item.date}</Text>
-              </Stack>
-            </Button>
-          ))}
-        </Group>
+        <Box mb="xl" style={{ overflowX: 'auto', overflowY: 'hidden', WebkitOverflowScrolling: 'touch' }}>
+          <Group gap="sm" justify="flex-start" wrap="nowrap" style={{ minWidth: 'fit-content', paddingRight: '16px' }}>
+            {weekDays.map((item, index) => {
+              const isToday = item.fullDate.toDateString() === today.toDateString();
+              return (
+                <Button
+                  key={index}
+                  onClick={() => {
+                    setActiveDay(index);
+                    if (viewMode === 'available' || viewMode === 'scheduled') {
+                      // Keep current view mode
+                    } else {
+                      setViewMode('schedule');
+                    }
+                  }}
+                  variant={activeDay === index ? 'filled' : 'light'}
+                  color={activeDay === index ? 'red.9' : 'transparent'}
+                  c="white"
+                  radius="md"
+                  style={{
+                    width: '52px',
+                    height: '52px',
+                    minWidth: '52px',
+                    flexShrink: 0,
+                    padding: '5px 3px',
+                    transform: activeDay === index ? 'scale(1.05)' : 'scale(1)',
+                    backgroundColor: activeDay === index 
+                      ? 'var(--mantine-color-red-9)' 
+                      : 'rgba(255, 255, 255, 0.25)',
+                    border: activeDay === index ? 'none' : '1px solid rgba(255, 255, 255, 0.3)',
+                    borderRadius: '8px',
+                  }}
+                >
+                  <Stack gap={2} align="center" justify="center" style={{ height: '100%', width: '100%' }}>
+                    <Text size="xs" fw={600} c="white" style={{ lineHeight: 1, opacity: 0.9, fontSize: '8px', letterSpacing: '0.3px' }}>{item.day}</Text>
+                    <Text size="xl" fw={900} c="white" style={{ lineHeight: 1, fontSize: '16px' }}>{item.date}</Text>
+                  </Stack>
+                </Button>
+              );
+            })}
+          </Group>
+        </Box>
 
         {/* Section Title */}
         {viewMode === 'schedule' && (
