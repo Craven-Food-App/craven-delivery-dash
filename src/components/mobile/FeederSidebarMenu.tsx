@@ -1,6 +1,19 @@
 import React from 'react';
-import { X, Home, Calendar, DollarSign, Bell, User, Star, TrendingUp, MessageCircle, LogOut, Flame } from 'lucide-react';
+import { IconX, IconHome, IconCalendar, IconCurrencyDollar, IconBell, IconUser, IconStar, IconTrendingUp, IconMessageCircle, IconLogout, IconFlame } from '@tabler/icons-react';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  Box,
+  Stack,
+  Text,
+  Button,
+  Group,
+  ActionIcon,
+  Badge,
+  Divider,
+  Paper,
+  Title,
+  ThemeIcon,
+} from '@mantine/core';
 
 type FeederSidebarMenuProps = {
   isOpen: boolean;
@@ -72,23 +85,23 @@ const FeederSidebarMenu: React.FC<FeederSidebarMenuProps> = ({
   }, [isOpen]);
 
   const getStatus = (points: number) => {
-    if (points >= 85) return { name: 'Diamond', gradient: 'from-cyan-200 via-blue-300 to-purple-300', icon: '💎' };
-    if (points >= 76) return { name: 'Platinum', gradient: 'from-gray-300 via-gray-100 to-gray-300', icon: '⚪' };
-    if (points >= 65) return { name: 'Gold', gradient: 'from-yellow-300 via-yellow-200 to-yellow-400', icon: '🥇' };
-    return { name: 'Silver', gradient: 'from-gray-400 via-gray-300 to-gray-500', icon: '🥈' };
+    if (points >= 85) return { name: 'Diamond', gradient: 'linear-gradient(to bottom right, var(--mantine-color-cyan-2), var(--mantine-color-blue-3), var(--mantine-color-purple-3))', icon: '💎' };
+    if (points >= 76) return { name: 'Platinum', gradient: 'linear-gradient(to bottom right, var(--mantine-color-gray-3), var(--mantine-color-gray-1), var(--mantine-color-gray-3))', icon: '⚪' };
+    if (points >= 65) return { name: 'Gold', gradient: 'linear-gradient(to bottom right, var(--mantine-color-yellow-3), var(--mantine-color-yellow-2), var(--mantine-color-yellow-4))', icon: '🥇' };
+    return { name: 'Silver', gradient: 'linear-gradient(to bottom right, var(--mantine-color-gray-4), var(--mantine-color-gray-3), var(--mantine-color-gray-5))', icon: '🥈' };
   };
 
   const status = getStatus(driverPoints);
 
   const menuItems = [
-    { icon: Home, label: 'Home', path: 'home' },
-    { icon: Calendar, label: 'Schedule', path: 'schedule' },
-    { icon: DollarSign, label: 'Earnings', path: 'earnings' },
-    { icon: Bell, label: 'Notifications', path: 'notifications' },
-    { icon: User, label: 'Account', path: 'account' },
-    { icon: Star, label: 'Ratings', path: 'ratings' },
-    { icon: TrendingUp, label: 'Promos', path: 'promos' },
-    { icon: MessageCircle, label: 'Help', path: 'help' }
+    { icon: IconHome, label: 'Home', path: 'home' },
+    { icon: IconCalendar, label: 'Schedule', path: 'schedule' },
+    { icon: IconCurrencyDollar, label: 'Earnings', path: 'earnings' },
+    { icon: IconBell, label: 'Notifications', path: 'notifications' },
+    { icon: IconUser, label: 'Account', path: 'account' },
+    { icon: IconStar, label: 'Ratings', path: 'ratings' },
+    { icon: IconTrendingUp, label: 'Promos', path: 'promos' },
+    { icon: IconMessageCircle, label: 'Help', path: 'help' }
   ];
 
   const handleMenuClick = (path: string) => {
@@ -124,124 +137,198 @@ const FeederSidebarMenu: React.FC<FeederSidebarMenuProps> = ({
   };
 
   return (
-    <div className={`fixed inset-0 z-50 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+    <Box
+      pos="fixed"
+      top={0}
+      left={0}
+      right={0}
+      bottom={0}
+      style={{ 
+        zIndex: 50, 
+        transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
+        transition: 'transform 0.3s',
+      }}
+    >
       {/* Overlay */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose}></div>
+      <Box 
+        pos="absolute" 
+        inset={0} 
+        style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }} 
+        onClick={onClose}
+      />
       
       {/* Sidebar */}
-      <div className="absolute left-0 top-0 h-full w-80 bg-white shadow-2xl overflow-y-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <Paper
+        pos="absolute"
+        left={0}
+        top={0}
+        h="100%"
+        w={320}
+        shadow="xl"
+        style={{ overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        bg="white"
+      >
         <style>{`
-          .scrollbar-hide::-webkit-scrollbar {
+          [data-mantine-paper]::-webkit-scrollbar {
             display: none;
           }
         `}</style>
 
         {/* Header Section */}
-        <div className={`relative bg-gradient-to-br ${status.gradient} p-6 overflow-hidden`}>
+        <Box
+          pos="relative"
+          p="xl"
+          style={{ background: status.gradient, overflow: 'hidden' }}
+        >
           {/* Sparkle effects for Diamond */}
           {status.name === 'Diamond' && (
-            <div className="absolute inset-0 opacity-30">
-              <div className="absolute top-4 left-8 w-3 h-3 bg-white rounded-full animate-pulse"></div>
-              <div className="absolute top-12 right-12 w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.3s' }}></div>
-              <div className="absolute bottom-8 left-16 w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.6s' }}></div>
-            </div>
+            <Box pos="absolute" inset={0} style={{ opacity: 0.3 }}>
+              <Box pos="absolute" top={16} left={32} w={12} h={12} bg="white" style={{ borderRadius: '50%', animation: 'pulse 2s ease-in-out infinite' }} />
+              <Box pos="absolute" top={48} right={48} w={8} h={8} bg="white" style={{ borderRadius: '50%', animation: 'pulse 2s ease-in-out infinite', animationDelay: '0.3s' }} />
+              <Box pos="absolute" bottom={32} left={64} w={8} h={8} bg="white" style={{ borderRadius: '50%', animation: 'pulse 2s ease-in-out infinite', animationDelay: '0.6s' }} />
+            </Box>
           )}
 
           {/* Close Button */}
-          <button 
+          <ActionIcon
+            pos="absolute"
+            top={16}
+            right={16}
+            variant="light"
+            color="gray"
+            size="lg"
+            radius="xl"
             onClick={onClose}
-            className="absolute top-4 right-4 bg-white/30 backdrop-blur-sm p-2 rounded-full hover:bg-white/50 transition-colors"
+            style={{ backgroundColor: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(4px)' }}
           >
-            <X className="w-6 h-6 text-gray-700" />
-          </button>
+            <IconX size={24} />
+          </ActionIcon>
 
           {/* Driver Info */}
-          <div className="relative mt-8">
-            <h2 className="text-3xl font-black text-gray-900 mb-2">{driverName}</h2>
+          <Box pos="relative" mt="xl">
+            <Title order={2} fw={900} c="dark" mb="md">{driverName}</Title>
             
             {/* Status Badge with Icon */}
-            <div className="inline-flex items-center gap-2 bg-white/40 backdrop-blur-sm px-4 py-2 rounded-full border-2 border-white/60 shadow-lg mb-4">
-              <span className="text-2xl">{status.icon}</span>
-              <span className="text-gray-900 font-black">{status.name} Feeder</span>
-            </div>
+            <Badge
+              size="lg"
+              variant="light"
+              mb="md"
+              style={{ backgroundColor: 'rgba(255,255,255,0.4)', backdropFilter: 'blur(4px)', border: '2px solid rgba(255,255,255,0.6)', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+            >
+              <Group gap="xs">
+                <Text size="xl">{status.icon}</Text>
+                <Text fw={900} c="dark">{status.name} Feeder</Text>
+              </Group>
+            </Badge>
 
             {/* Stats Row */}
-            <div className="flex items-center justify-between bg-white/30 backdrop-blur-sm rounded-2xl p-4 border border-white/50">
-              <div className="text-center flex-1">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <Star className="w-4 h-4 text-yellow-600" fill="currentColor" />
-                  <span className="text-2xl font-black text-gray-900">{driverRating.toFixed(2)}</span>
-                </div>
-                <p className="text-xs text-gray-700 font-semibold">Rating</p>
-              </div>
-              <div className="w-px h-12 bg-white/50"></div>
-              <div className="text-center flex-1">
-                <p className="text-2xl font-black text-gray-900">{deliveries}</p>
-                <p className="text-xs text-gray-700 font-semibold">deliveries</p>
-              </div>
-              <div className="w-px h-12 bg-white/50"></div>
-              <div className="text-center flex-1">
-                <p className="text-2xl font-black text-gray-900">{perfection}%</p>
-                <p className="text-xs text-gray-700 font-semibold">perfect</p>
-              </div>
-            </div>
-          </div>
-        </div>
+            <Paper p="md" radius="lg" style={{ backgroundColor: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.5)' }}>
+              <Group justify="space-between" gap={0}>
+                <Stack gap={4} align="center" style={{ flex: 1 }}>
+                  <Group gap={4} justify="center">
+                    <IconStar size={16} fill="var(--mantine-color-yellow-6)" color="var(--mantine-color-yellow-6)" />
+                    <Text size="2xl" fw={900} c="dark">{driverRating.toFixed(2)}</Text>
+                  </Group>
+                  <Text size="xs" c="dark" fw={600}>Rating</Text>
+                </Stack>
+                <Divider orientation="vertical" h={48} style={{ borderColor: 'rgba(255,255,255,0.5)' }} />
+                <Stack gap={4} align="center" style={{ flex: 1 }}>
+                  <Text size="2xl" fw={900} c="dark">{deliveries}</Text>
+                  <Text size="xs" c="dark" fw={600}>deliveries</Text>
+                </Stack>
+                <Divider orientation="vertical" h={48} style={{ borderColor: 'rgba(255,255,255,0.5)' }} />
+                <Stack gap={4} align="center" style={{ flex: 1 }}>
+                  <Text size="2xl" fw={900} c="dark">{perfection}%</Text>
+                  <Text size="xs" c="dark" fw={600}>perfect</Text>
+                </Stack>
+              </Group>
+            </Paper>
+          </Box>
+        </Box>
 
         {/* New Driver Badge */}
         {driverStatus && (
-          <div className="px-6 -mt-4 relative z-10">
-            <div className="bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl px-4 py-3 shadow-xl flex items-center gap-3">
-              <div className="bg-white/30 p-2 rounded-full">
-                <Flame className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-white font-black text-sm">{driverStatus}</span>
-            </div>
-          </div>
+          <Box px="xl" style={{ marginTop: -16, position: 'relative', zIndex: 10 }}>
+            <Paper
+              p="md"
+              radius="lg"
+              style={{ background: 'linear-gradient(to right, var(--mantine-color-orange-5), var(--mantine-color-red-6))', boxShadow: '0 10px 15px rgba(0,0,0,0.2)' }}
+            >
+              <Group gap="md">
+                <ThemeIcon size="lg" radius="xl" style={{ backgroundColor: 'rgba(255,255,255,0.3)' }}>
+                  <IconFlame size={20} color="white" />
+                </ThemeIcon>
+                <Text c="white" fw={900} size="sm">{driverStatus}</Text>
+              </Group>
+            </Paper>
+          </Box>
         )}
 
         {/* Menu Items */}
-        <div className="px-4 py-6 space-y-2">
+        <Stack gap="xs" p="md" pt="xl">
           {menuItems.map((item, idx) => {
             const isActive = activeTab === item.path;
+            const IconComponent = item.icon;
             return (
-              <button
+              <Button
                 key={idx}
                 onClick={() => handleMenuClick(item.path)}
-                className={`w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all ${
-                  isActive 
-                    ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg scale-105' 
-                    : 'bg-gray-50 text-gray-700 hover:bg-orange-50 hover:shadow-md'
-                }`}
+                variant={isActive ? 'filled' : 'subtle'}
+                color={isActive ? 'orange' : 'gray'}
+                fullWidth
+                justify="flex-start"
+                leftSection={
+                  <ThemeIcon
+                    size="lg"
+                    radius="md"
+                    color={isActive ? 'white' : 'orange'}
+                    variant={isActive ? 'light' : 'light'}
+                    style={{ backgroundColor: isActive ? 'rgba(255,255,255,0.3)' : 'var(--mantine-color-orange-1)' }}
+                  >
+                    <IconComponent size={24} color={isActive ? 'white' : 'var(--mantine-color-orange-6)'} />
+                  </ThemeIcon>
+                }
+                size="lg"
+                style={{
+                  background: isActive 
+                    ? 'linear-gradient(to right, var(--mantine-color-orange-5), var(--mantine-color-red-6))' 
+                    : undefined,
+                  color: isActive ? 'white' : 'var(--mantine-color-gray-7)',
+                  boxShadow: isActive ? '0 4px 6px rgba(0,0,0,0.1)' : undefined,
+                  transform: isActive ? 'scale(1.05)' : undefined,
+                }}
               >
-                <div className={`${isActive ? 'bg-white/30' : 'bg-orange-100'} p-3 rounded-xl`}>
-                  <item.icon className={`w-6 h-6 ${isActive ? 'text-white' : 'text-orange-600'}`} />
-                </div>
-                <span className="font-bold text-lg">{item.label}</span>
-              </button>
+                <Text fw={700} size="lg">{item.label}</Text>
+              </Button>
             );
           })}
-        </div>
+        </Stack>
 
         {/* Logout */}
-        <div className="px-4 pb-6">
-          <button 
+        <Box px="md" pb="xl">
+          <Button
             onClick={handleLogout}
-            className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl bg-red-50 border-2 border-red-200 text-red-600 hover:bg-red-100 transition-all"
+            variant="light"
+            color="red"
+            fullWidth
+            justify="flex-start"
+            leftSection={
+              <ThemeIcon size="lg" radius="md" color="red" variant="light">
+                <IconLogout size={24} color="var(--mantine-color-red-6)" />
+              </ThemeIcon>
+            }
+            size="lg"
+            style={{ border: '2px solid var(--mantine-color-red-2)' }}
           >
-            <div className="bg-red-100 p-3 rounded-xl">
-              <LogOut className="w-6 h-6 text-red-600" />
-            </div>
-            <span className="font-bold text-lg">Logout</span>
-          </button>
-        </div>
+            <Text fw={700} size="lg" c="red.6">Logout</Text>
+          </Button>
+        </Box>
 
         {/* Bottom Accent */}
-        <div className="h-20"></div>
-      </div>
-    </div>
+        <Box h={80} />
+      </Paper>
+    </Box>
   );
 };
 
 export default FeederSidebarMenu;
-

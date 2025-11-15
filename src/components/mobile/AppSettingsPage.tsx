@@ -1,7 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Bell, Globe, Moon, Sun, Volume2, VolumeX } from 'lucide-react';
+import { IconArrowLeft, IconBell, IconGlobe, IconMoon, IconSun, IconVolume, IconVolumeOff } from '@tabler/icons-react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { notifications } from '@mantine/notifications';
+import {
+  Box,
+  Stack,
+  Text,
+  Button,
+  Group,
+  ActionIcon,
+  Card,
+  Title,
+  Switch,
+  Select,
+  ThemeIcon,
+  Divider,
+} from '@mantine/core';
 
 type AppSettingsPageProps = {
   onBack: () => void;
@@ -70,144 +84,180 @@ const AppSettingsPage: React.FC<AppSettingsPageProps> = ({ onBack }) => {
       if (error) throw error;
 
       setSettings({ ...settings, [key]: value });
-      toast.success('Settings updated');
+      notifications.show({
+        title: 'Settings updated',
+        message: 'Your preferences have been saved',
+        color: 'green',
+      });
     } catch (error: any) {
       console.error('Error updating settings:', error);
-      toast.error('Failed to update settings');
+      notifications.show({
+        title: 'Failed to update settings',
+        message: error.message || 'Please try again',
+        color: 'red',
+      });
     }
   };
 
   return (
-    <div className="h-screen w-full bg-gray-50 overflow-y-auto" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
+    <Box h="100vh" w="100%" bg="gray.0" style={{ overflowY: 'auto', paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between safe-area-top">
-        <button onClick={onBack} className="text-gray-900">
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        <h1 className="text-gray-900 text-xl font-bold">App Settings</h1>
-        <div className="w-6"></div>
-      </div>
+      <Group
+        bg="white"
+        style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}
+        px="xl"
+        py="md"
+        justify="space-between"
+        align="center"
+        className="safe-area-top"
+      >
+        <ActionIcon onClick={onBack} variant="subtle" color="dark">
+          <IconArrowLeft size={24} />
+        </ActionIcon>
+        <Title order={3} fw={700} c="dark">App Settings</Title>
+        <Box w={24} />
+      </Group>
 
-      <div className="px-6 py-6 space-y-4">
+      <Stack gap="md" p="xl">
         {/* Notifications */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-blue-100 p-3 rounded-xl">
-              <Bell className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900 text-lg">Notifications</h2>
-              <p className="text-sm text-gray-500">Manage notification preferences</p>
-            </div>
-          </div>
+        <Card shadow="sm" radius="lg" p="xl" withBorder>
+          <Group gap="md" mb="md">
+            <ThemeIcon size="xl" radius="lg" color="blue" variant="light">
+              <IconBell size={24} color="var(--mantine-color-blue-6)" />
+            </ThemeIcon>
+            <Box>
+              <Title order={4} fw={700} c="dark">Notifications</Title>
+              <Text size="sm" c="dimmed">Manage notification preferences</Text>
+            </Box>
+          </Group>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl">
-              <div className="flex items-center gap-3">
-                <Bell className="w-5 h-5 text-gray-600" />
-                <div>
-                  <p className="font-bold text-gray-900">Push Notifications</p>
-                  <p className="text-sm text-gray-500">Receive push notifications</p>
-                </div>
-              </div>
-              <button
-                onClick={() => updateSetting('pushNotifications', !settings.pushNotifications)}
-                className={`w-12 h-6 rounded-full transition-colors ${settings.pushNotifications ? 'bg-orange-600' : 'bg-gray-300'}`}
-              >
-                <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform m-0.5 ${settings.pushNotifications ? 'translate-x-6' : ''}`}></div>
-              </button>
-            </div>
+          <Stack gap="md">
+            <Group justify="space-between" p="md" style={{ border: '2px solid var(--mantine-color-gray-2)', borderRadius: '12px' }}>
+              <Group gap="md">
+                <IconBell size={20} color="var(--mantine-color-gray-6)" />
+                <Box>
+                  <Text fw={700} c="dark">Push Notifications</Text>
+                  <Text size="sm" c="dimmed">Receive push notifications</Text>
+                </Box>
+              </Group>
+              <Switch
+                checked={settings.pushNotifications}
+                onChange={(e) => updateSetting('pushNotifications', e.currentTarget.checked)}
+                color="orange"
+                size="lg"
+              />
+            </Group>
 
-            <div className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl">
-              <div className="flex items-center gap-3">
-                {settings.soundEnabled ? <Volume2 className="w-5 h-5 text-gray-600" /> : <VolumeX className="w-5 h-5 text-gray-600" />}
-                <div>
-                  <p className="font-bold text-gray-900">Sound</p>
-                  <p className="text-sm text-gray-500">Notification sounds</p>
-                </div>
-              </div>
-              <button
-                onClick={() => updateSetting('soundEnabled', !settings.soundEnabled)}
-                className={`w-12 h-6 rounded-full transition-colors ${settings.soundEnabled ? 'bg-orange-600' : 'bg-gray-300'}`}
-              >
-                <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform m-0.5 ${settings.soundEnabled ? 'translate-x-6' : ''}`}></div>
-              </button>
-            </div>
+            <Group justify="space-between" p="md" style={{ border: '2px solid var(--mantine-color-gray-2)', borderRadius: '12px' }}>
+              <Group gap="md">
+                {settings.soundEnabled ? (
+                  <IconVolume size={20} color="var(--mantine-color-gray-6)" />
+                ) : (
+                  <IconVolumeOff size={20} color="var(--mantine-color-gray-6)" />
+                )}
+                <Box>
+                  <Text fw={700} c="dark">Sound</Text>
+                  <Text size="sm" c="dimmed">Notification sounds</Text>
+                </Box>
+              </Group>
+              <Switch
+                checked={settings.soundEnabled}
+                onChange={(e) => updateSetting('soundEnabled', e.currentTarget.checked)}
+                color="orange"
+                size="lg"
+              />
+            </Group>
 
-            <div className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl">
-              <div className="flex items-center gap-3">
-                <Bell className="w-5 h-5 text-gray-600" />
-                <div>
-                  <p className="font-bold text-gray-900">Vibration</p>
-                  <p className="text-sm text-gray-500">Vibrate on notifications</p>
-                </div>
-              </div>
-              <button
-                onClick={() => updateSetting('vibrationEnabled', !settings.vibrationEnabled)}
-                className={`w-12 h-6 rounded-full transition-colors ${settings.vibrationEnabled ? 'bg-orange-600' : 'bg-gray-300'}`}
-              >
-                <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform m-0.5 ${settings.vibrationEnabled ? 'translate-x-6' : ''}`}></div>
-              </button>
-            </div>
-          </div>
-        </div>
+            <Group justify="space-between" p="md" style={{ border: '2px solid var(--mantine-color-gray-2)', borderRadius: '12px' }}>
+              <Group gap="md">
+                <IconBell size={20} color="var(--mantine-color-gray-6)" />
+                <Box>
+                  <Text fw={700} c="dark">Vibration</Text>
+                  <Text size="sm" c="dimmed">Vibrate on notifications</Text>
+                </Box>
+              </Group>
+              <Switch
+                checked={settings.vibrationEnabled}
+                onChange={(e) => updateSetting('vibrationEnabled', e.currentTarget.checked)}
+                color="orange"
+                size="lg"
+              />
+            </Group>
+          </Stack>
+        </Card>
 
         {/* Appearance */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-purple-100 p-3 rounded-xl">
-              {settings.darkMode ? <Moon className="w-6 h-6 text-purple-600" /> : <Sun className="w-6 h-6 text-purple-600" />}
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900 text-lg">Appearance</h2>
-              <p className="text-sm text-gray-500">Theme and display settings</p>
-            </div>
-          </div>
+        <Card shadow="sm" radius="lg" p="xl" withBorder>
+          <Group gap="md" mb="md">
+            <ThemeIcon size="xl" radius="lg" color="purple" variant="light">
+              {settings.darkMode ? (
+                <IconMoon size={24} color="var(--mantine-color-purple-6)" />
+              ) : (
+                <IconSun size={24} color="var(--mantine-color-purple-6)" />
+              )}
+            </ThemeIcon>
+            <Box>
+              <Title order={4} fw={700} c="dark">Appearance</Title>
+              <Text size="sm" c="dimmed">Theme and display settings</Text>
+            </Box>
+          </Group>
 
-          <div className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl">
-            <div className="flex items-center gap-3">
-              {settings.darkMode ? <Moon className="w-5 h-5 text-gray-600" /> : <Sun className="w-5 h-5 text-gray-600" />}
-              <div>
-                <p className="font-bold text-gray-900">Dark Mode</p>
-                <p className="text-sm text-gray-500">Switch to dark theme</p>
-              </div>
-            </div>
-            <button
-              onClick={() => updateSetting('darkMode', !settings.darkMode)}
-              className={`w-12 h-6 rounded-full transition-colors ${settings.darkMode ? 'bg-orange-600' : 'bg-gray-300'}`}
-            >
-              <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform m-0.5 ${settings.darkMode ? 'translate-x-6' : ''}`}></div>
-            </button>
-          </div>
-        </div>
+          <Group justify="space-between" p="md" style={{ border: '2px solid var(--mantine-color-gray-2)', borderRadius: '12px' }}>
+            <Group gap="md">
+              {settings.darkMode ? (
+                <IconMoon size={20} color="var(--mantine-color-gray-6)" />
+              ) : (
+                <IconSun size={20} color="var(--mantine-color-gray-6)" />
+              )}
+              <Box>
+                <Text fw={700} c="dark">Dark Mode</Text>
+                <Text size="sm" c="dimmed">Switch to dark theme</Text>
+              </Box>
+            </Group>
+            <Switch
+              checked={settings.darkMode}
+              onChange={(e) => updateSetting('darkMode', e.currentTarget.checked)}
+              color="orange"
+              size="lg"
+            />
+          </Group>
+        </Card>
 
         {/* Language */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-green-100 p-3 rounded-xl">
-              <Globe className="w-6 h-6 text-green-600" />
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900 text-lg">Language</h2>
-              <p className="text-sm text-gray-500">App language preference</p>
-            </div>
-          </div>
+        <Card shadow="sm" radius="lg" p="xl" withBorder>
+          <Group gap="md" mb="md">
+            <ThemeIcon size="xl" radius="lg" color="green" variant="light">
+              <IconGlobe size={24} color="var(--mantine-color-green-6)" />
+            </ThemeIcon>
+            <Box>
+              <Title order={4} fw={700} c="dark">Language</Title>
+              <Text size="sm" c="dimmed">App language preference</Text>
+            </Box>
+          </Group>
 
-          <div className="p-4 border-2 border-gray-200 rounded-xl">
-            <select
+          <Box p="md" style={{ border: '2px solid var(--mantine-color-gray-2)', borderRadius: '12px' }}>
+            <Select
               value={settings.language}
-              onChange={(e) => updateSetting('language', e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none"
-            >
-              <option value="en">English</option>
-              <option value="es">Español</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>
+              onChange={(value) => updateSetting('language', value || 'en')}
+              data={[
+                { value: 'en', label: 'English' },
+                { value: 'es', label: 'Español' },
+              ]}
+              styles={{
+                input: {
+                  border: '2px solid var(--mantine-color-gray-2)',
+                  borderRadius: '12px',
+                  '&:focus': {
+                    borderColor: 'var(--mantine-color-orange-5)',
+                  },
+                },
+              }}
+            />
+          </Box>
+        </Card>
+      </Stack>
+    </Box>
   );
 };
 
 export default AppSettingsPage;
-
