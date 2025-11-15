@@ -1,16 +1,30 @@
-// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  Calendar,
-  Clock,
-  Plus,
-  ChevronRight,
-  Power,
-  Zap,
-  Trash2
-} from 'lucide-react';
-import { toast } from 'sonner';
+  IconCalendar,
+  IconClock,
+  IconPlus,
+  IconChevronRight,
+  IconPower,
+  IconBolt,
+  IconTrash,
+} from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
+import {
+  Box,
+  Stack,
+  Text,
+  Button,
+  Group,
+  Card,
+  Title,
+  ActionIcon,
+  Modal,
+  TextInput,
+  Paper,
+  Badge,
+  Divider,
+} from '@mantine/core';
 
 interface ScheduleBlock {
   id: string;
@@ -79,10 +93,16 @@ export default function ScheduleSection() {
       }, { onConflict: 'driver_id' });
 
       setCurrentStatus('online');
-      toast.success('You are now online');
+      notifications.show({
+        title: 'You are now online',
+        color: 'green',
+      });
     } catch (error) {
       console.error('Error going online:', error);
-      toast.error('Failed to go online');
+      notifications.show({
+        title: 'Failed to go online',
+        color: 'red',
+      });
     }
   };
 
@@ -103,7 +123,10 @@ export default function ScheduleSection() {
       }, { onConflict: 'driver_id' });
 
       setCurrentStatus('offline');
-      toast.success('You are now offline');
+      notifications.show({
+        title: 'You are now offline',
+        color: 'blue',
+      });
     } catch (error) {
       console.error('Error going offline:', error);
     }
@@ -142,11 +165,17 @@ export default function ScheduleSection() {
       if (error) throw error;
 
       await fetchSchedule();
-      toast.success('Schedule updated');
+      notifications.show({
+        title: 'Schedule updated',
+        color: 'green',
+      });
       setShowAddModal(false);
     } catch (error) {
       console.error('Error saving schedule:', error);
-      toast.error('Failed to save schedule');
+      notifications.show({
+        title: 'Failed to save schedule',
+        color: 'red',
+      });
     }
   };
 
@@ -160,10 +189,16 @@ export default function ScheduleSection() {
       if (error) throw error;
 
       await fetchSchedule();
-      toast.success('Schedule deleted');
+      notifications.show({
+        title: 'Schedule deleted',
+        color: 'green',
+      });
     } catch (error) {
       console.error('Error deleting schedule:', error);
-      toast.error('Failed to delete schedule');
+      notifications.show({
+        title: 'Failed to delete schedule',
+        color: 'red',
+      });
     }
   };
 
@@ -193,210 +228,212 @@ export default function ScheduleSection() {
   const todayIndex = new Date().getDay();
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
-      <div className="max-w-2xl mx-auto">
-        
+    <Box h="100vh" bg="slate.0" style={{ paddingBottom: '96px', overflowY: 'auto' }}>
+      <Box maw={768} mx="auto">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-white border-b shadow-sm safe-area-top">
-          <div className="p-4">
-            <h1 className="text-3xl font-bold text-slate-900 text-right">Schedule</h1>
-            <p className="text-sm text-slate-600 text-right">Manage when you're available</p>
-          </div>
-        </div>
+        <Paper
+          pos="sticky"
+          top={0}
+          style={{ zIndex: 10 }}
+          bg="white"
+          style={{ borderBottom: '1px solid var(--mantine-color-slate-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+          className="safe-area-top"
+        >
+          <Box p="md">
+            <Title order={1} fw={700} c="slate.9" style={{ textAlign: 'right' }}>Schedule</Title>
+            <Text size="sm" c="slate.6" style={{ textAlign: 'right' }}>Manage when you're available</Text>
+          </Box>
+        </Paper>
 
         {/* Online Status Toggle */}
-        <div className="px-4 py-6 bg-white border-b border-slate-100">
-          <button
+        <Paper px="md" py="xl" bg="white" style={{ borderBottom: '1px solid var(--mantine-color-slate-1)' }}>
+          <Button
+            fullWidth
+            size="lg"
+            radius="lg"
             onClick={currentStatus === 'online' ? handleGoOffline : handleGoOnline}
-            className={`w-full py-4 rounded-xl font-semibold text-lg transition-all shadow-lg ${
-              currentStatus === 'online'
-                ? 'bg-red-600 hover:bg-red-700 text-white'
-                : 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white'
-            }`}
+            color={currentStatus === 'online' ? 'red' : 'orange'}
+            leftSection={currentStatus === 'online' ? <IconPower size={20} /> : <IconBolt size={20} />}
+            style={{ boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
           >
-            {currentStatus === 'online' ? (
-              <div className="flex items-center justify-center gap-2">
-                <Power className="h-5 w-5" />
-                Stop Driving
-              </div>
-            ) : (
-              <div className="flex items-center justify-center gap-2">
-                <Zap className="h-5 w-5" />
-                Start Driving Now
-              </div>
-            )}
-          </button>
+            {currentStatus === 'online' ? 'Stop Driving' : 'Start Driving Now'}
+          </Button>
 
           {currentStatus === 'online' && (
-            <div className="mt-3 flex items-center justify-center gap-2 text-green-700 bg-green-50 py-2 rounded-lg">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-sm font-medium">You're online and accepting orders</span>
-            </div>
+            <Group gap="xs" justify="center" mt="md" p="sm" bg="green.0" style={{ borderRadius: '8px' }}>
+              <Box w={8} h={8} bg="green.5" style={{ borderRadius: '50%', animation: 'pulse 2s ease-in-out infinite' }} />
+              <Text size="sm" fw={500} c="green.7">You're online and accepting orders</Text>
+            </Group>
           )}
-        </div>
+        </Paper>
 
         {/* Quick Start Options */}
-        <div className="px-4 py-6 bg-white">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">Quick Start</h2>
-          <div className="grid grid-cols-3 gap-3">
+        <Paper px="md" py="xl" bg="white">
+          <Title order={3} fw={600} c="slate.9" mb="md">Quick Start</Title>
+          <Group gap="md" mb="md">
             {[
               { hours: 2, label: '2 Hours' },
               { hours: 4, label: '4 Hours' },
               { hours: 8, label: '8 Hours' }
             ].map(({ hours, label }) => (
-              <button
+              <Button
                 key={hours}
+                variant="outline"
                 onClick={() => handleQuickStart(hours)}
-                className="bg-white border-2 border-slate-200 hover:border-orange-500 hover:bg-orange-50 rounded-xl p-4 transition-all group"
+                style={{ flex: 1, border: '2px solid var(--mantine-color-slate-2)', height: 'auto', padding: '16px' }}
+                styles={{
+                  root: {
+                    '&:hover': {
+                      borderColor: 'var(--mantine-color-orange-5)',
+                      backgroundColor: 'var(--mantine-color-orange-0)',
+                    },
+                  },
+                }}
               >
-                <div className="text-3xl font-bold text-slate-900 mb-1">{hours}</div>
-                <div className="text-xs text-slate-600 font-medium">hours</div>
-              </button>
+                <Stack gap={4} align="center">
+                  <Text size="3xl" fw={700} c="slate.9">{hours}</Text>
+                  <Text size="xs" c="slate.6" fw={500}>hours</Text>
+                </Stack>
+              </Button>
             ))}
-          </div>
-          <p className="text-xs text-slate-500 mt-3 text-center">
+          </Group>
+          <Text size="xs" c="slate.5" style={{ textAlign: 'center' }}>
             Start driving immediately for the selected duration
-          </p>
-        </div>
+          </Text>
+        </Paper>
 
         {/* Weekly Calendar View */}
-        <div className="px-4 py-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900">This Week</h2>
-            <button
+        <Stack gap="xs" p="md">
+          <Group justify="space-between" mb="md">
+            <Title order={3} fw={600} c="slate.9">This Week</Title>
+            <Button
+              variant="subtle"
+              size="sm"
+              leftSection={<IconPlus size={16} />}
               onClick={() => setShowAddModal(true)}
-              className="text-orange-600 hover:text-orange-700 font-medium text-sm flex items-center gap-1"
+              color="orange"
             >
-              <Plus className="h-4 w-4" />
               Add Shift
-            </button>
-          </div>
+            </Button>
+          </Group>
 
-          <div className="space-y-2">
+          <Stack gap="xs">
             {DAYS_FULL.map((day, index) => {
               const dayBlocks = scheduleBlocks.filter(b => b.day_of_week === index && b.is_active);
               const isToday = index === todayIndex;
 
               return (
-                <button
+                <Card
                   key={index}
+                  shadow="sm"
+                  radius="lg"
+                  withBorder
+                  style={{
+                    borderColor: isToday ? 'var(--mantine-color-orange-5)' : 'var(--mantine-color-slate-2)',
+                    backgroundColor: isToday ? 'var(--mantine-color-orange-0)' : 'white',
+                  }}
                   onClick={() => setSelectedDay(index)}
-                  className={`w-full bg-white border rounded-xl p-4 transition-all ${
-                    isToday 
-                      ? 'border-orange-500 bg-orange-50/50' 
-                      : 'border-slate-200 hover:border-orange-300'
-                  }`}
+                  style={{ cursor: 'pointer' }}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold ${
-                        isToday 
-                          ? 'bg-orange-600 text-white' 
-                          : dayBlocks.length > 0
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-slate-100 text-slate-600'
-                      }`}>
+                  <Group justify="space-between">
+                    <Group gap="md">
+                      <Badge
+                        size="xl"
+                        radius="xl"
+                        color={isToday ? 'orange' : dayBlocks.length > 0 ? 'green' : 'gray'}
+                        variant={isToday ? 'filled' : 'light'}
+                      >
                         {DAYS[index]}
-                      </div>
-                      <div className="text-left">
-                        <div className="font-semibold text-slate-900">{day}</div>
-                        <div className="text-sm text-slate-600">
-                          {dayBlocks.length > 0 ? (
-                            `${dayBlocks.length} shift${dayBlocks.length > 1 ? 's' : ''}`
-                          ) : (
-                            'Not scheduled'
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-slate-400" />
-                  </div>
+                      </Badge>
+                      <Box>
+                        <Text fw={600} c="slate.9">{day}</Text>
+                        <Text size="sm" c="slate.6">
+                          {dayBlocks.length > 0
+                            ? `${dayBlocks.length} shift${dayBlocks.length > 1 ? 's' : ''}`
+                            : 'Not scheduled'}
+                        </Text>
+                      </Box>
+                    </Group>
+                    <IconChevronRight size={20} color="var(--mantine-color-slate-4)" />
+                  </Group>
 
                   {dayBlocks.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-slate-100 space-y-2">
-                      {dayBlocks.map((block) => (
-                        <div
-                          key={block.id}
-                          className="flex items-center justify-between bg-slate-50 rounded-lg p-2"
-                        >
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-slate-500" />
-                            <span className="text-sm font-medium text-slate-700">
-                              {formatTime(block.start_time)} - {formatTime(block.end_time)}
-                            </span>
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteBlock(block.id);
-                            }}
-                            className="text-red-600 hover:text-red-700 p-1"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                    <>
+                      <Divider my="md" />
+                      <Stack gap="xs">
+                        {dayBlocks.map((block) => (
+                          <Group key={block.id} justify="space-between" p="sm" bg="slate.0" style={{ borderRadius: '8px' }}>
+                            <Group gap="xs">
+                              <IconClock size={16} color="var(--mantine-color-slate-5)" />
+                              <Text size="sm" fw={500} c="slate.7">
+                                {formatTime(block.start_time)} - {formatTime(block.end_time)}
+                              </Text>
+                            </Group>
+                            <ActionIcon
+                              variant="subtle"
+                              color="red"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteBlock(block.id);
+                              }}
+                            >
+                              <IconTrash size={16} />
+                            </ActionIcon>
+                          </Group>
+                        ))}
+                      </Stack>
+                    </>
                   )}
-                </button>
+                </Card>
               );
             })}
-          </div>
-        </div>
-      </div>
+          </Stack>
+        </Stack>
+      </Box>
 
       {/* Add Schedule Modal */}
-      {showAddModal && selectedDay !== null && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-end">
-          <div className="w-full bg-white rounded-t-3xl p-6 pb-8 space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-slate-900">
-                Add Shift for {DAYS_FULL[selectedDay]}
-              </h2>
-              <button
-                onClick={() => {
-                  setShowAddModal(false);
-                  setSelectedDay(null);
-                }}
-                className="text-slate-500 hover:text-slate-700"
-              >
-                ✕
-              </button>
-            </div>
+      <Modal
+        opened={showAddModal && selectedDay !== null}
+        onClose={() => {
+          setShowAddModal(false);
+          setSelectedDay(null);
+        }}
+        title={`Add Shift for ${selectedDay !== null ? DAYS_FULL[selectedDay] : ''}`}
+        centered
+        styles={{
+          content: {
+            borderTopLeftRadius: '24px',
+            borderTopRightRadius: '24px',
+          },
+        }}
+      >
+        <Stack gap="md">
+          <TextInput
+            label="Start Time"
+            type="time"
+            value={newBlock.start_time}
+            onChange={(e) => setNewBlock({ ...newBlock, start_time: e.target.value })}
+          />
 
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-slate-700 mb-2 block">Start Time</label>
-                <input
-                  type="time"
-                  value={newBlock.start_time}
-                  onChange={(e) => setNewBlock({ ...newBlock, start_time: e.target.value })}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                />
-              </div>
+          <TextInput
+            label="End Time"
+            type="time"
+            value={newBlock.end_time}
+            onChange={(e) => setNewBlock({ ...newBlock, end_time: e.target.value })}
+          />
 
-              <div>
-                <label className="text-sm font-medium text-slate-700 mb-2 block">End Time</label>
-                <input
-                  type="time"
-                  value={newBlock.end_time}
-                  onChange={(e) => setNewBlock({ ...newBlock, end_time: e.target.value })}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                />
-              </div>
-            </div>
-
-            <button
-              onClick={handleAddSchedule}
-              disabled={loading}
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-4 rounded-xl transition-all disabled:opacity-50"
-            >
-              {loading ? 'Saving...' : 'Add Shift'}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+          <Button
+            fullWidth
+            onClick={handleAddSchedule}
+            loading={loading}
+            color="orange"
+            size="lg"
+            radius="lg"
+          >
+            {loading ? 'Saving...' : 'Add Shift'}
+          </Button>
+        </Stack>
+      </Modal>
+    </Box>
   );
 }
-
