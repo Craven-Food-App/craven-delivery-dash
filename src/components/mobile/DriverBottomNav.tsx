@@ -1,6 +1,12 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  Box,
+  Flex,
+  Text,
+  Image,
+  Badge,
+  useColorModeValue,
+} from '@chakra-ui/react';
 
 type DriverTabType = 'home' | 'schedule' | 'earnings' | 'notifications' | 'account';
 
@@ -23,65 +29,94 @@ export const DriverBottomNav: React.FC<DriverBottomNavProps> = ({
   onTabChange,
   notificationCount = 0
 }) => {
-  const isMobile = useIsMobile();
-
-  if (!isMobile) return null;
+  const bgColor = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const activeColor = useColorModeValue('orange.600', 'orange.400');
+  const inactiveColor = useColorModeValue('gray.500', 'gray.400');
 
   return (
     <>
-      {/* Bottom Navigation - Extends to bottom edge on PWA */}
-      <div 
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 shadow-lg"
-        style={{ 
-          height: 'calc(5rem + env(safe-area-inset-bottom, 0px))',
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)'
-        }}
+      <Box
+        position="fixed"
+        bottom={0}
+        left={0}
+        right={0}
+        bg={bgColor}
+        borderTop="1px"
+        borderColor={borderColor}
+        zIndex={50}
+        boxShadow="lg"
+        h="calc(5rem + env(safe-area-inset-bottom, 0px))"
+        pb="env(safe-area-inset-bottom, 0px)"
       >
-        <div className="flex h-20">
+        <Flex h={20}>
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             const hasNotification = tab.id === 'notifications' && notificationCount > 0;
             
             return (
-              <button
+              <Box
                 key={tab.id}
+                as="button"
+                flex={1}
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                justifyContent="center"
+                py={2}
+                px={1}
+                h="100%"
+                transition="all 0.2s"
+                position="relative"
+                color={isActive ? activeColor : inactiveColor}
+                _hover={{ color: isActive ? activeColor : 'gray.700' }}
                 onClick={() => onTabChange(tab.id)}
-                className={cn(
-                  "flex-1 flex flex-col items-center justify-center py-2 px-1 h-full transition-all duration-200 relative",
-                  isActive 
-                    ? "text-orange-600" 
-                    : "text-slate-500 hover:text-slate-700"
-                )}
               >
-                <div className="relative">
-                  <img 
-                    src={tab.icon} 
+                <Box position="relative">
+                  <Image
+                    src={tab.icon}
                     alt={tab.label}
-                    className={cn(
-                      "h-6 w-6 mb-1.5 transition-all duration-200",
-                      isActive ? "opacity-100" : "opacity-60"
-                    )}
+                    h={6}
+                    w={6}
+                    mb={1.5}
+                    opacity={isActive ? 1 : 0.6}
+                    transition="all 0.2s"
                   />
                   {hasNotification && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">
-                        {notificationCount > 9 ? '9+' : notificationCount}
-                      </span>
-                    </div>
+                    <Badge
+                      position="absolute"
+                      top={-1}
+                      right={-1}
+                      w={5}
+                      h={5}
+                      bg="red.500"
+                      borderRadius="full"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      color="white"
+                      fontSize="xs"
+                      fontWeight="bold"
+                    >
+                      {notificationCount > 9 ? '9+' : notificationCount}
+                    </Badge>
                   )}
-                </div>
-                <span className={cn(
-                  "text-xs font-medium leading-tight",
-                  isActive ? "text-orange-600 font-semibold" : "text-slate-500"
-                )}>{tab.label}</span>
-              </button>
+                </Box>
+                <Text
+                  fontSize="xs"
+                  fontWeight={isActive ? 'semibold' : 'medium'}
+                  lineHeight="tight"
+                  color={isActive ? activeColor : inactiveColor}
+                >
+                  {tab.label}
+                </Text>
+              </Box>
             );
           })}
-        </div>
-      </div>
+        </Flex>
+      </Box>
 
-      {/* Bottom padding spacer for content - accounts for extended nav */}
-      <div style={{ height: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }} />
+      <Box h="calc(5rem + env(safe-area-inset-bottom, 0px))" />
     </>
   );
 };

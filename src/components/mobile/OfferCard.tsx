@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import {
+  Box,
+  Flex,
+  Text,
+  Heading,
+  Button,
+  Badge,
+  Card,
+  CardBody,
+  HStack,
+  Icon,
+  Progress,
+} from '@chakra-ui/react';
 import { Star, MapPin, Clock, Package } from 'lucide-react';
 
 interface Offer {
@@ -36,7 +46,7 @@ export const OfferCard: React.FC<OfferCardProps> = ({
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
-          onDecline(offer.id); // Auto-decline when time runs out
+          onDecline(offer.id);
           return 0;
         }
         return prev - 1;
@@ -49,80 +59,87 @@ export const OfferCard: React.FC<OfferCardProps> = ({
   const progressPercentage = (timeLeft / countdownSeconds) * 100;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-end">
-      <div className="w-full p-4">
-        <Card className="w-full animate-slide-up shadow-hover">
-          <CardContent className="p-6">
-            {/* Countdown bar */}
-            <div className="w-full bg-muted rounded-full h-1 mb-4">
-              <div 
-                className="bg-primary h-1 rounded-full transition-all duration-1000 ease-linear"
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
+    <Box
+      position="fixed"
+      inset={0}
+      zIndex={50}
+      bg="blackAlpha.600"
+      backdropFilter="blur(4px)"
+      display="flex"
+      alignItems="flex-end"
+    >
+      <Box w="100%" p={4}>
+        <Card w="100%" boxShadow="xl" borderRadius="lg">
+          <CardBody p={6}>
+            <Progress
+              value={progressPercentage}
+              colorScheme="blue"
+              size="sm"
+              borderRadius="full"
+              mb={4}
+              transition="all 1s linear"
+            />
 
-            {/* Pickup info */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-lg">{offer.pickupName}</h3>
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm font-medium">{offer.pickupRating}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
-                    <span>{offer.dropoffDistance} mi</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    <span>{offer.estimatedTime} min</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Package className="h-4 w-4" />
-                    <span>{offer.itemCount} items</span>
-                  </div>
-                </div>
-              </div>
+            <Flex align="center" justify="space-between" mb={4}>
+              <Box flex={1}>
+                <HStack spacing={2} mb={1}>
+                  <Heading size="md" fontWeight="semibold">{offer.pickupName}</Heading>
+                  <HStack spacing={1}>
+                    <Icon as={Star} h={4} w={4} color="yellow.400" fill="yellow.400" />
+                    <Text fontSize="sm" fontWeight="medium">{offer.pickupRating}</Text>
+                  </HStack>
+                </HStack>
+                <HStack spacing={4} fontSize="sm" color="gray.500">
+                  <HStack spacing={1}>
+                    <Icon as={MapPin} h={4} w={4} />
+                    <Text>{offer.dropoffDistance} mi</Text>
+                  </HStack>
+                  <HStack spacing={1}>
+                    <Icon as={Clock} h={4} w={4} />
+                    <Text>{offer.estimatedTime} min</Text>
+                  </HStack>
+                  <HStack spacing={1}>
+                    <Icon as={Package} h={4} w={4} />
+                    <Text>{offer.itemCount} items</Text>
+                  </HStack>
+                </HStack>
+              </Box>
               
-              <div className="text-right">
-                <div className="text-2xl font-bold text-status-online">
+              <Box textAlign="right">
+                <Text fontSize="2xl" fontWeight="bold" color="green.600">
                   ${offer.estimatedPay.toFixed(2)}
-                </div>
-                <div className="text-xs text-muted-foreground">
+                </Text>
+                <Text fontSize="xs" color="gray.500">
                   {offer.miles.toFixed(1)} mi total
-                </div>
-              </div>
-            </div>
+                </Text>
+              </Box>
+            </Flex>
 
-            {/* Time remaining indicator */}
-            <div className="text-center mb-4">
-              <Badge variant="outline" className="text-sm">
+            <Box textAlign="center" mb={4}>
+              <Badge variant="outline" fontSize="sm">
                 {timeLeft}s remaining
               </Badge>
-            </div>
+            </Box>
 
-            {/* Action buttons */}
-            <div className="flex gap-3">
+            <HStack spacing={3}>
               <Button
                 variant="outline"
                 onClick={() => onDecline(offer.id)}
-                className="flex-1"
+                flex={1}
               >
                 Decline
               </Button>
               <Button
                 onClick={() => onAccept(offer.id)}
-                className="flex-1 bg-status-online hover:bg-status-online/90"
+                flex={1}
+                colorScheme="green"
               >
                 Accept
               </Button>
-            </div>
-          </CardContent>
+            </HStack>
+          </CardBody>
         </Card>
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 };

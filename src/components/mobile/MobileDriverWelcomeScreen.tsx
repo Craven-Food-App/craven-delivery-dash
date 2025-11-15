@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import {
+  Box,
+  Flex,
+  Text,
+  Button,
+  Image,
+  Link,
+} from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import mobileDriverWelcomeImage from '@/assets/mobile-driver-welcome.png';
 import MobileFeederLogin from './MobileFeederLogin';
@@ -18,11 +25,9 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
   console.log('MobileDriverWelcomeScreen rendered');
   console.log('Image source:', mobileDriverWelcomeImage);
 
-  // If a session exists, skip welcome and go straight to dashboard
   useEffect(() => {
     const checkExistingSession = async () => {
       try {
-        // Use getSession() for faster check than getUser()
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           console.log('Session exists, redirecting to dashboard');
@@ -37,7 +42,6 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
       }
     };
     
-    // Add timeout to prevent hanging
     const timeoutId = setTimeout(() => {
       console.log('Session check timeout - proceeding with welcome screen');
     }, 1000);
@@ -61,32 +65,35 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 w-full h-full bg-white">
-      {/* Wrong App Message */}
-      <div className="absolute left-0 right-0 z-10" style={{ top: 'calc(env(safe-area-inset-top, 150px) + 8px)' }}>
-        <div className="px-4 text-center">
-          <span className="text-xs text-gray-600">
+    <Box position="fixed" inset={0} w="100%" h="100%" bg="white">
+      <Box
+        position="absolute"
+        left={0}
+        right={0}
+        zIndex={10}
+        top="calc(env(safe-area-inset-top, 150px) + 8px)"
+      >
+        <Box px={4} textAlign="center">
+          <Text fontSize="xs" color="gray.600">
             Wrong app if you're Crave'N food{' '}
-            <a 
-              href="/" 
-              className="text-black hover:text-black underline font-medium"
-              style={{ color: 'black' }}
-            >
+            <Link href="/" color="black" textDecoration="underline" fontWeight="medium" _hover={{ color: 'black' }}>
               Download app for Customers
-            </a>
-          </span>
-        </div>
-      </div>
+            </Link>
+          </Text>
+        </Box>
+      </Box>
 
-      {/* Full Screen Background Image */}
-      <img 
+      <Image
         src={mobileDriverWelcomeImage}
         alt="CRAVE'N Delivery Rider"
-        className="absolute inset-0 w-full h-full object-cover"
+        position="absolute"
+        inset={0}
+        w="100%"
+        h="100%"
+        objectFit="cover"
         onLoad={() => console.log('Mobile driver welcome image loaded successfully')}
         onError={(e) => {
           console.error('Mobile driver welcome image failed to load:', e);
-          // Fallback to a gradient background if image doesn't exist
           e.currentTarget.style.display = 'none';
           const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
           if (nextElement) {
@@ -95,51 +102,51 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
         }}
       />
       
-      {/* Fallback gradient background if image doesn't load */}
-      <div 
-        className="hidden absolute inset-0 w-full h-full bg-gradient-to-br from-orange-400 to-orange-600"
-      >
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center text-white">
-            <div className="text-8xl mb-6">🛴</div>
-            <h2 className="text-4xl font-bold mb-4">CRAVE'N</h2>
-            <p className="text-xl opacity-90">Ready to deliver happiness!</p>
-          </div>
-        </div>
-      </div>
+      <Box
+        display="none"
+        position="absolute"
+        inset={0}
+        w="100%"
+        h="100%"
+        bgGradient="linear(to-br, orange.400, orange.600)"
+      />
 
-      {/* Message Bar - Transparent orange, touching the button */}
-      <div className="absolute bottom-16 left-0 right-0 px-6">
-        <div className="bg-orange-500/80 backdrop-blur-sm px-4 py-3 text-center">
-          <h1 className="text-white text-lg font-semibold mb-1">
-            Welcome to CRAVE'N!
-          </h1>
-          <p className="text-white/90 text-sm">
-            Ready to make some money and help hungry customers?
-          </p>
-        </div>
-      </div>
-
-      {/* FEED NOW Button - Overlay at bottom, touching message box with 0px gap */}
-      <div className="absolute left-0 right-0 px-6" style={{ bottom: '15px', marginTop: '-16px' }}>
-        <Button 
-          onClick={handleFeedNow}
-          className="w-full bg-orange-500 hover:bg-orange-600 text-white text-lg font-semibold py-4 rounded-b-lg shadow-2xl transition-all duration-200 transform hover:scale-105 border-2 border-white/20"
+      {showLogin ? (
+        <MobileFeederLogin onLoginSuccess={handleLoginSuccess} />
+      ) : (
+        <Flex
+          position="absolute"
+          bottom={0}
+          left={0}
+          right={0}
+          flexDirection="column"
+          align="center"
+          justify="flex-end"
+          pb={8}
+          px={6}
+          zIndex={20}
         >
-          FEED NOW
-        </Button>
-      </div>
-
-      {/* Mobile Feeder Login - Slides over the welcome screen */}
-      {showLogin && (
-        <MobileFeederLogin 
-          onBack={() => setShowLogin(false)}
-          onLoginSuccess={handleLoginSuccess}
-        />
+          <Button
+            size="lg"
+            w="100%"
+            maxW="400px"
+            h={14}
+            fontSize="xl"
+            fontWeight="bold"
+            bgGradient="linear(to-r, orange.500, orange.600)"
+            _hover={{ bgGradient: 'linear(to-r, orange.600, orange.700)' }}
+            color="white"
+            boxShadow="xl"
+            borderRadius="2xl"
+            onClick={handleFeedNow}
+            mb={4}
+          >
+            FEED NOW
+          </Button>
+        </Flex>
       )}
-    </div>
+    </Box>
   );
 };
 
 export default MobileDriverWelcomeScreen;
-  

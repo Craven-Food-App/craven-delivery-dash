@@ -1,18 +1,30 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronRight, Users, MapPin, Clock, DollarSign, Navigation2, X, Package, Phone, MessageSquare, Star } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@chakra-ui/react';
 import { supabase } from '@/integrations/supabase/client';
 import { DeliveryMap } from './DeliveryMap';
-import { 
-  DeliveryCard, 
-  DeliveryButton, 
-  DeliveryHeader, 
-  DeliveryInfoCard, 
-  DeliveryActionGroup,
-  DeliveryDivider,
-  DeliveryMapContainer,
-  typography 
-} from '@/components/delivery/DeliveryDesignSystem';
+import {
+  Box,
+  Flex,
+  Text,
+  Heading,
+  Button,
+  Badge,
+  Card,
+  CardBody,
+  CardHeader,
+  VStack,
+  HStack,
+  Icon,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalBody,
+  Grid,
+  Divider,
+  Progress,
+  useColorModeValue,
+} from '@chakra-ui/react';
 
 interface OrderAssignment {
   assignment_id: string;
@@ -44,9 +56,8 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
   onDecline
 }) => {
   const [timeLeft, setTimeLeft] = useState(45);
-  const { toast } = useToast();
+  const toast = useToast();
 
-  // Earnings + routing state
   const [payoutPercent, setPayoutPercent] = useState<number>(70);
   const [subtotalCents, setSubtotalCents] = useState<number>(0);
   const [tipCents, setTipCents] = useState<number>(0);
@@ -54,13 +65,11 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
   const [routeMins, setRouteMins] = useState<number | null>(null);
   const [locationType, setLocationType] = useState<string | null>(null);
 
-  // Load payout settings and order details
   useEffect(() => {
     if (!isOpen || !assignment) return;
 
     const run = async () => {
       try {
-        // Get active payout percentage
         const { data: setting } = await supabase
           .from('driver_payout_settings')
           .select('percentage')
@@ -68,7 +77,6 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
           .maybeSingle();
         if (setting?.percentage != null) setPayoutPercent(Number(setting.percentage));
 
-        // Get order details
         const { data: order } = await supabase
           .from('orders')
           .select('subtotal_cents, tip_cents, dropoff_address, pickup_address')
@@ -91,7 +99,6 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
     run();
   }, [isOpen, assignment]);
 
-  // Mapbox route fetch
   useEffect(() => {
     if (!isOpen || !assignment) return;
     let canceled = false;
@@ -170,7 +177,6 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
     return () => { canceled = true; };
   }, [isOpen, assignment]);
 
-  // Countdown timer and notification sound
   useEffect(() => {
     if (!isOpen || !assignment) return;
 
@@ -217,14 +223,14 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
   const handleAccept = () => {
     if (assignment) {
       onAccept(assignment);
-      toast({ title: "Order Accepted!", description: "Navigate to the pickup location." });
+      toast({ title: "Order Accepted!", description: "Navigate to the pickup location.", status: "success" });
     }
   };
 
   const handleDecline = () => {
     if (assignment) {
       onDecline(assignment);
-      toast({ title: "Order Declined", description: "Looking for new offers..." });
+      toast({ title: "Order Declined", description: "Looking for new offers...", status: "info" });
     }
   };
 
@@ -249,173 +255,209 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
     return 'Customer';
   };
 
+  const progressPercentage = (timeLeft / 45) * 100;
+
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center">
-      <div className="bg-white rounded-t-3xl w-full max-w-md mx-4 mb-20 max-h-[85vh] overflow-y-auto">
-        {/* Professional Header */}
-        <DeliveryHeader
-          title="New Delivery Request"
-          subtitle={`Order #${assignment.order_id.slice(-6)}`}
-          onBack={handleDecline}
-          rightAction={
-            <button
+    <Modal isOpen={isOpen} onClose={handleDecline} size="full" motionPreset="slideInBottom">
+      <ModalOverlay bg="blackAlpha.600" />
+      <ModalContent
+        bg="white"
+        borderTopRadius="3xl"
+        maxW="md"
+        mx={4}
+        mb={20}
+        maxH="85vh"
+        overflowY="auto"
+      >
+        <ModalBody p={0}>
+          <Flex
+            px={4}
+            py={4}
+            align="center"
+            justify="space-between"
+            borderBottom="1px"
+            borderColor="gray.200"
+          >
+            <Box>
+              <Heading size="md" fontWeight="bold">New Delivery Request</Heading>
+              <Text fontSize="sm" color="gray.500">Order #{assignment.order_id.slice(-6)}</Text>
+            </Box>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleDecline}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              p={2}
             >
-              <X className="h-5 w-5 text-gray-500" />
-            </button>
-          }
-        />
+              <Icon as={X} h={5} w={5} color="gray.500" />
+            </Button>
+          </Flex>
 
-        {/* Timer Alert */}
-        <div className="px-4 py-3 bg-red-50 border-b border-red-100">
-          <div className="flex items-center justify-center space-x-2">
-            <Clock className="h-5 w-5 text-red-600" />
-            <span className="text-red-700 font-semibold">
-              {timeLeft}s remaining to accept
-            </span>
-          </div>
-        </div>
+          <Box px={4} py={3} bg="red.50" borderBottom="1px" borderColor="red.100">
+            <HStack spacing={2} justify="center">
+              <Icon as={Clock} h={5} w={5} color="red.600" />
+              <Text color="red.700" fontWeight="semibold">
+                {timeLeft}s remaining to accept
+              </Text>
+            </HStack>
+          </Box>
 
-        <div className="p-4 space-y-4">
-          {/* Test Order Badge */}
-          {assignment.isTestOrder && (
-            <DeliveryCard className="bg-yellow-50 border-yellow-200">
-              <div className="flex items-center space-x-2">
-                <span className="text-lg">🧪</span>
-                <div>
-                  <h3 className="font-semibold text-yellow-900">Test Order</h3>
-                  <p className="text-sm text-yellow-700">This is a test order for training purposes.</p>
-                </div>
-              </div>
-            </DeliveryCard>
-          )}
+          <Progress value={progressPercentage} colorScheme="red" size="sm" />
 
-          {/* Map Section */}
-          <DeliveryCard variant="elevated" padding="none" className="overflow-hidden">
-            <DeliveryMapContainer>
-              <DeliveryMap 
-                pickupAddress={assignment.pickup_address}
-                dropoffAddress={assignment.dropoff_address}
-                showRoute={true}
-                className="w-full h-full"
-              />
-            </DeliveryMapContainer>
-          </DeliveryCard>
-
-          {/* Pickup Information */}
-          <DeliveryInfoCard
-            title="Pickup Location"
-            subtitle={assignment.restaurant_name}
-            icon={Package}
-          >
-            <div className="flex items-start space-x-3">
-              <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-gray-600 leading-relaxed">
-                {formatAddress(assignment.pickup_address)}
-              </p>
-            </div>
-          </DeliveryInfoCard>
-
-          {/* Delivery Information */}
-          <DeliveryInfoCard
-            title="Delivery Location"
-            subtitle={getCustomerName()}
-            icon={Users}
-          >
-            <div className="space-y-3">
-              <div className="flex items-start space-x-3">
-                <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  {formatAddress(assignment.dropoff_address)}
-                </p>
-              </div>
-              
-              {/* Location Type Badge */}
-              {locationType && (
-                <div className="flex items-center space-x-2">
-                  <Star className="w-4 h-4 text-orange-500" />
-                  <span className="text-xs font-medium text-orange-700 bg-orange-50 px-2 py-1 rounded-full">
-                    {locationType}
-                  </span>
-                </div>
-              )}
-            </div>
-          </DeliveryInfoCard>
-
-          {/* Route Information */}
-          <DeliveryCard variant="filled">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">{miles}</div>
-                <div className="text-sm text-gray-500 font-medium">Distance</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">{mins}</div>
-                <div className="text-sm text-gray-500 font-medium">Est. Time</div>
-              </div>
-            </div>
-            
-            {/* Route Details */}
-            {routeMiles && routeMins && (
-              <DeliveryDivider />
+          <VStack spacing={4} p={4} align="stretch">
+            {assignment.isTestOrder && (
+              <Card bg="yellow.50" borderColor="yellow.200">
+                <CardBody>
+                  <HStack spacing={2}>
+                    <Text fontSize="lg">🧪</Text>
+                    <Box>
+                      <Heading size="sm" fontWeight="semibold" color="yellow.900">Test Order</Heading>
+                      <Text fontSize="sm" color="yellow.700">This is a test order for training purposes.</Text>
+                    </Box>
+                  </HStack>
+                </CardBody>
+              </Card>
             )}
-            {routeMiles && routeMins && (
-              <div className="text-center">
-                <p className="text-xs text-gray-500">
-                  Actual route: {routeMiles.toFixed(1)} mi • {routeMins} min
-                </p>
-              </div>
-            )}
-          </DeliveryCard>
 
-          {/* Earnings Section */}
-          <DeliveryCard variant="elevated" className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-orange-900">Your Earnings</h3>
-                <p className="text-sm text-orange-600">Base pay + tips</p>
-              </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold text-orange-900">
-                  ${estimatedPayout}
-                </div>
-                <div className="text-sm text-orange-600">
-                  {payoutPercent}% of delivery fee
-                </div>
-              </div>
-            </div>
-            
-            {/* Earnings Breakdown */}
-            <DeliveryDivider />
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-gray-600">Subtotal:</span>
-                <span className="float-right font-medium">${(subtotalCents / 100).toFixed(2)}</span>
-              </div>
-              <div>
-                <span className="text-gray-600">Tips:</span>
-                <span className="float-right font-medium">${(tipCents / 100).toFixed(2)}</span>
-              </div>
-            </div>
-          </DeliveryCard>
+            <Card variant="elevated" p={0} overflow="hidden">
+              <Box h="300px" w="100%">
+                <DeliveryMap 
+                  pickupAddress={assignment.pickup_address}
+                  dropoffAddress={assignment.dropoff_address}
+                  showRoute={true}
+                />
+              </Box>
+            </Card>
 
-          {/* Action Buttons */}
-          <DeliveryActionGroup
-            primaryAction={{
-              children: "Accept Delivery",
-              onClick: handleAccept,
-              icon: <Package className="w-5 h-5" />,
-              className: "shadow-lg"
-            }}
-            secondaryAction={{
-              children: "Decline",
-              onClick: handleDecline,
-              icon: <X className="w-5 h-5" />
-            }}
-          />
-        </div>
-      </div>
-    </div>
+            <Card>
+              <CardHeader>
+                <HStack spacing={2}>
+                  <Icon as={Package} h={5} w={5} color="orange.500" />
+                  <Box>
+                    <Heading size="sm" fontWeight="semibold">Pickup Location</Heading>
+                    <Text fontSize="sm" color="gray.600">{assignment.restaurant_name}</Text>
+                  </Box>
+                </HStack>
+              </CardHeader>
+              <CardBody pt={0}>
+                <HStack spacing={3} align="flex-start">
+                  <Icon as={MapPin} w={4} h={4} color="gray.400" mt={0.5} flexShrink={0} />
+                  <Text fontSize="sm" color="gray.600" lineHeight="relaxed">
+                    {formatAddress(assignment.pickup_address)}
+                  </Text>
+                </HStack>
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <HStack spacing={2}>
+                  <Icon as={Users} h={5} w={5} color="orange.500" />
+                  <Box>
+                    <Heading size="sm" fontWeight="semibold">Delivery Location</Heading>
+                    <Text fontSize="sm" color="gray.600">{getCustomerName()}</Text>
+                  </Box>
+                </HStack>
+              </CardHeader>
+              <CardBody pt={0}>
+                <VStack spacing={3} align="stretch">
+                  <HStack spacing={3} align="flex-start">
+                    <Icon as={MapPin} w={4} h={4} color="gray.400" mt={0.5} flexShrink={0} />
+                    <Text fontSize="sm" color="gray.600" lineHeight="relaxed">
+                      {formatAddress(assignment.dropoff_address)}
+                    </Text>
+                  </HStack>
+                  
+                  {locationType && (
+                    <HStack spacing={2}>
+                      <Icon as={Star} w={4} h={4} color="orange.500" />
+                      <Badge colorScheme="orange" variant="subtle" fontSize="xs">
+                        {locationType}
+                      </Badge>
+                    </HStack>
+                  )}
+                </VStack>
+              </CardBody>
+            </Card>
+
+            <Card variant="filled">
+              <CardBody>
+                <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                  <Box textAlign="center">
+                    <Text fontSize="2xl" fontWeight="bold" color="gray.900">{miles}</Text>
+                    <Text fontSize="sm" color="gray.500" fontWeight="medium">Distance</Text>
+                  </Box>
+                  <Box textAlign="center">
+                    <Text fontSize="2xl" fontWeight="bold" color="gray.900">{mins}</Text>
+                    <Text fontSize="sm" color="gray.500" fontWeight="medium">Est. Time</Text>
+                  </Box>
+                </Grid>
+                
+                {routeMiles && routeMins && (
+                  <>
+                    <Divider my={4} />
+                    <Text fontSize="xs" color="gray.500" textAlign="center">
+                      Actual route: {routeMiles.toFixed(1)} mi • {routeMins} min
+                    </Text>
+                  </>
+                )}
+              </CardBody>
+            </Card>
+
+            <Card bgGradient="linear(to-r, orange.50, orange.100)" borderColor="orange.200">
+              <CardBody>
+                <Flex align="center" justify="space-between" mb={4}>
+                  <Box>
+                    <Heading size="md" fontWeight="semibold" color="orange.900">Your Earnings</Heading>
+                    <Text fontSize="sm" color="orange.600">Base pay + tips</Text>
+                  </Box>
+                  <Box textAlign="right">
+                    <Text fontSize="3xl" fontWeight="bold" color="orange.900">
+                      ${estimatedPayout}
+                    </Text>
+                    <Text fontSize="sm" color="orange.600">
+                      {payoutPercent}% of delivery fee
+                    </Text>
+                  </Box>
+                </Flex>
+                
+                <Divider mb={4} />
+                <Grid templateColumns="repeat(2, 1fr)" gap={4} fontSize="sm">
+                  <Flex justify="space-between">
+                    <Text color="gray.600">Subtotal:</Text>
+                    <Text fontWeight="medium">${(subtotalCents / 100).toFixed(2)}</Text>
+                  </Flex>
+                  <Flex justify="space-between">
+                    <Text color="gray.600">Tips:</Text>
+                    <Text fontWeight="medium">${(tipCents / 100).toFixed(2)}</Text>
+                  </Flex>
+                </Grid>
+              </CardBody>
+            </Card>
+
+            <VStack spacing={3} pt={2}>
+              <Button
+                onClick={handleAccept}
+                w="100%"
+                size="lg"
+                colorScheme="orange"
+                leftIcon={<Icon as={Package} h={5} w={5} />}
+                boxShadow="lg"
+              >
+                Accept Delivery
+              </Button>
+              <Button
+                onClick={handleDecline}
+                w="100%"
+                size="lg"
+                variant="outline"
+                leftIcon={<Icon as={X} h={5} w={5} />}
+              >
+                Decline
+              </Button>
+            </VStack>
+          </VStack>
+        </ModalBody>
+      </ModalContent>
+    </Modal>
   );
 };
