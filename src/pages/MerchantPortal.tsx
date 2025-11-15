@@ -38,6 +38,8 @@ import {
   IconClock,
   IconCheckCircle,
 } from "@tabler/icons-react";
+// Temporary imports for old code sections that haven't been converted yet
+import { Clock, CheckCircle, Tablet, Store, Package, ChevronUp, ChevronDown } from "lucide-react";
 import { useRestaurantSelector } from "@/hooks/useRestaurantSelector";
 import { useRestaurantOnboarding } from "@/hooks/useRestaurantOnboarding";
 import { supabase } from "@/integrations/supabase/client";
