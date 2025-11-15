@@ -39,10 +39,10 @@ const createBlankDataUrl = (width: number, height: number) => {
   const blank = document.createElement('canvas');
   blank.width = width;
   blank.height = height;
-  const ctx = blank.getContext('2d');
+  const ctx = blank.getContext('2d', { alpha: true });
   if (ctx) {
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, width, height);
+    // Transparent background
+    ctx.clearRect(0, 0, width, height);
   }
   return blank.toDataURL('image/png');
 };
@@ -67,15 +67,15 @@ const ExecutiveDocumentSign = () => {
   const initializeCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
     canvas.style.width = '100%';
     canvas.style.maxWidth = `${CANVAS_WIDTH}px`;
     canvas.style.height = `${(CANVAS_HEIGHT / CANVAS_WIDTH) * 100}%`;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    // Clear canvas with transparent background
+    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     ctx.strokeStyle = '#111827';
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
@@ -184,10 +184,10 @@ const ExecutiveDocumentSign = () => {
   const clearSignature = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Clear with transparent background
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = '#111827';
     ctx.lineWidth = 2;
     lastPointRef.current = null;
@@ -196,6 +196,7 @@ const ExecutiveDocumentSign = () => {
   const getSignatureDataUrl = () => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
+    // Export as PNG with transparency
     const dataUrl = canvas.toDataURL('image/png');
     if (blankSignatureRef.current && dataUrl === blankSignatureRef.current) {
       return null;
@@ -205,11 +206,6 @@ const ExecutiveDocumentSign = () => {
 
   const handleSubmitSignature = async () => {
     if (!document) return;
-
-    if (!typedName.trim()) {
-      message.error('Please type your full legal name.');
-      return;
-    }
 
     const signatureDataUrl = getSignatureDataUrl();
     if (!signatureDataUrl) {
@@ -343,17 +339,6 @@ const ExecutiveDocumentSign = () => {
             <Card title="Sign Document" className="shadow-sm">
               <Space direction="vertical" size="large" style={{ width: '100%' }}>
                 <div>
-                  <Text strong>Type your full legal name *</Text>
-                  <Input
-                    value={typedName}
-                    onChange={(e) => setTypedName(e.target.value)}
-                    placeholder="Full Legal Name"
-                    size="large"
-                    style={{ marginTop: 8 }}
-                  />
-                </div>
-
-                <div>
                   <Text strong>Draw your signature *</Text>
                   <div
                     style={{
@@ -368,7 +353,7 @@ const ExecutiveDocumentSign = () => {
                       ref={canvasRef}
                       width={CANVAS_WIDTH}
                       height={CANVAS_HEIGHT}
-                      style={{ width: '100%', borderRadius: 8, cursor: 'crosshair', background: '#ffffff', touchAction: 'none' }}
+                      style={{ width: '100%', borderRadius: 8, cursor: 'crosshair', background: 'linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%)', backgroundSize: '20px 20px', backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px', touchAction: 'none' }}
                       onPointerDown={handlePointerDown}
                       onPointerMove={handlePointerMove}
                       onPointerUp={handlePointerUp}

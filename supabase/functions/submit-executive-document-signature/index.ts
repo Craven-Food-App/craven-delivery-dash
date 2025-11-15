@@ -263,25 +263,40 @@ serve(async (req) => {
 
           if (fieldType === 'signature') {
             if (signatureImage) {
+              // Fill the entire signature box while maintaining aspect ratio
               const aspectRatio = signatureImage.width / signatureImage.height;
-              let drawWidth = boxWidth * 0.9;
-              let drawHeight = drawWidth / aspectRatio;
-              if (drawHeight > boxHeight * 0.75) {
-                drawHeight = boxHeight * 0.75;
-                drawWidth = drawHeight * aspectRatio;
+              const boxAspectRatio = boxWidth / boxHeight;
+              
+              let drawWidth = boxWidth;
+              let drawHeight = boxHeight;
+              
+              // Fit to box dimensions while maintaining aspect ratio
+              if (aspectRatio > boxAspectRatio) {
+                // Signature is wider - fit to width
+                drawHeight = boxWidth / aspectRatio;
+                drawWidth = boxWidth;
+              } else {
+                // Signature is taller - fit to height
+                drawWidth = boxHeight * aspectRatio;
+                drawHeight = boxHeight;
               }
+              
+              // Center the signature in the box
               const imageX = boxX + (boxWidth - drawWidth) / 2;
               const imageY = boxY + (boxHeight - drawHeight) / 2;
+              
+              // Draw signature image (transparent background already handled by canvas)
               page.drawImage(signatureImage, {
                 x: imageX,
                 y: imageY,
                 width: drawWidth,
                 height: drawHeight,
               });
+              renderedValue = 'Signature';
             } else {
-              drawCenteredText(page, signerDisplayName, boxX, boxY + (boxHeight - 12) / 2, boxWidth, fontBold, 12);
+              // No signature image - don't render anything (signature is required)
+              renderedValue = null;
             }
-            renderedValue = signerDisplayName;
           } else if (fieldType === 'initials') {
             drawCenteredText(page, initials, boxX, boxY + (boxHeight - 12) / 2, boxWidth, fontBold, 12);
             renderedValue = initials;
