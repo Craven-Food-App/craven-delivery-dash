@@ -2,12 +2,26 @@
 // @ts-nocheck
 
 import { useState } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { Minus, Plus, Trash2, Truck } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import {
+  Drawer,
+  Button,
+  Badge,
+  Divider,
+  Stack,
+  Group,
+  Text,
+  Title,
+  Box,
+  ActionIcon,
+  ScrollArea,
+} from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import {
+  IconMinus,
+  IconPlus,
+  IconTrash,
+  IconTruck,
+} from "@tabler/icons-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CustomerOrderForm } from "./CustomerOrderForm";
 import { PromoCodeInput } from "./PromoCodeInput";
@@ -79,7 +93,6 @@ export const CartSidebar = ({
 }: CartSidebarProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showOrderForm, setShowOrderForm] = useState(false);
-  const { toast } = useToast();
   
   const {
     appliedPromoCode,
@@ -223,9 +236,10 @@ export const CartSidebar = ({
           .eq('id', newOrder.id);
 
         // Show success message and redirect
-        toast({
+        notifications.show({
           title: "Order placed successfully! 🎉",
-          description: "Your free order has been confirmed and sent to the restaurant.",
+          message: "Your free order has been confirmed and sent to the restaurant.",
+          color: "green",
         });
 
         // Close cart and reset form
@@ -252,10 +266,10 @@ export const CartSidebar = ({
       
     } catch (error) {
       console.error('Error placing order:', error);
-      toast({
+      notifications.show({
         title: "Error placing order",
-        description: "Please try again or contact the restaurant directly.",
-        variant: "destructive",
+        message: "Please try again or contact the restaurant directly.",
+        color: "red",
       });
     } finally {
       setIsProcessing(false);
@@ -264,132 +278,120 @@ export const CartSidebar = ({
 
   if (cart.length === 0) {
     return (
-      <Sheet open={isOpen} onOpenChange={onClose}>
-        <SheetContent className="w-full sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle>Your Cart</SheetTitle>
-          </SheetHeader>
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <p className="text-muted-foreground">Your cart is empty</p>
-              <p className="text-sm text-muted-foreground mt-1">Add some delicious items to get started!</p>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
+      <Drawer opened={isOpen} onClose={onClose} title="Your Cart" position="right" size="md">
+        <Box style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '200px' }}>
+          <Stack align="center" gap="xs">
+            <Text c="dimmed">Your cart is empty</Text>
+            <Text size="sm" c="dimmed">Add some delicious items to get started!</Text>
+          </Stack>
+        </Box>
+      </Drawer>
     );
   }
 
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-md flex flex-col max-h-screen overflow-hidden">
-        <SheetHeader>
-          <SheetTitle>Your Cart • {restaurant.name}</SheetTitle>
-        </SheetHeader>
-
-        <div className="flex-1 overflow-y-auto py-4">
-          <div className="space-y-4">
+    <Drawer opened={isOpen} onClose={onClose} title={`Your Cart • ${restaurant.name}`} position="right" size="md">
+      <Stack gap="md" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <ScrollArea style={{ flex: 1 }}>
+          <Stack gap="md">
             {cart.map((item) => (
-              <div key={item.id} className="flex items-start gap-3">
-                <div className="flex-1">
-                  <div className="flex items-start justify-between">
-                     <div>
-                       <h4 className="font-medium">{item.name}</h4>
-                       {item.modifiers && item.modifiers.length > 0 && (
-                         <div className="mt-1">
-                           {item.modifiers.map((modifier) => (
-                             <div key={modifier.id} className="flex items-center justify-between text-sm text-muted-foreground">
-                               <span>• {modifier.name}</span>
-                               {modifier.price_cents > 0 && (
-                                 <span>+${(modifier.price_cents / 100).toFixed(2)}</span>
-                               )}
-                             </div>
-                           ))}
-                         </div>
-                       )}
-                       {item.special_instructions && (
-                         <p className="text-sm text-muted-foreground mt-1">
-                           Note: {item.special_instructions}
-                         </p>
-                       )}
-                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      onClick={() => onUpdateQuantity(item.id, 0)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-                        disabled={item.quantity <= 1}
+              <Box key={item.id}>
+                <Group justify="space-between" align="flex-start" gap="sm">
+                  <Stack gap="xs" style={{ flex: 1 }}>
+                    <Group justify="space-between" align="flex-start">
+                      <Text fw={500}>{item.name}</Text>
+                      <ActionIcon
+                        variant="subtle"
+                        color="red"
+                        size="sm"
+                        onClick={() => onUpdateQuantity(item.id, 0)}
                       >
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <span className="font-medium w-8 text-center">{item.quantity}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                    </div>
-                     <span className="font-medium">
-                       ${(((item.price_cents + (item.modifiers?.reduce((sum, mod) => sum + mod.price_cents, 0) || 0)) * item.quantity) / 100).toFixed(2)}
-                     </span>
-                  </div>
-                </div>
-              </div>
+                        <IconTrash size={16} />
+                      </ActionIcon>
+                    </Group>
+                    {item.modifiers && item.modifiers.length > 0 && (
+                      <Stack gap="xs">
+                        {item.modifiers.map((modifier) => (
+                          <Group key={modifier.id} justify="space-between" gap="xs">
+                            <Text size="sm" c="dimmed">• {modifier.name}</Text>
+                            {modifier.price_cents > 0 && (
+                              <Text size="sm" c="dimmed">+${(modifier.price_cents / 100).toFixed(2)}</Text>
+                            )}
+                          </Group>
+                        ))}
+                      </Stack>
+                    )}
+                    {item.special_instructions && (
+                      <Text size="sm" c="dimmed">
+                        Note: {item.special_instructions}
+                      </Text>
+                    )}
+                    <Group justify="space-between" align="center" mt="xs">
+                      <Group gap="xs">
+                        <ActionIcon
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                          disabled={item.quantity <= 1}
+                        >
+                          <IconMinus size={14} />
+                        </ActionIcon>
+                        <Text fw={500} style={{ minWidth: '32px', textAlign: 'center' }}>{item.quantity}</Text>
+                        <ActionIcon
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                        >
+                          <IconPlus size={14} />
+                        </ActionIcon>
+                      </Group>
+                      <Text fw={500}>
+                        ${(((item.price_cents + (item.modifiers?.reduce((sum, mod) => sum + mod.price_cents, 0) || 0)) * item.quantity) / 100).toFixed(2)}
+                      </Text>
+                    </Group>
+                  </Stack>
+                </Group>
+              </Box>
             ))}
-          </div>
-        </div>
+          </Stack>
+        </ScrollArea>
 
-        <div className="border-t pt-4 space-y-4">
-          {/* Delivery/Pickup Selection */}
-          <div className="space-y-3">
-            <h4 className="font-medium text-sm">Order Type</h4>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant={deliveryMethod === 'delivery' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => onDeliveryMethodChange('delivery')}
-                className="flex flex-col items-center py-3 h-auto"
-              >
-                <Truck className="h-4 w-4 mb-1" />
-                <span className="text-xs">Delivery</span>
-                <span className="text-xs text-muted-foreground">
-                  {restaurant.min_delivery_time}-{restaurant.max_delivery_time} min
-                </span>
-              </Button>
-              <Button
-                variant={deliveryMethod === 'pickup' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => onDeliveryMethodChange('pickup')}
-                className="flex flex-col items-center py-3 h-auto"
-              >
-                <div className="h-4 w-4 mb-1 flex items-center justify-center">
-                  <div className="w-3 h-3 bg-current rounded-full" />
-                </div>
-                <span className="text-xs">Pickup</span>
-                <span className="text-xs text-muted-foreground">
-                  15-25 min
-                </span>
-              </Button>
-            </div>
-          </div>
+        <Box style={{ borderTop: '1px solid var(--mantine-color-gray-3)', paddingTop: '16px' }}>
+          <Stack gap="md">
+            {/* Delivery/Pickup Selection */}
+            <Stack gap="xs">
+              <Text fw={500} size="sm">Order Type</Text>
+              <Group gap="xs">
+                <Button
+                  variant={deliveryMethod === 'delivery' ? 'filled' : 'outline'}
+                  size="sm"
+                  onClick={() => onDeliveryMethodChange('delivery')}
+                  style={{ flex: 1 }}
+                  leftSection={<IconTruck size={16} />}
+                >
+                  <Stack gap={0} align="center">
+                    <Text size="xs">Delivery</Text>
+                    <Text size="xs" c="dimmed">
+                      {restaurant.min_delivery_time}-{restaurant.max_delivery_time} min
+                    </Text>
+                  </Stack>
+                </Button>
+                <Button
+                  variant={deliveryMethod === 'pickup' ? 'filled' : 'outline'}
+                  size="sm"
+                  onClick={() => onDeliveryMethodChange('pickup')}
+                  style={{ flex: 1 }}
+                >
+                  <Stack gap={0} align="center">
+                    <Box style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: 'currentColor' }} />
+                    <Text size="xs">Pickup</Text>
+                    <Text size="xs" c="dimmed">15-25 min</Text>
+                  </Stack>
+                </Button>
+              </Group>
+            </Stack>
 
-          {/* Promo Code Section */}
-          <div className="mb-4">
+            {/* Promo Code Section */}
             <PromoCodeInput
               onApplyPromoCode={handleApplyPromoCode}
               onRemovePromoCode={removePromoCode}
@@ -397,108 +399,108 @@ export const CartSidebar = ({
               isValidating={isValidatingPromo}
               disabled={isProcessing}
             />
-          </div>
 
-          {/* Order Summary */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Subtotal</span>
-              <span>${(cart.reduce((sum, item) => {
-                const modifierPrice = item.modifiers?.reduce((modSum, mod) => modSum + mod.price_cents, 0) || 0;
-                return sum + ((item.price_cents + modifierPrice) * item.quantity);
-              }, 0) / 100).toFixed(2)}</span>
-            </div>
-            {deliveryMethod === 'delivery' && (
-              <div className="flex justify-between text-sm">
-                <span>Delivery Fee</span>
-                <span className={appliedPromoCode?.type === 'free_delivery' ? 'line-through text-muted-foreground' : ''}>
-                  ${(totals.deliveryFee / 100).toFixed(2)}
-                </span>
-              </div>
-            )}
-            {((appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery') || appliedPromoCode?.type === 'total_free') && totals.deliveryFee > 0 && (
-              <div className="flex justify-between text-sm text-primary">
-                <span>{appliedPromoCode?.type === 'total_free' ? 'Everything FREE!' : 'Free delivery applied'}</span>
-                <span>-${(totals.deliveryFee / 100).toFixed(2)}</span>
-              </div>
-            )}
-            {appliedPromoCode && appliedPromoCode.type !== 'free_delivery' && appliedPromoCode.type !== 'total_free' && appliedPromoCode.discount_applied_cents > 0 && (
-              <div className="flex justify-between text-sm text-primary">
-                <span>Promo discount</span>
-                <span>-${(appliedPromoCode.discount_applied_cents / 100).toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-sm">
-              <span>Tax</span>
-              <span>${(totals.tax / 100).toFixed(2)}</span>
-            </div>
-            <Separator />
-            <div className="flex justify-between font-semibold">
-              <span>Total</span>
-              <span>
-                {(() => {
-                  const subtotal = cart.reduce((sum, item) => {
-                    const modifierPrice = item.modifiers?.reduce((modSum, mod) => modSum + mod.price_cents, 0) || 0;
-                    return sum + ((item.price_cents + modifierPrice) * item.quantity);
-                  }, 0);
-                  
-                  const promoDiscount = appliedPromoCode?.discount_applied_cents || 0;
-                  let adjustedDeliveryFee = totals.deliveryFee;
-                  
-                  if (appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery') {
-                    adjustedDeliveryFee = 0;
-                  } else if (appliedPromoCode?.type === 'total_free') {
-                    adjustedDeliveryFee = 0;
-                  }
-                  
-                  const finalTotal = appliedPromoCode?.type === 'total_free' ? 0 : subtotal + adjustedDeliveryFee + totals.tax - promoDiscount;
-                  
-                  return finalTotal <= 0 ? (
-                    <span className="text-primary font-bold">FREE!</span>
-                  ) : (
-                    `$${(finalTotal / 100).toFixed(2)}`
-                  );
-                })()}
-              </span>
-            </div>
-          </div>
+            {/* Order Summary */}
+            <Stack gap="xs">
+              <Group justify="space-between">
+                <Text size="sm">Subtotal</Text>
+                <Text size="sm">${(cart.reduce((sum, item) => {
+                  const modifierPrice = item.modifiers?.reduce((modSum, mod) => modSum + mod.price_cents, 0) || 0;
+                  return sum + ((item.price_cents + modifierPrice) * item.quantity);
+                }, 0) / 100).toFixed(2)}</Text>
+              </Group>
+              {deliveryMethod === 'delivery' && (
+                <Group justify="space-between">
+                  <Text size="sm">Delivery Fee</Text>
+                  <Text size="sm" td={appliedPromoCode?.type === 'free_delivery' ? 'line-through' : undefined} c={appliedPromoCode?.type === 'free_delivery' ? 'dimmed' : undefined}>
+                    ${(totals.deliveryFee / 100).toFixed(2)}
+                  </Text>
+                </Group>
+              )}
+              {((appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery') || appliedPromoCode?.type === 'total_free') && totals.deliveryFee > 0 && (
+                <Group justify="space-between">
+                  <Text size="sm" c="orange.6">{appliedPromoCode?.type === 'total_free' ? 'Everything FREE!' : 'Free delivery applied'}</Text>
+                  <Text size="sm" c="orange.6">-${(totals.deliveryFee / 100).toFixed(2)}</Text>
+                </Group>
+              )}
+              {appliedPromoCode && appliedPromoCode.type !== 'free_delivery' && appliedPromoCode.type !== 'total_free' && appliedPromoCode.discount_applied_cents > 0 && (
+                <Group justify="space-between">
+                  <Text size="sm" c="orange.6">Promo discount</Text>
+                  <Text size="sm" c="orange.6">-${(appliedPromoCode.discount_applied_cents / 100).toFixed(2)}</Text>
+                </Group>
+              )}
+              <Group justify="space-between">
+                <Text size="sm">Tax</Text>
+                <Text size="sm">${(totals.tax / 100).toFixed(2)}</Text>
+              </Group>
+              <Divider />
+              <Group justify="space-between">
+                <Text fw={600}>Total</Text>
+                <Text fw={600}>
+                  {(() => {
+                    const subtotal = cart.reduce((sum, item) => {
+                      const modifierPrice = item.modifiers?.reduce((modSum, mod) => modSum + mod.price_cents, 0) || 0;
+                      return sum + ((item.price_cents + modifierPrice) * item.quantity);
+                    }, 0);
+                    
+                    const promoDiscount = appliedPromoCode?.discount_applied_cents || 0;
+                    let adjustedDeliveryFee = totals.deliveryFee;
+                    
+                    if (appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery') {
+                      adjustedDeliveryFee = 0;
+                    } else if (appliedPromoCode?.type === 'total_free') {
+                      adjustedDeliveryFee = 0;
+                    }
+                    
+                    const finalTotal = appliedPromoCode?.type === 'total_free' ? 0 : subtotal + adjustedDeliveryFee + totals.tax - promoDiscount;
+                    
+                    return finalTotal <= 0 ? (
+                      <Text c="orange.6" fw={700}>FREE!</Text>
+                    ) : (
+                      `$${(finalTotal / 100).toFixed(2)}`
+                    );
+                  })()}
+                </Text>
+              </Group>
+            </Stack>
 
-          <div className="text-sm text-muted-foreground text-center">
-            {deliveryMethod === 'delivery' 
-              ? `Estimated delivery: ${restaurant.min_delivery_time}-${restaurant.max_delivery_time} minutes`
-              : 'Ready for pickup in 15-25 minutes'
-            }
-          </div>
-
-          <Button 
-            className="w-full" 
-            size="lg" 
-            onClick={handleCheckout}
-            disabled={isProcessing}
-          >
-            {(() => {
-              const subtotal = cart.reduce((sum, item) => {
-                const modifierPrice = item.modifiers?.reduce((modSum, mod) => modSum + mod.price_cents, 0) || 0;
-                return sum + ((item.price_cents + modifierPrice) * item.quantity);
-              }, 0);
-              
-              const promoDiscount = appliedPromoCode?.discount_applied_cents || 0;
-              let adjustedDeliveryFee = totals.deliveryFee;
-              
-              if (appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery') {
-                adjustedDeliveryFee = 0;
-              } else if (appliedPromoCode?.type === 'total_free') {
-                adjustedDeliveryFee = 0;
+            <Text size="sm" c="dimmed" ta="center">
+              {deliveryMethod === 'delivery' 
+                ? `Estimated delivery: ${restaurant.min_delivery_time}-${restaurant.max_delivery_time} minutes`
+                : 'Ready for pickup in 15-25 minutes'
               }
-              
-              const finalTotal = appliedPromoCode?.type === 'total_free' ? 0 : subtotal + adjustedDeliveryFee + totals.tax - promoDiscount;
-              
-              if (isProcessing) return "Processing...";
-              if (finalTotal <= 0) return 'Place Free Order';
-              return `Place Order • $${(finalTotal / 100).toFixed(2)}`;
-            })()}
-          </Button>
-        </div>
+            </Text>
+
+            <Button 
+              fullWidth
+              size="lg" 
+              onClick={handleCheckout}
+              disabled={isProcessing}
+            >
+              {(() => {
+                const subtotal = cart.reduce((sum, item) => {
+                  const modifierPrice = item.modifiers?.reduce((modSum, mod) => modSum + mod.price_cents, 0) || 0;
+                  return sum + ((item.price_cents + modifierPrice) * item.quantity);
+                }, 0);
+                
+                const promoDiscount = appliedPromoCode?.discount_applied_cents || 0;
+                let adjustedDeliveryFee = totals.deliveryFee;
+                
+                if (appliedPromoCode?.type === 'free_delivery' && deliveryMethod === 'delivery') {
+                  adjustedDeliveryFee = 0;
+                } else if (appliedPromoCode?.type === 'total_free') {
+                  adjustedDeliveryFee = 0;
+                }
+                
+                const finalTotal = appliedPromoCode?.type === 'total_free' ? 0 : subtotal + adjustedDeliveryFee + totals.tax - promoDiscount;
+                
+                if (isProcessing) return "Processing...";
+                if (finalTotal <= 0) return 'Place Free Order';
+                return `Place Order • $${(finalTotal / 100).toFixed(2)}`;
+              })()}
+            </Button>
+          </Stack>
+        </Box>
 
         <CustomerOrderForm
           isOpen={showOrderForm}
@@ -524,7 +526,7 @@ export const CartSidebar = ({
             return appliedPromoCode?.type === 'total_free' ? 0 : subtotal + adjustedDeliveryFee + totals.tax - promoDiscount;
           })()}
         />
-      </SheetContent>
-    </Sheet>
+      </Stack>
+    </Drawer>
   );
 };
