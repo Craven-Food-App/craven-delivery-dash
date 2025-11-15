@@ -1,19 +1,32 @@
-// @ts-nocheck
 import React, { useEffect, useState, useMemo } from 'react';
-import { Row, Col, Statistic, Badge, Button, Space, Alert, Typography, Divider, Card } from 'antd';
-import { WarningOutlined } from '@ant-design/icons';
 import {
-  BarChart3,
-  Users as UsersIcon,
-  DollarSign,
-  Trophy,
-  Rocket,
-  Lightbulb,
-  ShieldAlert,
-  FileText,
-  Mail,
-  PenTool,
-} from 'lucide-react';
+  Grid,
+  Badge,
+  Button,
+  Group,
+  Stack,
+  Alert,
+  Title,
+  Text,
+  Divider,
+  Card,
+  Paper,
+  Loader,
+  Box,
+} from '@mantine/core';
+import {
+  IconAlertTriangle,
+  IconChartBar,
+  IconUsers,
+  IconCurrencyDollar,
+  IconTrophy,
+  IconRocket,
+  IconBulb,
+  IconShieldAlert,
+  IconFileText,
+  IconMail,
+  IconPencil,
+} from '@tabler/icons-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { PersonnelManager } from '@/components/ceo/PersonnelManager';
@@ -59,11 +72,11 @@ const CEOPortal: React.FC = () => {
     const pendingApprovals = metrics?.pendingApprovals ?? 0;
 
     return [
-      { id: 'overview', label: 'Command Center', icon: BarChart3 },
+      { id: 'overview', label: 'Command Center', icon: IconChartBar },
       {
         id: 'personnel',
         label: `Manage People (${totalEmployees})`,
-        icon: UsersIcon,
+        icon: IconUsers,
       },
       {
         id: 'financial',
@@ -71,16 +84,16 @@ const CEOPortal: React.FC = () => {
           pendingApprovals > 0
             ? `Approve Spend (${pendingApprovals})`
             : 'Approve Spend',
-        icon: DollarSign,
+        icon: IconCurrencyDollar,
       },
-      { id: 'equity', label: 'Review Equity', icon: Trophy },
-      { id: 'strategic', label: 'Drive Strategy', icon: Rocket },
-      { id: 'mindmap', label: 'Map Decisions', icon: Lightbulb },
-      { id: 'emergency', label: 'Run Emergency Playbooks', icon: ShieldAlert },
-      { id: 'audit', label: 'Audit Activity', icon: FileText },
-      { id: 'signature', label: 'Sign Documents', icon: PenTool },
-      { id: 'communications', label: 'Direct Communications', icon: Mail },
-      { id: 'word', label: 'Draft Briefings', icon: FileText },
+      { id: 'equity', label: 'Review Equity', icon: IconTrophy },
+      { id: 'strategic', label: 'Drive Strategy', icon: IconRocket },
+      { id: 'mindmap', label: 'Map Decisions', icon: IconBulb },
+      { id: 'emergency', label: 'Run Emergency Playbooks', icon: IconShieldAlert },
+      { id: 'audit', label: 'Audit Activity', icon: IconFileText },
+      { id: 'signature', label: 'Sign Documents', icon: IconPencil },
+      { id: 'communications', label: 'Direct Communications', icon: IconMail },
+      { id: 'word', label: 'Draft Briefings', icon: IconFileText },
     ];
   }, [metrics?.totalEmployees, metrics?.pendingApprovals]);
 
@@ -95,21 +108,20 @@ const CEOPortal: React.FC = () => {
   };
 
   const actionButtons = (
-    <Space wrap>
+    <Group wrap="wrap">
       <Button
-        type="primary"
-        danger
-        icon={<WarningOutlined />}
+        color="red"
+        leftSection={<IconAlertTriangle size={16} />}
         onClick={() => setActiveTab('emergency')}
       >
         Emergency
       </Button>
-      <Button onClick={handleNavigateToCFO}>CFO Portal</Button>
-      <Button type="primary" onClick={() => navigate('/admin')}>
+      <Button variant="default" onClick={handleNavigateToCFO}>CFO Portal</Button>
+      <Button onClick={() => navigate('/admin')}>
         Admin Portal
       </Button>
-      <Button onClick={() => navigate('/board')}>Board Portal</Button>
-    </Space>
+      <Button variant="default" onClick={() => navigate('/board')}>Board Portal</Button>
+    </Group>
   );
 
   const renderContent = () => {
@@ -255,41 +267,58 @@ const CEOPortal: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-white text-lg">Verifying access...</p>
-        </div>
-      </div>
+      <Box
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          background: 'linear-gradient(to bottom right, #0f172a, #1e293b)',
+        }}
+      >
+        <Stack align="center" gap="md">
+          <Loader size="xl" color="blue" />
+          <Text c="white" size="lg">Verifying access...</Text>
+        </Stack>
+      </Box>
     );
   }
 
   if (!isAuthorized) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 p-4">
-        <Card 
-          title={<div className="text-red-600 text-center font-bold text-xl">Access Denied</div>}
-          className="max-w-md w-full"
-        >
-          <div className="space-y-4 text-center">
-            <p className="text-lg">You don't have CEO access to this portal.</p>
-            <p className="text-sm text-gray-400">
+      <Box
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          background: 'linear-gradient(to bottom right, #0f172a, #1e293b)',
+          padding: '1rem',
+        }}
+      >
+        <Card w="100%" maw={500} p="xl">
+          <Stack gap="md" align="center">
+            <Title order={2} c="red" ta="center" fw={700}>
+              Access Denied
+            </Title>
+            <Text size="lg" ta="center">You don't have CEO access to this portal.</Text>
+            <Text size="sm" c="dimmed" ta="center">
               This portal is restricted to the Chief Executive Officer only.
-            </p>
-            <p className="text-xs text-gray-500">
-              Logged in as: <span className="font-semibold">{user?.email}</span>
-            </p>
-            <div className="flex gap-2 pt-4">
-              <Button onClick={() => navigate('/')} className="flex-1">
+            </Text>
+            <Text size="xs" c="dimmed" ta="center">
+              Logged in as: <Text component="span" fw={600}>{user?.email}</Text>
+            </Text>
+            <Group gap="md" mt="md" w="100%">
+              <Button variant="default" onClick={() => navigate('/')} style={{ flex: 1 }}>
                 Go Home
               </Button>
-              <Button onClick={signOut} danger className="flex-1">
+              <Button color="red" onClick={signOut} style={{ flex: 1 }}>
                 Sign Out
               </Button>
-            </div>
-          </div>
+            </Group>
+          </Stack>
         </Card>
-      </div>
+      </Box>
     );
   }
 
@@ -309,131 +338,135 @@ const CEOPortal: React.FC = () => {
         role: 'Executive Leadership',
       }}
     >
-      <div className="space-y-6">
+      <Stack gap="xl">
         {metrics?.criticalAlerts && metrics.criticalAlerts > 0 && (
           <Alert
-            message={`${metrics.criticalAlerts} Critical Alert${metrics.criticalAlerts > 1 ? 's' : ''}`}
-            description="Immediate action required. Click to view details."
-            type="error"
-            showIcon
-            icon={<WarningOutlined />}
-            action={
-              <Button size="small" danger onClick={() => setActiveTab('emergency')}>
+            title={`${metrics.criticalAlerts} Critical Alert${metrics.criticalAlerts > 1 ? 's' : ''}`}
+            color="red"
+            icon={<IconAlertTriangle size={16} />}
+            styles={{
+              root: {
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              },
+            }}
+          >
+            <Group justify="space-between" align="center" w="100%">
+              <Text>Immediate action required. Click to view details.</Text>
+              <Button size="sm" color="red" onClick={() => setActiveTab('emergency')}>
                 View Now
               </Button>
-            }
-          />
+            </Group>
+          </Alert>
         )}
 
-        <section className="space-y-4">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <Typography.Title level={3} style={{ margin: 0 }}>
-              Company Health
-            </Typography.Title>
-            <Badge
-              status="processing"
-              text={
-                <span className="text-gray-600 text-sm">
-                  Last updated: {lastUpdated.toLocaleTimeString()}
-                </span>
-              }
-            />
-          </div>
-          <Row gutter={[16, 16]}>
-            <Col xs={24} sm={12} lg={4}>
-              <div className="bg-green-600 rounded-md px-4 py-3 h-full">
-                <Statistic
-                  title={<span className="text-white font-semibold">Monthly Revenue</span>}
-                  value={formatCurrency(metrics?.totalRevenue ?? 0)}
-                  valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
-                />
-                <div className="text-xs text-green-100 mt-2">
-                  Revenue Growth: {metrics?.revenueGrowth ?? 0}%
-                </div>
-              </div>
-            </Col>
-            <Col xs={24} sm={12} lg={4}>
-              <div className="bg-blue-600 rounded-md px-4 py-3 h-full">
-                <Statistic
-                  title={<span className="text-white font-semibold">Cash Flow</span>}
-                  value={formatCurrency(metrics?.cashFlow ?? 0)}
-                  valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
-                />
-                <div className="text-xs text-blue-100 mt-2">
-                  Burn Rate {(metrics?.burnRate ?? 0).toLocaleString()}
-                </div>
-              </div>
-            </Col>
-            <Col xs={24} sm={12} lg={4}>
-              <div className="bg-purple-600 rounded-md px-4 py-3 h-full">
-                <Statistic
-                  title={<span className="text-white font-semibold">Runway</span>}
-                  value={`${metrics?.runway ?? 0} mo`}
-                  valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
-                />
-                <div className="text-xs text-purple-100 mt-2">
-                  Admin Staff: {metrics?.admins ?? 0}
-                </div>
-              </div>
-            </Col>
-            <Col xs={24} sm={12} lg={4}>
-              <div className="bg-indigo-600 rounded-md px-4 py-3 h-full">
-                <Statistic
-                  title={<span className="text-white font-semibold">Headcount</span>}
-                  value={metrics?.totalEmployees ?? 0}
-                  valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
-                />
-                <div className="text-xs text-indigo-100 mt-2">
-                  Admins: {metrics?.admins ?? 0} • Feeders: {metrics?.feeders ?? 0}
-                </div>
-              </div>
-            </Col>
-            <Col xs={24} sm={12} lg={4}>
-              <div className="bg-yellow-600 rounded-md px-4 py-3 h-full">
-                <Statistic
-                  title={<span className="text-white font-semibold">Pending Approvals</span>}
-                  value={metrics?.pendingApprovals ?? 0}
-                  valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
-                />
-                <div className="text-xs text-yellow-100 mt-2">
-                  Requires your attention
-                </div>
-              </div>
-            </Col>
-            <Col xs={24} sm={12} lg={4}>
-              <div className="bg-teal-600 rounded-md px-4 py-3 h-full">
-                <Statistic
-                  title={<span className="text-white font-semibold">Merchants</span>}
-                  value={metrics?.merchants ?? 0}
-                  valueStyle={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}
-                />
-                <div className="text-xs text-teal-100 mt-2">Active partners</div>
-              </div>
-            </Col>
-          </Row>
-        </section>
+        <Stack gap="md">
+          <Group justify="space-between" wrap="wrap" gap="md">
+            <Title order={3}>Company Health</Title>
+            <Badge color="blue" variant="light">
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </Badge>
+          </Group>
+          <Grid gutter="md">
+            <Grid.Col xs={24} sm={12} lg={4}>
+              <Paper bg="green.6" p="md" h="100%" style={{ borderRadius: '8px' }}>
+                <Stack gap="xs">
+                  <Text c="white" fw={600} size="sm">Monthly Revenue</Text>
+                  <Text c="white" size="xl" fw={700} style={{ fontSize: '24px' }}>
+                    {formatCurrency(metrics?.totalRevenue ?? 0)}
+                  </Text>
+                  <Text c="green.1" size="xs" mt="xs">
+                    Revenue Growth: {metrics?.revenueGrowth ?? 0}%
+                  </Text>
+                </Stack>
+              </Paper>
+            </Grid.Col>
+            <Grid.Col xs={24} sm={12} lg={4}>
+              <Paper bg="blue.6" p="md" h="100%" style={{ borderRadius: '8px' }}>
+                <Stack gap="xs">
+                  <Text c="white" fw={600} size="sm">Cash Flow</Text>
+                  <Text c="white" size="xl" fw={700} style={{ fontSize: '24px' }}>
+                    {formatCurrency(metrics?.cashFlow ?? 0)}
+                  </Text>
+                  <Text c="blue.1" size="xs" mt="xs">
+                    Burn Rate {(metrics?.burnRate ?? 0).toLocaleString()}
+                  </Text>
+                </Stack>
+              </Paper>
+            </Grid.Col>
+            <Grid.Col xs={24} sm={12} lg={4}>
+              <Paper bg="violet.6" p="md" h="100%" style={{ borderRadius: '8px' }}>
+                <Stack gap="xs">
+                  <Text c="white" fw={600} size="sm">Runway</Text>
+                  <Text c="white" size="xl" fw={700} style={{ fontSize: '24px' }}>
+                    {metrics?.runway ?? 0} mo
+                  </Text>
+                  <Text c="violet.1" size="xs" mt="xs">
+                    Admin Staff: {metrics?.admins ?? 0}
+                  </Text>
+                </Stack>
+              </Paper>
+            </Grid.Col>
+            <Grid.Col xs={24} sm={12} lg={4}>
+              <Paper bg="indigo.6" p="md" h="100%" style={{ borderRadius: '8px' }}>
+                <Stack gap="xs">
+                  <Text c="white" fw={600} size="sm">Headcount</Text>
+                  <Text c="white" size="xl" fw={700} style={{ fontSize: '24px' }}>
+                    {metrics?.totalEmployees ?? 0}
+                  </Text>
+                  <Text c="indigo.1" size="xs" mt="xs">
+                    Admins: {metrics?.admins ?? 0} • Feeders: {metrics?.feeders ?? 0}
+                  </Text>
+                </Stack>
+              </Paper>
+            </Grid.Col>
+            <Grid.Col xs={24} sm={12} lg={4}>
+              <Paper bg="yellow.6" p="md" h="100%" style={{ borderRadius: '8px' }}>
+                <Stack gap="xs">
+                  <Text c="white" fw={600} size="sm">Pending Approvals</Text>
+                  <Text c="white" size="xl" fw={700} style={{ fontSize: '24px' }}>
+                    {metrics?.pendingApprovals ?? 0}
+                  </Text>
+                  <Text c="yellow.1" size="xs" mt="xs">
+                    Requires your attention
+                  </Text>
+                </Stack>
+              </Paper>
+            </Grid.Col>
+            <Grid.Col xs={24} sm={12} lg={4}>
+              <Paper bg="teal.6" p="md" h="100%" style={{ borderRadius: '8px' }}>
+                <Stack gap="xs">
+                  <Text c="white" fw={600} size="sm">Merchants</Text>
+                  <Text c="white" size="xl" fw={700} style={{ fontSize: '24px' }}>
+                    {metrics?.merchants ?? 0}
+                  </Text>
+                  <Text c="teal.1" size="xs" mt="xs">Active partners</Text>
+                </Stack>
+              </Paper>
+            </Grid.Col>
+          </Grid>
+        </Stack>
 
-        <section className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Typography.Title level={5} style={{ margin: 0 }}>
-              Executive Chat
-            </Typography.Title>
-            <Button size="small" type="default" onClick={() => setIsChatCollapsed((prev) => !prev)}>
+        <Stack gap="xs">
+          <Group justify="space-between">
+            <Title order={5}>Executive Chat</Title>
+            <Button size="sm" variant="default" onClick={() => setIsChatCollapsed((prev) => !prev)}>
               {isChatCollapsed ? 'Expand' : 'Collapse'}
             </Button>
-          </div>
+          </Group>
           {!isChatCollapsed && (
             <ExecutiveInboxIMessage role="ceo" deviceId={`ceo-portal-${window.location.hostname}`} />
           )}
-        </section>
+        </Stack>
 
         <Divider />
 
-        <section className="space-y-6">{renderContent()}</section>
+        <Stack gap="xl">{renderContent()}</Stack>
 
         <Divider />
 
-      </div>
+      </Stack>
     </ExecutivePortalLayout>
   );
 };
