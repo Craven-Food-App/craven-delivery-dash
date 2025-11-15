@@ -335,317 +335,288 @@ export function MenuManagement({ restaurantId }: { restaurantId: string }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-      </div>
+      <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '256px' }}>
+        <Loader size="lg" color="orange" />
+      </Box>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <Stack gap="xl">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold">Menu Management</h2>
-          <p className="text-gray-600 mt-1">Manage your menu items, prices, and availability</p>
-        </div>
-        <Button onClick={handleAddItem} className="bg-gradient-to-r from-orange-500 to-red-500">
-          <Plus className="w-4 h-4 mr-2" />
+      <Group justify="space-between" align="flex-start">
+        <Stack gap="xs">
+          <Title order={2}>Menu Management</Title>
+          <Text c="dimmed">Manage your menu items, prices, and availability</Text>
+        </Stack>
+        <Button onClick={handleAddItem} leftSection={<IconPlus size={16} />} color="orange">
           Add Item
         </Button>
-      </div>
+      </Group>
 
       {/* Menu Items by Category */}
-      <Tabs defaultValue={categories[0]?.id || 'all'} className="w-full">
-        <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${Math.min(categories.length, 6)}, 1fr)` }}>
+      <Tabs defaultValue={categories[0]?.id || 'all'}>
+        <Tabs.List>
           {categories.map(category => (
-            <TabsTrigger key={category.id} value={category.id}>
+            <Tabs.Tab key={category.id} value={category.id}>
               {category.name} ({category.items.length})
-            </TabsTrigger>
+            </Tabs.Tab>
           ))}
-        </TabsList>
+        </Tabs.List>
 
         {categories.map(category => (
-          <TabsContent key={category.id} value={category.id} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Tabs.Panel key={category.id} value={category.id} pt="md">
+            <Grid gutter="md">
               {category.items.map(item => (
-                <Card key={item.id} className="overflow-hidden">
-                  {/* Item Image */}
-                  {item.image_url ? (
-                    <div className="relative h-48 bg-gray-100">
-                      <img 
-                        src={item.image_url} 
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
-                      {!item.is_available && (
-                        <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
-                          <Badge variant="destructive" className="text-lg">
-                            <EyeOff className="w-4 h-4 mr-2" />
-                            Unavailable
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="h-48 bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
-                      <ImageIcon className="w-16 h-16 text-orange-300" />
-                    </div>
-                  )}
-
-                  {/* Item Details */}
-                  <div className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-lg">{item.name}</h3>
-                      <span className="text-lg font-bold text-orange-600">
-                        ${(item.price / 100).toFixed(2)}
-                      </span>
-                    </div>
-
-                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                      {item.description}
-                    </p>
-
-                    {/* Prep Time & Tags */}
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {item.prep_time_minutes && (
-                        <Badge variant="outline" className="text-xs">
-                          <Clock className="w-3 h-3 mr-1" />
-                          {item.prep_time_minutes} min
-                        </Badge>
-                      )}
-                      {item.dietary_tags?.map(tag => (
-                        <Badge key={tag} variant="secondary" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleToggleAvailability(item.id, item.is_available)}
-                        className="flex-1"
-                      >
-                        {item.is_available ? (
-                          <><Eye className="w-4 h-4 mr-1" /> Available</>
-                        ) : (
-                          <><EyeOff className="w-4 h-4 mr-1" /> Unavailable</>
+                <Grid.Col key={item.id} span={{ base: 12, md: 6, lg: 4 }}>
+                  <Card p={0} withBorder style={{ overflow: 'hidden' }}>
+                    {/* Item Image */}
+                    {item.image_url ? (
+                      <Box style={{ position: 'relative', height: '192px', backgroundColor: 'var(--mantine-color-gray-1)' }}>
+                        <MantineImage
+                          src={item.image_url}
+                          alt={item.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          fit="cover"
+                        />
+                        {!item.is_available && (
+                          <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Badge color="red" size="lg" leftSection={<IconEyeOff size={16} />}>
+                              Unavailable
+                            </Badge>
+                          </Box>
                         )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditItem(item)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteItem(item.id)}
-                        className="text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
+                      </Box>
+                    ) : (
+                      <Box style={{ height: '192px', background: 'linear-gradient(to bottom right, var(--mantine-color-orange-1), var(--mantine-color-red-1))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <IconPhoto size={64} style={{ color: 'var(--mantine-color-orange-3)' }} />
+                      </Box>
+                    )}
+
+                    {/* Item Details */}
+                    <Stack gap="md" p="md">
+                      <Group justify="space-between" align="flex-start">
+                        <Title order={4}>{item.name}</Title>
+                        <Text size="lg" fw={700} c="orange.6">
+                          ${(item.price / 100).toFixed(2)}
+                        </Text>
+                      </Group>
+
+                      <Text size="sm" c="dimmed" lineClamp={2}>
+                        {item.description}
+                      </Text>
+
+                      {/* Prep Time & Tags */}
+                      <Group gap="xs" wrap="wrap">
+                        {item.prep_time_minutes && (
+                          <Badge variant="outline" size="sm" leftSection={<IconClock size={12} />}>
+                            {item.prep_time_minutes} min
+                          </Badge>
+                        )}
+                        {item.dietary_tags?.map(tag => (
+                          <Badge key={tag} variant="light" size="sm">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </Group>
+
+                      {/* Actions */}
+                      <Group gap="xs">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleToggleAvailability(item.id, item.is_available)}
+                          style={{ flex: 1 }}
+                          leftSection={item.is_available ? <IconEye size={16} /> : <IconEyeOff size={16} />}
+                        >
+                          {item.is_available ? 'Available' : 'Unavailable'}
+                        </Button>
+                        <ActionIcon
+                          variant="outline"
+                          size="lg"
+                          onClick={() => handleEditItem(item)}
+                        >
+                          <IconEdit size={16} />
+                        </ActionIcon>
+                        <ActionIcon
+                          variant="outline"
+                          size="lg"
+                          color="red"
+                          onClick={() => handleDeleteItem(item.id)}
+                        >
+                          <IconTrash size={16} />
+                        </ActionIcon>
+                      </Group>
+                    </Stack>
+                  </Card>
+                </Grid.Col>
               ))}
-            </div>
+            </Grid>
 
             {category.items.length === 0 && (
-              <div className="text-center py-12">
-                <ChefHat className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-600">No items in this category yet</p>
-                <Button variant="outline" onClick={handleAddItem} className="mt-4">
-                  Add First Item
-                </Button>
-              </div>
+              <Box p="xl" style={{ textAlign: 'center' }}>
+                <Stack gap="md" align="center">
+                  <IconChefHat size={64} style={{ color: 'var(--mantine-color-gray-3)' }} />
+                  <Text c="dimmed">No items in this category yet</Text>
+                  <Button variant="outline" onClick={handleAddItem}>
+                    Add First Item
+                  </Button>
+                </Stack>
+              </Box>
             )}
-          </TabsContent>
+          </Tabs.Panel>
         ))}
       </Tabs>
 
-      {/* Edit/Add Item Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {currentItem?.id ? 'Edit Menu Item' : 'Add Menu Item'}
-            </DialogTitle>
-            <DialogDescription>
-              {currentItem?.id ? 'Update' : 'Create'} your menu item with photos and details
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {/* Image Upload */}
-            <div>
-              <Label>Item Photo</Label>
-              <div className="mt-2">
-                {imagePreview ? (
-                  <div className="relative">
-                    <img 
-                      src={imagePreview} 
-                      alt="Preview"
-                      className="w-full h-64 object-cover rounded-lg"
-                    />
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={handleRemoveImage}
-                      className="absolute top-2 right-2"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                    <Upload className="w-12 h-12 mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-600 mb-2">Click to upload or drag and drop</p>
-                    <p className="text-xs text-gray-500">PNG, JPG up to 5MB</p>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      id="image-upload"
-                      disabled={uploadingImage}
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={() => document.getElementById('image-upload')?.click()}
-                      disabled={uploadingImage}
-                      className="mt-4"
-                    >
-                      {uploadingImage ? 'Uploading...' : 'Choose File'}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Item Name */}
-            <div>
-              <Label htmlFor="name">Item Name *</Label>
-              <Input
-                id="name"
-                value={currentItem?.name || ''}
-                onChange={(e) => setCurrentItem(prev => prev ? { ...prev, name: e.target.value } : null)}
-                placeholder="e.g., Margherita Pizza"
-              />
-            </div>
-
-            {/* Description */}
-            <div>
-              <Label htmlFor="description">Description *</Label>
-              <Textarea
-                id="description"
-                value={currentItem?.description || ''}
-                onChange={(e) => setCurrentItem(prev => prev ? { ...prev, description: e.target.value } : null)}
-                placeholder="Describe your delicious dish..."
-                rows={3}
-              />
-            </div>
-
-            {/* Price & Category */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="price">Price *</Label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={(currentItem?.price || 0) / 100}
-                    onChange={(e) => setCurrentItem(prev => prev ? { ...prev, price: Math.round(parseFloat(e.target.value) * 100) } : null)}
-                    className="pl-8"
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="category">Category *</Label>
-                <Select
-                  value={currentItem?.category}
-                  onValueChange={(value) => setCurrentItem(prev => prev ? { ...prev, category: value } : null)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map(cat => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Prep Time */}
-            <div>
-              <Label htmlFor="prep_time">Prep Time (minutes)</Label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  id="prep_time"
-                  type="number"
-                  min="0"
-                  value={currentItem?.prep_time_minutes || ''}
-                  onChange={(e) => setCurrentItem(prev => prev ? { ...prev, prep_time_minutes: parseInt(e.target.value) || 0 } : null)}
-                  className="pl-8"
-                  placeholder="15"
+      {/* Edit/Add Item Modal */}
+      <Modal
+        opened={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        title={currentItem?.id ? 'Edit Menu Item' : 'Add Menu Item'}
+        size="xl"
+        scrollAreaComponent={Stack}
+      >
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            {currentItem?.id ? 'Update' : 'Create'} your menu item with photos and details
+          </Text>
+          {/* Image Upload */}
+          <Stack gap="xs">
+            <Text fw={500}>Item Photo</Text>
+            {imagePreview ? (
+              <Box style={{ position: 'relative' }}>
+                <MantineImage
+                  src={imagePreview}
+                  alt="Preview"
+                  style={{ width: '100%', height: '256px', objectFit: 'cover', borderRadius: '8px' }}
+                  fit="cover"
                 />
-              </div>
-            </div>
-
-            {/* Dietary Tags */}
-            <div>
-              <Label>Dietary Tags</Label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {DIETARY_TAGS.map(tag => (
-                  <Badge
-                    key={tag}
-                    variant={currentItem?.dietary_tags?.includes(tag) ? 'default' : 'outline'}
-                    className="cursor-pointer"
-                    onClick={() => toggleDietaryTag(tag)}
+                <ActionIcon
+                  color="red"
+                  size="sm"
+                  style={{ position: 'absolute', top: 8, right: 8 }}
+                  onClick={handleRemoveImage}
+                >
+                  <IconX size={16} />
+                </ActionIcon>
+              </Box>
+            ) : (
+              <FileButton
+                onChange={(file) => file && handleImageUpload({ target: { files: [file] } } as any)}
+                accept="image/*"
+                disabled={uploadingImage}
+              >
+                {(props) => (
+                  <Box
+                    p="xl"
+                    style={{ border: '2px dashed var(--mantine-color-gray-3)', borderRadius: '8px', textAlign: 'center', cursor: 'pointer' }}
+                    {...props}
                   >
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
+                    <Stack gap="xs" align="center">
+                      <IconUpload size={48} style={{ color: 'var(--mantine-color-gray-4)' }} />
+                      <Text size="sm" c="dimmed">Click to upload or drag and drop</Text>
+                      <Text size="xs" c="dimmed">PNG, JPG up to 5MB</Text>
+                      <Button variant="outline" disabled={uploadingImage} leftSection={uploadingImage ? <Loader size="xs" /> : <IconUpload size={16} />}>
+                        {uploadingImage ? 'Uploading...' : 'Choose File'}
+                      </Button>
+                    </Stack>
+                  </Box>
+                )}
+              </FileButton>
+            )}
+          </Stack>
 
-            {/* Available Toggle */}
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Item Availability</Label>
-                <p className="text-sm text-gray-600">Make this item available for ordering</p>
-              </div>
-              <Switch
-                checked={currentItem?.is_available || false}
-                onCheckedChange={(checked) => setCurrentItem(prev => prev ? { ...prev, is_available: checked } : null)}
+          {/* Item Name */}
+          <TextInput
+            label="Item Name *"
+            value={currentItem?.name || ''}
+            onChange={(e) => setCurrentItem(prev => prev ? { ...prev, name: e.target.value } : null)}
+            placeholder="e.g., Margherita Pizza"
+          />
+
+          {/* Description */}
+          <Textarea
+            label="Description *"
+            value={currentItem?.description || ''}
+            onChange={(e) => setCurrentItem(prev => prev ? { ...prev, description: e.target.value } : null)}
+            placeholder="Describe your delicious dish..."
+            rows={3}
+          />
+
+          {/* Price & Category */}
+          <Grid gutter="md">
+            <Grid.Col span={6}>
+              <NumberInput
+                label="Price *"
+                value={(currentItem?.price || 0) / 100}
+                onChange={(value) => setCurrentItem(prev => prev ? { ...prev, price: Math.round((value || 0) * 100) } : null)}
+                placeholder="0.00"
+                min={0}
+                step={0.01}
+                decimalScale={2}
+                leftSection={<IconCurrencyDollar size={16} />}
               />
-            </div>
-          </div>
+            </Grid.Col>
+            <Grid.Col span={6}>
+              <Select
+                label="Category *"
+                value={currentItem?.category}
+                onChange={(value) => setCurrentItem(prev => prev ? { ...prev, category: value || '' } : null)}
+                data={CATEGORIES.map(cat => ({ value: cat, label: cat }))}
+                placeholder="Select category"
+              />
+            </Grid.Col>
+          </Grid>
 
-          <DialogFooter>
+          {/* Prep Time */}
+          <NumberInput
+            label="Prep Time (minutes)"
+            value={currentItem?.prep_time_minutes || undefined}
+            onChange={(value) => setCurrentItem(prev => prev ? { ...prev, prep_time_minutes: value || 0 } : null)}
+            placeholder="15"
+            min={0}
+            leftSection={<IconClock size={16} />}
+          />
+
+          {/* Dietary Tags */}
+          <Stack gap="xs">
+            <Text fw={500}>Dietary Tags</Text>
+            <Group gap="xs" wrap="wrap">
+              {DIETARY_TAGS.map(tag => (
+                <Badge
+                  key={tag}
+                  variant={currentItem?.dietary_tags?.includes(tag) ? 'filled' : 'outline'}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => toggleDietaryTag(tag)}
+                >
+                  {tag}
+                </Badge>
+              ))}
+            </Group>
+          </Stack>
+
+          {/* Available Toggle */}
+          <Group justify="space-between" align="flex-start">
+            <Stack gap="xs">
+              <Text fw={500}>Item Availability</Text>
+              <Text size="sm" c="dimmed">Make this item available for ordering</Text>
+            </Stack>
+            <Switch
+              checked={currentItem?.is_available || false}
+              onChange={(e) => setCurrentItem(prev => prev ? { ...prev, is_available: e.currentTarget.checked } : null)}
+            />
+          </Group>
+
+          <Group justify="flex-end" mt="md">
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSaveItem} disabled={!currentItem?.name || !currentItem?.description}>
-              <Save className="w-4 h-4 mr-2" />
+            <Button onClick={handleSaveItem} disabled={!currentItem?.name || !currentItem?.description} leftSection={<IconDeviceFloppy size={16} />}>
               {currentItem?.id ? 'Update' : 'Create'} Item
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+          </Group>
+        </Stack>
+      </Modal>
+    </Stack>
   );
 }
