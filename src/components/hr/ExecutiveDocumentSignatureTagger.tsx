@@ -14,6 +14,7 @@ import {
   Spin,
   Alert,
   Divider,
+  Tag,
 } from "antd";
 import {
   PlusOutlined,
@@ -88,6 +89,37 @@ const FIELD_COLORS: Record<FieldType, string> = {
 
 const normalizeRole = (role: string | null | undefined) => String(role || "").trim().toLowerCase();
 
+// Comprehensive executive role list with colors (DocuSign-style)
+const ALL_EXECUTIVE_ROLES = [
+  { value: 'ceo', label: 'CEO - Chief Executive Officer', color: '#FF6B35', description: 'Chief Executive Officer' },
+  { value: 'cfo', label: 'CFO - Chief Financial Officer', color: '#4ECDC4', description: 'Chief Financial Officer' },
+  { value: 'coo', label: 'COO - Chief Operating Officer', color: '#45B7D1', description: 'Chief Operating Officer' },
+  { value: 'cto', label: 'CTO - Chief Technology Officer', color: '#96CEB4', description: 'Chief Technology Officer' },
+  { value: 'cxo', label: 'CXO - Chief Experience Officer', color: '#FFEAA7', description: 'Chief Experience Officer' },
+  { value: 'board_member', label: 'Board Member', color: '#DDA15E', description: 'Member of the Board of Directors' },
+  { value: 'board', label: 'Board of Directors', color: '#DDA15E', description: 'Board of Directors' },
+  { value: 'officer', label: 'Officer', color: '#A8DADC', description: 'Corporate Officer' },
+  { value: 'founder', label: 'Founder', color: '#F77F00', description: 'Company Founder' },
+  { value: 'shareholder', label: 'Shareholder', color: '#FCBF49', description: 'Shareholder' },
+  { value: 'incorporator', label: 'Incorporator', color: '#EAE2B7', description: 'Incorporator' },
+  { value: 'secretary', label: 'Secretary', color: '#C9ADA7', description: 'Corporate Secretary' },
+  { value: 'treasurer', label: 'Treasurer', color: '#9A8C98', description: 'Corporate Treasurer' },
+];
+
+// Get role color for visual identification
+const getRoleColor = (role: string | null | undefined): string => {
+  const normalized = normalizeRole(role);
+  const roleData = ALL_EXECUTIVE_ROLES.find(r => r.value === normalized);
+  return roleData?.color || '#6B7280';
+};
+
+// Get role label with description
+const getRoleLabel = (role: string | null | undefined): string => {
+  const normalized = normalizeRole(role);
+  const roleData = ALL_EXECUTIVE_ROLES.find(r => r.value === normalized);
+  return roleData?.label || normalized.toUpperCase();
+};
+
 const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTaggerProps> = ({
   open,
   document: doc,
@@ -101,6 +133,7 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
   const [fields, setFields] = useState<SignatureFieldLayout[]>([]);
   const [activeFieldId, setActiveFieldId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(0.95);
+  const [draggingFieldId, setDraggingFieldId] = useState<string | null>(null);
 
   const pageContainerRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<{
@@ -131,9 +164,17 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
     return [];
   }, [docDetails]);
 
+  // Comprehensive role options - include ALL executive roles plus document-specific ones
   const roleOptions = useMemo(() => {
     const roles = new Set<string>();
-    requiredRoles.forEach((role) => roles.add(role));
+    
+    // Add all standard executive roles
+    ALL_EXECUTIVE_ROLES.forEach(role => roles.add(role.value));
+    
+    // Add required roles from document
+    requiredRoles.forEach((role) => roles.add(role.toLowerCase()));
+    
+    // Add document-specific roles
     if (docDetails?.role) {
       roles.add(String(docDetails.role).toLowerCase());
     }
@@ -143,8 +184,20 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
     if (docDetails?.officer_name) {
       roles.add(`${docDetails.officer_name.toLowerCase()} (name)`);
     }
-    return Array.from(roles).filter(Boolean);
+    
+    return Array.from(roles).filter(Boolean).sort();
   }, [docDetails, requiredRoles]);
+
+  // Group fields by signer role for DocuSign-style sidebar
+  const fieldsBySigner = useMemo(() => {
+    const grouped: Record<string, SignatureFieldLayout[]> = {};
+    fields.forEach(field => {
+      const role = field.signer_role || 'officer';
+      if (!grouped[role]) grouped[role] = [];
+      grouped[role].push(field);
+    });
+    return grouped;
+  }, [fields]);
 
   const currentFields = useMemo(
     () => fields.filter((field) => field.page_number === activePage),
@@ -323,6 +376,7 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
       boxHeight,
     };
     setActiveFieldId(field.id!);
+    setDraggingFieldId(field.id!); // Set dragging state for visual feedback
 
     const handleMove = (moveEvent: PointerEvent) => {
       if (!dragRef.current || !pageContainerRef.current) return;
@@ -334,6 +388,7 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
 
     const handleUp = () => {
       dragRef.current = null;
+      setDraggingFieldId(null); // Clear dragging state
       window.removeEventListener("pointermove", handleMove);
       window.removeEventListener("pointerup", handleUp);
     };
@@ -465,23 +520,58 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
             style={{ width: "100%", marginTop: 4 }}
             onChange={(value) => updateField(activeField.id!, { signer_role: String(value).trim() })}
             showSearch
-            options={roleOptions.map((role) => ({ value: role, label: role.toUpperCase() }))}
+            placeholder="Select who will sign this field"
+            filterOption={(input, option) => {
+              const label = option?.label as string;
+              return label?.toLowerCase().includes(input.toLowerCase()) || false;
+            }}
+            options={roleOptions.map((role) => {
+              const roleData = ALL_EXECUTIVE_ROLES.find(r => r.value === role);
+              return {
+                value: role,
+                label: (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ 
+                      width: 12, 
+                      height: 12, 
+                      borderRadius: '50%', 
+                      background: getRoleColor(role),
+                      flexShrink: 0
+                    }} />
+                    <span>{roleData?.label || role.toUpperCase()}</span>
+                  </div>
+                ),
+              };
+            })}
             dropdownRender={(menu) => (
               <>
                 {menu}
                 <Divider style={{ margin: "4px 0" }} />
                 <div style={{ padding: "4px 8px" }}>
                   <Input
-                    placeholder="Custom role"
+                    placeholder="Enter custom role name"
                     value={activeField.signer_role}
                     onChange={(event) =>
                       updateField(activeField.id!, { signer_role: String(event.target.value).trim() })
                     }
+                    onPressEnter={(e) => {
+                      const value = (e.target as HTMLInputElement).value.trim();
+                      if (value) {
+                        updateField(activeField.id!, { signer_role: value });
+                      }
+                    }}
                   />
                 </div>
               </>
             )}
           />
+          {activeField.signer_role && (
+            <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+              Color: <span style={{ color: getRoleColor(activeField.signer_role), fontWeight: 600 }}>
+                {getRoleLabel(activeField.signer_role)}
+              </span>
+            </Text>
+          )}
         </div>
 
         <div>
@@ -674,6 +764,9 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
                   const widthPx = (field.width_percent / 100) * (displayDimensions.width * zoom);
                   const heightPx = (field.height_percent / 100) * (displayDimensions.height * zoom);
                   const isActive = field.id === activeFieldId;
+                  const isDragging = field.id === draggingFieldId;
+                  const roleColor = getRoleColor(field.signer_role);
+                  const roleLabel = getRoleLabel(field.signer_role);
 
                   return (
                     <div
@@ -689,23 +782,53 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
                         top,
                         width: widthPx,
                         height: heightPx,
-                        border: isActive ? "2px solid #2563eb" : "2px dashed #1f2937",
+                        border: isActive 
+                          ? `3px solid ${roleColor}` 
+                          : isDragging 
+                          ? `2px dashed ${roleColor}`
+                          : `2px solid ${roleColor}`,
                         borderRadius: 6,
-                        background: FIELD_COLORS[field.field_type],
-                        boxShadow: isActive ? "0 0 0 3px rgba(37, 99, 235, 0.25)" : "0 0 0 1px rgba(148, 163, 184, 0.4)",
+                        background: isDragging 
+                          ? `${roleColor}30` 
+                          : `${roleColor}15`,
+                        boxShadow: isActive 
+                          ? `0 0 0 3px ${roleColor}40` 
+                          : isDragging
+                          ? `0 4px 12px ${roleColor}50`
+                          : `0 2px 4px rgba(0,0,0,0.1)`,
                         display: "flex",
+                        flexDirection: "column",
                         alignItems: "center",
                         justifyContent: "center",
-                        color: "#1f2937",
+                        color: roleColor,
                         fontWeight: 600,
-                        fontSize: Math.max(10, Math.min(13, heightPx / 4)),
-                        cursor: "grab",
+                        fontSize: Math.max(9, Math.min(12, heightPx / 5)),
+                        cursor: isDragging ? "grabbing" : "grab",
                         userSelect: "none",
                         pointerEvents: "auto",
-                        transition: "border 0.12s ease",
+                        transition: isDragging ? "none" : "all 0.15s ease",
+                        transform: isDragging ? "scale(1.02)" : "scale(1)",
+                        zIndex: isActive ? 10 : isDragging ? 9 : 1,
                       }}
                     >
-                      {field.label || `${FIELD_LABELS[field.field_type]} (${field.signer_role})`}
+                      <div style={{ 
+                        background: roleColor, 
+                        color: 'white', 
+                        padding: '2px 6px', 
+                        borderRadius: 4,
+                        fontSize: Math.max(8, Math.min(10, heightPx / 6)),
+                        fontWeight: 700,
+                        marginBottom: 2,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        maxWidth: '100%',
+                      }}>
+                        {roleLabel.split(' - ')[0]}
+                      </div>
+                      <div style={{ fontSize: Math.max(8, Math.min(10, heightPx / 7)), color: '#374151' }}>
+                        {FIELD_LABELS[field.field_type]}
+                      </div>
                     </div>
                   );
                 })}
@@ -735,19 +858,98 @@ const ExecutiveDocumentSignatureTagger: React.FC<ExecutiveDocumentSignatureTagge
           </Space>
         </div>
 
-        <div style={{ width: 320 }}>
-          <Space direction="vertical" size={16} style={{ width: "100%" }}>
+        <div style={{ width: 320, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* DocuSign-style Signers Sidebar */}
+          <div style={{ 
+            border: '1px solid #e5e7eb', 
+            borderRadius: 8, 
+            padding: 12, 
+            background: '#f9fafb',
+            maxHeight: '300px',
+            overflowY: 'auto'
+          }}>
+            <Text strong style={{ marginBottom: 12, display: 'block', fontSize: 14 }}>
+              Signers ({Object.keys(fieldsBySigner).length})
+            </Text>
+            {Object.keys(fieldsBySigner).length === 0 ? (
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                No signers yet. Add signature fields to see them here.
+              </Text>
+            ) : (
+              <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                {Object.entries(fieldsBySigner).map(([role, roleFields]) => {
+                  const roleColor = getRoleColor(role);
+                  const roleLabel = getRoleLabel(role);
+                  const signatureCount = roleFields.filter(f => f.field_type === 'signature').length;
+                  const isSelected = roleFields.some(f => f.id === activeFieldId);
+                  
+                  return (
+                    <div
+                      key={role}
+                      onClick={() => {
+                        // Select first field of this role
+                        if (roleFields.length > 0) {
+                          setActiveFieldId(roleFields[0].id!);
+                        }
+                      }}
+                      style={{
+                        padding: 10,
+                        borderRadius: 6,
+                        background: isSelected ? `${roleColor}20` : 'white',
+                        border: `1px solid ${isSelected ? roleColor : '#e5e7eb'}`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.background = `${roleColor}10`;
+                          e.currentTarget.style.borderColor = roleColor;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.background = 'white';
+                          e.currentTarget.style.borderColor = '#e5e7eb';
+                        }
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <div style={{ 
+                          width: 14, 
+                          height: 14, 
+                          borderRadius: '50%', 
+                          background: roleColor,
+                          flexShrink: 0,
+                          border: '2px solid white',
+                          boxShadow: '0 0 0 1px rgba(0,0,0,0.1)'
+                        }} />
+                        <Text strong style={{ fontSize: 13, flex: 1 }}>
+                          {roleLabel.split(' - ')[0]}
+                        </Text>
+                        <Tag size="small" color={roleColor} style={{ margin: 0 }}>
+                          {roleFields.length}
+                        </Tag>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, fontSize: 11, color: '#6b7280', marginLeft: 22 }}>
+                        <span>{signatureCount} signature{signatureCount !== 1 ? 's' : ''}</span>
+                        {roleFields.length > signatureCount && (
+                          <span>• {roleFields.length - signatureCount} other</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </Space>
+            )}
+          </div>
+
+          {/* Field Controls */}
+          <Space direction="vertical" size={16} style={{ width: "100%", flex: 1 }}>
             <Alert
               type="info"
               showIcon
-              message="Place signature tabs after review"
-              description="Use this tool after documents are generated so you can tag the exact signer name and role on each page."
-            />
-            <Alert
-              type="warning"
-              showIcon
-              message="Signer access"
-              description="Only finalised tabs are shown to the signer portal. Ensure every required role has a field before sending."
+              message="DocuSign-style Tagging"
+              description="Drag fields to position them. Each signer has a unique color for easy identification."
             />
             <Divider plain>Selected Field</Divider>
             {renderFieldControls()}
