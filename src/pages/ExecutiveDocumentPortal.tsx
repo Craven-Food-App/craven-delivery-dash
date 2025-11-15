@@ -285,7 +285,23 @@ export const ExecutiveDocumentPortal: React.FC = () => {
         },
       });
 
-      if (error) throw error;
+      // Handle edge function errors - when status is non-2xx, data may contain the error response
+      if (error) {
+        // When edge function returns non-2xx, data might still contain the error JSON
+        let errorMessage = 'Signature submission failed';
+        
+        if (data?.error) {
+          errorMessage = data.error;
+        } else if (error.message && error.message !== 'Edge Function returned a non-2xx status code') {
+          errorMessage = error.message;
+        } else if (typeof error === 'object' && 'error' in error) {
+          errorMessage = String(error.error);
+        }
+        
+        console.error('Signature submission error:', { error, data });
+        throw new Error(errorMessage);
+      }
+
       if (!data?.ok) {
         throw new Error(data?.error || 'Signature submission failed');
       }

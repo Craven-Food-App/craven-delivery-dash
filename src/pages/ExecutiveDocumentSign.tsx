@@ -226,8 +226,27 @@ const ExecutiveDocumentSign = () => {
       },
     });
 
-    if (submitError || !data?.ok) {
-      message.error(data?.error || submitError?.message || 'Failed to submit signature. Please try again.');
+    // Handle edge function errors - when status is non-2xx, data may contain the error response
+    if (submitError) {
+      // When edge function returns non-2xx, data might still contain the error JSON
+      let errorMessage = 'Failed to submit signature. Please try again.';
+      
+      if (data?.error) {
+        errorMessage = data.error;
+      } else if (submitError.message && submitError.message !== 'Edge Function returned a non-2xx status code') {
+        errorMessage = submitError.message;
+      } else if (typeof submitError === 'object' && 'error' in submitError) {
+        errorMessage = String(submitError.error);
+      }
+      
+      console.error('Signature submission error:', { submitError, data });
+      message.error(errorMessage);
+      setIsSigning(false);
+      return;
+    }
+
+    if (!data?.ok) {
+      message.error(data?.error || 'Failed to submit signature. Please try again.');
       setIsSigning(false);
       return;
     }
