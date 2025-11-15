@@ -740,38 +740,46 @@ const RestaurantSetup = () => {
           </Card>
 
           {/* Continue Crave'N setup */}
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-4">Continue your Crave'N setup</h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              While our team is preparing your Marketplace store, continue your Crave'N setup to maximize sales.
-            </p>
+          <Box mb="lg">
+            <Stack gap="md">
+              <Title order={2}>Continue your Crave'N setup</Title>
+              <Text size="sm" c="dimmed" mb="md">
+                While our team is preparing your Marketplace store, continue your Crave'N setup to maximize sales.
+              </Text>
 
-            <Card className="p-6">
-              <div className="flex gap-4">
-                <div className="flex-shrink-0">
-                  <div className="w-16 h-16">
-                    <div className="relative">
-                      <div className="w-full h-full rounded-full bg-orange-100 flex items-center justify-center">
-                        <Store className="h-8 w-8 text-orange-600" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg mb-2">Add another store or a new business</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    We noticed you signed up for more than one store location. Continue setting up your business on Crave'N by adding another store or business now.
-                  </p>
-                  <Button 
-                    className="bg-orange-500 hover:bg-orange-600 text-white"
-                    onClick={handleCreateAdditionalLocation}
-                  >
-                    Add store or business
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </div>
+              <Card p="lg" withBorder>
+                <Group gap="md" align="flex-start">
+                  <Box style={{ flexShrink: 0 }}>
+                    <Box
+                      style={{
+                        width: '64px',
+                        height: '64px',
+                        borderRadius: '50%',
+                        backgroundColor: 'var(--mantine-color-orange-0)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <IconBuildingStore size={32} style={{ color: 'var(--mantine-color-orange-6)' }} />
+                    </Box>
+                  </Box>
+                  <Stack gap="xs" style={{ flex: 1 }}>
+                    <Title order={4}>Add another store or a new business</Title>
+                    <Text size="sm" c="dimmed" mb="md">
+                      We noticed you signed up for more than one store location. Continue setting up your business on Crave'N by adding another store or business now.
+                    </Text>
+                    <Button 
+                      color="orange"
+                      onClick={handleCreateAdditionalLocation}
+                    >
+                      Add store or business
+                    </Button>
+                  </Stack>
+                </Group>
+              </Card>
+            </Stack>
+          </Box>
         </div>
           )
         ) : activeTab === 'insights' ? <InsightsDashboard /> : activeTab === 'reports' ? <ReportsDashboard /> : activeTab === 'customers' ? <CustomersDashboard /> : activeTab === 'orders' ? <RestaurantCustomerOrderManagement restaurantId={restaurant.id} /> : activeTab === 'menu' ? <MenuDashboard restaurantId={restaurant.id} /> : activeTab === 'availability' ? <StoreAvailabilityDashboard /> : activeTab === 'financials' ? <FinancialsDashboard /> : activeTab === 'settings' ? <SettingsDashboard defaultTab={settingsTab} /> : activeTab === 'commerce' ? <CommercePlatformDashboard /> : activeTab === 'request-delivery' ? <RequestDeliveryDashboard /> : null}
