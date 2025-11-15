@@ -19,6 +19,9 @@ import {
   Modal,
   Tabs,
   Menu,
+  RingProgress,
+  Avatar,
+  Grid,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import {
@@ -768,215 +771,325 @@ const RestaurantMenuPage = () => {
         if (!showItemModal || !selectedItem) return null;
 
         return (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-lg max-w-lg w-full max-h-[80vh] overflow-y-auto">
-                    {/* Header */}
-                    <div className="flex justify-between items-start p-3 border-b border-gray-200">
-                        <div className="flex-1">
-                            <h2 className="text-lg font-bold text-gray-900 mb-1">{selectedItem.name}</h2>
-                            <p className="text-xs text-gray-600 mb-2">77% (213)</p>
-                            <p className="text-xs text-gray-700">Select three appetizers and enjoy! Served with dipping sauces.</p>
-              </div>
-                        <button
-                            onClick={closeItemModal}
-                            className="text-gray-400 hover:text-gray-600 text-xl"
-                        >
-                            ×
-                        </button>
-            </div>
+            <Modal
+                opened={showItemModal}
+                onClose={closeItemModal}
+                size="lg"
+                centered
+                styles={{
+                    body: { maxHeight: '80vh', overflowY: 'auto' },
+                }}
+            >
+                {/* Header */}
+                <Group justify="space-between" align="flex-start" mb="md" pb="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
+                    <Stack gap="xs" style={{ flex: 1 }}>
+                        <Title order={3} size="lg" fw={700}>{selectedItem.name}</Title>
+                        <Text size="xs" c="dimmed">77% (213)</Text>
+                        <Text size="xs" c="gray.7">Select three appetizers and enjoy! Served with dipping sauces.</Text>
+                    </Stack>
+                    <ActionIcon variant="subtle" color="gray" onClick={closeItemModal}>
+                        <IconX size={20} />
+                    </ActionIcon>
+                </Group>
             
-                    {/* Food Image */}
-                    <div className="p-3">
-                        <img
-                            src={selectedItem.image_url || 'https://placehold.co/600x300/CCCCCC/666666?text=Triple+Dipper'}
-                            alt={selectedItem.name}
-                            className="w-full h-36 object-cover rounded-lg"
-                        />
-              </div>
+                {/* Food Image */}
+                <Box mb="md">
+                    <MantineImage
+                        src={selectedItem.image_url || 'https://placehold.co/600x300/CCCCCC/666666?text=Triple+Dipper'}
+                        alt={selectedItem.name}
+                        style={{ width: '100%', height: '144px', objectFit: 'cover' }}
+                        fit="cover"
+                        radius="md"
+                    />
+                </Box>
 
-                    {/* Recommended Options */}
-                    <div className="px-3 pb-2">
-                        <div className="flex justify-between items-center mb-3">
-                            <h3 className="text-base font-semibold text-gray-900">Your recommended options</h3>
-                            <div className="flex space-x-2">
-                                <button className="text-gray-400 hover:text-gray-600">‹</button>
-                                <button className="text-gray-400 hover:text-gray-600">›</button>
-            </div>
-          </div>
+                {/* Recommended Options */}
+                <Stack gap="md" mb="md">
+                    <Group justify="space-between" align="center">
+                        <Text size="md" fw={600}>Your recommended options</Text>
+                        <Group gap="xs">
+                            <ActionIcon variant="subtle" color="gray" size="sm">‹</ActionIcon>
+                            <ActionIcon variant="subtle" color="gray" size="sm">›</ActionIcon>
+                        </Group>
+                    </Group>
 
-                        {/* Option #1 (Selected) */}
-                        <div className="bg-gray-50 rounded-lg p-4 mb-3 border-2 border-primary">
-                            <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                    <div className="flex items-center mb-2">
-                                        <span className="text-sm font-bold text-gray-900">#1 • Ordered recently by 10+ others</span>
-                                        <div className="ml-auto w-4 h-4 border-2 border-primary rounded-full bg-primary/100 flex items-center justify-center">
-                                            <div className="w-2 h-2 bg-white rounded-full"></div>
-          </div>
-      </div>
-                                    <p className="text-sm text-gray-700 mb-2">
-                                        Big Mouth® Bites • Ranch • Bacon Crumbles • Sauteed Onion • American Cheese • Ranch...
-                                    </p>
-                                    <p className="text-lg font-bold text-gray-900">$16.89</p>
-                                </div>
-        </div>
-      </div>
+                    {/* Option #1 (Selected) */}
+                    <Card p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)', border: '2px solid var(--mantine-color-orange-6)' }}>
+                        <Group justify="space-between" align="flex-start">
+                            <Stack gap="xs" style={{ flex: 1 }}>
+                                <Group justify="space-between" align="center">
+                                    <Text size="sm" fw={700}>#1 • Ordered recently by 10+ others</Text>
+                                    <Box
+                                        style={{
+                                            width: '16px',
+                                            height: '16px',
+                                            border: '2px solid var(--mantine-color-orange-6)',
+                                            borderRadius: '50%',
+                                            backgroundColor: 'var(--mantine-color-orange-6)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                        }}
+                                    >
+                                        <Box
+                                            style={{
+                                                width: '8px',
+                                                height: '8px',
+                                                backgroundColor: 'white',
+                                                borderRadius: '50%',
+                                            }}
+                                        />
+                                    </Box>
+                                </Group>
+                                <Text size="sm" c="gray.7">
+                                    Big Mouth® Bites • Ranch • Bacon Crumbles • Sauteed Onion • American Cheese • Ranch...
+                                </Text>
+                                <Text size="lg" fw={700}>$16.89</Text>
+                            </Stack>
+                        </Group>
+                    </Card>
 
-                        {/* Option #2 (Partially Visible) */}
-                        <div className="bg-white rounded-lg p-4 border border-gray-200">
-                            <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                    <div className="flex items-center mb-2">
-                                        <span className="text-sm font-bold text-gray-900">#2 • Ordered recently by others</span>
-                                        <div className="ml-auto w-4 h-4 border-2 border-gray-300 rounded-full"></div>
-              </div>
-                                    <p className="text-sm text-gray-700 mb-2">
-                                        Southwestern Eggrolls • Big Mouth® Bites • Ranch...
-                                    </p>
-                                    <p className="text-lg font-bold text-gray-900">$16.89</p>
-            </div>
-          </div>
-              </div>
-            </div>
+                    {/* Option #2 (Partially Visible) */}
+                    <Card p="md" withBorder>
+                        <Group justify="space-between" align="flex-start">
+                            <Stack gap="xs" style={{ flex: 1 }}>
+                                <Group justify="space-between" align="center">
+                                    <Text size="sm" fw={700}>#2 • Ordered recently by others</Text>
+                                    <Box
+                                        style={{
+                                            width: '16px',
+                                            height: '16px',
+                                            border: '2px solid var(--mantine-color-gray-3)',
+                                            borderRadius: '50%',
+                                        }}
+                                    />
+                                </Group>
+                                <Text size="sm" c="gray.7">
+                                    Southwestern Eggrolls • Big Mouth® Bites • Ranch...
+                                </Text>
+                                <Text size="lg" fw={700}>$16.89</Text>
+                            </Stack>
+                        </Group>
+                    </Card>
+                </Stack>
       
-                    {/* Tabs */}
-                    <div className="px-3 border-t border-gray-200">
-                        <div className="flex space-x-4">
-                            <button className="py-2 text-sm font-semibold text-primary border-b-2 border-primary">
-                                Order
-              </button>
-                            <button className="py-2 text-sm font-semibold text-gray-500">
-                                Reviews (8)
-                            </button>
-          </div>
-      </div>
+                {/* Tabs */}
+                <Tabs defaultValue="order" mb="md">
+                    <Tabs.List>
+                        <Tabs.Tab value="order">Order</Tabs.Tab>
+                        <Tabs.Tab value="reviews">Reviews (8)</Tabs.Tab>
+                    </Tabs.List>
 
                     {/* Order Content */}
-                    <div className="px-3 py-2">
-                        <h4 className="text-base font-semibold text-gray-900 mb-2">Selection 1</h4>
-                        <p className="text-sm text-gray-600 mb-4">Required • Select 1</p>
-                        
-                        {/* Selection options would go here */}
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                                <span className="text-sm font-medium text-gray-900">Big Mouth® Bites</span>
-                                <div className="w-4 h-4 border-2 border-gray-300 rounded-full"></div>
-                </div>
-                            <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                                <span className="text-sm font-medium text-gray-900">Southwestern Eggrolls</span>
-                                <div className="w-4 h-4 border-2 border-gray-300 rounded-full"></div>
-              </div>
-        </div>
-      </div>
+                    <Tabs.Panel value="order" pt="md">
+                        <Stack gap="md">
+                            <Stack gap="xs">
+                                <Text size="md" fw={600}>Selection 1</Text>
+                                <Text size="sm" c="dimmed">Required • Select 1</Text>
+                            </Stack>
+                            
+                            <Stack gap="sm">
+                                <Card p="sm" withBorder style={{ cursor: 'pointer' }}>
+                                    <Group justify="space-between">
+                                        <Text size="sm" fw={500}>Big Mouth® Bites</Text>
+                                        <Box
+                                            style={{
+                                                width: '16px',
+                                                height: '16px',
+                                                border: '2px solid var(--mantine-color-gray-3)',
+                                                borderRadius: '50%',
+                                            }}
+                                        />
+                                    </Group>
+                                </Card>
+                                <Card p="sm" withBorder style={{ cursor: 'pointer' }}>
+                                    <Group justify="space-between">
+                                        <Text size="sm" fw={500}>Southwestern Eggrolls</Text>
+                                        <Box
+                                            style={{
+                                                width: '16px',
+                                                height: '16px',
+                                                border: '2px solid var(--mantine-color-gray-3)',
+                                                borderRadius: '50%',
+                                            }}
+                                        />
+                                    </Group>
+                                </Card>
+                            </Stack>
+                        </Stack>
+                    </Tabs.Panel>
+                </Tabs>
 
-                    {/* Bottom Action Bar */}
-                    <div className="bg-gray-50 px-3 py-2 flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                            <button 
-                                onClick={() => setModalQuantity(Math.max(1, modalQuantity - 1))}
-                                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100"
-                            >
-                                −
-                            </button>
-                            <span className="text-lg font-semibold text-gray-900">{modalQuantity}</span>
-                  <button
-                                onClick={() => setModalQuantity(modalQuantity + 1)}
-                                className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100"
-                            >
-                                +
-                  </button>
-              </div>
-                        <button
-                            onClick={addToCartFromModal}
-                            className="bg-primary text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 transition duration-200"
+                {/* Bottom Action Bar */}
+                <Group justify="space-between" p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)', borderRadius: '8px' }}>
+                    <Group gap="md">
+                        <ActionIcon
+                            variant="outline"
+                            color="gray"
+                            radius="xl"
+                            onClick={() => setModalQuantity(Math.max(1, modalQuantity - 1))}
                         >
-                            Add to cart - ${formatPrice(selectedItem.price_cents * modalQuantity)}
-                        </button>
-            </div>
-        </div>
-    </div>
-  );
-};
+                            <IconMinus size={16} />
+                        </ActionIcon>
+                        <Text size="lg" fw={600}>{modalQuantity}</Text>
+                        <ActionIcon
+                            variant="outline"
+                            color="gray"
+                            radius="xl"
+                            onClick={() => setModalQuantity(modalQuantity + 1)}
+                        >
+                            <IconPlus size={16} />
+                        </ActionIcon>
+                    </Group>
+                    <Button
+                        color="orange"
+                        onClick={addToCartFromModal}
+                    >
+                        Add to cart - {formatPrice(selectedItem.price_cents * modalQuantity)}
+                    </Button>
+                </Group>
+            </Modal>
+        );
+    };
 
     const DealsSection = () => (
-        <div className="mb-8">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Deals & benefits</h2>
+        <Stack gap="md" mb="xl">
+            <Title order={2} size="xl" fw={700} c="gray.8">Deals & benefits</Title>
 
-            <div className="flex overflow-x-auto space-x-3 pb-2 snap-x snap-mandatory">
-                {promos.map(promo => (
-                    <div
-                        key={promo.id}
-                        className="flex-shrink-0 w-[240px] sm:w-[300px] bg-white p-4 rounded-xl shadow-md border border-gray-200 snap-start relative"
-                    >
-                        <h3 className="text-base font-bold text-primary mb-1">{promo.name}</h3>
-                        <p className="text-sm text-gray-500">
-                            {promo.description || 
-                             (promo.minimum_order_cents ? `Add ${formatPrice(promo.minimum_order_cents)} to apply` : 'Apply at checkout')}
-                        </p>
-                        <ArrowUp className="w-4 h-4 text-primary absolute right-4 top-1/2 transform -translate-y-1/2 rotate-90" strokeWidth={3} />
-                    </div>
-                ))}
-                {promos.length === 0 && (
-                    <div className="flex-shrink-0 w-[300px] bg-white p-4 rounded-xl shadow-md border border-gray-200">
-                        <h3 className="text-base font-bold text-gray-500">No active deals right now</h3>
-                        <p className="text-sm text-gray-400">Check back soon for special offers!</p>
-            </div>
-              )}
-          </div>
-              </div>
-            );
+            <ScrollArea scrollbars="x">
+                <Group gap="sm" style={{ flexWrap: 'nowrap' }} pb="xs">
+                    {promos.map(promo => (
+                        <Card
+                            key={promo.id}
+                            p="md"
+                            withBorder
+                            shadow="md"
+                            style={{
+                                minWidth: '240px',
+                                maxWidth: '300px',
+                                flexShrink: 0,
+                                position: 'relative',
+                            }}
+                        >
+                            <Text size="md" fw={700} c="orange.6" mb="xs">{promo.name}</Text>
+                            <Text size="sm" c="dimmed">
+                                {promo.description || 
+                                 (promo.minimum_order_cents ? `Add ${formatPrice(promo.minimum_order_cents)} to apply` : 'Apply at checkout')}
+                            </Text>
+                            <IconArrowUp
+                                size={16}
+                                style={{
+                                    color: 'var(--mantine-color-orange-6)',
+                                    position: 'absolute',
+                                    right: 16,
+                                    top: '50%',
+                                    transform: 'translateY(-50%) rotate(90deg)',
+                                }}
+                                stroke={3}
+                            />
+                        </Card>
+                    ))}
+                    {promos.length === 0 && (
+                        <Card
+                            p="md"
+                            withBorder
+                            shadow="md"
+                            style={{
+                                minWidth: '300px',
+                                flexShrink: 0,
+                            }}
+                        >
+                            <Text size="md" fw={700} c="dimmed">No active deals right now</Text>
+                            <Text size="sm" c="dimmed">Check back soon for special offers!</Text>
+                        </Card>
+                    )}
+                </Group>
+            </ScrollArea>
+        </Stack>
+    );
 
     const LeftColumn = () => (
-        <div className={`pt-8 ${isMenuFixed
-            ? 'hidden lg:block fixed top-1 left-1/2 transform -translate-x-1/2 lg:translate-x-0 lg:left-auto lg:max-w-[calc(25%-1rem)] xl:max-w-[calc((1120px*0.25)-1rem)] w-full max-w-xs lg:w-auto'
-            : 'hidden lg:block'}`}>
-            <div className="space-y-4">
-                {/* Store Info */}
-                <div className="text-sm space-y-2">
-                    <h3 className="font-bold text-gray-700">Store Info</h3>
-                    <p className={`flex items-center space-x-1 font-semibold ${restaurant?.is_open ? 'text-green-600' : 'text-primary'}`}>
-                        <Clock className="w-4 h-4" />
-                        <span>{restaurant?.is_open ? 'Open Now' : `Closed • Opens at ${restaurant?.opens_at || '9:00 AM'}`}</span>
-                    </p>
-                    <p className="flex items-center space-x-1 text-gray-600">
-                        <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                        <span>{restaurant?.rating || 4.0} <span className='text-gray-400'>({restaurant?.total_reviews || 0}+)</span> • {(((restaurant?.latitude || 0) - 35) * 100).toFixed(1)} mi</span>
-                    </p>
-                    <p className="flex items-center space-x-1 text-gray-600">
-                        <MapPin className="w-4 h-4 inline-block -mt-1 mr-1 text-red-500" />
-                        {restaurant?.cuisine_type}
-                    </p>
-                    <p className="flex items-center space-x-1 text-gray-600">
-                        <Truck className="w-4 h-4 inline-block mr-1 text-green-600" />
-                        {formatPrice(restaurant?.delivery_fee_cents || 0)} delivery fee
-                    </p>
-      </div>
+        <Box
+          pt="xl"
+          style={{
+            display: 'none',
+            '@media (min-width: 1024px)': { display: 'block' },
+            ...(isMenuFixed ? {
+              position: 'fixed',
+              top: 4,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              '@media (min-width: 1024px)': {
+                left: 'auto',
+                transform: 'none',
+                maxWidth: 'calc(25% - 1rem)',
+              },
+              '@media (min-width: 1280px)': {
+                maxWidth: 'calc((1120px * 0.25) - 1rem)',
+              },
+              width: '100%',
+              maxWidth: '320px',
+            } : {}),
+          }}
+        >
+          <Stack gap="md">
+            {/* Store Info */}
+            <Stack gap="xs">
+              <Text size="sm" fw={700} c="gray.7">Store Info</Text>
+              <Group gap="xs" wrap="nowrap">
+                <IconClock size={16} />
+                <Text size="sm" fw={600} c={restaurant?.is_open ? 'green.7' : 'orange.6'}>
+                  {restaurant?.is_open ? 'Open Now' : `Closed • Opens at ${restaurant?.opens_at || '9:00 AM'}`}
+                </Text>
+              </Group>
+              <Group gap="xs" wrap="nowrap">
+                <IconStar size={16} style={{ color: 'var(--mantine-color-yellow-5)', fill: 'var(--mantine-color-yellow-5)' }} />
+                <Text size="sm" c="dimmed">
+                  {restaurant?.rating || 4.0} <Text component="span" c="dimmed">({restaurant?.total_reviews || 0}+)</Text> • {(((restaurant?.latitude || 0) - 35) * 100).toFixed(1)} mi
+                </Text>
+              </Group>
+              <Group gap="xs" wrap="nowrap">
+                <IconMapPin size={16} style={{ color: 'var(--mantine-color-red-5)' }} />
+                <Text size="sm" c="dimmed">{restaurant?.cuisine_type}</Text>
+              </Group>
+              <Group gap="xs" wrap="nowrap">
+                <IconTruck size={16} style={{ color: 'var(--mantine-color-green-6)' }} />
+                <Text size="sm" c="dimmed">{formatPrice(restaurant?.delivery_fee_cents || 0)} delivery fee</Text>
+              </Group>
+            </Stack>
 
-                {/* Full Menu Navigation */}
-                <nav className="border-t border-gray-200 pt-4 space-y-1">
-                    <h3 className="font-bold text-gray-700 mb-2">Full Menu</h3>
-
-                    <ul className="space-y-1 text-sm">
-                        {sidebarLinks.map(link => (
-                            <li key={link.id}>
-                                <a
-                                    href={link.href}
-                                    onClick={(e) => { e.preventDefault(); scrollToSection(link.id); }}
-                                    className={`block p-2 rounded-lg font-medium transition duration-150 
-                                        ${activeSection === link.id
-                                            ? 'bg-primary/10 text-primary font-semibold border-l-4 border-primary -ml-2 pl-4'
-                                            : 'text-gray-700 hover:bg-gray-50'
-                                        }`}
-                                >
-                                    {link.label}
-                                </a>
-                            </li>
-                        ))}
-                    </ul>
-                </nav>
-                </div>
-              </div>
-            );
+            {/* Full Menu Navigation */}
+            <Divider />
+            <Stack gap="xs" pt="md">
+              <Text size="sm" fw={700} c="gray.7" mb="xs">Full Menu</Text>
+              <Stack gap="xs">
+                {sidebarLinks.map(link => (
+                  <Button
+                    key={link.id}
+                    variant="subtle"
+                    fullWidth
+                    justify="flex-start"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      scrollToSection(link.id);
+                    }}
+                    style={{
+                      backgroundColor: activeSection === link.id ? 'var(--mantine-color-orange-0)' : 'transparent',
+                      color: activeSection === link.id ? 'var(--mantine-color-orange-6)' : 'var(--mantine-color-gray-7)',
+                      fontWeight: activeSection === link.id ? 600 : 500,
+                      borderLeft: activeSection === link.id ? '4px solid var(--mantine-color-orange-6)' : 'none',
+                      marginLeft: activeSection === link.id ? '-8px' : 0,
+                      paddingLeft: activeSection === link.id ? '12px' : '8px',
+                    }}
+                  >
+                    {link.label}
+                  </Button>
+                ))}
+              </Stack>
+            </Stack>
+          </Stack>
+        </Box>
+    );
 
     if (loading) {
         return (
@@ -1774,383 +1887,489 @@ const RestaurantMenuPage = () => {
                 </Stack>
               </Box>
 
-                       {/* --- Desktop Header Image Banner --- */}
-                       <div className="hidden lg:block relative h-64 overflow-hidden rounded-b-xl shadow-lg" style={{
-                           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
-                       }}>
-                    <img
-                        src={restaurant.header_image_url || restaurant.image_url || 'https://placehold.co/1200x400/A31D24/ffffff?text=Restaurant'}
-                        alt={restaurant.name}
-                        className="w-full h-full object-cover"
-            style={{
-                            imageRendering: 'crisp-edges'
-                        }}
-                        onError={(e) => { e.currentTarget.src = "https://placehold.co/1200x400/A31D24/ffffff?text=Restaurant"; }}
-                    />
+              {/* --- Desktop Header Image Banner --- */}
+              <Box
+                style={{
+                  display: 'none',
+                  '@media (min-width: 1024px)': { display: 'block' },
+                  position: 'relative',
+                  height: '256px',
+                  overflow: 'hidden',
+                  borderRadius: '0 0 12px 12px',
+                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                }}
+              >
+                <MantineImage
+                  src={restaurant.header_image_url || restaurant.image_url || 'https://placehold.co/1200x400/A31D24/ffffff?text=Restaurant'}
+                  alt={restaurant.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  fit="cover"
+                  onError={(e) => { e.currentTarget.src = "https://placehold.co/1200x400/A31D24/ffffff?text=Restaurant"; }}
+                />
 
-                           {/* Back Button */}
-                           <button
-                               onClick={() => navigate('/restaurants')}
-                               className="absolute top-4 left-4 bg-white rounded-md p-2 shadow-lg hover:bg-gray-100 transition"
-                           >
-                               <ChevronLeft className="w-4 h-4" />
-                           </button>
+                {/* Back Button */}
+                <ActionIcon
+                  variant="filled"
+                  color="white"
+                  onClick={() => navigate('/restaurants')}
+                  style={{
+                    position: 'absolute',
+                    top: 16,
+                    left: 16,
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  }}
+                >
+                  <IconChevronLeft size={16} />
+                </ActionIcon>
 
-                           {/* Status Bar Overlay */}
-                           <div className="absolute bottom-0 left-0 right-0 h-10 bg-white flex items-center px-4 shadow-lg">
-                               <p className="text-sm font-medium text-gray-700 flex-1">
-                                   <span className={restaurant.is_open ? 'text-green-700' : 'text-primary'}>
-                                       {restaurant.is_open ? 'Open Now' : 'Closed'}
-                                   </span> • {restaurant.min_delivery_time}-{restaurant.max_delivery_time} min
-                               </p>
-              </div>
-            </div>
-        </div>
+                {/* Status Bar Overlay */}
+                <Box
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: '40px',
+                    backgroundColor: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '0 16px',
+                    boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.1)',
+                  }}
+                >
+                  <Text size="sm" fw={500} c="gray.7" style={{ flex: 1 }}>
+                    <Text component="span" c={restaurant.is_open ? 'green.7' : 'orange.6'}>
+                      {restaurant.is_open ? 'Open Now' : 'Closed'}
+                    </Text>
+                    {' • '}
+                    {restaurant.min_delivery_time}-{restaurant.max_delivery_time} min
+                  </Text>
+                </Box>
+              </Box>
+            </Box>
         
             {/* --- Main Content Layout - Desktop Only --- */}
-            <main className="hidden lg:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                       {/* --- Restaurant Name & Search Bar --- */}
-                       <div className="mb-6 flex items-center justify-between">
-                           <div className="flex items-center space-x-4">
-                               {/* Restaurant Logo */}
-                               <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-200 shadow-md">
-                                   <img 
-                                       src={restaurant.logo_url || restaurant.image_url || 'https://placehold.co/64x64/CCCCCC/666666?text=Logo'} 
-                                       alt={`${restaurant.name} logo`}
-                                       className="w-full h-full object-cover"
-                                       onError={(e) => {
-                                           (e.target as HTMLImageElement).onerror = null;
-                                           (e.target as HTMLImageElement).src = 'https://placehold.co/64x64/CCCCCC/666666?text=Logo';
-                                       }}
-                                   />
-                               </div>
-                               <h1 className="text-3xl font-extrabold text-gray-900" style={{
-                                   letterSpacing: '-0.025em',
-                                   lineHeight: '1.1'
-                               }}>{restaurant.name}</h1>
-                           </div>
-                           <div className="relative w-80">
-                               <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                               <input
-                                   type="text"
-                                   placeholder={`Search ${restaurant.name}`}
-                                   value={searchQuery}
-                                   onChange={(e) => setSearchQuery(e.target.value)}
-                                   className="w-full py-2 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-primary transition"
-                               />
-      </div>
-              </div>
+            <Box
+              component="main"
+              style={{
+                display: 'none',
+                '@media (min-width: 1024px)': { display: 'block' },
+                maxWidth: '1280px',
+                margin: '0 auto',
+                padding: '32px 16px',
+              }}
+            >
+              {/* --- Restaurant Name & Search Bar --- */}
+              <Group justify="space-between" align="center" mb="lg">
+                <Group gap="md">
+                  {/* Restaurant Logo */}
+                  <Box
+                    style={{
+                      width: '64px',
+                      height: '64px',
+                      borderRadius: '50%',
+                      overflow: 'hidden',
+                      border: '2px solid var(--mantine-color-gray-3)',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                    }}
+                  >
+                    <MantineImage
+                      src={restaurant.logo_url || restaurant.image_url || 'https://placehold.co/64x64/CCCCCC/666666?text=Logo'}
+                      alt={`${restaurant.name} logo`}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      fit="cover"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = 'https://placehold.co/64x64/CCCCCC/666666?text=Logo';
+                      }}
+                    />
+                  </Box>
+                  <Title order={1} size="2rem" fw={800} style={{ letterSpacing: '-0.025em', lineHeight: '1.1' }}>
+                    {restaurant.name}
+                  </Title>
+                </Group>
+                <TextInput
+                  placeholder={`Search ${restaurant.name}`}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  leftSection={<IconSearch size={16} style={{ color: 'var(--mantine-color-gray-5)' }} />}
+                  style={{ width: '320px' }}
+                />
+              </Group>
 
-                {/* --- Two-Column Layout --- */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    {/* LEFT: Sticky Store Info and Menu Sidebar */}
-                    <div className="lg:col-span-3">
-                        <div className="sticky top-4" style={{ top: '32px' }}>
-                            <LeftColumn />
-    </div>
-          </div>
+              {/* --- Two-Column Layout --- */}
+              <Grid gutter="lg">
+                {/* LEFT: Sticky Store Info and Menu Sidebar */}
+                <Grid.Col span={{ base: 12, lg: 3 }}>
+                  <Box style={{ position: 'sticky', top: '32px' }}>
+                    <LeftColumn />
+                  </Box>
+                </Grid.Col>
           
-                    {/* RIGHT: Delivery Tabs, Price/Time, and Scrollable Menu Content */}
-                    <div className="lg:col-span-9 min-w-0">
-                               {/* Delivery Tabs and Price/Time (Sticky Top Bar) - Only for Delivery */}
-                               {deliveryMethod === 'delivery' && (
-                                   <div ref={tabsRef} className="sticky top-0 bg-gray-50 pt-4 pb-6 z-20 border-b border-gray-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
-                                       <div className="flex justify-between items-center space-x-6">
-                                           {/* Delivery/Pickup Tabs */}
-                                           <div className="flex border border-gray-300 rounded-lg p-0.5 bg-gray-100 text-sm font-semibold transition duration-300">
-                                               <button
-                                                   onClick={() => setDeliveryMethod('delivery')}
-                                                   className={`px-5 py-2 rounded-md transition duration-200 ${deliveryMethod === 'delivery' ? 'bg-primary shadow-lg text-white font-bold' : 'text-gray-600 font-medium hover:bg-white'}`}
-                                               >
-                                                   Delivery
-                                               </button>
-                                               <button
-                                                   onClick={() => setDeliveryMethod('pickup')}
-                                                   className={`px-5 py-2 rounded-md transition duration-200 ${(deliveryMethod as string) === 'pickup' ? 'bg-primary shadow-lg text-white font-bold' : 'text-gray-600 font-medium hover:bg-white'}`}
-                                               >
-                                                   Pickup
-                                               </button>
-            </div>
+                {/* RIGHT: Delivery Tabs, Price/Time, and Scrollable Menu Content */}
+                <Grid.Col span={{ base: 12, lg: 9 }} style={{ minWidth: 0 }}>
+                  {/* Delivery Tabs and Price/Time (Sticky Top Bar) - Only for Delivery */}
+                  {deliveryMethod === 'delivery' && (
+                    <Box
+                      ref={tabsRef}
+                      style={{
+                        position: 'sticky',
+                        top: 0,
+                        backgroundColor: 'var(--mantine-color-gray-0)',
+                        paddingTop: '16px',
+                        paddingBottom: '24px',
+                        zIndex: 20,
+                        borderBottom: '1px solid var(--mantine-color-gray-3)',
+                        margin: '0 -16px',
+                        paddingLeft: '16px',
+                        paddingRight: '16px',
+                      }}
+                    >
+                      <Group justify="space-between" align="center" gap="lg">
+                        {/* Delivery/Pickup Tabs */}
+                        <Button.Group>
+                          <Button
+                            variant={deliveryMethod === 'delivery' ? 'filled' : 'outline'}
+                            color={deliveryMethod === 'delivery' ? 'orange' : 'gray'}
+                            size="sm"
+                            onClick={() => setDeliveryMethod('delivery')}
+                          >
+                            Delivery
+                          </Button>
+                          <Button
+                            variant={deliveryMethod === 'pickup' ? 'filled' : 'outline'}
+                            color={deliveryMethod === 'pickup' ? 'orange' : 'gray'}
+                            size="sm"
+                            onClick={() => setDeliveryMethod('pickup')}
+                          >
+                            Pickup
+                          </Button>
+                        </Button.Group>
             
-                                           {/* Price/Time Info Box */}
-                                           <div className="flex items-center space-x-4 text-base text-right">
-                                               {/* Delivery Fee Box */}
-                                               <div className="bg-green-100 text-green-700 px-4 py-2 rounded-lg">
-                                                   <div className="font-bold text-sm">
-                                                       {formatPrice(restaurant.delivery_fee_cents)} delivery fee
-                                                   </div>
-                                                   <div className="text-xs flex items-center">
-                                                       pricing & fees
-                                                       <Info className="w-3 h-3 ml-1" />
-                                                   </div>
-              </div>
+                        {/* Price/Time Info Box */}
+                        <Group gap="md">
+                          {/* Delivery Fee Box */}
+                          <Box p="sm" style={{ backgroundColor: 'var(--mantine-color-green-0)', borderRadius: '8px' }}>
+                            <Text fw={700} size="sm" c="green.7">
+                              {formatPrice(restaurant.delivery_fee_cents)} delivery fee
+                            </Text>
+                            <Group gap="xs" mt={4}>
+                              <Text size="xs" c="green.7">pricing & fees</Text>
+                              <IconInfoCircle size={12} style={{ color: 'var(--mantine-color-green-7)' }} />
+                            </Group>
+                          </Box>
               
-                                               {/* Delivery Time */}
-                                               <div className="text-right">
-                                                   <div className="text-lg font-bold text-gray-900">
-                                                       {restaurant.min_delivery_time}-{restaurant.max_delivery_time}
-                </div>
-                                                   <div className="text-sm text-gray-600">
-                                                       delivery time
-              </div>
-            </div>
-          </div>
-                                       </div>
-                                   </div>
-                               )}
+                          {/* Delivery Time */}
+                          <Stack gap={0} align="flex-end">
+                            <Text size="lg" fw={700} c="gray.9">
+                              {restaurant.min_delivery_time}-{restaurant.max_delivery_time}
+                            </Text>
+                            <Text size="sm" c="dimmed">delivery time</Text>
+                          </Stack>
+                        </Group>
+                      </Group>
+                    </Box>
+                  )}
 
-                               {/* Pickup Interface - Show when pickup is selected */}
-                               {deliveryMethod === 'pickup' && <PickupInterface />}
+                  {/* Pickup Interface - Show when pickup is selected */}
+                  {deliveryMethod === 'pickup' && <PickupInterface />}
 
-                               {/* Deals & Benefits */}
-                               <section id="deals" className="pt-2">
-                                   <DealsSection />
-                               </section>
+                  {/* Deals & Benefits */}
+                  <Box id="deals" pt="xs">
+                    <DealsSection />
+                  </Box>
 
+                  {/* Reviews Section */}
+                  <Box id="reviews" mb="xl" style={{ scrollMarginTop: '80px', marginTop: '-80px', paddingTop: '80px' }}>
+                    <Group justify="space-between" align="center" mb="lg">
+                      <Stack gap={4}>
+                        <Title order={2} size="2xl" fw={700} c="gray.8">Reviews</Title>
+                        <Text size="sm" c="dimmed">3k+ ratings • 80+ public reviews</Text>
+                      </Stack>
+                      <Group gap="xs">
+                        <Button variant="subtle" color="orange" size="sm">
+                          Add Review
+                        </Button>
+                        <Group gap="xs">
+                          <ActionIcon
+                            variant="light"
+                            color="gray"
+                            radius="xl"
+                            onClick={scrollReviewsLeft}
+                          >
+                            <IconChevronLeft size={16} />
+                          </ActionIcon>
+                          <ActionIcon
+                            variant="light"
+                            color="gray"
+                            radius="xl"
+                            onClick={scrollReviewsRight}
+                          >
+                            <IconChevronLeft size={16} style={{ transform: 'rotate(180deg)' }} />
+                          </ActionIcon>
+                        </Group>
+                      </Group>
+                    </Group>
 
-                        {/* Reviews Section */}
-                        <section id="reviews" className="mb-10 pt-20 -mt-20">
-                            <div className="flex justify-between items-center mb-6">
-                                <div>
-                                    <h2 className="text-2xl font-bold text-gray-800 mb-1">Reviews</h2>
-                                    <p className="text-sm text-gray-600">3k+ ratings • 80+ public reviews</p>
-              </div>
-                                <div className="flex items-center space-x-2">
-                                    <button className="text-sm font-semibold text-primary hover:text-primary">
-                                        Add Review
-                                    </button>
-                                    <div className="flex space-x-1">
-                                        <button 
-                                            onClick={scrollReviewsLeft}
-                                            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200"
-                                        >
-                                            <ChevronLeft className="w-4 h-4" />
-                                        </button>
-                                        <button 
-                                            onClick={scrollReviewsRight}
-                                            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200"
-                                        >
-                                            <ChevronLeft className="w-4 h-4 rotate-180" />
-                                        </button>
-          </div>
-        </div>
-      </div>
+                    <Group align="flex-start" gap="lg">
+                      {/* Overall Rating Card */}
+                      <Card
+                        p="xl"
+                        withBorder
+                        shadow="lg"
+                        style={{ flexShrink: 0, width: '192px' }}
+                      >
+                        <Stack align="center" gap="md">
+                          {/* Circular Rating Display */}
+                          <RingProgress
+                            size={96}
+                            thickness={8}
+                            sections={[{ value: 88, color: 'yellow' }]}
+                            label={
+                              <Stack align="center" gap={4}>
+                                <Text size="2xl" fw={700}>4.4</Text>
+                                <IconStar size={16} style={{ color: 'var(--mantine-color-gray-4)' }} />
+                              </Stack>
+                            }
+                          />
+                          <Text size="sm" c="dimmed" ta="center">of 5 stars</Text>
+                        </Stack>
+                      </Card>
 
-                            <div className="flex space-x-6">
-                                {/* Overall Rating Card */}
-                                <div className="flex-shrink-0 w-48 bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                                    <div className="flex flex-col items-center">
-                                        {/* Circular Rating Display */}
-                                        <div className="relative w-24 h-24 mb-4">
-                                            <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
-                                                {/* Background circle */}
-                                                <circle
-                                                    cx="50"
-                                                    cy="50"
-                                                    r="40"
-                                                    stroke="#e5e7eb"
-                                                    strokeWidth="8"
-                                                    fill="none"
-                                                />
-                                                {/* Progress circle */}
-                                                <circle
-                                                    cx="50"
-                                                    cy="50"
-                                                    r="40"
-                                                    stroke="#fbbf24"
-                                                    strokeWidth="8"
-                                                    fill="none"
-                                                    strokeDasharray={`${2 * Math.PI * 40}`}
-                                                    strokeDashoffset={`${2 * Math.PI * 40 * (1 - 0.88)}`}
-                                                    strokeLinecap="round"
-                                                />
-                                            </svg>
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                                <span className="text-2xl font-bold text-gray-900">4.4</span>
-                                                <Star className="w-4 h-4 text-gray-400 mt-1" />
-                                            </div>
-                                        </div>
-                                        <p className="text-sm text-gray-600 text-center">of 5 stars</p>
-                                    </div>
-        </div>
+                      {/* Individual Review Cards - Horizontal Scroll */}
+                      <ScrollArea scrollbars="x" ref={reviewsScrollRef} style={{ flex: 1 }}>
+                        <Group gap="md" style={{ flexWrap: 'nowrap' }} pb="md">
+                          {/* Review Card 1 */}
+                          <Card
+                            p="md"
+                            withBorder
+                            shadow="lg"
+                            style={{ minWidth: '320px', flexShrink: 0 }}
+                          >
+                            <Group align="flex-start" gap="sm" mb="sm">
+                              <Avatar color="blue" radius="xl">M</Avatar>
+                              <Stack gap={4} style={{ flex: 1 }}>
+                                <Group gap="xs">
+                                  <Text size="sm" fw={600}>Marcus T</Text>
+                                  <IconChevronLeft size={12} style={{ color: 'var(--mantine-color-gray-4)', transform: 'rotate(90deg)' }} />
+                                </Group>
+                                <Text size="xs" c="dimmed">Regular Customer • 12 orders</Text>
+                              </Stack>
+                            </Group>
+                            <Group gap="xs" mb="xs">
+                              <Group gap={2}>
+                                {[...Array(5)].map((_, i) => (
+                                  <IconStar key={i} size={16} style={{ color: 'var(--mantine-color-yellow-5)', fill: 'var(--mantine-color-yellow-5)' }} />
+                                ))}
+                              </Group>
+                              <Text size="sm" c="dimmed">11/15/23</Text>
+                              <Text size="sm" c="dimmed">• Craven order</Text>
+                            </Group>
+                            <Text size="sm" c="gray.7">
+                              This place never disappoints! <Text component="span" fw={600}>Classic Burger</Text> is always fresh and the delivery is super quick. Highly recommend!
+                            </Text>
+                          </Card>
+                          
+                          {/* Review Card 2 */}
+                          <Card
+                            p="md"
+                            withBorder
+                            shadow="lg"
+                            style={{ minWidth: '320px', flexShrink: 0 }}
+                          >
+                            <Group align="flex-start" gap="sm" mb="sm">
+                              <Avatar color="violet" radius="xl">S</Avatar>
+                              <Stack gap={4} style={{ flex: 1 }}>
+                                <Group gap="xs">
+                                  <Text size="sm" fw={600}>Sarah K</Text>
+                                  <IconChevronLeft size={12} style={{ color: 'var(--mantine-color-gray-4)', transform: 'rotate(90deg)' }} />
+                                </Group>
+                                <Text size="xs" c="dimmed">Food Lover • 8 reviews</Text>
+                              </Stack>
+                            </Group>
+                            <Group gap="xs" mb="xs">
+                              <Group gap={2}>
+                                {[...Array(5)].map((_, i) => (
+                                  <IconStar key={i} size={16} style={{ color: 'var(--mantine-color-yellow-5)', fill: 'var(--mantine-color-yellow-5)' }} />
+                                ))}
+                              </Group>
+                              <Text size="sm" c="dimmed">10/28/23</Text>
+                              <Text size="sm" c="dimmed">• Craven order</Text>
+                            </Group>
+                            <Text size="sm" c="gray.7">
+                              Amazing food! <Text component="span" fw={600}>Chicken Sandwich</Text> was perfectly cooked and the <Text component="span" fw={600}>seasoned fries</Text> were incredible. Will definitely order again!
+                            </Text>
+                          </Card>
+                          
+                          {/* Review Card 3 */}
+                          <Card
+                            p="md"
+                            withBorder
+                            shadow="lg"
+                            style={{ minWidth: '320px', flexShrink: 0 }}
+                          >
+                            <Group align="flex-start" gap="sm" mb="sm">
+                              <Avatar color="orange" radius="xl">D</Avatar>
+                              <Stack gap={4} style={{ flex: 1 }}>
+                                <Group gap="xs">
+                                  <Text size="sm" fw={600}>David M</Text>
+                                  <IconChevronLeft size={12} style={{ color: 'var(--mantine-color-gray-4)', transform: 'rotate(90deg)' }} />
+                                </Group>
+                                <Text size="xs" c="dimmed">New Customer • 3 orders</Text>
+                              </Stack>
+                            </Group>
+                            <Group gap="xs" mb="xs">
+                              <Group gap={2}>
+                                {[...Array(5)].map((_, i) => (
+                                  <IconStar key={i} size={16} style={{ color: 'var(--mantine-color-yellow-5)', fill: 'var(--mantine-color-yellow-5)' }} />
+                                ))}
+                              </Group>
+                              <Text size="sm" c="dimmed">12/02/23</Text>
+                              <Text size="sm" c="dimmed">• Craven order</Text>
+                            </Group>
+                            <Text size="sm" c="gray.7">
+                              First time ordering and I'm impressed! <Text component="span" fw={600}>Fish Sandwich</Text> was crispy and fresh. The <Text component="span" fw={600}>onion rings</Text> were the perfect side. Great value!
+                            </Text>
+                          </Card>
+                        </Group>
+                      </ScrollArea>
+                    </Group>
+                  </Box>
 
-                                {/* Individual Review Cards - Horizontal Scroll */}
-                                <div className="flex space-x-4 overflow-x-hidden pb-4 snap-x snap-mandatory" ref={reviewsScrollRef}>
-                                    {/* Review Card 1 */}
-                                    <div className="flex-shrink-0 w-80 bg-white rounded-xl shadow-lg border border-gray-200 p-4 snap-start">
-                                        <div className="flex items-start space-x-3 mb-3">
-                                            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
-                                                M
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="flex items-center space-x-1">
-                                                    <span className="font-semibold text-gray-900">Marcus T</span>
-                                                    <ChevronLeft className="w-3 h-3 text-gray-400 rotate-90" />
-                                                </div>
-                                                <p className="text-xs text-gray-600">Regular Customer • 12 orders</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center space-x-2 mb-2">
-                                            <div className="flex space-x-1">
-                                                {[...Array(5)].map((_, i) => (
-                                                    <Star key={i} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                                                ))}
-                                            </div>
-                                            <span className="text-sm text-gray-500">11/15/23</span>
-                                            <span className="text-sm text-gray-500">• Craven order</span>
-                                        </div>
-                                        <p className="text-sm text-gray-700">
-                                            This place never disappoints! <span className="font-semibold">Classic Burger</span> is always fresh and the delivery is super quick. Highly recommend!
-                </p>
-              </div>
-              
-                                    {/* Review Card 2 */}
-                                    <div className="flex-shrink-0 w-80 bg-white rounded-xl shadow-lg border border-gray-200 p-4 snap-start">
-                                        <div className="flex items-start space-x-3 mb-3">
-                                            <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
-                                                S
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="flex items-center space-x-1">
-                                                    <span className="font-semibold text-gray-900">Sarah K</span>
-                                                    <ChevronLeft className="w-3 h-3 text-gray-400 rotate-90" />
-                                                </div>
-                                                <p className="text-xs text-gray-600">Food Lover • 8 reviews</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center space-x-2 mb-2">
-                                            <div className="flex space-x-1">
-                                                {[...Array(5)].map((_, i) => (
-                                                    <Star key={i} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                                                ))}
-                                            </div>
-                                            <span className="text-sm text-gray-500">10/28/23</span>
-                                            <span className="text-sm text-gray-500">• Craven order</span>
-                                        </div>
-                                        <p className="text-sm text-gray-700">
-                                            Amazing food! <span className="font-semibold">Chicken Sandwich</span> was perfectly cooked and the <span className="font-semibold">seasoned fries</span> were incredible. Will definitely order again!
-                                        </p>
-                </div>
-                
-                                    {/* Review Card 3 */}
-                                    <div className="flex-shrink-0 w-80 bg-white rounded-xl shadow-lg border border-gray-200 p-4 snap-start">
-                                        <div className="flex items-start space-x-3 mb-3">
-                                            <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-semibold">
-                                                D
-              </div>
-                                            <div className="flex-1">
-                                                <div className="flex items-center space-x-1">
-                                                    <span className="font-semibold text-gray-900">David M</span>
-                                                    <ChevronLeft className="w-3 h-3 text-gray-400 rotate-90" />
-            </div>
-                                                <p className="text-xs text-gray-600">New Customer • 3 orders</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center space-x-2 mb-2">
-                                            <div className="flex space-x-1">
-                                                {[...Array(5)].map((_, i) => (
-                                                    <Star key={i} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-          ))}
-        </div>
-                                            <span className="text-sm text-gray-500">12/02/23</span>
-                                            <span className="text-sm text-gray-500">• Craven order</span>
-                                        </div>
-                                        <p className="text-sm text-gray-700">
-                                            First time ordering and I'm impressed! <span className="font-semibold">Fish Sandwich</span> was crispy and fresh. The <span className="font-semibold">onion rings</span> were the perfect side. Great value!
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
+                  {/* Featured Items */}
+                  {featuredItems.length > 0 && (
+                    <Box id="featured" mb="xl" style={{ scrollMarginTop: '80px', marginTop: '-80px', paddingTop: '80px' }}>
+                      <Title order={2} size="2xl" fw={700} c="gray.8" mb="md">Featured Items</Title>
+                      <Grid gutter="sm">
+                        {featuredItems.map(item => (
+                          <Grid.Col key={item.id} span={{ base: 6, sm: 4, md: 3, lg: 2.4, xl: 2 }}>
+                            <MenuItemCard item={item} />
+                          </Grid.Col>
+                        ))}
+                      </Grid>
+                      <Divider mt="lg" />
+                    </Box>
+                  )}
 
-                               {/* Featured Items */}
-                               {featuredItems.length > 0 && (
-                                   <section id="featured" className="mb-8 pt-20 -mt-20">
-                                       <h2 className="text-2xl font-bold text-gray-800 mb-4">Featured Items</h2>
-                                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                                           {featuredItems.map(item => (
-                                               <MenuItemCard key={item.id} item={item} />
-          ))}
-            </div>
-                                       <div className='mt-6 border-t border-gray-200'></div>
-                                   </section>
-                               )}
+                  {/* Most Ordered */}
+                  {mostOrderedItems.length > 0 && (
+                    <Box id="most-ordered" mb="xl" style={{ scrollMarginTop: '80px', marginTop: '-80px', paddingTop: '80px' }}>
+                      <Title order={2} size="2xl" fw={700} c="gray.8" mb="md">Most Ordered</Title>
+                      <Grid gutter="sm">
+                        {mostOrderedItems.map(item => (
+                          <Grid.Col key={item.id} span={{ base: 6, sm: 4, md: 3, lg: 2.4, xl: 2 }}>
+                            <MenuItemCard item={item} />
+                          </Grid.Col>
+                        ))}
+                      </Grid>
+                      <Divider mt="lg" />
+                    </Box>
+                  )}
 
-                               {/* Most Ordered */}
-                               {mostOrderedItems.length > 0 && (
-                                   <section id="most-ordered" className="mb-8 pt-20 -mt-20">
-                                       <h2 className="text-2xl font-bold text-gray-800 mb-4">Most Ordered</h2>
-                                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                                           {mostOrderedItems.map(item => (
-                                               <MenuItemCard key={item.id} item={item} />
-                                           ))}
-              </div>
-                                       <div className='mt-6 border-t border-gray-200'></div>
-                                   </section>
-                               )}
+                  {/* Category Sections */}
+                  {categories.map(category => {
+                    const items = getItemsByCategory(category.id);
+                    if (items.length === 0) return null;
 
-                               {/* Category Sections */}
-                               {categories.map(category => {
-                                   const items = getItemsByCategory(category.id);
-                                   if (items.length === 0) return null;
+                    return (
+                      <Box key={category.id} id={category.id} mb="xl" style={{ scrollMarginTop: '80px', marginTop: '-80px', paddingTop: '80px' }}>
+                        <Title order={2} size="2xl" fw={700} c="gray.8" mb="md">{category.name}</Title>
+                        {category.description && (
+                          <Text c="dimmed" mb="md">{category.description}</Text>
+                        )}
+                        <Grid gutter="sm">
+                          {items.map(item => (
+                            <Grid.Col key={item.id} span={{ base: 6, sm: 4, md: 3, lg: 2.4, xl: 2 }}>
+                              <MenuItemCard item={item} />
+                            </Grid.Col>
+                          ))}
+                        </Grid>
+                        <Divider mt="lg" />
+                      </Box>
+                    );
+                  })}
+                </Grid.Col>
+              </Grid>
+            </Box>
 
-                                   return (
-                                       <section key={category.id} id={category.id} className="mb-8 pt-20 -mt-20">
-                                           <h2 className="text-2xl font-bold text-gray-800 mb-4">{category.name}</h2>
-                                           {category.description && (
-                                               <p className="text-gray-600 mb-4">{category.description}</p>
-                                           )}
-                                           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                                               {items.map(item => (
-                                                   <MenuItemCard key={item.id} item={item} />
-                                               ))}
-            </div>
-                                           <div className='mt-6 border-t border-gray-200'></div>
-                                       </section>
-                                   );
-                               })}
-            </div>
-          </div>
-            </main>
+            {/* Floating Cart Button - Mobile (DoorDash Style) */}
+            {cart.length > 0 && (
+              <Box
+                style={{
+                  display: 'block',
+                  '@media (min-width: 1024px)': { display: 'none' },
+                  position: 'fixed',
+                  bottom: 24,
+                  left: 16,
+                  right: 16,
+                  zIndex: 50,
+                  paddingBottom: 'env(safe-area-inset-bottom)',
+                }}
+              >
+                <Button
+                  fullWidth
+                  size="lg"
+                  color="orange"
+                  radius="xl"
+                  onClick={() => navigate('/checkout')}
+                  style={{
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
+                  }}
+                  leftSection={
+                    <Badge
+                      color="white"
+                      variant="filled"
+                      style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                        color: 'white',
+                        minWidth: '32px',
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                    </Badge>
+                  }
+                  rightSection={
+                    <Text fw={700} size="lg">
+                      ${(cart.reduce((sum, item) => sum + item.quantity * item.price_cents, 0) / 100).toFixed(2)}
+                    </Text>
+                  }
+                >
+                  View Cart
+                </Button>
+              </Box>
+            )}
 
-                   {/* Floating Cart Button - Mobile (DoorDash Style) */}
-                   {cart.length > 0 && (
-                       <div className="lg:hidden fixed bottom-6 left-4 right-4 z-50 pb-safe">
-                           <button
-                               onClick={() => navigate('/checkout')}
-                               className="w-full bg-primary text-white rounded-full py-4 px-6 shadow-2xl flex items-center justify-between active:scale-[0.98] transition-all duration-200"
-                           >
-                               <div className="flex items-center space-x-3">
-                                   <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                                       <span className="text-sm font-bold">{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
-                                   </div>
-                                   <span className="font-bold text-lg">View Cart</span>
-                               </div>
-                               <span className="font-bold text-lg">
-                                   ${(cart.reduce((sum, item) => sum + item.quantity * item.price_cents, 0) / 100).toFixed(2)}
-                               </span>
-                           </button>
-                       </div>
-                   )}
-
-                   {/* Floating Cart Button - Desktop */}
-                   {cart.length > 0 && showCartButton && (
-                       <div 
-                         className="hidden lg:block fixed bottom-4 right-4 z-50 transition-all duration-500 ease-in-out"
-                         style={{
-                           opacity: showCartButton ? 1 : 0,
-                           transform: showCartButton ? 'translateY(0)' : 'translateY(20px)'
-                         }}
-                       >
-                           <button
-                               onClick={() => navigate('/checkout')}
-                               className="bg-primary text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2 hover:bg-primary/90 transition-all duration-200"
-                           >
-                               <ShoppingCart className="w-5 h-5" />
-                               <span className="font-semibold text-base">Cart ({cart.length})</span>
-                           </button>
-        </div>
-                   )}
+            {/* Floating Cart Button - Desktop */}
+            {cart.length > 0 && showCartButton && (
+              <Box
+                style={{
+                  display: 'none',
+                  '@media (min-width: 1024px)': { display: 'block' },
+                  position: 'fixed',
+                  bottom: 16,
+                  right: 16,
+                  zIndex: 50,
+                  opacity: showCartButton ? 1 : 0,
+                  transform: showCartButton ? 'translateY(0)' : 'translateY(20px)',
+                  transition: 'all 0.5s ease-in-out',
+                }}
+              >
+                <Button
+                  color="orange"
+                  leftSection={<IconShoppingCart size={20} />}
+                  onClick={() => navigate('/checkout')}
+                  style={{
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  }}
+                >
+                  Cart ({cart.length})
+                </Button>
+              </Box>
+            )}
 
             <style>{`
                 html { scroll-behavior: smooth; }
