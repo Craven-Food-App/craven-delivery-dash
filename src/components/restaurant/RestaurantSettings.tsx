@@ -1,15 +1,36 @@
 import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
+import {
+  Button,
+  Card,
+  TextInput,
+  Textarea,
+  Switch,
+  Select,
+  Tabs,
+  Text,
+  Title,
+  Stack,
+  Group,
+  Box,
+  Loader,
+  ActionIcon,
+  Divider,
+  FileButton,
+  Image as MantineImage,
+} from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import {
+  IconDeviceFloppy,
+  IconClock,
+  IconCurrencyDollar,
+  IconMapPin,
+  IconUpload,
+  IconX,
+  IconPhoto,
+  IconCrop,
+  IconScissors,
+} from "@tabler/icons-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Save, Clock, DollarSign, MapPin, Upload, X, Image, Crop, Scissors } from "lucide-react";
 import ImageCropper from "@/components/common/ImageCropper";
 import { removeBackground, loadImage } from "@/utils/BackgroundRemovalService";
 import { AddressAutocomplete } from "@/components/common/AddressAutocomplete";
@@ -53,7 +74,6 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
   const [cropperImageSrc, setCropperImageSrc] = useState('');
   const [cropperImageType, setCropperImageType] = useState<'image' | 'logo'>('logo');
   const [removingBackground, setRemovingBackground] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
     setFormData(restaurant);
@@ -88,10 +108,10 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
       return data.publicUrl;
     } catch (error) {
       console.error('Error uploading image:', error);
-      toast({
+      notifications.show({
         title: "Error",
-        description: "Failed to upload image",
-        variant: "destructive",
+        message: "Failed to upload image",
+        color: 'red',
       });
       return null;
     } finally {
@@ -104,10 +124,10 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast({
+      notifications.show({
         title: "Error",
-        description: "Please select an image file",
-        variant: "destructive",
+        message: "Please select an image file",
+        color: 'red',
       });
       return;
     }
@@ -135,10 +155,10 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
   const handleRemoveBackground = async (type: 'image' | 'logo') => {
     const currentImageUrl = type === 'logo' ? formData.logo_url : formData.image_url;
     if (!currentImageUrl) {
-      toast({
+      notifications.show({
         title: "Error",
-        description: "No image to process",
-        variant: "destructive",
+        message: "No image to process",
+        color: 'red',
       });
       return;
     }
@@ -158,17 +178,18 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
       if (imageUrl) {
         const field = type === 'logo' ? 'logo_url' : 'image_url';
         handleInputChange(field, imageUrl);
-        toast({
+        notifications.show({
           title: "Success",
-          description: "Background removed successfully",
+          message: "Background removed successfully",
+          color: 'green',
         });
       }
     } catch (error) {
       console.error('Error removing background:', error);
-      toast({
+      notifications.show({
         title: "Error",
-        description: "Failed to remove background. Make sure your browser supports WebGPU.",
-        variant: "destructive",
+        message: "Failed to remove background. Make sure your browser supports WebGPU.",
+        color: 'red',
       });
     } finally {
       setRemovingBackground(false);
@@ -194,18 +215,19 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
 
       if (error) throw error;
 
-      toast({
+      notifications.show({
         title: "Success",
-        description: "Basic information updated successfully",
+        message: "Basic information updated successfully",
+        color: 'green',
       });
 
       onUpdate();
     } catch (error) {
       console.error("Error updating basic info:", error);
-      toast({
+      notifications.show({
         title: "Error",
-        description: "Failed to update basic information",
-        variant: "destructive",
+        message: "Failed to update basic information",
+        color: 'red',
       });
     } finally {
       setSaving(false);
@@ -227,18 +249,19 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
 
       if (error) throw error;
 
-      toast({
+      notifications.show({
         title: "Success",
-        description: "Address updated successfully",
+        message: "Address updated successfully",
+        color: 'green',
       });
 
       onUpdate();
     } catch (error) {
       console.error("Error updating address:", error);
-      toast({
+      notifications.show({
         title: "Error",
-        description: "Failed to update address",
-        variant: "destructive",
+        message: "Failed to update address",
+        color: 'red',
       });
     } finally {
       setSaving(false);
@@ -259,18 +282,19 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
 
       if (error) throw error;
 
-      toast({
+      notifications.show({
         title: "Success",
-        description: "Delivery settings updated successfully",
+        message: "Delivery settings updated successfully",
+        color: 'green',
       });
 
       onUpdate();
     } catch (error) {
       console.error("Error updating delivery settings:", error);
-      toast({
+      notifications.show({
         title: "Error",
-        description: "Failed to update delivery settings",
-        variant: "destructive",
+        message: "Failed to update delivery settings",
+        color: 'red',
       });
     } finally {
       setSaving(false);
@@ -290,18 +314,19 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
 
       setFormData(prev => ({ ...prev, is_active: newStatus }));
       
-      toast({
+      notifications.show({
         title: "Success", 
-        description: `Restaurant ${newStatus ? 'activated' : 'deactivated'} successfully`,
+        message: `Restaurant ${newStatus ? 'activated' : 'deactivated'} successfully`,
+        color: 'green',
       });
 
       onUpdate();
     } catch (error) {
       console.error("Error updating status:", error);
-      toast({
+      notifications.show({
         title: "Error",
-        description: "Failed to update restaurant status",
-        variant: "destructive",
+        message: "Failed to update restaurant status",
+        color: 'red',
       });
     } finally {
       setSaving(false);
@@ -309,88 +334,76 @@ export const RestaurantSettings = ({ restaurant, onUpdate }: RestaurantSettingsP
   };
 
   return (
-    <div className="space-y-6">
-      <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="basic">Basic Info</TabsTrigger>
-          <TabsTrigger value="images">Images</TabsTrigger>
-          <TabsTrigger value="address">Address</TabsTrigger>
-          <TabsTrigger value="delivery">Delivery</TabsTrigger>
-          <TabsTrigger value="status">Status</TabsTrigger>
-        </TabsList>
+    <Stack gap="xl">
+      <Tabs defaultValue="basic">
+        <Tabs.List>
+          <Tabs.Tab value="basic">Basic Info</Tabs.Tab>
+          <Tabs.Tab value="images">Images</Tabs.Tab>
+          <Tabs.Tab value="address">Address</Tabs.Tab>
+          <Tabs.Tab value="delivery">Delivery</Tabs.Tab>
+          <Tabs.Tab value="status">Status</Tabs.Tab>
+        </Tabs.List>
 
-        <TabsContent value="basic" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-              <CardDescription>
-                Update your restaurant's basic information
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Restaurant Name</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cuisine">Cuisine Type</Label>
-                  <Select value={formData.cuisine_type} onValueChange={(value) => handleInputChange('cuisine_type', value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cuisineTypes.map((cuisine) => (
-                        <SelectItem key={cuisine} value={cuisine}>
-                          {cuisine}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+        <Tabs.Panel value="basic" pt="md">
+          <Stack gap="md">
+            <Card p="md" withBorder>
+              <Stack gap="md">
+                <Stack gap="xs">
+                  <Title order={4}>Basic Information</Title>
+                  <Text size="sm" c="dimmed">
+                    Update your restaurant's basic information
+                  </Text>
+                </Stack>
+                <Grid gutter="md">
+                  <Grid.Col span={{ base: 12, md: 6 }}>
+                    <TextInput
+                      label="Restaurant Name"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, md: 6 }}>
+                    <Select 
+                      label="Cuisine Type"
+                      value={formData.cuisine_type} 
+                      onChange={(value) => handleInputChange('cuisine_type', value)}
+                      data={cuisineTypes.map(cuisine => ({ value: cuisine, label: cuisine }))}
+                    />
+                  </Grid.Col>
+                </Grid>
+                
                 <Textarea
-                  id="description"
+                  label="Description"
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   rows={3}
                 />
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone || ''}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email || ''}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                  />
-                </div>
-              </div>
+                <Grid gutter="md">
+                  <Grid.Col span={{ base: 12, md: 6 }}>
+                    <TextInput
+                      label="Phone"
+                      value={formData.phone || ''}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                    />
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, md: 6 }}>
+                    <TextInput
+                      label="Email"
+                      type="email"
+                      value={formData.email || ''}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                    />
+                  </Grid.Col>
+                </Grid>
 
-              <Button onClick={saveBasicInfo} disabled={saving}>
-                <Save className="h-4 w-4 mr-2" />
-                {saving ? "Saving..." : "Save Basic Info"}
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                <Button onClick={saveBasicInfo} disabled={saving} leftSection={saving ? <Loader size="sm" /> : <IconDeviceFloppy size={16} />}>
+                  {saving ? "Saving..." : "Save Basic Info"}
+                </Button>
+              </Stack>
+            </Card>
+          </Stack>
+        </Tabs.Panel>
 
         <TabsContent value="images" className="space-y-4">
           <Card>
