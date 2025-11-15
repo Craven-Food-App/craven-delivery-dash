@@ -448,6 +448,23 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
           shares: sharesIssued,
           vesting: formValues.vesting_schedule,
         });
+        
+        // Fetch Invero Business Trust data from employee_equity
+        const { data: inveroEquity } = await supabase
+          .from('employee_equity')
+          .select('shares_percentage, shareholder_name, shareholder_type')
+          .eq('shareholder_name', 'Invero Business Trust')
+          .single();
+        
+        const founderTrustEquityPercent = inveroEquity?.shares_percentage || 60.00;
+        const founderIndividualEquityPercent = equityPercent || (100 - founderTrustEquityPercent);
+        
+        // Get additional company settings for Founders Agreement
+        const trustState = await getCompanySetting('trust_state', 'Ohio');
+        const founderState = await getCompanySetting('founder_state', 'Ohio');
+        const governingLawState = await getCompanySetting('governing_law_state', stateOfIncorporation);
+        const arbitrationState = await getCompanySetting('arbitration_state', stateOfIncorporation);
+        
         return {
           ...baseData,
           founders_table_html: foundersTable.tableHtml,
@@ -464,6 +481,23 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
           founders_ceo_vesting: foundersTable.ceo.vesting,
           vesting_years: '4',
           cliff_months: '12',
+          // Founders Agreement specific placeholders
+          founder_trust_name: 'Invero Business Trust',
+          founder_individual_name: formValues.full_name || 'Torrance Stroman',
+          founder_trust_equity_percent: `${founderTrustEquityPercent}%`,
+          founder_individual_equity_percent: `${founderIndividualEquityPercent}%`,
+          founder_trust_state: trustState,
+          founder_individual_state: founderState,
+          company_state: stateOfIncorporation,
+          trust_state: trustState,
+          governing_law_state: governingLawState,
+          arbitration_state: arbitrationState,
+          founder_trust_title: 'Trustee',
+          effective_date: new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          }),
         };
       }
       case 'shareholders_agreement': {
