@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import {
   Box,
-  Flex,
+  Stack,
   Text,
   Button,
   Image,
-  Link,
-} from '@chakra-ui/react';
+  Anchor,
+} from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
 import mobileDriverWelcomeImage from '@/assets/mobile-driver-welcome.png';
 import MobileFeederLogin from './MobileFeederLogin';
@@ -65,20 +65,19 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
   };
 
   return (
-    <Box position="fixed" inset={0} w="100%" h="100%" bg="white">
+    <Box pos="fixed" top={0} left={0} right={0} bottom={0} w="100%" h="100%" bg="white">
       <Box
-        position="absolute"
+        pos="absolute"
         left={0}
         right={0}
-        zIndex={10}
-        top="calc(env(safe-area-inset-top, 150px) + 8px)"
+        style={{ zIndex: 10, top: 'calc(env(safe-area-inset-top, 150px) + 8px)' }}
       >
-        <Box px={4} textAlign="center">
-          <Text fontSize="xs" color="gray.600">
+        <Box px="md" style={{ textAlign: 'center' }}>
+          <Text size="xs" c="dimmed">
             Wrong app if you're Crave'N food{' '}
-            <Link href="/" color="black" textDecoration="underline" fontWeight="medium" _hover={{ color: 'black' }}>
+            <Anchor href="/" c="dark" td="underline" fw={500} style={{ color: 'black' }}>
               Download app for Customers
-            </Link>
+            </Anchor>
           </Text>
         </Box>
       </Box>
@@ -86,11 +85,14 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
       <Image
         src={mobileDriverWelcomeImage}
         alt="CRAVE'N Delivery Rider"
-        position="absolute"
-        inset={0}
+        pos="absolute"
+        top={0}
+        left={0}
+        right={0}
+        bottom={0}
         w="100%"
         h="100%"
-        objectFit="cover"
+        style={{ objectFit: 'cover' }}
         onLoad={() => console.log('Mobile driver welcome image loaded successfully')}
         onError={(e) => {
           console.error('Mobile driver welcome image failed to load:', e);
@@ -103,47 +105,35 @@ const MobileDriverWelcomeScreen: React.FC<MobileDriverWelcomeScreenProps> = ({
       />
       
       <Box
-        display="none"
-        position="absolute"
-        inset={0}
-        w="100%"
-        h="100%"
-        bgGradient="linear(to-br, orange.400, orange.600)"
+        style={{ display: 'none', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', background: 'linear-gradient(to bottom right, var(--mantine-color-orange-4), var(--mantine-color-orange-6))' }}
       />
 
       {showLogin ? (
         <MobileFeederLogin onLoginSuccess={handleLoginSuccess} />
       ) : (
-        <Flex
-          position="absolute"
+        <Stack
+          pos="absolute"
           bottom={0}
           left={0}
           right={0}
-          flexDirection="column"
           align="center"
           justify="flex-end"
-          pb={8}
-          px={6}
-          zIndex={20}
+          pb="xl"
+          px="xl"
+          style={{ zIndex: 20 }}
         >
           <Button
             size="lg"
-            w="100%"
-            maxW="400px"
-            h={14}
-            fontSize="xl"
-            fontWeight="bold"
-            bgGradient="linear(to-r, orange.500, orange.600)"
-            _hover={{ bgGradient: 'linear(to-r, orange.600, orange.700)' }}
-            color="white"
-            boxShadow="xl"
-            borderRadius="2xl"
+            fullWidth
+            maw={400}
+            h={56}
+            style={{ fontSize: '20px', fontWeight: 700, background: 'linear-gradient(to right, var(--mantine-color-orange-5), var(--mantine-color-orange-6))', color: 'white', boxShadow: '0 20px 25px rgba(0,0,0,0.3)', borderRadius: '16px' }}
             onClick={handleFeedNow}
-            mb={4}
+            mb="md"
           >
             FEED NOW
           </Button>
-        </Flex>
+        </Stack>
       )}
     </Box>
   );

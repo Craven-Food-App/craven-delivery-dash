@@ -1,12 +1,11 @@
 import React from 'react';
 import {
   Box,
-  Flex,
+  Group,
   Text,
   Image,
   Badge,
-  useColorModeValue,
-} from '@chakra-ui/react';
+} from '@mantine/core';
 
 type DriverTabType = 'home' | 'schedule' | 'earnings' | 'notifications' | 'account';
 
@@ -29,27 +28,17 @@ export const DriverBottomNav: React.FC<DriverBottomNavProps> = ({
   onTabChange,
   notificationCount = 0
 }) => {
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const activeColor = useColorModeValue('orange.600', 'orange.400');
-  const inactiveColor = useColorModeValue('gray.500', 'gray.400');
-
   return (
     <>
       <Box
-        position="fixed"
+        pos="fixed"
         bottom={0}
         left={0}
         right={0}
-        bg={bgColor}
-        borderTop="1px"
-        borderColor={borderColor}
-        zIndex={50}
-        boxShadow="lg"
-        h="calc(5rem + env(safe-area-inset-bottom, 0px))"
-        pb="env(safe-area-inset-bottom, 0px)"
+        bg="white"
+        style={{ borderTop: '1px solid var(--mantine-color-gray-2)', zIndex: 50, boxShadow: '0 -4px 6px rgba(0,0,0,0.1)', height: 'calc(5rem + env(safe-area-inset-bottom, 0px))', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
-        <Flex h={20}>
+        <Group h={80} gap={0}>
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             const hasNotification = tab.id === 'notifications' && notificationCount > 0;
@@ -57,63 +46,47 @@ export const DriverBottomNav: React.FC<DriverBottomNavProps> = ({
             return (
               <Box
                 key={tab.id}
-                as="button"
-                flex={1}
-                display="flex"
-                flexDirection="column"
-                alignItems="center"
-                justifyContent="center"
-                py={2}
-                px={1}
-                h="100%"
-                transition="all 0.2s"
-                position="relative"
-                color={isActive ? activeColor : inactiveColor}
-                _hover={{ color: isActive ? activeColor : 'gray.700' }}
+                component="button"
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8px 4px', height: '100%', transition: 'all 0.2s', position: 'relative', color: isActive ? 'var(--mantine-color-orange-6)' : 'var(--mantine-color-gray-5)', cursor: 'pointer' }}
                 onClick={() => onTabChange(tab.id)}
               >
-                <Box position="relative">
+                <Box pos="relative">
                   <Image
                     src={tab.icon}
                     alt={tab.label}
-                    h={6}
-                    w={6}
-                    mb={1.5}
-                    opacity={isActive ? 1 : 0.6}
-                    transition="all 0.2s"
+                    h={24}
+                    w={24}
+                    mb={6}
+                    style={{ opacity: isActive ? 1 : 0.6, transition: 'all 0.2s' }}
                   />
                   {hasNotification && (
                     <Badge
-                      position="absolute"
-                      top={-1}
-                      right={-1}
-                      w={5}
-                      h={5}
-                      bg="red.500"
-                      borderRadius="full"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                      color="white"
-                      fontSize="xs"
-                      fontWeight="bold"
+                      pos="absolute"
+                      top={-4}
+                      right={-4}
+                      w={20}
+                      h={20}
+                      bg="red.5"
+                      style={{ borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}
+                      size="xs"
+                      fw={700}
                     >
                       {notificationCount > 9 ? '9+' : notificationCount}
                     </Badge>
                   )}
                 </Box>
                 <Text
-                  fontSize="xs"
-                  fontWeight={isActive ? 'semibold' : 'medium'}
-                  lineHeight="tight"
-                  color={isActive ? activeColor : inactiveColor}
+                  size="xs"
+                  fw={isActive ? 600 : 500}
+                  style={{ lineHeight: 'tight' }}
+                  c={isActive ? 'orange.6' : 'gray.5'}
                 >
                   {tab.label}
                 </Text>
               </Box>
             );
           })}
-        </Flex>
+        </Group>
       </Box>
 
       <Box h="calc(5rem + env(safe-area-inset-bottom, 0px))" />

@@ -1,15 +1,13 @@
 import React from 'react';
 import {
   Box,
-  Flex,
+  Group,
   Text,
-  Link as ChakraLink,
+  Anchor,
   Badge,
-  Icon,
-  useColorModeValue,
-} from '@chakra-ui/react';
+} from '@mantine/core';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, User, ShoppingCart } from 'lucide-react';
+import { IconHome, IconSearch, IconUser, IconShoppingCart } from '@tabler/icons-react';
 import ChatButton from '@/components/chat/ChatButton';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 
@@ -24,36 +22,32 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
 }) => {
   const location = useLocation();
   const restaurantsVisible = useFeatureFlag('feature_restaurants_visible');
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const activeColor = useColorModeValue('orange.500', 'orange.400');
-  const inactiveColor = useColorModeValue('gray.500', 'gray.400');
   
   const tabs = [
     ...(restaurantsVisible ? [
       {
         id: 'home',
         label: 'Home',
-        icon: Home,
+        icon: IconHome,
         path: '/restaurants'
       }, 
       {
         id: 'restaurants',
         label: 'Search',
-        icon: Search,
+        icon: IconSearch,
         path: '/restaurants'
       }
     ] : []),
     {
       id: 'orders',
       label: 'Orders',
-      icon: ShoppingCart,
+      icon: IconShoppingCart,
       path: user ? '/customer-dashboard?tab=orders' : '/auth'
     }, 
     {
       id: 'profile',
       label: 'Account',
-      icon: User,
+      icon: IconUser,
       path: user ? '/customer-dashboard?tab=account' : '/auth'
     }
   ];
@@ -61,14 +55,10 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   return (
     <>
       <Box
-        position="fixed"
+        pos="fixed"
         bottom={20}
-        right={4}
-        zIndex={50}
-        my="340px"
-        px={0}
-        mx={0}
-        py={0}
+        right={16}
+        style={{ zIndex: 50, marginTop: '340px', padding: 0, margin: '340px 16px 0 0' }}
       >
         <ChatButton
           type="customer_support"
@@ -77,23 +67,20 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           size="lg"
           className="rounded-full w-14 h-14 shadow-lg bg-primary hover:bg-primary/90 border-2 border-background"
         >
-          <Box as="span" srOnly>Chat Support</Box>
+          <Box component="span" style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', borderWidth: 0 }}>Chat Support</Box>
         </ChatButton>
       </Box>
 
       <Box
-        position="fixed"
+        pos="fixed"
         bottom={0}
         left={0}
         right={0}
-        bg={bgColor}
-        borderTop="1px"
-        borderColor={borderColor}
-        zIndex={40}
-        h={16}
+        bg="white"
+        style={{ borderTop: '1px solid var(--mantine-color-gray-2)', zIndex: 40, height: '64px' }}
         className="safe-area-padding-bottom"
       >
-        <Flex h="100%">
+        <Group h="100%" gap={0}>
           {tabs.map(tab => {
             const TabIcon = tab.icon;
             const isActive = tab.id === 'home' 
@@ -107,52 +94,36 @@ const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                     : location.pathname === tab.path;
             
             return (
-              <ChakraLink
+              <Anchor
                 key={tab.id}
-                as={Link}
+                component={Link}
                 to={tab.path}
-                flex={1}
-                display="flex"
-                flexDirection="column"
-                alignItems="center"
-                justifyContent="center"
-                py={1}
-                px={1}
-                h="100%"
-                transition="all 0.2s"
-                position="relative"
-                color={isActive ? activeColor : inactiveColor}
-                bg={isActive ? `${activeColor}0D` : 'transparent'}
-                _hover={{ color: isActive ? activeColor : 'gray.700' }}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4px', height: '100%', transition: 'all 0.2s', position: 'relative', color: isActive ? 'var(--mantine-color-orange-5)' : 'var(--mantine-color-gray-5)', backgroundColor: isActive ? 'rgba(255, 107, 31, 0.05)' : 'transparent', textDecoration: 'none' }}
               >
-                <Icon as={TabIcon} h={5} w={5} mb={1} />
-                <Text fontSize="10px" fontWeight="medium" lineHeight="tight">{tab.label}</Text>
+                <TabIcon size={20} style={{ marginBottom: 4 }} />
+                <Text size="10px" fw={500} style={{ lineHeight: 'tight' }}>{tab.label}</Text>
                 
                 {tab.id === 'orders' && cartCount > 0 && (
                   <Badge
-                    position="absolute"
-                    top={-1}
+                    pos="absolute"
+                    top={-4}
                     right="25%"
-                    bg="red.500"
-                    color="white"
-                    fontSize="xs"
-                    borderRadius="full"
-                    h={5}
-                    w={5}
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
+                    bg="red.5"
+                    c="white"
+                    size="xs"
+                    style={{ borderRadius: '50%', height: '20px', width: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    fw={700}
                   >
                     {cartCount > 9 ? '9+' : cartCount}
                   </Badge>
                 )}
-              </ChakraLink>
+              </Anchor>
             );
           })}
-        </Flex>
+        </Group>
       </Box>
 
-      <Box h={16} display={{ base: 'block', md: 'none' }} />
+      <Box h={64} style={{ display: 'block' }} />
     </>
   );
 };

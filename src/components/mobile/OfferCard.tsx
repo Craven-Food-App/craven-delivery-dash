@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Flex,
+  Stack,
   Text,
-  Heading,
+  Title,
   Button,
   Badge,
   Card,
-  CardBody,
-  HStack,
-  Icon,
+  Group,
   Progress,
-} from '@chakra-ui/react';
-import { Star, MapPin, Clock, Package } from 'lucide-react';
+} from '@mantine/core';
+import { IconStar, IconMapPin, IconClock, IconPackage } from '@tabler/icons-react';
 
 interface Offer {
   id: string;
@@ -60,84 +58,82 @@ export const OfferCard: React.FC<OfferCardProps> = ({
 
   return (
     <Box
-      position="fixed"
-      inset={0}
-      zIndex={50}
-      bg="blackAlpha.600"
-      backdropFilter="blur(4px)"
-      display="flex"
-      alignItems="flex-end"
+      pos="fixed"
+      top={0}
+      left={0}
+      right={0}
+      bottom={0}
+      style={{ zIndex: 50, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'flex-end' }}
     >
-      <Box w="100%" p={4}>
-        <Card w="100%" boxShadow="xl" borderRadius="lg">
-          <CardBody p={6}>
+      <Box w="100%" p="md">
+        <Card w="100%" shadow="xl" radius="lg" withBorder>
+          <Stack gap="md" p="xl">
             <Progress
               value={progressPercentage}
-              colorScheme="blue"
+              color="blue"
               size="sm"
-              borderRadius="full"
-              mb={4}
-              transition="all 1s linear"
+              radius="xl"
+              style={{ transition: 'all 1s linear' }}
             />
 
-            <Flex align="center" justify="space-between" mb={4}>
-              <Box flex={1}>
-                <HStack spacing={2} mb={1}>
-                  <Heading size="md" fontWeight="semibold">{offer.pickupName}</Heading>
-                  <HStack spacing={1}>
-                    <Icon as={Star} h={4} w={4} color="yellow.400" fill="yellow.400" />
-                    <Text fontSize="sm" fontWeight="medium">{offer.pickupRating}</Text>
-                  </HStack>
-                </HStack>
-                <HStack spacing={4} fontSize="sm" color="gray.500">
-                  <HStack spacing={1}>
-                    <Icon as={MapPin} h={4} w={4} />
-                    <Text>{offer.dropoffDistance} mi</Text>
-                  </HStack>
-                  <HStack spacing={1}>
-                    <Icon as={Clock} h={4} w={4} />
-                    <Text>{offer.estimatedTime} min</Text>
-                  </HStack>
-                  <HStack spacing={1}>
-                    <Icon as={Package} h={4} w={4} />
-                    <Text>{offer.itemCount} items</Text>
-                  </HStack>
-                </HStack>
+            <Group align="center" justify="space-between">
+              <Box style={{ flex: 1 }}>
+                <Group gap="sm" mb={4}>
+                  <Title order={4} fw={600}>{offer.pickupName}</Title>
+                  <Group gap={4}>
+                    <IconStar size={16} fill="var(--mantine-color-yellow-4)" color="var(--mantine-color-yellow-4)" />
+                    <Text size="sm" fw={500}>{offer.pickupRating}</Text>
+                  </Group>
+                </Group>
+                <Group gap="md" size="sm" c="dimmed">
+                  <Group gap={4}>
+                    <IconMapPin size={16} />
+                    <Text size="sm">{offer.dropoffDistance} mi</Text>
+                  </Group>
+                  <Group gap={4}>
+                    <IconClock size={16} />
+                    <Text size="sm">{offer.estimatedTime} min</Text>
+                  </Group>
+                  <Group gap={4}>
+                    <IconPackage size={16} />
+                    <Text size="sm">{offer.itemCount} items</Text>
+                  </Group>
+                </Group>
               </Box>
               
-              <Box textAlign="right">
-                <Text fontSize="2xl" fontWeight="bold" color="green.600">
+              <Box style={{ textAlign: 'right' }}>
+                <Text size="2xl" fw={700} c="green.6">
                   ${offer.estimatedPay.toFixed(2)}
                 </Text>
-                <Text fontSize="xs" color="gray.500">
+                <Text size="xs" c="dimmed">
                   {offer.miles.toFixed(1)} mi total
                 </Text>
               </Box>
-            </Flex>
+            </Group>
 
-            <Box textAlign="center" mb={4}>
-              <Badge variant="outline" fontSize="sm">
+            <Box style={{ textAlign: 'center' }}>
+              <Badge variant="outline" size="sm">
                 {timeLeft}s remaining
               </Badge>
             </Box>
 
-            <HStack spacing={3}>
+            <Group gap="md">
               <Button
                 variant="outline"
                 onClick={() => onDecline(offer.id)}
-                flex={1}
+                style={{ flex: 1 }}
               >
                 Decline
               </Button>
               <Button
                 onClick={() => onAccept(offer.id)}
-                flex={1}
-                colorScheme="green"
+                style={{ flex: 1 }}
+                color="green"
               >
                 Accept
               </Button>
-            </HStack>
-          </CardBody>
+            </Group>
+          </Stack>
         </Card>
       </Box>
     </Box>

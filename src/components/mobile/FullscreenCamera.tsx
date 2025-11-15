@@ -1,23 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Box,
-  Flex,
+  Stack,
   Text,
   Button,
-  Icon,
-  VStack,
-  HStack,
-  useColorModeValue,
-} from '@chakra-ui/react';
+  ActionIcon,
+  Loader,
+} from '@mantine/core';
 import { 
-  Camera, 
-  X, 
-  RotateCcw, 
-  Flashlight, 
-  FlashlightOff,
-  Check,
-  ArrowLeft
-} from 'lucide-react';
+  IconCamera, 
+  IconX, 
+  IconRotateClockwise, 
+  IconFlashlight, 
+  IconFlashlightOff,
+  IconCheck,
+  IconArrowLeft
+} from '@tabler/icons-react';
 
 interface FullscreenCameraProps {
   isOpen: boolean;
@@ -46,7 +44,6 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
   const [lastTap, setLastTap] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const bgColor = useColorModeValue('gray.900', 'black');
 
   useEffect(() => {
     if (isOpen) {
@@ -162,163 +159,157 @@ const FullscreenCamera: React.FC<FullscreenCameraProps> = ({
 
   return (
     <Box
-      position="fixed"
-      inset={0}
-      zIndex={50}
-      bg={bgColor}
-      display="flex"
-      flexDirection="column"
+      pos="fixed"
+      top={0}
+      left={0}
+      right={0}
+      bottom={0}
+      style={{ zIndex: 50, backgroundColor: 'var(--mantine-color-dark-9)', display: 'flex', flexDirection: 'column' }}
     >
-      <Flex
-        px={4}
-        py={4}
+      <Group
+        px="md"
+        py="md"
         justify="space-between"
         align="center"
-        bg="blackAlpha.500"
-        backdropFilter="blur(8px)"
-        color="white"
-        flexShrink={0}
+        style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', color: 'white', flexShrink: 0 }}
       >
         <Button
-          variant="ghost"
+          variant="subtle"
           size="sm"
-          color="gray.400"
-          _hover={{ color: 'white' }}
+          c="gray.4"
+          style={{ color: 'var(--mantine-color-gray-4)' }}
           onClick={onClose}
-          leftIcon={<Icon as={RotateCcw} w={4} h={4} />}
+          leftSection={<IconRotateClockwise size={16} />}
         >
           Go Back
         </Button>
-        <Text fontSize="lg" fontWeight="bold">{title}</Text>
-        <Box w={10} />
-      </Flex>
+        <Text size="lg" fw={700}>{title}</Text>
+        <Box w={40} />
+      </Group>
       
-      <Box flex={1} position="relative" display="flex" alignItems="center" justifyContent="center" bg="black">
+      <Box flex={1} pos="relative" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'black' }}>
         {capturedImage ? (
-          <Box position="relative" w="100%" h="100%">
+          <Box pos="relative" w="100%" h="100%">
             <Box
-              as="img"
+              component="img"
               src={capturedImage}
               alt="Captured"
               w="100%"
               h="100%"
-              objectFit="contain"
+              style={{ objectFit: 'contain' }}
             />
-            <VStack
-              position="absolute"
+            <Stack
+              pos="absolute"
               top={0}
               w="100%"
-              bg="gray.900"
-              bgOpacity={0.7}
-              p={4}
+              style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+              p="md"
             >
-              <Text textAlign="center" color="orange.300" fontWeight="semibold" fontSize="sm">
+              <Text style={{ textAlign: 'center', color: 'var(--mantine-color-orange-3)', fontWeight: 600 }} size="sm">
                 {description}
               </Text>
-            </VStack>
+            </Stack>
           </Box>
         ) : (
           <>
             {cameraError ? (
-              <VStack spacing={4} p={4}>
-                <Text color="white" fontSize="lg" fontWeight="bold" textAlign="center">
+              <Stack gap="md" p="md">
+                <Text c="white" size="lg" fw={700} style={{ textAlign: 'center' }}>
                   Camera Not Available
                 </Text>
-                <Text color="whiteAlpha.800" fontSize="sm" textAlign="center">
+                <Text c="white" opacity={0.8} size="sm" style={{ textAlign: 'center' }}>
                   {description}
                 </Text>
                 <Button
                   onClick={capturePhoto}
-                  colorScheme="orange"
+                  color="orange"
                   size="lg"
                 >
                   Use Demo Photo
                 </Button>
-              </VStack>
+              </Stack>
             ) : (
               <Box
-                as="video"
+                component="video"
                 ref={videoRef}
                 autoPlay
                 playsInline
                 muted
                 w="100%"
                 h="100%"
-                objectFit="cover"
+                style={{ objectFit: 'cover' }}
                 onClick={handleDoubleTap}
               />
             )}
             
-            <VStack
-              position="absolute"
+            <Stack
+              pos="absolute"
               top={0}
               w="100%"
-              bg="gray.900"
-              bgOpacity={0.7}
-              p={4}
+              style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+              p="md"
             >
-              <Text textAlign="center" color="orange.300" fontWeight="semibold" fontSize="sm">
+              <Text style={{ textAlign: 'center', color: 'var(--mantine-color-orange-3)', fontWeight: 600 }} size="sm">
                 {description}
               </Text>
-            </VStack>
+            </Stack>
           </>
         )}
       </Box>
 
       <Box
-        position="absolute"
+        pos="absolute"
         bottom={0}
         w="100%"
-        p={6}
-        bg="blackAlpha.500"
-        backdropFilter="blur(8px)"
-        display="flex"
-        justifyContent="center"
-        flexShrink={0}
+        p="xl"
+        style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', display: 'flex', justifyContent: 'center', flexShrink: 0 }}
       >
         {capturedImage ? (
-          <HStack spacing={4}>
+          <Group gap="md">
             <Button
               onClick={handleRetake}
               variant="outline"
-              colorScheme="whiteAlpha"
-              leftIcon={<Icon as={RotateCcw} w={5} h={5} />}
+              color="gray"
+              leftSection={<IconRotateClockwise size={20} />}
             >
               Retake
             </Button>
             <Button
               onClick={handleConfirm}
-              colorScheme="green"
+              color="green"
               size="lg"
-              leftIcon={<Icon as={Check} w={5} h={5} />}
+              leftSection={<IconCheck size={20} />}
             >
               Confirm
             </Button>
-          </HStack>
+          </Group>
         ) : (
-          <Button
+          <ActionIcon
             onClick={capturePhoto}
-            isLoading={isCapturing}
-            w={20}
-            h={20}
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
+            loading={isCapturing}
+            w={80}
+            h={80}
             bg="white"
-            border="4px"
-            borderColor="orange.600"
-            borderRadius="full"
-            boxShadow="xl"
-            _hover={{ bg: 'gray.100' }}
-            _active={{ transform: 'scale(0.95)' }}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              border: '4px solid var(--mantine-color-orange-6)', 
+              borderRadius: '50%', 
+              boxShadow: '0 20px 25px rgba(0,0,0,0.3)',
+            }}
             title="Capture Photo"
           >
-            <Icon as={Camera} w={8} h={8} color="gray.900" />
-          </Button>
+            {isCapturing ? (
+              <Loader size="md" color="dark" />
+            ) : (
+              <IconCamera size={32} color="var(--mantine-color-dark-9)" />
+            )}
+          </ActionIcon>
         )}
       </Box>
 
-      <Box as="canvas" ref={canvasRef} display="none" />
+      <Box component="canvas" ref={canvasRef} style={{ display: 'none' }} />
     </Box>
   );
 };

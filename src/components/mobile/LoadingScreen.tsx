@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Flex,
+  Stack,
   Text,
   Image,
-  Spinner,
-  VStack,
-  HStack,
-} from '@chakra-ui/react';
+  Loader,
+  Group,
+} from '@mantine/core';
 import cravenLogo from '@/assets/craven-c-new.png';
 
 interface LoadingScreenProps {
@@ -42,23 +41,22 @@ const LoadingScreen = ({ isLoading }: LoadingScreenProps) => {
 
   return (
     <Box
-      position="fixed"
-      inset={0}
-      zIndex={50}
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      bgGradient="linear(to-br, orange.500, orange.600)"
+      pos="fixed"
+      top={0}
+      left={0}
+      right={0}
+      bottom={0}
+      style={{ zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(to bottom right, var(--mantine-color-orange-5), var(--mantine-color-orange-6))' }}
     >
-      <VStack spacing={8}>
-        <Box position="relative">
+      <Stack gap="xl">
+        <Box pos="relative">
           {!imageError ? (
             <Image
               src={cravenLogo}
               alt="Crave'n"
-              w={32}
-              h={32}
-              animation="spin 2s ease-in-out infinite"
+              w={128}
+              h={128}
+              style={{ animation: 'spin 2s ease-in-out infinite' }}
               onError={() => {
                 console.error('LoadingScreen: Failed to load logo image');
                 setImageError(true);
@@ -66,49 +64,42 @@ const LoadingScreen = ({ isLoading }: LoadingScreenProps) => {
               onLoad={() => console.log('LoadingScreen: Logo loaded successfully')}
             />
           ) : (
-            <Spinner
+            <Loader
               size="xl"
-              thickness="8px"
-              speed="1s"
-              color="whiteAlpha.300"
-              emptyColor="whiteAlpha.300"
+              type="bars"
+              color="white"
+              style={{ opacity: 0.3 }}
             />
           )}
-          <Box position="absolute" bottom={-8} left="50%" transform="translateX(-50%)">
-            <HStack spacing={1}>
+          <Box pos="absolute" bottom={-32} left="50%" style={{ transform: 'translateX(-50%)' }}>
+            <Group gap={4}>
               <Box
-                w={2}
-                h={2}
+                w={8}
+                h={8}
                 bg="white"
-                borderRadius="full"
-                animation="pulse 1.4s ease-in-out infinite"
-                style={{ animationDelay: '0s' }}
+                style={{ borderRadius: '50%', animation: 'pulse 1.4s ease-in-out infinite', animationDelay: '0s' }}
               />
               <Box
-                w={2}
-                h={2}
+                w={8}
+                h={8}
                 bg="white"
-                borderRadius="full"
-                animation="pulse 1.4s ease-in-out infinite"
-                style={{ animationDelay: '0.2s' }}
+                style={{ borderRadius: '50%', animation: 'pulse 1.4s ease-in-out infinite', animationDelay: '0.2s' }}
               />
               <Box
-                w={2}
-                h={2}
+                w={8}
+                h={8}
                 bg="white"
-                borderRadius="full"
-                animation="pulse 1.4s ease-in-out infinite"
-                style={{ animationDelay: '0.4s' }}
+                style={{ borderRadius: '50%', animation: 'pulse 1.4s ease-in-out infinite', animationDelay: '0.4s' }}
               />
-            </HStack>
+            </Group>
           </Box>
         </Box>
         
-        <VStack spacing={2} textAlign="center" color="white">
-          <Text fontSize="2xl" fontWeight="bold">CRAVE'N</Text>
-          <Text fontSize="lg" opacity={0.9}>{loadingText}</Text>
-        </VStack>
-      </VStack>
+        <Stack gap="xs" style={{ textAlign: 'center', color: 'white' }}>
+          <Text size="2xl" fw={700}>CRAVE'N</Text>
+          <Text size="lg" opacity={0.9}>{loadingText}</Text>
+        </Stack>
+      </Stack>
     </Box>
   );
 };

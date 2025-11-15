@@ -1,30 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronRight, Users, MapPin, Clock, DollarSign, Navigation2, X, Package, Phone, MessageSquare, Star } from 'lucide-react';
-import { useToast } from '@chakra-ui/react';
+import { IconUsers, IconMapPin, IconClock, IconCurrencyDollar, IconNavigation, IconX, IconPackage, IconPhone, IconMessageSquare, IconStar } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import { supabase } from '@/integrations/supabase/client';
 import { DeliveryMap } from './DeliveryMap';
 import {
   Box,
-  Flex,
+  Stack,
   Text,
-  Heading,
+  Title,
   Button,
   Badge,
   Card,
-  CardBody,
-  CardHeader,
-  VStack,
-  HStack,
-  Icon,
+  Group,
+  ActionIcon,
   Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalBody,
   Grid,
   Divider,
   Progress,
-  useColorModeValue,
-} from '@chakra-ui/react';
+  ThemeIcon,
+} from '@mantine/core';
 
 interface OrderAssignment {
   assignment_id: string;
@@ -56,7 +50,6 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
   onDecline
 }) => {
   const [timeLeft, setTimeLeft] = useState(45);
-  const toast = useToast();
 
   const [payoutPercent, setPayoutPercent] = useState<number>(70);
   const [subtotalCents, setSubtotalCents] = useState<number>(0);
@@ -223,14 +216,22 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
   const handleAccept = () => {
     if (assignment) {
       onAccept(assignment);
-      toast({ title: "Order Accepted!", description: "Navigate to the pickup location.", status: "success" });
+      notifications.show({
+        title: 'Order Accepted!',
+        message: 'Navigate to the pickup location.',
+        color: 'green',
+      });
     }
   };
 
   const handleDecline = () => {
     if (assignment) {
       onDecline(assignment);
-      toast({ title: "Order Declined", description: "Looking for new offers...", status: "info" });
+      notifications.show({
+        title: 'Order Declined',
+        message: 'Looking for new offers...',
+        color: 'blue',
+      });
     }
   };
 
@@ -258,206 +259,220 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
   const progressPercentage = (timeLeft / 45) * 100;
 
   return (
-    <Modal isOpen={isOpen} onClose={handleDecline} size="full" motionPreset="slideInBottom">
-      <ModalOverlay bg="blackAlpha.600" />
-      <ModalContent
-        bg="white"
-        borderTopRadius="3xl"
-        maxW="md"
-        mx={4}
-        mb={20}
-        maxH="85vh"
-        overflowY="auto"
+    <Modal 
+      opened={isOpen} 
+      onClose={handleDecline} 
+      fullScreen
+      transitionProps={{ transition: 'slide-up' }}
+      styles={{
+        body: {
+          padding: 0,
+        },
+        content: {
+          backgroundColor: 'white',
+          borderTopLeftRadius: '24px',
+          borderTopRightRadius: '24px',
+          maxWidth: '448px',
+          margin: '0 auto 80px',
+          maxHeight: '85vh',
+          overflowY: 'auto',
+        },
+      }}
+    >
+      <Group
+        px="md"
+        py="md"
+        align="center"
+        justify="space-between"
+        style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}
       >
-        <ModalBody p={0}>
-          <Flex
-            px={4}
-            py={4}
-            align="center"
-            justify="space-between"
-            borderBottom="1px"
-            borderColor="gray.200"
-          >
-            <Box>
-              <Heading size="md" fontWeight="bold">New Delivery Request</Heading>
-              <Text fontSize="sm" color="gray.500">Order #{assignment.order_id.slice(-6)}</Text>
-            </Box>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDecline}
-              p={2}
-            >
-              <Icon as={X} h={5} w={5} color="gray.500" />
-            </Button>
-          </Flex>
+        <Box>
+          <Title order={4} fw={700}>New Delivery Request</Title>
+          <Text size="sm" c="dimmed">Order #{assignment.order_id.slice(-6)}</Text>
+        </Box>
+        <ActionIcon
+          variant="subtle"
+          size="sm"
+          onClick={handleDecline}
+        >
+          <IconX size={20} color="var(--mantine-color-gray-6)" />
+        </ActionIcon>
+      </Group>
 
-          <Box px={4} py={3} bg="red.50" borderBottom="1px" borderColor="red.100">
-            <HStack spacing={2} justify="center">
-              <Icon as={Clock} h={5} w={5} color="red.600" />
-              <Text color="red.700" fontWeight="semibold">
-                {timeLeft}s remaining to accept
-              </Text>
-            </HStack>
-          </Box>
+      <Box px="md" py="sm" bg="red.0" style={{ borderBottom: '1px solid var(--mantine-color-red-1)' }}>
+        <Group gap="sm" justify="center">
+          <IconClock size={20} color="var(--mantine-color-red-6)" />
+          <Text c="red.7" fw={600}>
+            {timeLeft}s remaining to accept
+          </Text>
+        </Group>
+      </Box>
 
-          <Progress value={progressPercentage} colorScheme="red" size="sm" />
+      <Progress value={progressPercentage} color="red" size="sm" />
 
-          <VStack spacing={4} p={4} align="stretch">
-            {assignment.isTestOrder && (
-              <Card bg="yellow.50" borderColor="yellow.200">
-                <CardBody>
-                  <HStack spacing={2}>
-                    <Text fontSize="lg">🧪</Text>
-                    <Box>
-                      <Heading size="sm" fontWeight="semibold" color="yellow.900">Test Order</Heading>
-                      <Text fontSize="sm" color="yellow.700">This is a test order for training purposes.</Text>
-                    </Box>
-                  </HStack>
-                </CardBody>
-              </Card>
-            )}
-
-            <Card variant="elevated" p={0} overflow="hidden">
-              <Box h="300px" w="100%">
-                <DeliveryMap 
-                  pickupAddress={assignment.pickup_address}
-                  dropoffAddress={assignment.dropoff_address}
-                  showRoute={true}
-                />
+      <Stack gap="md" p="md" align="stretch">
+        {assignment.isTestOrder && (
+          <Card bg="yellow.0" style={{ borderColor: 'var(--mantine-color-yellow-2)' }} withBorder>
+            <Group gap="sm">
+              <Text size="lg">🧪</Text>
+              <Box>
+                <Title order={5} fw={600} c="yellow.9">Test Order</Title>
+                <Text size="sm" c="yellow.7">This is a test order for training purposes.</Text>
               </Box>
-            </Card>
+            </Group>
+          </Card>
+        )}
 
-            <Card>
-              <CardHeader>
-                <HStack spacing={2}>
-                  <Icon as={Package} h={5} w={5} color="orange.500" />
-                  <Box>
-                    <Heading size="sm" fontWeight="semibold">Pickup Location</Heading>
-                    <Text fontSize="sm" color="gray.600">{assignment.restaurant_name}</Text>
-                  </Box>
-                </HStack>
-              </CardHeader>
-              <CardBody pt={0}>
-                <HStack spacing={3} align="flex-start">
-                  <Icon as={MapPin} w={4} h={4} color="gray.400" mt={0.5} flexShrink={0} />
-                  <Text fontSize="sm" color="gray.600" lineHeight="relaxed">
-                    {formatAddress(assignment.pickup_address)}
-                  </Text>
-                </HStack>
-              </CardBody>
-            </Card>
+        <Card shadow="sm" p={0} style={{ overflow: 'hidden' }} withBorder>
+          <Box h={300} w="100%">
+            <DeliveryMap 
+              pickupAddress={assignment.pickup_address}
+              dropoffAddress={assignment.dropoff_address}
+              showRoute={true}
+            />
+          </Box>
+        </Card>
 
-            <Card>
-              <CardHeader>
-                <HStack spacing={2}>
-                  <Icon as={Users} h={5} w={5} color="orange.500" />
-                  <Box>
-                    <Heading size="sm" fontWeight="semibold">Delivery Location</Heading>
-                    <Text fontSize="sm" color="gray.600">{getCustomerName()}</Text>
-                  </Box>
-                </HStack>
-              </CardHeader>
-              <CardBody pt={0}>
-                <VStack spacing={3} align="stretch">
-                  <HStack spacing={3} align="flex-start">
-                    <Icon as={MapPin} w={4} h={4} color="gray.400" mt={0.5} flexShrink={0} />
-                    <Text fontSize="sm" color="gray.600" lineHeight="relaxed">
-                      {formatAddress(assignment.dropoff_address)}
-                    </Text>
-                  </HStack>
-                  
-                  {locationType && (
-                    <HStack spacing={2}>
-                      <Icon as={Star} w={4} h={4} color="orange.500" />
-                      <Badge colorScheme="orange" variant="subtle" fontSize="xs">
-                        {locationType}
-                      </Badge>
-                    </HStack>
-                  )}
-                </VStack>
-              </CardBody>
-            </Card>
+        <Card withBorder>
+          <Card.Section p="md" pb="xs">
+            <Group gap="sm">
+              <ThemeIcon size="lg" radius="xl" color="orange" variant="light">
+                <IconPackage size={20} />
+              </ThemeIcon>
+              <Box>
+                <Title order={5} fw={600}>Pickup Location</Title>
+                <Text size="sm" c="dimmed">{assignment.restaurant_name}</Text>
+              </Box>
+            </Group>
+          </Card.Section>
+          <Card.Section px="md" pb="md">
+            <Group gap="md" align="flex-start">
+              <IconMapPin size={16} color="var(--mantine-color-gray-4)" style={{ marginTop: 2, flexShrink: 0 }} />
+              <Text size="sm" c="dimmed" style={{ lineHeight: 1.6 }}>
+                {formatAddress(assignment.pickup_address)}
+              </Text>
+            </Group>
+          </Card.Section>
+        </Card>
 
-            <Card variant="filled">
-              <CardBody>
-                <Grid templateColumns="repeat(2, 1fr)" gap={4}>
-                  <Box textAlign="center">
-                    <Text fontSize="2xl" fontWeight="bold" color="gray.900">{miles}</Text>
-                    <Text fontSize="sm" color="gray.500" fontWeight="medium">Distance</Text>
-                  </Box>
-                  <Box textAlign="center">
-                    <Text fontSize="2xl" fontWeight="bold" color="gray.900">{mins}</Text>
-                    <Text fontSize="sm" color="gray.500" fontWeight="medium">Est. Time</Text>
-                  </Box>
-                </Grid>
-                
-                {routeMiles && routeMins && (
-                  <>
-                    <Divider my={4} />
-                    <Text fontSize="xs" color="gray.500" textAlign="center">
-                      Actual route: {routeMiles.toFixed(1)} mi • {routeMins} min
-                    </Text>
-                  </>
-                )}
-              </CardBody>
-            </Card>
+        <Card withBorder>
+          <Card.Section p="md" pb="xs">
+            <Group gap="sm">
+              <ThemeIcon size="lg" radius="xl" color="orange" variant="light">
+                <IconUsers size={20} />
+              </ThemeIcon>
+              <Box>
+                <Title order={5} fw={600}>Delivery Location</Title>
+                <Text size="sm" c="dimmed">{getCustomerName()}</Text>
+              </Box>
+            </Group>
+          </Card.Section>
+          <Card.Section px="md" pb="md">
+            <Stack gap="md" align="stretch">
+              <Group gap="md" align="flex-start">
+                <IconMapPin size={16} color="var(--mantine-color-gray-4)" style={{ marginTop: 2, flexShrink: 0 }} />
+                <Text size="sm" c="dimmed" style={{ lineHeight: 1.6 }}>
+                  {formatAddress(assignment.dropoff_address)}
+                </Text>
+              </Group>
+              
+              {locationType && (
+                <Group gap="sm">
+                  <IconStar size={16} color="var(--mantine-color-orange-5)" />
+                  <Badge color="orange" variant="light" size="xs">
+                    {locationType}
+                  </Badge>
+                </Group>
+              )}
+            </Stack>
+          </Card.Section>
+        </Card>
 
-            <Card bgGradient="linear(to-r, orange.50, orange.100)" borderColor="orange.200">
-              <CardBody>
-                <Flex align="center" justify="space-between" mb={4}>
-                  <Box>
-                    <Heading size="md" fontWeight="semibold" color="orange.900">Your Earnings</Heading>
-                    <Text fontSize="sm" color="orange.600">Base pay + tips</Text>
-                  </Box>
-                  <Box textAlign="right">
-                    <Text fontSize="3xl" fontWeight="bold" color="orange.900">
-                      ${estimatedPayout}
-                    </Text>
-                    <Text fontSize="sm" color="orange.600">
-                      {payoutPercent}% of delivery fee
-                    </Text>
-                  </Box>
-                </Flex>
-                
-                <Divider mb={4} />
-                <Grid templateColumns="repeat(2, 1fr)" gap={4} fontSize="sm">
-                  <Flex justify="space-between">
-                    <Text color="gray.600">Subtotal:</Text>
-                    <Text fontWeight="medium">${(subtotalCents / 100).toFixed(2)}</Text>
-                  </Flex>
-                  <Flex justify="space-between">
-                    <Text color="gray.600">Tips:</Text>
-                    <Text fontWeight="medium">${(tipCents / 100).toFixed(2)}</Text>
-                  </Flex>
-                </Grid>
-              </CardBody>
-            </Card>
+        <Card variant="filled">
+          <Card.Section p="md">
+            <Grid gutter="md">
+              <Grid.Col span={6}>
+                <Box style={{ textAlign: 'center' }}>
+                  <Text size="2xl" fw={700} c="dark">{miles}</Text>
+                  <Text size="sm" c="dimmed" fw={500}>Distance</Text>
+                </Box>
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <Box style={{ textAlign: 'center' }}>
+                  <Text size="2xl" fw={700} c="dark">{mins}</Text>
+                  <Text size="sm" c="dimmed" fw={500}>Est. Time</Text>
+                </Box>
+              </Grid.Col>
+            </Grid>
+            
+            {routeMiles && routeMins && (
+              <>
+                <Divider my="md" />
+                <Text size="xs" c="dimmed" style={{ textAlign: 'center' }}>
+                  Actual route: {routeMiles.toFixed(1)} mi • {routeMins} min
+                </Text>
+              </>
+            )}
+          </Card.Section>
+        </Card>
 
-            <VStack spacing={3} pt={2}>
-              <Button
-                onClick={handleAccept}
-                w="100%"
-                size="lg"
-                colorScheme="orange"
-                leftIcon={<Icon as={Package} h={5} w={5} />}
-                boxShadow="lg"
-              >
-                Accept Delivery
-              </Button>
-              <Button
-                onClick={handleDecline}
-                w="100%"
-                size="lg"
-                variant="outline"
-                leftIcon={<Icon as={X} h={5} w={5} />}
-              >
-                Decline
-              </Button>
-            </VStack>
-          </VStack>
-        </ModalBody>
-      </ModalContent>
+        <Card style={{ background: 'linear-gradient(to right, var(--mantine-color-orange-0), var(--mantine-color-orange-1))', borderColor: 'var(--mantine-color-orange-2)' }} withBorder>
+          <Card.Section p="md">
+            <Group align="center" justify="space-between" mb="md">
+              <Box>
+                <Title order={4} fw={600} c="orange.9">Your Earnings</Title>
+                <Text size="sm" c="orange.6">Base pay + tips</Text>
+              </Box>
+              <Box style={{ textAlign: 'right' }}>
+                <Text size="3xl" fw={700} c="orange.9">
+                  ${estimatedPayout}
+                </Text>
+                <Text size="sm" c="orange.6">
+                  {payoutPercent}% of delivery fee
+                </Text>
+              </Box>
+            </Group>
+            
+            <Divider mb="md" />
+            <Grid gutter="md" size="sm">
+              <Grid.Col span={6}>
+                <Group justify="space-between">
+                  <Text c="dimmed" size="sm">Subtotal:</Text>
+                  <Text fw={500} size="sm">${(subtotalCents / 100).toFixed(2)}</Text>
+                </Group>
+              </Grid.Col>
+              <Grid.Col span={6}>
+                <Group justify="space-between">
+                  <Text c="dimmed" size="sm">Tips:</Text>
+                  <Text fw={500} size="sm">${(tipCents / 100).toFixed(2)}</Text>
+                </Group>
+              </Grid.Col>
+            </Grid>
+          </Card.Section>
+        </Card>
+
+        <Stack gap="sm" pt="xs">
+          <Button
+            onClick={handleAccept}
+            fullWidth
+            size="lg"
+            color="orange"
+            leftSection={<IconPackage size={20} />}
+            style={{ boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+          >
+            Accept Delivery
+          </Button>
+          <Button
+            onClick={handleDecline}
+            fullWidth
+            size="lg"
+            variant="outline"
+            leftSection={<IconX size={20} />}
+          >
+            Decline
+          </Button>
+        </Stack>
+      </Stack>
     </Modal>
   );
 };
