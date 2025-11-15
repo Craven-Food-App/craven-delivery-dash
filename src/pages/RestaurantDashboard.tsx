@@ -1,13 +1,28 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { Plus, Store, Menu, Settings, BarChart } from "lucide-react";
+import {
+  Button,
+  Card,
+  Badge,
+  Tabs,
+  Text,
+  Title,
+  Stack,
+  Group,
+  Grid,
+  Box,
+  Loader,
+  Image,
+} from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import {
+  IconPlus,
+  IconBuildingStore,
+  IconMenu2,
+  IconSettings,
+  IconChartBar,
+} from "@tabler/icons-react";
 import Header from "@/components/Header";
 import { MenuManagement } from "@/components/restaurant/MenuManagement";
 import { RestaurantSettings } from "@/components/restaurant/RestaurantSettings";
@@ -54,7 +69,6 @@ const RestaurantDashboard = () => {
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [showStoreSetup, setShowStoreSetup] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -79,9 +93,10 @@ const RestaurantDashboard = () => {
       if (error) {
         if (error.code === 'PGRST116') {
           // No restaurant found
-      toast({
+      notifications.show({
         title: "No restaurant found",
-        description: "You haven't registered a restaurant yet. Let's get started!",
+        message: "You haven't registered a restaurant yet. Let's get started!",
+        color: 'blue',
       });
           navigate("/restaurant/register");
           return;
@@ -92,10 +107,10 @@ const RestaurantDashboard = () => {
       setRestaurant(data);
     } catch (error) {
       console.error("Error fetching restaurant:", error);
-      toast({
+      notifications.show({
         title: "Error loading restaurant",
-        description: "There was a problem loading your restaurant information.",
-        variant: "destructive"
+        message: "There was a problem loading your restaurant information.",
+        color: 'red',
       });
     } finally {
       setLoading(false);
@@ -105,191 +120,206 @@ const RestaurantDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <Box style={{ minHeight: '100vh' }}>
         <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">Loading your restaurant dashboard...</div>
-        </div>
-      </div>
+        <Box p="xl">
+          <Stack align="center" gap="md">
+            <Loader size="lg" />
+            <Text>Loading your restaurant dashboard...</Text>
+          </Stack>
+        </Box>
+      </Box>
     );
   }
 
   if (!restaurant) {
     return (
-      <div className="min-h-screen bg-background">
+      <Box style={{ minHeight: '100vh' }}>
         <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">No Restaurant Found</h1>
-            <p className="text-muted-foreground mb-6">You haven't registered a restaurant yet.</p>
+        <Box p="xl">
+          <Stack align="center" gap="md">
+            <Title order={2}>No Restaurant Found</Title>
+            <Text c="dimmed">You haven't registered a restaurant yet.</Text>
             <Button onClick={() => navigate("/restaurant/register")}>
               Register Your Restaurant
             </Button>
-          </div>
-        </div>
-      </div>
+          </Stack>
+        </Box>
+      </Box>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <Box style={{ minHeight: '100vh' }}>
       <Header />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-6">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Restaurant Dashboard</h1>
-              <p className="text-muted-foreground">Manage your restaurant and orders</p>
-            </div>
+      <Box p="xl">
+        <Group justify="space-between" align="center" mb="xl">
+          <Group gap="xl">
+            <Stack gap="xs">
+              <Title order={1}>Restaurant Dashboard</Title>
+              <Text c="dimmed">Manage your restaurant and orders</Text>
+            </Stack>
             <NewOrderAlert restaurantId={restaurant.id} />
-          </div>
-          <div className="flex gap-2">
-            <Badge variant={restaurant.is_active ? "default" : "secondary"}>
+          </Group>
+          <Group gap="xs">
+            <Badge color={restaurant.is_active ? "green" : "gray"}>
               {restaurant.is_active ? "Active" : "Inactive"}
             </Badge>
             {restaurant.is_promoted && <Badge variant="outline">Promoted</Badge>}
-          </div>
-        </div>
+          </Group>
+        </Group>
 
         {/* Store Location Selector */}
-        <div className="mb-6">
+        <Box mb="xl">
           <StoreLocationSelector 
             selectedStoreId={selectedStoreId}
             onStoreChange={setSelectedStoreId}
           />
-        </div>
+        </Box>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs value={activeTab} onChange={setActiveTab}>
           {!isMobile && (
-            <TabsList className="grid w-full grid-cols-7">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="menu">Menu</TabsTrigger>
-              <TabsTrigger value="pos">Phone Orders</TabsTrigger>
-              <TabsTrigger value="orders">Orders</TabsTrigger>
-              <TabsTrigger value="stores">Stores</TabsTrigger>
-              <TabsTrigger value="employees">Employees</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-            </TabsList>
+            <Tabs.List>
+              <Tabs.Tab value="overview">Overview</Tabs.Tab>
+              <Tabs.Tab value="menu">Menu</Tabs.Tab>
+              <Tabs.Tab value="pos">Phone Orders</Tabs.Tab>
+              <Tabs.Tab value="orders">Orders</Tabs.Tab>
+              <Tabs.Tab value="stores">Stores</Tabs.Tab>
+              <Tabs.Tab value="employees">Employees</Tabs.Tab>
+              <Tabs.Tab value="settings">Settings</Tabs.Tab>
+            </Tabs.List>
           )}
 
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Status</CardTitle>
-                  <Store className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {restaurant.is_active ? "Online" : "Offline"}
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {restaurant.is_active 
-                      ? "Your restaurant is accepting orders" 
-                      : "Contact Crave'N support to activate your restaurant"}
-                  </p>
-                </CardContent>
-              </Card>
+          <Tabs.Panel value="overview" pt="xl">
+            <Stack gap="xl">
+              <Grid gutter="md">
+                <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                  <Card p="md" withBorder>
+                    <Group justify="space-between" mb="xs">
+                      <Text size="sm" fw={500}>Status</Text>
+                      <IconBuildingStore size={16} style={{ color: 'var(--mantine-color-dimmed)' }} />
+                    </Group>
+                    <Text size="xl" fw={700}>
+                      {restaurant.is_active ? "Online" : "Offline"}
+                    </Text>
+                    <Text size="sm" c="dimmed" mt="xs">
+                      {restaurant.is_active 
+                        ? "Your restaurant is accepting orders" 
+                        : "Contact Crave'N support to activate your restaurant"}
+                    </Text>
+                  </Card>
+                </Grid.Col>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Rating</CardTitle>
-                  <BarChart className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{restaurant.rating.toFixed(1)}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {restaurant.total_reviews} reviews
-                  </p>
-                </CardContent>
-              </Card>
+                <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                  <Card p="md" withBorder>
+                    <Group justify="space-between" mb="xs">
+                      <Text size="sm" fw={500}>Rating</Text>
+                      <IconChartBar size={16} style={{ color: 'var(--mantine-color-dimmed)' }} />
+                    </Group>
+                    <Text size="xl" fw={700}>{restaurant.rating.toFixed(1)}</Text>
+                    <Text size="xs" c="dimmed" mt="xs">
+                      {restaurant.total_reviews} reviews
+                    </Text>
+                  </Card>
+                </Grid.Col>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Delivery Fee</CardTitle>
-                  <Settings className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    ${(restaurant.delivery_fee_cents / 100).toFixed(2)}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {restaurant.min_delivery_time}-{restaurant.max_delivery_time} min
-                  </p>
-                </CardContent>
-              </Card>
+                <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                  <Card p="md" withBorder>
+                    <Group justify="space-between" mb="xs">
+                      <Text size="sm" fw={500}>Delivery Fee</Text>
+                      <IconSettings size={16} style={{ color: 'var(--mantine-color-dimmed)' }} />
+                    </Group>
+                    <Text size="xl" fw={700}>
+                      ${(restaurant.delivery_fee_cents / 100).toFixed(2)}
+                    </Text>
+                    <Text size="xs" c="dimmed" mt="xs">
+                      {restaurant.min_delivery_time}-{restaurant.max_delivery_time} min
+                    </Text>
+                  </Card>
+                </Grid.Col>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Cuisine</CardTitle>
-                  <Menu className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{restaurant.cuisine_type}</div>
-                </CardContent>
-              </Card>
-            </div>
+                <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
+                  <Card p="md" withBorder>
+                    <Group justify="space-between" mb="xs">
+                      <Text size="sm" fw={500}>Cuisine</Text>
+                      <IconMenu2 size={16} style={{ color: 'var(--mantine-color-dimmed)' }} />
+                    </Group>
+                    <Text size="xl" fw={700}>{restaurant.cuisine_type}</Text>
+                  </Card>
+                </Grid.Col>
+              </Grid>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Restaurant Information</CardTitle>
-                <CardDescription>Your restaurant details</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card p="md" withBorder>
+                <Stack gap="md">
                   <div>
-                    <h3 className="font-semibold">{restaurant.name}</h3>
-                    <p className="text-sm text-muted-foreground">{restaurant.description}</p>
+                    <Title order={4} mb="xs">Restaurant Information</Title>
+                    <Text size="sm" c="dimmed">Your restaurant details</Text>
                   </div>
-                  <div>
-                    <p className="text-sm"><strong>Phone:</strong> {restaurant.phone}</p>
-                    <p className="text-sm"><strong>Email:</strong> {restaurant.email}</p>
-                    <p className="text-sm">
-                      <strong>Address:</strong> {restaurant.address}, {restaurant.city}, {restaurant.state} {restaurant.zip_code}
-                    </p>
-                  </div>
-                </div>
-                {restaurant.image_url && (
-                  <div className="mt-4">
-                    <img 
-                      src={restaurant.image_url} 
-                      alt={restaurant.name}
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  <Grid gutter="md">
+                    <Grid.Col span={{ base: 12, md: 6 }}>
+                      <Stack gap="xs">
+                        <Text fw={600}>{restaurant.name}</Text>
+                        <Text size="sm" c="dimmed">{restaurant.description}</Text>
+                      </Stack>
+                    </Grid.Col>
+                    <Grid.Col span={{ base: 12, md: 6 }}>
+                      <Stack gap="xs">
+                        <Text size="sm"><Text component="span" fw={600}>Phone:</Text> {restaurant.phone}</Text>
+                        <Text size="sm"><Text component="span" fw={600}>Email:</Text> {restaurant.email}</Text>
+                        <Text size="sm">
+                          <Text component="span" fw={600}>Address:</Text> {restaurant.address}, {restaurant.city}, {restaurant.state} {restaurant.zip_code}
+                        </Text>
+                      </Stack>
+                    </Grid.Col>
+                  </Grid>
+                  {restaurant.image_url && (
+                    <Box mt="md">
+                      <Image 
+                        src={restaurant.image_url} 
+                        alt={restaurant.name}
+                        h={200}
+                        fit="cover"
+                        radius="md"
+                      />
+                    </Box>
+                  )}
+                </Stack>
+              </Card>
+            </Stack>
+          </Tabs.Panel>
 
-          <TabsContent value="menu" className="space-y-4">
-            <MenuImportTool restaurantId={restaurant.id} onItemsImported={fetchRestaurant} />
-            <MenuManagement restaurantId={restaurant.id} />
-          </TabsContent>
+          <Tabs.Panel value="menu" pt="xl">
+            <Stack gap="md">
+              <MenuImportTool restaurantId={restaurant.id} onItemsImported={fetchRestaurant} />
+              <MenuManagement restaurantId={restaurant.id} />
+            </Stack>
+          </Tabs.Panel>
 
-          <TabsContent value="pos" className="space-y-4">
+          <Tabs.Panel value="pos" pt="xl">
             <PhoneOrderPOS restaurantId={restaurant.id} />
-          </TabsContent>
+          </Tabs.Panel>
 
-          <TabsContent value="orders" className="space-y-4">
+          <Tabs.Panel value="orders" pt="xl">
             <RestaurantCustomerOrderManagement restaurantId={restaurant.id} />
-          </TabsContent>
+          </Tabs.Panel>
 
-          <TabsContent value="stores" className="space-y-4">
+          <Tabs.Panel value="stores" pt="xl">
             <BasicStoreManagement />
-          </TabsContent>
+          </Tabs.Panel>
 
-          <TabsContent value="employees" className="space-y-4">
+          <Tabs.Panel value="employees" pt="xl">
             <EmployeeManagement restaurantId={restaurant.id} />
-          </TabsContent>
+          </Tabs.Panel>
 
-          <TabsContent value="settings" className="space-y-4">
-            <RestaurantHours restaurantId={restaurant.id} />
-            <RestaurantSettings restaurant={restaurant} onUpdate={fetchRestaurant} />
-          </TabsContent>
+          <Tabs.Panel value="settings" pt="xl">
+            <Stack gap="md">
+              <RestaurantHours restaurantId={restaurant.id} />
+              <RestaurantSettings restaurant={restaurant} onUpdate={fetchRestaurant} />
+            </Stack>
+          </Tabs.Panel>
         </Tabs>
-      </div>
+      </Box>
       
       {isMobile && (
         <RestaurantBottomNav 
@@ -297,7 +327,7 @@ const RestaurantDashboard = () => {
           onTabChange={setActiveTab} 
         />
       )}
-    </div>
+    </Box>
   );
 };
 
