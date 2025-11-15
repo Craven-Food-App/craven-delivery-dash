@@ -839,28 +839,28 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
             ${typeof currentOrder.pay === 'number' ? currentOrder.pay.toFixed(2) : parseFloat(String(currentOrder.pay || 0)).toFixed(2)}
           </Text>
 
-          <Card w="100%" maw="sm" mb="xl" withBorder>
-            <Card.Section p="md" pb="xs">
-              <Text size="sm" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
-                Order Summary
-              </Text>
-            </Card.Section>
-            <Card.Section px="md" pb="md">
-              <Stack gap="xs" align="stretch">
-                <Group justify="space-between" align="center">
-                  <Text size="sm" fw={500} c="dimmed">Order ID:</Text>
-                  <Text size="sm" fw={600} c="dark">
-                    {currentOrder.id.split('-')[1] || currentOrder.id.slice(-8)}
-                  </Text>
-                </Group>
-                <Group justify="space-between" align="center">
-                  <Text size="sm" fw={500} c="dimmed">Total Distance:</Text>
-                  <Text size="sm" fw={600} c="dark">
-                    {currentOrder.totalDistance.toFixed(1)} mi
-                  </Text>
-                </Group>
-              </Stack>
-            </Card.Section>
+          <Card w="100%" maw={400} mb="xl" withBorder bg="white" p="lg" style={{ width: '90%', maxWidth: '400px' }}>
+            <Text size="sm" fw={600} c="dimmed" tt="uppercase" mb="lg" ta="center" style={{ letterSpacing: '0.05em' }}>
+              Order Summary
+            </Text>
+            <Stack gap="lg" align="stretch">
+              <Group justify="space-between" align="center" wrap="nowrap" gap="md">
+                <Text size="sm" fw={500} c="dimmed" style={{ flexShrink: 0, minWidth: '100px' }}>
+                  Order ID:
+                </Text>
+                <Text size="sm" fw={600} c="dark" style={{ textAlign: 'right', flex: 1 }}>
+                  {currentOrder.id.split('-')[1] || currentOrder.id.slice(-8)}
+                </Text>
+              </Group>
+              <Group justify="space-between" align="center" wrap="nowrap" gap="md">
+                <Text size="sm" fw={500} c="dimmed" style={{ flexShrink: 0, minWidth: '100px' }}>
+                  Total Distance:
+                </Text>
+                <Text size="sm" fw={600} c="dark" style={{ textAlign: 'right', flex: 1 }}>
+                  {currentOrder.totalDistance.toFixed(1)} mi
+                </Text>
+              </Group>
+            </Stack>
           </Card>
 
           <Button
