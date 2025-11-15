@@ -376,10 +376,10 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate }) => {
             onClick={action.action}
           >
             <div className="text-center text-white">
-              <div style={{ fontSize: '14px', marginBottom: '4px' }}>{action.icon}</div>
-              <h3 className="text-[10px] font-semibold leading-tight mb-0.5">{action.title}</h3>
-              <p className="text-[8px] leading-tight opacity-90 line-clamp-2">{action.description}</p>
-              {action.loading && <div className="text-[8px] uppercase mt-0.5">Working…</div>}
+              <div style={{ fontSize: '20px', marginBottom: '6px' }}>{action.icon}</div>
+              <h3 className="text-sm font-semibold leading-tight mb-1">{action.title}</h3>
+              <p className="text-xs leading-tight opacity-90 line-clamp-2">{action.description}</p>
+              {action.loading && <div className="text-xs uppercase mt-1">Working…</div>}
             </div>
           </Card>
         ))}
