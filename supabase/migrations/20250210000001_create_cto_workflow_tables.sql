@@ -316,3 +316,4 @@ CREATE TRIGGER update_cto_weekly_deliverables_updated_at BEFORE UPDATE ON public
 CREATE TRIGGER update_cto_monthly_deliverables_updated_at BEFORE UPDATE ON public.cto_monthly_deliverables FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_cto_daily_reports_updated_at BEFORE UPDATE ON public.cto_daily_reports FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+

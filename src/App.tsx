@@ -73,6 +73,7 @@ import BusinessAuthGuard from "./components/BusinessAuthGuard";
 import { DriverApplicationWizard } from "./pages/driverOnboarding/DriverApplicationWizard";
 import { PostWaitlistOnboarding } from "./pages/driverOnboarding/PostWaitlistOnboarding";
 import ExecutiveDocumentSign from "./pages/ExecutiveDocumentSign";
+import ExecutiveSigningPortal from "./pages/ExecutiveSigningPortal";
 import ExecutiveProfile from "./pages/ExecutiveProfile";
 import ExecutiveResetPassword from "./pages/ExecutiveResetPassword";
 
@@ -559,7 +560,7 @@ const App = () => {
           <Route path="/track-order/:orderId" element={<TrackOrder />} />
           <Route path="/payment-canceled" element={<PaymentCanceled />} />
           {/* Executive signature route */}
-          <Route path="/executive/sign" element={<ExecutiveDocumentSign />} />
+          <Route path="/executive/sign" element={<ExecutiveSigningPortal />} />
           <Route path="/executive/profile" element={<ExecutiveProfile />} />
           <Route path="/executive/reset-password" element={<ExecutiveResetPassword />} />
           <Route path="/executive-portal/documents" element={<ExecutiveDocumentPortal />} />
