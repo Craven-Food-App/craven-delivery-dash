@@ -205,16 +205,6 @@ const MapHeader: React.FC<MapHeaderProps> = ({ title, status, locationIcon, dist
                 </div>
             </div>
 
-            <Card className="absolute left-4 right-4 -bottom-6 shadow-lg">
-                <CardContent className="p-4">
-                    <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                            <DollarSign className="w-4 h-4 text-green-600"/> Estimated Pay
-                        </span>
-                        <p className="text-2xl font-bold text-green-700 leading-none">${payAmount}</p>
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     );
 };
@@ -674,6 +664,18 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                           </Card>
                         )}
 
+                        {/* Estimated Pay Card */}
+                        <Card className="mt-4">
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                                <DollarSign className="w-4 h-4 text-green-600"/> Estimated Pay
+                              </span>
+                              <p className="text-2xl font-bold text-green-700 leading-none">${typeof payAmount === 'number' ? payAmount.toFixed(2) : String(payAmount || '0.00')}</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+
                         {status === DRIVER_STATUS.TO_STORE && (
                             <Button 
                               onClick={handleConfirmArrivalAtStore}
@@ -737,6 +739,19 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                               }
                           />
                         )}
+
+                        {/* Estimated Pay Card */}
+                        <Card className="mt-4">
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                                <DollarSign className="w-4 h-4 text-green-600"/> Estimated Pay
+                              </span>
+                              <p className="text-2xl font-bold text-green-700 leading-none">${typeof payAmount === 'number' ? payAmount.toFixed(2) : String(payAmount || '0.00')}</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+
                         {status === DRIVER_STATUS.TO_CUSTOMER && (
                             <Button 
                               onClick={handleConfirmArrivalAtCustomer}
