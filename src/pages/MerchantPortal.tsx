@@ -44,7 +44,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import InsightsDashboard from "@/components/restaurant/dashboard/InsightsDashboard";
 import CustomersDashboard from "@/components/restaurant/dashboard/CustomersDashboard";
-import MenuDashboard from "@/components/restaurant/dashboard/MenuDashboard";
+import MenuDashboard from "@/components/restaurant/dashboard/MenuDashboard"; // Renamed to avoid conflict with Mantine Menu
 import FinancialsDashboard from "@/components/restaurant/dashboard/FinancialsDashboard";
 import SettingsDashboard from "@/components/restaurant/dashboard/SettingsDashboard";
 import CommercePlatformDashboard from "@/components/restaurant/dashboard/CommercePlatformDashboard";
