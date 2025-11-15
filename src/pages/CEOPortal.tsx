@@ -37,7 +37,6 @@ import { StrategicMindMap } from '@/components/ceo/StrategicMindMap';
 import { AuditTrail } from '@/components/ceo/AuditTrail';
 import { QuickActions } from '@/components/ceo/QuickActions';
 import { EquityDashboard } from '@/components/ceo/EquityDashboard';
-import { ExecutiveInboxIMessage } from '@/components/executive/ExecutiveInboxIMessage';
 import ExecutiveCommunicationsCenter from '@/components/executive/ExecutiveCommunicationsCenter';
 import ExecutivePortalLayout, { ExecutiveNavItem } from '@/components/executive/ExecutivePortalLayout';
 import { useExecAuth } from '@/hooks/useExecAuth';
@@ -65,7 +64,6 @@ const CEOPortal: React.FC = () => {
   const [metrics, setMetrics] = useState<CEOMetrics | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [isChatCollapsed, setIsChatCollapsed] = useState(true);
 
   const navItems = useMemo<ExecutiveNavItem[]>(() => {
     const totalEmployees = metrics?.totalEmployees ?? 0;
@@ -361,7 +359,7 @@ const CEOPortal: React.FC = () => {
           </Alert>
         )}
 
-        <Stack gap="md">
+        <Stack gap="md" mt={metrics?.criticalAlerts && metrics.criticalAlerts > 0 ? 0 : 0}>
           <Group justify="space-between" wrap="wrap" gap="md">
             <Title order={3}>Company Health</Title>
             <Badge color="blue" variant="light">
@@ -448,19 +446,6 @@ const CEOPortal: React.FC = () => {
           </Grid>
         </Stack>
 
-        <Stack gap="xs">
-          <Group justify="space-between">
-            <Title order={5}>Executive Chat</Title>
-            <Button size="sm" variant="default" onClick={() => setIsChatCollapsed((prev) => !prev)}>
-              {isChatCollapsed ? 'Expand' : 'Collapse'}
-            </Button>
-          </Group>
-          {!isChatCollapsed && (
-            <ExecutiveInboxIMessage role="ceo" deviceId={`ceo-portal-${window.location.hostname}`} />
-          )}
-        </Stack>
-
-        <Divider />
 
         <Stack gap="xl">{renderContent()}</Stack>
 
