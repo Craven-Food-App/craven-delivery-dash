@@ -216,26 +216,32 @@ const BoardPortal: React.FC = () => {
 
   return (
     <ConfigProvider theme={executiveTheme}>
-      <div className="min-h-screen bg-white">
+      <div 
+        className="min-h-screen bg-white" 
+        style={{ 
+          minWidth: '1400px',
+          width: '100%',
+          overflowX: 'auto'
+        }}
+      >
         {/* Header */}
         <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-sm">
-          <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="container mx-auto px-6 py-6" style={{ maxWidth: '100%', width: '100%' }}>
+            <div className="flex flex-row items-center justify-between gap-4">
               <div className="flex-1">
-                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
                   Executive Board Portal
                 </h1>
-                <p className="text-slate-600 dark:text-slate-400 flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
+                <p className="text-slate-600 dark:text-slate-400 flex flex-row items-center gap-2">
                   Welcome back, <strong>{execUser?.title || user?.email?.split('@')[0]}</strong> • {execUser?.role?.toUpperCase()}
-                  <Badge status="processing" text="Live Data" className="ml-0 sm:ml-2" />
+                  <Badge status="processing" text="Live Data" className="ml-2" />
                 </p>
               </div>
-              <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
+              <div className="flex items-center gap-4">
                 <Button 
                   type="default" 
                   size="small"
                   icon={<ArrowLeftOutlined />}
-                  className="text-xs sm:text-base"
                   onClick={() => navigate('/hub')}
                 >
                   Back to Hub
@@ -243,14 +249,12 @@ const BoardPortal: React.FC = () => {
                 <Button 
                   type="default" 
                   size="small"
-                  className="text-xs sm:text-base"
                   onClick={() => navigate('/ceo')}
                 >
                   CEO Portal
                 </Button>
                 <Button 
                   size="small"
-                  className="text-xs sm:text-base"
                   onClick={signOut}
                 >
                   Sign Out
@@ -262,7 +266,7 @@ const BoardPortal: React.FC = () => {
         </div>
 
         {/* Main Content */}
-        <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-8">
+        <div className="container mx-auto px-6 py-8" style={{ maxWidth: '100%', width: '100%' }}>
           {/* Last Updated Indicator */}
           <div className="mb-4 text-right">
             <span className="text-sm text-slate-600">Last updated: {lastUpdated.toLocaleTimeString()}</span>
@@ -270,16 +274,16 @@ const BoardPortal: React.FC = () => {
           
           {/* Key Metrics Row */}
           <Row gutter={[24, 24]} className="mb-8">
-            <Col xs={24} sm={12} lg={6}>
+            <Col span={6}>
               <Card bordered={false} className="shadow-lg hover:shadow-xl transition-all duration-300">
                 <Statistic
-                  title={<span className="text-slate-600 font-medium text-xs sm:text-sm">Total Revenue</span>}
+                  title={<span className="text-slate-600 font-medium text-sm">Total Revenue</span>}
                   value={metrics?.revenue}
                   precision={2}
                   prefix={<DollarOutlined className="text-blue-600" />}
-                  valueStyle={{ fontSize: window.innerWidth < 640 ? '20px' : '28px', fontWeight: 'bold', color: '#1e293b' }}
+                  valueStyle={{ fontSize: '28px', fontWeight: 'bold', color: '#1e293b' }}
                   suffix={
-                    <span className="text-xs sm:text-sm text-green-600 font-semibold ml-2">
+                    <span className="text-sm text-green-600 font-semibold ml-2">
                       <ArrowUpOutlined /> {metrics?.revenueChange}%
                     </span>
                   }
@@ -287,15 +291,15 @@ const BoardPortal: React.FC = () => {
               </Card>
             </Col>
 
-            <Col xs={24} sm={12} lg={6}>
+            <Col span={6}>
               <Card bordered={false} className="shadow-lg hover:shadow-xl transition-all duration-300">
                 <Statistic
-                  title={<span className="text-slate-600 font-medium text-xs sm:text-sm">Total Orders</span>}
+                  title={<span className="text-slate-600 font-medium text-sm">Total Orders</span>}
                   value={metrics?.orders}
                   prefix={<ShoppingOutlined className="text-purple-600" />}
-                  valueStyle={{ fontSize: window.innerWidth < 640 ? '20px' : '28px', fontWeight: 'bold', color: '#1e293b' }}
+                  valueStyle={{ fontSize: '28px', fontWeight: 'bold', color: '#1e293b' }}
                   suffix={
-                    <span className="text-xs sm:text-sm text-green-600 font-semibold ml-2">
+                    <span className="text-sm text-green-600 font-semibold ml-2">
                       <ArrowUpOutlined /> {metrics?.ordersChange}%
                     </span>
                   }
@@ -303,25 +307,25 @@ const BoardPortal: React.FC = () => {
               </Card>
             </Col>
 
-            <Col xs={24} sm={12} lg={6}>
+            <Col span={6}>
               <Card bordered={false} className="shadow-lg hover:shadow-xl transition-all duration-300">
                 <Statistic
-                  title={<span className="text-slate-600 font-medium text-xs sm:text-sm">Employees</span>}
+                  title={<span className="text-slate-600 font-medium text-sm">Employees</span>}
                   value={metrics?.totalEmployees}
                   prefix={<TeamOutlined className="text-orange-600" />}
-                  valueStyle={{ fontSize: window.innerWidth < 640 ? '20px' : '28px', fontWeight: 'bold', color: '#1e293b' }}
+                  valueStyle={{ fontSize: '28px', fontWeight: 'bold', color: '#1e293b' }}
                 />
               </Card>
             </Col>
 
-            <Col xs={24} sm={12} lg={6}>
+            <Col span={6}>
               <Card bordered={false} className="shadow-lg hover:shadow-xl transition-all duration-300">
                 <Statistic
-                  title={<span className="text-slate-600 font-medium text-xs sm:text-sm">Net Profit Margin</span>}
+                  title={<span className="text-slate-600 font-medium text-sm">Net Profit Margin</span>}
                   value={metrics?.profitMargin}
                   precision={1}
                   suffix="%"
-                  valueStyle={{ fontSize: window.innerWidth < 640 ? '20px' : '28px', fontWeight: 'bold', color: '#059669' }}
+                  valueStyle={{ fontSize: '28px', fontWeight: 'bold', color: '#059669' }}
                 />
               </Card>
             </Col>
@@ -339,9 +343,9 @@ const BoardPortal: React.FC = () => {
                 {
                   key: 'communications',
                   label: (
-                    <span className="flex items-center gap-1 sm:gap-2">
+                    <span className="flex items-center gap-2">
                       <UserOutlined />
-                      <span className="text-xs sm:text-base">Communications</span>
+                      <span>Communications</span>
                     </span>
                   ),
                   children: <ExecutiveCommunicationsCenter defaultTab="messages" compact />,
@@ -349,9 +353,9 @@ const BoardPortal: React.FC = () => {
                 {
                   key: 'directory',
                   label: (
-                    <span className="flex items-center gap-1 sm:gap-2">
+                    <span className="flex items-center gap-2">
                       <TeamOutlined />
-                      <span className="text-xs sm:text-base">Directory</span>
+                      <span>Directory</span>
                     </span>
                   ),
                   children: <ExecutiveDirectory viewerRole={execUser?.role?.toLowerCase()} />,
@@ -359,9 +363,9 @@ const BoardPortal: React.FC = () => {
                 {
                   key: 'officers',
                   label: (
-                    <span className="flex items-center gap-1 sm:gap-2">
+                    <span className="flex items-center gap-2">
                       <TrophyOutlined />
-                      <span className="text-xs sm:text-base">Officer Management</span>
+                      <span>Officer Management</span>
                     </span>
                   ),
                   children: (
@@ -396,9 +400,9 @@ const BoardPortal: React.FC = () => {
                 {
                   key: 'personnel',
                   label: (
-                    <span className="flex items-center gap-1 sm:gap-2">
+                    <span className="flex items-center gap-2">
                       <TeamOutlined />
-                      <span className="text-xs sm:text-base">Personnel ({metrics?.totalEmployees || 0})</span>
+                      <span>Personnel ({metrics?.totalEmployees || 0})</span>
                     </span>
                   ),
                   children: <PersonnelManager />,
@@ -406,9 +410,9 @@ const BoardPortal: React.FC = () => {
                 {
                   key: 'documents',
                   label: (
-                    <span className="flex items-center gap-1 sm:gap-2">
+                    <span className="flex items-center gap-2">
                       <FileOutlined />
-                      <span className="text-xs sm:text-base">Document Vault</span>
+                      <span>Document Vault</span>
                     </span>
                   ),
                   children: <DocumentVault />,
@@ -416,9 +420,9 @@ const BoardPortal: React.FC = () => {
                 {
                   key: 'wordprocessor',
                   label: (
-                    <span className="flex items-center gap-1 sm:gap-2">
+                    <span className="flex items-center gap-2">
                       <FileTextOutlined />
-                      <span className="text-xs sm:text-base">Word Processor</span>
+                      <span>Word Processor</span>
                     </span>
                   ),
                   children: <ExecutiveWordProcessor storageKey="board" />,
@@ -426,9 +430,9 @@ const BoardPortal: React.FC = () => {
                 {
                   key: 'articles',
                   label: (
-                    <span className="flex items-center gap-1 sm:gap-2">
+                    <span className="flex items-center gap-2">
                       <FileAddOutlined />
-                      <span className="text-xs sm:text-base">Articles Generator</span>
+                      <span>Articles Generator</span>
                     </span>
                   ),
                   children: <ArticlesOfIncorporationGenerator />,
@@ -436,9 +440,9 @@ const BoardPortal: React.FC = () => {
                 {
                   key: 'iboe',
                   label: (
-                    <span className="flex items-center gap-1 sm:gap-2">
+                    <span className="flex items-center gap-2">
                       <AuditOutlined />
-                      <span className="text-xs sm:text-base">IBOE Sender</span>
+                      <span>IBOE Sender</span>
                     </span>
                   ),
                   children: (
@@ -463,9 +467,9 @@ const BoardPortal: React.FC = () => {
                 {
                   key: 'equity',
                   label: (
-                    <span className="flex items-center gap-1 sm:gap-2">
+                    <span className="flex items-center gap-2">
                       <PieChartOutlined />
-                      <span className="text-xs sm:text-base">Equity & Governance</span>
+                      <span>Equity & Governance</span>
                     </span>
                   ),
                   children: (
@@ -502,9 +506,9 @@ const BoardPortal: React.FC = () => {
                 {
                   key: 'financial',
                   label: (
-                    <span className="flex items-center gap-1 sm:gap-2">
+                    <span className="flex items-center gap-2">
                       <DollarOutlined />
-                      <span className="text-xs sm:text-base">Financial Approvals</span>
+                      <span>Financial Approvals</span>
                       {metrics?.pendingApprovals! > 0 && (
                         <Badge count={metrics?.pendingApprovals} className="ml-2" />
                       )}
@@ -515,9 +519,9 @@ const BoardPortal: React.FC = () => {
                 {
                   key: 'templates',
                   label: (
-                    <span className="flex items-center gap-1 sm:gap-2">
+                    <span className="flex items-center gap-2">
                       <CodeOutlined />
-                      <span className="text-xs sm:text-base">Templates & Settings</span>
+                      <span>Templates & Settings</span>
                     </span>
                   ),
                   children: (
