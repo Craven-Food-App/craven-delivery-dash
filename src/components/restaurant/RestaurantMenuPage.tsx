@@ -1404,253 +1404,375 @@ const RestaurantMenuPage = () => {
         </Drawer>
 
         {/* Main Content */}
-        <div className="flex-1 relative">
-          <div className="bg-gray-50 min-h-screen font-sans text-gray-800 antialiased" style={{
-              WebkitFontSmoothing: 'antialiased',
-              MozOsxFontSmoothing: 'grayscale',
-              textRendering: 'optimizeLegibility'
-          }}>
-            <div className="max-w-7xl mx-auto">
-                       {/* --- Mobile Hero Section (DoorDash Style) --- */}
-                       <div className="lg:hidden">
-                         {/* Hero Image */}
-                         <div className="relative h-48">
-                           <img
-                             src={restaurant.header_image_url || restaurant.image_url || 'https://placehold.co/600x300/A31D24/ffffff?text=Restaurant'}
-                             alt={restaurant.name}
-                             className="w-full h-full object-cover"
-                           />
-                         </div>
-                         
-                         {/* Restaurant Info Card - Overlapping (DoorDash signature style) */}
-                         <div className="mx-4 -mt-8 bg-white rounded-2xl shadow-xl p-4 relative z-10 border border-gray-100">
-                           <div className="flex items-start space-x-3 mb-3">
-                             <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-white shadow-md flex-shrink-0 bg-gray-100">
-                               <img 
-                                 src={restaurant.logo_url || restaurant.image_url || 'https://placehold.co/64x64/CCCCCC/666666?text=Logo'} 
-                                 alt={restaurant.name}
-                                 className="w-full h-full object-cover"
-                                 onError={(e) => { e.currentTarget.src = "https://placehold.co/64x64/CCCCCC/666666?text=Logo"; }}
-                               />
-                             </div>
-                             <div className="flex-1 min-w-0">
-                               <h2 className="text-lg font-bold text-gray-900 mb-1 leading-tight">{restaurant.name}</h2>
-                               <div className="flex items-center space-x-1 text-sm text-gray-600 mb-1">
-                                 <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 flex-shrink-0" />
-                                 <span className="font-semibold">{restaurant.rating || 4.5}</span>
-                                 <span>({restaurant.total_reviews || 0}+)</span>
-                                 <span className="text-gray-400">•</span>
-                                 <span className="truncate">{restaurant.cuisine_type}</span>
-                               </div>
-                               <div className="flex items-center text-xs text-gray-500 space-x-2">
-                                 <div className="flex items-center space-x-1">
-                                   <Clock className="w-3 h-3 flex-shrink-0" />
-                                   <span>{restaurant.min_delivery_time}-{restaurant.max_delivery_time} min</span>
-                                 </div>
-                                 <span className="text-gray-400">•</span>
-                                 <div className="flex items-center space-x-1">
-                                   <Truck className="w-3 h-3 flex-shrink-0" />
-                                   <span>{formatPrice(restaurant.delivery_fee_cents || 0)}</span>
-                                 </div>
-                               </div>
-                             </div>
-                           </div>
+        <Box style={{ flex: 1, position: 'relative' }}>
+          <Box style={{ backgroundColor: 'var(--mantine-color-gray-0)', minHeight: '100vh' }}>
+            <Box style={{ maxWidth: '1280px', margin: '0 auto' }}>
+              {/* --- Mobile Hero Section (DoorDash Style) --- */}
+              <Box
+                style={{
+                  display: 'block',
+                  '@media (min-width: 1024px)': { display: 'none' },
+                }}
+              >
+                {/* Hero Image */}
+                <Box style={{ position: 'relative', height: '192px' }}>
+                  <MantineImage
+                    src={restaurant.header_image_url || restaurant.image_url || 'https://placehold.co/600x300/A31D24/ffffff?text=Restaurant'}
+                    alt={restaurant.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    fit="cover"
+                  />
+                </Box>
+                
+                {/* Restaurant Info Card - Overlapping (DoorDash signature style) */}
+                <Card
+                  p="md"
+                  withBorder
+                  shadow="xl"
+                  style={{
+                    margin: '0 16px',
+                    marginTop: '-32px',
+                    position: 'relative',
+                    zIndex: 10,
+                    borderRadius: '16px',
+                  }}
+                >
+                  <Group align="flex-start" gap="sm" mb="md">
+                    <Box
+                      style={{
+                        width: '64px',
+                        height: '64px',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        border: '2px solid white',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                        flexShrink: 0,
+                        backgroundColor: 'var(--mantine-color-gray-1)',
+                      }}
+                    >
+                      <MantineImage
+                        src={restaurant.logo_url || restaurant.image_url || 'https://placehold.co/64x64/CCCCCC/666666?text=Logo'}
+                        alt={restaurant.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        fit="cover"
+                        onError={(e) => { e.currentTarget.src = "https://placehold.co/64x64/CCCCCC/666666?text=Logo"; }}
+                      />
+                    </Box>
+                    <Stack gap="xs" style={{ flex: 1, minWidth: 0 }}>
+                      <Text size="lg" fw={700} lineClamp={2} style={{ lineHeight: '1.2' }}>{restaurant.name}</Text>
+                      <Group gap="xs" wrap="nowrap">
+                        <IconStar size={16} style={{ color: 'var(--mantine-color-yellow-5)', fill: 'var(--mantine-color-yellow-5)' }} />
+                        <Text size="sm" fw={600} c="dimmed">{restaurant.rating || 4.5}</Text>
+                        <Text size="sm" c="dimmed">({restaurant.total_reviews || 0}+)</Text>
+                        <Text size="sm" c="dimmed">•</Text>
+                        <Text size="sm" c="dimmed" truncate>{restaurant.cuisine_type}</Text>
+                      </Group>
+                      <Group gap="xs" wrap="nowrap">
+                        <Group gap={4}>
+                          <IconClock size={12} style={{ color: 'var(--mantine-color-gray-5)' }} />
+                          <Text size="xs" c="dimmed">{restaurant.min_delivery_time}-{restaurant.max_delivery_time} min</Text>
+                        </Group>
+                        <Text size="xs" c="dimmed">•</Text>
+                        <Group gap={4}>
+                          <IconTruck size={12} style={{ color: 'var(--mantine-color-gray-5)' }} />
+                          <Text size="xs" c="dimmed">{formatPrice(restaurant.delivery_fee_cents || 0)}</Text>
+                        </Group>
+                      </Group>
+                    </Stack>
+                  </Group>
 
-                           {/* Delivery/Pickup Toggle - Mobile */}
-                           <div className="flex gap-2 mt-4">
-                             <button
-                               onClick={() => setDeliveryMethod('delivery')}
-                               className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all ${
-                                 deliveryMethod === 'delivery'
-                                   ? 'bg-black text-white'
-                                   : 'bg-gray-100 text-gray-600'
-                               }`}
-                             >
-                               <Truck className="w-4 h-4 inline mr-1" />
-                               Delivery
-                             </button>
-                             <button
-                               onClick={() => setDeliveryMethod('pickup')}
-                               className={`flex-1 py-2.5 rounded-lg font-semibold text-sm transition-all ${
-                                 deliveryMethod === 'pickup'
-                                   ? 'bg-black text-white'
-                                   : 'bg-gray-100 text-gray-600'
-                               }`}
-                             >
-                               <Store className="w-4 h-4 inline mr-1" />
-                               Pickup
-                             </button>
-                           </div>
-                         </div>
+                  {/* Delivery/Pickup Toggle - Mobile */}
+                  <Button.Group fullWidth>
+                    <Button
+                      variant={deliveryMethod === 'delivery' ? 'filled' : 'light'}
+                      color={deliveryMethod === 'delivery' ? 'dark' : 'gray'}
+                      leftSection={<IconTruck size={16} />}
+                      onClick={() => setDeliveryMethod('delivery')}
+                      style={{ flex: 1 }}
+                    >
+                      Delivery
+                    </Button>
+                    <Button
+                      variant={deliveryMethod === 'pickup' ? 'filled' : 'light'}
+                      color={deliveryMethod === 'pickup' ? 'dark' : 'gray'}
+                      leftSection={<IconBuildingStore size={16} />}
+                      onClick={() => setDeliveryMethod('pickup')}
+                      style={{ flex: 1 }}
+                    >
+                      Pickup
+                    </Button>
+                  </Button.Group>
+                </Card>
 
-                         {/* Sticky Category Tabs - Mobile */}
-                         <div className="sticky top-12 z-40 bg-white border-b border-gray-200 overflow-x-auto scrollbar-hide -mx-4 px-4">
-                           <div className="flex space-x-2 py-3">
-                             {featuredItems.length > 0 && (
-                               <button
-                                 onClick={() => scrollToSection('featured')}
-                                 className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
-                                   activeSection === 'featured'
-                                     ? 'bg-black text-white'
-                                     : 'bg-gray-100 text-gray-700'
-                                 }`}
-                               >
-                                 ⭐ Featured
-                               </button>
-                             )}
-                             {mostOrderedItems.length > 0 && (
-                               <button
-                                 onClick={() => scrollToSection('most-ordered')}
-                                 className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
-                                   activeSection === 'most-ordered'
-                                     ? 'bg-black text-white'
-                                     : 'bg-gray-100 text-gray-700'
-                                 }`}
-                               >
-                                 🔥 Most Ordered
-                               </button>
-                             )}
-                             {categories.map(category => (
-                               <button
-                                 key={category.id}
-                                 onClick={() => scrollToSection(category.id)}
-                                 className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
-                                   activeSection === category.id
-                                     ? 'bg-black text-white'
-                                     : 'bg-gray-100 text-gray-700'
-                                 }`}
-                               >
-                                 {category.name}
-                               </button>
-                             ))}
-                           </div>
-                         </div>
+                {/* Sticky Category Tabs - Mobile */}
+                <ScrollArea
+                  style={{
+                    position: 'sticky',
+                    top: '48px',
+                    zIndex: 40,
+                    backgroundColor: 'white',
+                    borderBottom: '1px solid var(--mantine-color-gray-3)',
+                    margin: '0 -16px',
+                    padding: '0 16px',
+                  }}
+                  scrollbars="x"
+                >
+                  <Group gap="xs" py="sm" style={{ flexWrap: 'nowrap' }}>
+                    {featuredItems.length > 0 && (
+                      <Button
+                        variant={activeSection === 'featured' ? 'filled' : 'light'}
+                        color={activeSection === 'featured' ? 'dark' : 'gray'}
+                        size="sm"
+                        radius="xl"
+                        onClick={() => scrollToSection('featured')}
+                        style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+                      >
+                        ⭐ Featured
+                      </Button>
+                    )}
+                    {mostOrderedItems.length > 0 && (
+                      <Button
+                        variant={activeSection === 'most-ordered' ? 'filled' : 'light'}
+                        color={activeSection === 'most-ordered' ? 'dark' : 'gray'}
+                        size="sm"
+                        radius="xl"
+                        onClick={() => scrollToSection('most-ordered')}
+                        style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+                      >
+                        🔥 Most Ordered
+                      </Button>
+                    )}
+                    {categories.map(category => (
+                      <Button
+                        key={category.id}
+                        variant={activeSection === category.id ? 'filled' : 'light'}
+                        color={activeSection === category.id ? 'dark' : 'gray'}
+                        size="sm"
+                        radius="xl"
+                        onClick={() => scrollToSection(category.id)}
+                        style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+                      >
+                        {category.name}
+                      </Button>
+                    ))}
+                  </Group>
+                </ScrollArea>
 
-                         {/* Mobile Menu Items - Compact List */}
-                         <div className="px-4 py-6 space-y-6">
-                           {/* Featured Items - Mobile */}
-                           {featuredItems.length > 0 && (
-                             <section id="featured-mobile" className="scroll-mt-24">
-                               <h2 className="text-xl font-bold text-gray-900 mb-4">Featured Items</h2>
-                               <div className="space-y-3">
-                                 {featuredItems.map(item => (
-                                   <div
-                                     key={item.id}
-                                     onClick={() => openItemModal(item)}
-                                     className="flex gap-3 bg-white rounded-xl border border-gray-200 p-3 active:bg-gray-50 transition-colors"
-                                   >
-                                     <div className="flex-1 min-w-0">
-                                       <h3 className="font-semibold text-gray-900 mb-1">{item.name}</h3>
-                                       <p className="text-sm text-gray-500 line-clamp-2 mb-2">{item.description}</p>
-                                       <div className="flex items-center justify-between">
-                                         <span className="text-base font-bold text-gray-900">{formatPrice(item.price_cents)}</span>
-                                         <div className="flex items-center space-x-1">
-                                           {item.is_vegetarian && <Leaf className="w-4 h-4 text-green-600" />}
-                                           {item.chef_recommended && <ChefHat className="w-4 h-4 text-orange-500" />}
-                                         </div>
-                                       </div>
-                                     </div>
-                                     {item.image_url && (
-                                       <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 relative">
-                                         <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = "https://placehold.co/100x100/CCCCCC/666666?text=Item"; }} />
-                                         <button
-                                           onClick={(e) => { e.stopPropagation(); addToCart(item); }}
-                                           className="absolute bottom-1 right-1 w-7 h-7 bg-white rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform"
-                                         >
-                                           <Plus className="w-4 h-4 text-primary" />
-                                         </button>
-                                       </div>
-                                     )}
-                                   </div>
-                                 ))}
-                               </div>
-                             </section>
-                           )}
+                {/* Mobile Menu Items - Compact List */}
+                <Stack gap="lg" p="md">
+                  {/* Featured Items - Mobile */}
+                  {featuredItems.length > 0 && (
+                    <Box id="featured-mobile" style={{ scrollMarginTop: '96px' }}>
+                      <Title order={2} size="xl" fw={700} mb="md">Featured Items</Title>
+                      <Stack gap="sm">
+                        {featuredItems.map(item => (
+                          <Card
+                            key={item.id}
+                            p="sm"
+                            withBorder
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => openItemModal(item)}
+                          >
+                            <Group align="flex-start" gap="sm">
+                              <Stack gap="xs" style={{ flex: 1, minWidth: 0 }}>
+                                <Text fw={600} lineClamp={1}>{item.name}</Text>
+                                <Text size="sm" c="dimmed" lineClamp={2} mb="xs">{item.description}</Text>
+                                <Group justify="space-between">
+                                  <Text size="md" fw={700}>{formatPrice(item.price_cents)}</Text>
+                                  <Group gap="xs">
+                                    {item.is_vegetarian && <IconLeaf size={16} style={{ color: 'var(--mantine-color-green-6)' }} />}
+                                    {item.chef_recommended && <IconChefHat size={16} style={{ color: 'var(--mantine-color-orange-6)' }} />}
+                                  </Group>
+                                </Group>
+                              </Stack>
+                              {item.image_url && (
+                                <Box
+                                  style={{
+                                    width: '96px',
+                                    height: '96px',
+                                    borderRadius: '8px',
+                                    overflow: 'hidden',
+                                    flexShrink: 0,
+                                    position: 'relative',
+                                  }}
+                                >
+                                  <MantineImage
+                                    src={item.image_url}
+                                    alt={item.name}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    fit="cover"
+                                    onError={(e) => { e.currentTarget.src = "https://placehold.co/100x100/CCCCCC/666666?text=Item"; }}
+                                  />
+                                  <ActionIcon
+                                    color="orange"
+                                    variant="filled"
+                                    size="sm"
+                                    radius="xl"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      addToCart(item);
+                                    }}
+                                    style={{
+                                      position: 'absolute',
+                                      bottom: 4,
+                                      right: 4,
+                                    }}
+                                  >
+                                    <IconPlus size={14} />
+                                  </ActionIcon>
+                                </Box>
+                              )}
+                            </Group>
+                          </Card>
+                        ))}
+                      </Stack>
+                    </Box>
+                  )}
 
-                           {/* Most Ordered - Mobile */}
-                           {mostOrderedItems.length > 0 && (
-                             <section id="most-ordered-mobile" className="scroll-mt-24">
-                               <h2 className="text-xl font-bold text-gray-900 mb-4">Most Ordered</h2>
-                               <div className="space-y-3">
-                                 {mostOrderedItems.map(item => (
-                                   <div
-                                     key={item.id}
-                                     onClick={() => openItemModal(item)}
-                                     className="flex gap-3 bg-white rounded-xl border border-gray-200 p-3 active:bg-gray-50 transition-colors"
-                                   >
-                                     <div className="flex-1 min-w-0">
-                                       <h3 className="font-semibold text-gray-900 mb-1">{item.name}</h3>
-                                       <p className="text-sm text-gray-500 line-clamp-2 mb-2">{item.description}</p>
-                                       <div className="flex items-center justify-between">
-                                         <span className="text-base font-bold text-gray-900">{formatPrice(item.price_cents)}</span>
-                                         <div className="flex items-center space-x-1">
-                                           {item.is_vegetarian && <Leaf className="w-4 h-4 text-green-600" />}
-                                           {item.chef_recommended && <ChefHat className="w-4 h-4 text-orange-500" />}
-                                         </div>
-                                       </div>
-                                     </div>
-                                     {item.image_url && (
-                                       <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 relative">
-                                         <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = "https://placehold.co/100x100/CCCCCC/666666?text=Item"; }} />
-                                         <button
-                                           onClick={(e) => { e.stopPropagation(); addToCart(item); }}
-                                           className="absolute bottom-1 right-1 w-7 h-7 bg-white rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform"
-                                         >
-                                           <Plus className="w-4 h-4 text-primary" />
-                                         </button>
-                                       </div>
-                                     )}
-                                   </div>
-                                 ))}
-                               </div>
-                             </section>
-                           )}
+                  {/* Most Ordered - Mobile */}
+                  {mostOrderedItems.length > 0 && (
+                    <Box id="most-ordered-mobile" style={{ scrollMarginTop: '96px' }}>
+                      <Title order={2} size="xl" fw={700} mb="md">Most Ordered</Title>
+                      <Stack gap="sm">
+                        {mostOrderedItems.map(item => (
+                          <Card
+                            key={item.id}
+                            p="sm"
+                            withBorder
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => openItemModal(item)}
+                          >
+                            <Group align="flex-start" gap="sm">
+                              <Stack gap="xs" style={{ flex: 1, minWidth: 0 }}>
+                                <Text fw={600} lineClamp={1}>{item.name}</Text>
+                                <Text size="sm" c="dimmed" lineClamp={2} mb="xs">{item.description}</Text>
+                                <Group justify="space-between">
+                                  <Text size="md" fw={700}>{formatPrice(item.price_cents)}</Text>
+                                  <Group gap="xs">
+                                    {item.is_vegetarian && <IconLeaf size={16} style={{ color: 'var(--mantine-color-green-6)' }} />}
+                                    {item.chef_recommended && <IconChefHat size={16} style={{ color: 'var(--mantine-color-orange-6)' }} />}
+                                  </Group>
+                                </Group>
+                              </Stack>
+                              {item.image_url && (
+                                <Box
+                                  style={{
+                                    width: '96px',
+                                    height: '96px',
+                                    borderRadius: '8px',
+                                    overflow: 'hidden',
+                                    flexShrink: 0,
+                                    position: 'relative',
+                                  }}
+                                >
+                                  <MantineImage
+                                    src={item.image_url}
+                                    alt={item.name}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    fit="cover"
+                                    onError={(e) => { e.currentTarget.src = "https://placehold.co/100x100/CCCCCC/666666?text=Item"; }}
+                                  />
+                                  <ActionIcon
+                                    color="orange"
+                                    variant="filled"
+                                    size="sm"
+                                    radius="xl"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      addToCart(item);
+                                    }}
+                                    style={{
+                                      position: 'absolute',
+                                      bottom: 4,
+                                      right: 4,
+                                    }}
+                                  >
+                                    <IconPlus size={14} />
+                                  </ActionIcon>
+                                </Box>
+                              )}
+                            </Group>
+                          </Card>
+                        ))}
+                      </Stack>
+                    </Box>
+                  )}
 
-                           {/* Category Sections - Mobile */}
-                           {categories.map(category => {
-                             const items = getItemsByCategory(category.id);
-                             if (items.length === 0) return null;
-                             
-                             return (
-                               <section key={category.id} id={`${category.id}-mobile`} className="scroll-mt-24">
-                                 <h2 className="text-xl font-bold text-gray-900 mb-4">{category.name}</h2>
-                                 <div className="space-y-3">
-                                   {items.map(item => (
-                                     <div
-                                       key={item.id}
-                                       onClick={() => openItemModal(item)}
-                                       className="flex gap-3 bg-white rounded-xl border border-gray-200 p-3 active:bg-gray-50 transition-colors"
-                                     >
-                                       <div className="flex-1 min-w-0">
-                                         <h3 className="font-semibold text-gray-900 mb-1">{item.name}</h3>
-                                         <p className="text-sm text-gray-500 line-clamp-2 mb-2">{item.description}</p>
-                                         <div className="flex items-center justify-between">
-                                           <span className="text-base font-bold text-gray-900">{formatPrice(item.price_cents)}</span>
-                                           <div className="flex items-center space-x-1">
-                                             {item.is_vegetarian && <Leaf className="w-4 h-4 text-green-600" />}
-                                             {item.chef_recommended && <ChefHat className="w-4 h-4 text-orange-500" />}
-                                           </div>
-                                         </div>
-                                       </div>
-                                       {item.image_url && (
-                                         <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 relative">
-                                           <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = "https://placehold.co/100x100/CCCCCC/666666?text=Item"; }} />
-                                           <button
-                                             onClick={(e) => { e.stopPropagation(); addToCart(item); }}
-                                             className="absolute bottom-1 right-1 w-7 h-7 bg-white rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform"
-                                           >
-                                             <Plus className="w-4 h-4 text-primary" />
-                                           </button>
-                                         </div>
-                                       )}
-                                     </div>
-                                   ))}
-                                 </div>
-                               </section>
-                             );
-                           })}
-                         </div>
-                       </div>
+                  {/* Category Sections - Mobile */}
+                  {categories.map(category => {
+                    const items = getItemsByCategory(category.id);
+                    if (items.length === 0) return null;
+                    
+                    return (
+                      <Box key={category.id} id={`${category.id}-mobile`} style={{ scrollMarginTop: '96px' }}>
+                        <Title order={2} size="xl" fw={700} mb="md">{category.name}</Title>
+                        <Stack gap="sm">
+                          {items.map(item => (
+                            <Card
+                              key={item.id}
+                              p="sm"
+                              withBorder
+                              style={{ cursor: 'pointer' }}
+                              onClick={() => openItemModal(item)}
+                            >
+                              <Group align="flex-start" gap="sm">
+                                <Stack gap="xs" style={{ flex: 1, minWidth: 0 }}>
+                                  <Text fw={600} lineClamp={1}>{item.name}</Text>
+                                  <Text size="sm" c="dimmed" lineClamp={2} mb="xs">{item.description}</Text>
+                                  <Group justify="space-between">
+                                    <Text size="md" fw={700}>{formatPrice(item.price_cents)}</Text>
+                                    <Group gap="xs">
+                                      {item.is_vegetarian && <IconLeaf size={16} style={{ color: 'var(--mantine-color-green-6)' }} />}
+                                      {item.chef_recommended && <IconChefHat size={16} style={{ color: 'var(--mantine-color-orange-6)' }} />}
+                                    </Group>
+                                  </Group>
+                                </Stack>
+                                {item.image_url && (
+                                  <Box
+                                    style={{
+                                      width: '96px',
+                                      height: '96px',
+                                      borderRadius: '8px',
+                                      overflow: 'hidden',
+                                      flexShrink: 0,
+                                      position: 'relative',
+                                    }}
+                                  >
+                                    <MantineImage
+                                      src={item.image_url}
+                                      alt={item.name}
+                                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                      fit="cover"
+                                      onError={(e) => { e.currentTarget.src = "https://placehold.co/100x100/CCCCCC/666666?text=Item"; }}
+                                    />
+                                    <ActionIcon
+                                      color="orange"
+                                      variant="filled"
+                                      size="sm"
+                                      radius="xl"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        addToCart(item);
+                                      }}
+                                      style={{
+                                        position: 'absolute',
+                                        bottom: 4,
+                                        right: 4,
+                                      }}
+                                    >
+                                      <IconPlus size={14} />
+                                    </ActionIcon>
+                                  </Box>
+                                )}
+                              </Group>
+                            </Card>
+                          ))}
+                        </Stack>
+                      </Box>
+                    );
+                  })}
+                </Stack>
+              </Box>
 
                        {/* --- Desktop Header Image Banner --- */}
                        <div className="hidden lg:block relative h-64 overflow-hidden rounded-b-xl shadow-lg" style={{
