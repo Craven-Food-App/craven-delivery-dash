@@ -139,6 +139,8 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
     }
   };
 
+  // Generate documents for officer - DOES NOT send emails
+  // Emails are only sent via promptSendDocuments() which is called from the final step button
   const generateDocumentsForOfficer = async (
     formValues: OfficerFormData,
     executiveId: string,
@@ -719,6 +721,8 @@ export const OfficerAppointmentWorkflow: React.FC = () => {
       }
 
       message.info('Generating documents...', 2);
+      // Generate documents - NO emails are sent at this step
+      // Emails are only sent when user clicks "Send Documents" button on the final step
       const generated = await generateDocumentsForOfficer(values, data.officer_id, data.equity_grant_id);
       if (generated.length === 0) {
         message.error('Document generation failed. Check Supabase Edge Function logs for details and try again.');
