@@ -1,7 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, Bell, Flame, MapPin, Clock, Target, TrendingUp, Users, Zap, Award, ChevronRight, Package } from 'lucide-react';
-import { toast } from 'sonner';
+import { IconMenu2, IconBell, IconFlame, IconMapPin, IconClock, IconTarget, IconTrendingUp, IconUsers, IconBolt, IconAward, IconChevronRight, IconPackage } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  Box,
+  Stack,
+  Text,
+  Button,
+  Group,
+  ActionIcon,
+  Loader,
+  ThemeIcon,
+  Paper,
+  Title,
+  Badge,
+  Progress,
+  SegmentedControl,
+} from '@mantine/core';
 
 type FeederPromotionsTabProps = {
   onOpenMenu?: () => void;
@@ -28,7 +43,6 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
 
       const now = new Date().toISOString();
 
-      // Fetch active promotions (surge zones)
       const { data: surgeZones } = await supabase
         .from('driver_surge_zones')
         .select('*')
@@ -58,7 +72,6 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
         setPromotions(formattedPromos);
       }
 
-      // Fetch challenges (promotions with challenge_type)
       const { data: activePromotions } = await supabase
         .from('driver_promotions')
         .select('*')
@@ -67,7 +80,6 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
         .lte('start_date', now)
         .limit(20);
 
-      // Fetch user's participation in challenges
       const { data: participations } = await supabase
         .from('driver_promotion_participation')
         .select('*')
@@ -78,30 +90,27 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
         const formattedChallenges = activePromotions.map(promo => {
           const participation = participations.find(p => p.promotion_id === promo.id);
           const progress = participation?.progress || 0;
-          const total = 100; // Default requirement value
+          const total = 100;
           const progressPercentage = total > 0 ? (progress / total) * 100 : 0;
 
-          // Map challenge types to icons and colors
           const typeMap: Record<string, { icon: any; color: string }> = {
-            delivery_count: { icon: Package, color: 'orange' },
-            time_based: { icon: Zap, color: 'yellow' },
-            peak_hours: { icon: TrendingUp, color: 'red' },
-            geographic: { icon: MapPin, color: 'blue' },
-            rating_based: { icon: Award, color: 'purple' },
-            streak_based: { icon: Flame, color: 'red' },
-            referral: { icon: Users, color: 'green' }
+            delivery_count: { icon: IconPackage, color: 'orange' },
+            time_based: { icon: IconBolt, color: 'yellow' },
+            peak_hours: { icon: IconTrendingUp, color: 'red' },
+            geographic: { icon: IconMapPin, color: 'blue' },
+            rating_based: { icon: IconAward, color: 'purple' },
+            streak_based: { icon: IconFlame, color: 'red' },
+            referral: { icon: IconUsers, color: 'green' }
           };
 
-          const typeInfo = typeMap[promo.promo_type] || { icon: Target, color: 'orange' };
+          const typeInfo = typeMap[promo.promo_type] || { icon: IconTarget, color: 'orange' };
 
-          // Calculate deadline
           const endsAt = new Date(promo.end_date);
           const daysLeft = Math.ceil((endsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
           const deadline = daysLeft > 0 
             ? `${daysLeft} day${daysLeft !== 1 ? 's' : ''} left`
             : 'Ending soon';
 
-          // Format reward
           let reward = '$0';
           if (promo.reward_amount) {
             reward = `$${promo.reward_amount.toFixed(0)}`;
@@ -126,7 +135,10 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
       }
     } catch (error) {
       console.error('Error fetching promotions:', error);
-      toast.error('Failed to load promotions');
+      notifications.show({
+        title: 'Failed to load promotions',
+        color: 'red',
+      });
     } finally {
       setLoading(false);
     }
@@ -135,52 +147,52 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
   const getChallengeColors = (color: string) => {
     const colors: Record<string, { bg: string; icon: string; badgeBg: string; badgeText: string; progressFrom: string; progressTo: string }> = {
       orange: { 
-        bg: 'bg-orange-100', 
-        icon: 'text-orange-600',
-        badgeBg: 'bg-orange-100',
-        badgeText: 'text-orange-700',
-        progressFrom: 'from-orange-400',
-        progressTo: 'to-orange-600'
+        bg: 'orange.1', 
+        icon: 'orange.6',
+        badgeBg: 'orange.1',
+        badgeText: 'orange.7',
+        progressFrom: 'orange.4',
+        progressTo: 'orange.6'
       },
       yellow: { 
-        bg: 'bg-yellow-100', 
-        icon: 'text-yellow-600',
-        badgeBg: 'bg-yellow-100',
-        badgeText: 'text-yellow-700',
-        progressFrom: 'from-yellow-400',
-        progressTo: 'to-yellow-600'
+        bg: 'yellow.1', 
+        icon: 'yellow.6',
+        badgeBg: 'yellow.1',
+        badgeText: 'yellow.7',
+        progressFrom: 'yellow.4',
+        progressTo: 'yellow.6'
       },
       red: { 
-        bg: 'bg-red-100', 
-        icon: 'text-red-600',
-        badgeBg: 'bg-red-100',
-        badgeText: 'text-red-700',
-        progressFrom: 'from-red-400',
-        progressTo: 'to-red-600'
+        bg: 'red.1', 
+        icon: 'red.6',
+        badgeBg: 'red.1',
+        badgeText: 'red.7',
+        progressFrom: 'red.4',
+        progressTo: 'red.6'
       },
       blue: { 
-        bg: 'bg-blue-100', 
-        icon: 'text-blue-600',
-        badgeBg: 'bg-blue-100',
-        badgeText: 'text-blue-700',
-        progressFrom: 'from-blue-400',
-        progressTo: 'to-blue-600'
+        bg: 'blue.1', 
+        icon: 'blue.6',
+        badgeBg: 'blue.1',
+        badgeText: 'blue.7',
+        progressFrom: 'blue.4',
+        progressTo: 'blue.6'
       },
       purple: { 
-        bg: 'bg-purple-100', 
-        icon: 'text-purple-600',
-        badgeBg: 'bg-purple-100',
-        badgeText: 'text-purple-700',
-        progressFrom: 'from-purple-400',
-        progressTo: 'to-purple-600'
+        bg: 'violet.1', 
+        icon: 'violet.6',
+        badgeBg: 'violet.1',
+        badgeText: 'violet.7',
+        progressFrom: 'violet.4',
+        progressTo: 'violet.6'
       },
       green: { 
-        bg: 'bg-green-100', 
-        icon: 'text-green-600',
-        badgeBg: 'bg-green-100',
-        badgeText: 'text-green-700',
-        progressFrom: 'from-green-400',
-        progressTo: 'to-green-600'
+        bg: 'green.1', 
+        icon: 'green.6',
+        badgeBg: 'green.1',
+        badgeText: 'green.7',
+        progressFrom: 'green.4',
+        progressTo: 'green.6'
       }
     };
     return colors[color] || colors.orange;
@@ -188,143 +200,184 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
 
   if (loading) {
     return (
-      <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-orange-500 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-      </div>
+      <Box h="100vh" w="100%" style={{ background: 'linear-gradient(to bottom, var(--mantine-color-red-6), var(--mantine-color-orange-6), var(--mantine-color-orange-5))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader size="lg" color="white" />
+      </Box>
     );
   }
 
   return (
-    <div className="h-screen w-full bg-gradient-to-b from-red-600 via-orange-600 to-orange-500 overflow-y-auto" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
+    <Box h="100vh" w="100%" style={{ background: 'linear-gradient(to bottom, var(--mantine-color-red-6), var(--mantine-color-orange-6), var(--mantine-color-orange-5))', overflowY: 'auto', paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
       {/* Header */}
-      <div className="px-6 pb-4 flex items-center justify-between flex-shrink-0 safe-area-top">
-        <button 
+      <Group px="xl" pb="md" justify="space-between" align="center" className="safe-area-top">
+        <ActionIcon
           onClick={() => {
             if (onOpenMenu) {
               onOpenMenu();
             } else {
-              toast.info('Menu coming soon.');
+              notifications.show({
+                title: 'Menu coming soon.',
+                color: 'blue',
+              });
             }
           }}
-          className="text-white"
+          variant="subtle"
+          color="white"
         >
-          <Menu className="w-6 h-6" />
-        </button>
-        <h1 className="text-orange-400 text-3xl font-bold tracking-wide">PROMOS</h1>
-        <button 
+          <IconMenu2 size={24} />
+        </ActionIcon>
+        <Title order={1} c="orange.3" fw={700} style={{ letterSpacing: '0.05em' }}>PROMOS</Title>
+        <ActionIcon
           onClick={() => {
             if (onOpenNotifications) {
               onOpenNotifications();
             } else {
-              toast.info('Notifications coming soon.');
+              notifications.show({
+                title: 'Notifications coming soon.',
+                color: 'blue',
+              });
             }
           }}
-          className="text-white"
+          variant="subtle"
+          color="white"
         >
-          <Bell className="w-7 h-7" />
-        </button>
-      </div>
+          <IconBell size={28} />
+        </ActionIcon>
+      </Group>
 
       {/* Tab Switcher */}
-      <div className="px-6 mb-6">
-        <div className="bg-white/20 backdrop-blur-sm rounded-full p-1 flex gap-1">
-          <button
-            onClick={() => setActiveTab('promos')}
-            className={`flex-1 py-2.5 rounded-full font-bold text-sm transition-all ${
-              activeTab === 'promos'
-                ? 'bg-white text-red-700 shadow-lg'
-                : 'text-white'
-            }`}
-          >
-            Active Promos
-          </button>
-          <button
-            onClick={() => setActiveTab('challenges')}
-            className={`flex-1 py-2.5 rounded-full font-bold text-sm transition-all ${
-              activeTab === 'challenges'
-                ? 'bg-white text-red-700 shadow-lg'
-                : 'text-white'
-            }`}
-          >
-            Challenges
-          </button>
-        </div>
-      </div>
+      <Box px="xl" mb="xl">
+        <SegmentedControl
+          value={activeTab}
+          onChange={setActiveTab}
+          data={[
+            { label: 'Active Promos', value: 'promos' },
+            { label: 'Challenges', value: 'challenges' },
+          ]}
+          fullWidth
+          radius="xl"
+          size="md"
+          styles={{
+            root: {
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              backdropFilter: 'blur(4px)',
+              padding: '4px',
+            },
+            indicator: {
+              backgroundColor: 'white',
+              color: 'var(--mantine-color-red-7)',
+            },
+            label: {
+              color: 'white',
+              fontWeight: 700,
+            },
+          }}
+        />
+      </Box>
 
       {/* Content */}
-      <div className="px-6 pb-24">
+      <Box px="xl" pb="xl">
         {activeTab === 'promos' && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Flame className="w-5 h-5 text-yellow-300" />
-              <h3 className="text-white text-xl font-bold tracking-wide">ACTIVE NOW</h3>
-            </div>
+          <Stack gap="md">
+            <Group gap="xs" mb="md">
+              <IconFlame size={20} color="var(--mantine-color-yellow-3)" />
+              <Title order={3} c="white" fw={700} style={{ letterSpacing: '0.05em' }}>ACTIVE NOW</Title>
+            </Group>
             
             {promotions.length > 0 ? promotions.map((promo, idx) => (
-              <div 
-                key={promo.id || idx} 
-                className={`rounded-2xl p-5 shadow-xl relative overflow-hidden ${
-                  promo.active 
-                    ? 'bg-gradient-to-br from-yellow-50 to-orange-50' 
-                    : 'bg-gray-100 opacity-75'
-                }`}
+              <Paper
+                key={promo.id || idx}
+                p="lg"
+                radius="xl"
+                shadow="xl"
+                style={{
+                  background: promo.active 
+                    ? 'linear-gradient(to bottom right, var(--mantine-color-yellow-0), var(--mantine-color-orange-0))'
+                    : 'var(--mantine-color-gray-1)',
+                  opacity: promo.active ? 1 : 0.75,
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
               >
                 {promo.active && (
-                  <div className="absolute top-3 right-3">
-                    <div className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 animate-pulse">
-                      <div className="w-2 h-2 bg-white rounded-full"></div>
-                      LIVE
-                    </div>
-                  </div>
+                  <Badge
+                    pos="absolute"
+                    top={12}
+                    right={12}
+                    color="red"
+                    size="sm"
+                    radius="xl"
+                    leftSection={<Box w={8} h={8} bg="white" style={{ borderRadius: '50%' }} />}
+                    styles={{
+                      root: {
+                        animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                      },
+                    }}
+                  >
+                    LIVE
+                  </Badge>
                 )}
 
-                <div className="mb-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <MapPin className="w-4 h-4 text-orange-600" />
-                    <span className="text-gray-900 font-bold text-lg">{promo.zone}</span>
-                  </div>
+                <Stack gap="md">
+                  <Group gap="xs">
+                    <IconMapPin size={16} color="var(--mantine-color-orange-6)" />
+                    <Text c="dark" fw={700} size="lg">{promo.zone}</Text>
+                  </Group>
                   
-                  <div className="flex items-center gap-4 text-sm text-gray-700 mb-3">
-                    <div className="flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
-                      </svg>
-                      <span className="font-semibold">{promo.date}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      <span className="font-semibold">{promo.timeframe}</span>
-                    </div>
-                  </div>
+                  <Group gap="md" c="dark.7" size="sm">
+                    <Group gap="xs">
+                      <IconClock size={16} />
+                      <Text fw={600}>{promo.date}</Text>
+                    </Group>
+                    <Group gap="xs">
+                      <IconClock size={16} />
+                      <Text fw={600}>{promo.timeframe}</Text>
+                    </Group>
+                  </Group>
 
-                  <div className="bg-gradient-to-r from-orange-400 to-red-500 rounded-xl p-3 mb-3">
-                    <p className="text-white font-black text-xl text-center">
+                  <Paper
+                    p="md"
+                    radius="md"
+                    style={{
+                      background: 'linear-gradient(to right, var(--mantine-color-orange-4), var(--mantine-color-red-5))',
+                    }}
+                  >
+                    <Text c="white" fw={900} size="xl" ta="center">
                       {promo.description}
-                    </p>
-                  </div>
+                    </Text>
+                  </Paper>
 
-                  <div className="bg-green-100 border-2 border-green-500 rounded-xl p-3 text-center">
-                    <p className="text-green-800 font-black text-2xl">
+                  <Paper
+                    p="md"
+                    radius="md"
+                    bg="green.1"
+                    style={{
+                      border: '2px solid var(--mantine-color-green-5)',
+                    }}
+                  >
+                    <Text c="green.8" fw={900} size="2xl" ta="center">
                       {promo.bonus}
-                    </p>
-                  </div>
-                </div>
-              </div>
+                    </Text>
+                  </Paper>
+                </Stack>
+              </Paper>
             )) : (
-              <div className="bg-orange-50 rounded-2xl p-8 text-center shadow-lg">
-                <p className="text-gray-500">No active promotions</p>
-                <p className="text-sm text-gray-400 mt-2">Check back soon for new opportunities</p>
-              </div>
+              <Paper p="xl" radius="xl" bg="orange.0" shadow="md">
+                <Stack gap="xs" align="center">
+                  <Text c="dimmed">No active promotions</Text>
+                  <Text size="sm" c="dimmed">Check back soon for new opportunities</Text>
+                </Stack>
+              </Paper>
             )}
-          </div>
+          </Stack>
         )}
 
         {activeTab === 'challenges' && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Target className="w-5 h-5 text-yellow-300" />
-              <h3 className="text-white text-xl font-bold tracking-wide">YOUR CHALLENGES</h3>
-            </div>
+          <Stack gap="md">
+            <Group gap="xs" mb="md">
+              <IconTarget size={20} color="var(--mantine-color-yellow-3)" />
+              <Title order={3} c="white" fw={700} style={{ letterSpacing: '0.05em' }}>YOUR CHALLENGES</Title>
+            </Group>
 
             {challenges.length > 0 ? challenges.map((challenge) => {
               const IconComponent = challenge.icon;
@@ -332,56 +385,74 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
               const colors = getChallengeColors(challenge.color);
               
               return (
-                <div key={challenge.id} className="bg-orange-50 rounded-2xl p-5 shadow-xl">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-start gap-3 flex-1">
-                      <div className={`${colors.bg} p-3 rounded-xl`}>
-                        <IconComponent className={`w-6 h-6 ${colors.icon}`} />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-gray-900 font-bold text-lg mb-1">{challenge.title}</h4>
-                        <span className={`inline-block ${colors.badgeBg} ${colors.badgeText} px-2 py-1 rounded-full text-xs font-bold mb-2`}>
+                <Paper key={challenge.id} p="lg" radius="xl" bg="orange.0" shadow="xl">
+                  <Group justify="space-between" mb="md" align="flex-start">
+                    <Group gap="md" style={{ flex: 1 }} align="flex-start">
+                      <ThemeIcon size="xl" radius="md" color={colors.bg} variant="light">
+                        <IconComponent size={24} color={`var(--mantine-color-${colors.icon})`} />
+                      </ThemeIcon>
+                      <Stack gap="xs" style={{ flex: 1 }}>
+                        <Title order={4} c="dark" fw={700}>{challenge.title}</Title>
+                        <Badge color={colors.badgeBg} c={colors.badgeText} size="sm" radius="xl" fw={700}>
                           {challenge.type}
-                        </span>
-                        <p className="text-gray-700 text-sm">{challenge.description}</p>
-                      </div>
-                    </div>
-                    <div className="text-right ml-2">
-                      <p className="text-green-600 font-black text-2xl">{challenge.reward}</p>
-                      <p className="text-gray-500 text-xs">{challenge.deadline}</p>
-                    </div>
-                  </div>
+                        </Badge>
+                        <Text c="dark.7" size="sm">{challenge.description}</Text>
+                      </Stack>
+                    </Group>
+                    <Stack gap="xs" align="flex-end">
+                      <Text c="green.6" fw={900} size="2xl">{challenge.reward}</Text>
+                      <Text c="dimmed" size="xs">{challenge.deadline}</Text>
+                    </Stack>
+                  </Group>
 
-                  {/* Progress Bar */}
-                  <div className="mb-2">
-                    <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="text-gray-700 font-semibold">Progress</span>
-                      <span className="text-gray-900 font-bold">{challenge.progress}/{challenge.total}</span>
-                    </div>
-                    <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full bg-gradient-to-r ${colors.progressFrom} ${colors.progressTo} rounded-full transition-all duration-500`}
-                        style={{ width: `${Math.min(progressPercentage, 100)}%` }}
-                      />
-                    </div>
-                  </div>
+                  <Stack gap="xs">
+                    <Group justify="space-between" size="sm">
+                      <Text c="dark.7" fw={600} size="sm">Progress</Text>
+                      <Text c="dark" fw={700}>{challenge.progress}/{challenge.total}</Text>
+                    </Group>
+                    <Progress
+                      value={Math.min(progressPercentage, 100)}
+                      color={challenge.color}
+                      size="sm"
+                      radius="xl"
+                      styles={{
+                        root: {
+                          backgroundColor: 'var(--mantine-color-gray-2)',
+                        },
+                        bar: {
+                          background: `linear-gradient(to right, var(--mantine-color-${colors.progressFrom}), var(--mantine-color-${colors.progressTo}))`,
+                        },
+                      }}
+                    />
+                  </Stack>
 
-                  <button className="w-full mt-3 bg-gradient-to-r from-orange-500 to-red-600 text-white py-2.5 rounded-full font-bold text-sm shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2">
-                    <span>View Details</span>
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
+                  <Button
+                    fullWidth
+                    mt="md"
+                    color="orange"
+                    rightSection={<IconChevronRight size={16} />}
+                    style={{
+                      background: 'linear-gradient(to right, var(--mantine-color-orange-5), var(--mantine-color-red-6))',
+                    }}
+                    radius="xl"
+                    fw={700}
+                  >
+                    View Details
+                  </Button>
+                </Paper>
               );
             }) : (
-              <div className="bg-orange-50 rounded-2xl p-8 text-center shadow-lg">
-                <p className="text-gray-500">No active challenges</p>
-                <p className="text-sm text-gray-400 mt-2">New challenges will appear here</p>
-              </div>
+              <Paper p="xl" radius="xl" bg="orange.0" shadow="md">
+                <Stack gap="xs" align="center">
+                  <Text c="dimmed">No active challenges</Text>
+                  <Text size="sm" c="dimmed">New challenges will appear here</Text>
+                </Stack>
+              </Paper>
             )}
-          </div>
+          </Stack>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 };
 
