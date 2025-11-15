@@ -3,6 +3,9 @@ import { Check, MapPin, Navigation, DollarSign, Clock, Package, Home, Bell, Copy
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import FullscreenCamera from './FullscreenCamera';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 // ===== TYPES =====
 
@@ -68,10 +71,6 @@ const STAGE_NAMES: Record<DeliveryStage, string> = {
 
 const styles = {
     appBackground: "bg-gradient-to-br from-orange-600 to-red-600 min-h-screen",
-    actionButton: "w-full py-4 mt-6 text-lg font-extrabold rounded-2xl text-white shadow-xl bg-neutral-900 hover:bg-neutral-800 transition-all active:scale-[0.99]",
-    cardBackground: "bg-white p-4 rounded-xl shadow-2xl shadow-orange-900/10 mb-4 border border-neutral-100",
-    navButton: "flex items-center gap-1 text-sm font-semibold text-neutral-900 active:opacity-80 p-3 rounded-xl bg-white shadow-lg shadow-black/10 hover:bg-neutral-100 transition-colors",
-    iconContainer: "p-3 bg-red-100 rounded-full text-red-700 flex-shrink-0",
 };
 
 // ===== UTILITY FUNCTIONS =====
@@ -178,38 +177,44 @@ const MapHeader: React.FC<MapHeaderProps> = ({ title, status, locationIcon, dist
     const payAmount = typeof pay === 'number' ? pay.toFixed(2) : '0.00';
     
     return (
-        <div className="p-4 pt-10 text-white flex flex-col justify-between h-full relative z-40 bg-gradient-to-br from-orange-600/80 to-red-600/80">
+        <div className="p-4 safe-area-top text-white flex flex-col justify-between h-full relative z-40 bg-gradient-to-br from-orange-600/80 to-red-600/80">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-black italic tracking-wider">CRAVEN</h1>
+                <h1 className="text-2xl font-bold">CRAVEN</h1>
                 <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold">ON FIRE</span>
-                    <Clock className="w-5 h-5" />
+                    <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+                        <span className="text-sm font-semibold">ON FIRE</span>
+                        <Clock className="w-4 h-4 ml-1" />
+                    </Badge>
                 </div>
             </div>
 
             <div className="flex justify-between items-end">
                 <div className="flex items-center gap-3">
-                    <span className="p-3 bg-red-800 rounded-full border-2 border-white/50">
+                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center border-2 border-white/50">
                         {locationIcon}
-                    </span>
+                    </div>
                     <div>
-                        <p className="text-sm opacity-80 font-medium">{status}</p>
-                        <h2 className="text-2xl font-extrabold truncate">{title}</h2>
+                        <p className="text-xs text-white/80 font-medium">{status}</p>
+                        <h2 className="text-lg font-bold truncate">{title}</h2>
                     </div>
                 </div>
 
                 <div className="text-right">
-                    <p className="text-2xl font-black leading-none">{typeof distance === 'number' ? distance.toFixed(1) : '0.0'} mi</p>
-                    <p className="text-sm opacity-80 font-medium">to destination</p>
+                    <p className="text-xl font-bold leading-none">{typeof distance === 'number' ? distance.toFixed(1) : '0.0'} mi</p>
+                    <p className="text-xs text-white/80 font-medium">to destination</p>
                 </div>
             </div>
 
-            <div className="absolute left-4 right-4 -bottom-6 bg-white p-4 rounded-xl shadow-2xl shadow-black/30">
-                <div className="flex justify-between items-center">
-                    <span className="text-sm font-semibold text-neutral-500 flex items-center gap-1"><DollarSign className="w-4 h-4 text-green-600"/> Estimated Pay</span>
-                    <p className="text-3xl font-black text-green-700 leading-none">${payAmount}</p>
-                </div>
-            </div>
+            <Card className="absolute left-4 right-4 -bottom-6 shadow-lg">
+                <CardContent className="p-4">
+                    <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                            <DollarSign className="w-4 h-4 text-green-600"/> Estimated Pay
+                        </span>
+                        <p className="text-2xl font-bold text-green-700 leading-none">${payAmount}</p>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     );
 };
@@ -223,28 +228,34 @@ interface DetailCardProps {
 }
 
 const DetailCard: React.FC<DetailCardProps> = ({ title, content, icon, actionButton, linkHref }) => (
-    <div className={styles.cardBackground}>
-        <div className="flex items-start gap-4">
-            <div className={styles.iconContainer}>
-                {icon}
+    <Card className="mb-4">
+        <CardContent className="p-4">
+            <div className="flex items-start gap-4">
+                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <div className="text-orange-600">
+                        {icon}
+                    </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                    <CardTitle className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wide">
+                        {title}
+                    </CardTitle>
+                    {linkHref ? (
+                         <a 
+                            href={linkHref} 
+                            className="text-sm font-medium text-primary leading-tight block truncate"
+                            onClick={(e) => { e.preventDefault(); }}
+                         >
+                            {content}
+                         </a>
+                    ) : (
+                        <p className="text-sm font-medium text-foreground leading-tight break-words">{content}</p>
+                    )}
+                </div>
+                {actionButton && <div className="flex-shrink-0">{actionButton}</div>}
             </div>
-            <div className="flex-1">
-                <h3 className="text-sm font-semibold text-neutral-500 mb-1">{title}</h3>
-                {linkHref ? (
-                     <a 
-                        href={linkHref} 
-                        className="text-base font-medium text-blue-600 hover:text-blue-700 leading-tight block truncate"
-                        onClick={(e) => { e.preventDefault(); }}
-                     >
-                        {content}
-                     </a>
-                ) : (
-                    <p className="text-base font-medium text-neutral-900 leading-tight">{content}</p>
-                )}
-            </div>
-            {actionButton && <div className="flex-shrink-0">{actionButton}</div>}
-        </div>
-    </div>
+        </CardContent>
+    </Card>
 );
 
 // ===== MAIN COMPONENT =====
@@ -583,13 +594,19 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
           </div>
           <div className="h-6"></div>
 
-          <div className="flex-1 px-4 pb-4 overflow-y-auto bg-white rounded-t-3xl shadow-inner shadow-black/10 -mt-6">
+          <div className="flex-1 px-4 pb-4 overflow-y-auto bg-background rounded-t-3xl -mt-6">
             
-            <div className="pt-4">
-                <h3 className="text-xl font-extrabold text-neutral-900 mb-4">
-                  ORDER DETAILS #{currentOrder.id.split('-')[1] || currentOrder.id.slice(-8)}
-                  {isTestOrder && <span className="ml-2 text-sm font-normal text-orange-600">(Test Order)</span>}
-                </h3>
+            <div className="pt-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-foreground">
+                    Order #{currentOrder.id.split('-')[1] || currentOrder.id.slice(-8)}
+                  </h2>
+                  {isTestOrder && (
+                    <Badge variant="outline" className="bg-orange-50 text-orange-600 border-orange-300">
+                      Test Order
+                    </Badge>
+                  )}
+                </div>
             
                 {currentFlow.isPickup ? (
                     <>
@@ -598,16 +615,17 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                             content={currentOrder.store.address}
                             icon={<MapPin className="w-5 h-5"/>}
                             actionButton={
-                                <button 
-                                  className={styles.navButton} 
+                                <Button 
+                                  variant="outline"
+                                  size="sm"
                                   title="Start Navigation"
                                   onClick={() => {
                                     const address = encodeURIComponent(currentOrder.store.address || '');
                                     window.open(`https://maps.apple.com/?daddr=${address}`, '_blank');
                                   }}
                                 >
-                                    <Navigation className="w-4 h-4" /> Navigate
-                                </button>
+                                    <Navigation className="w-4 h-4 mr-1" /> Navigate
+                                </Button>
                             }
                         />
                         {pickupCode && (
@@ -616,7 +634,9 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                               content={pickupCode}
                               icon={<Package className="w-5 h-5"/>}
                               actionButton={
-                                  <button 
+                                  <Button 
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() => {
                                       copyToClipboard(pickupCode);
                                       toast({
@@ -624,38 +644,54 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                                         description: `Pickup code ${pickupCode} copied to clipboard`,
                                       });
                                     }} 
-                                      className="p-3 bg-neutral-100 rounded-xl text-neutral-700 active:bg-neutral-200 transition-colors shadow-md"
-                                      title="Copy Code"
-                                  ><Copy className="w-4 h-4" /></button>
+                                    title="Copy Code"
+                                  >
+                                    <Copy className="w-4 h-4" />
+                                  </Button>
                               }
                           />
                         )}
                         
                         {currentOrder.items && currentOrder.items.length > 0 && (
-                          <div className="mt-4 p-4 bg-orange-50 rounded-xl border border-orange-200 shadow-inner">
-                              <h4 className="text-sm font-bold text-red-600 mb-2">CRAVEN ITEMS ({currentOrder.items.length})</h4>
-                              <ul className="space-y-2 text-sm text-neutral-800">
+                          <Card className="bg-orange-50 border-orange-200">
+                            <CardHeader className="pb-3">
+                              <CardTitle className="text-sm font-semibold text-orange-700">
+                                Items ({currentOrder.items.length})
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                              <ul className="space-y-2">
                                   {currentOrder.items.map((item: any, index: number) => (
-                                      <li key={index} className="flex justify-between border-b border-orange-100 pb-1 last:border-b-0">
-                                          <span>{item.name}</span>
-                                          <span className="font-bold text-neutral-900">x{item.qty || item.quantity}</span>
+                                      <li key={index} className="flex justify-between items-center py-1 border-b border-orange-100 last:border-b-0">
+                                          <span className="text-sm text-foreground">{item.name}</span>
+                                          <Badge variant="secondary" className="ml-2">
+                                            x{item.qty || item.quantity}
+                                          </Badge>
                                       </li>
                                   ))}
                               </ul>
-                          </div>
+                            </CardContent>
+                          </Card>
                         )}
-                        <div className="h-6"></div> 
 
                         {status === DRIVER_STATUS.TO_STORE && (
-                            <button onClick={handleConfirmArrivalAtStore}
-                                className={styles.actionButton}
-                            >Arrived at Craven Kitchen</button>
+                            <Button 
+                              onClick={handleConfirmArrivalAtStore}
+                              size="lg"
+                              className="w-full mt-4"
+                            >
+                              Arrived at Craven Kitchen
+                            </Button>
                         )}
                         
                         {status === DRIVER_STATUS.AT_STORE && (
-                             <button onClick={handleStartPickupVerification}
-                                className={styles.actionButton}
-                            >Order Ready? Start Hand-off Check</button>
+                             <Button 
+                              onClick={handleStartPickupVerification}
+                              size="lg"
+                              className="w-full mt-4"
+                            >
+                              Order Ready? Start Hand-off Check
+                            </Button>
                         )}
                     </>
                 ) : (
@@ -665,16 +701,17 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                             content={currentOrder.customer.address}
                             icon={<Home className="w-5 h-5"/>}
                             actionButton={
-                                <button 
-                                  className={styles.navButton} 
+                                <Button 
+                                  variant="outline"
+                                  size="sm"
                                   title="Start Navigation"
                                   onClick={() => {
                                     const address = encodeURIComponent(currentOrder.customer.address || '');
                                     window.open(`https://maps.apple.com/?daddr=${address}`, '_blank');
                                   }}
                                 >
-                                    <Navigation className="w-4 h-4" /> Navigate
-                                </button>
+                                    <Navigation className="w-4 h-4 mr-1" /> Navigate
+                                </Button>
                             }
                         />
                         {currentOrder.customer.deliveryNotes && (
@@ -683,7 +720,9 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                               content={currentOrder.customer.deliveryNotes}
                               icon={<Bell className="w-5 h-5"/>}
                               actionButton={
-                                  <button 
+                                  <Button 
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() => {
                                       copyToClipboard(currentOrder.customer.deliveryNotes);
                                       toast({
@@ -691,24 +730,31 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                                         description: "Delivery notes copied to clipboard",
                                       });
                                     }} 
-                                      className="p-3 bg-neutral-100 rounded-xl text-neutral-700 active:bg-neutral-200 transition-colors shadow-md"
-                                      title="Copy Instructions"
-                                  ><Copy className="w-4 h-4" /></button>
+                                    title="Copy Instructions"
+                                  >
+                                    <Copy className="w-4 h-4" />
+                                  </Button>
                               }
                           />
                         )}
-                        <div className="h-6"></div> 
-
                         {status === DRIVER_STATUS.TO_CUSTOMER && (
-                            <button onClick={handleConfirmArrivalAtCustomer}
-                                className={styles.actionButton}
-                            >Arrived at Customer's Location</button>
+                            <Button 
+                              onClick={handleConfirmArrivalAtCustomer}
+                              size="lg"
+                              className="w-full mt-4"
+                            >
+                              Arrived at Customer's Location
+                            </Button>
                         )}
                         
                         {status === DRIVER_STATUS.AT_CUSTOMER && (
-                            <button onClick={handleStartDeliveryVerification}
-                                className={styles.actionButton}
-                            >Drop-off & Complete Delivery</button>
+                            <Button 
+                              onClick={handleStartDeliveryVerification}
+                              size="lg"
+                              className="w-full mt-4"
+                            >
+                              Drop-off & Complete Delivery
+                            </Button>
                         )}
                     </>
                 )}
@@ -721,29 +767,38 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
   const renderComplete = () => {
     return (
         <div className={`flex flex-col items-center justify-center flex-1 p-6 text-center ${styles.appBackground}`}>
-          <Check className={`w-24 h-24 text-white mb-6 border-4 border-white rounded-full p-2 bg-green-500/80`} />
-          <h2 className="text-4xl font-black text-white mb-4">DELIVERY COMPLETE!</h2>
-          <p className="text-white/90 mb-1 font-semibold text-lg">Great job! You earned:</p>
-          <p className="text-6xl font-black text-white mb-8 drop-shadow-lg">${typeof currentOrder.pay === 'number' ? currentOrder.pay.toFixed(2) : parseFloat(String(currentOrder.pay || 0)).toFixed(2)}</p>
+          <div className="safe-area-top"></div>
+          <Check className={`w-20 h-20 text-white mb-6 border-4 border-white rounded-full p-2 bg-green-500/80`} />
+          <h2 className="text-3xl font-bold text-white mb-2">Delivery Complete!</h2>
+          <p className="text-white/90 mb-1 font-medium">Great job! You earned:</p>
+          <p className="text-5xl font-bold text-white mb-8 drop-shadow-lg">${typeof currentOrder.pay === 'number' ? currentOrder.pay.toFixed(2) : parseFloat(String(currentOrder.pay || 0)).toFixed(2)}</p>
 
-          <div className="bg-white p-6 rounded-2xl shadow-2xl shadow-black/30 w-full max-w-sm mb-8">
-            <h3 className="text-sm font-bold text-neutral-500 mb-3 uppercase tracking-wider">ORDER SUMMARY</h3>
-            <div className='flex justify-between items-center py-1'>
-                <p className="text-base font-medium text-neutral-700">Order ID:</p>
-                <p className='text-base font-black text-neutral-900'>{currentOrder.id.split('-')[1] || currentOrder.id.slice(-8)}</p>
-            </div>
-            <div className='flex justify-between items-center py-1'>
-                <p className="text-base font-medium text-neutral-700">Total Distance:</p>
-                <p className='text-base font-black text-neutral-900'>{currentOrder.totalDistance.toFixed(1)} mi</p>
-            </div>
-          </div>
+          <Card className="w-full max-w-sm mb-8">
+            <CardHeader>
+              <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                Order Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className='flex justify-between items-center'>
+                <p className="text-sm font-medium text-muted-foreground">Order ID:</p>
+                <p className='text-sm font-semibold text-foreground'>{currentOrder.id.split('-')[1] || currentOrder.id.slice(-8)}</p>
+              </div>
+              <div className='flex justify-between items-center'>
+                <p className="text-sm font-medium text-muted-foreground">Total Distance:</p>
+                <p className='text-sm font-semibold text-foreground'>{currentOrder.totalDistance.toFixed(1)} mi</p>
+              </div>
+            </CardContent>
+          </Card>
 
-          <button
+          <Button
             onClick={onCompleteDelivery}
-            className="w-4/5 h-16 bg-white hover:bg-neutral-100 text-red-600 text-xl font-bold rounded-full shadow-2xl shadow-black/40 transition-all active:scale-[0.98]"
+            size="lg"
+            variant="secondary"
+            className="w-full max-w-sm h-14 text-lg font-semibold"
           >
             Continue Accepting Orders
-          </button>
+          </Button>
         </div>
     );
   };
