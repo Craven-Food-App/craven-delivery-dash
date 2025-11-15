@@ -367,23 +367,23 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate }) => {
         </p>
       </div>
 
-      <Row gutter={[16, 16]}>
+      <div className="flex flex-nowrap gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin' }}>
         {actions.map((action, index) => (
-          <Col xs={24} sm={12} lg={6} key={index}>
-            <Card
-              className={`cursor-pointer hover:shadow-xl transition-all duration-300 bg-gradient-to-br ${action.color} border-0`}
-              onClick={action.action}
-            >
-              <div className="text-center text-white space-y-2">
-                <div className="mb-3">{action.icon}</div>
-                <h3 className="text-lg font-semibold">{action.title}</h3>
-                <p className="text-xs leading-tight opacity-90">{action.description}</p>
-                {action.loading && <div className="text-xs uppercase tracking-wide">Working…</div>}
-              </div>
-            </Card>
-          </Col>
+          <Card
+            key={index}
+            className={`cursor-pointer hover:shadow-xl transition-all duration-300 bg-gradient-to-br ${action.color} border-0 flex-shrink-0`}
+            style={{ minWidth: '180px', maxWidth: '200px', width: 'calc((100% - 21px) / 8)' }}
+            onClick={action.action}
+          >
+            <div className="text-center text-white space-y-2">
+              <div className="mb-2">{action.icon}</div>
+              <h3 className="text-sm font-semibold leading-tight">{action.title}</h3>
+              <p className="text-xs leading-tight opacity-90 line-clamp-2">{action.description}</p>
+              {action.loading && <div className="text-xs uppercase tracking-wide">Working…</div>}
+            </div>
+          </Card>
         ))}
-      </Row>
+      </div>
 
       {/* Modals */}
       <MeetingScheduler visible={meetingModalVisible} onClose={() => setMeetingModalVisible(false)} />
