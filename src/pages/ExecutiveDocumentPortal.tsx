@@ -79,6 +79,8 @@ export const ExecutiveDocumentPortal: React.FC = () => {
       if (error) throw error;
       
       // Sort by signing_stage, then signing_order, then created_at
+      // IMPORTANT: Show ALL documents - don't deduplicate by template_key/role
+      // Multiple documents of the same type may need signatures (e.g., different stages)
       const sorted = (data || []).map(d => ({
         ...d,
         signature_status: d.signature_status as 'pending' | 'signed' | 'expired' | 'declined',
@@ -87,6 +89,7 @@ export const ExecutiveDocumentPortal: React.FC = () => {
         depends_on_document_id: (d as any).depends_on_document_id as string | undefined,
         packet_id: (d as any).packet_id as string | undefined,
         template_key: (d as any).template_key as string | undefined,
+        signature_token: (d as any).signature_token as string | undefined,
       } as ExecutiveDocument)).sort((a, b) => {
         if (a.signing_stage !== b.signing_stage) {
           return (a.signing_stage || 999) - (b.signing_stage || 999);
@@ -97,17 +100,9 @@ export const ExecutiveDocumentPortal: React.FC = () => {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
 
-      const uniqueSorted: ExecutiveDocument[] = [];
-      const seen = new Set<string>();
-      for (const doc of sorted) {
-        const key = `${doc.template_key || doc.type}::${doc.role}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        uniqueSorted.push(doc);
-      }
-
-      const withDependencies = uniqueSorted.map(doc => {
-        const dependsOn = uniqueSorted.find(d => d.id === doc.depends_on_document_id);
+      // Calculate dependencies and signing eligibility for ALL documents
+      const withDependencies = sorted.map(doc => {
+        const dependsOn = sorted.find(d => d.id === doc.depends_on_document_id);
         const canSign = !dependsOn || dependsOn.signature_status === 'signed';
 
         return {
@@ -160,18 +155,39 @@ export const ExecutiveDocumentPortal: React.FC = () => {
     setSignModalVisible(true);
   };
 
+  // Initialize canvas when modal opens
+  useEffect(() => {
+    if (signModalVisible && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d', { alpha: true });
+      if (ctx) {
+        canvas.width = 500;
+        canvas.height = 200;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = '#111827';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+      }
+    }
+  }, [signModalVisible]);
+
   // Canvas drawing handlers
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     setIsDrawing(true);
     const rect = canvas.getBoundingClientRect();
-    const x = 'touches' in e ? e.touches[0].clientX - rect.left : (e as any).clientX - rect.left;
-    const y = 'touches' in e ? e.touches[0].clientY - rect.top : (e as any).clientY - rect.top;
-    const ctx = canvas.getContext('2d');
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = ('touches' in e ? e.touches[0].clientX - rect.left : (e as any).clientX - rect.left) * scaleX;
+    const y = ('touches' in e ? e.touches[0].clientY - rect.top : (e as any).clientY - rect.top) * scaleY;
+    const ctx = canvas.getContext('2d', { alpha: true });
     if (ctx) {
       ctx.beginPath();
       ctx.moveTo(x, y);
+      ctx.lineTo(x, y);
+      ctx.stroke();
     }
     if ('preventDefault' in e) e.preventDefault();
   };
@@ -181,13 +197,13 @@ export const ExecutiveDocumentPortal: React.FC = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const x = 'touches' in e ? e.touches[0].clientX - rect.left : (e as any).clientX - rect.left;
-    const y = 'touches' in e ? e.touches[0].clientY - rect.top : (e as any).clientY - rect.top;
-    const ctx = canvas.getContext('2d');
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = ('touches' in e ? e.touches[0].clientX - rect.left : (e as any).clientX - rect.left) * scaleX;
+    const y = ('touches' in e ? e.touches[0].clientY - rect.top : (e as any).clientY - rect.top) * scaleY;
+    const ctx = canvas.getContext('2d', { alpha: true });
     if (ctx) {
       ctx.lineTo(x, y);
-      ctx.strokeStyle = '#111827';
-      ctx.lineWidth = 2;
       ctx.stroke();
     }
     if ('preventDefault' in e) e.preventDefault();
@@ -198,39 +214,81 @@ export const ExecutiveDocumentPortal: React.FC = () => {
   const clearCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#111827';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
   };
 
   const submitSignature = async () => {
-    if (!selectedDocument || !typedName) {
-      message.warning('Please enter your full legal name');
+    if (!selectedDocument) {
+      message.warning('No document selected');
+      return;
+    }
+
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      message.warning('Signature canvas not available');
+      return;
+    }
+
+    // Get signature as PNG (with transparency)
+    const ctx = canvas.getContext('2d', { alpha: true });
+    if (!ctx) {
+      message.warning('Canvas context not available');
+      return;
+    }
+
+    // Check if canvas has any drawing (not blank)
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const hasDrawing = imageData.data.some((pixel, index) => {
+      // Check alpha channel (every 4th value)
+      return index % 4 === 3 && pixel > 0;
+    });
+
+    if (!hasDrawing) {
+      message.warning('Please draw your signature before submitting');
+      return;
+    }
+
+    const signaturePng = canvas.toDataURL('image/png');
+    if (!signaturePng || signaturePng === 'data:,') {
+      message.warning('Failed to capture signature. Please try again.');
       return;
     }
 
     setIsSigning(true);
     try {
-      const canvas = canvasRef.current;
-      const signaturePng = canvas?.toDataURL('image/png') || null;
-
-      // Get signer IP
-      const signerIp = (await fetch('https://api.ipify.org?format=json')
-        .then(r => r.json())
-        .catch(() => ({ ip: null }))).ip;
+      // Get signer IP (optional)
+      let signerIp: string | null = null;
+      try {
+        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipResponse.json();
+        signerIp = ipData.ip || null;
+      } catch (ipError) {
+        console.warn('Could not fetch IP address:', ipError);
+      }
 
       // Submit signature via edge function
+      // Include signature_token if available (required for token-based signing)
       const { data, error } = await supabase.functions.invoke('submit-executive-document-signature', {
         body: {
           document_id: selectedDocument.id,
-          typed_name: typedName,
+          typed_name: typedName.trim() || selectedDocument.officer_name || null,
           signature_png_base64: signaturePng,
           signer_ip: signerIp,
           signer_user_agent: navigator.userAgent,
+          signature_token: selectedDocument.signature_token || null,
         },
       });
 
       if (error) throw error;
+      if (!data?.ok) {
+        throw new Error(data?.error || 'Signature submission failed');
+      }
 
       message.success('Document signed successfully!');
       setSignModalVisible(false);
@@ -240,7 +298,7 @@ export const ExecutiveDocumentPortal: React.FC = () => {
       await fetchDocuments(); // Refresh list
     } catch (err: any) {
       console.error('Error submitting signature:', err);
-      message.error(err?.message || 'Failed to submit signature');
+      message.error(err?.message || 'Failed to submit signature. Please try again.');
     } finally {
       setIsSigning(false);
     }
@@ -502,14 +560,20 @@ export const ExecutiveDocumentPortal: React.FC = () => {
                   placeholder="Full legal name"
                   className="mb-4"
                 />
-                <label className="block text-sm font-semibold mb-2">Draw your signature</label>
+                <label className="block text-sm font-semibold mb-2">Draw your signature *</label>
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-white">
                   <canvas
                     ref={canvasRef}
                     width={500}
                     height={200}
-                    className="border rounded bg-white w-full cursor-crosshair"
-                    style={{ touchAction: 'none', display: 'block' }}
+                    className="border rounded w-full cursor-crosshair"
+                    style={{ 
+                      touchAction: 'none', 
+                      display: 'block',
+                      background: 'linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%)',
+                      backgroundSize: '20px 20px',
+                      backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
+                    }}
                     onMouseDown={startDrawing}
                     onMouseMove={draw}
                     onMouseUp={stopDrawing}
@@ -547,7 +611,7 @@ export const ExecutiveDocumentPortal: React.FC = () => {
               </Button>
               <Button
                 type="primary"
-                disabled={!typedName || isSigning}
+                disabled={isSigning}
                 loading={isSigning}
                 onClick={submitSignature}
               >
