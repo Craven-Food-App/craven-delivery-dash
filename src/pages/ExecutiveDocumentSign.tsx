@@ -219,7 +219,7 @@ const ExecutiveDocumentSign = () => {
     const { data, error: submitError } = await supabase.functions.invoke('submit-executive-document-signature', {
       body: {
         document_id: document.id,
-        typed_name: typedName.trim(),
+        typed_name: typedName.trim() || document.officer_name || null,
         signature_png_base64: signatureDataUrl,
         signer_user_agent: window.navigator.userAgent,
         signature_token: token,
