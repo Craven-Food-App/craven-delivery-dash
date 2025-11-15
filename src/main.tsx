@@ -1,36 +1,37 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { ChakraProvider, extendTheme } from '@chakra-ui/react';
+import { MantineProvider, createTheme } from '@mantine/core';
+import { Notifications } from '@mantine/notifications';
+import '@mantine/core/styles.css';
+import '@mantine/notifications/styles.css';
 import App from './App.tsx';
 import './index.css';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-const theme = extendTheme({
-  config: {
-    initialColorMode: 'light',
-    useSystemColorMode: false,
-  },
+const theme = createTheme({
+  primaryColor: 'orange',
   colors: {
-    brand: {
-      50: '#fff5f0',
-      100: '#ffe0d1',
-      200: '#ffc5a3',
-      300: '#ffa375',
-      400: '#ff8147',
-      500: '#ff5f1f',
-      600: '#e64a0c',
-      700: '#cc3300',
-      800: '#b32d00',
-      900: '#992600',
-    },
+    orange: [
+      '#fff5f0',
+      '#ffe0d1',
+      '#ffc5a3',
+      '#ffa375',
+      '#ff8147',
+      '#ff5f1f',
+      '#e64a0c',
+      '#cc3300',
+      '#b32d00',
+      '#992600',
+    ],
   },
 });
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ChakraProvider theme={theme}>
+    <MantineProvider theme={theme}>
+      <Notifications />
       <App />
-    </ChakraProvider>
+    </MantineProvider>
   </React.StrictMode>
 );
 

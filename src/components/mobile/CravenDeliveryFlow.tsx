@@ -1,23 +1,21 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Check, MapPin, Navigation, DollarSign, Clock, Package, Home, Bell, Copy, Camera, RotateCcw, Utensils } from 'lucide-react';
+import { IconMapPin, IconNavigation, IconCurrencyDollar, IconClock, IconPackage, IconHome, IconBell, IconCopy, IconToolsKitchen2, IconCheck } from '@tabler/icons-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@chakra-ui/react';
+import { notifications } from '@mantine/notifications';
 import FullscreenCamera from './FullscreenCamera';
 import {
   Box,
-  Flex,
+  Stack,
   Text,
-  Heading,
+  Title,
   Button,
   Badge,
   Card,
-  CardBody,
-  CardHeader,
-  VStack,
-  HStack,
-  Icon,
-  useColorModeValue,
-} from '@chakra-ui/react';
+  Group,
+  ActionIcon,
+  ThemeIcon,
+  Divider,
+} from '@mantine/core';
 
 // ===== TYPES =====
 
@@ -95,19 +93,17 @@ const formatAddress = (address: any): string => {
   return String(address);
 };
 
-const copyToClipboard = (text: string) => {
-  const textarea = document.createElement('textarea');
-  textarea.value = text;
-  textarea.style.position = 'fixed'; 
-  document.body.appendChild(textarea);
-  textarea.focus();
-  textarea.select();
+const copyToClipboard = async (text: string) => {
   try {
-    document.execCommand('copy');
+    await navigator.clipboard.writeText(text);
+    notifications.show({
+      title: 'Copied!',
+      message: 'Copied to clipboard',
+      color: 'green',
+    });
   } catch (err) {
     console.error('Failed to copy text: ', err);
   }
-  document.body.removeChild(textarea);
 };
 
 // ===== PRESENTATIONAL COMPONENTS =====
@@ -122,17 +118,20 @@ const SimulatedMapView: React.FC<{ isToStore: boolean }> = ({ isToStore }) => {
     : "M 75 25 L 85 70";
 
   return (
-    <Box position="absolute" inset={0} bg="gray.900" overflow="hidden">
-      <Box position="absolute" inset={0} opacity={0.2}>
-        <Box position="absolute" top={0} bottom={0} left="50%" w="16px" bg="gray.700" />
-        <Box position="absolute" top="50%" left={0} right={0} h="16px" bg="gray.700" />
-        <Box position="absolute" top="10%" right={0} bottom="60%" w="25%" bg="blue.900" opacity={0.5} />
+    <Box pos="absolute" top={0} left={0} right={0} bottom={0} bg="dark.9" style={{ overflow: 'hidden' }}>
+      <Box pos="absolute" top={0} left={0} right={0} bottom={0} style={{ opacity: 0.2 }}>
+        <Box pos="absolute" top={0} bottom={0} left="50%" w={16} bg="dark.7" />
+        <Box pos="absolute" top="50%" left={0} right={0} h={16} bg="dark.7" />
+        <Box pos="absolute" top="10%" right={0} bottom="60%" w="25%" bg="blue.9" style={{ opacity: 0.5 }} />
       </Box>
 
       <Box
-        as="svg"
-        position="absolute"
-        inset={0}
+        component="svg"
+        pos="absolute"
+        top={0}
+        left={0}
+        right={0}
+        bottom={0}
         w="100%"
         h="100%"
         viewBox="0 0 100 100"
@@ -157,17 +156,38 @@ const SimulatedMapView: React.FC<{ isToStore: boolean }> = ({ isToStore }) => {
         `}</style>
       </Box>
 
-      <Box position="absolute" {...driverPos} zIndex={30} p={1} bg="blue.500" borderRadius="full" ring={4} ringColor="whiteAlpha.800">
-        <Icon as={Navigation} w={4} h={4} color="white" transform="rotate(-45deg)" />
-      </Box>
+      <ThemeIcon
+        pos="absolute"
+        {...driverPos}
+        style={{ zIndex: 30, border: '4px solid white' }}
+        size="lg"
+        color="blue"
+        radius="xl"
+      >
+        <IconNavigation size={16} style={{ transform: 'rotate(-45deg)' }} />
+      </ThemeIcon>
       
-      <Box position="absolute" {...storePos} zIndex={20} color="white" bg="red.600" p={1} borderRadius="full" ring={2} ringColor="red.300" boxShadow="lg">
-        <Icon as={Utensils} w={4} h={4} />
-      </Box>
+      <ThemeIcon
+        pos="absolute"
+        {...storePos}
+        style={{ zIndex: 20, border: '2px solid white' }}
+        size="lg"
+        color="red"
+        radius="xl"
+      >
+        <IconToolsKitchen2 size={16} />
+      </ThemeIcon>
 
-      <Box position="absolute" {...customerPos} zIndex={20} color="white" bg="green.600" p={1} borderRadius="full" ring={2} ringColor="green.300" boxShadow="lg">
-        <Icon as={Home} w={4} h={4} />
-      </Box>
+      <ThemeIcon
+        pos="absolute"
+        {...customerPos}
+        style={{ zIndex: 20, border: '2px solid white' }}
+        size="lg"
+        color="green"
+        radius="xl"
+      >
+        <IconHome size={16} />
+      </ThemeIcon>
     </Box>
   );
 };
@@ -180,65 +200,55 @@ interface MapHeaderProps {
   pay: number;
 }
 
-const MapHeader: React.FC<MapHeaderProps> = ({ title, status, locationIcon, distance, pay }) => {
-  const payAmount = typeof pay === 'number' ? pay.toFixed(2) : '0.00';
-  const bgGradient = useColorModeValue(
-    'linear(to-br, orange.600, red.600)',
-    'linear(to-br, orange.700, red.700)'
-  );
-  
+const MapHeader: React.FC<MapHeaderProps> = ({ title, status, locationIcon, distance }) => {
   return (
     <Box
-      p={4}
+      p="md"
       className="safe-area-top"
-      color="white"
-      display="flex"
-      flexDirection="column"
-      justifyContent="space-between"
-      h="100%"
-      position="relative"
-      zIndex={40}
-      bgGradient={bgGradient}
-      opacity={0.8}
+      style={{
+        background: 'linear-gradient(to bottom right, var(--mantine-color-orange-6), var(--mantine-color-red-6))',
+        color: 'white',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        height: '100%',
+        position: 'relative',
+        zIndex: 40,
+        opacity: 0.8,
+      }}
     >
-      <Flex justify="space-between" align="center" mb={6}>
-        <Heading size="lg" fontWeight="bold">CRAVEN</Heading>
-        <Badge colorScheme="whiteAlpha" bg="whiteAlpha.200" color="white" borderColor="whiteAlpha.300">
-          <HStack spacing={1}>
-            <Text fontSize="sm" fontWeight="semibold">ON FIRE</Text>
-            <Icon as={Clock} w={4} h={4} ml={1} />
-          </HStack>
+      <Group justify="space-between" mb="xl">
+        <Title order={2} fw={700}>CRAVEN</Title>
+        <Badge color="white" variant="light" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: 'white' }}>
+          <Group gap={4}>
+            <Text size="sm" fw={600}>ON FIRE</Text>
+            <IconClock size={16} />
+          </Group>
         </Badge>
-      </Flex>
+      </Group>
 
-      <Flex justify="space-between" align="flex-end">
-        <HStack spacing={3}>
-          <Box
-            w={10}
-            h={10}
-            bg="whiteAlpha.20"
-            borderRadius="full"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            border="2px"
-            borderColor="whiteAlpha.50"
+      <Group justify="space-between" align="flex-end">
+        <Group gap="md">
+          <ThemeIcon
+            size="xl"
+            radius="xl"
+            style={{ backgroundColor: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.5)' }}
           >
             {locationIcon}
-          </Box>
+          </ThemeIcon>
           <Box>
-            <Text fontSize="xs" color="whiteAlpha.800" fontWeight="medium">{status}</Text>
-            <Heading size="md" fontWeight="bold" isTruncated>{title}</Heading>
+            <Text size="xs" c="white" opacity={0.8} fw={500}>{status}</Text>
+            <Title order={4} fw={700} lineClamp={1}>{title}</Title>
           </Box>
-        </HStack>
+        </Group>
 
-        <Box textAlign="right">
-          <Text fontSize="xl" fontWeight="bold" lineHeight="none">
+        <Box style={{ textAlign: 'right' }}>
+          <Text size="xl" fw={700} style={{ lineHeight: 'none' }}>
             {typeof distance === 'number' ? distance.toFixed(1) : '0.0'} mi
           </Text>
-          <Text fontSize="xs" color="whiteAlpha.800" fontWeight="medium">to destination</Text>
+          <Text size="xs" c="white" opacity={0.8} fw={500}>to destination</Text>
         </Box>
-      </Flex>
+      </Group>
     </Box>
   );
 };
@@ -252,51 +262,36 @@ interface DetailCardProps {
 }
 
 const DetailCard: React.FC<DetailCardProps> = ({ title, content, icon, actionButton, linkHref }) => (
-  <Card mb={4}>
-    <CardBody p={4}>
-      <Flex align="flex-start" gap={4}>
-        <Box
-          w={10}
-          h={10}
-          bg="orange.100"
-          borderRadius="full"
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-          flexShrink={0}
-        >
-          <Box color="orange.600">
-            {icon}
-          </Box>
-        </Box>
-        <Box flex={1} minW={0}>
-          <Text fontSize="xs" fontWeight="semibold" color="gray.500" mb={1} textTransform="uppercase" letterSpacing="wide">
-            {title}
+  <Card mb="md" withBorder>
+    <Group align="flex-start" gap="md">
+      <ThemeIcon size="xl" radius="xl" color="orange" variant="light">
+        {icon}
+      </ThemeIcon>
+      <Box style={{ flex: 1, minWidth: 0 }}>
+        <Text size="xs" fw={600} c="dimmed" tt="uppercase" mb={4} style={{ letterSpacing: '0.05em' }}>
+          {title}
+        </Text>
+        {linkHref ? (
+          <Text
+            component="a"
+            href={linkHref}
+            size="sm"
+            fw={500}
+            c="blue"
+            style={{ textDecoration: 'none' }}
+            lineClamp={1}
+            onClick={(e) => { e.preventDefault(); }}
+          >
+            {content}
           </Text>
-          {linkHref ? (
-            <Text
-              as="a"
-              href={linkHref}
-              fontSize="sm"
-              fontWeight="medium"
-              color="blue.600"
-              _hover={{ color: 'blue.700' }}
-              lineHeight="tight"
-              display="block"
-              isTruncated
-              onClick={(e) => { e.preventDefault(); }}
-            >
-              {content}
-            </Text>
-          ) : (
-            <Text fontSize="sm" fontWeight="medium" color="gray.900" lineHeight="tight" wordBreak="break-word">
-              {content}
-            </Text>
-          )}
-        </Box>
-        {actionButton && <Box flexShrink={0}>{actionButton}</Box>}
-      </Flex>
-    </CardBody>
+        ) : (
+          <Text size="sm" fw={500} c="dark" style={{ wordBreak: 'break-word' }}>
+            {content}
+          </Text>
+        )}
+      </Box>
+      {actionButton && <Box>{actionButton}</Box>}
+    </Group>
   </Card>
 );
 
@@ -308,17 +303,13 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
   onProgressChange,
   onCameraStateChange 
 }) => {
-  const toast = useToast();
-  
   // Early validation
   if (!orderDetails) {
     return (
-      <Flex flex={1} align="center" justify="center" p={6}>
-        <Box textAlign="center">
-          <Text fontSize="lg" fontWeight="semibold" color="gray.900" mb={2}>Missing Order Details</Text>
-          <Text fontSize="sm" color="gray.600">Order information is not available.</Text>
-        </Box>
-      </Flex>
+      <Stack flex={1} align="center" justify="center" p="xl">
+        <Text size="lg" fw={600} c="dark">Missing Order Details</Text>
+        <Text size="sm" c="dimmed">Order information is not available.</Text>
+      </Stack>
     );
   }
 
@@ -430,12 +421,10 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
       return publicUrl;
     } catch (error) {
       console.error('Error uploading photo:', error);
-      toast({
-        title: "Upload Failed",
-        description: "Failed to upload photo. Please try again.",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
+      notifications.show({
+        title: 'Upload Failed',
+        message: 'Failed to upload photo. Please try again.',
+        color: 'red',
       });
       return null;
     }
@@ -549,7 +538,7 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                       : 'Verify Pickup',
           address: currentOrder.store.address,
           distance: currentOrder.distanceToStore,
-          icon: <Icon as={Utensils} w={5} h={5} />,
+          icon: <IconToolsKitchen2 size={20} />,
           isPickup: true,
         };
       case DRIVER_STATUS.TO_CUSTOMER:
@@ -562,7 +551,7 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                       : 'Verify Drop-off',
           address: currentOrder.customer.address,
           distance: currentOrder.distanceToCustomer,
-          icon: <Icon as={Home} w={5} h={5} />,
+          icon: <IconHome size={20} />,
           isPickup: false,
         };
       default:
@@ -571,7 +560,7 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
           statusText: 'Preparing for pickup',
           address: currentOrder.store.address,
           distance: currentOrder.distanceToStore,
-          icon: <Icon as={Utensils} w={5} h={5} />,
+          icon: <IconToolsKitchen2 size={20} />,
           isPickup: true,
         };
     }
@@ -599,18 +588,16 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
 
     if (!currentFlow || !currentFlow.title) {
       return (
-        <Flex flex={1} align="center" justify="center" p={6}>
-          <Box textAlign="center">
-            <Text fontSize="lg" fontWeight="semibold" color="gray.900" mb={2}>Loading delivery details...</Text>
-            <Text fontSize="sm" color="gray.600">Please wait while we load your order information.</Text>
-          </Box>
-        </Flex>
+        <Stack flex={1} align="center" justify="center" p="xl">
+          <Text size="lg" fw={600} c="dark" mb="md">Loading delivery details...</Text>
+          <Text size="sm" c="dimmed">Please wait while we load your order information.</Text>
+        </Stack>
       );
     }
 
     return (
-      <Flex flex={1} flexDirection="column" fontFamily="sans-serif">
-        <Box h="40%" w="100%" position="relative" flexShrink={0}>
+      <Stack flex={1} style={{ fontFamily: 'sans-serif' }}>
+        <Box h="40%" w="100%" pos="relative" style={{ flexShrink: 0 }}>
           <SimulatedMapView isToStore={isToStore} /> 
           <MapHeader
             title={currentFlow.title}
@@ -620,27 +607,27 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
             pay={payAmount}
           />
         </Box>
-        <Box h={6} />
+        <Box h={24} />
 
-        <Box flex={1} px={4} pb={4} overflowY="auto" bg="white" borderTopRadius="3xl" mt={-6}>
-          <VStack spacing={4} pt={6} align="stretch">
-            <Flex align="center" justify="space-between">
-              <Heading size="lg" fontWeight="bold" color="gray.900">
+        <Box flex={1} px="md" pb="md" style={{ overflowY: 'auto', backgroundColor: 'white', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', marginTop: -24 }}>
+          <Stack gap="md" pt="xl" align="stretch">
+            <Group justify="space-between" align="center">
+              <Title order={2} fw={700} c="dark">
                 Order #{currentOrder.id.split('-')[1] || currentOrder.id.slice(-8)}
-              </Heading>
+              </Title>
               {isTestOrder && (
-                <Badge colorScheme="orange" variant="outline" bg="orange.50" color="orange.600" borderColor="orange.300">
+                <Badge color="orange" variant="outline">
                   Test Order
                 </Badge>
               )}
-            </Flex>
+            </Group>
         
             {currentFlow.isPickup ? (
               <>
                 <DetailCard 
                   title="PICKUP ADDRESS"
                   content={currentOrder.store.address}
-                  icon={<Icon as={MapPin} w={5} h={5} />}
+                  icon={<IconMapPin size={20} />}
                   actionButton={
                     <Button 
                       variant="outline"
@@ -650,8 +637,9 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                         const address = encodeURIComponent(currentOrder.store.address || '');
                         window.open(`https://maps.apple.com/?daddr=${address}`, '_blank');
                       }}
+                      leftSection={<IconNavigation size={16} />}
                     >
-                      <Icon as={Navigation} w={4} h={4} mr={1} /> Navigate
+                      Navigate
                     </Button>
                   }
                 />
@@ -659,72 +647,63 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                   <DetailCard 
                     title="ORDER CODE (FOR KITCHEN)"
                     content={pickupCode}
-                    icon={<Icon as={Package} w={5} h={5} />}
+                    icon={<IconPackage size={20} />}
                     actionButton={
-                      <Button 
+                      <ActionIcon
                         variant="outline"
                         size="sm"
                         onClick={() => {
                           copyToClipboard(pickupCode);
-                          toast({
-                            title: "Copied!",
-                            description: `Pickup code ${pickupCode} copied to clipboard`,
-                            status: "success",
-                            duration: 2000,
-                            isClosable: true,
-                          });
                         }} 
                         title="Copy Code"
                       >
-                        <Icon as={Copy} w={4} h={4} />
-                      </Button>
+                        <IconCopy size={16} />
+                      </ActionIcon>
                     }
                   />
                 )}
                 
                 {currentOrder.items && currentOrder.items.length > 0 && (
-                  <Card bg="orange.50" borderColor="orange.200">
-                    <CardHeader pb={3}>
-                      <Heading size="sm" fontWeight="semibold" color="orange.700">
+                  <Card bg="orange.0" style={{ borderColor: 'var(--mantine-color-orange-2)' }} withBorder>
+                    <Card.Section p="md" pb="xs">
+                      <Title order={4} fw={600} c="orange.7">
                         Items ({currentOrder.items.length})
-                      </Heading>
-                    </CardHeader>
-                    <CardBody pt={0}>
-                      <VStack spacing={2} align="stretch">
+                      </Title>
+                    </Card.Section>
+                    <Card.Section px="md" pb="md">
+                      <Stack gap="xs" align="stretch">
                         {currentOrder.items.map((item: any, index: number) => (
-                          <Flex key={index} justify="space-between" align="center" py={1} borderBottom="1px" borderColor="orange.100" _last={{ borderBottom: 'none' }}>
-                            <Text fontSize="sm" color="gray.900">{item.name}</Text>
-                            <Badge colorScheme="gray" ml={2}>
+                          <Group key={index} justify="space-between" align="center" py={4} style={{ borderBottom: index < currentOrder.items.length - 1 ? '1px solid var(--mantine-color-orange-1)' : 'none' }}>
+                            <Text size="sm" c="dark">{item.name}</Text>
+                            <Badge color="gray">
                               x{item.qty || item.quantity}
                             </Badge>
-                          </Flex>
+                          </Group>
                         ))}
-                      </VStack>
-                    </CardBody>
+                      </Stack>
+                    </Card.Section>
                   </Card>
                 )}
 
-                <Card mt={4}>
-                  <CardBody p={4}>
-                    <Flex justify="space-between" align="center">
-                      <HStack spacing={1}>
-                        <Icon as={DollarSign} w={4} h={4} color="green.600" />
-                        <Text fontSize="sm" fontWeight="medium" color="gray.500">Estimated Pay</Text>
-                      </HStack>
-                      <Text fontSize="2xl" fontWeight="bold" color="green.700" lineHeight="none">
-                        ${typeof payAmount === 'number' ? payAmount.toFixed(2) : String(payAmount || '0.00')}
-                      </Text>
-                    </Flex>
-                  </CardBody>
+                <Card mt="md" withBorder>
+                  <Group justify="space-between" align="center" p="md">
+                    <Group gap={4}>
+                      <IconCurrencyDollar size={16} color="var(--mantine-color-green-6)" />
+                      <Text size="sm" fw={500} c="dimmed">Estimated Pay</Text>
+                    </Group>
+                    <Text size="2xl" fw={700} c="green.7" style={{ lineHeight: 'none' }}>
+                      ${typeof payAmount === 'number' ? payAmount.toFixed(2) : String(payAmount || '0.00')}
+                    </Text>
+                  </Group>
                 </Card>
 
                 {status === DRIVER_STATUS.TO_STORE && (
                   <Button 
                     onClick={handleConfirmArrivalAtStore}
                     size="lg"
-                    w="100%"
-                    mt={4}
-                    colorScheme="gray"
+                    fullWidth
+                    mt="md"
+                    color="gray"
                   >
                     Arrived at Craven Kitchen
                   </Button>
@@ -734,9 +713,9 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                   <Button 
                     onClick={handleStartPickupVerification}
                     size="lg"
-                    w="100%"
-                    mt={4}
-                    colorScheme="gray"
+                    fullWidth
+                    mt="md"
+                    color="gray"
                   >
                     Order Ready? Start Hand-off Check
                   </Button>
@@ -747,7 +726,7 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                 <DetailCard 
                   title="CUSTOMER ADDRESS"
                   content={currentOrder.customer.address}
-                  icon={<Icon as={Home} w={5} h={5} />}
+                  icon={<IconHome size={20} />}
                   actionButton={
                     <Button 
                       variant="outline"
@@ -757,8 +736,9 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                         const address = encodeURIComponent(currentOrder.customer.address || '');
                         window.open(`https://maps.apple.com/?daddr=${address}`, '_blank');
                       }}
+                      leftSection={<IconNavigation size={16} />}
                     >
-                      <Icon as={Navigation} w={4} h={4} mr={1} /> Navigate
+                      Navigate
                     </Button>
                   }
                 />
@@ -766,50 +746,41 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                   <DetailCard 
                     title="SPECIAL INSTRUCTIONS"
                     content={currentOrder.customer.deliveryNotes}
-                    icon={<Icon as={Bell} w={5} h={5} />}
+                    icon={<IconBell size={20} />}
                     actionButton={
-                      <Button 
+                      <ActionIcon
                         variant="outline"
                         size="sm"
                         onClick={() => {
                           copyToClipboard(currentOrder.customer.deliveryNotes);
-                          toast({
-                            title: "Copied!",
-                            description: "Delivery notes copied to clipboard",
-                            status: "success",
-                            duration: 2000,
-                            isClosable: true,
-                          });
                         }} 
                         title="Copy Instructions"
                       >
-                        <Icon as={Copy} w={4} h={4} />
-                      </Button>
+                        <IconCopy size={16} />
+                      </ActionIcon>
                     }
                   />
                 )}
 
-                <Card mt={4}>
-                  <CardBody p={4}>
-                    <Flex justify="space-between" align="center">
-                      <HStack spacing={1}>
-                        <Icon as={DollarSign} w={4} h={4} color="green.600" />
-                        <Text fontSize="sm" fontWeight="medium" color="gray.500">Estimated Pay</Text>
-                      </HStack>
-                      <Text fontSize="2xl" fontWeight="bold" color="green.700" lineHeight="none">
-                        ${typeof payAmount === 'number' ? payAmount.toFixed(2) : String(payAmount || '0.00')}
-                      </Text>
-                    </Flex>
-                  </CardBody>
+                <Card mt="md" withBorder>
+                  <Group justify="space-between" align="center" p="md">
+                    <Group gap={4}>
+                      <IconCurrencyDollar size={16} color="var(--mantine-color-green-6)" />
+                      <Text size="sm" fw={500} c="dimmed">Estimated Pay</Text>
+                    </Group>
+                    <Text size="2xl" fw={700} c="green.7" style={{ lineHeight: 'none' }}>
+                      ${typeof payAmount === 'number' ? payAmount.toFixed(2) : String(payAmount || '0.00')}
+                    </Text>
+                  </Group>
                 </Card>
 
                 {status === DRIVER_STATUS.TO_CUSTOMER && (
                   <Button 
                     onClick={handleConfirmArrivalAtCustomer}
                     size="lg"
-                    w="100%"
-                    mt={4}
-                    colorScheme="gray"
+                    fullWidth
+                    mt="md"
+                    color="gray"
                   >
                     Arrived at Customer's Location
                   </Button>
@@ -819,83 +790,79 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                   <Button 
                     onClick={handleStartDeliveryVerification}
                     size="lg"
-                    w="100%"
-                    mt={4}
-                    colorScheme="gray"
+                    fullWidth
+                    mt="md"
+                    color="gray"
                   >
                     Drop-off & Complete Delivery
                   </Button>
                 )}
               </>
             )}
-          </VStack>
+          </Stack>
         </Box>
-      </Flex>
+      </Stack>
     );
   };
 
   const renderComplete = () => {
-    const bgGradient = useColorModeValue(
-      'linear(to-br, orange.600, red.600)',
-      'linear(to-br, orange.700, red.700)'
-    );
-    
     return (
-      <Flex
+      <Stack
         flex={1}
-        flexDirection="column"
         align="center"
         justify="center"
-        p={6}
-        textAlign="center"
-        bgGradient={bgGradient}
+        p="xl"
+        style={{
+          textAlign: 'center',
+          background: 'linear-gradient(to bottom right, var(--mantine-color-orange-6), var(--mantine-color-red-6))',
+        }}
       >
         <Box className="safe-area-top" />
-        <Icon as={Check} w={20} h={20} color="white" mb={6} border="4px" borderColor="white" borderRadius="full" p={2} bg="green.500" opacity={0.8} />
-        <Heading size="xl" fontWeight="bold" color="white" mb={2}>Delivery Complete!</Heading>
-        <Text color="whiteAlpha.900" mb={1} fontWeight="medium" fontSize="lg">Great job! You earned:</Text>
-        <Text fontSize="5xl" fontWeight="bold" color="white" mb={8} textShadow="lg">
+        <ThemeIcon size={80} radius="xl" color="green" style={{ border: '4px solid white', opacity: 0.8 }}>
+          <IconCheck size={40} />
+        </ThemeIcon>
+        <Title order={1} fw={700} c="white" mb="md">Delivery Complete!</Title>
+        <Text c="white" opacity={0.9} mb={4} fw={500} size="lg">Great job! You earned:</Text>
+        <Text size="5xl" fw={700} c="white" mb="xl" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
           ${typeof currentOrder.pay === 'number' ? currentOrder.pay.toFixed(2) : parseFloat(String(currentOrder.pay || 0)).toFixed(2)}
         </Text>
 
-        <Card w="100%" maxW="sm" mb={8}>
-          <CardHeader>
-            <Heading size="sm" fontWeight="semibold" color="gray.500" textTransform="uppercase" letterSpacing="wide">
+        <Card w="100%" maw="sm" mb="xl" withBorder>
+          <Card.Section p="md" pb="xs">
+            <Text size="sm" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
               Order Summary
-            </Heading>
-          </CardHeader>
-          <CardBody>
-            <VStack spacing={2} align="stretch">
-              <Flex justify="space-between" align="center">
-                <Text fontSize="sm" fontWeight="medium" color="gray.500">Order ID:</Text>
-                <Text fontSize="sm" fontWeight="semibold" color="gray.900">
+            </Text>
+          </Card.Section>
+          <Card.Section px="md" pb="md">
+            <Stack gap="xs" align="stretch">
+              <Group justify="space-between" align="center">
+                <Text size="sm" fw={500} c="dimmed">Order ID:</Text>
+                <Text size="sm" fw={600} c="dark">
                   {currentOrder.id.split('-')[1] || currentOrder.id.slice(-8)}
                 </Text>
-              </Flex>
-              <Flex justify="space-between" align="center">
-                <Text fontSize="sm" fontWeight="medium" color="gray.500">Total Distance:</Text>
-                <Text fontSize="sm" fontWeight="semibold" color="gray.900">
+              </Group>
+              <Group justify="space-between" align="center">
+                <Text size="sm" fw={500} c="dimmed">Total Distance:</Text>
+                <Text size="sm" fw={600} c="dark">
                   {currentOrder.totalDistance.toFixed(1)} mi
                 </Text>
-              </Flex>
-            </VStack>
-          </CardBody>
+              </Group>
+            </Stack>
+          </Card.Section>
         </Card>
 
         <Button
           onClick={onCompleteDelivery}
           size="lg"
-          variant="solid"
-          colorScheme="gray"
-          w="100%"
-          maxW="sm"
-          h={14}
-          fontSize="lg"
-          fontWeight="semibold"
+          color="gray"
+          fullWidth
+          maw="sm"
+          h={56}
+          style={{ fontSize: '18px', fontWeight: 600 }}
         >
           Continue Accepting Orders
         </Button>
-      </Flex>
+      </Stack>
     );
   };
 
