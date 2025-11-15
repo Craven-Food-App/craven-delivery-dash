@@ -410,7 +410,11 @@ const RestaurantMenuPage = () => {
 
     } catch (error: any) {
       console.error('Error fetching restaurant data:', error);
-      showToast.error("Failed to load restaurant details");
+      notifications.show({
+        title: "Error",
+        message: "Failed to load restaurant details",
+        color: "red",
+      });
     } finally {
       setLoading(false);
     }
@@ -481,7 +485,11 @@ const RestaurantMenuPage = () => {
     } else {
                    setCart([...cart, { ...item, quantity: 1, key: item.id }]);
     }
-    showToast.success(`${item.name} added to cart!`);
+    notifications.show({
+      title: "Added to cart",
+      message: `${item.name} added to cart!`,
+      color: "green",
+    });
     
     // Show cart button and set timer to hide after 3 seconds
     setShowCartButton(true);
@@ -518,7 +526,11 @@ const RestaurantMenuPage = () => {
                    } else {
                        setCart([...cart, itemToAdd]);
                    }
-                   showToast.success(`${selectedItem.name} added to cart!`);
+                   notifications.show({
+                     title: "Added to cart",
+                     message: `${selectedItem.name} added to cart!`,
+                     color: "green",
+                   });
                    
                    // Show cart button and set timer to hide after 3 seconds
                    setShowCartButton(true);
@@ -580,37 +592,44 @@ const RestaurantMenuPage = () => {
         const reviews = item.order_count || Math.floor(Math.random() * 200) + 50;
 
     return (
-                   <div className="w-full bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden cursor-pointer group transition duration-200 hover:shadow-lg relative">
-                   <div className="h-32 overflow-hidden">
-                       <img
-                           src={item.image_url || 'https://placehold.co/100x100/CCCCCC/666666?text=Item'}
-                           alt={item.name}
-                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                           style={{
-                               imageRendering: 'crisp-edges'
-                           }}
-                           onError={(e) => { e.currentTarget.src = "https://placehold.co/100x100/CCCCCC/666666?text=Item"; }}
-                       />
-      </div>
+      <Card
+        p={0}
+        withBorder
+        shadow="md"
+        style={{ cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
+        onClick={() => openItemModal(item)}
+      >
+        <Box style={{ height: '128px', overflow: 'hidden' }}>
+          <MantineImage
+            src={item.image_url || 'https://placehold.co/100x100/CCCCCC/666666?text=Item'}
+            alt={item.name}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            fit="cover"
+            onError={(e) => { e.currentTarget.src = "https://placehold.co/100x100/CCCCCC/666666?text=Item"; }}
+          />
+        </Box>
 
-                   <div className="p-3">
-                       <h4 className="text-sm font-extrabold text-gray-800 line-clamp-2 leading-tight mb-1" style={{
-                           lineHeight: '1.3'
-                       }}>{item.name}</h4>
+        <Stack gap="xs" p="sm">
+          <Text size="sm" fw={800} lineClamp={2} style={{ lineHeight: '1.3' }}>{item.name}</Text>
+          <Stack gap={0}>
+            <Text size="sm" fw={600} c="gray.7">{formatPrice(item.price_cents)}</Text>
+            <Text size="xs" c="dimmed">{rating}% ({reviews})</Text>
+          </Stack>
+        </Stack>
 
-                       <div className="text-sm font-semibold">
-                           <span className="text-gray-700">{formatPrice(item.price_cents)}</span>
-                           <span className="text-xs text-gray-400 block mt-1">{rating}% ({reviews})</span>
-                       </div>
-                </div>
-
-                       <button
-                           onClick={() => openItemModal(item)}
-                           className="absolute bottom-2 right-2 bg-primary text-white w-7 h-7 rounded-md flex items-center justify-center hover:bg-primary/90 transition duration-200 shadow-md"
-                       >
-                           <Plus className='w-3 h-3' />
-                       </button>
-      </div>
+        <ActionIcon
+          onClick={(e) => {
+            e.stopPropagation();
+            openItemModal(item);
+          }}
+          color="orange"
+          variant="filled"
+          style={{ position: 'absolute', bottom: 8, right: 8 }}
+          size="sm"
+        >
+          <IconPlus size={14} />
+        </ActionIcon>
+      </Card>
     );
     };
 
