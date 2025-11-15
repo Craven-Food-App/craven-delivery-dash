@@ -86,26 +86,41 @@ export default function ExecutiveSignature() {
   const stopDrawing = () => setIsDrawing(false);
 
   const submitSignature = async () => {
-    if (!token) return;
+    if (!token || !record) return;
     const canvas = canvasRef.current;
     const png = canvas?.toDataURL('image/png') || null;
-    const svg = null; // optional, we only capture PNG here
     setIsSigning(true);
 
-    // Always submit via edge function (service role), avoiding RLS/auth issues
-    const signerIp = (await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ ip: null }))).ip;
-    const { error } = await supabase.functions.invoke('submit-executive-signature', {
-      body: {
-        token,
-        typed_name: typedName || null,
-        signature_png_base64: png,
-        signature_svg: svg,
-        signer_ip: signerIp,
-        signer_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+    try {
+      // Get signer IP
+      const signerIp = (await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ ip: null }))).ip;
+      
+      // Use the correct edge function based on whether we have a document_id
+      const { data, error } = await supabase.functions.invoke('submit-executive-document-signature', {
+        body: {
+          document_id: record.document_id || record.id,
+          typed_name: typedName || null,
+          signature_png_base64: png,
+          signer_ip: signerIp,
+          signer_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+          signature_token: token,
+        }
+      });
+      
+      setIsSigning(false);
+      
+      if (error) {
+        console.error('Signature error:', error);
+        alert(`Failed to submit signature: ${error.message || 'Unknown error'}`);
+        return;
       }
-    }) as any;
-    setIsSigning(false);
-    if (!error) return navigate('/thank-you');
+      
+      navigate('/thank-you');
+    } catch (err: any) {
+      console.error('Signature submission failed:', err);
+      alert(`Failed to submit signature: ${err.message || 'Unknown error'}`);
+      setIsSigning(false);
+    }
   };
 
   if (loading) return <div className="p-6">Loading...</div>;
