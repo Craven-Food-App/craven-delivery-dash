@@ -18,6 +18,7 @@ import {
   Drawer,
   Modal,
   Tabs,
+  Menu,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import {
@@ -1002,7 +1003,7 @@ const RestaurantMenuPage = () => {
     }
 
   return (
-    <div className="min-h-screen bg-white">
+    <Box style={{ minHeight: '100vh', backgroundColor: 'white' }}>
       {/* Mobile Header - DoorDash Style */}
       <MobileHeader 
         restaurant={restaurant}
@@ -1019,226 +1020,295 @@ const RestaurantMenuPage = () => {
       />
 
       {/* Desktop Header - Hidden on Mobile */}
-      <div className="hidden lg:block sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
+      <Box
+        style={{
+          display: 'none',
+          '@media (min-width: 1024px)': { display: 'block' },
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+          backgroundColor: 'white',
+          borderBottom: '1px solid var(--mantine-color-gray-3)',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+        }}
+      >
+        <Box style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 16px' }}>
+          <Group justify="space-between" align="center" style={{ height: '64px' }}>
             {/* Left: Logo */}
-            <div className="flex items-center space-x-4">
-              <img src={cravenLogo} alt="CRAVE'N" className="h-10" />
-            </div>
+            <Group gap="md">
+              <MantineImage src={cravenLogo} alt="CRAVE'N" style={{ height: '40px' }} />
+            </Group>
 
             {/* Center: Search */}
-            <div className="flex-1 max-w-2xl mx-8">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <Input 
-                  placeholder="Search Crave'N" 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-full border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                />
-              </div>
-            </div>
+            <Box style={{ flex: 1, maxWidth: '672px', margin: '0 32px' }}>
+              <TextInput
+                placeholder="Search Crave'N"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                leftSection={<IconSearch size={20} style={{ color: 'var(--mantine-color-gray-5)' }} />}
+                style={{ width: '100%' }}
+              />
+            </Box>
 
             {/* Right: Location, Delivery/Pickup, Notifications, Cart */}
-            <div className="flex items-center space-x-4">
+            <Group gap="md">
               {/* Location Selector */}
-              <div className="relative">
-                <button 
-                  onClick={() => setShowAddressSelector(!showAddressSelector)}
-                  className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  <MapPin className="w-4 h-4" />
-                  <span className="text-sm font-medium max-w-32 truncate">{location}</span>
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                
-                {/* Address Selector Dropdown */}
-                {showAddressSelector && (
-                  <div data-dropdown className="absolute top-full left-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                    <div className="p-4">
-                      <h3 className="font-semibold text-gray-900 mb-3">Select delivery address</h3>
-                      <div className="space-y-2">
-                        <Input
-                          placeholder="Search for an address"
-                          onChange={(e) => handleAddressSearch(e.target.value)}
-                          className="w-full"
-                        />
-                        {addressSuggestions.length > 0 && (
-                          <div className="space-y-1">
-                            {addressSuggestions.map((address, index) => (
-                              <button
-                                key={index}
-                                onClick={() => selectAddress(address)}
-                                className="w-full text-left p-2 hover:bg-gray-100 rounded-md text-sm"
-                              >
-                                {address}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                        <div className="pt-2 border-t">
-                          <button className="text-orange-600 text-sm font-medium">
-                            Add new address
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <Menu
+                opened={showAddressSelector}
+                onClose={() => setShowAddressSelector(false)}
+                position="bottom-start"
+                width={320}
+              >
+                <Menu.Target>
+                  <Button
+                    variant="subtle"
+                    leftSection={<IconMapPin size={16} />}
+                    rightSection={<IconChevronLeft size={16} style={{ transform: 'rotate(-90deg)' }} />}
+                    onClick={() => setShowAddressSelector(!showAddressSelector)}
+                  >
+                    <Text size="sm" fw={500} truncate style={{ maxWidth: '128px' }}>{location}</Text>
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Stack gap="sm" p="md">
+                    <Title order={5}>Select delivery address</Title>
+                    <TextInput
+                      placeholder="Search for an address"
+                      onChange={(e) => handleAddressSearch(e.target.value)}
+                    />
+                    {addressSuggestions.length > 0 && (
+                      <Stack gap="xs">
+                        {addressSuggestions.map((address, index) => (
+                          <Button
+                            key={index}
+                            variant="subtle"
+                            fullWidth
+                            justify="flex-start"
+                            onClick={() => selectAddress(address)}
+                            style={{ textAlign: 'left' }}
+                          >
+                            {address}
+                          </Button>
+                        ))}
+                      </Stack>
+                    )}
+                    <Divider />
+                    <Button variant="subtle" color="orange" size="sm">
+                      Add new address
+                    </Button>
+                  </Stack>
+                </Menu.Dropdown>
+              </Menu>
 
               {/* Delivery/Pickup Toggle */}
-              <div className="flex bg-gray-100 rounded-lg p-1">
-                <button 
+              <Button.Group>
+                <Button
+                  variant={deliveryMode === 'delivery' ? 'filled' : 'subtle'}
+                  color={deliveryMode === 'delivery' ? 'orange' : 'gray'}
+                  size="sm"
                   onClick={() => setDeliveryMode('delivery')}
-                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                    deliveryMode === 'delivery' 
-                      ? 'bg-orange-500 text-white' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
                 >
                   Delivery
-                </button>
-                <button 
+                </Button>
+                <Button
+                  variant={deliveryMode === 'pickup' ? 'filled' : 'subtle'}
+                  color={deliveryMode === 'pickup' ? 'orange' : 'gray'}
+                  size="sm"
                   onClick={() => setDeliveryMode('pickup')}
-                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                    deliveryMode === 'pickup' 
-                      ? 'bg-orange-500 text-white' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
                 >
                   Pickup
-                </button>
-              </div>
+                </Button>
+              </Button.Group>
 
               {/* Notifications */}
-              <div className="relative">
-                <button 
-                  onClick={() => setShowNotifications(!showNotifications)}
-                  className="relative"
-                >
-                  <Bell className="w-6 h-6 text-gray-600 hover:text-gray-900 transition-colors" />
-                  {notifications.filter(n => !n.read).length > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary/100 text-white text-xs rounded-full flex items-center justify-center">
-                      {notifications.filter(n => !n.read).length}
-                    </span>
-                  )}
-                </button>
-                
-                {/* Notifications Dropdown */}
-                {showNotifications && (
-                  <div data-dropdown className="absolute top-full right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                    <div className="p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-semibold text-gray-900">Notifications</h3>
-                        <button className="text-sm text-orange-600">Mark all as read</button>
-                      </div>
-                      <div className="space-y-3 max-h-64 overflow-y-auto">
+              <Menu
+                opened={showNotifications}
+                onClose={() => setShowNotifications(false)}
+                position="bottom-end"
+                width={320}
+              >
+                <Menu.Target>
+                  <ActionIcon
+                    variant="subtle"
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    style={{ position: 'relative' }}
+                  >
+                    <IconBell size={24} style={{ color: 'var(--mantine-color-gray-6)' }} />
+                    {notifications.filter(n => !n.read).length > 0 && (
+                      <Badge
+                        size="xs"
+                        color="orange"
+                        style={{
+                          position: 'absolute',
+                          top: -4,
+                          right: -4,
+                          minWidth: '16px',
+                          height: '16px',
+                          padding: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {notifications.filter(n => !n.read).length}
+                      </Badge>
+                    )}
+                  </ActionIcon>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Stack gap="md" p="md">
+                    <Group justify="space-between">
+                      <Title order={5}>Notifications</Title>
+                      <Button variant="subtle" color="orange" size="xs">
+                        Mark all as read
+                      </Button>
+                    </Group>
+                    <ScrollArea style={{ maxHeight: '256px' }}>
+                      <Stack gap="sm">
                         {notifications.map((notification) => (
-                          <div 
+                          <Card
                             key={notification.id}
-                            className={`p-3 rounded-lg border ${
-                              notification.read ? 'bg-gray-50' : 'bg-orange-50 border-orange-200'
-                            }`}
+                            p="sm"
+                            withBorder
+                            style={{
+                              backgroundColor: notification.read ? 'var(--mantine-color-gray-0)' : 'var(--mantine-color-orange-0)',
+                              borderColor: notification.read ? 'var(--mantine-color-gray-3)' : 'var(--mantine-color-orange-3)',
+                            }}
                           >
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <h4 className="font-medium text-sm text-gray-900">{notification.title}</h4>
-                                <p className="text-xs text-gray-600 mt-1">{notification.message}</p>
-                                <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
-                              </div>
+                            <Group justify="space-between" align="flex-start">
+                              <Stack gap={4} style={{ flex: 1 }}>
+                                <Text size="sm" fw={500}>{notification.title}</Text>
+                                <Text size="xs" c="dimmed">{notification.message}</Text>
+                                <Text size="xs" c="dimmed">{notification.time}</Text>
+                              </Stack>
                               {!notification.read && (
-                                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                <Box
+                                  style={{
+                                    width: '8px',
+                                    height: '8px',
+                                    borderRadius: '50%',
+                                    backgroundColor: 'var(--mantine-color-orange-6)',
+                                  }}
+                                />
                               )}
-                            </div>
-                          </div>
+                            </Group>
+                          </Card>
                         ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+                      </Stack>
+                    </ScrollArea>
+                  </Stack>
+                </Menu.Dropdown>
+              </Menu>
 
               {/* Cart */}
-              <div className="relative">
-                <button 
-                  onClick={() => setShowCart(!showCart)}
-                  className="relative"
-                >
-                  <ShoppingCart className="w-6 h-6 text-gray-600 hover:text-gray-900 transition-colors" />
-                  {cart.length > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 text-white text-xs rounded-full flex items-center justify-center">
-                      {cart.length}
-                    </span>
-                  )}
-                </button>
-                
-                {/* Cart Dropdown */}
-                {showCart && (
-                  <div data-dropdown className="absolute top-full right-0 mt-2 w-96 bg-orange-50 border border-orange-200 rounded-lg shadow-lg z-50 overflow-x-hidden">
-                    <div className="p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-semibold text-gray-900">Your Cart</h3>
-                        <button className="text-sm text-orange-600">Clear all</button>
-                      </div>
-                      {cart.length > 0 ? (
-                        <div className="space-y-3 max-h-80 overflow-y-auto overflow-x-hidden pr-1">
+              <Menu
+                opened={showCart}
+                onClose={() => setShowCart(false)}
+                position="bottom-end"
+                width={384}
+              >
+                <Menu.Target>
+                  <ActionIcon
+                    variant="subtle"
+                    onClick={() => setShowCart(!showCart)}
+                    style={{ position: 'relative' }}
+                  >
+                    <IconShoppingCart size={24} style={{ color: 'var(--mantine-color-gray-6)' }} />
+                    {cart.length > 0 && (
+                      <Badge
+                        size="xs"
+                        color="orange"
+                        style={{
+                          position: 'absolute',
+                          top: -4,
+                          right: -4,
+                          minWidth: '16px',
+                          height: '16px',
+                          padding: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {cart.length}
+                      </Badge>
+                    )}
+                  </ActionIcon>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Stack gap="md" p="md" style={{ backgroundColor: 'var(--mantine-color-orange-0)' }}>
+                    <Group justify="space-between">
+                      <Title order={5}>Your Cart</Title>
+                      <Button variant="subtle" color="orange" size="xs">
+                        Clear all
+                      </Button>
+                    </Group>
+                    {cart.length > 0 ? (
+                      <ScrollArea style={{ maxHeight: '320px' }}>
+                        <Stack gap="sm">
                           {cart.map((item, index) => (
-                            <div key={index} className="flex items-center justify-between p-2 border rounded-lg gap-3">
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-sm text-gray-900 truncate">{item.name}</h4>
-                                <p className="text-xs text-gray-600">${(item.price_cents / 100).toFixed(2)}</p>
-                              </div>
-                              <button 
-                                onClick={() => {
-                                  setCart(prev => prev.filter((_, i) => i !== index));
-                                }}
-                                className="text-red-500 hover:text-primary"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
+                            <Card key={index} p="sm" withBorder>
+                              <Group justify="space-between" align="flex-start">
+                                <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
+                                  <Text size="sm" fw={500} truncate>{item.name}</Text>
+                                  <Text size="xs" c="dimmed">${(item.price_cents / 100).toFixed(2)}</Text>
+                                </Stack>
+                                <ActionIcon
+                                  variant="subtle"
+                                  color="red"
+                                  onClick={() => {
+                                    setCart(prev => prev.filter((_, i) => i !== index));
+                                  }}
+                                >
+                                  <IconX size={16} />
+                                </ActionIcon>
+                              </Group>
+                            </Card>
                           ))}
-                          <div className="pt-3 border-t">
-                            <div className="flex items-center justify-between mb-3">
-                              <span className="font-semibold">Total: ${(cart.reduce((total, item) => total + (item.price_cents * item.quantity), 0) / 100).toFixed(2)}</span>
-                            </div>
-                            <button
-                              onClick={() => {
-                                // Save cart and restaurant data to localStorage
-                                localStorage.setItem('checkout_cart', JSON.stringify(cart));
-                                localStorage.setItem('checkout_restaurant', JSON.stringify(restaurant));
-                                navigate('/checkout');
-                              }}
-                              className="w-full h-9 px-3 py-2 text-sm rounded-md bg-orange-500 hover:bg-orange-600 text-white"
-                            >
-                              Checkout
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <ShoppingCart className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                          <p className="text-gray-500 text-sm">Your cart is empty</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+                          <Divider />
+                          <Group justify="space-between" mb="sm">
+                            <Text fw={600}>
+                              Total: ${(cart.reduce((total, item) => total + (item.price_cents * item.quantity), 0) / 100).toFixed(2)}
+                            </Text>
+                          </Group>
+                          <Button
+                            fullWidth
+                            color="orange"
+                            onClick={() => {
+                              localStorage.setItem('checkout_cart', JSON.stringify(cart));
+                              localStorage.setItem('checkout_restaurant', JSON.stringify(restaurant));
+                              navigate('/checkout');
+                            }}
+                          >
+                            Checkout
+                          </Button>
+                        </Stack>
+                      </ScrollArea>
+                    ) : (
+                      <Stack align="center" gap="sm" py="xl">
+                        <IconShoppingCart size={48} style={{ color: 'var(--mantine-color-gray-4)' }} />
+                        <Text size="sm" c="dimmed">Your cart is empty</Text>
+                      </Stack>
+                    )}
+                  </Stack>
+                </Menu.Dropdown>
+              </Menu>
 
               {/* Mobile Menu */}
-              <button 
+              <ActionIcon
+                variant="subtle"
                 onClick={() => setShowMobileNav(!showMobileNav)}
-                className="lg:hidden p-2"
+                style={{
+                  display: 'block',
+                  '@media (min-width: 1024px)': { display: 'none' },
+                }}
               >
-                {showMobileNav ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+                {showMobileNav ? <IconX size={24} /> : <IconMenu2 size={24} />}
+              </ActionIcon>
+            </Group>
+          </Group>
+        </Box>
+      </Box>
 
       <div className="relative">
         {/* Right Side Navigation - Fixed Overlay */}
