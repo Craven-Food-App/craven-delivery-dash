@@ -1,22 +1,35 @@
-// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Store, ChefHat, Users, TrendingUp } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import {
+  Button,
+  TextInput,
+  Card,
+  Tabs,
+  Text,
+  Title,
+  Stack,
+  Group,
+  Box,
+  Loader,
+  Badge,
+  Container,
+  Grid,
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import {
+  IconBuildingStore,
+  IconChefHat,
+  IconUsers,
+  IconTrendingUp,
+  IconLoader2,
+} from '@tabler/icons-react';
 
 const RestaurantAuth: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -47,9 +60,10 @@ const RestaurantAuth: React.FC = () => {
       (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
           setUser(session.user);
-          toast({
+          notifications.show({
             title: "Welcome back!",
-            description: "You've been signed in successfully.",
+            message: "You've been signed in successfully.",
+            color: 'green',
           });
           
           // Check for restaurant after successful login
@@ -123,17 +137,18 @@ const RestaurantAuth: React.FC = () => {
       }
 
       if (data.user) {
-        toast({
+        notifications.show({
           title: "Success!",
-          description: "Signing you in...",
+          message: "Signing you in...",
+          color: 'green',
         });
       }
     } catch (error: any) {
       console.error('Sign in error:', error);
-      toast({
+      notifications.show({
         title: "Sign In Failed",
-        description: error.message || 'An error occurred during sign in',
-        variant: "destructive",
+        message: error.message || 'An error occurred during sign in',
+        color: 'red',
       });
     } finally {
       setLoading(false);
@@ -144,19 +159,19 @@ const RestaurantAuth: React.FC = () => {
     e.preventDefault();
     
     if (!email || !password) {
-      toast({
+      notifications.show({
         title: "Error",
-        description: "Please enter both email and password",
-        variant: "destructive",
+        message: "Please enter both email and password",
+        color: 'red',
       });
       return;
     }
 
     if (password.length < 6) {
-      toast({
+      notifications.show({
         title: "Error",
-        description: "Password must be at least 6 characters long",
-        variant: "destructive",
+        message: "Password must be at least 6 characters long",
+        color: 'red',
       });
       return;
     }
@@ -184,17 +199,18 @@ const RestaurantAuth: React.FC = () => {
       }
 
       if (data.user) {
-        toast({
+        notifications.show({
           title: "Account Created!",
-          description: "Please check your email to confirm your account, then you can register your restaurant.",
+          message: "Please check your email to confirm your account, then you can register your restaurant.",
+          color: 'green',
         });
       }
     } catch (error: any) {
       console.error('Sign up error:', error);
-      toast({
+      notifications.show({
         title: "Sign Up Failed",
-        description: error.message || 'An error occurred during sign up',
-        variant: "destructive",
+        message: error.message || 'An error occurred during sign up',
+        color: 'red',
       });
     } finally {
       setLoading(false);
@@ -203,207 +219,197 @@ const RestaurantAuth: React.FC = () => {
 
   if (user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>Redirecting to your restaurant dashboard...</p>
-        </div>
-      </div>
+      <Box style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Stack align="center" gap="md">
+          <Loader size="lg" />
+          <Text>Redirecting to your restaurant dashboard...</Text>
+        </Stack>
+      </Box>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto px-4 py-8">
+    <Box style={{ minHeight: '100vh', background: 'linear-gradient(to bottom right, var(--mantine-color-orange-0), var(--mantine-color-red-0))' }}>
+      <Container size="xl" py="xl">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Store className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold text-foreground">Restaurant Portal</h1>
-          </div>
-          <p className="text-muted-foreground text-lg">
+        <Stack align="center" gap="md" mb="xl">
+          <Group gap="xs">
+            <IconBuildingStore size={32} color="var(--mantine-color-orange-6)" />
+            <Title order={1}>Restaurant Portal</Title>
+          </Group>
+          <Text size="lg" c="dimmed" ta="center">
             Manage your restaurant, track orders, and grow your business
-          </p>
-        </div>
+          </Text>
+        </Stack>
 
-        <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+        <Grid gutter="xl">
           {/* Features Section */}
-          <div className="space-y-6">
-            <div className="text-center lg:text-left">
-              <h2 className="text-2xl font-semibold mb-6">Why Choose Crave'n for Your Restaurant?</h2>
-            </div>
+          <Grid.Col span={{ base: 12, lg: 6 }}>
+            <Stack gap="xl">
+              <Title order={2} ta={{ base: 'center', lg: 'left' }}>Why Choose Crave'n for Your Restaurant?</Title>
 
-            <div className="space-y-4">
-              <div className="flex items-start gap-4 p-4 bg-card rounded-lg border">
-                <ChefHat className="h-6 w-6 text-primary mt-1" />
-                <div>
-                  <h3 className="font-semibold">Easy Menu Management</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Upload and organize your menu items with photos, prices, and descriptions
-                  </p>
-                </div>
-              </div>
+              <Stack gap="md">
+                <Card p="md" withBorder>
+                  <Group align="flex-start" gap="md">
+                    <IconChefHat size={24} color="var(--mantine-color-orange-6)" />
+                    <div>
+                      <Text fw={600} mb="xs">Easy Menu Management</Text>
+                      <Text size="sm" c="dimmed">
+                        Upload and organize your menu items with photos, prices, and descriptions
+                      </Text>
+                    </div>
+                  </Group>
+                </Card>
 
-              <div className="flex items-start gap-4 p-4 bg-card rounded-lg border">
-                <Users className="h-6 w-6 text-primary mt-1" />
-                <div>
-                  <h3 className="font-semibold">Real-time Order Management</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Track orders from placement to delivery with instant notifications
-                  </p>
-                </div>
-              </div>
+                <Card p="md" withBorder>
+                  <Group align="flex-start" gap="md">
+                    <IconUsers size={24} color="var(--mantine-color-orange-6)" />
+                    <div>
+                      <Text fw={600} mb="xs">Real-time Order Management</Text>
+                      <Text size="sm" c="dimmed">
+                        Track orders from placement to delivery with instant notifications
+                      </Text>
+                    </div>
+                  </Group>
+                </Card>
 
-              <div className="flex items-start gap-4 p-4 bg-card rounded-lg border">
-                <TrendingUp className="h-6 w-6 text-primary mt-1" />
-                <div>
-                  <h3 className="font-semibold">Business Analytics</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Monitor your restaurant's performance with detailed insights
-                  </p>
-                </div>
-              </div>
-            </div>
+                <Card p="md" withBorder>
+                  <Group align="flex-start" gap="md">
+                    <IconTrendingUp size={24} color="var(--mantine-color-orange-6)" />
+                    <div>
+                      <Text fw={600} mb="xs">Business Analytics</Text>
+                      <Text size="sm" c="dimmed">
+                        Monitor your restaurant's performance with detailed insights
+                      </Text>
+                    </div>
+                  </Group>
+                </Card>
+              </Stack>
 
-            <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
-              <div className="flex items-center gap-2 mb-2">
-                <Badge variant="default">Special Offer</Badge>
-              </div>
-              <p className="text-sm">
-                Join now and get your first month of premium features absolutely free!
-              </p>
-            </div>
-          </div>
+              <Card p="md" withBorder bg="orange.0">
+                <Stack gap="xs">
+                  <Badge color="orange">Special Offer</Badge>
+                  <Text size="sm">
+                    Join now and get your first month of premium features absolutely free!
+                  </Text>
+                </Stack>
+              </Card>
+            </Stack>
+          </Grid.Col>
 
           {/* Auth Form */}
-          <div className="flex items-center justify-center">
-            <Card className="w-full max-w-md">
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl font-bold">Restaurant Access</CardTitle>
-                <CardDescription>Sign in to your restaurant account or create a new one</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="signin" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="signin">Sign In</TabsTrigger>
-                    <TabsTrigger value="signup">Get Started</TabsTrigger>
-                  </TabsList>
+          <Grid.Col span={{ base: 12, lg: 6 }}>
+            <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Card w="100%" maw={400} p="xl" withBorder>
+                <Stack gap="md">
+                  <Stack gap="xs" align="center">
+                    <Title order={2}>Restaurant Access</Title>
+                    <Text size="sm" c="dimmed" ta="center">
+                      Sign in to your restaurant account or create a new one
+                    </Text>
+                  </Stack>
+
+                  <Tabs defaultValue="signin">
+                    <Tabs.List>
+                      <Tabs.Tab value="signin">Sign In</Tabs.Tab>
+                      <Tabs.Tab value="signup">Get Started</Tabs.Tab>
+                    </Tabs.List>
+                    
+                    <Tabs.Panel value="signin" pt="md">
+                      <form onSubmit={handleSignIn}>
+                        <Stack gap="md">
+                          <TextInput
+                            label="Email"
+                            type="email"
+                            placeholder="Enter your restaurant email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            disabled={loading}
+                            required
+                          />
+                          
+                          <TextInput
+                            label="Password"
+                            type="password"
+                            placeholder="Enter your password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            disabled={loading}
+                            required
+                          />
+                          
+                          <Button 
+                            type="submit" 
+                            fullWidth
+                            disabled={loading}
+                            leftSection={loading ? <Loader size="sm" /> : null}
+                          >
+                            {loading ? 'Signing In...' : 'Access Restaurant Dashboard'}
+                          </Button>
+                        </Stack>
+                      </form>
+                    </Tabs.Panel>
+                    
+                    <Tabs.Panel value="signup" pt="md">
+                      <form onSubmit={handleSignUp}>
+                        <Stack gap="md">
+                          <TextInput
+                            label="Restaurant Email"
+                            type="email"
+                            placeholder="Enter your restaurant email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            disabled={loading}
+                            required
+                          />
+                          
+                          <TextInput
+                            label="Password"
+                            type="password"
+                            placeholder="Create a secure password (min 6 characters)"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            disabled={loading}
+                            required
+                            minLength={6}
+                          />
+                          
+                          <Button 
+                            type="submit" 
+                            fullWidth
+                            disabled={loading}
+                            leftSection={loading ? <Loader size="sm" /> : null}
+                          >
+                            {loading ? 'Creating Account...' : 'Create Restaurant Account'}
+                          </Button>
+                        </Stack>
+                      </form>
+                    </Tabs.Panel>
+                  </Tabs>
                   
-                  <TabsContent value="signin">
-                    <form onSubmit={handleSignIn} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="signin-email">Email</Label>
-                        <Input
-                          id="signin-email"
-                          type="email"
-                          placeholder="Enter your restaurant email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          disabled={loading}
-                          required
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="signin-password">Password</Label>
-                        <Input
-                          id="signin-password"
-                          type="password"
-                          placeholder="Enter your password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          disabled={loading}
-                          required
-                        />
-                      </div>
-                      
-                      <Button 
-                        type="submit" 
-                        className="w-full" 
-                        disabled={loading}
-                      >
-                        {loading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Signing In...
-                          </>
-                        ) : (
-                          'Access Restaurant Dashboard'
-                        )}
-                      </Button>
-                    </form>
-                  </TabsContent>
-                  
-                  <TabsContent value="signup">
-                    <form onSubmit={handleSignUp} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-email">Restaurant Email</Label>
-                        <Input
-                          id="signup-email"
-                          type="email"
-                          placeholder="Enter your restaurant email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          disabled={loading}
-                          required
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-password">Password</Label>
-                        <Input
-                          id="signup-password"
-                          type="password"
-                          placeholder="Create a secure password (min 6 characters)"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          disabled={loading}
-                          required
-                          minLength={6}
-                        />
-                      </div>
-                      
-                      <Button 
-                        type="submit" 
-                        className="w-full" 
-                        disabled={loading}
-                      >
-                        {loading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Creating Account...
-                          </>
-                        ) : (
-                          'Create Restaurant Account'
-                        )}
-                      </Button>
-                    </form>
-                  </TabsContent>
-                </Tabs>
-                
-                <div className="mt-6 text-center space-y-2">
-                  <Button 
-                    variant="link" 
-                    onClick={() => navigate('/auth')}
-                    className="text-sm text-muted-foreground"
-                  >
-                    Customer Login
-                  </Button>
-                  <br />
-                  <Button 
-                    variant="link" 
-                    onClick={() => navigate('/')}
-                    className="text-sm text-muted-foreground"
-                  >
-                    Back to Home
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    </div>
+                  <Stack gap="xs" align="center" mt="xl">
+                    <Button 
+                      variant="subtle"
+                      onClick={() => navigate('/auth')}
+                      size="sm"
+                    >
+                      Customer Login
+                    </Button>
+                    <Button 
+                      variant="subtle"
+                      onClick={() => navigate('/')}
+                      size="sm"
+                    >
+                      Back to Home
+                    </Button>
+                  </Stack>
+                </Stack>
+              </Card>
+            </Box>
+          </Grid.Col>
+        </Grid>
+      </Container>
+    </Box>
   );
 };
 

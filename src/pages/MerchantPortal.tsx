@@ -740,5 +740,5 @@ const RestaurantSetup = () => {
     </Box>
   );
 };
-};
+
 export default RestaurantSetup;
