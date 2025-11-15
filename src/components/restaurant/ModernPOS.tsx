@@ -384,13 +384,6 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
         description: (
           <div className="space-y-2">
             <p>Order #{(newOrder.order_number || newOrder.id.slice(-8))} has been created.</p>
-            {newOrder.pickup_code && (
-              <div className="p-2 bg-orange-50 border border-orange-300 rounded mt-2">
-                <p className="text-xs font-semibold text-orange-700 uppercase mb-1">Pickup Code</p>
-                <p className="text-xl font-black font-mono text-orange-900">{newOrder.pickup_code}</p>
-                <p className="text-xs text-orange-600 mt-1">Share this code with the driver</p>
-              </div>
-            )}
             <p className="text-sm">
               {orderType === 'delivery' ? 'Auto-assignment triggered for delivery' : 'Ready for pickup in 20 minutes'}
             </p>

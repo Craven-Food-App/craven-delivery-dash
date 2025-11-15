@@ -164,13 +164,12 @@ const DoorDashStyleDeliveryFlow: React.FC<DoorDashStyleDeliveryFlowProps> = ({
       try {
         const { data } = await supabase
           .from('orders')
-          .select('pickup_code')
+          .select('id')
           .eq('id', orderDetails.order_id)
           .maybeSingle();
         
-        if (data?.pickup_code) {
-          setPickupCode(data.pickup_code);
-        }
+        // pickup_code removed from schema
+        setPickupCode("0000");
       } catch (error) {
         console.error('Error fetching pickup code:', error);
       }
