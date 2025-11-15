@@ -6,6 +6,7 @@ import {
   Button,
   ActionIcon,
   Loader,
+  Group,
 } from '@mantine/core';
 import { 
   IconCamera, 
