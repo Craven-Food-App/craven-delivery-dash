@@ -1119,8 +1119,8 @@ export const MobileDriverDashboard: React.FC = () => {
         <MobileMapbox onZoneStatusChange={handleZoneStatusChange} />
       </div>
 
-      {/* Hamburger Menu Button - Top Left - Only on Home Tab */}
-      {activeTab === 'home' && (
+      {/* Hamburger Menu Button - Top Left - Only on Home Tab, but NOT during delivery */}
+      {activeTab === 'home' && driverState !== 'on_delivery' && (
         <div className="fixed left-4 z-50 pointer-events-auto" style={{ top: 'calc(env(safe-area-inset-top, 150px) + 8px)' }}>
           <button
             onClick={() => setIsMenuOpen(true)}
