@@ -1,17 +1,64 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  Star, Clock, Truck, Plus, Minus, ShoppingCart, X, 
-  ChevronLeft, Utensils, Heart, Share2, MapPin, Phone,
-  Navigation, MessageCircle, CheckCircle, Filter, Search, ChefHat, Leaf,
-    Info, ArrowUp, Timer, Flame, Car, Home, Store, Coffee, Calendar, 
-    User, Bell, Menu, Banana, Pill, PawPrint, Receipt
-} from "lucide-react";
+import {
+  Button,
+  TextInput,
+  Badge,
+  Stack,
+  Group,
+  Text,
+  Title,
+  Box,
+  ActionIcon,
+  Image as MantineImage,
+  ScrollArea,
+  Divider,
+  Card,
+  Loader,
+  Drawer,
+  Modal,
+  Tabs,
+} from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import {
+  IconStar,
+  IconClock,
+  IconTruck,
+  IconPlus,
+  IconMinus,
+  IconShoppingCart,
+  IconX,
+  IconChevronLeft,
+  IconUtensils,
+  IconHeart,
+  IconShare,
+  IconMapPin,
+  IconPhone,
+  IconNavigation,
+  IconMessageCircle,
+  IconCheckCircle,
+  IconFilter,
+  IconSearch,
+  IconChefHat,
+  IconLeaf,
+  IconInfoCircle,
+  IconArrowUp,
+  IconTimer,
+  IconFlame,
+  IconCar,
+  IconHome,
+  IconBuildingStore,
+  IconCoffee,
+  IconCalendar,
+  IconUser,
+  IconBell,
+  IconMenu2,
+  IconBanana,
+  IconPill,
+  IconPaw,
+  IconReceipt,
+} from "@tabler/icons-react";
 import { supabase } from '@/integrations/supabase/client';
-import { toast as showToast } from 'sonner';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
 import cravenLogo from "@/assets/craven-logo.png";
 
 // --- Type Definitions (matching your database) ---
@@ -88,19 +135,38 @@ interface CartItem extends MenuItem {
 
 // --- Mobile Header Component (DoorDash Style) ---
 const MobileHeader = ({ restaurant, onBack, onShare }: { restaurant: Restaurant | null; onBack: () => void; onShare: () => void }) => (
-  <div className="lg:hidden sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-    <div className="flex items-center justify-between px-4 py-3">
-      <button onClick={onBack} className="p-2 -ml-2 active:bg-gray-100 rounded-full transition-colors">
-        <ChevronLeft className="w-6 h-6 text-gray-900" />
-      </button>
-      <div className="flex-1 text-center">
-        <h1 className="font-semibold text-gray-900 text-sm truncate">{restaurant?.name || 'Restaurant'}</h1>
-      </div>
-      <button onClick={onShare} className="p-2 -mr-2 active:bg-gray-100 rounded-full transition-colors">
-        <Share2 className="w-5 h-5 text-gray-600" />
-      </button>
-    </div>
-  </div>
+  <Box
+    style={{
+      display: 'block',
+      '@media (min-width: 1024px)': { display: 'none' },
+      position: 'sticky',
+      top: 0,
+      zIndex: 50,
+      backgroundColor: 'white',
+      borderBottom: '1px solid var(--mantine-color-gray-3)',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+    }}
+  >
+    <Group justify="space-between" align="center" p="md" px="lg">
+      <ActionIcon
+        variant="subtle"
+        onClick={onBack}
+        style={{ marginLeft: '-8px' }}
+      >
+        <IconChevronLeft size={24} style={{ color: 'var(--mantine-color-gray-9)' }} />
+      </ActionIcon>
+      <Box style={{ flex: 1, textAlign: 'center' }}>
+        <Text fw={600} size="sm" truncate>{restaurant?.name || 'Restaurant'}</Text>
+      </Box>
+      <ActionIcon
+        variant="subtle"
+        onClick={onShare}
+        style={{ marginRight: '-8px' }}
+      >
+        <IconShare size={20} style={{ color: 'var(--mantine-color-gray-6)' }} />
+      </ActionIcon>
+    </Group>
+  </Box>
 );
 
 // --- Main Component ---
@@ -132,7 +198,6 @@ const RestaurantMenuPage = () => {
   const [showCartButton, setShowCartButton] = useState(false);
   const cartButtonTimerRef = useRef<NodeJS.Timeout | null>(null);
   
-  const { toast } = useToast();
     const [activeSection, setActiveSection] = useState('featured');
     const [isMenuFixed, setIsMenuFixed] = useState(false);
     const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
@@ -190,9 +255,10 @@ const RestaurantMenuPage = () => {
     const selectAddress = (address: string) => {
         setLocation(address);
         setShowAddressSelector(false);
-        toast({
+        notifications.show({
             title: "Location Updated",
-            description: `Delivery address set to ${address}`,
+            message: `Delivery address set to ${address}`,
+            color: "green",
         });
     };
 
