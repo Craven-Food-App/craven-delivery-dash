@@ -218,10 +218,10 @@ export const DocumentVault: React.FC = () => {
             <div className="text-sm text-slate-600">{record.description}</div>
             {record.source === 'executive_documents' && record.signature_status && (
               <div className="text-xs mt-1">
-                {record.signature_status === 'signed' ? (
-                  <Tag color="green" size="small">Signed</Tag>
+              {record.signature_status === 'signed' ? (
+                  <Tag color="green">Signed</Tag>
                 ) : (
-                  <Tag color="orange" size="small">Pending</Tag>
+                  <Tag color="orange">Pending</Tag>
                 )}
                 {record.officer_name && (
                   <span className="text-slate-500 ml-2">{record.officer_name}</span>
