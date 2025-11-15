@@ -1,4 +1,5 @@
 import React from 'react';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import CravenDeliveryFlow from './CravenDeliveryFlow';
 
 // ===== TYPES =====
@@ -29,7 +30,11 @@ interface ActiveDeliveryProps {
 }
 
 const ActiveDeliveryFlow: React.FC<ActiveDeliveryProps> = (props) => {
-  return <CravenDeliveryFlow {...props} />;
+  return (
+    <ErrorBoundary>
+      <CravenDeliveryFlow {...props} />
+    </ErrorBoundary>
+  );
 };
 
 export default ActiveDeliveryFlow;

@@ -157,7 +157,7 @@ const MapHeader = ({ title, status, locationIcon, distance, pay }: {
         </div>
 
         <div className="text-right">
-          <p className="text-2xl font-black leading-none">{distance.toFixed(1)} mi</p>
+          <p className="text-2xl font-black leading-none">{typeof distance === 'number' ? distance.toFixed(1) : '0.0'} mi</p>
           <p className="text-sm opacity-80 font-medium">to destination</p>
         </div>
       </div>
@@ -214,6 +214,18 @@ export default function CravenDeliveryFlow({
   onCompleteDelivery,
   onCameraStateChange 
 }: CravenDeliveryFlowProps) {
+  // Early validation - must be before hooks
+  if (!orderDetails) {
+    return (
+      <div className="flex flex-col items-center justify-center flex-1 p-6">
+        <div className="text-center">
+          <p className="text-lg font-semibold text-gray-900 mb-2">Missing Order Details</p>
+          <p className="text-sm text-gray-600">Order information is not available.</p>
+        </div>
+      </div>
+    );
+  }
+
   const [status, setStatus] = useState(DRIVER_STATUS.TO_STORE);
   const [pickupPhoto, setPickupPhoto] = useState<string | null>(null);
   const [deliveryPhoto, setDeliveryPhoto] = useState<string | null>(null);
@@ -397,7 +409,7 @@ export default function CravenDeliveryFlow({
                       : status === DRIVER_STATUS.AT_STORE ? 'Awaiting Hand-off'
                       : 'Verify Pickup',
           address: orderDetails.pickup_address || 'Pickup Address',
-          distance: orderDetails.distance_mi || (orderDetails.distance_km ? orderDetails.distance_km * 0.621371 : 0),
+          distance: typeof orderDetails.distance_mi === 'number' ? orderDetails.distance_mi : (typeof orderDetails.distance_km === 'number' ? orderDetails.distance_km * 0.621371 : 0),
           icon: <Utensils className="w-5 h-5" />,
           isPickup: true,
         };
@@ -410,12 +422,20 @@ export default function CravenDeliveryFlow({
                       : status === DRIVER_STATUS.AT_CUSTOMER ? 'At Drop-off Location'
                       : 'Verify Drop-off',
           address: orderDetails.dropoff_address || 'Delivery Address',
-          distance: orderDetails.distance_mi || (orderDetails.distance_km ? orderDetails.distance_km * 0.621371 : 0),
+          distance: typeof orderDetails.distance_mi === 'number' ? orderDetails.distance_mi : (typeof orderDetails.distance_km === 'number' ? orderDetails.distance_km * 0.621371 : 0),
           icon: <Home className="w-5 h-5" />,
           isPickup: false,
         };
       default:
-        return {};
+        // Default to pickup flow if status is unexpected
+        return {
+          title: orderDetails.restaurant_name || 'Restaurant',
+          statusText: 'Preparing for pickup',
+          address: orderDetails.pickup_address || 'Pickup Address',
+          distance: typeof orderDetails.distance_mi === 'number' ? orderDetails.distance_mi : (typeof orderDetails.distance_km === 'number' ? orderDetails.distance_km * 0.621371 : 0),
+          icon: <Utensils className="w-5 h-5" />,
+          isPickup: true,
+        };
     }
   }, [status, orderDetails]);
 
@@ -474,8 +494,20 @@ export default function CravenDeliveryFlow({
 
   // Active Flow Render
   const payAmount = orderDetails.payout_cents ? (orderDetails.payout_cents / 100) : 0;
-  const isToStore = currentFlow.isPickup;
+  const isToStore = currentFlow?.isPickup ?? true;
   const orderIdSuffix = orderDetails.order_number?.split('-')[1] || orderDetails.order_id?.slice(-8) || '';
+
+  // Safety check - if currentFlow is empty, show loading or error state
+  if (!currentFlow || !currentFlow.title) {
+    return (
+      <div className="flex flex-col items-center justify-center flex-1 p-6">
+        <div className="text-center">
+          <p className="text-lg font-semibold text-gray-900 mb-2">Loading delivery details...</p>
+          <p className="text-sm text-gray-600">Please wait while we load your order information.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`flex flex-col flex-1 font-sans`}>
@@ -483,7 +515,7 @@ export default function CravenDeliveryFlow({
       <div className="h-[40%] w-full relative flex-shrink-0">
         <SimulatedMapView isToStore={isToStore} />
         <MapHeader
-          title={currentFlow.title || ''}
+          title={currentFlow.title}
           status={currentFlow.statusText || ''}
           locationIcon={currentFlow.icon}
           distance={currentFlow.distance || 0}
@@ -500,7 +532,7 @@ export default function CravenDeliveryFlow({
             {isTestOrder && <span className="ml-2 text-sm font-normal text-orange-600">(Test Order)</span>}
           </h3>
 
-          {currentFlow.isPickup ? (
+          {currentFlow?.isPickup ? (
             <>
               <DetailCard 
                 title="PICKUP ADDRESS"
