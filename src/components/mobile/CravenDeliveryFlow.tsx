@@ -807,62 +807,75 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
 
   const renderComplete = () => {
     return (
-      <Stack
-        flex={1}
-        align="center"
-        justify="center"
-        p="xl"
+      <Box
         style={{
-          textAlign: 'center',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 9999,
           background: 'linear-gradient(to bottom right, var(--mantine-color-orange-6), var(--mantine-color-red-6))',
+          overflowY: 'auto',
         }}
       >
-        <Box className="safe-area-top" />
-        <ThemeIcon size={80} radius="xl" color="green" style={{ border: '4px solid white', opacity: 0.8 }}>
-          <IconCheck size={40} />
-        </ThemeIcon>
-        <Title order={1} fw={700} c="white" mb="md">Delivery Complete!</Title>
-        <Text c="white" opacity={0.9} mb={4} fw={500} size="lg">Great job! You earned:</Text>
-        <Text size="5xl" fw={700} c="white" mb="xl" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
-          ${typeof currentOrder.pay === 'number' ? currentOrder.pay.toFixed(2) : parseFloat(String(currentOrder.pay || 0)).toFixed(2)}
-        </Text>
-
-        <Card w="100%" maw="sm" mb="xl" withBorder>
-          <Card.Section p="md" pb="xs">
-            <Text size="sm" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
-              Order Summary
-            </Text>
-          </Card.Section>
-          <Card.Section px="md" pb="md">
-            <Stack gap="xs" align="stretch">
-              <Group justify="space-between" align="center">
-                <Text size="sm" fw={500} c="dimmed">Order ID:</Text>
-                <Text size="sm" fw={600} c="dark">
-                  {currentOrder.id.split('-')[1] || currentOrder.id.slice(-8)}
-                </Text>
-              </Group>
-              <Group justify="space-between" align="center">
-                <Text size="sm" fw={500} c="dimmed">Total Distance:</Text>
-                <Text size="sm" fw={600} c="dark">
-                  {currentOrder.totalDistance.toFixed(1)} mi
-                </Text>
-              </Group>
-            </Stack>
-          </Card.Section>
-        </Card>
-
-        <Button
-          onClick={onCompleteDelivery}
-          size="lg"
-          color="gray"
-          fullWidth
-          maw="sm"
-          h={56}
-          style={{ fontSize: '18px', fontWeight: 600 }}
+        <Stack
+          align="center"
+          justify="center"
+          p="xl"
+          style={{
+            minHeight: '100vh',
+            textAlign: 'center',
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 2rem)',
+            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 100px)',
+          }}
         >
-          Continue Accepting Orders
-        </Button>
-      </Stack>
+          <ThemeIcon size={80} radius="xl" color="green" style={{ border: '4px solid white', opacity: 0.8 }}>
+            <IconCheck size={40} />
+          </ThemeIcon>
+          <Title order={1} fw={700} c="white" mb="md">Delivery Complete!</Title>
+          <Text c="white" opacity={0.9} mb={4} fw={500} size="lg">Great job! You earned:</Text>
+          <Text size="5xl" fw={700} c="white" mb="xl" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
+            ${typeof currentOrder.pay === 'number' ? currentOrder.pay.toFixed(2) : parseFloat(String(currentOrder.pay || 0)).toFixed(2)}
+          </Text>
+
+          <Card w="100%" maw="sm" mb="xl" withBorder>
+            <Card.Section p="md" pb="xs">
+              <Text size="sm" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+                Order Summary
+              </Text>
+            </Card.Section>
+            <Card.Section px="md" pb="md">
+              <Stack gap="xs" align="stretch">
+                <Group justify="space-between" align="center">
+                  <Text size="sm" fw={500} c="dimmed">Order ID:</Text>
+                  <Text size="sm" fw={600} c="dark">
+                    {currentOrder.id.split('-')[1] || currentOrder.id.slice(-8)}
+                  </Text>
+                </Group>
+                <Group justify="space-between" align="center">
+                  <Text size="sm" fw={500} c="dimmed">Total Distance:</Text>
+                  <Text size="sm" fw={600} c="dark">
+                    {currentOrder.totalDistance.toFixed(1)} mi
+                  </Text>
+                </Group>
+              </Stack>
+            </Card.Section>
+          </Card>
+
+          <Button
+            onClick={onCompleteDelivery}
+            size="lg"
+            color="gray"
+            fullWidth
+            maw="sm"
+            h={56}
+            style={{ fontSize: '18px', fontWeight: 600 }}
+          >
+            Continue Accepting Orders
+          </Button>
+        </Stack>
+      </Box>
     );
   };
 
