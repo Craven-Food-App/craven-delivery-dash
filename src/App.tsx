@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Link, Navigate, HashRouter } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, Navigate, HashRouter, useLocation } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
 import MobileBottomNav from "@/components/mobile/MobileBottomNav";
@@ -83,6 +83,22 @@ const RestaurantGuide = lazy(() => import("./pages/RestaurantGuide"));
 const DriverGuide = lazy(() => import("./pages/DriverGuide"));
 
 const queryClient = new QueryClient();
+
+// Wrapper component to conditionally render MobileBottomNav based on route
+const ConditionalMobileBottomNav = ({ user }: { user: any }) => {
+  const location = useLocation();
+  
+  // Check if route is driver-related or restaurants page
+  const isDriverRoute = location.pathname.startsWith('/mobile') || 
+                        location.pathname.startsWith('/driver') || 
+                        location.pathname.startsWith('/enhanced-onboarding');
+  
+  if (isDriverRoute || location.pathname === '/restaurants') {
+    return null;
+  }
+  
+  return <MobileBottomNav user={user} />;
+};
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -615,8 +631,8 @@ const App = () => {
           </ChatButton>
         </div>
 
-        {/* Global Mobile Bottom Navigation - Hide on driver routes */}
-        {!isDriverRoute(window.location.pathname) && <MobileBottomNav user={user} />}
+        {/* Global Mobile Bottom Navigation - Hide on driver routes and restaurants page (has its own nav) */}
+        <ConditionalMobileBottomNav user={user} />
       </BrowserRouter>
     </TooltipProvider>
     </ThemeProvider>

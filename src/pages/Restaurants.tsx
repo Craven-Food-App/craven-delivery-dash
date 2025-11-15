@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import RestaurantGrid from '@/components/RestaurantGrid';
@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   Search, 
   MapPin, 
@@ -86,11 +87,94 @@ import {
   Grid3X3 as GridIcon,
   List as ListIcon,
   Layers as LayersIcon,
-  Compass as CompassIcon
+  Compass as CompassIcon,
+  Package
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import cravenLogo from "@/assets/craven-logo.png";
+
+// Professional Rating Icon Component
+const RatingPill = ({ rating }: { rating: number }) => (
+  <span className="flex items-center gap-1 bg-white px-2 py-0.5 rounded-full shadow-md">
+    <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+    <span className="text-xs font-semibold text-neutral-900">{rating}</span>
+  </span>
+);
+
+// Professional Restaurant Card
+const RestaurantCard = ({ 
+  restaurant, 
+  likedItems, 
+  toggleLike 
+}: { 
+  restaurant: any; 
+  likedItems: Set<string>; 
+  toggleLike: (id: string) => void;
+}) => (
+  <article
+    className="min-w-[280px] bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer active:scale-[0.98] border border-neutral-100"
+  >
+    <div className="relative h-40 bg-neutral-100">
+      <img
+        src={restaurant.image || restaurant.image_url || `https://placehold.co/600x400/f5f5f5/333?text=Craven`}
+        alt={restaurant.name}
+        onError={(e) => { 
+          const target = e.target as HTMLImageElement;
+          target.onerror = null; 
+          target.src = "https://placehold.co/600x400/f5f5f5/333?text=Craven"; 
+        }}
+        className="w-full h-full object-cover transition-opacity duration-500"
+      />
+
+      <div className="absolute top-0 right-0 p-3">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleLike(restaurant.id);
+          }}
+          className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center transition-transform active:scale-90 shadow"
+          aria-label={`Favorite ${restaurant.name}`}
+        >
+          <Heart
+            className={`w-4 h-4 transition-colors ${
+              likedItems.has(restaurant.id)
+                ? 'fill-red-700 text-red-700'
+                : 'text-neutral-500'
+            }`}
+          />
+        </button>
+      </div>
+
+      <div className="absolute bottom-3 left-3">
+        <RatingPill rating={restaurant.rating || 4.5} />
+      </div>
+
+      {restaurant.time && (
+        <div className="absolute bottom-3 right-3 bg-white px-3 py-1 rounded-full shadow-md">
+          <div className="flex items-center gap-1 text-sm font-semibold text-neutral-800">
+            <Clock className="w-4 h-4 text-neutral-500" />
+            <span>{restaurant.time}</span>
+          </div>
+        </div>
+      )}
+    </div>
+
+    <div className="p-4">
+      <h3 className="text-lg font-extrabold text-neutral-900 mb-0.5 truncate">
+        {restaurant.name}
+      </h3>
+      <div className="flex items-center gap-2 text-sm text-neutral-600 mb-1">
+        <span>{restaurant.distance || '0.5 mi'}</span>
+        <span className="text-neutral-400">•</span>
+        <span>{restaurant.reviews || '0'} reviews</span>
+      </div>
+      {restaurant.promo && (
+        <p className="text-sm font-semibold text-red-700 mt-2">{restaurant.promo}</p>
+      )}
+    </div>
+  </article>
+);
 
 const Restaurants = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -103,6 +187,11 @@ const Restaurants = () => {
   const [activeFilter, setActiveFilter] = useState('deals');
   const [showMobileNav, setShowMobileNav] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
+  
+  // Mobile app states
+  const [showMain, setShowMain] = useState(false);
+  const [likedItems, setLikedItems] = useState<Set<string>>(new Set());
+  const [cartCount] = useState(3);
   
   // New state for enhanced functionality
   const [deliveryMode, setDeliveryMode] = useState<'delivery' | 'pickup'>('delivery');
@@ -117,9 +206,24 @@ const Restaurants = () => {
   const [accountPopupPosition, setAccountPopupPosition] = useState({ top: 0, left: 0 });
   
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const currentLocation = useLocation();
   const resultsRef = useRef<HTMLDivElement | null>(null);
   const weeklyDealsScrollRef = useRef<HTMLDivElement>(null);
   const featuredScrollRef = useRef<HTMLDivElement>(null);
+
+  const toggleLike = useCallback((id: string) => {
+    setLikedItems(prev => {
+      const newLiked = new Set(prev);
+      if (newLiked.has(id)) {
+        newLiked.delete(id);
+      } else {
+        newLiked.add(id);
+      }
+      return newLiked;
+    });
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -352,6 +456,346 @@ const Restaurants = () => {
     { id: 'dashpass', label: 'CravePass' }
   ];
 
+  // Promo data
+  const PROMOS_DATA = [
+    {
+      id: 1,
+      title: "Exclusive: 20% Off All Sushi Orders",
+      subtitle: "Limited to the first 500 customers. Code: LUXURY20",
+      color: "from-slate-800 to-red-900",
+      image: "https://images.unsplash.com/photo-1545624773-a261c6b12d7f?w=400&h=300&fit=crop&q=80"
+    },
+    {
+      id: 2,
+      title: "Free Premium Delivery on $30+ orders",
+      subtitle: "Valid today only. Elevate your weekend plans.",
+      color: "from-red-700 to-amber-600",
+      image: "https://images.unsplash.com/photo-1577219549323-5e98218991f8?w=400&h=300&fit=crop&q=80"
+    }
+  ];
+
+  // Restaurant data - transform from database
+  const getRestaurantData = () => {
+    const fastest = weeklyDeals.slice(0, 3).map((r) => ({
+      id: r.id,
+      name: r.name,
+      image: r.promotion_image_url || r.image_url || r.header_image_url || `https://placehold.co/600x400/f5f5f5/333?text=${encodeURIComponent(r.name)}`,
+      rating: r.rating || 4.5,
+      reviews: "1.2K",
+      distance: "0.8 mi",
+      time: `${r.min_delivery_time || 20} min`,
+      promo: r.promotion_title || "Premium Selection Partner"
+    }));
+
+    const premium = weeklyDeals.slice(3, 5).map((r) => ({
+      id: r.id,
+      name: r.name,
+      image: r.promotion_image_url || r.image_url || r.header_image_url || `https://placehold.co/600x400/f5f5f5/333?text=${encodeURIComponent(r.name)}`,
+      rating: r.rating || 4.5,
+      reviews: "800",
+      distance: "2.1 mi",
+      time: `${r.min_delivery_time || 30} min`,
+      featured: true
+    }));
+
+    return { fastest, premium };
+  };
+
+  const RESTAURANTS_DATA = getRestaurantData();
+
+  // Determine active nav item based on current location
+  const getNavItems = () => {
+    const isHome = currentLocation.pathname === '/restaurants' || currentLocation.pathname === '/';
+    const isOrders = currentLocation.pathname === '/customer-dashboard' && currentLocation.search.includes('tab=orders');
+    const isAccount = currentLocation.pathname === '/customer-dashboard' && currentLocation.search.includes('tab=account');
+    const isFavorites = currentLocation.pathname === '/customer-dashboard' && currentLocation.search.includes('tab=favorites');
+
+    return [
+      { name: 'Home', icon: Home, current: isHome, path: '/restaurants' },
+      { name: 'Favorites', icon: Heart, current: isFavorites, path: '/customer-dashboard?tab=favorites' },
+      { name: 'Orders', icon: Package, current: isOrders, path: '/customer-dashboard?tab=orders' },
+      { name: 'Account', icon: User, current: isAccount, path: '/customer-dashboard?tab=account' },
+    ];
+  };
+
+  const NAV_ITEMS = getNavItems();
+
+  const handleNavClick = (path: string) => {
+    if (path === '/restaurants') {
+      setShowMain(true);
+      navigate('/restaurants');
+    } else {
+      navigate(path);
+    }
+  };
+
+  // Mobile App Landing Page
+  if (isMobile && !showMain) {
+    return (
+      <div className="w-full max-w-[430px] mx-auto h-screen bg-gradient-to-br from-red-50 via-white to-neutral-50 flex flex-col overflow-y-auto font-sans">
+        {/* Status Bar */}
+        <div className="h-11 flex items-center justify-between px-6 bg-white/80 backdrop-blur-sm text-neutral-900">
+          <div className="text-sm font-semibold">9:41</div>
+          <div className="flex items-center gap-1">
+            <span className="text-xs font-mono">LTE</span>
+          </div>
+        </div>
+
+        {/* Hero Section - Light, Premium */}
+        <div className="px-6 pt-16 pb-12 relative overflow-hidden flex flex-col justify-between flex-1">
+          {/* Logo and Tagline */}
+          <div className="relative z-10">
+            <h1 className="text-7xl font-black text-neutral-900 mb-2 tracking-tighter">Craven.</h1>
+            <p className="text-2xl font-light text-neutral-700 max-w-xs">
+              Your premium choice for food delivery.
+            </p>
+          </div>
+          
+          {/* Decorative background image (Subtle) */}
+          <div className="absolute inset-0 z-0 opacity-5">
+            <img 
+              src="https://images.unsplash.com/photo-1542456578-1a52c34c568f?w=600&h=800&fit=crop&q=80" 
+              alt="Background texture" 
+              className="w-full h-full object-cover" 
+            />
+          </div>
+
+          {/* Action Area */}
+          <div className="relative z-10 pt-16">
+            <p className="text-neutral-600 text-sm mb-4">Enter your corporate or residential address to begin.</p>
+            <div className="relative bg-white rounded-xl overflow-hidden shadow-2xl shadow-red-900/20 border border-red-100">
+              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-red-700" />
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="Enter delivery address"
+                className="w-full pl-12 pr-16 py-4 text-base font-medium text-neutral-900 placeholder-neutral-500 border-2 border-transparent focus:border-red-600 focus:outline-none transition-colors rounded-xl"
+              />
+              <button
+                onClick={() => setShowMain(true)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-red-700 rounded-lg flex items-center justify-center active:scale-95 transition-transform shadow-lg shadow-red-700/50"
+              >
+                <ChevronRight className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            <div className="flex justify-between items-center mt-6">
+              <button
+                onClick={() => setShowMain(true)}
+                className="flex items-center gap-2 px-4 py-2 text-neutral-600 text-sm font-medium hover:text-neutral-900 transition-colors"
+              >
+                <User className="w-4 h-4" />
+                Sign In / Sign Up
+              </button>
+              <button
+                onClick={() => setShowMain(true)}
+                className="flex items-center gap-2 px-4 py-2 text-red-700 text-sm font-medium hover:text-red-800 transition-colors"
+              >
+                <Navigation className="w-4 h-4" />
+                Use My Location
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Links */}
+        <div className="bg-white/80 backdrop-blur-sm px-6 py-4 border-t border-neutral-200">
+          <div className="grid grid-cols-3 text-center text-xs text-neutral-600">
+            <a href="#" className="hover:text-red-700 transition-colors">Deliver</a>
+            <a href="#" className="hover:text-red-700 transition-colors">Partner</a>
+            <a href="#" className="hover:text-red-700 transition-colors">Help</a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Mobile App Main Interface
+  if (isMobile && showMain) {
+    return (
+      <div className="w-full max-w-[430px] mx-auto h-screen bg-white flex flex-col overflow-hidden font-sans">
+        {/* Status Bar */}
+        <div className="h-11 bg-white flex items-center justify-between px-4">
+          <div className="text-sm font-semibold">9:41</div>
+          <div className="flex items-center gap-1 text-xs">LTE</div>
+        </div>
+        
+        {/* Search & Address Bar (Sticky Header) */}
+        <header className="bg-white sticky top-0 z-20 shadow-sm border-b border-neutral-100 px-4 pt-2 pb-3">
+          {/* Address and Account */}
+          <div className="flex items-center justify-between mb-3">
+            <button 
+              className="flex items-center p-2 rounded-xl active:bg-neutral-100 transition-colors"
+              onClick={() => setShowMain(false)}
+            >
+              <MapPin className="w-5 h-5 text-red-700" />
+              <div className="text-left ml-2">
+                <p className="text-xs text-neutral-500 font-medium leading-none">Deliver to</p>
+                <p className="text-sm font-bold text-neutral-900 truncate max-w-[150px]">{location.split(',')[0]}...</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-neutral-400 ml-1" />
+            </button>
+
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => navigate('/customer-dashboard?tab=notifications')}
+                className="p-2 active:bg-neutral-100 rounded-full transition-colors relative"
+              >
+                <Bell className="w-6 h-6 text-neutral-600" />
+                {notifications.filter(n => !n.read).length > 0 && (
+                  <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-700 rounded-full border-2 border-white"></span>
+                )}
+              </button>
+              <button 
+                onClick={() => navigate('/customer-dashboard?tab=account')}
+                className="p-2 active:bg-neutral-100 rounded-full transition-colors"
+              >
+                <User className="w-6 h-6 text-neutral-900" />
+              </button>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+            <input
+              type="text"
+              placeholder="Search Craven, Restaurants, or Food"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-11 pr-4 py-3 text-base bg-neutral-50 border-0 rounded-xl focus:ring-2 focus:ring-red-200 focus:bg-white focus:outline-none transition-all font-medium"
+            />
+          </div>
+        </header>
+
+        {/* Scrollable Content */}
+        <main className="flex-1 overflow-y-auto bg-neutral-50">
+          {/* Quick Filters/Categories */}
+          <div className="px-4 py-3 flex gap-2 overflow-x-auto whitespace-nowrap border-b border-neutral-100 bg-white">
+            {['Fast Delivery', 'High Rated', 'Breakfast', 'Deals', 'Grocery', 'Dessert'].map((item) => (
+              <button 
+                key={item}
+                className="flex items-center bg-white border border-neutral-200 text-neutral-700 text-sm font-medium px-4 py-2 rounded-full shadow-sm active:bg-red-50 active:border-red-200 transition-all hover:bg-neutral-100"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+
+          {/* Promo Carousel */}
+          <section className="py-5">
+            <div className="flex gap-4 px-4 overflow-x-auto pb-3 -mx-4 px-4">
+              {PROMOS_DATA.map((promo) => (
+                <div
+                  key={promo.id}
+                  className={`min-w-[320px] max-w-[90vw] bg-gradient-to-br ${promo.color} rounded-2xl p-5 flex items-center justify-between shadow-xl cursor-pointer active:scale-[0.99] transition-transform`}
+                >
+                  <div className="flex-1 pr-4">
+                    <h3 className="text-xl font-bold text-white mb-1 leading-snug">
+                      {promo.title}
+                    </h3>
+                    <p className="text-sm text-neutral-300 mb-4">{promo.subtitle}</p>
+                    <button className="px-5 py-2.5 bg-white text-red-700 text-sm font-extrabold rounded-lg shadow-md hover:bg-neutral-100 active:scale-95 transition-transform">
+                      View Details
+                    </button>
+                  </div>
+                  <div className="w-20 h-20 flex-shrink-0 opacity-80">
+                    <img src={promo.image} alt="" className="w-full h-full object-cover rounded-xl" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Fastest near you */}
+          <section className="px-4 py-5 bg-white border-t border-neutral-100">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-extrabold text-neutral-900">Craven Quick Picks</h2>
+              <button className="p-1 active:bg-neutral-100 rounded-full transition-colors text-red-700">
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4">
+              {RESTAURANTS_DATA.fastest.map((restaurant) => (
+                <RestaurantCard 
+                  key={restaurant.id} 
+                  restaurant={restaurant} 
+                  likedItems={likedItems} 
+                  toggleLike={toggleLike} 
+                />
+              ))}
+            </div>
+          </section>
+
+          {/* Premium Selections */}
+          <section className="px-4 py-5 mt-3 bg-white border-t border-neutral-100">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-extrabold text-neutral-900">Premium Selections</h2>
+              <button className="p-1 active:bg-neutral-100 rounded-full transition-colors text-red-700">
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="flex flex-col gap-4">
+              {RESTAURANTS_DATA.premium.map((restaurant) => (
+                <RestaurantCard 
+                  key={restaurant.id} 
+                  restaurant={restaurant} 
+                  likedItems={likedItems} 
+                  toggleLike={toggleLike} 
+                />
+              ))}
+            </div>
+          </section>
+
+          {/* Spacing for Nav */}
+          <div className="h-24"></div> 
+        </main>
+
+        {/* Bottom Navigation: Floating and Robust */}
+        <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-white border-t border-neutral-100 shadow-2xl shadow-neutral-300/50 z-30">
+          <div className="flex justify-around pt-3 pb-6">
+            {NAV_ITEMS.map(item => (
+              <button 
+                key={item.name}
+                onClick={() => handleNavClick(item.path)}
+                className="flex flex-col items-center gap-1 py-1 text-neutral-500 hover:text-red-700 active:scale-95 transition-all relative"
+              >
+                <item.icon className={`w-6 h-6 transition-colors ${item.current ? 'text-red-700' : 'text-neutral-500'}`} />
+                <span className={`text-[11px] font-semibold transition-colors ${item.current ? 'text-red-700' : 'text-neutral-600'}`}>{item.name}</span>
+                
+                {item.name === 'Favorites' && likedItems.size > 0 && (
+                  <span className="absolute top-0 right-1 bg-red-700 text-white text-[10px] font-bold min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center pointer-events-none">
+                    {likedItems.size}
+                  </span>
+                )}
+
+                {item.name === 'Orders' && <span className="absolute top-0 right-1 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></span>}
+              </button>
+            ))}
+            
+            {/* Dedicated Cart Button */}
+            <button 
+              onClick={() => navigate('/cart')}
+              className="flex flex-col items-center gap-1 py-1 text-red-700 relative"
+            >
+              <ShoppingCart className="w-6 h-6 fill-red-700/10" />
+              <span className="text-[11px] font-bold text-red-700">Cart</span>
+              {cartCount > 0 && (
+                <span className="absolute -top-1 right-2 bg-red-700 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-lg pointer-events-none">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </nav>
+      </div>
+    );
+  }
+
+  // Desktop Layout (existing code - keep as is)
   return (
     <div className="min-h-screen bg-white">
       {/* Mobile Header - DoorDash Style */}
