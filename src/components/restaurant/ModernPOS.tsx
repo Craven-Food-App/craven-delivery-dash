@@ -432,317 +432,312 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg">Loading POS System...</p>
-        </div>
-      </div>
+      <Box style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(to bottom right, var(--mantine-color-orange-0), var(--mantine-color-orange-1))' }}>
+        <Stack align="center" gap="md">
+          <Loader size="lg" color="orange" />
+          <Text size="lg">Loading POS System...</Text>
+        </Stack>
+      </Box>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-accent/10">
+    <Box style={{ minHeight: '100vh', background: 'linear-gradient(to bottom right, var(--mantine-color-gray-0), var(--mantine-color-orange-0))' }}>
       {/* Header */}
-      <div className="border-b bg-card/95 backdrop-blur-sm sticky top-0 z-50">
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-4">
-            <div className="bg-primary/10 p-2 rounded-lg">
-              <ShoppingCart className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold">POS</h1>
-              <p className="text-sm text-muted-foreground">Point of Sale System</p>
-            </div>
-          </div>
+      <Box style={{ borderBottom: '1px solid var(--mantine-color-gray-3)', backgroundColor: 'var(--mantine-color-body)', position: 'sticky', top: 0, zIndex: 50 }}>
+        <Group justify="space-between" align="center" p="md">
+          <Group gap="md">
+            <Box p="xs" style={{ backgroundColor: 'var(--mantine-color-orange-0)', borderRadius: '8px' }}>
+              <IconShoppingCart size={24} style={{ color: 'var(--mantine-color-orange-6)' }} />
+            </Box>
+            <Stack gap={0}>
+              <Title order={3}>POS</Title>
+              <Text size="sm" c="dimmed">Point of Sale System</Text>
+            </Stack>
+          </Group>
           
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-medium">{employee.full_name}</p>
-              <p className="text-xs text-muted-foreground capitalize">{employee.role} • {employee.employee_id}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm font-medium">{currentTime.toLocaleTimeString()}</p>
-              <p className="text-xs text-muted-foreground">{currentTime.toLocaleDateString()}</p>
-            </div>
-            <Button variant="outline" size="sm" onClick={onLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
+          <Group gap="md">
+            <Stack gap={0} align="flex-end">
+              <Text size="sm" fw={500}>{employee.full_name}</Text>
+              <Text size="xs" c="dimmed" tt="capitalize">{employee.role} • {employee.employee_id}</Text>
+            </Stack>
+            <Stack gap={0} align="flex-end">
+              <Text size="sm" fw={500}>{currentTime.toLocaleTimeString()}</Text>
+              <Text size="xs" c="dimmed">{currentTime.toLocaleDateString()}</Text>
+            </Stack>
+            <Button variant="outline" size="sm" onClick={onLogout} leftSection={<IconLogout size={16} />}>
               Logout
             </Button>
-          </div>
-        </div>
-      </div>
+          </Group>
+        </Group>
+      </Box>
 
-      <div className={`grid gap-6 p-4 md:p-6 ${isMobile ? 'grid-cols-1 pb-24' : 'grid-cols-1 lg:grid-cols-5 h-[calc(100vh-100px)]'}`}>
+      <Grid gutter="lg" p="md" style={{ minHeight: isMobile ? 'auto' : 'calc(100vh - 100px)' }}>
         {/* Menu Items - Left Side */}
-        <div className={`space-y-4 ${!isMobile && 'lg:col-span-3'}`}>
-          {/* Search */}
-          <Card className="border-0 shadow-lg bg-card/95 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  placeholder="Search menu items..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 h-12 text-lg border-0 bg-muted/50"
-                />
-              </div>
-            </CardContent>
-          </Card>
+        <Grid.Col span={{ base: 12, lg: 3 }}>
+          <Stack gap="md">
+            {/* Search */}
+            <Card p="md" withBorder shadow="md">
+              <TextInput
+                placeholder="Search menu items..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                size="lg"
+                leftSection={<IconSearch size={20} />}
+                styles={{ input: { fontSize: '18px' } }}
+              />
+            </Card>
 
-          {/* Category Tabs */}
-          <Card className="border-0 shadow-lg bg-card/95 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {categories.map((category) => (
-                  <Button
-                    key={category.id}
-                    variant={selectedCategory === category.id ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedCategory(category.id)}
-                    className="whitespace-nowrap min-w-fit"
-                  >
-                    {category.name}
-                  </Button>
+            {/* Category Tabs */}
+            <Card p="md" withBorder shadow="md">
+              <ScrollArea>
+                <Group gap="xs" wrap="nowrap">
+                  {categories.map((category) => (
+                    <Button
+                      key={category.id}
+                      variant={selectedCategory === category.id ? "filled" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedCategory(category.id)}
+                      style={{ whiteSpace: 'nowrap', minWidth: 'fit-content' }}
+                    >
+                      {category.name}
+                    </Button>
+                  ))}
+                </Group>
+              </ScrollArea>
+            </Card>
+
+            {/* Menu Grid */}
+            <ScrollArea style={{ height: isMobile ? 'calc(100vh - 280px)' : '100%', flex: 1 }}>
+              <Grid gutter="md" pb="md">
+                {filteredMenuItems.map((item) => (
+                  <Grid.Col key={item.id} span={{ base: 6, md: 4, lg: 6 }}>
+                    <Card
+                      p={0}
+                      withBorder
+                      shadow="md"
+                      style={{ cursor: 'pointer', overflow: 'hidden' }}
+                      onClick={() => quickAddToCart(item)}
+                    >
+                      <Box style={{ aspectRatio: '1', position: 'relative', background: 'linear-gradient(to bottom right, var(--mantine-color-orange-0), var(--mantine-color-orange-1))', overflow: 'hidden' }}>
+                        {item.image_url ? (
+                          <MantineImage
+                            src={item.image_url}
+                            alt={item.name}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            fit="cover"
+                          />
+                        ) : (
+                          <Box style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <IconShoppingCart size={48} style={{ color: 'var(--mantine-color-dimmed)' }} />
+                          </Box>
+                        )}
+                        <Box style={{ position: 'absolute', top: 8, right: 8 }}>
+                          <Badge variant="filled" size="lg" fw={700}>
+                            ${(item.price_cents / 100).toFixed(2)}
+                          </Badge>
+                        </Box>
+                      </Box>
+                      <Stack gap="xs" p="sm">
+                        <Text fw={700} size="sm" lineClamp={1}>{item.name}</Text>
+                        <Text size="xs" c="dimmed" lineClamp={2}>
+                          {item.description}
+                        </Text>
+                      </Stack>
+                    </Card>
+                  </Grid.Col>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Menu Grid */}
-          <ScrollArea className={isMobile ? "h-[calc(100vh-280px)]" : "flex-1"}>
-            <div className={`grid gap-3 md:gap-4 pb-4 ${isMobile ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}`}>
-              {filteredMenuItems.map((item) => (
-                <Card 
-                  key={item.id} 
-                  className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-0 shadow-lg bg-card/95 backdrop-blur-sm overflow-hidden hover:scale-105"
-                  onClick={() => quickAddToCart(item)}
-                >
-                  <div className="aspect-square bg-gradient-to-br from-primary/10 to-accent/10 relative overflow-hidden">
-                    {item.image_url ? (
-                      <img
-                        src={item.image_url}
-                        alt={item.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <ShoppingCart className="h-12 w-12 text-muted-foreground/50" />
-                      </div>
-                    )}
-                    <div className="absolute top-2 right-2">
-                      <Badge variant="secondary" className="font-bold shadow-lg">
-                        ${(item.price_cents / 100).toFixed(2)}
-                      </Badge>
-                    </div>
-                  </div>
-                  <CardContent className="p-3">
-                    <h4 className="font-bold text-sm mb-1 line-clamp-1">{item.name}</h4>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {item.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </ScrollArea>
-        </div>
+              </Grid>
+            </ScrollArea>
+          </Stack>
+        </Grid.Col>
 
         {/* Order Summary & Customer Info - Right Side (Desktop Only) */}
         {!isMobile && (
-          <div className="lg:col-span-2 space-y-4 flex flex-col h-full">
-          {/* Customer Information */}
-          <Card className="border-0 shadow-lg bg-card/95 backdrop-blur-sm">
-            <CardContent className="p-4 space-y-4">
-              <div className="flex items-center gap-2 mb-3">
-                <User className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold">Customer Information</h3>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="customerName" className="text-xs font-medium">Name *</Label>
-                  <Input
-                    id="customerName"
-                    value={customerInfo.name}
-                    onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
-                    placeholder="Customer name"
-                    className="h-10"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="customerPhone" className="text-xs font-medium">Phone *</Label>
-                  <Input
-                    id="customerPhone"
-                    value={customerInfo.phone}
-                    onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
-                    placeholder="Phone number"
-                    className="h-10"
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs font-medium">Order Type</Label>
-                  <Select value={orderType} onValueChange={(value: 'delivery' | 'pickup') => setOrderType(value)}>
-                    <SelectTrigger className="h-10">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pickup">🏪 Pickup</SelectItem>
-                      <SelectItem value="delivery">🚗 Delivery</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-xs font-medium">Payment</Label>
-                  <Select value={paymentMethod} onValueChange={(value: any) => setPaymentMethod(value)}>
-                    <SelectTrigger className="h-10">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cash">💵 Cash</SelectItem>
-                      <SelectItem value="card">💳 Card</SelectItem>
-                      <SelectItem value="phone_payment">📱 Phone Payment</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+          <Grid.Col span={{ base: 12, lg: 2 }}>
+            <Stack gap="md" style={{ height: '100%' }}>
+              {/* Customer Information */}
+              <Card p="md" withBorder shadow="md">
+                <Stack gap="md">
+                  <Group gap="xs">
+                    <IconUser size={20} style={{ color: 'var(--mantine-color-orange-6)' }} />
+                    <Title order={4}>Customer Information</Title>
+                  </Group>
+                  
+                  <Grid gutter="sm">
+                    <Grid.Col span={6}>
+                      <TextInput
+                        label="Name *"
+                        size="sm"
+                        value={customerInfo.name}
+                        onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
+                        placeholder="Customer name"
+                      />
+                    </Grid.Col>
+                    <Grid.Col span={6}>
+                      <TextInput
+                        label="Phone *"
+                        size="sm"
+                        value={customerInfo.phone}
+                        onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
+                        placeholder="Phone number"
+                      />
+                    </Grid.Col>
+                  </Grid>
+                  
+                  <Grid gutter="sm">
+                    <Grid.Col span={6}>
+                      <Select
+                        label="Order Type"
+                        size="sm"
+                        value={orderType}
+                        onChange={(value: 'delivery' | 'pickup') => setOrderType(value)}
+                        data={[
+                          { value: 'pickup', label: '🏪 Pickup' },
+                          { value: 'delivery', label: '🚗 Delivery' },
+                        ]}
+                      />
+                    </Grid.Col>
+                    <Grid.Col span={6}>
+                      <Select
+                        label="Payment"
+                        size="sm"
+                        value={paymentMethod}
+                        onChange={(value: any) => setPaymentMethod(value)}
+                        data={[
+                          { value: 'cash', label: '💵 Cash' },
+                          { value: 'card', label: '💳 Card' },
+                          { value: 'phone_payment', label: '📱 Phone Payment' },
+                        ]}
+                      />
+                    </Grid.Col>
+                  </Grid>
 
-              {orderType === 'delivery' && (
-                <div>
-                  <Label htmlFor="address" className="text-xs font-medium">Delivery Address *</Label>
-                  <AddressAutocomplete
-                    value={customerInfo.address || ''}
-                    onChange={(value, coordinates) => {
-                      setCustomerInfo(prev => ({ 
-                        ...prev, 
-                        address: value,
-                        ...(coordinates && { addressCoordinates: coordinates })
-                      }));
-                    }}
-                    onValidAddress={(isValid) => setIsValidAddress(isValid)}
-                    placeholder="123 Main St, City, State 12345"
-                    required
-                    className="h-10"
-                  />
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  {orderType === 'delivery' && (
+                    <AddressAutocomplete
+                      value={customerInfo.address || ''}
+                      onChange={(value, coordinates) => {
+                        setCustomerInfo(prev => ({ 
+                          ...prev, 
+                          address: value,
+                          ...(coordinates && { addressCoordinates: coordinates })
+                        }));
+                      }}
+                      onValidAddress={(isValid) => setIsValidAddress(isValid)}
+                      placeholder="123 Main St, City, State 12345"
+                      required
+                    />
+                  )}
+                </Stack>
+              </Card>
 
-          {/* Cart */}
-          <Card className="border-0 shadow-lg bg-card/95 backdrop-blur-sm flex-1 flex flex-col">
-            <CardContent className="p-4 flex flex-col h-full">
-              <div className="flex items-center gap-2 mb-3">
-                <ShoppingCart className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold">Order Summary</h3>
-                <Badge variant="secondary" className="ml-auto">
-                  {cart.reduce((sum, item) => sum + item.quantity, 0)} items
-                </Badge>
-              </div>
-              
-              {cart.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <p className="text-muted-foreground text-center">
-                    Tap menu items to add them to the order
-                  </p>
-                </div>
-              ) : (
-                <div className="flex-1 flex flex-col">
-                  <ScrollArea className="flex-1 mb-4">
-                    <div className="space-y-3">
-                      {cart.map((item) => (
-                        <div key={item.id} className="bg-muted/30 rounded-lg p-3">
-                          <div className="flex justify-between items-start mb-2">
-                            <h5 className="font-medium text-sm">{item.name}</h5>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => updateQuantity(item.id, 0)}
-                              className="h-auto p-1 text-muted-foreground hover:text-destructive"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Minus className="h-3 w-3" />
-                              </Button>
-                              <span className="text-sm font-bold min-w-[2rem] text-center">{item.quantity}</span>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Plus className="h-3 w-3" />
-                              </Button>
-                            </div>
-                            <span className="text-sm font-bold">
-                              ${((item.price_cents * item.quantity) / 100).toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
+              {/* Cart */}
+              <Card p="md" withBorder shadow="md" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <Stack gap="md" style={{ height: '100%' }}>
+                  <Group justify="space-between" align="center">
+                    <Group gap="xs">
+                      <IconShoppingCart size={20} style={{ color: 'var(--mantine-color-orange-6)' }} />
+                      <Title order={4}>Order Summary</Title>
+                    </Group>
+                    <Badge variant="light">
+                      {cart.reduce((sum, item) => sum + item.quantity, 0)} items
+                    </Badge>
+                  </Group>
+                  
+                  {cart.length === 0 ? (
+                    <Box style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Text c="dimmed" ta="center">
+                        Tap menu items to add them to the order
+                      </Text>
+                    </Box>
+                  ) : (
+                    <>
+                      <ScrollArea style={{ flex: 1 }}>
+                        <Stack gap="sm">
+                          {cart.map((item) => (
+                            <Card key={item.id} p="sm" style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
+                              <Stack gap="xs">
+                                <Group justify="space-between" align="flex-start">
+                                  <Text fw={500} size="sm">{item.name}</Text>
+                                  <ActionIcon
+                                    variant="subtle"
+                                    color="red"
+                                    size="sm"
+                                    onClick={() => updateQuantity(item.id, 0)}
+                                  >
+                                    <IconTrash size={14} />
+                                  </ActionIcon>
+                                </Group>
+                                <Group justify="space-between" align="center">
+                                  <Group gap="xs">
+                                    <ActionIcon
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                    >
+                                      <IconMinus size={14} />
+                                    </ActionIcon>
+                                    <Text fw={700} size="sm" style={{ minWidth: '2rem', textAlign: 'center' }}>{item.quantity}</Text>
+                                    <ActionIcon
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                    >
+                                      <IconPlus size={14} />
+                                    </ActionIcon>
+                                  </Group>
+                                  <Text fw={700} size="sm">
+                                    ${((item.price_cents * item.quantity) / 100).toFixed(2)}
+                                  </Text>
+                                </Group>
+                              </Stack>
+                            </Card>
+                          ))}
+                        </Stack>
+                      </ScrollArea>
 
-                  <Separator className="mb-4" />
+                      <Divider />
 
-                  {/* Totals */}
-                  <div className="space-y-2 mb-4">
-                    <div className="flex justify-between text-sm">
-                      <span>Subtotal</span>
-                      <span>${(totals.subtotal / 100).toFixed(2)}</span>
-                    </div>
-                    {orderType === 'delivery' && (
-                      <div className="flex justify-between text-sm">
-                        <span>Delivery Fee</span>
-                        <span>${(totals.deliveryFee / 100).toFixed(2)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between text-sm">
-                      <span>Tax</span>
-                      <span>${(totals.tax / 100).toFixed(2)}</span>
-                    </div>
-                    <Separator />
-                    <div className="flex justify-between font-bold text-lg">
-                      <span>Total</span>
-                      <span>${(totals.total / 100).toFixed(2)}</span>
-                    </div>
-                  </div>
+                      {/* Totals */}
+                      <Stack gap="xs">
+                        <Group justify="space-between">
+                          <Text size="sm">Subtotal</Text>
+                          <Text size="sm">${(totals.subtotal / 100).toFixed(2)}</Text>
+                        </Group>
+                        {orderType === 'delivery' && (
+                          <Group justify="space-between">
+                            <Text size="sm">Delivery Fee</Text>
+                            <Text size="sm">${(totals.deliveryFee / 100).toFixed(2)}</Text>
+                          </Group>
+                        )}
+                        <Group justify="space-between">
+                          <Text size="sm">Tax</Text>
+                          <Text size="sm">${(totals.tax / 100).toFixed(2)}</Text>
+                        </Group>
+                        <Divider />
+                        <Group justify="space-between">
+                          <Text fw={700} size="lg">Total</Text>
+                          <Text fw={700} size="lg">${(totals.total / 100).toFixed(2)}</Text>
+                        </Group>
+                      </Stack>
 
-                  <Button
-                    onClick={handleSubmitOrder}
-                    disabled={isSubmitting || cart.length === 0}
-                    className="w-full h-14 text-lg font-bold"
-                    size="lg"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Clock className="h-5 w-5 mr-2 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      `Place Order • $${(totals.total / 100).toFixed(2)}`
-                    )}
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                      <Button
+                        onClick={handleSubmitOrder}
+                        disabled={isSubmitting || cart.length === 0}
+                        size="lg"
+                        fullWidth
+                        leftSection={isSubmitting ? <Loader size="sm" /> : <IconClock size={20} />}
+                      >
+                        {isSubmitting ? 'Processing...' : `Place Order • $${(totals.total / 100).toFixed(2)}`}
+                      </Button>
+                    </>
+                  )}
+                </Stack>
+              </Card>
+            </Stack>
+          </Grid.Col>
         )}
-      </div>
+      </Grid>
 
       {/* Mobile Cart Drawer */}
       {isMobile && (
@@ -778,6 +773,6 @@ export const ModernPOS: React.FC<ModernPOSProps> = ({ restaurantId, employee, on
           onAddToCart={addToCart}
         />
       )}
-    </div>
+    </Box>
   );
 };
