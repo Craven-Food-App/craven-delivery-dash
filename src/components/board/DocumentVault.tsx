@@ -23,8 +23,13 @@ interface Document {
   file_size_bytes: number;
   access_level: number;
   created_at: string;
-  source?: 'exec_documents' | 'employee_documents';
+  source?: 'exec_documents' | 'employee_documents' | 'executive_documents';
   storage_path?: string;
+  signed_file_url?: string;
+  signature_status?: string;
+  officer_name?: string;
+  role?: string;
+  type?: string;
 }
 
 export const DocumentVault: React.FC = () => {
@@ -42,10 +47,11 @@ export const DocumentVault: React.FC = () => {
   const fetchDocuments = async () => {
     setLoading(true);
     try {
-      // Fetch from both exec_documents and employee_documents
-      const [execDocs, empDocs] = await Promise.all([
+      // Fetch from exec_documents, employee_documents, and executive_documents
+      const [execDocs, empDocs, executiveDocs] = await Promise.all([
         supabase.from('exec_documents').select('*').order('created_at', { ascending: false }),
-        supabase.from('employee_documents').select('*').order('created_at', { ascending: false })
+        supabase.from('employee_documents').select('*').order('created_at', { ascending: false }),
+        supabase.from('executive_documents').select('*').order('created_at', { ascending: false })
       ]);
 
       const allDocs: Document[] = [];
@@ -105,6 +111,47 @@ export const DocumentVault: React.FC = () => {
             created_at: doc.created_at,
             source: 'employee_documents',
             storage_path: doc.storage_path
+          });
+        });
+      }
+
+      // Map executive_documents (signed executive appointment documents)
+      if (executiveDocs.data) {
+        executiveDocs.data.forEach((doc: any) => {
+          // Map document type to category
+          const typeCategoryMap: Record<string, string> = {
+            'pre_incorporation_consent': 'legal',
+            'founders_agreement': 'legal',
+            'shareholders_agreement': 'legal',
+            'bylaws': 'board_materials',
+            'employment_agreement': 'hr',
+            'equity_agreement': 'legal',
+            'confidentiality_agreement': 'legal',
+            'offer_letter': 'hr',
+          };
+
+          const docType = doc.type || '';
+          const category = typeCategoryMap[docType] || 'legal';
+          const title = doc.type?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'Executive Document';
+          const description = doc.signature_status === 'signed' 
+            ? `Signed by ${doc.officer_name || 'Executive'} • ${doc.role || ''}`
+            : `Pending signature • ${doc.officer_name || 'Executive'}`;
+
+          allDocs.push({
+            id: doc.id,
+            title: title,
+            description: description,
+            category: category,
+            file_url: doc.signed_file_url || doc.file_url || '',
+            file_size_bytes: 0,
+            access_level: 2, // Executive docs are confidential
+            created_at: doc.created_at,
+            source: 'executive_documents',
+            signed_file_url: doc.signed_file_url,
+            signature_status: doc.signature_status,
+            officer_name: doc.officer_name,
+            role: doc.role,
+            type: doc.type
           });
         });
       }
@@ -169,6 +216,18 @@ export const DocumentVault: React.FC = () => {
           <div>
             <div className="font-semibold">{title}</div>
             <div className="text-sm text-slate-600">{record.description}</div>
+            {record.source === 'executive_documents' && record.signature_status && (
+              <div className="text-xs mt-1">
+                {record.signature_status === 'signed' ? (
+                  <Tag color="green" size="small">Signed</Tag>
+                ) : (
+                  <Tag color="orange" size="small">Pending</Tag>
+                )}
+                {record.officer_name && (
+                  <span className="text-slate-500 ml-2">{record.officer_name}</span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       ),
@@ -241,9 +300,14 @@ export const DocumentVault: React.FC = () => {
           <Button
             type="link"
             icon={<DownloadOutlined />}
-            onClick={() => window.open(record.file_url, '_blank')}
+            onClick={() => {
+              const urlToDownload = record.signed_file_url || record.file_url;
+              if (urlToDownload) {
+                window.open(urlToDownload, '_blank');
+              }
+            }}
           >
-            Download
+            {record.signed_file_url ? 'Download Signed' : 'Download'}
           </Button>
         </div>
       ),
@@ -417,47 +481,57 @@ export const DocumentVault: React.FC = () => {
             key="download" 
             type="primary"
             icon={<DownloadOutlined />}
-            onClick={() => selectedDocument && window.open(selectedDocument.file_url, '_blank')}
+            onClick={() => {
+              if (selectedDocument) {
+                const urlToDownload = selectedDocument.signed_file_url || selectedDocument.file_url;
+                if (urlToDownload) {
+                  window.open(urlToDownload, '_blank');
+                }
+              }
+            }}
           >
-            Download
+            {selectedDocument?.signed_file_url ? 'Download Signed' : 'Download'}
           </Button>
         ]}
         width="90%"
         style={{ top: 20 }}
         bodyStyle={{ height: 'calc(100vh - 200px)', padding: 0 }}
       >
-        {selectedDocument && (
-          <div style={{ height: '100%', overflow: 'auto', padding: '16px' }}>
-            {selectedDocument.file_url.endsWith('.html') ? (
-              <iframe
-                src={selectedDocument.file_url}
-                style={{ width: '100%', height: 'calc(100vh - 250px)', border: 'none' }}
-                title={selectedDocument.title}
-              />
-            ) : selectedDocument.file_url.endsWith('.pdf') ? (
-              <embed
-                src={selectedDocument.file_url}
-                type="application/pdf"
-                style={{ width: '100%', height: 'calc(100vh - 250px)' }}
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full">
-                <FileOutlined className="text-6xl text-gray-400 mb-4" />
-                <p className="text-gray-600">
-                  Document preview not available for this file type
-                </p>
-                <Button
-                  type="link"
-                  icon={<DownloadOutlined />}
-                  onClick={() => window.open(selectedDocument.file_url, '_blank')}
-                  className="mt-4"
-                >
-                  Download to view
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
+        {selectedDocument && (() => {
+          const fileUrl = selectedDocument.signed_file_url || selectedDocument.file_url;
+          return (
+            <div style={{ height: '100%', overflow: 'auto', padding: '16px' }}>
+              {fileUrl.endsWith('.html') ? (
+                <iframe
+                  src={fileUrl}
+                  style={{ width: '100%', height: 'calc(100vh - 250px)', border: 'none' }}
+                  title={selectedDocument.title}
+                />
+              ) : fileUrl.endsWith('.pdf') || fileUrl.includes('.pdf') ? (
+                <embed
+                  src={fileUrl}
+                  type="application/pdf"
+                  style={{ width: '100%', height: 'calc(100vh - 250px)' }}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full">
+                  <FileOutlined className="text-6xl text-gray-400 mb-4" />
+                  <p className="text-gray-600">
+                    Document preview not available for this file type
+                  </p>
+                  <Button
+                    type="link"
+                    icon={<DownloadOutlined />}
+                    onClick={() => window.open(fileUrl, '_blank')}
+                    className="mt-4"
+                  >
+                    Download to view
+                  </Button>
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </Modal>
     </div>
   );
