@@ -38,8 +38,6 @@ import {
   IconClock,
   IconCheckCircle,
 } from "@tabler/icons-react";
-// Temporary imports for old code sections that haven't been converted yet
-import { Clock, CheckCircle, Tablet, Store, Package, ChevronUp, ChevronDown } from "lucide-react";
 import { useRestaurantSelector } from "@/hooks/useRestaurantSelector";
 import { useRestaurantOnboarding } from "@/hooks/useRestaurantOnboarding";
 import { supabase } from "@/integrations/supabase/client";
@@ -416,144 +414,191 @@ const RestaurantSetup = () => {
                   </Text>
                 </Stack>
 
-          {/* ... keep existing code (Prepare your store section, Go live section, Continue Crave'N setup) */}
-          <Card className="p-6 mb-6">
-            <button onClick={() => setPrepareStoreExpanded(!prepareStoreExpanded)} className="w-full flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-xl font-semibold text-left mb-1">Prepare your store</h2>
-                <p className="text-sm text-muted-foreground text-left">
+          {/* Prepare your store section */}
+          <Card p="lg" mb="lg" withBorder>
+            <Button
+              variant="subtle"
+              fullWidth
+              onClick={() => setPrepareStoreExpanded(!prepareStoreExpanded)}
+              rightSection={prepareStoreExpanded ? <IconChevronUp size={20} /> : <IconChevronDown size={20} />}
+              styles={{ root: { justifyContent: 'space-between', height: 'auto', padding: '16px' } }}
+            >
+              <Stack gap="xs" align="flex-start" style={{ flex: 1 }}>
+                <Title order={3} style={{ textAlign: 'left' }}>Prepare your store</Title>
+                <Text size="sm" c="dimmed" style={{ textAlign: 'left' }}>
                   Review other steps before your store goes live.
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">{completedSteps} of 3 steps</span>
-                {prepareStoreExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-              </div>
-            </button>
+                </Text>
+              </Stack>
+              <Text size="sm" c="dimmed">{completedSteps} of 3 steps</Text>
+            </Button>
 
-            {prepareStoreExpanded && <div className="space-y-4 mt-6">
+            {prepareStoreExpanded && (
+              <Stack gap="md" mt="md">
                 {/* Business info verified */}
-                <Card className="p-6">
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        isBusinessVerified ? 'bg-green-500' : 'bg-orange-500'
-                      }`}>
+                <Card p="lg" withBorder>
+                  <Group gap="md" align="flex-start">
+                    <Box style={{ flexShrink: 0 }}>
+                      <Box
+                        style={{
+                          width: '48px',
+                          height: '48px',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: isBusinessVerified ? 'var(--mantine-color-green-6)' : 'var(--mantine-color-orange-6)',
+                        }}
+                      >
                         {isBusinessVerified ? (
-                          <div className="relative">
-                            <Clock className="w-6 h-6 text-white" />
-                            <CheckCircle className="w-4 h-4 text-white absolute -bottom-1 -right-1 bg-green-500 rounded-full" />
-                          </div>
+                          <Box style={{ position: 'relative' }}>
+                            <IconClock size={24} style={{ color: 'white' }} />
+                            <Box
+                              style={{
+                                position: 'absolute',
+                                bottom: -4,
+                                right: -4,
+                                width: '16px',
+                                height: '16px',
+                                borderRadius: '50%',
+                                backgroundColor: 'var(--mantine-color-green-6)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <IconCheckCircle size={12} style={{ color: 'white' }} />
+                            </Box>
+                          </Box>
                         ) : (
-                          <Clock className="w-6 h-6 text-white" />
+                          <IconClock size={24} style={{ color: 'white' }} />
                         )}
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg mb-2">
+                      </Box>
+                    </Box>
+                    <Stack gap="xs" style={{ flex: 1 }}>
+                      <Title order={4}>
                         {isBusinessVerified 
                           ? 'Your business info was verified' 
                           : 'Business verification pending'}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
+                      </Title>
+                      <Text size="sm" c="dimmed">
                         {isBusinessVerified
                           ? "We've reviewed and verified your business info. No further action is needed."
                           : "Our team is reviewing your business documents. This usually takes 1-2 business days."}
-                      </p>
-                    </div>
-                  </div>
+                      </Text>
+                    </Stack>
+                  </Group>
                 </Card>
 
                 {/* Menu preparation */}
-                <Card className="p-6">
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        progress?.menu_preparation_status === 'ready' 
-                          ? 'bg-green-500' 
-                          : progress?.menu_preparation_status === 'in_progress'
-                            ? 'bg-green-500'
-                            : 'bg-red-500'
-                      }`}>
+                <Card p="lg" withBorder>
+                  <Group gap="md" align="flex-start">
+                    <Box style={{ flexShrink: 0 }}>
+                      <Box
+                        style={{
+                          width: '48px',
+                          height: '48px',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: progress?.menu_preparation_status === 'ready' 
+                            ? 'var(--mantine-color-green-6)' 
+                            : progress?.menu_preparation_status === 'in_progress'
+                              ? 'var(--mantine-color-green-6)'
+                              : 'var(--mantine-color-red-6)',
+                        }}
+                      >
                         {progress?.menu_preparation_status === 'ready' ? (
-                          <CheckCircle className="w-6 h-6 text-white" />
+                          <IconCheckCircle size={24} style={{ color: 'white' }} />
                         ) : (
-                          <Clock className="w-6 h-6 text-white" />
+                          <IconClock size={24} style={{ color: 'white' }} />
                         )}
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-lg">
+                      </Box>
+                    </Box>
+                    <Stack gap="xs" style={{ flex: 1 }}>
+                      <Group gap="xs" align="center">
+                        <Title order={4}>
                           {progress?.menu_preparation_status === 'ready' 
                             ? 'Your menu is ready' 
                             : progress?.menu_preparation_status === 'in_progress'
                               ? "We're preparing your menu"
                               : 'Menu preparation not started'}
-                        </h3>
-                        <span className={`text-xs font-medium px-2 py-1 rounded ${
-                          progress?.menu_preparation_status === 'ready'
-                            ? 'text-green-600 bg-green-50'
-                            : progress?.menu_preparation_status === 'in_progress'
-                              ? 'text-yellow-600 bg-yellow-50'
-                              : 'text-red-600 bg-red-50'
-                        }`}>
+                        </Title>
+                        <Badge
+                          color={
+                            progress?.menu_preparation_status === 'ready'
+                              ? 'green'
+                              : progress?.menu_preparation_status === 'in_progress'
+                                ? 'yellow'
+                                : 'red'
+                          }
+                          variant="light"
+                          size="sm"
+                        >
                           {progress?.menu_preparation_status === 'ready' 
                             ? 'Complete' 
                             : progress?.menu_preparation_status === 'in_progress'
                               ? 'In progress'
                               : 'Not started'}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-4">
+                        </Badge>
+                      </Group>
+                      <Text size="sm" c="dimmed" mb="md">
                         {progress?.menu_preparation_status === 'ready'
                           ? "Your menu has been prepared and is ready to go live."
                           : "This usually takes 2 business days. You'll get an email when your menu is ready."}
-                      </p>
+                      </Text>
                       
-                      {progress?.menu_preparation_status === 'ready' && !restaurant?.header_image_url ? (
-                        <div className="bg-muted/50 p-4 rounded-lg">
-                          <h4 className="font-semibold text-sm mb-2">Add a store header</h4>
-                          <p className="text-sm text-muted-foreground mb-4">
-                            Stores with a header image get up to 50% more monthly sales.
-                          </p>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              setSettingsTab('store');
-                              setActiveTab('settings');
-                            }}
-                          >
-                            Add a header image
-                          </Button>
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
+                      {progress?.menu_preparation_status === 'ready' && !restaurant?.header_image_url && (
+                        <Box p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)', borderRadius: '8px' }}>
+                          <Stack gap="xs">
+                            <Text fw={600} size="sm">Add a store header</Text>
+                            <Text size="sm" c="dimmed" mb="md">
+                              Stores with a header image get up to 50% more monthly sales.
+                            </Text>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                setSettingsTab('store');
+                                setActiveTab('settings');
+                              }}
+                            >
+                              Add a header image
+                            </Button>
+                          </Stack>
+                        </Box>
+                      )}
+                    </Stack>
+                  </Group>
                 </Card>
 
                 {/* Tablet status */}
-                <Card className="p-6">
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        progress?.tablet_delivered_at 
-                          ? 'bg-green-500' 
-                          : progress?.tablet_shipped 
-                            ? 'bg-blue-500' 
-                            : progress?.tablet_preparing_shipment
-                              ? 'bg-yellow-500'
-                              : 'bg-muted'
-                      }`}>
-                        <Tablet className={`w-6 h-6 ${
-                          progress?.tablet_delivered_at || progress?.tablet_shipped || progress?.tablet_preparing_shipment ? 'text-white' : 'text-muted-foreground'
-                        }`} />
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-lg">
+                <Card p="lg" withBorder>
+                  <Group gap="md" align="flex-start">
+                    <Box style={{ flexShrink: 0 }}>
+                      <Box
+                        style={{
+                          width: '48px',
+                          height: '48px',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: progress?.tablet_delivered_at 
+                            ? 'var(--mantine-color-green-6)' 
+                            : progress?.tablet_shipped 
+                              ? 'var(--mantine-color-blue-6)' 
+                              : progress?.tablet_preparing_shipment
+                                ? 'var(--mantine-color-yellow-6)'
+                                : 'var(--mantine-color-gray-3)',
+                        }}
+                      >
+                        <IconDeviceTablet size={24} style={{ color: progress?.tablet_delivered_at || progress?.tablet_shipped || progress?.tablet_preparing_shipment ? 'white' : 'var(--mantine-color-dimmed)' }} />
+                      </Box>
+                    </Box>
+                    <Stack gap="xs" style={{ flex: 1 }}>
+                      <Group gap="xs" align="center">
+                        <Title order={4}>
                           {progress?.tablet_delivered_at
                             ? 'Your tablet has been delivered'
                             : progress?.tablet_shipped
@@ -561,20 +606,24 @@ const RestaurantSetup = () => {
                               : progress?.tablet_preparing_shipment
                                 ? 'Tablet is preparing for shipment'
                                 : 'Tablet not yet shipped'}
-                        </h3>
+                        </Title>
                         {(progress?.tablet_shipped || progress?.tablet_preparing_shipment) && (
-                          <span className={`text-xs font-medium px-2 py-1 rounded ${
-                            progress?.tablet_delivered_at
-                              ? 'text-green-600 bg-green-50'
-                              : progress?.tablet_shipped
-                                ? 'text-blue-600 bg-blue-50'
-                                : 'text-yellow-600 bg-yellow-50'
-                          }`}>
+                          <Badge
+                            color={
+                              progress?.tablet_delivered_at
+                                ? 'green'
+                                : progress?.tablet_shipped
+                                  ? 'blue'
+                                  : 'yellow'
+                            }
+                            variant="light"
+                            size="sm"
+                          >
                             {progress?.tablet_delivered_at ? '✓ Delivered' : progress?.tablet_shipped ? '✓ In transit' : '⏱ Preparing'}
-                          </span>
+                          </Badge>
                         )}
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-3">
+                      </Group>
+                      <Text size="sm" c="dimmed" mb="md">
                         {progress?.tablet_delivered_at
                           ? "Your tablet has been delivered and is ready to use."
                           : progress?.tablet_shipped
@@ -582,113 +631,112 @@ const RestaurantSetup = () => {
                             : progress?.tablet_preparing_shipment
                               ? "Your tablet is being prepared for shipment. You'll receive tracking info soon."
                               : "Your tablet will ship once business verification and menu preparation are complete."}
-                      </p>
+                      </Text>
                       
                       {progress?.tablet_shipping_label_url && (
-                        <div className="mt-3">
-                          <Button
-                            onClick={() => window.open(progress.tablet_shipping_label_url!, '_blank')}
-                            variant="outline"
-                            size="sm"
-                            className="w-full"
-                          >
-                            <Package className="w-4 h-4 mr-2" />
-                            View Shipping Label
-                          </Button>
-                        </div>
+                        <Button
+                          onClick={() => window.open(progress.tablet_shipping_label_url!, '_blank')}
+                          variant="outline"
+                          size="sm"
+                          fullWidth
+                          leftSection={<IconPackage size={16} />}
+                        >
+                          View Shipping Label
+                        </Button>
                       )}
 
                       {progress?.tablet_tracking_number && progress?.tablet_shipped && (
-                        <div className="bg-muted p-3 rounded-lg mt-3 space-y-2">
-                          <p className="text-sm font-semibold">Tracking Information</p>
-                          <p className="text-sm">
-                            <span className="text-muted-foreground">Carrier:</span> {progress.tablet_shipping_carrier || 'USPS'}
-                          </p>
-                          <p className="text-sm">
-                            <span className="text-muted-foreground">Tracking #:</span> {progress.tablet_tracking_number}
-                          </p>
-                          {progress.tablet_shipped_at && (
-                            <p className="text-sm">
-                              <span className="text-muted-foreground">Shipped:</span> {format(new Date(progress.tablet_shipped_at), 'PPP')}
-                            </p>
-                          )}
-                          <Button
-                            onClick={() => {
-                              const carrier = progress.tablet_shipping_carrier || 'USPS';
-                              const trackingUrl = carrier === 'USPS' 
-                                ? `https://tools.usps.com/go/TrackConfirmAction?tLabels=${progress.tablet_tracking_number}`
-                                : carrier === 'UPS'
-                                ? `https://www.ups.com/track?tracknum=${progress.tablet_tracking_number}`
-                                : carrier === 'FedEx'
-                                ? `https://www.fedex.com/fedextrack/?trknbr=${progress.tablet_tracking_number}`
-                                : `https://www.dhl.com/en/express/tracking.html?AWB=${progress.tablet_tracking_number}`;
-                              window.open(trackingUrl, '_blank');
-                            }}
-                            variant="default"
-                            size="sm"
-                            className="w-full mt-2"
-                          >
-                            Track Package
-                          </Button>
-                        </div>
+                        <Box p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)', borderRadius: '8px' }} mt="md">
+                          <Stack gap="xs">
+                            <Text fw={600} size="sm">Tracking Information</Text>
+                            <Text size="sm">
+                              <Text component="span" c="dimmed">Carrier:</Text> {progress.tablet_shipping_carrier || 'USPS'}
+                            </Text>
+                            <Text size="sm">
+                              <Text component="span" c="dimmed">Tracking #:</Text> {progress.tablet_tracking_number}
+                            </Text>
+                            {progress.tablet_shipped_at && (
+                              <Text size="sm">
+                                <Text component="span" c="dimmed">Shipped:</Text> {format(new Date(progress.tablet_shipped_at), 'PPP')}
+                              </Text>
+                            )}
+                            <Button
+                              onClick={() => {
+                                const carrier = progress.tablet_shipping_carrier || 'USPS';
+                                const trackingUrl = carrier === 'USPS' 
+                                  ? `https://tools.usps.com/go/TrackConfirmAction?tLabels=${progress.tablet_tracking_number}`
+                                  : carrier === 'UPS'
+                                  ? `https://www.ups.com/track?tracknum=${progress.tablet_tracking_number}`
+                                  : carrier === 'FedEx'
+                                  ? `https://www.fedex.com/fedextrack/?trknbr=${progress.tablet_tracking_number}`
+                                  : `https://www.dhl.com/en/express/tracking.html?AWB=${progress.tablet_tracking_number}`;
+                                window.open(trackingUrl, '_blank');
+                              }}
+                              size="sm"
+                              fullWidth
+                              mt="xs"
+                            >
+                              Track Package
+                            </Button>
+                          </Stack>
+                        </Box>
                       )}
-                    </div>
-                  </div>
+                    </Stack>
+                  </Group>
                 </Card>
-              </div>}
+              </Stack>
+            )}
           </Card>
 
           {/* Go live section */}
-          <Card className="p-6 mb-6">
-            <div className="flex gap-4">
-              <div className="flex-shrink-0">
-                <div className="w-16 h-16">
-                  <Store className="w-16 h-16 text-orange-500" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="font-semibold text-lg">Go live with your store</h3>
-                  <span className={`text-xs font-medium px-2 py-1 rounded ${
-                    readiness?.ready
-                      ? 'text-green-600 bg-green-50'
-                      : 'text-orange-600 bg-orange-50'
-                  }`}>
+          <Card p="lg" mb="lg" withBorder>
+            <Group gap="md" align="flex-start">
+              <Box style={{ flexShrink: 0 }}>
+                <IconBuildingStore size={64} style={{ color: 'var(--mantine-color-orange-6)' }} />
+              </Box>
+              <Stack gap="xs" style={{ flex: 1 }}>
+                <Group gap="xs" align="center">
+                  <Title order={4}>Go live with your store</Title>
+                  <Badge
+                    color={readiness?.ready ? 'green' : 'orange'}
+                    variant="light"
+                    size="sm"
+                  >
                     {readiness?.ready ? '✓ Ready' : '🔥 Not ready'}
-                  </span>
+                  </Badge>
                   {readiness && (
-                    <span className="text-xs font-medium text-muted-foreground">
+                    <Text size="xs" c="dimmed" fw={500}>
                       Readiness: {readiness.score}%
-                    </span>
+                    </Text>
                   )}
-                </div>
-                <p className="text-sm text-muted-foreground mb-2">
+                </Group>
+                <Text size="sm" c="dimmed" mb="md">
                   {readiness?.ready
                     ? `You're ready to go live! Your estimated launch date is ${deadline}.`
                     : `We recommend going live by ${deadline}. Complete the items below to go live.`}
-                </p>
+                </Text>
                 {readiness && readiness.blockers.length > 0 && (
-                  <div className="mt-3 p-3 bg-orange-50 rounded-lg">
-                    <p className="text-sm font-semibold text-orange-900 mb-1">Required to go live:</p>
-                    <ul className="text-sm text-orange-800 space-y-1">
+                  <Box p="md" style={{ backgroundColor: 'var(--mantine-color-orange-0)', borderRadius: '8px' }} mt="md">
+                    <Text fw={600} size="sm" c="orange.9" mb="xs">Required to go live:</Text>
+                    <Stack gap="xs">
                       {readiness.blockers.map((blocker, idx) => (
-                        <li key={idx}>• {blocker}</li>
+                        <Text key={idx} size="sm" c="orange.8">• {blocker}</Text>
                       ))}
-                    </ul>
-                  </div>
+                    </Stack>
+                  </Box>
                 )}
                 {readiness && readiness.missing_items.length > 0 && (
-                  <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                    <p className="text-sm font-semibold text-blue-900 mb-1">Recommended items:</p>
-                    <ul className="text-sm text-blue-800 space-y-1">
+                  <Box p="md" style={{ backgroundColor: 'var(--mantine-color-blue-0)', borderRadius: '8px' }} mt="md">
+                    <Text fw={600} size="sm" c="blue.9" mb="xs">Recommended items:</Text>
+                    <Stack gap="xs">
                       {readiness.missing_items.slice(0, 3).map((item, idx) => (
-                        <li key={idx}>• {item}</li>
+                        <Text key={idx} size="sm" c="blue.8">• {item}</Text>
                       ))}
-                    </ul>
-                  </div>
+                    </Stack>
+                  </Box>
                 )}
-              </div>
-            </div>
+              </Stack>
+            </Group>
           </Card>
 
           {/* Continue Crave'N setup */}

@@ -17,6 +17,7 @@ import {
   ActionIcon,
   Tabs,
   Loader,
+  Image as MantineImage,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import {
