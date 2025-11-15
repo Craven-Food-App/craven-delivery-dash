@@ -227,16 +227,16 @@ const RestaurantMenuPage = () => {
 
     // Navigation categories for side menu
     const navCategories = [
-        { id: 'all', label: 'All', icon: Home, active: activeCategory === 'all' },
-        { id: 'grocery', label: 'Grocery', icon: Banana, active: activeCategory === 'grocery' },
-        { id: 'convenience', label: 'Convenience', icon: Coffee, active: activeCategory === 'convenience' },
-        { id: 'dashmart', label: "Craven'Z", icon: Store, active: activeCategory === 'dashmart' },
-        { id: 'beauty', label: 'Beauty', icon: Heart, active: activeCategory === 'beauty' },
-        { id: 'pets', label: 'Pets', icon: PawPrint, active: activeCategory === 'pets' },
-        { id: 'health', label: 'Health', icon: Pill, active: activeCategory === 'health' },
-        { id: 'browse', label: 'Browse All', icon: Search, active: activeCategory === 'browse' },
-        { id: 'orders', label: 'Orders', icon: Receipt, active: activeCategory === 'orders' },
-        { id: 'account', label: 'Account', icon: User, active: activeCategory === 'account' }
+        { id: 'all', label: 'All', icon: IconHome, active: activeCategory === 'all' },
+        { id: 'grocery', label: 'Grocery', icon: IconBanana, active: activeCategory === 'grocery' },
+        { id: 'convenience', label: 'Convenience', icon: IconCoffee, active: activeCategory === 'convenience' },
+        { id: 'dashmart', label: "Craven'Z", icon: IconBuildingStore, active: activeCategory === 'dashmart' },
+        { id: 'beauty', label: 'Beauty', icon: IconHeart, active: activeCategory === 'beauty' },
+        { id: 'pets', label: 'Pets', icon: IconPaw, active: activeCategory === 'pets' },
+        { id: 'health', label: 'Health', icon: IconPill, active: activeCategory === 'health' },
+        { id: 'browse', label: 'Browse All', icon: IconSearch, active: activeCategory === 'browse' },
+        { id: 'orders', label: 'Orders', icon: IconReceipt, active: activeCategory === 'orders' },
+        { id: 'account', label: 'Account', icon: IconUser, active: activeCategory === 'account' }
     ];
 
     // Helper functions for header functionality
@@ -1310,78 +1310,98 @@ const RestaurantMenuPage = () => {
         </Box>
       </Box>
 
-      <div className="relative">
+      <Box style={{ position: 'relative' }}>
         {/* Right Side Navigation - Fixed Overlay */}
-        <div 
-          className={`hidden lg:block fixed left-0 top-[64px] transition-all duration-300 ease-in-out ${
-            (isMenuCompressed && !isMenuHovered) ? 'w-16' : 'w-64'
-          } bg-gray-50 border-r border-gray-200 h-[calc(100vh-64px)] z-30 shadow-md`}
+        <Box
+          style={{
+            display: 'none',
+            '@media (min-width: 1024px)': { display: 'block' },
+            position: 'fixed',
+            left: 0,
+            top: '64px',
+            width: (isMenuCompressed && !isMenuHovered) ? '64px' : '256px',
+            backgroundColor: 'var(--mantine-color-gray-0)',
+            borderRight: '1px solid var(--mantine-color-gray-3)',
+            height: 'calc(100vh - 64px)',
+            zIndex: 30,
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+            transition: 'width 0.3s ease-in-out',
+          }}
           onMouseEnter={() => setIsMenuHovered(true)}
           onMouseLeave={() => setIsMenuHovered(false)}
         >
-          <div className="p-4">
+          <Stack gap="md" p="md">
             {/* Hamburger Menu Button */}
-            <button 
+            <Button
+              variant="subtle"
+              fullWidth
               onClick={toggleMenuCompression}
-              className="w-full flex items-center justify-center p-2 mb-4 hover:bg-gray-100 rounded-lg transition-colors"
+              style={{ justifyContent: 'center' }}
             >
-              <Menu className="w-5 h-5 text-gray-600" />
-            </button>
+              <IconMenu2 size={20} style={{ color: 'var(--mantine-color-gray-6)' }} />
+            </Button>
 
             {(!isMenuCompressed || isMenuHovered) && (
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Browse</h3>
+              <Text size="sm" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: '0.05em' }}>
+                Browse
+              </Text>
             )}
             
-            <nav className="space-y-1">
-              {navCategories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => handleCategoryClick(category.id)}
-                  className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                >
-                  <category.icon className="w-5 h-5 flex-shrink-0" />
-                  {(!isMenuCompressed || isMenuHovered) && (
-                    <span className="font-medium">{category.label}</span>
-                  )}
-                </button>
-              ))}
-            </nav>
-          </div>
-        </div>
+            <Stack gap="xs">
+              {navCategories.map((category) => {
+                const IconComponent = category.icon;
+                return (
+                  <Button
+                    key={category.id}
+                    variant="subtle"
+                    fullWidth
+                    justify="flex-start"
+                    leftSection={<IconComponent size={20} />}
+                    onClick={() => handleCategoryClick(category.id)}
+                    style={{
+                      color: category.active ? 'var(--mantine-color-orange-6)' : 'var(--mantine-color-gray-6)',
+                      backgroundColor: category.active ? 'var(--mantine-color-orange-0)' : 'transparent',
+                    }}
+                  >
+                    {(!isMenuCompressed || isMenuHovered) && (
+                      <Text fw={500}>{category.label}</Text>
+                    )}
+                  </Button>
+                );
+              })}
+            </Stack>
+          </Stack>
+        </Box>
 
         {/* Mobile Navigation Overlay */}
-        {showMobileNav && (
-          <div className="lg:hidden fixed inset-0 z-50 bg-black bg-opacity-50">
-            <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-xl">
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold">Menu</h2>
-                  <button 
-                    onClick={() => setShowMobileNav(false)}
-                    className="p-2 hover:bg-gray-100 rounded-lg"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                <nav className="space-y-1">
-                  {navCategories.map((category) => (
-                    <button
-                      key={category.id}
-                      onClick={() => {
-                        handleCategoryClick(category.id);
-                        setShowMobileNav(false);
-                      }}
-                  className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                    >
-                      <category.icon className="w-5 h-5" />
-                      <span className="font-medium">{category.label}</span>
-                    </button>
-                  ))}
-                </nav>
-              </div>
-            </div>
-          </div>
-        )}
+        <Drawer
+          opened={showMobileNav}
+          onClose={() => setShowMobileNav(false)}
+          position="right"
+          size="320px"
+          title="Menu"
+        >
+          <Stack gap="xs">
+            {navCategories.map((category) => {
+              const IconComponent = category.icon;
+              return (
+                <Button
+                  key={category.id}
+                  variant="subtle"
+                  fullWidth
+                  justify="flex-start"
+                  leftSection={<IconComponent size={20} />}
+                  onClick={() => {
+                    handleCategoryClick(category.id);
+                    setShowMobileNav(false);
+                  }}
+                >
+                  {category.label}
+                </Button>
+              );
+            })}
+          </Stack>
+        </Drawer>
 
         {/* Main Content */}
         <div className="flex-1 relative">
