@@ -6,45 +6,46 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import {
-  Plus,
-  Edit,
-  Trash2,
-  Upload,
-  Clock,
-  DollarSign,
-  Eye,
-  EyeOff,
-  Save,
-  X,
-  Image as ImageIcon,
-  ChefHat,
-  Tag
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
+  Button,
+  Card,
+  TextInput,
+  Textarea,
+  Switch,
+  Badge,
+  Tabs,
+  Modal,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Stack,
+  Group,
+  Text,
+  Title,
+  Box,
+  Loader,
+  ActionIcon,
+  FileButton,
+  Image as MantineImage,
+  Grid,
+  Divider,
+  MultiSelect,
+  NumberInput,
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import {
+  IconPlus,
+  IconEdit,
+  IconTrash,
+  IconUpload,
+  IconClock,
+  IconCurrencyDollar,
+  IconEye,
+  IconEyeOff,
+  IconDeviceFloppy,
+  IconX,
+  IconPhoto,
+  IconChefHat,
+  IconTag,
+} from '@tabler/icons-react';
 
 interface MenuItem {
   id: string;
@@ -69,7 +70,6 @@ interface MenuCategory {
 }
 
 export function MenuManagement({ restaurantId }: { restaurantId: string }) {
-  const { toast } = useToast();
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -114,10 +114,10 @@ export function MenuManagement({ restaurantId }: { restaurantId: string }) {
       setCategories(categoriesData);
     } catch (error) {
       console.error('Error fetching menu items:', error);
-      toast({
+      notifications.show({
         title: 'Error',
-        description: 'Failed to load menu items',
-        variant: 'destructive'
+        message: 'Failed to load menu items',
+        color: 'red',
       });
     } finally {
       setLoading(false);
@@ -164,9 +164,10 @@ export function MenuManagement({ restaurantId }: { restaurantId: string }) {
 
         if (error) throw error;
 
-        toast({
+        notifications.show({
           title: 'Success',
-          description: 'Menu item updated successfully'
+          message: 'Menu item updated successfully',
+          color: 'green',
         });
       } else {
         // Create new item
@@ -176,9 +177,10 @@ export function MenuManagement({ restaurantId }: { restaurantId: string }) {
 
         if (error) throw error;
 
-        toast({
+        notifications.show({
           title: 'Success',
-          description: 'Menu item created successfully'
+          message: 'Menu item created successfully',
+          color: 'green',
         });
       }
 
@@ -186,10 +188,10 @@ export function MenuManagement({ restaurantId }: { restaurantId: string }) {
       fetchMenuItems();
     } catch (error) {
       console.error('Error saving item:', error);
-      toast({
+      notifications.show({
         title: 'Error',
-        description: 'Failed to save menu item',
-        variant: 'destructive'
+        message: 'Failed to save menu item',
+        color: 'red',
       });
     }
   };
@@ -205,18 +207,19 @@ export function MenuManagement({ restaurantId }: { restaurantId: string }) {
 
       if (error) throw error;
 
-      toast({
+      notifications.show({
         title: 'Success',
-        description: 'Menu item deleted successfully'
+        message: 'Menu item deleted successfully',
+        color: 'green',
       });
 
       fetchMenuItems();
     } catch (error) {
       console.error('Error deleting item:', error);
-      toast({
+      notifications.show({
         title: 'Error',
-        description: 'Failed to delete menu item',
-        variant: 'destructive'
+        message: 'Failed to delete menu item',
+        color: 'red',
       });
     }
   };
@@ -230,18 +233,19 @@ export function MenuManagement({ restaurantId }: { restaurantId: string }) {
 
       if (error) throw error;
 
-      toast({
+      notifications.show({
         title: 'Success',
-        description: `Item ${!currentAvailability ? 'enabled' : 'disabled'} successfully`
+        message: `Item ${!currentAvailability ? 'enabled' : 'disabled'} successfully`,
+        color: 'green',
       });
 
       fetchMenuItems();
     } catch (error) {
       console.error('Error toggling availability:', error);
-      toast({
+      notifications.show({
         title: 'Error',
-        description: 'Failed to update item availability',
-        variant: 'destructive'
+        message: 'Failed to update item availability',
+        color: 'red',
       });
     }
   };
@@ -252,20 +256,20 @@ export function MenuManagement({ restaurantId }: { restaurantId: string }) {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast({
+      notifications.show({
         title: 'Invalid File',
-        description: 'Please upload an image file',
-        variant: 'destructive'
+        message: 'Please upload an image file',
+        color: 'red',
       });
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast({
+      notifications.show({
         title: 'File Too Large',
-        description: 'Please upload an image smaller than 5MB',
-        variant: 'destructive'
+        message: 'Please upload an image smaller than 5MB',
+        color: 'red',
       });
       return;
     }
@@ -296,16 +300,17 @@ export function MenuManagement({ restaurantId }: { restaurantId: string }) {
       setImagePreview(publicUrl);
       setCurrentItem(prev => prev ? { ...prev, image_url: publicUrl } : null);
 
-      toast({
+      notifications.show({
         title: 'Success',
-        description: 'Image uploaded successfully'
+        message: 'Image uploaded successfully',
+        color: 'green',
       });
     } catch (error) {
       console.error('Error uploading image:', error);
-      toast({
+      notifications.show({
         title: 'Error',
-        description: 'Failed to upload image',
-        variant: 'destructive'
+        message: 'Failed to upload image',
+        color: 'red',
       });
     } finally {
       setUploadingImage(false);
