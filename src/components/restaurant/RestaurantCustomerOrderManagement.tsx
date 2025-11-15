@@ -1,13 +1,30 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
+import {
+  Card,
+  Button,
+  Badge,
+  Tabs,
+  Text,
+  Title,
+  Stack,
+  Group,
+  Box,
+  Loader,
+  Divider,
+  ActionIcon,
+  Grid,
+} from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import {
+  IconClock,
+  IconMapPin,
+  IconPhone,
+  IconMail,
+  IconPackage,
+  IconTruck,
+  IconCopy,
+} from "@tabler/icons-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Separator } from "@/components/ui/separator";
-import { Clock, MapPin, Phone, Mail, Package, Truck, Copy } from "lucide-react";
 
 interface CustomerOrder {
   id: string;
@@ -38,7 +55,6 @@ interface RestaurantCustomerOrderManagementProps {
 export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCustomerOrderManagementProps) => {
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchOrders();
@@ -191,9 +207,10 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
 
       if (error) throw error;
 
-      toast({
+      notifications.show({
         title: "Order Updated",
-        description: `Order status updated to ${newStatus}`,
+        message: `Order status updated to ${newStatus}`,
+        color: 'green',
       });
     } catch (error) {
       console.error('Error updating order:', error);
@@ -201,10 +218,10 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
       // Revert to previous state on error
       setOrders(previousOrders);
       
-      toast({
+      notifications.show({
         title: "Error",
-        description: "Failed to update order status",
-        variant: "destructive",
+        message: "Failed to update order status",
+        color: 'red',
       });
     }
   };
@@ -245,7 +262,11 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
   };
 
   if (loading) {
-    return <div className="text-center py-8">Loading orders...</div>;
+    return (
+      <Box p="xl" style={{ textAlign: 'center' }}>
+        <Loader />
+      </Box>
+    );
   }
 
   const pendingOrders = filterOrdersByStatus('pending');
@@ -253,196 +274,202 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
   const completedOrders = filterOrdersByStatus('delivered');
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{pendingOrders.length}</div>
-          </CardContent>
-        </Card>
+    <Stack gap="xl">
+      <Grid gutter="md">
+        <Grid.Col span={{ base: 12, md: 4 }}>
+          <Card p="md" withBorder>
+            <Stack gap="xs">
+              <Text size="sm" fw={500}>Pending Orders</Text>
+              <Text size="xl" fw={700}>{pendingOrders.length}</Text>
+            </Stack>
+          </Card>
+        </Grid.Col>
         
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Active Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeOrders.length}</div>
-          </CardContent>
-        </Card>
+        <Grid.Col span={{ base: 12, md: 4 }}>
+          <Card p="md" withBorder>
+            <Stack gap="xs">
+              <Text size="sm" fw={500}>Active Orders</Text>
+              <Text size="xl" fw={700}>{activeOrders.length}</Text>
+            </Stack>
+          </Card>
+        </Grid.Col>
         
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${(orders.reduce((sum, order) => 
-                order.order_status === 'delivered' && 
-                new Date(order.created_at).toDateString() === new Date().toDateString()
-                  ? sum + order.total_cents : sum, 0
-              ) / 100).toFixed(2)}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        <Grid.Col span={{ base: 12, md: 4 }}>
+          <Card p="md" withBorder>
+            <Stack gap="xs">
+              <Text size="sm" fw={500}>Today's Revenue</Text>
+              <Text size="xl" fw={700}>
+                ${(orders.reduce((sum, order) => 
+                  order.order_status === 'delivered' && 
+                  new Date(order.created_at).toDateString() === new Date().toDateString()
+                    ? sum + order.total_cents : sum, 0
+                ) / 100).toFixed(2)}
+              </Text>
+            </Stack>
+          </Card>
+        </Grid.Col>
+      </Grid>
 
-      <Tabs defaultValue="all" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="all">All Orders ({orders.length})</TabsTrigger>
-          <TabsTrigger value="pending">Pending ({pendingOrders.length})</TabsTrigger>
-          <TabsTrigger value="active">Active ({activeOrders.length})</TabsTrigger>
-          <TabsTrigger value="delivered">Completed ({completedOrders.length})</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="all">
+        <Tabs.List>
+          <Tabs.Tab value="all">All Orders ({orders.length})</Tabs.Tab>
+          <Tabs.Tab value="pending">Pending ({pendingOrders.length})</Tabs.Tab>
+          <Tabs.Tab value="active">Active ({activeOrders.length})</Tabs.Tab>
+          <Tabs.Tab value="delivered">Completed ({completedOrders.length})</Tabs.Tab>
+        </Tabs.List>
 
         {['all', 'pending', 'active', 'delivered'].map((tab) => (
-          <TabsContent key={tab} value={tab} className="space-y-4">
+          <Tabs.Panel key={tab} value={tab} pt="md">
+            <Stack gap="md">
             {filterOrdersByStatus(tab === 'active' ? undefined : tab === 'all' ? undefined : tab)
               .filter(order => tab === 'active' 
                 ? ['confirmed', 'preparing', 'ready', 'out_for_delivery'].includes(order.order_status)
                 : tab === 'all' ? true : order.order_status === tab
               )
               .map((order) => (
-              <Card key={order.id} className="overflow-hidden">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-lg">Order #{order.order_number || order.id.slice(-8)}</CardTitle>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {new Date(order.created_at).toLocaleString()}
-                        </span>
-                        <Badge variant={getStatusColor(order.order_status)}>
+              <Card key={order.id} p="md" withBorder>
+                <Stack gap="md">
+                  <Group justify="space-between" align="flex-start">
+                    <Stack gap="xs">
+                      <Title order={4}>Order #{order.order_number || order.id.slice(-8)}</Title>
+                      <Group gap="md">
+                        <Group gap="xs">
+                          <IconClock size={12} style={{ color: 'var(--mantine-color-dimmed)' }} />
+                          <Text size="sm" c="dimmed">{new Date(order.created_at).toLocaleString()}</Text>
+                        </Group>
+                        <Badge color={getStatusColor(order.order_status) === 'destructive' ? 'red' : getStatusColor(order.order_status) === 'secondary' ? 'blue' : 'gray'}>
                           {getStatusLabel(order.order_status)}
                         </Badge>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold">${(order.total_cents / 100).toFixed(2)}</div>
-                      <div className="text-sm text-muted-foreground">{order.delivery_method}</div>
-                    </div>
-                  </div>
-                </CardHeader>
+                      </Group>
+                    </Stack>
+                    <Stack gap="xs" align="flex-end">
+                      <Text size="lg" fw={700}>${(order.total_cents / 100).toFixed(2)}</Text>
+                      <Text size="sm" c="dimmed">{order.delivery_method}</Text>
+                    </Stack>
+                  </Group>
 
-                <CardContent className="space-y-4">
                   {/* Order Number and Pickup Code */}
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Order Number */}
-                    <div className="p-3 bg-gray-50 rounded-lg border">
-                      <p className="text-xs font-semibold text-gray-600 uppercase mb-1">
-                        Order Number
-                      </p>
-                      <p className="text-lg font-bold font-mono">
-                        {order.order_number || order.id.slice(-8)}
-                      </p>
-                    </div>
+                  <Grid gutter="md">
+                    <Grid.Col span={{ base: 12, md: 6 }}>
+                      <Box p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)', borderRadius: '8px' }} withBorder>
+                        <Stack gap="xs">
+                          <Text size="xs" fw={600} c="gray.6" tt="uppercase">Order Number</Text>
+                          <Text size="lg" fw={700} style={{ fontFamily: 'monospace' }}>
+                            {order.order_number || order.id.slice(-8)}
+                          </Text>
+                        </Stack>
+                      </Box>
+                    </Grid.Col>
                     
                     {/* Pickup Code */}
                     {order.pickup_code && (
-                      <div className="p-3 bg-orange-50 rounded-lg border-2 border-orange-300">
-                        <p className="text-xs font-semibold text-orange-700 uppercase mb-1">
-                          Pickup Code
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <p className="text-lg font-black font-mono text-orange-900">
-                            {order.pickup_code}
-                          </p>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              navigator.clipboard.writeText(order.pickup_code!);
-                              toast({
-                                title: "Copied!",
-                                description: `Pickup code copied`,
-                              });
-                            }}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
+                      <Grid.Col span={{ base: 12, md: 6 }}>
+                        <Box p="md" style={{ background: 'linear-gradient(to right, var(--mantine-color-orange-0), var(--mantine-color-orange-1))', border: '2px solid var(--mantine-color-orange-3)', borderRadius: '8px' }}>
+                          <Group justify="space-between" align="flex-start">
+                            <Stack gap="xs">
+                              <Text size="xs" fw={600} c="orange.7" tt="uppercase">Pickup Code</Text>
+                              <Text size="lg" fw={900} c="orange.9" style={{ fontFamily: 'monospace' }}>
+                                {order.pickup_code}
+                              </Text>
+                            </Stack>
+                            <ActionIcon
+                              variant="subtle"
+                              color="orange"
+                              onClick={() => {
+                                navigator.clipboard.writeText(order.pickup_code!);
+                                notifications.show({
+                                  title: "Copied!",
+                                  message: `Pickup code copied`,
+                                  color: 'green',
+                                });
+                              }}
+                            >
+                              <IconCopy size={16} />
+                            </ActionIcon>
+                          </Group>
+                        </Box>
+                      </Grid.Col>
                     )}
-                  </div>
+                  </Grid>
                   
                   {/* Customer Information */}
-                  <div>
-                    <h4 className="font-medium mb-2">Customer</h4>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Package className="h-3 w-3" />
-                        <span>{order.customer_name}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-3 w-3" />
-                        <span>{order.customer_email}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-3 w-3" />
-                        <span>{order.customer_phone}</span>
-                      </div>
-                       {order.delivery_address && (
-                         <div className="flex items-center gap-2">
-                           <MapPin className="h-3 w-3" />
-                           <span>
-                             {typeof order.delivery_address === 'string' 
-                               ? order.delivery_address 
-                               : `${order.delivery_address.street}, ${order.delivery_address.city}, ${order.delivery_address.state} ${order.delivery_address.zip}`
-                             }
-                           </span>
-                         </div>
-                       )}
-                    </div>
-                  </div>
+                  <Stack gap="xs">
+                    <Text fw={500}>Customer</Text>
+                    <Stack gap="xs">
+                      <Group gap="xs">
+                        <IconPackage size={14} style={{ color: 'var(--mantine-color-dimmed)' }} />
+                        <Text size="sm">{order.customer_name}</Text>
+                      </Group>
+                      <Group gap="xs">
+                        <IconMail size={14} style={{ color: 'var(--mantine-color-dimmed)' }} />
+                        <Text size="sm">{order.customer_email}</Text>
+                      </Group>
+                      <Group gap="xs">
+                        <IconPhone size={14} style={{ color: 'var(--mantine-color-dimmed)' }} />
+                        <Text size="sm">{order.customer_phone}</Text>
+                      </Group>
+                      {order.delivery_address && (
+                        <Group gap="xs">
+                          <IconMapPin size={14} style={{ color: 'var(--mantine-color-dimmed)' }} />
+                          <Text size="sm">
+                            {typeof order.delivery_address === 'string' 
+                              ? order.delivery_address 
+                              : `${order.delivery_address.street}, ${order.delivery_address.city}, ${order.delivery_address.state} ${order.delivery_address.zip}`
+                            }
+                          </Text>
+                        </Group>
+                      )}
+                    </Stack>
+                  </Stack>
 
-                  <Separator />
+                  <Divider />
 
                   {/* Order Items */}
-                  <div>
-                    <h4 className="font-medium mb-2">Items ({order.order_items.length})</h4>
-                    <div className="space-y-2">
+                  <Stack gap="xs">
+                    <Text fw={500}>Items ({order.order_items.length})</Text>
+                    <Stack gap="xs">
                       {order.order_items.map((item: any, index: number) => (
-                        <div key={index} className="flex justify-between text-sm">
-                          <div>
-                            <span>{item.quantity}x {item.name}</span>
+                        <Group key={index} justify="space-between">
+                          <Stack gap="xs">
+                            <Text size="sm">{item.quantity}x {item.name}</Text>
                             {item.modifiers?.length > 0 && (
-                              <div className="text-muted-foreground ml-4">
-                                {item.modifiers.map((mod: any) => (
-                                  <div key={mod.id}>+ {mod.name}</div>
-                                ))}
-                              </div>
+                              <Box pl="md">
+                                <Stack gap="xs">
+                                  {item.modifiers.map((mod: any) => (
+                                    <Text key={mod.id} size="sm" c="dimmed">+ {mod.name}</Text>
+                                  ))}
+                                </Stack>
+                              </Box>
                             )}
                             {item.special_instructions && (
-                              <div className="text-muted-foreground ml-4 italic">
+                              <Text size="sm" c="dimmed" style={{ fontStyle: 'italic' }} pl="md">
                                 Note: {item.special_instructions}
-                              </div>
+                              </Text>
                             )}
-                          </div>
-                          <span>${((item.price_cents + (item.modifiers?.reduce((sum: number, mod: any) => sum + mod.price_cents, 0) || 0)) * item.quantity / 100).toFixed(2)}</span>
-                        </div>
+                          </Stack>
+                          <Text size="sm" fw={500}>
+                            ${((item.price_cents + (item.modifiers?.reduce((sum: number, mod: any) => sum + mod.price_cents, 0) || 0)) * item.quantity / 100).toFixed(2)}
+                          </Text>
+                        </Group>
                       ))}
-                    </div>
-                  </div>
+                    </Stack>
+                  </Stack>
 
                   {order.special_instructions && (
                     <>
-                      <Separator />
-                      <div>
-                        <h4 className="font-medium mb-2">Special Instructions</h4>
-                        <p className="text-sm text-muted-foreground">{order.special_instructions}</p>
-                      </div>
+                      <Divider />
+                      <Stack gap="xs">
+                        <Text fw={500}>Special Instructions</Text>
+                        <Text size="sm" c="dimmed">{order.special_instructions}</Text>
+                      </Stack>
                     </>
                   )}
 
                   {/* Order Actions */}
                   {order.order_status !== 'delivered' && order.order_status !== 'cancelled' && (
                     <>
-                      <Separator />
-                      <div className="flex gap-2 flex-wrap">
+                      <Divider />
+                      <Group gap="xs" wrap="wrap">
                         {getNextStatus(order.order_status) && (
                           <Button
                             onClick={() => updateOrderStatus(order.id, getNextStatus(order.order_status)!)}
@@ -457,12 +484,12 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
                             <Button
                               onClick={() => updateOrderStatus(order.id, 'confirmed')}
                               size="sm"
-                              className="bg-green-600 hover:bg-green-700"
+                              color="green"
                             >
                               Confirm Order
                             </Button>
                             <Button
-                              variant="destructive"
+                              color="red"
                               onClick={() => updateOrderStatus(order.id, 'cancelled')}
                               size="sm"
                             >
@@ -470,15 +497,16 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
                             </Button>
                           </>
                         )}
-                      </div>
+                      </Group>
                     </>
                   )}
-                </CardContent>
+                </Stack>
               </Card>
             ))}
-          </TabsContent>
+            </Stack>
+          </Tabs.Panel>
         ))}
       </Tabs>
-    </div>
+    </Stack>
   );
 };
