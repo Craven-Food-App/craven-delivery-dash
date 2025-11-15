@@ -1,7 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Car, FileText, Upload, CheckCircle, XCircle } from 'lucide-react';
+import { IconArrowLeft, IconCar, IconFileText, IconUpload, IconCheck, IconX } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import {
+  Box,
+  Stack,
+  Text,
+  Button,
+  Group,
+  Card,
+  Title,
+  ActionIcon,
+  Loader,
+  ThemeIcon,
+  Paper,
+  Grid,
+} from '@mantine/core';
 
 type VehicleDocumentsPageProps = {
   onBack: () => void;
@@ -42,159 +56,186 @@ const VehicleDocumentsPage: React.FC<VehicleDocumentsPageProps> = ({ onBack }) =
 
   const getStatusIcon = (status: boolean | null | undefined) => {
     if (status === true) {
-      return <CheckCircle className="w-5 h-5 text-green-600" />;
+      return <IconCheck size={20} color="var(--mantine-color-green-6)" />;
     }
-    return <XCircle className="w-5 h-5 text-gray-400" />;
+    return <IconX size={20} color="var(--mantine-color-gray-4)" />;
   };
 
   if (loading) {
     return (
-      <div className="h-screen w-full bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-      </div>
+      <Box h="100vh" w="100%" bg="gray.0" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader size="lg" color="orange" />
+      </Box>
     );
   }
 
   return (
-    <div className="h-screen w-full bg-gray-50 overflow-y-auto" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
+    <Box h="100vh" w="100%" bg="gray.0" style={{ overflowY: 'auto', paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between safe-area-top">
-        <button onClick={onBack} className="text-gray-900">
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        <h1 className="text-gray-900 text-xl font-bold">Vehicle & Documents</h1>
-        <div className="w-6"></div>
-      </div>
+      <Paper
+        pos="sticky"
+        top={0}
+        style={{ zIndex: 10 }}
+        bg="white"
+        style={{ borderBottom: '1px solid var(--mantine-color-gray-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+        className="safe-area-top"
+      >
+        <Group px="xl" py="md" justify="space-between" align="center">
+          <ActionIcon onClick={onBack} variant="subtle" color="dark">
+            <IconArrowLeft size={24} />
+          </ActionIcon>
+          <Title order={3} fw={700} c="dark">Vehicle & Documents</Title>
+          <Box w={24} />
+        </Group>
+      </Paper>
 
-      <div className="px-6 py-6 space-y-4">
+      <Stack gap="md" p="xl">
         {/* Vehicle Information */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-green-100 p-3 rounded-xl">
-              <Car className="w-6 h-6 text-green-600" />
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900 text-lg">Vehicle Information</h2>
-              <p className="text-sm text-gray-500">Your registered vehicle details</p>
-            </div>
-          </div>
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Group gap="md" mb="md">
+              <ThemeIcon size="xl" radius="lg" color="green" variant="light">
+                <IconCar size={24} />
+              </ThemeIcon>
+              <Box>
+                <Title order={4} fw={700} c="dark">Vehicle Information</Title>
+                <Text size="sm" c="dimmed">Your registered vehicle details</Text>
+              </Box>
+            </Group>
+          </Card.Section>
+          <Card.Section p="md">
+            <Stack gap="md">
+              <Grid gutter="md">
+                <Grid.Col span={6}>
+                  <Text size="sm" fw={600} c="dimmed" mb="xs">Make</Text>
+                  <Paper p="md" bg="gray.0" style={{ border: '2px solid var(--mantine-color-gray-2)', borderRadius: '12px' }}>
+                    <Text c="dark">{vehicleData?.vehicle_make || 'Not set'}</Text>
+                  </Paper>
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <Text size="sm" fw={600} c="dimmed" mb="xs">Model</Text>
+                  <Paper p="md" bg="gray.0" style={{ border: '2px solid var(--mantine-color-gray-2)', borderRadius: '12px' }}>
+                    <Text c="dark">{vehicleData?.vehicle_model || 'Not set'}</Text>
+                  </Paper>
+                </Grid.Col>
+              </Grid>
 
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm text-gray-600 font-semibold mb-2 block">Make</label>
-                <div className="px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50">
-                  <p className="text-gray-900">{vehicleData?.vehicle_make || 'Not set'}</p>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm text-gray-600 font-semibold mb-2 block">Model</label>
-                <div className="px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50">
-                  <p className="text-gray-900">{vehicleData?.vehicle_model || 'Not set'}</p>
-                </div>
-              </div>
-            </div>
+              <Grid gutter="md">
+                <Grid.Col span={6}>
+                  <Text size="sm" fw={600} c="dimmed" mb="xs">Year</Text>
+                  <Paper p="md" bg="gray.0" style={{ border: '2px solid var(--mantine-color-gray-2)', borderRadius: '12px' }}>
+                    <Text c="dark">{vehicleData?.vehicle_year || 'Not set'}</Text>
+                  </Paper>
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <Text size="sm" fw={600} c="dimmed" mb="xs">Color</Text>
+                  <Paper p="md" bg="gray.0" style={{ border: '2px solid var(--mantine-color-gray-2)', borderRadius: '12px' }}>
+                    <Text c="dark">{vehicleData?.vehicle_color || 'Not set'}</Text>
+                  </Paper>
+                </Grid.Col>
+              </Grid>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm text-gray-600 font-semibold mb-2 block">Year</label>
-                <div className="px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50">
-                  <p className="text-gray-900">{vehicleData?.vehicle_year || 'Not set'}</p>
-                </div>
-              </div>
-              <div>
-                <label className="text-sm text-gray-600 font-semibold mb-2 block">Color</label>
-                <div className="px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50">
-                  <p className="text-gray-900">{vehicleData?.vehicle_color || 'Not set'}</p>
-                </div>
-              </div>
-            </div>
+              <Box>
+                <Text size="sm" fw={600} c="dimmed" mb="xs">License Plate</Text>
+                <Paper p="md" bg="gray.0" style={{ border: '2px solid var(--mantine-color-gray-2)', borderRadius: '12px' }}>
+                  <Text c="dark">{vehicleData?.license_plate || 'Not set'}</Text>
+                </Paper>
+              </Box>
 
-            <div>
-              <label className="text-sm text-gray-600 font-semibold mb-2 block">License Plate</label>
-              <div className="px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50">
-                <p className="text-gray-900">{vehicleData?.license_plate || 'Not set'}</p>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm text-gray-600 font-semibold mb-2 block">Vehicle Type</label>
-              <div className="px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50">
-                <p className="text-gray-900 capitalize">{vehicleData?.vehicle_type || 'Not set'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+              <Box>
+                <Text size="sm" fw={600} c="dimmed" mb="xs">Vehicle Type</Text>
+                <Paper p="md" bg="gray.0" style={{ border: '2px solid var(--mantine-color-gray-2)', borderRadius: '12px' }}>
+                  <Text c="dark" tt="capitalize">{vehicleData?.vehicle_type || 'Not set'}</Text>
+                </Paper>
+              </Box>
+            </Stack>
+          </Card.Section>
+        </Card>
 
         {/* Documents Status */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-blue-100 p-3 rounded-xl">
-              <FileText className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900 text-lg">Document Status</h2>
-              <p className="text-sm text-gray-500">Required documents and verification</p>
-            </div>
-          </div>
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Group gap="md" mb="md">
+              <ThemeIcon size="xl" radius="lg" color="blue" variant="light">
+                <IconFileText size={24} />
+              </ThemeIcon>
+              <Box>
+                <Title order={4} fw={700} c="dark">Document Status</Title>
+                <Text size="sm" c="dimmed">Required documents and verification</Text>
+              </Box>
+            </Group>
+          </Card.Section>
+          <Card.Section p="md">
+            <Stack gap="md">
+              <Paper p="md" style={{ border: '2px solid var(--mantine-color-gray-2)', borderRadius: '12px' }}>
+                <Group justify="space-between">
+                  <Group gap="md">
+                    <IconFileText size={20} color="var(--mantine-color-gray-6)" />
+                    <Box>
+                      <Text fw={700} c="dark">Vehicle Registration</Text>
+                      <Text size="sm" c="dimmed">Registration document</Text>
+                    </Box>
+                  </Group>
+                  {getStatusIcon(documents.registration)}
+                </Group>
+              </Paper>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl">
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-gray-600" />
-                <div>
-                  <p className="font-bold text-gray-900">Vehicle Registration</p>
-                  <p className="text-sm text-gray-500">Registration document</p>
-                </div>
-              </div>
-              {getStatusIcon(documents.registration)}
-            </div>
+              <Paper p="md" style={{ border: '2px solid var(--mantine-color-gray-2)', borderRadius: '12px' }}>
+                <Group justify="space-between">
+                  <Group gap="md">
+                    <IconFileText size={20} color="var(--mantine-color-gray-6)" />
+                    <Box>
+                      <Text fw={700} c="dark">Insurance</Text>
+                      <Text size="sm" c="dimmed">
+                        {documents.insurance ? `${documents.insurance.provider} - ${documents.insurance.policy}` : 'Not uploaded'}
+                      </Text>
+                    </Box>
+                  </Group>
+                  {getStatusIcon(documents.insurance)}
+                </Group>
+              </Paper>
 
-            <div className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl">
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-gray-600" />
-                <div>
-                  <p className="font-bold text-gray-900">Insurance</p>
-                  <p className="text-sm text-gray-500">
-                    {documents.insurance ? `${documents.insurance.provider} - ${documents.insurance.policy}` : 'Not uploaded'}
-                  </p>
-                </div>
-              </div>
-              {getStatusIcon(documents.insurance)}
-            </div>
+              <Paper p="md" style={{ border: '2px solid var(--mantine-color-gray-2)', borderRadius: '12px' }}>
+                <Group justify="space-between">
+                  <Group gap="md">
+                    <IconFileText size={20} color="var(--mantine-color-gray-6)" />
+                    <Box>
+                      <Text fw={700} c="dark">Vehicle Inspection</Text>
+                      <Text size="sm" c="dimmed">Inspection certificate</Text>
+                    </Box>
+                  </Group>
+                  {getStatusIcon(documents.inspection)}
+                </Group>
+              </Paper>
 
-            <div className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl">
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-gray-600" />
-                <div>
-                  <p className="font-bold text-gray-900">Vehicle Inspection</p>
-                  <p className="text-sm text-gray-500">Inspection certificate</p>
-                </div>
-              </div>
-              {getStatusIcon(documents.inspection)}
-            </div>
+              <Paper p="md" style={{ border: '2px solid var(--mantine-color-gray-2)', borderRadius: '12px' }}>
+                <Group justify="space-between">
+                  <Group gap="md">
+                    <IconFileText size={20} color="var(--mantine-color-gray-6)" />
+                    <Box>
+                      <Text fw={700} c="dark">Driver's License</Text>
+                      <Text size="sm" c="dimmed">License number on file</Text>
+                    </Box>
+                  </Group>
+                  {getStatusIcon(documents.license)}
+                </Group>
+              </Paper>
+            </Stack>
 
-            <div className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl">
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-gray-600" />
-                <div>
-                  <p className="font-bold text-gray-900">Driver's License</p>
-                  <p className="text-sm text-gray-500">License number on file</p>
-                </div>
-              </div>
-              {getStatusIcon(documents.license)}
-            </div>
-          </div>
-
-          <button className="w-full mt-4 bg-gradient-to-r from-orange-500 to-red-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2">
-            <Upload className="w-5 h-5" />
-            Upload Documents
-          </button>
-        </div>
-      </div>
-    </div>
+            <Button
+              fullWidth
+              mt="md"
+              color="orange"
+              leftSection={<IconUpload size={20} />}
+              style={{ background: 'linear-gradient(to right, var(--mantine-color-orange-5), var(--mantine-color-red-6))' }}
+            >
+              Upload Documents
+            </Button>
+          </Card.Section>
+        </Card>
+      </Stack>
+    </Box>
   );
 };
 
 export default VehicleDocumentsPage;
-

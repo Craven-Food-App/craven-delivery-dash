@@ -1,13 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Car, Upload, CheckCircle, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
+import { IconArrowLeft, IconCar, IconUpload, IconCheck, IconAlertCircle } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  Box,
+  Stack,
+  Text,
+  Button,
+  Group,
+  Card,
+  Title,
+  ActionIcon,
+  TextInput,
+  Select,
+  Badge,
+  Loader,
+  ThemeIcon,
+  Paper,
+  Grid,
+} from '@mantine/core';
 
 interface VehicleManagementSectionProps {
   onBack: () => void;
@@ -28,7 +39,6 @@ export const VehicleManagementSection: React.FC<VehicleManagementSectionProps> =
     insurance: false
   });
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchVehicleInfo();
@@ -97,15 +107,16 @@ export const VehicleManagementSection: React.FC<VehicleManagementSectionProps> =
 
       if (error) throw error;
 
-      toast({
+      notifications.show({
         title: "Vehicle updated",
-        description: "Your vehicle information has been saved."
+        message: "Your vehicle information has been saved.",
+        color: "green",
       });
     } catch (error) {
-      toast({
+      notifications.show({
         title: "Error updating vehicle",
-        description: "Please try again later.",
-        variant: "destructive"
+        message: "Please try again later.",
+        color: "red",
       });
     } finally {
       setLoading(false);
@@ -125,203 +136,199 @@ export const VehicleManagementSection: React.FC<VehicleManagementSectionProps> =
 
   const getDocumentStatus = (isUploaded: boolean) => {
     return isUploaded ? (
-      <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
-        <CheckCircle className="h-3 w-3 mr-1" />
+      <Badge color="green" variant="light" leftSection={<IconCheck size={12} />}>
         Uploaded
       </Badge>
     ) : (
-      <Badge variant="outline" className="border-orange-200 text-orange-600">
-        <AlertCircle className="h-3 w-3 mr-1" />
+      <Badge color="orange" variant="light" leftSection={<IconAlertCircle size={12} />}>
         Required
       </Badge>
     );
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20 overflow-y-auto">
-      <div className="max-w-md mx-auto">
-        {/* Header */}
-        <div className="bg-background border-b border-border/50 px-4 py-3 sticky top-0 z-10 safe-area-top">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onBack}
-              className="p-2"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-xl font-semibold text-foreground">Vehicle Management</h1>
-          </div>
-        </div>
+    <Box h="100vh" bg="gray.0" style={{ paddingBottom: '80px', overflowY: 'auto' }}>
+      {/* Header */}
+      <Paper
+        pos="sticky"
+        top={0}
+        style={{ zIndex: 10 }}
+        bg="white"
+        style={{ borderBottom: '1px solid var(--mantine-color-gray-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+        className="safe-area-top"
+      >
+        <Group px="md" py="md" gap="md" align="center">
+          <ActionIcon onClick={onBack} variant="subtle" color="dark">
+            <IconArrowLeft size={24} />
+          </ActionIcon>
+          <Title order={3} fw={700} c="dark">Vehicle Management</Title>
+        </Group>
+      </Paper>
 
-        <div className="p-4 space-y-6">
-          {/* Current Vehicle */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <span className="text-2xl">{getVehicleIcon(vehicleInfo.vehicle_type)}</span>
-                Vehicle Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="vehicle_type">Vehicle Type</Label>
-                <Select
-                  value={vehicleInfo.vehicle_type}
-                  onValueChange={(value) => setVehicleInfo({ ...vehicleInfo, vehicle_type: value })}
-                  disabled
-                >
-                  <SelectTrigger className="mt-1 bg-muted/50">
-                    <SelectValue placeholder="Select vehicle type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="car">Car</SelectItem>
-                    <SelectItem value="bike">Bicycle</SelectItem>
-                    <SelectItem value="scooter">Scooter</SelectItem>
-                    <SelectItem value="motorcycle">Motorcycle</SelectItem>
-                    <SelectItem value="walking">Walking</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Contact support to change vehicle type
-                </p>
-              </div>
+      <Stack gap="xl" p="md">
+        {/* Current Vehicle */}
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Group gap="xs">
+              <Text size="2xl">{getVehicleIcon(vehicleInfo.vehicle_type)}</Text>
+              <Title order={4} fw={600}>Vehicle Information</Title>
+            </Group>
+          </Card.Section>
+          <Card.Section p="md">
+            <Stack gap="md">
+              <Select
+                label="Vehicle Type"
+                value={vehicleInfo.vehicle_type}
+                onChange={(value) => setVehicleInfo({ ...vehicleInfo, vehicle_type: value || '' })}
+                disabled
+                data={[
+                  { value: 'car', label: 'Car' },
+                  { value: 'bike', label: 'Bicycle' },
+                  { value: 'scooter', label: 'Scooter' },
+                  { value: 'motorcycle', label: 'Motorcycle' },
+                  { value: 'walking', label: 'Walking' },
+                ]}
+                styles={{
+                  input: {
+                    backgroundColor: 'var(--mantine-color-gray-0)',
+                  },
+                }}
+              />
+              <Text size="xs" c="dimmed">
+                Contact support to change vehicle type
+              </Text>
 
               {vehicleInfo.vehicle_type !== 'walking' && (
                 <>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="vehicle_make">Make</Label>
-                      <Input
-                        id="vehicle_make"
+                  <Grid gutter="md">
+                    <Grid.Col span={6}>
+                      <TextInput
+                        label="Make"
                         value={vehicleInfo.vehicle_make}
                         onChange={(e) => setVehicleInfo({ ...vehicleInfo, vehicle_make: e.target.value })}
-                        className="mt-1"
                         placeholder="Toyota"
                       />
-                    </div>
-                    <div>
-                      <Label htmlFor="vehicle_model">Model</Label>
-                      <Input
-                        id="vehicle_model"
+                    </Grid.Col>
+                    <Grid.Col span={6}>
+                      <TextInput
+                        label="Model"
                         value={vehicleInfo.vehicle_model}
                         onChange={(e) => setVehicleInfo({ ...vehicleInfo, vehicle_model: e.target.value })}
-                        className="mt-1"
                         placeholder="Camry"
                       />
-                    </div>
-                  </div>
+                    </Grid.Col>
+                  </Grid>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="vehicle_year">Year</Label>
-                      <Input
-                        id="vehicle_year"
+                  <Grid gutter="md">
+                    <Grid.Col span={6}>
+                      <TextInput
+                        label="Year"
                         type="number"
                         value={vehicleInfo.vehicle_year}
                         onChange={(e) => setVehicleInfo({ ...vehicleInfo, vehicle_year: e.target.value })}
-                        className="mt-1"
                         placeholder="2020"
                         min="1990"
                         max="2025"
                       />
-                    </div>
-                    <div>
-                      <Label htmlFor="vehicle_color">Color</Label>
-                      <Input
-                        id="vehicle_color"
+                    </Grid.Col>
+                    <Grid.Col span={6}>
+                      <TextInput
+                        label="Color"
                         value={vehicleInfo.vehicle_color}
                         onChange={(e) => setVehicleInfo({ ...vehicleInfo, vehicle_color: e.target.value })}
-                        className="mt-1"
                         placeholder="Silver"
                       />
-                    </div>
-                  </div>
+                    </Grid.Col>
+                  </Grid>
 
-                  <div>
-                    <Label htmlFor="license_plate">License Plate</Label>
-                    <Input
-                      id="license_plate"
-                      value={vehicleInfo.license_plate}
-                      onChange={(e) => setVehicleInfo({ ...vehicleInfo, license_plate: e.target.value.toUpperCase() })}
-                      className="mt-1"
-                      placeholder="ABC123"
-                    />
-                  </div>
+                  <TextInput
+                    label="License Plate"
+                    value={vehicleInfo.license_plate}
+                    onChange={(e) => setVehicleInfo({ ...vehicleInfo, license_plate: e.target.value.toUpperCase() })}
+                    placeholder="ABC123"
+                  />
                 </>
               )}
 
               <Button 
                 onClick={handleSave} 
-                disabled={loading}
-                className="w-full bg-primary hover:bg-primary/90"
+                loading={loading}
+                color="orange"
+                fullWidth
+                mt="md"
               >
                 Save Changes
               </Button>
-            </CardContent>
-          </Card>
+            </Stack>
+          </Card.Section>
+        </Card>
 
-          {/* Required Documents */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Required Documents</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-3 border rounded-lg">
-                <div>
-                  <div className="font-medium">Driver's License</div>
-                  <div className="text-sm text-muted-foreground">Front and back photos</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {getDocumentStatus(documents.drivers_license)}
-                  <Button variant="outline" size="sm">
-                    <Upload className="h-4 w-4 mr-1" />
-                    Upload
-                  </Button>
-                </div>
-              </div>
+        {/* Required Documents */}
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Title order={4} fw={600}>Required Documents</Title>
+          </Card.Section>
+          <Card.Section p="md">
+            <Stack gap="md">
+              <Paper p="md" style={{ border: '1px solid var(--mantine-color-gray-2)', borderRadius: '8px' }}>
+                <Group justify="space-between">
+                  <Box>
+                    <Text fw={500}>Driver's License</Text>
+                    <Text size="sm" c="dimmed">Front and back photos</Text>
+                  </Box>
+                  <Group gap="xs">
+                    {getDocumentStatus(documents.drivers_license)}
+                    <Button variant="light" size="xs" leftSection={<IconUpload size={16} />}>
+                      Upload
+                    </Button>
+                  </Group>
+                </Group>
+              </Paper>
 
               {vehicleInfo.vehicle_type !== 'walking' && vehicleInfo.vehicle_type !== 'bike' && (
                 <>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <div className="font-medium">Vehicle Registration</div>
-                      <div className="text-sm text-muted-foreground">Current registration document</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {getDocumentStatus(documents.vehicle_registration)}
-                      <Button variant="outline" size="sm">
-                        <Upload className="h-4 w-4 mr-1" />
-                        Upload
-                      </Button>
-                    </div>
-                  </div>
+                  <Paper p="md" style={{ border: '1px solid var(--mantine-color-gray-2)', borderRadius: '8px' }}>
+                    <Group justify="space-between">
+                      <Box>
+                        <Text fw={500}>Vehicle Registration</Text>
+                        <Text size="sm" c="dimmed">Current registration document</Text>
+                      </Box>
+                      <Group gap="xs">
+                        {getDocumentStatus(documents.vehicle_registration)}
+                        <Button variant="light" size="xs" leftSection={<IconUpload size={16} />}>
+                          Upload
+                        </Button>
+                      </Group>
+                    </Group>
+                  </Paper>
 
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <div className="font-medium">Insurance</div>
-                      <div className="text-sm text-muted-foreground">Valid insurance policy</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {getDocumentStatus(documents.insurance)}
-                      <Button variant="outline" size="sm">
-                        <Upload className="h-4 w-4 mr-1" />
-                        Upload
-                      </Button>
-                    </div>
-                  </div>
+                  <Paper p="md" style={{ border: '1px solid var(--mantine-color-gray-2)', borderRadius: '8px' }}>
+                    <Group justify="space-between">
+                      <Box>
+                        <Text fw={500}>Insurance</Text>
+                        <Text size="sm" c="dimmed">Valid insurance policy</Text>
+                      </Box>
+                      <Group gap="xs">
+                        {getDocumentStatus(documents.insurance)}
+                        <Button variant="light" size="xs" leftSection={<IconUpload size={16} />}>
+                          Upload
+                        </Button>
+                      </Group>
+                    </Group>
+                  </Paper>
                 </>
               )}
 
-              <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-                <strong>Note:</strong> All documents must be current and clearly readable. 
-                Document updates may require approval before you can continue driving.
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
+              <Paper p="md" bg="blue.0" radius="md">
+                <Text size="xs" c="dimmed">
+                  <Text component="span" fw={600}>Note:</Text> All documents must be current and clearly readable. 
+                  Document updates may require approval before you can continue driving.
+                </Text>
+              </Paper>
+            </Stack>
+          </Card.Section>
+        </Card>
+      </Stack>
+    </Box>
   );
 };

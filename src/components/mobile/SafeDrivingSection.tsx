@@ -1,9 +1,19 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Shield, Phone, AlertTriangle, MapPin, Clock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { IconArrowLeft, IconShield, IconPhone, IconAlertTriangle, IconMapPin, IconClock } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
+import {
+  Box,
+  Stack,
+  Text,
+  Button,
+  Group,
+  Card,
+  Title,
+  ActionIcon,
+  Switch,
+  ThemeIcon,
+  Paper,
+} from '@mantine/core';
 
 interface SafeDrivingSectionProps {
   onBack: () => void;
@@ -18,202 +28,235 @@ export const SafeDrivingSection: React.FC<SafeDrivingSectionProps> = ({ onBack }
     crashDetection: true,
     nightModeAlerts: true
   });
-  const { toast } = useToast();
 
   const handleSettingChange = (key: keyof typeof safetySettings, value: boolean) => {
     setSafetySettings(prev => ({ ...prev, [key]: value }));
-    toast({
+    notifications.show({
       title: "Safety setting updated",
-      description: "Your driving safety preference has been saved."
+      message: "Your driving safety preference has been saved.",
+      color: "green",
     });
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20 overflow-y-auto">
-      <div className="max-w-md mx-auto">
-        {/* Header */}
-        <div className="bg-background border-b border-border/50 px-4 py-3 sticky top-0 z-10 safe-area-top">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onBack}
-              className="p-2"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-xl font-semibold text-foreground">Safe Driving Features</h1>
-          </div>
-        </div>
+    <Box h="100vh" bg="gray.0" style={{ paddingBottom: '80px', overflowY: 'auto' }}>
+      {/* Header */}
+      <Paper
+        pos="sticky"
+        top={0}
+        style={{ zIndex: 10 }}
+        bg="white"
+        style={{ borderBottom: '1px solid var(--mantine-color-gray-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+        className="safe-area-top"
+      >
+        <Group px="md" py="md" gap="md" align="center">
+          <ActionIcon onClick={onBack} variant="subtle" color="dark">
+            <IconArrowLeft size={24} />
+          </ActionIcon>
+          <Title order={3} fw={700} c="dark">Safe Driving Features</Title>
+        </Group>
+      </Paper>
 
-        <div className="p-4 space-y-4">
-          {/* Safety Overview */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Shield className="h-8 w-8 text-green-500" />
-                <div>
-                  <h3 className="font-semibold text-foreground">Your Safety Score</h3>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold text-green-500">94</span>
-                    <span className="text-sm text-muted-foreground">Excellent Driver</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      <Stack gap="md" p="md">
+        {/* Safety Overview */}
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md">
+            <Group gap="md">
+              <ThemeIcon size="xl" radius="xl" color="green" variant="light">
+                <IconShield size={32} />
+              </ThemeIcon>
+              <Box>
+                <Text fw={600} c="dark">Your Safety Score</Text>
+                <Group gap="xs" align="center">
+                  <Text size="2xl" fw={700} c="green.6">94</Text>
+                  <Text size="sm" c="dimmed">Excellent Driver</Text>
+                </Group>
+              </Box>
+            </Group>
+          </Card.Section>
+        </Card>
 
-          {/* Driving Mode */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Phone className="h-5 w-5 text-primary" />
-                Driving Mode
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Auto-Enable Driving Mode</div>
-                  <div className="text-sm text-muted-foreground">Silences calls and notifications while driving</div>
-                </div>
+        {/* Driving Mode */}
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Group gap="xs">
+              <ThemeIcon size="lg" radius="md" color="orange" variant="light">
+                <IconPhone size={20} />
+              </ThemeIcon>
+              <Title order={4} fw={600}>Driving Mode</Title>
+            </Group>
+          </Card.Section>
+          <Card.Section p="md">
+            <Stack gap="md">
+              <Group justify="space-between">
+                <Box>
+                  <Text fw={500}>Auto-Enable Driving Mode</Text>
+                  <Text size="sm" c="dimmed">Silences calls and notifications while driving</Text>
+                </Box>
                 <Switch
                   checked={safetySettings.drivingModeEnabled}
-                  onCheckedChange={(checked) => handleSettingChange('drivingModeEnabled', checked)}
+                  onChange={(e) => handleSettingChange('drivingModeEnabled', e.currentTarget.checked)}
+                  color="orange"
                 />
-              </div>
+              </Group>
 
-              <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                Emergency calls will still come through when driving mode is active.
-              </div>
-            </CardContent>
-          </Card>
+              <Paper p="md" bg="gray.0" radius="md">
+                <Text size="xs" c="dimmed">
+                  Emergency calls will still come through when driving mode is active.
+                </Text>
+              </Paper>
+            </Stack>
+          </Card.Section>
+        </Card>
 
-          {/* Speed & Alerts */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-primary" />
-                Speed & Safety Alerts
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Speed Limit Alerts</div>
-                  <div className="text-sm text-muted-foreground">Get notified when exceeding speed limits</div>
-                </div>
+        {/* Speed & Alerts */}
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Group gap="xs">
+              <ThemeIcon size="lg" radius="md" color="orange" variant="light">
+                <IconAlertTriangle size={20} />
+              </ThemeIcon>
+              <Title order={4} fw={600}>Speed & Safety Alerts</Title>
+            </Group>
+          </Card.Section>
+          <Card.Section p="md">
+            <Stack gap="md">
+              <Group justify="space-between">
+                <Box>
+                  <Text fw={500}>Speed Limit Alerts</Text>
+                  <Text size="sm" c="dimmed">Get notified when exceeding speed limits</Text>
+                </Box>
                 <Switch
                   checked={safetySettings.speedAlerts}
-                  onCheckedChange={(checked) => handleSettingChange('speedAlerts', checked)}
+                  onChange={(e) => handleSettingChange('speedAlerts', e.currentTarget.checked)}
+                  color="orange"
                 />
-              </div>
+              </Group>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Night Driving Alerts</div>
-                  <div className="text-sm text-muted-foreground">Extra caution reminders for night deliveries</div>
-                </div>
+              <Group justify="space-between">
+                <Box>
+                  <Text fw={500}>Night Driving Alerts</Text>
+                  <Text size="sm" c="dimmed">Extra caution reminders for night deliveries</Text>
+                </Box>
                 <Switch
                   checked={safetySettings.nightModeAlerts}
-                  onCheckedChange={(checked) => handleSettingChange('nightModeAlerts', checked)}
+                  onChange={(e) => handleSettingChange('nightModeAlerts', e.currentTarget.checked)}
+                  color="orange"
                 />
-              </div>
+              </Group>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Break Reminders</div>
-                  <div className="text-sm text-muted-foreground">Suggests breaks after long driving periods</div>
-                </div>
+              <Group justify="space-between">
+                <Box>
+                  <Text fw={500}>Break Reminders</Text>
+                  <Text size="sm" c="dimmed">Suggests breaks after long driving periods</Text>
+                </Box>
                 <Switch
                   checked={safetySettings.breakReminders}
-                  onCheckedChange={(checked) => handleSettingChange('breakReminders', checked)}
+                  onChange={(e) => handleSettingChange('breakReminders', e.currentTarget.checked)}
+                  color="orange"
                 />
-              </div>
-            </CardContent>
-          </Card>
+              </Group>
+            </Stack>
+          </Card.Section>
+        </Card>
 
-          {/* Emergency Features */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-primary" />
-                Emergency Features
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Crash Detection</div>
-                  <div className="text-sm text-muted-foreground">Auto-alerts emergency contacts if crash detected</div>
-                </div>
+        {/* Emergency Features */}
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Group gap="xs">
+              <ThemeIcon size="lg" radius="md" color="orange" variant="light">
+                <IconMapPin size={20} />
+              </ThemeIcon>
+              <Title order={4} fw={600}>Emergency Features</Title>
+            </Group>
+          </Card.Section>
+          <Card.Section p="md">
+            <Stack gap="md">
+              <Group justify="space-between">
+                <Box>
+                  <Text fw={500}>Crash Detection</Text>
+                  <Text size="sm" c="dimmed">Auto-alerts emergency contacts if crash detected</Text>
+                </Box>
                 <Switch
                   checked={safetySettings.crashDetection}
-                  onCheckedChange={(checked) => handleSettingChange('crashDetection', checked)}
+                  onChange={(e) => handleSettingChange('crashDetection', e.currentTarget.checked)}
+                  color="orange"
                 />
-              </div>
+              </Group>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Emergency Contacts</div>
-                  <div className="text-sm text-muted-foreground">Share location with trusted contacts while driving</div>
-                </div>
+              <Group justify="space-between">
+                <Box>
+                  <Text fw={500}>Emergency Contacts</Text>
+                  <Text size="sm" c="dimmed">Share location with trusted contacts while driving</Text>
+                </Box>
                 <Switch
                   checked={safetySettings.emergencyContacts}
-                  onCheckedChange={(checked) => handleSettingChange('emergencyContacts', checked)}
+                  onChange={(e) => handleSettingChange('emergencyContacts', e.currentTarget.checked)}
+                  color="orange"
                 />
-              </div>
+              </Group>
 
-              <Button variant="outline" className="w-full">
+              <Button variant="light" fullWidth>
                 Manage Emergency Contacts
               </Button>
-            </CardContent>
-          </Card>
+            </Stack>
+          </Card.Section>
+        </Card>
 
-          {/* Safety Tips */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Safety Tips</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 text-sm text-muted-foreground">
-                <div className="flex items-start gap-2">
-                  <Clock className="h-4 w-4 mt-0.5 text-primary" />
-                  <span>Take regular breaks every 2 hours during long delivery sessions</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Phone className="h-4 w-4 mt-0.5 text-primary" />
-                  <span>Never use your phone while driving - pull over safely if needed</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Shield className="h-4 w-4 mt-0.5 text-primary" />
-                  <span>Always wear a seatbelt and ensure your vehicle is properly maintained</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <MapPin className="h-4 w-4 mt-0.5 text-primary" />
-                  <span>Check weather conditions and adjust driving accordingly</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Safety Tips */}
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Title order={4} fw={600}>Safety Tips</Title>
+          </Card.Section>
+          <Card.Section p="md">
+            <Stack gap="md">
+              <Group gap="xs" align="flex-start">
+                <ThemeIcon size="sm" radius="md" color="orange" variant="light">
+                  <IconClock size={16} />
+                </ThemeIcon>
+                <Text size="sm" c="dimmed">Take regular breaks every 2 hours during long delivery sessions</Text>
+              </Group>
+              <Group gap="xs" align="flex-start">
+                <ThemeIcon size="sm" radius="md" color="orange" variant="light">
+                  <IconPhone size={16} />
+                </ThemeIcon>
+                <Text size="sm" c="dimmed">Never use your phone while driving - pull over safely if needed</Text>
+              </Group>
+              <Group gap="xs" align="flex-start">
+                <ThemeIcon size="sm" radius="md" color="orange" variant="light">
+                  <IconShield size={16} />
+                </ThemeIcon>
+                <Text size="sm" c="dimmed">Always wear a seatbelt and ensure your vehicle is properly maintained</Text>
+              </Group>
+              <Group gap="xs" align="flex-start">
+                <ThemeIcon size="sm" radius="md" color="orange" variant="light">
+                  <IconMapPin size={16} />
+                </ThemeIcon>
+                <Text size="sm" c="dimmed">Check weather conditions and adjust driving accordingly</Text>
+              </Group>
+            </Stack>
+          </Card.Section>
+        </Card>
 
-          {/* Emergency Button */}
-          <Card className="border-red-200 bg-red-50 dark:bg-red-900/20">
-            <CardContent className="p-4">
+        {/* Emergency Button */}
+        <Card shadow="sm" radius="lg" withBorder style={{ borderColor: 'var(--mantine-color-red-2)', backgroundColor: 'var(--mantine-color-red-0)' }}>
+          <Card.Section p="md">
+            <Stack gap="xs">
               <Button 
-                variant="destructive" 
-                className="w-full bg-red-600 hover:bg-red-700"
+                color="red"
+                fullWidth
                 size="lg"
+                onClick={() => window.location.href = 'tel:911'}
               >
                 🚨 Emergency - Call 911
               </Button>
-              <p className="text-xs text-center mt-2 text-red-600 dark:text-red-400">
+              <Text size="xs" c="red.6" ta="center">
                 Only use in real emergencies
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
+              </Text>
+            </Stack>
+          </Card.Section>
+        </Card>
+      </Stack>
+    </Box>
   );
 };

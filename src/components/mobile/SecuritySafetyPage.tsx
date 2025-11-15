@@ -1,7 +1,21 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Lock, Shield, Phone, Key, Eye, EyeOff } from 'lucide-react';
+import { IconArrowLeft, IconLock, IconShield, IconPhone, IconKey, IconEye, IconEyeOff } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import {
+  Box,
+  Stack,
+  Text,
+  Button,
+  Group,
+  Card,
+  Title,
+  ActionIcon,
+  TextInput,
+  ThemeIcon,
+  Paper,
+  PasswordInput,
+} from '@mantine/core';
 
 type SecuritySafetyPageProps = {
   onBack: () => void;
@@ -9,9 +23,6 @@ type SecuritySafetyPageProps = {
 
 const SecuritySafetyPage: React.FC<SecuritySafetyPageProps> = ({ onBack }) => {
   const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -24,12 +35,18 @@ const SecuritySafetyPage: React.FC<SecuritySafetyPageProps> = ({ onBack }) => {
 
   const handlePasswordChange = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error('New passwords do not match');
+      notifications.show({
+        title: 'New passwords do not match',
+        color: 'red',
+      });
       return;
     }
 
     if (passwordData.newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters');
+      notifications.show({
+        title: 'Password must be at least 6 characters',
+        color: 'red',
+      });
       return;
     }
 
@@ -40,12 +57,18 @@ const SecuritySafetyPage: React.FC<SecuritySafetyPageProps> = ({ onBack }) => {
 
       if (error) throw error;
 
-      toast.success('Password updated successfully');
+      notifications.show({
+        title: 'Password updated successfully',
+        color: 'green',
+      });
       setShowPasswordForm(false);
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error: any) {
       console.error('Error updating password:', error);
-      toast.error(error.message || 'Failed to update password');
+      notifications.show({
+        title: error.message || 'Failed to update password',
+        color: 'red',
+      });
     }
   };
 
@@ -66,194 +89,184 @@ const SecuritySafetyPage: React.FC<SecuritySafetyPageProps> = ({ onBack }) => {
 
       if (error) throw error;
 
-      toast.success('Emergency contact saved');
+      notifications.show({
+        title: 'Emergency contact saved',
+        color: 'green',
+      });
     } catch (error: any) {
       console.error('Error saving emergency contact:', error);
-      toast.error('Failed to save emergency contact');
+      notifications.show({
+        title: 'Failed to save emergency contact',
+        color: 'red',
+      });
     }
   };
 
   return (
-    <div className="h-screen w-full bg-gray-50 overflow-y-auto" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
+    <Box h="100vh" w="100%" bg="gray.0" style={{ overflowY: 'auto', paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between safe-area-top">
-        <button onClick={onBack} className="text-gray-900">
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        <h1 className="text-gray-900 text-xl font-bold">Security & Safety</h1>
-        <div className="w-6"></div>
-      </div>
+      <Paper
+        pos="sticky"
+        top={0}
+        style={{ zIndex: 10 }}
+        bg="white"
+        style={{ borderBottom: '1px solid var(--mantine-color-gray-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+        className="safe-area-top"
+      >
+        <Group px="xl" py="md" justify="space-between" align="center">
+          <ActionIcon onClick={onBack} variant="subtle" color="dark">
+            <IconArrowLeft size={24} />
+          </ActionIcon>
+          <Title order={3} fw={700} c="dark">Security & Safety</Title>
+          <Box w={24} />
+        </Group>
+      </Paper>
 
-      <div className="px-6 py-6 space-y-4">
+      <Stack gap="md" p="xl">
         {/* Password */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-red-100 p-3 rounded-xl">
-              <Lock className="w-6 h-6 text-red-600" />
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900 text-lg">Password</h2>
-              <p className="text-sm text-gray-500">Change your account password</p>
-            </div>
-          </div>
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Group gap="md" mb="md">
+              <ThemeIcon size="xl" radius="lg" color="red" variant="light">
+                <IconLock size={24} />
+              </ThemeIcon>
+              <Box>
+                <Title order={4} fw={700} c="dark">Password</Title>
+                <Text size="sm" c="dimmed">Change your account password</Text>
+              </Box>
+            </Group>
+          </Card.Section>
+          <Card.Section p="md">
+            {!showPasswordForm ? (
+              <Button
+                fullWidth
+                color="orange"
+                onClick={() => setShowPasswordForm(true)}
+                style={{ background: 'linear-gradient(to right, var(--mantine-color-orange-5), var(--mantine-color-red-6))' }}
+              >
+                Change Password
+              </Button>
+            ) : (
+              <Stack gap="md">
+                <PasswordInput
+                  label="Current Password"
+                  value={passwordData.currentPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                  placeholder="Enter current password"
+                />
 
-          {!showPasswordForm ? (
-            <button
-              onClick={() => setShowPasswordForm(true)}
-              className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white py-3 rounded-xl font-bold"
-            >
-              Change Password
-            </button>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm text-gray-600 font-semibold mb-2 block">Current Password</label>
-                <div className="relative">
-                  <input
-                    type={showCurrentPassword ? 'text' : 'password'}
-                    value={passwordData.currentPassword}
-                    onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none pr-12"
-                    placeholder="Enter current password"
-                  />
-                  <button
-                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                <PasswordInput
+                  label="New Password"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                  placeholder="Enter new password"
+                />
+
+                <PasswordInput
+                  label="Confirm New Password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                  placeholder="Confirm new password"
+                />
+
+                <Group gap="md" mt="md">
+                  <Button
+                    variant="light"
+                    color="gray"
+                    flex={1}
+                    onClick={() => {
+                      setShowPasswordForm(false);
+                      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                    }}
                   >
-                    {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm text-gray-600 font-semibold mb-2 block">New Password</label>
-                <div className="relative">
-                  <input
-                    type={showNewPassword ? 'text' : 'password'}
-                    value={passwordData.newPassword}
-                    onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none pr-12"
-                    placeholder="Enter new password"
-                  />
-                  <button
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    Cancel
+                  </Button>
+                  <Button
+                    flex={1}
+                    color="orange"
+                    onClick={handlePasswordChange}
+                    style={{ background: 'linear-gradient(to right, var(--mantine-color-orange-5), var(--mantine-color-red-6))' }}
                   >
-                    {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm text-gray-600 font-semibold mb-2 block">Confirm New Password</label>
-                <div className="relative">
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={passwordData.confirmPassword}
-                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none pr-12"
-                    placeholder="Confirm new password"
-                  />
-                  <button
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  >
-                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowPasswordForm(false);
-                    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-                  }}
-                  className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handlePasswordChange}
-                  className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white py-3 rounded-xl font-bold"
-                >
-                  Update Password
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+                    Update Password
+                  </Button>
+                </Group>
+              </Stack>
+            )}
+          </Card.Section>
+        </Card>
 
         {/* Two-Factor Authentication */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-blue-100 p-3 rounded-xl">
-              <Shield className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900 text-lg">Two-Factor Authentication</h2>
-              <p className="text-sm text-gray-500">Add an extra layer of security</p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl">
-            <div>
-              <p className="font-bold text-gray-900">2FA Status</p>
-              <p className="text-sm text-gray-500">Not enabled</p>
-            </div>
-            <button className="bg-gray-200 text-gray-700 px-4 py-2 rounded-xl font-bold text-sm">
-              Enable
-            </button>
-          </div>
-        </div>
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Group gap="md" mb="md">
+              <ThemeIcon size="xl" radius="lg" color="blue" variant="light">
+                <IconShield size={24} />
+              </ThemeIcon>
+              <Box>
+                <Title order={4} fw={700} c="dark">Two-Factor Authentication</Title>
+                <Text size="sm" c="dimmed">Add an extra layer of security</Text>
+              </Box>
+            </Group>
+          </Card.Section>
+          <Card.Section p="md">
+            <Paper p="md" style={{ border: '2px solid var(--mantine-color-gray-2)', borderRadius: '12px' }}>
+              <Group justify="space-between">
+                <Box>
+                  <Text fw={700} c="dark">2FA Status</Text>
+                  <Text size="sm" c="dimmed">Not enabled</Text>
+                </Box>
+                <Button variant="light" color="gray" size="sm">
+                  Enable
+                </Button>
+              </Group>
+            </Paper>
+          </Card.Section>
+        </Card>
 
         {/* Emergency Contact */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-orange-100 p-3 rounded-xl">
-              <Phone className="w-6 h-6 text-orange-600" />
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900 text-lg">Emergency Contact</h2>
-              <p className="text-sm text-gray-500">Contact to notify in emergencies</p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm text-gray-600 font-semibold mb-2 block">Contact Name</label>
-              <input
-                type="text"
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Group gap="md" mb="md">
+              <ThemeIcon size="xl" radius="lg" color="orange" variant="light">
+                <IconPhone size={24} />
+              </ThemeIcon>
+              <Box>
+                <Title order={4} fw={700} c="dark">Emergency Contact</Title>
+                <Text size="sm" c="dimmed">Contact to notify in emergencies</Text>
+              </Box>
+            </Group>
+          </Card.Section>
+          <Card.Section p="md">
+            <Stack gap="md">
+              <TextInput
+                label="Contact Name"
                 value={emergencyContact.name}
                 onChange={(e) => setEmergencyContact({ ...emergencyContact, name: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none"
                 placeholder="John Doe"
               />
-            </div>
 
-            <div>
-              <label className="text-sm text-gray-600 font-semibold mb-2 block">Phone Number</label>
-              <input
+              <TextInput
+                label="Phone Number"
                 type="tel"
                 value={emergencyContact.phone}
                 onChange={(e) => setEmergencyContact({ ...emergencyContact, phone: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none"
                 placeholder="(555) 123-4567"
               />
-            </div>
 
-            <button
-              onClick={handleSaveEmergencyContact}
-              className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white py-3 rounded-xl font-bold"
-            >
-              Save Emergency Contact
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+              <Button
+                fullWidth
+                color="orange"
+                onClick={handleSaveEmergencyContact}
+                style={{ background: 'linear-gradient(to right, var(--mantine-color-orange-5), var(--mantine-color-red-6))' }}
+              >
+                Save Emergency Contact
+              </Button>
+            </Stack>
+          </Card.Section>
+        </Card>
+      </Stack>
+    </Box>
   );
 };
 
 export default SecuritySafetyPage;
-

@@ -1,7 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Save, User, Mail, Phone, MapPin, Calendar } from 'lucide-react';
+import { IconArrowLeft, IconDeviceFloppy, IconUser, IconMail, IconPhone, IconMapPin, IconCalendar } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import {
+  Box,
+  Stack,
+  Text,
+  Button,
+  Group,
+  Card,
+  Title,
+  ActionIcon,
+  TextInput,
+  Loader,
+  ThemeIcon,
+  Paper,
+  Grid,
+} from '@mantine/core';
 
 type ProfileDetailsPageProps = {
   onBack: () => void;
@@ -43,7 +58,6 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
         .single();
 
       // Fetch user profile from drivers table if exists
-      // Note: drivers table uses auth_user_id and has different column names
       const { data: driverData } = await supabase
         .from('drivers')
         .select('id, full_name, email, phone, city, zip')
@@ -52,7 +66,6 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
 
       if (driverData) {
         setProfile(driverData);
-        // Parse full_name into first and last name
         const nameParts = (driverData.full_name || '').split(' ');
         const firstName = nameParts[0] || '';
         const lastName = nameParts.slice(1).join(' ') || '';
@@ -62,10 +75,10 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
           lastName,
           email: authUser.email || driverData.email || '',
           phone: driverData.phone || '',
-          dateOfBirth: '', // date_of_birth is encrypted in driver_identity table, not accessible directly
-          streetAddress: '', // Not stored in drivers table
+          dateOfBirth: '',
+          streetAddress: '',
           city: driverData.city || '',
-          state: '', // Not stored in drivers table
+          state: '',
           zipCode: driverData.zip || '',
         });
       } else if (driverProfile) {
@@ -82,7 +95,6 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
           zipCode: '',
         });
       } else {
-        // Use auth user data
         const fullName = authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || '';
         const nameParts = fullName.split(' ');
         setFormData({
@@ -99,7 +111,10 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
-      toast.error('Failed to load profile data');
+      notifications.show({
+        title: 'Failed to load profile data',
+        color: 'red',
+      });
     } finally {
       setLoading(false);
     }
@@ -110,18 +125,22 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
       setSaving(true);
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) {
-        toast.error('Not authenticated');
+        notifications.show({
+          title: 'Not authenticated',
+          color: 'red',
+        });
         return;
       }
 
       const fullName = `${formData.firstName} ${formData.lastName}`.trim();
       if (!fullName) {
-        toast.error('Name is required');
+        notifications.show({
+          title: 'Name is required',
+          color: 'red',
+        });
         return;
       }
 
-      // Update drivers table if exists
-      // Note: drivers table uses auth_user_id and full_name (not first_name/last_name)
       const { data: existingDriver, error: checkError } = await supabase
         .from('drivers')
         .select('id')
@@ -133,9 +152,11 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
         throw checkError;
       }
 
-      // Validate required fields (city, zip, phone are NOT NULL in drivers table)
       if (!formData.city || !formData.zipCode || !formData.phone) {
-        toast.error('Name, Phone, City, and Zip Code are required');
+        notifications.show({
+          title: 'Name, Phone, City, and Zip Code are required',
+          color: 'red',
+        });
         return;
       }
 
@@ -158,10 +179,11 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
           throw error;
         }
       } else {
-        // Create driver record
-        // Validate required fields for insert (city, zip, phone are NOT NULL)
         if (!formData.city || !formData.zipCode || !formData.phone) {
-          toast.error('Name, Phone, City, and Zip Code are required');
+          notifications.show({
+            title: 'Name, Phone, City, and Zip Code are required',
+            color: 'red',
+          });
           return;
         }
 
@@ -186,7 +208,6 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
         }
       }
 
-      // Update auth user metadata
       const { error: authError } = await supabase.auth.updateUser({
         data: {
           full_name: fullName,
@@ -196,17 +217,21 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
 
       if (authError) {
         console.error('Auth update error:', authError);
-        // Don't fail the whole operation if auth update fails
       }
 
-      toast.success('Profile updated successfully');
-      // Refresh the data
+      notifications.show({
+        title: 'Profile updated successfully',
+        color: 'green',
+      });
       await fetchProfileData();
       setTimeout(() => onBack(), 500);
     } catch (error: any) {
       console.error('Error saving profile:', error);
       const errorMessage = error?.message || error?.details || 'Failed to save profile';
-      toast.error(`Error: ${errorMessage}`);
+      notifications.show({
+        title: `Error: ${errorMessage}`,
+        color: 'red',
+      });
     } finally {
       setSaving(false);
     }
@@ -214,168 +239,174 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
 
   if (loading) {
     return (
-      <div className="h-screen w-full bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-      </div>
+      <Box h="100vh" w="100%" bg="gray.0" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader size="lg" color="orange" />
+      </Box>
     );
   }
 
   return (
-    <div className="h-screen w-full bg-gray-50 overflow-y-auto" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
+    <Box h="100vh" w="100%" bg="gray.0" style={{ overflowY: 'auto', paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between safe-area-top">
-        <button onClick={onBack} className="text-gray-900">
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        <h1 className="text-gray-900 text-xl font-bold">Profile Information</h1>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="text-orange-600 font-bold disabled:opacity-50"
-        >
-          {saving ? 'Saving...' : 'Save'}
-        </button>
-      </div>
+      <Paper
+        pos="sticky"
+        top={0}
+        style={{ zIndex: 10 }}
+        bg="white"
+        style={{ borderBottom: '1px solid var(--mantine-color-gray-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+        className="safe-area-top"
+      >
+        <Group px="xl" py="md" justify="space-between" align="center">
+          <ActionIcon onClick={onBack} variant="subtle" color="dark">
+            <IconArrowLeft size={24} />
+          </ActionIcon>
+          <Title order={3} fw={700} c="dark">Profile Information</Title>
+          <Button
+            variant="subtle"
+            color="orange"
+            onClick={handleSave}
+            loading={saving}
+            leftSection={<IconDeviceFloppy size={16} />}
+          >
+            {saving ? 'Saving...' : 'Save'}
+          </Button>
+        </Group>
+      </Paper>
 
       {/* Form */}
-      <div className="px-6 py-6 space-y-4">
-        <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-blue-100 p-3 rounded-xl">
-              <User className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900 text-lg">Personal Information</h2>
-              <p className="text-sm text-gray-500">Update your personal details</p>
-            </div>
-          </div>
+      <Stack gap="md" p="xl">
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Group gap="md" mb="md">
+              <ThemeIcon size="xl" radius="lg" color="blue" variant="light">
+                <IconUser size={24} />
+              </ThemeIcon>
+              <Box>
+                <Title order={4} fw={700} c="dark">Personal Information</Title>
+                <Text size="sm" c="dimmed">Update your personal details</Text>
+              </Box>
+            </Group>
+          </Card.Section>
+          <Card.Section p="md">
+            <Stack gap="md">
+              <Grid gutter="md">
+                <Grid.Col span={6}>
+                  <TextInput
+                    label="First Name"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    placeholder="First name"
+                  />
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <TextInput
+                    label="Last Name"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    placeholder="Last name"
+                  />
+                </Grid.Col>
+              </Grid>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm text-gray-600 font-semibold mb-2 block">First Name</label>
-              <input
-                type="text"
-                value={formData.firstName}
-                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none"
-                placeholder="First name"
+              <TextInput
+                label={
+                  <Group gap="xs">
+                    <IconMail size={16} />
+                    <Text>Email</Text>
+                  </Group>
+                }
+                type="email"
+                value={formData.email}
+                disabled
+                styles={{
+                  input: {
+                    backgroundColor: 'var(--mantine-color-gray-0)',
+                    color: 'var(--mantine-color-gray-5)',
+                  },
+                }}
               />
-            </div>
-            <div>
-              <label className="text-sm text-gray-600 font-semibold mb-2 block">Last Name</label>
-              <input
-                type="text"
-                value={formData.lastName}
-                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none"
-                placeholder="Last name"
+              <Text size="xs" c="dimmed">Email cannot be changed</Text>
+
+              <TextInput
+                label={
+                  <Group gap="xs">
+                    <IconPhone size={16} />
+                    <Text>Phone Number</Text>
+                  </Group>
+                }
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="(555) 123-4567"
               />
-            </div>
-          </div>
 
-          <div>
-            <label className="text-sm text-gray-600 font-semibold mb-2 block flex items-center gap-2">
-              <Mail className="w-4 h-4" />
-              Email
-            </label>
-            <input
-              type="email"
-              value={formData.email}
-              disabled
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-500"
-              placeholder="Email"
-            />
-            <p className="text-xs text-gray-400 mt-1">Email cannot be changed</p>
-          </div>
-
-          <div>
-            <label className="text-sm text-gray-600 font-semibold mb-2 block flex items-center gap-2">
-              <Phone className="w-4 h-4" />
-              Phone Number
-            </label>
-            <input
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none"
-              placeholder="(555) 123-4567"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm text-gray-600 font-semibold mb-2 block flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Date of Birth
-            </label>
-            <input
-              type="date"
-              value={formData.dateOfBirth}
-              onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none"
-            />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-green-100 p-3 rounded-xl">
-              <MapPin className="w-6 h-6 text-green-600" />
-            </div>
-            <div>
-              <h2 className="font-bold text-gray-900 text-lg">Address</h2>
-              <p className="text-sm text-gray-500">Your current address</p>
-            </div>
-          </div>
-
-          <div>
-            <label className="text-sm text-gray-600 font-semibold mb-2 block">Street Address</label>
-            <input
-              type="text"
-              value={formData.streetAddress}
-              onChange={(e) => setFormData({ ...formData, streetAddress: e.target.value })}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none"
-              placeholder="123 Main St"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm text-gray-600 font-semibold mb-2 block">City</label>
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none"
-                placeholder="City"
+              <TextInput
+                label={
+                  <Group gap="xs">
+                    <IconCalendar size={16} />
+                    <Text>Date of Birth</Text>
+                  </Group>
+                }
+                type="date"
+                value={formData.dateOfBirth}
+                onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
               />
-            </div>
-            <div>
-              <label className="text-sm text-gray-600 font-semibold mb-2 block">State</label>
-              <input
-                type="text"
-                value={formData.state}
-                onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none"
-                placeholder="State"
-              />
-            </div>
-          </div>
+            </Stack>
+          </Card.Section>
+        </Card>
 
-          <div>
-            <label className="text-sm text-gray-600 font-semibold mb-2 block">Zip Code</label>
-            <input
-              type="text"
-              value={formData.zipCode}
-              onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none"
-              placeholder="12345"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Group gap="md" mb="md">
+              <ThemeIcon size="xl" radius="lg" color="green" variant="light">
+                <IconMapPin size={24} />
+              </ThemeIcon>
+              <Box>
+                <Title order={4} fw={700} c="dark">Address</Title>
+                <Text size="sm" c="dimmed">Your current address</Text>
+              </Box>
+            </Group>
+          </Card.Section>
+          <Card.Section p="md">
+            <Stack gap="md">
+              <TextInput
+                label="Street Address"
+                value={formData.streetAddress}
+                onChange={(e) => setFormData({ ...formData, streetAddress: e.target.value })}
+                placeholder="123 Main St"
+              />
+
+              <Grid gutter="md">
+                <Grid.Col span={6}>
+                  <TextInput
+                    label="City"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    placeholder="City"
+                  />
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <TextInput
+                    label="State"
+                    value={formData.state}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                    placeholder="State"
+                  />
+                </Grid.Col>
+              </Grid>
+
+              <TextInput
+                label="Zip Code"
+                value={formData.zipCode}
+                onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
+                placeholder="12345"
+              />
+            </Stack>
+          </Card.Section>
+        </Card>
+      </Stack>
+    </Box>
   );
 };
 
 export default ProfileDetailsPage;
-
