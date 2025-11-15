@@ -76,6 +76,21 @@ const styles = {
 
 // ===== UTILITY FUNCTIONS =====
 
+const formatAddress = (address: any): string => {
+  if (!address) return '';
+  if (typeof address === 'string') return address;
+  if (typeof address === 'object') {
+    const parts = [
+      address.street || address.address,
+      address.city,
+      address.state,
+      address.zip || address.zip_code
+    ].filter(Boolean);
+    return parts.join(', ');
+  }
+  return String(address);
+};
+
 const copyToClipboard = (text: string) => {
     const textarea = document.createElement('textarea');
     textarea.value = text;
@@ -274,13 +289,13 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
       timeEstimate: orderDetails?.estimated_time || 30,
       store: {
         name: orderDetails?.restaurant_name || 'Craven Restaurant',
-        address: orderDetails?.pickup_address || '123 Main St',
+        address: formatAddress(orderDetails?.pickup_address) || '123 Main St',
         pickupCode: pickupCode || 'LOADING...',
         phone: orderDetails?.customer_phone || '(555) 555-5555',
       },
       customer: {
         name: orderDetails?.customer_name || 'Customer',
-        address: orderDetails?.dropoff_address || '456 Oak Ave',
+        address: formatAddress(orderDetails?.dropoff_address) || '456 Oak Ave',
         deliveryNotes: orderDetails?.delivery_notes || 'Ring doorbell',
         phone: orderDetails?.customer_phone || '(555) 555-1234',
       },
@@ -587,7 +602,7 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                                   className={styles.navButton} 
                                   title="Start Navigation"
                                   onClick={() => {
-                                    const address = encodeURIComponent(currentOrder.store.address);
+                                    const address = encodeURIComponent(currentOrder.store.address || '');
                                     window.open(`https://maps.apple.com/?daddr=${address}`, '_blank');
                                   }}
                                 >
@@ -654,7 +669,7 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
                                   className={styles.navButton} 
                                   title="Start Navigation"
                                   onClick={() => {
-                                    const address = encodeURIComponent(currentOrder.customer.address);
+                                    const address = encodeURIComponent(currentOrder.customer.address || '');
                                     window.open(`https://maps.apple.com/?daddr=${address}`, '_blank');
                                   }}
                                 >
