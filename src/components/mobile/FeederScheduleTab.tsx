@@ -663,48 +663,45 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
         </Paper>
 
         {/* Week Strip */}
-        <Box mb="xl" style={{ overflowX: 'auto', overflowY: 'hidden', WebkitOverflowScrolling: 'touch' }}>
-          <Group gap="sm" justify="flex-start" wrap="nowrap" style={{ minWidth: 'fit-content', paddingRight: '16px' }}>
-            {weekDays.map((item, index) => {
-              const isToday = item.fullDate.toDateString() === today.toDateString();
-              return (
-                <Button
-                  key={index}
-                  onClick={() => {
-                    setActiveDay(index);
-                    if (viewMode === 'available' || viewMode === 'scheduled') {
-                      // Keep current view mode
-                    } else {
-                      setViewMode('schedule');
-                    }
-                  }}
-                  variant={activeDay === index ? 'filled' : 'light'}
-                  color={activeDay === index ? 'red.9' : 'transparent'}
-                  c="white"
-                  radius="md"
-                  style={{
-                    width: '52px',
-                    height: '52px',
-                    minWidth: '52px',
-                    flexShrink: 0,
-                    padding: '5px 3px',
-                    transform: activeDay === index ? 'scale(1.05)' : 'scale(1)',
-                    backgroundColor: activeDay === index 
-                      ? 'var(--mantine-color-red-9)' 
-                      : 'rgba(255, 255, 255, 0.25)',
-                    border: activeDay === index ? 'none' : '1px solid rgba(255, 255, 255, 0.3)',
-                    borderRadius: '8px',
-                  }}
-                >
-                  <Stack gap={2} align="center" justify="center" style={{ height: '100%', width: '100%' }}>
-                    <Text size="xs" fw={600} c="white" style={{ lineHeight: 1, opacity: 0.9, fontSize: '8px', letterSpacing: '0.3px' }}>{item.day}</Text>
-                    <Text size="xl" fw={900} c="white" style={{ lineHeight: 1, fontSize: '16px' }}>{item.date}</Text>
-                  </Stack>
-                </Button>
-              );
-            })}
-          </Group>
-        </Box>
+        <Group gap="xs" mb="xl" justify="space-between" wrap="nowrap" style={{ width: '100%' }}>
+          {weekDays.map((item, index) => {
+            const isToday = item.fullDate.toDateString() === today.toDateString();
+            return (
+              <Button
+                key={index}
+                onClick={() => {
+                  setActiveDay(index);
+                  if (viewMode === 'available' || viewMode === 'scheduled') {
+                    // Keep current view mode
+                  } else {
+                    setViewMode('schedule');
+                  }
+                }}
+                variant={activeDay === index ? 'filled' : 'light'}
+                color={activeDay === index ? 'red.9' : 'transparent'}
+                c="white"
+                radius="md"
+                style={{
+                  flex: 1,
+                  maxWidth: 'calc((100% - 24px) / 7)',
+                  height: '48px',
+                  padding: '4px 2px',
+                  transform: activeDay === index ? 'scale(1.05)' : 'scale(1)',
+                  backgroundColor: activeDay === index 
+                    ? 'var(--mantine-color-red-9)' 
+                    : 'rgba(255, 255, 255, 0.25)',
+                  border: activeDay === index ? 'none' : '1px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '8px',
+                }}
+              >
+                <Stack gap={1} align="center" justify="center" style={{ height: '100%', width: '100%' }}>
+                  <Text size="xs" fw={600} c="white" style={{ lineHeight: 1, opacity: 0.9, fontSize: '7px', letterSpacing: '0.2px' }}>{item.day}</Text>
+                  <Text size="lg" fw={900} c="white" style={{ lineHeight: 1, fontSize: '14px' }}>{item.date}</Text>
+                </Stack>
+              </Button>
+            );
+          })}
+        </Group>
 
         {/* Section Title */}
         {viewMode === 'schedule' && (
