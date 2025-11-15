@@ -1,15 +1,29 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { ShoppingCart, Plus, Minus, Trash2, User, MapPin, CreditCard } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  Drawer,
+  Button,
+  Card,
+  TextInput,
+  Textarea,
+  Select,
+  ScrollArea,
+  Badge,
+  Divider,
+  Stack,
+  Group,
+  Text,
+  Title,
+  Box,
+  ActionIcon,
+} from '@mantine/core';
+import {
+  IconShoppingCart,
+  IconPlus,
+  IconMinus,
+  IconUser,
+  IconMapPin,
+  IconCreditCard,
+} from '@tabler/icons-react';
 import { AddressAutocomplete } from '@/components/common/AddressAutocomplete';
 
 interface CartItem {
@@ -73,249 +87,262 @@ export const MobilePOSCart: React.FC<MobilePOSCartProps> = ({
   onValidAddressChange,
   onSubmit
 }) => {
+  const [opened, setOpened] = useState(false);
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button 
-          size="lg" 
-          className="fixed bottom-20 right-4 z-50 rounded-full h-14 w-14 shadow-2xl"
-        >
-          <div className="relative">
-            <ShoppingCart className="h-6 w-6" />
-            {cartItemCount > 0 && (
-              <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center">
-                {cartItemCount}
-              </Badge>
-            )}
-          </div>
-        </Button>
-      </SheetTrigger>
+    <>
+      <ActionIcon
+        size="xl"
+        radius="xl"
+        color="orange"
+        variant="filled"
+        onClick={() => setOpened(true)}
+        style={{
+          position: 'fixed',
+          bottom: '80px',
+          right: '16px',
+          zIndex: 50,
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+        }}
+      >
+        <Box style={{ position: 'relative' }}>
+          <IconShoppingCart size={24} />
+          {cartItemCount > 0 && (
+            <Badge
+              size="sm"
+              color="red"
+              style={{
+                position: 'absolute',
+                top: -8,
+                right: -8,
+                minWidth: '20px',
+                height: '20px',
+                padding: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {cartItemCount}
+            </Badge>
+          )}
+        </Box>
+      </ActionIcon>
       
-      <SheetContent side="bottom" className="h-[90vh] p-0">
-        <SheetHeader className="p-4 border-b">
-          <SheetTitle className="flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5" />
-            Cart ({cartItemCount} {cartItemCount === 1 ? 'item' : 'items'})
-          </SheetTitle>
-        </SheetHeader>
-
-        <ScrollArea className="h-[calc(90vh-180px)]">
-          <div className="p-4 space-y-6">
+      <Drawer
+        opened={opened}
+        onClose={() => setOpened(false)}
+        position="bottom"
+        size="90vh"
+        title={
+          <Group gap="xs">
+            <IconShoppingCart size={20} />
+            <Text fw={500}>Cart ({cartItemCount} {cartItemCount === 1 ? 'item' : 'items'})</Text>
+          </Group>
+        }
+        styles={{ content: { display: 'flex', flexDirection: 'column' }, body: { flex: 1, display: 'flex', flexDirection: 'column', padding: 0 } }}
+      >
+        <ScrollArea style={{ flex: 1 }}>
+          <Stack gap="lg" p="md">
             {/* Order Type */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Order Type</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="grid grid-cols-2 gap-2">
+            <Card p="md" withBorder>
+              <Stack gap="md">
+                <Title order={5}>Order Type</Title>
+                <Group gap="xs">
                   <Button
-                    variant={orderType === 'pickup' ? 'default' : 'outline'}
+                    variant={orderType === 'pickup' ? 'filled' : 'outline'}
                     onClick={() => onOrderTypeChange('pickup')}
-                    className="w-full"
+                    style={{ flex: 1 }}
                   >
                     Pickup
                   </Button>
                   <Button
-                    variant={orderType === 'delivery' ? 'default' : 'outline'}
+                    variant={orderType === 'delivery' ? 'filled' : 'outline'}
                     onClick={() => onOrderTypeChange('delivery')}
-                    className="w-full"
+                    style={{ flex: 1 }}
                   >
                     Delivery
                   </Button>
-                </div>
-              </CardContent>
+                </Group>
+              </Stack>
             </Card>
 
             {/* Customer Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Customer Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <Label>Name *</Label>
-                  <Input
+            <Card p="md" withBorder>
+              <Stack gap="md">
+                <Group gap="xs">
+                  <IconUser size={16} />
+                  <Title order={5}>Customer Information</Title>
+                </Group>
+                <Stack gap="sm">
+                  <TextInput
+                    label="Name *"
                     value={customerInfo.name}
                     onChange={(e) => onCustomerInfoChange({ name: e.target.value })}
                     placeholder="Customer name"
                   />
-                </div>
-                <div>
-                  <Label>Phone *</Label>
-                  <Input
+                  <TextInput
+                    label="Phone *"
                     value={customerInfo.phone}
                     onChange={(e) => onCustomerInfoChange({ phone: e.target.value })}
                     placeholder="(555) 123-4567"
                   />
-                </div>
-                <div>
-                  <Label>Email (Optional)</Label>
-                  <Input
+                  <TextInput
+                    label="Email (Optional)"
                     type="email"
                     value={customerInfo.email || ''}
                     onChange={(e) => onCustomerInfoChange({ email: e.target.value })}
                     placeholder="customer@email.com"
                   />
-                </div>
-              </CardContent>
+                </Stack>
+              </Stack>
             </Card>
 
             {/* Delivery Address */}
             {orderType === 'delivery' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    Delivery Address
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <AddressAutocomplete
-                    value={customerInfo.address || ''}
-                    onChange={(value, coordinates) => {
-                      onAddressSelect({ address: value, coordinates });
-                    }}
-                    onValidAddress={onValidAddressChange}
-                    required={true}
-                    placeholder="123 Main St, City, State 12345"
-                  />
-                  <div>
-                    <Label>Delivery Instructions (Optional)</Label>
+              <Card p="md" withBorder>
+                <Stack gap="md">
+                  <Group gap="xs">
+                    <IconMapPin size={16} />
+                    <Title order={5}>Delivery Address</Title>
+                  </Group>
+                  <Stack gap="sm">
+                    <AddressAutocomplete
+                      value={customerInfo.address || ''}
+                      onChange={(value, coordinates) => {
+                        onAddressSelect({ address: value, coordinates });
+                      }}
+                      onValidAddress={onValidAddressChange}
+                      required={true}
+                      placeholder="123 Main St, City, State 12345"
+                    />
                     <Textarea
+                      label="Delivery Instructions (Optional)"
                       value={customerInfo.special_instructions || ''}
                       onChange={(e) => onCustomerInfoChange({ special_instructions: e.target.value })}
                       placeholder="Gate code, door color, etc."
                       rows={2}
                     />
-                  </div>
-                </CardContent>
+                  </Stack>
+                </Stack>
               </Card>
             )}
 
             {/* Cart Items */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Items</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <Card p="md" withBorder>
+              <Stack gap="md">
+                <Title order={5}>Items</Title>
                 {cart.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-4">Cart is empty</p>
+                  <Text c="dimmed" ta="center" py="md">Cart is empty</Text>
                 ) : (
-                  cart.map((item) => (
-                    <div key={item.id} className="space-y-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <p className="font-medium">{item.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            ${(item.price_cents / 100).toFixed(2)}
-                            {item.modifiers && item.modifiers.length > 0 && (
-                              <span className="block text-xs">
-                                + {item.modifiers.map(m => m.name).join(', ')}
-                              </span>
+                  <Stack gap="sm">
+                    {cart.map((item) => (
+                      <Box key={item.id}>
+                        <Group justify="space-between" align="flex-start" gap="sm">
+                          <Stack gap="xs" style={{ flex: 1 }}>
+                            <Text fw={500}>{item.name}</Text>
+                            <Text size="sm" c="dimmed">
+                              ${(item.price_cents / 100).toFixed(2)}
+                              {item.modifiers && item.modifiers.length > 0 && (
+                                <Text component="span" display="block" size="xs">
+                                  + {item.modifiers.map(m => m.name).join(', ')}
+                                </Text>
+                              )}
+                            </Text>
+                            {item.special_instructions && (
+                              <Text size="xs" c="dimmed" fs="italic">
+                                Note: {item.special_instructions}
+                              </Text>
                             )}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-                            className="h-7 w-7 p-0"
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="w-8 text-center text-sm">{item.quantity}</span>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                            className="h-7 w-7 p-0"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                      {item.special_instructions && (
-                        <p className="text-xs text-muted-foreground italic">
-                          Note: {item.special_instructions}
-                        </p>
-                      )}
-                      <Separator />
-                    </div>
-                  ))
+                          </Stack>
+                          <Group gap="xs">
+                            <ActionIcon
+                              size="sm"
+                              variant="outline"
+                              onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                            >
+                              <IconMinus size={14} />
+                            </ActionIcon>
+                            <Text size="sm" style={{ minWidth: '32px', textAlign: 'center' }}>{item.quantity}</Text>
+                            <ActionIcon
+                              size="sm"
+                              variant="outline"
+                              onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                            >
+                              <IconPlus size={14} />
+                            </ActionIcon>
+                          </Group>
+                        </Group>
+                        <Divider mt="sm" />
+                      </Box>
+                    ))}
+                  </Stack>
                 )}
-              </CardContent>
+              </Stack>
             </Card>
 
             {/* Payment Method */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <CreditCard className="h-4 w-4" />
-                  Payment Method
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Select value={paymentMethod} onValueChange={(v: any) => onPaymentMethodChange(v)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="card">Card</SelectItem>
-                    <SelectItem value="phone_payment">Phone Payment</SelectItem>
-                  </SelectContent>
-                </Select>
-              </CardContent>
+            <Card p="md" withBorder>
+              <Stack gap="md">
+                <Group gap="xs">
+                  <IconCreditCard size={16} />
+                  <Title order={5}>Payment Method</Title>
+                </Group>
+                <Select
+                  value={paymentMethod}
+                  onChange={(v: any) => onPaymentMethodChange(v)}
+                  data={[
+                    { value: 'cash', label: 'Cash' },
+                    { value: 'card', label: 'Card' },
+                    { value: 'phone_payment', label: 'Phone Payment' },
+                  ]}
+                />
+              </Stack>
             </Card>
 
             {/* Order Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Order Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Subtotal:</span>
-                  <span>${(totals.subtotal / 100).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Tax:</span>
-                  <span>${(totals.tax / 100).toFixed(2)}</span>
-                </div>
-                {orderType === 'delivery' && (
-                  <div className="flex justify-between text-sm">
-                    <span>Delivery Fee:</span>
-                    <span>${(totals.deliveryFee / 100).toFixed(2)}</span>
-                  </div>
-                )}
-                <Separator />
-                <div className="flex justify-between font-bold text-lg">
-                  <span>Total:</span>
-                  <span>${(totals.total / 100).toFixed(2)}</span>
-                </div>
-              </CardContent>
+            <Card p="md" withBorder>
+              <Stack gap="md">
+                <Title order={5}>Order Summary</Title>
+                <Stack gap="xs">
+                  <Group justify="space-between">
+                    <Text size="sm">Subtotal:</Text>
+                    <Text size="sm">${(totals.subtotal / 100).toFixed(2)}</Text>
+                  </Group>
+                  <Group justify="space-between">
+                    <Text size="sm">Tax:</Text>
+                    <Text size="sm">${(totals.tax / 100).toFixed(2)}</Text>
+                  </Group>
+                  {orderType === 'delivery' && (
+                    <Group justify="space-between">
+                      <Text size="sm">Delivery Fee:</Text>
+                      <Text size="sm">${(totals.deliveryFee / 100).toFixed(2)}</Text>
+                    </Group>
+                  )}
+                  <Divider />
+                  <Group justify="space-between">
+                    <Text fw={700} size="lg">Total:</Text>
+                    <Text fw={700} size="lg">${(totals.total / 100).toFixed(2)}</Text>
+                  </Group>
+                </Stack>
+              </Stack>
             </Card>
-          </div>
+          </Stack>
         </ScrollArea>
 
         {/* Submit Button */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-background border-t">
+        <Box p="md" style={{ borderTop: '1px solid var(--mantine-color-gray-3)', backgroundColor: 'var(--mantine-color-body)' }}>
           <Button
             onClick={onSubmit}
             disabled={isSubmitting || cart.length === 0}
-            className="w-full h-12 text-lg"
             size="lg"
+            fullWidth
           >
             {isSubmitting ? 'Processing...' : `Place Order - $${(totals.total / 100).toFixed(2)}`}
           </Button>
-        </div>
-      </SheetContent>
-    </Sheet>
+        </Box>
+      </Drawer>
+    </>
   );
 };
