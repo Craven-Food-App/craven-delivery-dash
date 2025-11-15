@@ -688,76 +688,79 @@ const RestaurantMenuPage = () => {
         };
 
   return (
-            <div className="bg-white rounded-lg shadow-md border border-gray-200 p-2 mb-6">
-                {/* Top Row - Delivery/Pickup Buttons and Price/Time */}
-                <div className="flex justify-between items-center space-x-6 mb-4">
-                    {/* Delivery/Pickup Tabs */}
-                    <div className="flex border border-gray-300 rounded-lg p-0.5 bg-gray-100 text-sm font-semibold transition duration-300">
-                        <button
-                            onClick={() => setDeliveryMethod('delivery')}
-                            className={`px-5 py-2 rounded-md transition duration-200 ${deliveryMethod === 'delivery' ? 'bg-primary shadow-lg text-white font-bold' : 'text-gray-600 font-medium hover:bg-white'}`}
-                        >
-                            Delivery
-                        </button>
-                        <button
-                            onClick={() => setDeliveryMethod('pickup')}
-                            className={`px-5 py-2 rounded-md transition duration-200 ${deliveryMethod === 'pickup' ? 'bg-primary shadow-lg text-white font-bold' : 'text-gray-600 font-medium hover:bg-white'}`}
-                        >
-                            Pickup
-                        </button>
-            </div>
+    <Card p="sm" mb="lg" withBorder shadow="md">
+      <Stack gap="md">
+        {/* Top Row - Delivery/Pickup Buttons and Price/Time */}
+        <Group justify="space-between" align="center" gap="lg">
+          {/* Delivery/Pickup Tabs */}
+          <Button.Group>
+            <Button
+              variant={deliveryMethod === 'delivery' ? 'filled' : 'outline'}
+              onClick={() => setDeliveryMethod('delivery')}
+              size="sm"
+            >
+              Delivery
+            </Button>
+            <Button
+              variant={deliveryMethod === 'pickup' ? 'filled' : 'outline'}
+              onClick={() => setDeliveryMethod('pickup')}
+              size="sm"
+            >
+              Pickup
+            </Button>
+          </Button.Group>
 
-                    {/* Price/Time Info Box */}
-                    <div className="flex items-center space-x-4 text-base text-right">
-                        {/* Delivery Fee Box */}
-                        <div className="bg-green-100 text-green-700 px-4 py-2 rounded-lg">
-                            <div className="font-bold text-sm">$0 delivery fee</div>
-                            <div className="text-xs flex items-center">
-                                pricing & fees
-                                <Info className="w-3 h-3 ml-1" />
-          </div>
-          </div>
+          {/* Price/Time Info Box */}
+          <Group gap="md">
+            {/* Delivery Fee Box */}
+            <Box p="sm" style={{ backgroundColor: 'var(--mantine-color-green-0)', borderRadius: '8px' }}>
+              <Text fw={700} size="sm" c="green.7">$0 delivery fee</Text>
+              <Group gap="xs" mt={4}>
+                <Text size="xs" c="green.7">pricing & fees</Text>
+                <IconInfoCircle size={12} style={{ color: 'var(--mantine-color-green-7)' }} />
+              </Group>
+            </Box>
 
-                        {/* Pickup Time with Dropdown */}
-                        <div className="text-right">
-                            <div className="text-lg font-bold text-gray-900">{pickupInfo.readyTime} min</div>
-                            <div className="text-sm text-gray-600 flex items-center">
-                                ready for pickup
-                                <ArrowUp className="w-4 h-4 ml-1 transform rotate-90" />
-        </div>
-      </div>
-            </div>
-          </div>
-          
-                {/* Main Content - Address and Map */}
-                <div className="flex flex-col md:flex-row items-stretch" style={{ gap: '3px' }}>
-                    {/* Address and Info - Left Side - Fixed Width */}
-                    <div className="w-auto flex flex-col justify-between mb-4 md:mb-0" style={{ minWidth: '200px' }}>
-          <div>
-                            <h3 className="text-base font-semibold text-gray-900 mb-2">
-                                Pick up this order at:
-                            </h3>
-                            <p className="text-blue-600 underline cursor-pointer hover:text-blue-800 mb-2 text-sm">
-                                {pickupInfo.address}
-                            </p>
-                            <div className="flex items-center text-sm text-gray-600">
-                                <Car className="w-4 h-4 mr-1" />
-                                <span>{pickupInfo.driveTime} min</span>
-                            </div>
-          </div>
-        </div>
+            {/* Pickup Time */}
+            <Stack gap={0} align="flex-end">
+              <Text size="lg" fw={700} c="gray.9">{pickupInfo.readyTime} min</Text>
+              <Group gap="xs">
+                <Text size="sm" c="dimmed">ready for pickup</Text>
+                <IconArrowUp size={16} style={{ transform: 'rotate(90deg)', color: 'var(--mantine-color-gray-6)' }} />
+              </Group>
+            </Stack>
+          </Group>
+        </Group>
+        
+        {/* Main Content - Address and Map */}
+        <Group align="stretch" gap="xs">
+          {/* Address and Info - Left Side */}
+          <Stack justify="space-between" style={{ minWidth: '200px' }}>
+            <Stack gap="xs">
+              <Text size="sm" fw={600} c="gray.9">
+                Pick up this order at:
+              </Text>
+              <Text size="sm" c="blue.6" td="underline" style={{ cursor: 'pointer' }}>
+                {pickupInfo.address}
+              </Text>
+              <Group gap="xs">
+                <IconCar size={16} style={{ color: 'var(--mantine-color-gray-6)' }} />
+                <Text size="sm" c="dimmed">{pickupInfo.driveTime} min</Text>
+              </Group>
+            </Stack>
+          </Stack>
 
-                    {/* Map Container - Right Side - Stretches to fill remaining space */}
-                    <div className="flex-1 h-32 rounded-lg overflow-hidden border border-gray-200">
-                        <div 
-                            ref={mapContainer} 
-                            className="w-full h-full"
-                            style={{ minHeight: '128px' }}
-                        />
-              </div>
-            </div>
-            </div>
-        );
+          {/* Map Container - Right Side */}
+          <Box style={{ flex: 1, height: '128px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--mantine-color-gray-3)' }}>
+            <Box 
+              ref={mapContainer} 
+              style={{ width: '100%', height: '100%', minHeight: '128px' }}
+            />
+          </Box>
+        </Group>
+      </Stack>
+    </Card>
+  );
     };
 
     const TripleDipperModal = () => {
@@ -976,26 +979,26 @@ const RestaurantMenuPage = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading restaurant...</p>
-      </div>
-              </div>
+            <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+                <Stack align="center" gap="md">
+                    <Loader size="lg" color="orange" />
+                    <Text c="dimmed">Loading restaurant...</Text>
+                </Stack>
+            </Box>
         );
     }
 
     if (!restaurant) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="text-center">
-                    <p className="text-xl text-gray-600">Restaurant not found</p>
-                    <button onClick={() => navigate('/restaurants')} className="mt-4 text-primary font-semibold">
+            <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+                <Stack align="center" gap="md">
+                    <Text size="xl" c="dimmed">Restaurant not found</Text>
+                    <Button onClick={() => navigate('/restaurants')} color="orange">
                         Back to Restaurants
-                    </button>
-            </div>
-          </div>
-  );
+                    </Button>
+                </Stack>
+            </Box>
+        );
     }
 
   return (
