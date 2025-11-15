@@ -1,23 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Check, MapPin, Navigation, DollarSign, Clock, Package, Home, Bell, Copy, Camera, RotateCcw, Utensils } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@chakra-ui/react';
+import { useToast } from '@/components/ui/use-toast';
 import FullscreenCamera from './FullscreenCamera';
-import {
-  Box,
-  Flex,
-  Text,
-  Heading,
-  Button,
-  Badge,
-  Card,
-  CardBody,
-  CardHeader,
-  VStack,
-  HStack,
-  Icon,
-  useColorModeValue,
-} from '@chakra-ui/react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 // ===== TYPES =====
 

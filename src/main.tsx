@@ -1,36 +1,12 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import App from './App.tsx';
 import './index.css';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-const theme = extendTheme({
-  config: {
-    initialColorMode: 'light',
-    useSystemColorMode: false,
-  },
-  colors: {
-    brand: {
-      50: '#fff5f0',
-      100: '#ffe0d1',
-      200: '#ffc5a3',
-      300: '#ffa375',
-      400: '#ff8147',
-      500: '#ff5f1f',
-      600: '#e64a0c',
-      700: '#cc3300',
-      800: '#b32d00',
-      900: '#992600',
-    },
-  },
-});
-
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ChakraProvider theme={theme}>
-      <App />
-    </ChakraProvider>
+    <App />
   </React.StrictMode>
 );
 
