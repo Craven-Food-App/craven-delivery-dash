@@ -1,27 +1,54 @@
 import React, { useState, useEffect } from "react";
 import {
-  User,
-  Car,
-  FileText,
-  CreditCard,
-  Settings,
-  Shield,
-  Phone,
-  MessageCircle,
-  LogOut,
-  ChevronRight,
-  Star,
-  Award,
-  Bell,
-  Menu,
-} from "lucide-react";
-import { toast } from "sonner";
+  IconUser,
+  IconCar,
+  IconFileText,
+  IconCreditCard,
+  IconSettings,
+  IconShield,
+  IconPhone,
+  IconMessageCircle,
+  IconLogout,
+  IconChevronRight,
+  IconStar,
+  IconAward,
+  IconBell,
+  IconMenu,
+  IconArrowLeft,
+  IconEye,
+  IconEyeOff,
+  IconLock,
+  IconLockOpen,
+  IconKey,
+  IconPlus,
+  IconMinus,
+} from "@tabler/icons-react";
+import { notifications } from "@mantine/notifications";
 import { supabase } from "@/integrations/supabase/client";
 import ProfileDetailsPage from "./ProfileDetailsPage";
 import VehicleDocumentsPage from "./VehicleDocumentsPage";
 import AppSettingsPage from "./AppSettingsPage";
 import SecuritySafetyPage from "./SecuritySafetyPage";
 import { useNavigate } from "react-router-dom";
+import {
+  Box,
+  Stack,
+  Text,
+  Button,
+  Group,
+  Card,
+  Title,
+  Loader,
+  ActionIcon,
+  Modal,
+  TextInput,
+  Paper,
+  Badge,
+  Progress,
+  Switch,
+  Divider,
+  ThemeIcon,
+} from "@mantine/core";
 
 type FeederAccountPageProps = {
   onOpenMenu?: () => void;
@@ -67,12 +94,8 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
         .eq('user_id', user.id)
         .single();
 
-      // TODO: Driver table structure needs update - using placeholder data
-      const driverData: any = null;
-
       // Get user metadata
       const fullName = user.user_metadata?.full_name || 
-                      driverData?.full_name ||
                       user.email?.split('@')[0] || 'Driver';
       setDriverName(fullName);
 
@@ -122,45 +145,61 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
   // Determine status based on points
   const getStatus = (points: number) => {
     if (points >= 85)
-      return { name: "Diamond Feeder", color: "diamond", gradient: "from-cyan-200 via-blue-300 to-purple-300" };
+      return { 
+        name: "Diamond Feeder", 
+        color: "diamond", 
+        gradient: "linear-gradient(to bottom right, var(--mantine-color-cyan-2), var(--mantine-color-blue-3), var(--mantine-color-purple-3))" 
+      };
     if (points >= 76)
-      return { name: "Platinum Feeder", color: "platinum", gradient: "from-gray-300 via-gray-100 to-gray-300" };
+      return { 
+        name: "Platinum Feeder", 
+        color: "platinum", 
+        gradient: "linear-gradient(to bottom right, var(--mantine-color-gray-3), var(--mantine-color-gray-1), var(--mantine-color-gray-3))" 
+      };
     if (points >= 65)
-      return { name: "Gold Feeder", color: "gold", gradient: "from-yellow-300 via-yellow-200 to-yellow-400" };
-    return { name: "Silver Feeder", color: "silver", gradient: "from-gray-400 via-gray-300 to-gray-500" };
+      return { 
+        name: "Gold Feeder", 
+        color: "gold", 
+        gradient: "linear-gradient(to bottom right, var(--mantine-color-yellow-3), var(--mantine-color-yellow-2), var(--mantine-color-yellow-4))" 
+      };
+    return { 
+      name: "Silver Feeder", 
+      color: "silver", 
+      gradient: "linear-gradient(to bottom right, var(--mantine-color-gray-4), var(--mantine-color-gray-3), var(--mantine-color-gray-5))" 
+    };
   };
 
   const status = getStatus(driverPoints);
 
   const getMenuItemColors = (color: string) => {
     const colors: Record<string, { bg: string; icon: string }> = {
-      blue: { bg: "bg-blue-100", icon: "text-blue-600" },
-      green: { bg: "bg-green-100", icon: "text-green-600" },
-      purple: { bg: "bg-purple-100", icon: "text-purple-600" },
-      gray: { bg: "bg-gray-100", icon: "text-gray-600" },
-      red: { bg: "bg-red-100", icon: "text-red-600" },
-      orange: { bg: "bg-orange-100", icon: "text-orange-600" },
+      blue: { bg: "blue", icon: "blue" },
+      green: { bg: "green", icon: "green" },
+      purple: { bg: "purple", icon: "purple" },
+      gray: { bg: "gray", icon: "gray" },
+      red: { bg: "red", icon: "red" },
+      orange: { bg: "orange", icon: "orange" },
     };
     return colors[color] || colors.gray;
   };
 
   const menuItems = [
     { 
-      icon: User, 
+      icon: IconUser, 
       label: "Profile Information", 
       desc: "Personal details & preferences", 
       color: "blue",
       action: () => setCurrentPage('profile')
     },
     { 
-      icon: Car, 
+      icon: IconCar, 
       label: "Vehicle & Documents", 
       desc: "Registration, insurance, inspection", 
       color: "green",
       action: () => setCurrentPage('vehicle')
     },
     {
-      icon: CreditCard,
+      icon: IconCreditCard,
       label: "Feeder Card",
       desc: "Digital debit card & transactions",
       color: "purple",
@@ -168,28 +207,28 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
       action: () => setShowCardPage(true),
     },
     { 
-      icon: Settings, 
+      icon: IconSettings, 
       label: "App Settings", 
       desc: "Notifications, language, preferences", 
       color: "gray",
       action: () => setCurrentPage('settings')
     },
     { 
-      icon: Shield, 
+      icon: IconShield, 
       label: "Security & Safety", 
       desc: "Password, 2FA, emergency contacts", 
       color: "red",
       action: () => setCurrentPage('security')
     },
     { 
-      icon: Phone, 
+      icon: IconPhone, 
       label: "Call Support", 
       desc: "24/7 driver assistance hotline", 
       color: "orange",
       action: () => window.location.href = 'tel:+18005551234'
     },
     { 
-      icon: MessageCircle, 
+      icon: IconMessageCircle, 
       label: "Message Support", 
       desc: "Live chat with support team", 
       color: "blue",
@@ -203,12 +242,17 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
-      toast.success("Signed out successfully");
+      notifications.show({
+        title: "Signed out successfully",
+        color: "green",
+      });
       navigate('/mobile');
     } catch (error) {
       console.error("Error signing out:", error);
-      toast.error("Failed to sign out");
-      // Still redirect even on error
+      notifications.show({
+        title: "Failed to sign out",
+        color: "red",
+      });
       navigate('/mobile');
     }
   };
@@ -233,560 +277,441 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
   // If card page is open, show that instead
   if (showCardPage) {
     return (
-      <div className="h-screen w-full bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 overflow-y-auto" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
+      <Box h="100vh" w="100%" style={{ background: 'linear-gradient(to bottom right, var(--mantine-color-purple-0), var(--mantine-color-blue-0), var(--mantine-color-pink-0))', overflowY: 'auto', paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
         {/* Header */}
-        <div className="px-6 pb-4 flex items-center justify-between flex-shrink-0 safe-area-top">
-          <button onClick={() => setShowCardPage(false)} className="text-gray-900">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <h1 className="text-gray-900 text-2xl font-bold">Feeder Card</h1>
-          <div className="w-6"></div>
-        </div>
+        <Group px="xl" pb="md" justify="space-between" align="center" className="safe-area-top">
+          <ActionIcon onClick={() => setShowCardPage(false)} variant="subtle" color="dark">
+            <IconArrowLeft size={24} />
+          </ActionIcon>
+          <Title order={2} fw={700} c="dark">Feeder Card</Title>
+          <Box w={24} />
+        </Group>
 
         {/* Card Display */}
-        <div className="px-6 mb-6 flex justify-center">
-          <div
-            className="bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 rounded-3xl p-6 shadow-2xl relative overflow-hidden"
+        <Box px="xl" mb="xl" style={{ display: 'flex', justifyContent: 'center' }}>
+          <Paper
+            p="xl"
+            radius="xl"
+            shadow="xl"
+            pos="relative"
             style={{ 
+              background: 'linear-gradient(to bottom right, var(--mantine-color-orange-5), var(--mantine-color-red-5), var(--mantine-color-pink-6))',
               aspectRatio: "1.586 / 1",
               width: "100%",
-              maxWidth: "340px"
+              maxWidth: "340px",
+              overflow: 'hidden',
             }}
           >
             {/* Card shine effect */}
-            <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+            <Box pos="absolute" top={0} right={0} w={160} h={160} bg="white" style={{ borderRadius: '50%', opacity: 0.1, filter: 'blur(48px)' }} />
 
-            <div className="relative h-full flex flex-col justify-between py-1.5">
+            <Stack justify="space-between" h="100%" gap="xs">
               {/* Top Section - Balance */}
-              <div className="flex-shrink-0">
-                <p className="text-orange-100 text-[10px] mb-0.5 leading-tight">Available Balance</p>
-                <h2 className="text-white text-xl font-black leading-tight">${cardBalance.toFixed(2)}</h2>
-              </div>
+              <Box>
+                <Text size="xs" c="orange.1" mb={4}>Available Balance</Text>
+                <Title order={2} c="white" fw={900}>${cardBalance.toFixed(2)}</Title>
+              </Box>
 
-              {/* Middle Section - Card Number (centered) */}
-              <div className="flex items-center justify-center flex-shrink-0" style={{ marginTop: '-10px' }}>
-                <p className="text-white text-lg font-mono tracking-widest break-all text-center leading-tight">
+              {/* Middle Section - Card Number */}
+              <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '-10px' }}>
+                <Text size="lg" c="white" ff="monospace" style={{ letterSpacing: '0.2em', wordBreak: 'break-all', textAlign: 'center' }}>
                   {showCardDetails ? cardNumber : "**** **** **** " + cardNumber.replace(/\s/g, "").slice(-4)}
-                </p>
-              </div>
+                </Text>
+              </Box>
 
               {/* Bottom Section - Expiry, CVV, Name, Brand */}
-              <div className="flex items-end justify-between flex-shrink-0" style={{ marginTop: '-30px' }}>
-                <div className="flex-1 min-w-0">
-                  {/* Expiry and CVV */}
-                  <div className="flex gap-2 mb-0.5">
-                    <div>
-                      <p className="text-orange-100 text-[8px] mb-0.5 leading-tight">EXP</p>
-                      <p className="text-white text-[10px] font-mono leading-tight">{showCardDetails ? expiryDate : "**/**"}</p>
-                    </div>
-                    <div>
-                      <p className="text-orange-100 text-[8px] mb-0.5 leading-tight">CVV</p>
-                      <p className="text-white text-[10px] font-mono leading-tight">{showCardDetails ? cvv : "***"}</p>
-                    </div>
-                  </div>
-                  {/* Cardholder Name */}
-                  <div className="truncate">
-                    <p className="text-white text-[9px] font-bold tracking-wide leading-tight">{driverName.toUpperCase()}</p>
-                  </div>
-                </div>
-                {/* Brand Logo */}
-                <div className="text-white text-sm font-black ml-2 flex-shrink-0">FEEDER</div>
-              </div>
-            </div>
-          </div>
-        </div>
+              <Group justify="space-between" align="flex-end" style={{ marginTop: '-30px' }}>
+                <Box style={{ flex: 1, minWidth: 0 }}>
+                  <Group gap="md" mb={4}>
+                    <Box>
+                      <Text size="xs" c="orange.1" mb={2}>EXP</Text>
+                      <Text size="xs" c="white" ff="monospace">{showCardDetails ? expiryDate : "**/**"}</Text>
+                    </Box>
+                    <Box>
+                      <Text size="xs" c="orange.1" mb={2}>CVV</Text>
+                      <Text size="xs" c="white" ff="monospace">{showCardDetails ? cvv : "***"}</Text>
+                    </Box>
+                  </Group>
+                  <Text size="xs" fw={700} c="white" style={{ letterSpacing: '0.1em', textTransform: 'uppercase' }} lineClamp={1}>
+                    {driverName}
+                  </Text>
+                </Box>
+                <Text size="sm" fw={900} c="white" ml="md">FEEDER</Text>
+              </Group>
+            </Stack>
+          </Paper>
+        </Box>
 
         {/* Card Controls */}
-        <div className="px-6 mb-6">
-          <div className="bg-white rounded-2xl p-4 shadow-lg space-y-3">
-            {/* Toggle Card Details */}
-            <button
-              onClick={() => setShowCardDetails(!showCardDetails)}
-              className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-100 p-2 rounded-lg">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                    />
-                  </svg>
-                </div>
-                <div className="text-left">
-                  <p className="font-bold text-gray-900">Show Card Details</p>
-                  <p className="text-xs text-gray-500">View number, expiry, CVV</p>
-                </div>
-              </div>
-              <div
-                className={`w-12 h-6 rounded-full transition-colors ${showCardDetails ? "bg-blue-600" : "bg-gray-300"}`}
+        <Stack gap="md" px="xl" mb="xl">
+          <Card shadow="lg" radius="lg" p="md">
+            <Stack gap="md">
+              {/* Toggle Card Details */}
+              <Group justify="space-between" p="md" style={{ border: '2px solid var(--mantine-color-gray-2)', borderRadius: '12px' }}>
+                <Group gap="md">
+                  <ThemeIcon size="lg" radius="md" color="blue" variant="light">
+                    {showCardDetails ? <IconEye size={20} /> : <IconEyeOff size={20} />}
+                  </ThemeIcon>
+                  <Box>
+                    <Text fw={700} c="dark">Show Card Details</Text>
+                    <Text size="xs" c="dimmed">View number, expiry, CVV</Text>
+                  </Box>
+                </Group>
+                <Switch
+                  checked={showCardDetails}
+                  onChange={(e) => setShowCardDetails(e.currentTarget.checked)}
+                  color="blue"
+                  size="lg"
+                />
+              </Group>
+
+              {/* Lock Card */}
+              <Group justify="space-between" p="md" style={{ border: '2px solid var(--mantine-color-gray-2)', borderRadius: '12px' }}>
+                <Group gap="md">
+                  <ThemeIcon size="lg" radius="md" color={isCardLocked ? "red" : "green"} variant="light">
+                    {isCardLocked ? <IconLock size={20} /> : <IconLockOpen size={20} />}
+                  </ThemeIcon>
+                  <Box>
+                    <Text fw={700} c="dark">{isCardLocked ? "Card Locked" : "Lock Card"}</Text>
+                    <Text size="xs" c="dimmed">
+                      {isCardLocked ? "Transactions blocked" : "Block all transactions"}
+                    </Text>
+                  </Box>
+                </Group>
+                <Switch
+                  checked={isCardLocked}
+                  onChange={(e) => setIsCardLocked(e.currentTarget.checked)}
+                  color={isCardLocked ? "red" : "gray"}
+                  size="lg"
+                />
+              </Group>
+
+              {/* Change PIN */}
+              <Button
+                variant="subtle"
+                fullWidth
+                justify="space-between"
+                leftSection={
+                  <ThemeIcon size="lg" radius="md" color="purple" variant="light">
+                    <IconKey size={20} />
+                  </ThemeIcon>
+                }
+                rightSection={<IconChevronRight size={20} color="var(--mantine-color-gray-4)" />}
+                onClick={() => setShowPinDialog(true)}
+                style={{ height: 'auto', padding: '12px' }}
               >
-                <div
-                  className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform m-0.5 ${showCardDetails ? "translate-x-6" : ""}`}
-                ></div>
-              </div>
-            </button>
-
-            {/* Lock Card */}
-            <button
-              onClick={() => setIsCardLocked(!isCardLocked)}
-              className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className={`${isCardLocked ? "bg-red-100" : "bg-green-100"} p-2 rounded-lg`}>
-                  <svg
-                    className={`w-5 h-5 ${isCardLocked ? "text-red-600" : "text-green-600"}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    {isCardLocked ? (
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                      />
-                    ) : (
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"
-                      />
-                    )}
-                  </svg>
-                </div>
-                <div className="text-left">
-                  <p className="font-bold text-gray-900">{isCardLocked ? "Card Locked" : "Lock Card"}</p>
-                  <p className="text-xs text-gray-500">
-                    {isCardLocked ? "Transactions blocked" : "Block all transactions"}
-                  </p>
-                </div>
-              </div>
-              <div className={`w-12 h-6 rounded-full transition-colors ${isCardLocked ? "bg-red-600" : "bg-gray-300"}`}>
-                <div
-                  className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform m-0.5 ${isCardLocked ? "translate-x-6" : ""}`}
-                ></div>
-              </div>
-            </button>
-
-            {/* Change PIN */}
-            <button
-              onClick={() => setShowPinDialog(true)}
-              className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="bg-purple-100 p-2 rounded-lg">
-                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                    />
-                  </svg>
-                </div>
-                <div className="text-left">
-                  <p className="font-bold text-gray-900">Change Card PIN</p>
-                  <p className="text-xs text-gray-500">Set or update your PIN</p>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-gray-400" />
-            </button>
-          </div>
-        </div>
+                <Box>
+                  <Text fw={700} c="dark">Change Card PIN</Text>
+                  <Text size="xs" c="dimmed">Set or update your PIN</Text>
+                </Box>
+              </Button>
+            </Stack>
+          </Card>
+        </Stack>
 
         {/* PIN Dialog */}
-        {showPinDialog && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-6">
-            <div className="bg-white rounded-3xl p-6 w-full max-w-sm">
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Change Card PIN</h3>
-              <div className="space-y-4 mb-6">
-                <div>
-                  <label className="text-sm text-gray-600 font-semibold mb-2 block">Current PIN</label>
-                  <input
-                    type="password"
-                    maxLength={4}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-center text-2xl font-mono tracking-widest"
-                    placeholder="****"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-gray-600 font-semibold mb-2 block">New PIN</label>
-                  <input
-                    type="password"
-                    maxLength={4}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-center text-2xl font-mono tracking-widest"
-                    placeholder="****"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-gray-600 font-semibold mb-2 block">Confirm New PIN</label>
-                  <input
-                    type="password"
-                    maxLength={4}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-center text-2xl font-mono tracking-widest"
-                    placeholder="****"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowPinDialog(false)}
-                  className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-full font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    setShowPinDialog(false);
-                    toast.success("PIN updated successfully");
-                  }}
-                  className="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white py-3 rounded-full font-bold"
-                >
-                  Update PIN
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <Modal
+          opened={showPinDialog}
+          onClose={() => setShowPinDialog(false)}
+          title="Change Card PIN"
+          centered
+          radius="xl"
+        >
+          <Stack gap="md">
+            <TextInput
+              label="Current PIN"
+              type="password"
+              maxLength={4}
+              placeholder="****"
+              styles={{
+                input: {
+                  textAlign: 'center',
+                  fontSize: '24px',
+                  fontFamily: 'monospace',
+                  letterSpacing: '0.2em',
+                  border: '2px solid var(--mantine-color-gray-2)',
+                  borderRadius: '12px',
+                },
+              }}
+            />
+            <TextInput
+              label="New PIN"
+              type="password"
+              maxLength={4}
+              placeholder="****"
+              styles={{
+                input: {
+                  textAlign: 'center',
+                  fontSize: '24px',
+                  fontFamily: 'monospace',
+                  letterSpacing: '0.2em',
+                  border: '2px solid var(--mantine-color-gray-2)',
+                  borderRadius: '12px',
+                },
+              }}
+            />
+            <TextInput
+              label="Confirm New PIN"
+              type="password"
+              maxLength={4}
+              placeholder="****"
+              styles={{
+                input: {
+                  textAlign: 'center',
+                  fontSize: '24px',
+                  fontFamily: 'monospace',
+                  letterSpacing: '0.2em',
+                  border: '2px solid var(--mantine-color-gray-2)',
+                  borderRadius: '12px',
+                },
+              }}
+            />
+            <Group gap="md" mt="md">
+              <Button
+                variant="light"
+                color="gray"
+                flex={1}
+                onClick={() => setShowPinDialog(false)}
+                radius="xl"
+              >
+                Cancel
+              </Button>
+              <Button
+                flex={1}
+                color="orange"
+                onClick={() => {
+                  setShowPinDialog(false);
+                  notifications.show({
+                    title: "PIN updated successfully",
+                    color: "green",
+                  });
+                }}
+                radius="xl"
+                style={{ background: 'linear-gradient(to right, var(--mantine-color-orange-5), var(--mantine-color-red-6))' }}
+              >
+                Update PIN
+              </Button>
+            </Group>
+          </Stack>
+        </Modal>
 
         {/* Transactions List */}
-        <div className="px-6 pb-24">
-          <h3 className="text-gray-900 text-xl font-bold mb-4">Transaction History</h3>
+        <Stack gap="md" px="xl" pb="xl">
+          <Title order={3} fw={700} c="dark">Transaction History</Title>
           {transactions.length === 0 ? (
-            <div className="bg-white rounded-2xl p-8 text-center">
-              <p className="text-gray-500">No transactions yet</p>
-              <p className="text-sm text-gray-400 mt-2">Your earnings will appear here</p>
-            </div>
+            <Card shadow="sm" radius="lg" p="xl" style={{ textAlign: 'center' }}>
+              <Text c="dimmed">No transactions yet</Text>
+              <Text size="sm" c="dimmed" mt="xs">Your earnings will appear here</Text>
+            </Card>
           ) : (
-            <div className="space-y-3">
+            <Stack gap="md">
               {transactions.map((txn, idx) => (
-              <div key={idx} className="bg-white rounded-2xl p-4 shadow-md">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`${txn.type === "credit" ? "bg-green-100" : "bg-red-100"} p-3 rounded-xl`}>
-                      <svg
-                        className={`w-5 h-5 ${txn.type === "credit" ? "text-green-600" : "text-red-600"}`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        {txn.type === "credit" ? (
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        ) : (
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                        )}
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-900">{txn.description}</p>
-                      <p className="text-sm text-gray-500">{txn.date}</p>
-                    </div>
-                  </div>
-                  <p className={`text-xl font-black ${txn.type === "credit" ? "text-green-600" : "text-red-600"}`}>
-                    {txn.type === "credit" ? "+" : "-"}${Math.abs(txn.amount).toFixed(2)}
-                  </p>
-                </div>
-              </div>
-            ))}
-            </div>
+                <Card key={idx} shadow="sm" radius="lg" p="md">
+                  <Group justify="space-between">
+                    <Group gap="md">
+                      <ThemeIcon size="lg" radius="md" color={txn.type === "credit" ? "green" : "red"} variant="light">
+                        {txn.type === "credit" ? <IconPlus size={20} /> : <IconMinus size={20} />}
+                      </ThemeIcon>
+                      <Box>
+                        <Text fw={700} c="dark">{txn.description}</Text>
+                        <Text size="sm" c="dimmed">{txn.date}</Text>
+                      </Box>
+                    </Group>
+                    <Text size="xl" fw={900} c={txn.type === "credit" ? "green.6" : "red.6"}>
+                      {txn.type === "credit" ? "+" : "-"}${Math.abs(txn.amount).toFixed(2)}
+                    </Text>
+                  </Group>
+                </Card>
+              ))}
+            </Stack>
           )}
-        </div>
-      </div>
+        </Stack>
+      </Box>
     );
   }
 
   if (loading) {
     return (
-      <div className="h-screen w-full bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-      </div>
+      <Box h="100vh" w="100%" style={{ background: 'linear-gradient(to bottom right, var(--mantine-color-orange-0), var(--mantine-color-red-0), var(--mantine-color-pink-0))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader size="lg" color="orange" />
+      </Box>
     );
   }
 
   return (
-    <div className="h-screen w-full bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 overflow-y-auto" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
+    <Box h="100vh" w="100%" style={{ background: 'linear-gradient(to bottom right, var(--mantine-color-orange-0), var(--mantine-color-red-0), var(--mantine-color-pink-0))', overflowY: 'auto', paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
       {/* Diamond Header */}
-      <div className={`relative px-6 pb-8 bg-gradient-to-br ${status.gradient} overflow-hidden flex-shrink-0 safe-area-top`}>
+      <Paper
+        px="xl"
+        pb="xl"
+        style={{ background: status.gradient, overflow: 'hidden' }}
+        className="safe-area-top"
+      >
         {/* Diamond sparkle effect */}
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-4 left-8 w-3 h-3 bg-white rounded-full animate-pulse"></div>
-          <div
-            className="absolute top-12 right-12 w-2 h-2 bg-white rounded-full animate-pulse"
-            style={{ animationDelay: "0.3s" }}
-          ></div>
-          <div
-            className="absolute bottom-8 left-16 w-2 h-2 bg-white rounded-full animate-pulse"
-            style={{ animationDelay: "0.6s" }}
-          ></div>
-          <div
-            className="absolute top-1/2 right-8 w-4 h-4 bg-white rounded-full animate-pulse"
-            style={{ animationDelay: "0.9s" }}
-          ></div>
-        </div>
+        <Box pos="absolute" inset={0} style={{ opacity: 0.3 }}>
+          <Box pos="absolute" top={16} left={32} w={12} h={12} bg="white" style={{ borderRadius: '50%', animation: 'pulse 2s ease-in-out infinite' }} />
+          <Box pos="absolute" top={48} right={48} w={8} h={8} bg="white" style={{ borderRadius: '50%', animation: 'pulse 2s ease-in-out infinite', animationDelay: '0.3s' }} />
+          <Box pos="absolute" bottom={32} left={64} w={8} h={8} bg="white" style={{ borderRadius: '50%', animation: 'pulse 2s ease-in-out infinite', animationDelay: '0.6s' }} />
+          <Box pos="absolute" top="50%" right={32} w={16} h={16} bg="white" style={{ borderRadius: '50%', animation: 'pulse 2s ease-in-out infinite', animationDelay: '0.9s' }} />
+        </Box>
 
         {/* Geometric diamond pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <Box pos="absolute" inset={0} style={{ opacity: 0.1 }}>
+          <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
             <polygon points="50,10 90,50 50,90 10,50" fill="white" opacity="0.3" />
             <polygon points="50,20 80,50 50,80 20,50" fill="white" opacity="0.2" />
           </svg>
-        </div>
+        </Box>
 
-        <div className="relative flex items-center justify-between mb-4">
-          <button
+        <Group justify="space-between" mb="md" pos="relative">
+          <ActionIcon
+            variant="subtle"
+            color="dark"
             onClick={() => {
               if (onOpenMenu) {
                 onOpenMenu();
               } else {
-                toast.info("Menu coming soon.");
+                notifications.show({
+                  title: "Menu coming soon.",
+                  color: "blue",
+                });
               }
             }}
-            className="text-gray-700"
           >
-            <Menu className="w-6 h-6" />
-          </button>
-          <h1 className="text-gray-900 text-2xl font-bold">Account</h1>
-          <button
+            <IconMenu size={24} />
+          </ActionIcon>
+          <Title order={2} fw={700} c="dark">Account</Title>
+          <ActionIcon
+            variant="subtle"
+            color="dark"
             onClick={() => {
               if (onOpenNotifications) {
                 onOpenNotifications();
               } else {
-                toast.info("Notifications coming soon.");
+                notifications.show({
+                  title: "Notifications coming soon.",
+                  color: "blue",
+                });
               }
             }}
-            className="text-gray-700"
           >
-            <Bell className="w-7 h-7" />
-          </button>
-        </div>
+            <IconBell size={28} />
+          </ActionIcon>
+        </Group>
 
         {/* Profile Section */}
-        <div className="relative mb-4">
-          <div className="text-center">
-            <h2 className="text-3xl font-black text-gray-900 mb-3">{driverName}</h2>
+        <Box pos="relative" mb="md">
+          <Stack align="center" gap="md">
+            <Title order={1} fw={900} c="dark">{driverName}</Title>
 
             {/* Status Badge */}
-            <div className="relative inline-block">
-              <div className="bg-white/50 backdrop-blur-sm px-6 py-3 rounded-2xl border-2 border-white shadow-lg">
-                <span className="text-gray-900 text-xl font-black">{status.name}</span>
-              </div>
+            <Box pos="relative" style={{ display: 'inline-block' }}>
+              <Badge
+                size="xl"
+                variant="light"
+                style={{ backgroundColor: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(4px)', border: '2px solid white', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                radius="lg"
+                p="md"
+              >
+                <Text size="xl" fw={900} c="dark">{status.name}</Text>
+              </Badge>
+            </Box>
 
-              {/* Badge Icon - Bottom Right Corner */}
-              <div className="absolute -bottom-2 -right-2 z-10">
-                {/* Diamond Icon */}
-                {status.color === "diamond" && (
-                  <div className="relative w-10 h-10">
-                    <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl">
-                      <defs>
-                        <linearGradient id="diamondGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" style={{ stopColor: "#a5f3fc", stopOpacity: 1 }} />
-                          <stop offset="50%" style={{ stopColor: "#67e8f9", stopOpacity: 1 }} />
-                          <stop offset="100%" style={{ stopColor: "#22d3ee", stopOpacity: 1 }} />
-                        </linearGradient>
-                        <radialGradient id="diamondShine">
-                          <stop offset="0%" style={{ stopColor: "#ffffff", stopOpacity: 0.8 }} />
-                          <stop offset="100%" style={{ stopColor: "#ffffff", stopOpacity: 0 }} />
-                        </radialGradient>
-                      </defs>
-                      <polygon
-                        points="50,10 90,40 70,90 30,90 10,40"
-                        fill="url(#diamondGrad)"
-                        stroke="#0891b2"
-                        strokeWidth="2"
-                      />
-                      <polygon points="50,10 70,40 50,50 30,40" fill="url(#diamondShine)" opacity="0.6" />
-                      <line x1="50" y1="10" x2="50" y2="50" stroke="#ffffff" strokeWidth="1" opacity="0.4" />
-                      <line x1="10" y1="40" x2="50" y2="50" stroke="#0e7490" strokeWidth="1" opacity="0.3" />
-                      <line x1="90" y1="40" x2="50" y2="50" stroke="#0e7490" strokeWidth="1" opacity="0.3" />
-                    </svg>
-                  </div>
-                )}
-
-                {/* Platinum Bar */}
-                {status.color === "platinum" && (
-                  <div className="relative w-10 h-10 flex items-center justify-center">
-                    <svg viewBox="0 0 60 40" className="w-full drop-shadow-2xl">
-                      <defs>
-                        <linearGradient id="platinumGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" style={{ stopColor: "#f3f4f6", stopOpacity: 1 }} />
-                          <stop offset="50%" style={{ stopColor: "#d1d5db", stopOpacity: 1 }} />
-                          <stop offset="100%" style={{ stopColor: "#9ca3af", stopOpacity: 1 }} />
-                        </linearGradient>
-                        <linearGradient id="platinumShine" x1="0%" y1="0%" x2="100%" y2="0%">
-                          <stop offset="0%" style={{ stopColor: "#ffffff", stopOpacity: 0 }} />
-                          <stop offset="50%" style={{ stopColor: "#ffffff", stopOpacity: 0.8 }} />
-                          <stop offset="100%" style={{ stopColor: "#ffffff", stopOpacity: 0 }} />
-                        </linearGradient>
-                      </defs>
-                      <rect
-                        x="5"
-                        y="8"
-                        width="50"
-                        height="24"
-                        rx="2"
-                        fill="url(#platinumGrad)"
-                        stroke="#6b7280"
-                        strokeWidth="1"
-                      />
-                      <rect x="5" y="8" width="50" height="8" rx="2" fill="url(#platinumShine)" opacity="0.5" />
-                    </svg>
-                  </div>
-                )}
-
-                {/* Gold Bar */}
-                {status.color === "gold" && (
-                  <div className="relative w-10 h-10 flex items-center justify-center">
-                    <svg viewBox="0 0 60 40" className="w-full drop-shadow-2xl">
-                      <defs>
-                        <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" style={{ stopColor: "#fde047", stopOpacity: 1 }} />
-                          <stop offset="50%" style={{ stopColor: "#facc15", stopOpacity: 1 }} />
-                          <stop offset="100%" style={{ stopColor: "#eab308", stopOpacity: 1 }} />
-                        </linearGradient>
-                        <linearGradient id="goldShine" x1="0%" y1="0%" x2="100%" y2="0%">
-                          <stop offset="0%" style={{ stopColor: "#ffffff", stopOpacity: 0 }} />
-                          <stop offset="50%" style={{ stopColor: "#ffffff", stopOpacity: 0.9 }} />
-                          <stop offset="100%" style={{ stopColor: "#ffffff", stopOpacity: 0 }} />
-                        </linearGradient>
-                      </defs>
-                      <rect
-                        x="5"
-                        y="8"
-                        width="50"
-                        height="24"
-                        rx="2"
-                        fill="url(#goldGrad)"
-                        stroke="#ca8a04"
-                        strokeWidth="1"
-                      />
-                      <rect x="5" y="8" width="50" height="8" rx="2" fill="url(#goldShine)" opacity="0.6" />
-                      <rect x="10" y="14" width="40" height="2" fill="#ffffff" opacity="0.3" />
-                    </svg>
-                  </div>
-                )}
-
-                {/* Silver Nugget */}
-                {status.color === "silver" && (
-                  <div className="relative w-10 h-10 flex items-center justify-center">
-                    <svg viewBox="0 0 50 50" className="w-full drop-shadow-2xl">
-                      <defs>
-                        <radialGradient id="silverGrad">
-                          <stop offset="0%" style={{ stopColor: "#f9fafb", stopOpacity: 1 }} />
-                          <stop offset="50%" style={{ stopColor: "#d1d5db", stopOpacity: 1 }} />
-                          <stop offset="100%" style={{ stopColor: "#9ca3af", stopOpacity: 1 }} />
-                        </radialGradient>
-                        <radialGradient id="silverShine">
-                          <stop offset="0%" style={{ stopColor: "#ffffff", stopOpacity: 1 }} />
-                          <stop offset="100%" style={{ stopColor: "#ffffff", stopOpacity: 0 }} />
-                        </radialGradient>
-                      </defs>
-                      <ellipse
-                        cx="25"
-                        cy="28"
-                        rx="18"
-                        ry="16"
-                        fill="url(#silverGrad)"
-                        stroke="#6b7280"
-                        strokeWidth="1"
-                      />
-                      <ellipse cx="20" cy="22" rx="8" ry="7" fill="url(#silverShine)" opacity="0.5" />
-                      <path d="M 15 28 Q 25 20, 35 28" fill="none" stroke="#ffffff" strokeWidth="1" opacity="0.3" />
-                    </svg>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-center gap-4 text-sm mt-4">
-              <div className="flex items-center gap-1">
-                <Star className="w-4 h-4 text-yellow-600" fill="currentColor" />
-                <span className="font-bold text-gray-900">{driverRating}</span>
-              </div>
-              <span className="text-gray-700 font-semibold">{totalDeliveries} feeds</span>
-              <span className="text-gray-700">Since {memberSince}</span>
-            </div>
-          </div>
-        </div>
+            <Group gap="md" justify="center">
+              <Group gap={4}>
+                <IconStar size={16} fill="var(--mantine-color-yellow-6)" color="var(--mantine-color-yellow-6)" />
+                <Text fw={700} c="dark">{driverRating}</Text>
+              </Group>
+              <Text fw={600} c="dark">{totalDeliveries} feeds</Text>
+              <Text c="dark">Since {memberSince}</Text>
+            </Group>
+          </Stack>
+        </Box>
 
         {/* Points Progress */}
-        <div className="relative bg-white/30 backdrop-blur-md rounded-2xl p-4 border border-white">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-900 font-bold text-sm">Status Points</span>
-            <span className="text-gray-900 font-black text-lg">{driverPoints} pts</span>
-          </div>
-          <div className="relative h-3 bg-white/40 rounded-full overflow-hidden">
-            <div
-              className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full"
-              style={{ width: "100%" }}
-            >
-              <div className="absolute inset-0 bg-white/30 animate-pulse"></div>
-            </div>
-          </div>
-          <p className="text-gray-800 text-xs mt-2 font-semibold">
+        <Paper p="md" radius="lg" style={{ backgroundColor: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(4px)', border: '1px solid white' }}>
+          <Group justify="space-between" mb="xs">
+            <Text fw={700} c="dark" size="sm">Status Points</Text>
+            <Text fw={900} c="dark" size="lg">{driverPoints} pts</Text>
+          </Group>
+          <Progress 
+            value={100} 
+            color="blue" 
+            size="sm" 
+            radius="xl"
+            style={{ backgroundColor: 'rgba(255,255,255,0.4)' }}
+          />
+          <Text c="dark" size="xs" mt="xs" fw={600}>
             🎉 You've reached Diamond status! Keep being amazing!
-          </p>
-        </div>
-      </div>
+          </Text>
+        </Paper>
+      </Paper>
 
       {/* Menu Items */}
-      <div className="px-6 py-6 space-y-3">
+      <Stack gap="md" px="xl" py="xl">
         {menuItems.map((item, idx) => {
           const colors = getMenuItemColors(item.color);
-          const Icon = item.icon;
+          const IconComponent = item.icon;
           return (
-            <button
+            <Button
               key={idx}
               onClick={item.action || (() => {})}
-              className="w-full bg-white rounded-2xl p-4 shadow-md hover:shadow-lg transition-all active:scale-98 flex items-center gap-4"
+              variant="light"
+              fullWidth
+              justify="space-between"
+              leftSection={
+                <ThemeIcon size="lg" radius="md" color={colors.bg} variant="light">
+                  <IconComponent size={24} />
+                </ThemeIcon>
+              }
+              rightSection={
+                <Group gap="xs">
+                  {item.badge && (
+                    <Badge color="green" variant="light" size="lg" fw={700}>
+                      {item.badge}
+                    </Badge>
+                  )}
+                  <IconChevronRight size={20} color="var(--mantine-color-gray-4)" />
+                </Group>
+              }
+              size="lg"
+              radius="lg"
+              style={{ height: 'auto', padding: '16px' }}
             >
-              <div className={`${colors.bg} p-3 rounded-xl`}>
-                <Icon className={`w-6 h-6 ${colors.icon}`} />
-              </div>
-              <div className="flex-1 text-left">
-                <p className="font-bold text-gray-900 text-lg">{item.label}</p>
-                <p className="text-sm text-gray-500">{item.desc}</p>
-              </div>
-              {item.badge && (
-                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">
-                  {item.badge}
-                </span>
-              )}
-              <ChevronRight className="w-5 h-5 text-gray-400" />
-            </button>
+              <Box style={{ flex: 1, textAlign: 'left' }}>
+                <Text fw={700} c="dark" size="lg">{item.label}</Text>
+                <Text size="sm" c="dimmed">{item.desc}</Text>
+              </Box>
+            </Button>
           );
         })}
 
         {/* Sign Out Button */}
-        <button
+        <Button
+          variant="light"
+          color="red"
+          fullWidth
+          justify="space-between"
+          leftSection={
+            <ThemeIcon size="lg" radius="md" color="red" variant="light">
+              <IconLogout size={24} />
+            </ThemeIcon>
+          }
+          rightSection={<IconChevronRight size={20} color="var(--mantine-color-red-4)" />}
           onClick={handleSignOut}
-          className="w-full bg-red-50 rounded-2xl p-4 shadow-md hover:shadow-lg transition-all active:scale-98 flex items-center gap-4 border-2 border-red-200"
+          size="lg"
+          radius="lg"
+          style={{ height: 'auto', padding: '16px', border: '2px solid var(--mantine-color-red-2)' }}
         >
-          <div className="bg-red-100 p-3 rounded-xl">
-            <LogOut className="w-6 h-6 text-red-600" />
-          </div>
-          <div className="flex-1 text-left">
-            <p className="font-bold text-red-600 text-lg">Sign Out</p>
-            <p className="text-sm text-red-500">Log out of your account</p>
-          </div>
-          <ChevronRight className="w-5 h-5 text-red-400" />
-        </button>
-      </div>
+          <Box style={{ flex: 1, textAlign: 'left' }}>
+            <Text fw={700} c="red.6" size="lg">Sign Out</Text>
+            <Text size="sm" c="red.5">Log out of your account</Text>
+          </Box>
+        </Button>
+      </Stack>
 
-      <div className="h-24"></div>
-    </div>
+      <Box h={96} />
+    </Box>
   );
 };
 
