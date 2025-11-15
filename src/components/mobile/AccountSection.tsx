@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  User, Car, Shield, CreditCard, Settings, LogOut, 
-  ChevronRight, Star, DollarSign, MessageCircle,
-  Phone, Mail, MapPin, Calendar
-} from 'lucide-react';
+  IconUser, IconCar, IconShield, IconCreditCard, IconSettings, IconLogout, 
+  IconChevronRight, IconStar, IconCurrencyDollar, IconMessageCircle,
+  IconPhone, IconMail, IconMapPin, IconCalendar
+} from '@tabler/icons-react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { notifications } from '@mantine/notifications';
 import { ProfileSection } from './ProfileSection';
 import { PaymentMethodsSection } from './PaymentMethodsSection';
 import { AppSettingsSection } from './AppSettingsSection';
@@ -13,6 +13,21 @@ import { VehicleManagementSection } from './VehicleManagementSection';
 import { SafeDrivingSection } from './SafeDrivingSection';
 import { InstantCashoutModal } from './InstantCashoutModal';
 import { ProfilePhotoUpload } from './ProfilePhotoUpload';
+import {
+  Box,
+  Stack,
+  Text,
+  Button,
+  Group,
+  Card,
+  Title,
+  Loader,
+  ThemeIcon,
+  Divider,
+  Anchor,
+  Grid,
+  Paper,
+} from '@mantine/core';
 
 interface CraverProfile {
   id: string;
@@ -134,10 +149,16 @@ export const AccountSection: React.FC<{
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
-      toast.success('Signed out successfully');
+      notifications.show({
+        title: 'Signed out successfully',
+        color: 'green',
+      });
       window.location.href = '/mobile';
     } catch (error) {
-      toast.error('Failed to sign out');
+      notifications.show({
+        title: 'Failed to sign out',
+        color: 'red',
+      });
     }
   };
 
@@ -160,190 +181,267 @@ export const AccountSection: React.FC<{
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading your account...</p>
-        </div>
-      </div>
+      <Box h="100vh" bg="slate.0" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Stack align="center" gap="md">
+          <Loader size="xl" color="orange" />
+          <Text c="slate.6">Loading your account...</Text>
+        </Stack>
+      </Box>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20">
+    <Box h="100vh" bg="slate.0" style={{ paddingBottom: '80px', overflowY: 'auto' }}>
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b shadow-sm safe-area-top">
-        <div className="p-4">
-          <h1 className="text-3xl font-bold text-slate-900 text-right">Account</h1>
-          <p className="text-sm text-slate-600 text-right">Manage your profile and settings</p>
-        </div>
-      </div>
+      <Paper
+        pos="sticky"
+        top={0}
+        style={{ zIndex: 10 }}
+        bg="white"
+        style={{ borderBottom: '1px solid var(--mantine-color-slate-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+        className="safe-area-top"
+      >
+        <Box p="md">
+          <Title order={1} fw={700} c="slate.9" style={{ textAlign: 'right' }}>Account</Title>
+          <Text size="sm" c="slate.6" style={{ textAlign: 'right' }}>Manage your profile and settings</Text>
+        </Box>
+      </Paper>
 
       {/* Profile Card */}
-      <div className="bg-gradient-to-br from-orange-500 to-orange-600 px-4 py-8">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-20 h-20 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white">
+      <Paper
+        p="xl"
+        style={{ background: 'linear-gradient(to bottom right, var(--mantine-color-orange-5), var(--mantine-color-orange-6))' }}
+      >
+        <Group gap="md" mb="xl">
+          <Box
+            w={80}
+            h={80}
+            style={{ borderRadius: '50%', border: '4px solid white', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', overflow: 'hidden', backgroundColor: 'white' }}
+          >
             {profile?.profile_photo ? (
-              <img src={profile.profile_photo} alt="Profile" className="w-full h-full object-cover" />
+              <Box component="img" src={profile.profile_photo} alt="Profile" w="100%" h="100%" style={{ objectFit: 'cover' }} />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-slate-200">
-                <User className="h-10 w-10 text-slate-500" />
-              </div>
+              <Box w="100%" h="100%" bg="slate.2" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <IconUser size={40} color="var(--mantine-color-slate-5)" />
+              </Box>
             )}
-          </div>
-          <div className="flex-1 text-white">
-            <h2 className="text-2xl font-bold">
+          </Box>
+          <Box style={{ flex: 1 }}>
+            <Title order={2} c="white" fw={700}>
               {profile?.first_name} {profile?.last_name}
-            </h2>
-            <p className="text-orange-100 text-sm capitalize">{profile?.status || 'Driver'}</p>
-          </div>
-        </div>
+            </Title>
+            <Text c="orange.1" size="sm" tt="capitalize">{profile?.status || 'Driver'}</Text>
+          </Box>
+        </Group>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-white">
-            <div className="flex items-center gap-2 mb-1">
-              <Star className="h-4 w-4" />
-              <span className="text-xs text-orange-100">Rating</span>
-            </div>
-            <div className="text-2xl font-bold">{stats.rating.toFixed(1)}</div>
-          </div>
-          <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-white">
-            <div className="flex items-center gap-2 mb-1">
-              <DollarSign className="h-4 w-4" />
-              <span className="text-xs text-orange-100">This Week</span>
-            </div>
-            <div className="text-2xl font-bold">${stats.weekEarnings.toFixed(0)}</div>
-          </div>
-        </div>
+        <Grid gutter="md">
+          <Grid.Col span={6}>
+            <Paper p="md" radius="lg" style={{ backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)' }}>
+              <Group gap="xs" mb={4}>
+                <IconStar size={16} color="white" />
+                <Text size="xs" c="orange.1">Rating</Text>
+              </Group>
+              <Text size="2xl" fw={700} c="white">{stats.rating.toFixed(1)}</Text>
+            </Paper>
+          </Grid.Col>
+          <Grid.Col span={6}>
+            <Paper p="md" radius="lg" style={{ backgroundColor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)' }}>
+              <Group gap="xs" mb={4}>
+                <IconCurrencyDollar size={16} color="white" />
+                <Text size="xs" c="orange.1">This Week</Text>
+              </Group>
+              <Text size="2xl" fw={700} c="white">${stats.weekEarnings.toFixed(0)}</Text>
+            </Paper>
+          </Grid.Col>
+        </Grid>
 
         {availableCashout > 0.50 && (
-          <button
+          <Button
+            fullWidth
+            mt="md"
+            bg="white"
+            c="orange.6"
+            fw={600}
+            size="lg"
+            radius="lg"
             onClick={() => setShowCashoutModal(true)}
-            className="w-full mt-4 bg-white text-orange-600 font-semibold py-3 rounded-xl hover:bg-orange-50 transition-all"
+            style={{ ':hover': { backgroundColor: 'var(--mantine-color-orange-0)' } }}
           >
             Cash Out ${availableCashout.toFixed(2)}
-          </button>
+          </Button>
         )}
-      </div>
+      </Paper>
 
       {/* Menu Sections */}
-      <div className="px-4 py-4 space-y-3">
+      <Stack gap="md" p="md">
         {/* Personal */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
-            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Personal</h3>
-          </div>
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="sm" style={{ backgroundColor: 'var(--mantine-color-slate-0)', borderBottom: '1px solid var(--mantine-color-slate-2)' }}>
+            <Text size="sm" fw={600} c="slate.7" tt="uppercase" style={{ letterSpacing: '0.05em' }}>Personal</Text>
+          </Card.Section>
           
-          <button onClick={() => setCurrentSection('profile')} className="w-full px-4 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors border-b border-slate-100">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-                <User className="h-5 w-5 text-blue-600" />
-              </div>
-              <span className="font-medium text-slate-900">Profile Information</span>
-            </div>
-            <ChevronRight className="h-5 w-5 text-slate-400" />
-          </button>
+          <Button
+            variant="subtle"
+            fullWidth
+            justify="space-between"
+            leftSection={
+              <ThemeIcon size="lg" radius="xl" color="blue" variant="light">
+                <IconUser size={20} color="var(--mantine-color-blue-6)" />
+              </ThemeIcon>
+            }
+            rightSection={<IconChevronRight size={20} color="var(--mantine-color-slate-4)" />}
+            onClick={() => setCurrentSection('profile')}
+            style={{ height: 'auto', padding: '16px' }}
+          >
+            <Text fw={500} c="slate.9">Profile Information</Text>
+          </Button>
 
-          <button onClick={() => setCurrentSection('vehicle')} className="w-full px-4 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center">
-                <Car className="h-5 w-5 text-purple-600" />
-              </div>
-              <div className="text-left">
-                <span className="font-medium text-slate-900 block">Vehicle & Documents</span>
-                <span className="text-xs text-slate-600 capitalize">{profile?.vehicle_type || 'Not set'}</span>
-              </div>
-            </div>
-            <ChevronRight className="h-5 w-5 text-slate-400" />
-          </button>
-        </div>
+          <Divider />
+
+          <Button
+            variant="subtle"
+            fullWidth
+            justify="space-between"
+            leftSection={
+              <ThemeIcon size="lg" radius="xl" color="purple" variant="light">
+                <IconCar size={20} color="var(--mantine-color-purple-6)" />
+              </ThemeIcon>
+            }
+            rightSection={<IconChevronRight size={20} color="var(--mantine-color-slate-4)" />}
+            onClick={() => setCurrentSection('vehicle')}
+            style={{ height: 'auto', padding: '16px' }}
+          >
+            <Box>
+              <Text fw={500} c="slate.9">Vehicle & Documents</Text>
+              <Text size="xs" c="slate.6" tt="capitalize">{profile?.vehicle_type || 'Not set'}</Text>
+            </Box>
+          </Button>
+        </Card>
 
         {/* Financial */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
-            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Financial</h3>
-          </div>
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="sm" style={{ backgroundColor: 'var(--mantine-color-slate-0)', borderBottom: '1px solid var(--mantine-color-slate-2)' }}>
+            <Text size="sm" fw={600} c="slate.7" tt="uppercase" style={{ letterSpacing: '0.05em' }}>Financial</Text>
+          </Card.Section>
           
-          <button onClick={() => setCurrentSection('payments')} className="w-full px-4 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center">
-                <CreditCard className="h-5 w-5 text-green-600" />
-              </div>
-              <span className="font-medium text-slate-900">Payment Methods</span>
-            </div>
-            <ChevronRight className="h-5 w-5 text-slate-400" />
-          </button>
-        </div>
+          <Button
+            variant="subtle"
+            fullWidth
+            justify="space-between"
+            leftSection={
+              <ThemeIcon size="lg" radius="xl" color="green" variant="light">
+                <IconCreditCard size={20} color="var(--mantine-color-green-6)" />
+              </ThemeIcon>
+            }
+            rightSection={<IconChevronRight size={20} color="var(--mantine-color-slate-4)" />}
+            onClick={() => setCurrentSection('payments')}
+            style={{ height: 'auto', padding: '16px' }}
+          >
+            <Text fw={500} c="slate.9">Payment Methods</Text>
+          </Button>
+        </Card>
 
         {/* App Settings */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
-            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Settings</h3>
-          </div>
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="sm" style={{ backgroundColor: 'var(--mantine-color-slate-0)', borderBottom: '1px solid var(--mantine-color-slate-2)' }}>
+            <Text size="sm" fw={600} c="slate.7" tt="uppercase" style={{ letterSpacing: '0.05em' }}>Settings</Text>
+          </Card.Section>
           
-          <button onClick={() => setCurrentSection('settings')} className="w-full px-4 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors border-b border-slate-100">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center">
-                <Settings className="h-5 w-5 text-slate-600" />
-              </div>
-              <span className="font-medium text-slate-900">App Settings</span>
-            </div>
-            <ChevronRight className="h-5 w-5 text-slate-400" />
-          </button>
+          <Button
+            variant="subtle"
+            fullWidth
+            justify="space-between"
+            leftSection={
+              <ThemeIcon size="lg" radius="xl" color="gray" variant="light">
+                <IconSettings size={20} color="var(--mantine-color-slate-6)" />
+              </ThemeIcon>
+            }
+            rightSection={<IconChevronRight size={20} color="var(--mantine-color-slate-4)" />}
+            onClick={() => setCurrentSection('settings')}
+            style={{ height: 'auto', padding: '16px' }}
+          >
+            <Text fw={500} c="slate.9">App Settings</Text>
+          </Button>
 
-          <button onClick={() => setCurrentSection('safety')} className="w-full px-4 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center">
-                <Shield className="h-5 w-5 text-green-600" />
-              </div>
-              <span className="font-medium text-slate-900">Safety & Security</span>
-            </div>
-            <ChevronRight className="h-5 w-5 text-slate-400" />
-          </button>
-        </div>
+          <Divider />
+
+          <Button
+            variant="subtle"
+            fullWidth
+            justify="space-between"
+            leftSection={
+              <ThemeIcon size="lg" radius="xl" color="green" variant="light">
+                <IconShield size={20} color="var(--mantine-color-green-6)" />
+              </ThemeIcon>
+            }
+            rightSection={<IconChevronRight size={20} color="var(--mantine-color-slate-4)" />}
+            onClick={() => setCurrentSection('safety')}
+            style={{ height: 'auto', padding: '16px' }}
+          >
+            <Text fw={500} c="slate.9">Safety & Security</Text>
+          </Button>
+        </Card>
 
         {/* Support */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
-            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Support</h3>
-          </div>
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="sm" style={{ backgroundColor: 'var(--mantine-color-slate-0)', borderBottom: '1px solid var(--mantine-color-slate-2)' }}>
+            <Text size="sm" fw={600} c="slate.7" tt="uppercase" style={{ letterSpacing: '0.05em' }}>Support</Text>
+          </Card.Section>
           
-          <a href="tel:+18883728368" className="w-full px-4 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors border-b border-slate-100">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-                <Phone className="h-5 w-5 text-blue-600" />
-              </div>
-              <span className="font-medium text-slate-900">Call Support</span>
-            </div>
-            <ChevronRight className="h-5 w-5 text-slate-400" />
-          </a>
+          <Anchor
+            href="tel:+18883728368"
+            component="button"
+            variant="subtle"
+            fullWidth
+            style={{ height: 'auto', padding: '16px', textDecoration: 'none' }}
+            leftSection={
+              <ThemeIcon size="lg" radius="xl" color="blue" variant="light">
+                <IconPhone size={20} color="var(--mantine-color-blue-6)" />
+              </ThemeIcon>
+            }
+            rightSection={<IconChevronRight size={20} color="var(--mantine-color-slate-4)" />}
+          >
+            <Text fw={500} c="slate.9">Call Support</Text>
+          </Anchor>
 
-          <a href="mailto:support@crave-n.shop" className="w-full px-4 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center">
-                <Mail className="h-5 w-5 text-purple-600" />
-              </div>
-              <span className="font-medium text-slate-900">Email Support</span>
-            </div>
-            <ChevronRight className="h-5 w-5 text-slate-400" />
-          </a>
-        </div>
+          <Divider />
+
+          <Anchor
+            href="mailto:support@crave-n.shop"
+            component="button"
+            variant="subtle"
+            fullWidth
+            style={{ height: 'auto', padding: '16px', textDecoration: 'none' }}
+            leftSection={
+              <ThemeIcon size="lg" radius="xl" color="purple" variant="light">
+                <IconMail size={20} color="var(--mantine-color-purple-6)" />
+              </ThemeIcon>
+            }
+            rightSection={<IconChevronRight size={20} color="var(--mantine-color-slate-4)" />}
+          >
+            <Text fw={500} c="slate.9">Email Support</Text>
+          </Anchor>
+        </Card>
 
         {/* Sign Out */}
-        <button
+        <Button
+          fullWidth
+          variant="light"
+          color="red"
+          leftSection={<IconLogout size={20} />}
           onClick={handleSignOut}
-          className="w-full bg-white rounded-xl shadow-sm border border-slate-200 px-4 py-4 flex items-center justify-center gap-2 hover:bg-red-50 hover:border-red-200 transition-all text-red-600 font-semibold"
+          size="lg"
+          radius="lg"
         >
-          <LogOut className="h-5 w-5" />
           Sign Out
-        </button>
+        </Button>
 
         {/* App Version */}
-        <div className="text-center py-6">
-          <p className="text-xs text-slate-500">Feeder v2.0.0</p>
-        </div>
-      </div>
+        <Box style={{ textAlign: 'center' }} py="xl">
+          <Text size="xs" c="slate.5">Feeder v2.0.0</Text>
+        </Box>
+      </Stack>
 
       <InstantCashoutModal
         isOpen={showCashoutModal}
@@ -351,7 +449,6 @@ export const AccountSection: React.FC<{
         availableAmount={availableCashout}
         onSuccess={fetchProfile}
       />
-    </div>
+    </Box>
   );
 };
-
