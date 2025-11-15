@@ -1,15 +1,31 @@
 
 // @ts-nocheck
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Minus, Plus, AlertCircle, ChefHat, X } from "lucide-react";
+import {
+  Modal,
+  Button,
+  Textarea,
+  Badge,
+  Checkbox,
+  Radio,
+  Divider,
+  Stack,
+  Group,
+  Text,
+  Title,
+  Box,
+  ActionIcon,
+  Image as MantineImage,
+  Alert,
+  Loader,
+} from "@mantine/core";
+import {
+  IconMinus,
+  IconPlus,
+  IconAlertCircle,
+  IconChefHat,
+  IconX,
+} from "@tabler/icons-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface MenuItem {
@@ -138,188 +154,179 @@ export const MenuItemModal = ({ item, onClose, onAddToCart }: MenuItemModalProps
   const totalPrice = ((item.price_cents + modifiersPrice) * quantity) / 100;
 
   return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-md mx-auto max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-left">{item.name}</DialogTitle>
-        </DialogHeader>
+    <Modal
+      opened={true}
+      onClose={onClose}
+      title={item.name}
+      size="md"
+      scrollAreaComponent={Stack}
+    >
+      <Stack gap="md">
+        {item.image_url && (
+          <MantineImage
+            src={item.image_url}
+            alt={item.name}
+            style={{ width: '100%', height: '192px', objectFit: 'cover', borderRadius: '8px' }}
+            fit="cover"
+          />
+        )}
 
-        <div className="space-y-4 pb-4">
-          {item.image_url && (
-            <div className="w-full h-48 rounded-lg overflow-hidden">
-              <img 
-                src={item.image_url} 
-                alt={item.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
+        <Stack gap="xs">
+          <Group gap="xs">
+            {item.is_vegetarian && <Badge variant="light" size="sm">Vegetarian</Badge>}
+            {item.is_vegan && <Badge variant="light" size="sm">Vegan</Badge>}
+            {item.is_gluten_free && <Badge variant="light" size="sm">Gluten Free</Badge>}
+          </Group>
+          <Text size="sm" c="dimmed">
+            {item.description}
+          </Text>
+          <Text size="sm" c="dimmed">
+            Prep time: ~{item.preparation_time} minutes
+          </Text>
+        </Stack>
 
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              {item.is_vegetarian && <Badge variant="secondary" className="text-xs">Vegetarian</Badge>}
-              {item.is_vegan && <Badge variant="secondary" className="text-xs">Vegan</Badge>}
-              {item.is_gluten_free && <Badge variant="secondary" className="text-xs">Gluten Free</Badge>}
-            </div>
-            <p className="text-muted-foreground text-sm">
-              {item.description}
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Prep time: ~{item.preparation_time} minutes
-            </p>
-          </div>
-
-          {/* Modifiers Section */}
-          {!loading && Object.keys(modifiersByType).length > 0 && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-2">
-                <ChefHat className="h-4 w-4 text-primary" />
-                <h3 className="text-base font-semibold">Customize Your Order</h3>
-              </div>
-              
-              {Object.entries(modifiersByType)
-                .sort(([a], [b]) => {
-                  // Sort by importance: size first, then others
-                  const order = ['size', 'addon', 'removal', 'substitution', 'preparation'];
-                  return order.indexOf(a) - order.indexOf(b);
-                })
-                .map(([type, typeModifiers]) => (
-                  <div key={type} className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">{getModifierTypeIcon(type)}</span>
-                      <h4 className="text-sm font-medium text-foreground">
+        {/* Modifiers Section */}
+        {loading ? (
+          <Box style={{ display: 'flex', justifyContent: 'center', padding: '32px' }}>
+            <Loader size="md" />
+          </Box>
+        ) : Object.keys(modifiersByType).length > 0 && (
+          <Stack gap="lg">
+            <Group gap="xs">
+              <IconChefHat size={16} style={{ color: 'var(--mantine-color-orange-6)' }} />
+              <Title order={5}>Customize Your Order</Title>
+            </Group>
+            
+            {Object.entries(modifiersByType)
+              .sort(([a], [b]) => {
+                // Sort by importance: size first, then others
+                const order = ['size', 'addon', 'removal', 'substitution', 'preparation'];
+                return order.indexOf(a) - order.indexOf(b);
+              })
+              .map(([type, typeModifiers], index, array) => (
+                <Box key={type}>
+                  <Stack gap="sm">
+                    <Group gap="xs">
+                      <Text size="sm">{getModifierTypeIcon(type)}</Text>
+                      <Text size="sm" fw={500}>
                         {getModifierTypeLabel(type)}
                         {typeModifiers.some(m => m.is_required) && (
-                          <span className="text-destructive ml-1">*</span>
+                          <Text component="span" c="red" ml="xs">*</Text>
                         )}
-                      </h4>
-                    </div>
+                      </Text>
+                    </Group>
                     
                     {type === 'size' ? (
                       // Radio group for size selection
-                      <RadioGroup
+                      <Radio.Group
                         value={typeModifiers.find(m => m.selected)?.id || ''}
-                        onValueChange={(value) => handleModifierToggle(value, 'size')}
+                        onChange={(value) => handleModifierToggle(value, 'size')}
                       >
-                        {typeModifiers.map((modifier) => (
-                          <div key={modifier.id} className="flex items-center space-x-2">
-                            <RadioGroupItem value={modifier.id} id={modifier.id} />
-                            <Label htmlFor={modifier.id} className="flex-1 cursor-pointer">
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium">{modifier.name}</span>
-                                {modifier.price_cents > 0 && (
-                                  <span className="text-sm text-muted-foreground">
-                                    +${(modifier.price_cents / 100).toFixed(2)}
-                                  </span>
-                                )}
-                              </div>
-                              {modifier.description && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {modifier.description}
-                                </p>
-                              )}
-                            </Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
+                        <Stack gap="xs">
+                          {typeModifiers.map((modifier) => (
+                            <Radio
+                              key={modifier.id}
+                              value={modifier.id}
+                              label={
+                                <Group justify="space-between" style={{ flex: 1 }}>
+                                  <Text size="sm" fw={500}>{modifier.name}</Text>
+                                  {modifier.price_cents > 0 && (
+                                    <Text size="sm" c="dimmed">
+                                      +${(modifier.price_cents / 100).toFixed(2)}
+                                    </Text>
+                                  )}
+                                </Group>
+                              }
+                              description={modifier.description}
+                            />
+                          ))}
+                        </Stack>
+                      </Radio.Group>
                     ) : (
                       // Checkboxes for other modifier types
-                      <div className="space-y-2">
+                      <Stack gap="xs">
                         {typeModifiers.map((modifier) => (
-                          <div key={modifier.id} className="flex items-start space-x-3">
+                          <Group key={modifier.id} align="flex-start" gap="sm">
                             <Checkbox
-                              id={modifier.id}
                               checked={modifier.selected}
-                              onCheckedChange={() => handleModifierToggle(modifier.id, type)}
-                              className="mt-1"
+                              onChange={() => handleModifierToggle(modifier.id, type)}
+                              mt={2}
                             />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between">
-                                <Label 
-                                  htmlFor={modifier.id}
-                                  className="text-sm font-medium cursor-pointer flex items-center gap-2"
-                                >
-                                  {type === 'removal' && <X className="h-3 w-3 text-destructive" />}
-                                  {modifier.name}
-                                </Label>
+                            <Stack gap={0} style={{ flex: 1 }}>
+                              <Group justify="space-between">
+                                <Group gap="xs">
+                                  {type === 'removal' && <IconX size={14} style={{ color: 'var(--mantine-color-red-6)' }} />}
+                                  <Text size="sm" fw={500}>{modifier.name}</Text>
+                                </Group>
                                 {modifier.price_cents > 0 && (
-                                  <span className="text-sm text-muted-foreground">
+                                  <Text size="sm" c="dimmed">
                                     +${(modifier.price_cents / 100).toFixed(2)}
-                                  </span>
+                                  </Text>
                                 )}
                                 {modifier.price_cents < 0 && (
-                                  <span className="text-sm text-green-600">
+                                  <Text size="sm" c="green.6">
                                     -${Math.abs(modifier.price_cents / 100).toFixed(2)}
-                                  </span>
+                                  </Text>
                                 )}
-                              </div>
+                              </Group>
                               {modifier.description && (
-                                <p className="text-xs text-muted-foreground mt-1">
+                                <Text size="xs" c="dimmed" mt={4}>
                                   {modifier.description}
-                                </p>
+                                </Text>
                               )}
-                            </div>
-                          </div>
+                            </Stack>
+                          </Group>
                         ))}
-                      </div>
+                      </Stack>
                     )}
                     
-                    {type !== Object.keys(modifiersByType)[Object.keys(modifiersByType).length - 1] && (
-                      <Separator className="mt-4" />
-                    )}
-                  </div>
-                ))}
-              
-              {/* Required modifier warning */}
-              {modifiers.some(m => m.is_required && !m.selected) && (
-                <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
-                  <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0" />
-                  <p className="text-xs text-destructive">
-                    Please select required options before adding to cart.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
+                    {index < array.length - 1 && <Divider mt="md" />}
+                  </Stack>
+                </Box>
+              ))}
+            
+            {/* Required modifier warning */}
+            {modifiers.some(m => m.is_required && !m.selected) && (
+              <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light">
+                <Text size="xs">
+                  Please select required options before adding to cart.
+                </Text>
+              </Alert>
+            )}
+          </Stack>
+        )}
 
-          <div>
-            <label className="text-sm font-medium mb-2 block">
-              Special Instructions (optional)
-            </label>
-            <Textarea
-              placeholder="Add any special requests..."
-              value={specialInstructions}
-              onChange={(e) => setSpecialInstructions(e.target.value)}
-              rows={3}
-            />
-          </div>
+        <Textarea
+          label="Special Instructions (optional)"
+          placeholder="Add any special requests..."
+          value={specialInstructions}
+          onChange={(e) => setSpecialInstructions(e.target.value)}
+          rows={3}
+        />
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                disabled={quantity <= 1}
-              >
-                <Minus className="h-4 w-4" />
-              </Button>
-              <span className="font-semibold text-lg w-8 text-center">{quantity}</span>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setQuantity(quantity + 1)}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
+        <Group justify="space-between" align="center">
+          <Group gap="md">
+            <ActionIcon
+              variant="outline"
+              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              disabled={quantity <= 1}
+            >
+              <IconMinus size={16} />
+            </ActionIcon>
+            <Text fw={600} size="lg" style={{ minWidth: '32px', textAlign: 'center' }}>{quantity}</Text>
+            <ActionIcon
+              variant="outline"
+              onClick={() => setQuantity(quantity + 1)}
+            >
+              <IconPlus size={16} />
+            </ActionIcon>
+          </Group>
 
-            <Button onClick={handleAddToCart} size="lg">
-              Add to Cart • ${totalPrice.toFixed(2)}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+          <Button onClick={handleAddToCart} size="lg">
+            Add to Cart • ${totalPrice.toFixed(2)}
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
   );
 };
