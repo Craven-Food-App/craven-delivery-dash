@@ -1,11 +1,46 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import {
+  Button,
+  Card,
+  Menu,
+  Stack,
+  Group,
+  Text,
+  Title,
+  Box,
+  Loader,
+  Badge,
+  Avatar,
+  Divider,
+  ScrollArea,
+} from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import {
+  IconHome,
+  IconTrendingUp,
+  IconFileText,
+  IconUsers,
+  IconPackage,
+  IconMenu2,
+  IconCalendar,
+  IconCurrencyDollar,
+  IconSettings,
+  IconChevronDown,
+  IconCheck,
+  IconDeviceTablet,
+  IconBuildingStore,
+  IconChevronUp,
+  IconPlus,
+  IconHelpCircle,
+  IconMessageCircle,
+  IconMail,
+  IconClock,
+  IconCheckCircle,
+} from "@tabler/icons-react";
 import { useRestaurantSelector } from "@/hooks/useRestaurantSelector";
 import { useRestaurantOnboarding } from "@/hooks/useRestaurantOnboarding";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import InsightsDashboard from "@/components/restaurant/dashboard/InsightsDashboard";
 import CustomersDashboard from "@/components/restaurant/dashboard/CustomersDashboard";
@@ -19,17 +54,9 @@ import StoreAvailabilityDashboard from "@/components/restaurant/dashboard/StoreA
 import RequestDeliveryDashboard from "@/components/restaurant/dashboard/RequestDeliveryDashboard";
 import { HomeDashboard } from "@/components/merchant/HomeDashboard";
 import MerchantWelcomeConfetti from "@/components/merchant/MerchantWelcomeConfetti";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Home, TrendingUp, FileText, Users, Package, Menu as MenuIcon, Calendar, DollarSign, Settings, ChevronDown, CheckCircle2, Tablet, Store, ChevronUp, Plus, HelpCircle, MessageCircle, Mail, Clock, CheckCircle } from "lucide-react";
 
 const RestaurantSetup = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'home' | 'insights' | 'reports' | 'customers' | 'orders' | 'menu' | 'availability' | 'financials' | 'settings' | 'commerce' | 'request-delivery'>('home');
   const [prepareStoreExpanded, setPrepareStoreExpanded] = useState(true);
   const [userName, setUserName] = useState("User");
@@ -88,18 +115,19 @@ const RestaurantSetup = () => {
 
       if (error) throw error;
 
-      toast({
+      notifications.show({
         title: "Success",
-        description: "New location created successfully"
+        message: "New location created successfully",
+        color: 'green',
       });
 
       navigate('/restaurant/onboarding');
     } catch (error) {
       console.error('Error creating location:', error);
-      toast({
+      notifications.show({
         title: "Error",
-        description: "Failed to create new location",
-        variant: "destructive"
+        message: "Failed to create new location",
+        color: 'red',
       });
     }
   };
@@ -122,187 +150,269 @@ const RestaurantSetup = () => {
 
   if (restaurantLoading || onboardingLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
-      </div>
+      <Box style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader size="xl" color="orange" />
+      </Box>
     );
   }
 
   if (!restaurant) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-2">No Restaurant Found</h2>
-          <p className="text-muted-foreground mb-4">Please complete restaurant onboarding first.</p>
-          <Button onClick={() => navigate('/restaurant/register')}>
-            Start Onboarding
-          </Button>
+      <Box style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>
+        <Card p="xl" withBorder>
+          <Stack gap="md">
+            <Title order={3}>No Restaurant Found</Title>
+            <Text c="dimmed">Please complete restaurant onboarding first.</Text>
+            <Button onClick={() => navigate('/restaurant/register')}>
+              Start Onboarding
+            </Button>
+          </Stack>
         </Card>
-      </div>
+      </Box>
     );
   }
-  return <div className="flex h-screen bg-background">
+  return (
+    <Box style={{ display: 'flex', height: '100vh' }}>
       {/* Left Sidebar */}
-      <aside className="w-64 border-r bg-card flex flex-col">
+      <Box style={{ width: '256px', borderRight: '1px solid var(--mantine-color-gray-3)', display: 'flex', flexDirection: 'column' }}>
         {/* Logo */}
-        <div className="p-4 border-b">
-              <div className="flex items-center gap-2">
-                <img 
-                  src="/merchant-logo.png" 
-                  alt="Crave'N" 
-                  className="h-6 w-auto"
-                />
-                <span className="font-semibold text-lg">Merchant</span>
-              </div>
-        </div>
+        <Box p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
+          <Group gap="xs">
+            <img 
+              src="/merchant-logo.png" 
+              alt="Crave'N" 
+              style={{ height: '24px', width: 'auto' }}
+            />
+            <Text fw={600} size="lg">Merchant</Text>
+          </Group>
+        </Box>
 
         {/* Restaurant Selector */}
-        <div className="p-4 border-b">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="w-full flex items-center justify-between hover:bg-muted/50 p-2 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center">
-                    <Store className="w-4 h-4" />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-semibold text-sm">{restaurant.name}</div>
-                    <div className="text-xs text-muted-foreground">Store {restaurants.length > 1 && `(${restaurants.length})`}</div>
-                  </div>
-                </div>
-                <ChevronDown className="w-4 h-4 text-muted-foreground" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
+        <Box p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
+          <Menu width={224} position="bottom-start">
+            <Menu.Target>
+              <Button
+                variant="subtle"
+                fullWidth
+                justify="space-between"
+                leftSection={
+                  <Group gap="xs">
+                    <Avatar size="sm" radius="xl" color="gray">
+                      <IconBuildingStore size={16} />
+                    </Avatar>
+                    <Stack gap={0}>
+                      <Text size="sm" fw={600}>{restaurant.name}</Text>
+                      <Text size="xs" c="dimmed">Store {restaurants.length > 1 && `(${restaurants.length})`}</Text>
+                    </Stack>
+                  </Group>
+                }
+                rightSection={<IconChevronDown size={16} />}
+              />
+            </Menu.Target>
+            <Menu.Dropdown>
               {restaurants.map((r) => (
-                <DropdownMenuItem
+                <Menu.Item
                   key={r.id}
                   onClick={() => selectRestaurant(r.id)}
-                  className={restaurant?.id === r.id ? 'bg-orange-50' : ''}
+                  leftSection={<IconBuildingStore size={16} />}
+                  rightSection={restaurant?.id === r.id ? <IconCheckCircle size={16} color="var(--mantine-color-orange-6)" /> : null}
+                  bg={restaurant?.id === r.id ? 'orange.0' : undefined}
                 >
-                  <div className="flex items-center gap-2 w-full">
-                    <Store className="w-4 h-4" />
-                    <span className="flex-1">{r.name}</span>
-                    {restaurant?.id === r.id && <CheckCircle className="w-4 h-4 text-orange-600" />}
-                  </div>
-                </DropdownMenuItem>
+                  {r.name}
+                </Menu.Item>
               ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+            </Menu.Dropdown>
+          </Menu>
+        </Box>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto p-2">
-          <div className="space-y-1">
-            <button onClick={() => setActiveTab('home')} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg ${activeTab === 'home' ? 'bg-orange-50 text-orange-600' : 'hover:bg-muted text-foreground'}`}>
-              <Home className="w-5 h-5" />
-              <span className="text-sm font-medium">Home</span>
-            </button>
+        <ScrollArea style={{ flex: 1 }} p="xs">
+          <Stack gap="xs">
+            <Button
+              variant={activeTab === 'home' ? 'light' : 'subtle'}
+              color={activeTab === 'home' ? 'orange' : 'gray'}
+              fullWidth
+              justify="flex-start"
+              leftSection={<IconHome size={20} />}
+              onClick={() => setActiveTab('home')}
+            >
+              Home
+            </Button>
             
-            <button onClick={() => setActiveTab('insights')} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg ${activeTab === 'insights' ? 'bg-orange-50 text-orange-600' : 'hover:bg-muted text-foreground'}`}>
-              <TrendingUp className="w-5 h-5" />
-              <span className="text-sm font-medium">Insights</span>
-            </button>
+            <Button
+              variant={activeTab === 'insights' ? 'light' : 'subtle'}
+              color={activeTab === 'insights' ? 'orange' : 'gray'}
+              fullWidth
+              justify="flex-start"
+              leftSection={<IconTrendingUp size={20} />}
+              onClick={() => setActiveTab('insights')}
+            >
+              Insights
+            </Button>
             
-            <button onClick={() => setActiveTab('reports')} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg ${activeTab === 'reports' ? 'bg-orange-50 text-orange-600' : 'hover:bg-muted text-foreground'}`}>
-              <FileText className="w-5 h-5" />
-              <span className="text-sm font-medium">Reports</span>
-            </button>
+            <Button
+              variant={activeTab === 'reports' ? 'light' : 'subtle'}
+              color={activeTab === 'reports' ? 'orange' : 'gray'}
+              fullWidth
+              justify="flex-start"
+              leftSection={<IconFileText size={20} />}
+              onClick={() => setActiveTab('reports')}
+            >
+              Reports
+            </Button>
             
-            <button onClick={() => setActiveTab('customers')} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg ${activeTab === 'customers' ? 'bg-orange-50 text-orange-600' : 'hover:bg-muted text-foreground'}`}>
-              <Users className="w-5 h-5" />
-              <span className="text-sm font-medium">Customers</span>
-            </button>
+            <Button
+              variant={activeTab === 'customers' ? 'light' : 'subtle'}
+              color={activeTab === 'customers' ? 'orange' : 'gray'}
+              fullWidth
+              justify="flex-start"
+              leftSection={<IconUsers size={20} />}
+              onClick={() => setActiveTab('customers')}
+            >
+              Customers
+            </Button>
             
-            <button onClick={() => setActiveTab('orders')} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg ${activeTab === 'orders' ? 'bg-orange-50 text-orange-600' : 'hover:bg-muted text-foreground'}`}>
-              <Package className="w-5 h-5" />
-              <span className="text-sm font-medium">Orders</span>
-            </button>
+            <Button
+              variant={activeTab === 'orders' ? 'light' : 'subtle'}
+              color={activeTab === 'orders' ? 'orange' : 'gray'}
+              fullWidth
+              justify="flex-start"
+              leftSection={<IconPackage size={20} />}
+              onClick={() => setActiveTab('orders')}
+            >
+              Orders
+            </Button>
             
-            <button onClick={() => setActiveTab('menu')} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg ${activeTab === 'menu' ? 'bg-orange-50 text-orange-600' : 'hover:bg-muted text-foreground'}`}>
-              <MenuIcon className="w-5 h-5" />
-              <span className="text-sm font-medium">Menu</span>
-            </button>
+            <Button
+              variant={activeTab === 'menu' ? 'light' : 'subtle'}
+              color={activeTab === 'menu' ? 'orange' : 'gray'}
+              fullWidth
+              justify="flex-start"
+              leftSection={<IconMenu2 size={20} />}
+              onClick={() => setActiveTab('menu')}
+            >
+              Menu
+            </Button>
             
-            <button onClick={() => setActiveTab('availability')} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg ${activeTab === 'availability' ? 'bg-orange-50 text-orange-600' : 'hover:bg-muted text-foreground'}`}>
-              <Calendar className="w-5 h-5" />
-              <span className="text-sm font-medium">Store availability</span>
-            </button>
+            <Button
+              variant={activeTab === 'availability' ? 'light' : 'subtle'}
+              color={activeTab === 'availability' ? 'orange' : 'gray'}
+              fullWidth
+              justify="flex-start"
+              leftSection={<IconCalendar size={20} />}
+              onClick={() => setActiveTab('availability')}
+            >
+              Store availability
+            </Button>
             
-            <button onClick={() => setActiveTab('financials')} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg ${activeTab === 'financials' ? 'bg-orange-50 text-orange-600' : 'hover:bg-muted text-foreground'}`}>
-              <DollarSign className="w-5 h-5" />
-              <span className="text-sm font-medium">Financials</span>
-            </button>
+            <Button
+              variant={activeTab === 'financials' ? 'light' : 'subtle'}
+              color={activeTab === 'financials' ? 'orange' : 'gray'}
+              fullWidth
+              justify="flex-start"
+              leftSection={<IconCurrencyDollar size={20} />}
+              onClick={() => setActiveTab('financials')}
+            >
+              Financials
+            </Button>
             
-            <button onClick={() => setActiveTab('settings')} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg ${activeTab === 'settings' ? 'bg-orange-50 text-orange-600' : 'hover:bg-muted text-foreground'}`}>
-              <Settings className="w-5 h-5" />
-              <span className="text-sm font-medium">Settings</span>
-            </button>
-          </div>
+            <Button
+              variant={activeTab === 'settings' ? 'light' : 'subtle'}
+              color={activeTab === 'settings' ? 'orange' : 'gray'}
+              fullWidth
+              justify="flex-start"
+              leftSection={<IconSettings size={20} />}
+              onClick={() => setActiveTab('settings')}
+            >
+              Settings
+            </Button>
+          </Stack>
 
-          <div className="mt-6 pt-4 border-t">
-            <div className="px-3 py-2 text-xs text-muted-foreground font-medium">
-              Channels
-            </div>
-            
-            <button onClick={() => setActiveTab('commerce')} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg ${activeTab === 'commerce' ? 'bg-orange-50 text-orange-600' : 'hover:bg-muted text-foreground'}`}>
-              <Store className="w-5 h-5" />
-              <div className="flex-1 text-left">
-                <div className="text-sm font-medium">Commerce Platform</div>
-                <span className="text-xs text-green-600 font-medium">New</span>
-              </div>
-            </button>
-            
-            <button onClick={() => setActiveTab('request-delivery')} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-foreground">
-              <Tablet className="w-5 h-5" />
-              <span className="text-sm font-medium">Request a delivery</span>
-            </button>
-          </div>
+          <Divider my="md" />
 
-          <div className="mt-4">
-            <button onClick={() => navigate('/restaurant/solutions')} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted text-foreground">
-              <Plus className="w-5 h-5" />
-              <span className="text-sm font-medium">Add solutions</span>
-            </button>
-          </div>
-        </nav>
+          <Stack gap="xs">
+            <Text size="xs" c="dimmed" fw={500} px="xs">Channels</Text>
+            
+            <Button
+              variant={activeTab === 'commerce' ? 'light' : 'subtle'}
+              color={activeTab === 'commerce' ? 'orange' : 'gray'}
+              fullWidth
+              justify="flex-start"
+              leftSection={<IconBuildingStore size={20} />}
+              rightSection={<Badge size="xs" color="green">New</Badge>}
+              onClick={() => setActiveTab('commerce')}
+            >
+              Commerce Platform
+            </Button>
+            
+            <Button
+              variant={activeTab === 'request-delivery' ? 'light' : 'subtle'}
+              color={activeTab === 'request-delivery' ? 'orange' : 'gray'}
+              fullWidth
+              justify="flex-start"
+              leftSection={<IconDeviceTablet size={20} />}
+              onClick={() => setActiveTab('request-delivery')}
+            >
+              Request a delivery
+            </Button>
+          </Stack>
+
+          <Box mt="md">
+            <Button
+              variant="subtle"
+              fullWidth
+              justify="flex-start"
+              leftSection={<IconPlus size={20} />}
+              onClick={() => navigate('/restaurant/solutions')}
+            >
+              Add solutions
+            </Button>
+          </Box>
+        </ScrollArea>
 
         {/* User Profile */}
-        <div className="p-4 border-t">
-          <button className="w-full flex items-center gap-3 hover:bg-muted/50 p-2 rounded-lg">
-            <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-              <span className="text-sm font-medium">T</span>
-            </div>
-            <span className="text-sm font-medium">{userName} Stroman</span>
-            <ChevronDown className="w-4 h-4 ml-auto text-muted-foreground" />
-          </button>
-        </div>
-      </aside>
+        <Box p="md" style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }}>
+          <Button
+            variant="subtle"
+            fullWidth
+            justify="flex-start"
+            leftSection={
+              <Avatar size="sm" radius="xl" color="gray">
+                T
+              </Avatar>
+            }
+            rightSection={<IconChevronDown size={16} />}
+          >
+            {userName} Stroman
+          </Button>
+        </Box>
+      </Box>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        {activeTab === 'home' ? (
-          allStepsComplete ? (
-            <div className="max-w-7xl mx-auto p-8">
-              <div className="mb-8">
-                <p className="text-sm text-muted-foreground mb-2">Welcome back, {userName}</p>
-                <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-              </div>
-              <HomeDashboard 
-                restaurantId={restaurant?.id || ''} 
-                restaurant={restaurant}
-                readiness={readiness}
-              />
-            </div>
-          ) : (
-            <div className="max-w-5xl mx-auto p-8">
-          <div className="mb-8">
-            <p className="text-sm text-muted-foreground mb-2">Welcome, {userName}</p>
-            <h1 className="text-3xl font-bold mb-2">Set up your store</h1>
-            <p className="text-sm text-muted-foreground">
-              Complete these steps to go live with your store by <span className="font-medium text-foreground">{deadline}</span>.
-            </p>
-          </div>
+      <ScrollArea style={{ flex: 1 }}>
+        <Box p="xl">
+          {activeTab === 'home' ? (
+            allStepsComplete ? (
+              <Box style={{ maxWidth: '1280px', margin: '0 auto' }}>
+                <Stack gap="xl" mb="xl">
+                  <Text size="sm" c="dimmed">Welcome back, {userName}</Text>
+                  <Title order={1}>Dashboard</Title>
+                </Stack>
+                <HomeDashboard 
+                  restaurantId={restaurant?.id || ''} 
+                  restaurant={restaurant}
+                  readiness={readiness}
+                />
+              </Box>
+            ) : (
+              <Box style={{ maxWidth: '1024px', margin: '0 auto' }}>
+                <Stack gap="xl" mb="xl">
+                  <Text size="sm" c="dimmed">Welcome, {userName}</Text>
+                  <Title order={1}>Set up your store</Title>
+                  <Text size="sm" c="dimmed">
+                    Complete these steps to go live with your store by <Text component="span" fw={500}>{deadline}</Text>.
+                  </Text>
+                </Stack>
 
           {/* ... keep existing code (Prepare your store section, Go live section, Continue Crave'N setup) */}
           <Card className="p-6 mb-6">
@@ -615,7 +725,8 @@ const RestaurantSetup = () => {
         </div>
           )
         ) : activeTab === 'insights' ? <InsightsDashboard /> : activeTab === 'reports' ? <ReportsDashboard /> : activeTab === 'customers' ? <CustomersDashboard /> : activeTab === 'orders' ? <RestaurantCustomerOrderManagement restaurantId={restaurant.id} /> : activeTab === 'menu' ? <MenuDashboard restaurantId={restaurant.id} /> : activeTab === 'availability' ? <StoreAvailabilityDashboard /> : activeTab === 'financials' ? <FinancialsDashboard /> : activeTab === 'settings' ? <SettingsDashboard defaultTab={settingsTab} /> : activeTab === 'commerce' ? <CommercePlatformDashboard /> : activeTab === 'request-delivery' ? <RequestDeliveryDashboard /> : null}
-      </main>
+        </Box>
+      </ScrollArea>
 
       {/* Right Sidebar - Store Preview */}
       
@@ -626,6 +737,8 @@ const RestaurantSetup = () => {
           onComplete={() => setShowWelcomeConfetti(false)}
         />
       )}
-    </div>;
+    </Box>
+  );
+};
 };
 export default RestaurantSetup;
