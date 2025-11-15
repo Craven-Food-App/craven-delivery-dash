@@ -1,13 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Trash2, CreditCard, Building2, CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
+import { IconArrowLeft, IconPlus, IconTrash, IconCreditCard, IconBuilding, IconCheck } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  Box,
+  Stack,
+  Text,
+  Button,
+  Group,
+  Card,
+  Title,
+  ActionIcon,
+  TextInput,
+  Select,
+  Badge,
+  Loader,
+  ThemeIcon,
+  Paper,
+  Divider,
+} from '@mantine/core';
 
 interface PaymentMethodsSectionProps {
   onBack: () => void;
@@ -28,7 +39,6 @@ export const PaymentMethodsSection: React.FC<PaymentMethodsSectionProps> = ({ on
     payment_type: 'cashapp',
     account_identifier: '',
   });
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchPaymentMethods();
@@ -56,10 +66,10 @@ export const PaymentMethodsSection: React.FC<PaymentMethodsSectionProps> = ({ on
 
   const handleAddPaymentMethod = async () => {
     if (!paymentDetails.account_identifier) {
-      toast({
+      notifications.show({
         title: "Missing information",
-        description: "Please enter your payment account details.",
-        variant: "destructive"
+        message: "Please enter your payment account details.",
+        color: "red",
       });
       return;
     }
@@ -80,9 +90,10 @@ export const PaymentMethodsSection: React.FC<PaymentMethodsSectionProps> = ({ on
 
       if (error) throw error;
 
-      toast({
+      notifications.show({
         title: "Payment method added",
-        description: "Your payout method has been set up successfully."
+        message: "Your payout method has been set up successfully.",
+        color: "green",
       });
       
       setShowAddForm(false);
@@ -92,10 +103,10 @@ export const PaymentMethodsSection: React.FC<PaymentMethodsSectionProps> = ({ on
       });
       fetchPaymentMethods();
     } catch (error) {
-      toast({
+      notifications.show({
         title: "Error adding payment method",
-        description: "Please try again.",
-        variant: "destructive"
+        message: "Please try again.",
+        color: "red",
       });
     }
   };
@@ -109,14 +120,15 @@ export const PaymentMethodsSection: React.FC<PaymentMethodsSectionProps> = ({ on
 
       if (error) throw error;
 
-      toast({
+      notifications.show({
         title: "Payment method removed",
+        color: "green",
       });
       fetchPaymentMethods();
     } catch (error) {
-      toast({
+      notifications.show({
         title: "Error removing payment method",
-        variant: "destructive"
+        color: "red",
       });
     }
   };
@@ -140,14 +152,15 @@ export const PaymentMethodsSection: React.FC<PaymentMethodsSectionProps> = ({ on
 
       if (error) throw error;
 
-      toast({
+      notifications.show({
         title: "Primary method updated",
+        color: "green",
       });
       fetchPaymentMethods();
     } catch (error) {
-      toast({
+      notifications.show({
         title: "Error updating primary method",
-        variant: "destructive"
+        color: "red",
       });
     }
   };
@@ -179,202 +192,203 @@ export const PaymentMethodsSection: React.FC<PaymentMethodsSectionProps> = ({ on
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20 overflow-y-auto">
-      <div className="max-w-md mx-auto">
-        {/* Header */}
-        <div className="bg-background border-b border-border/50 px-4 py-3 sticky top-0 z-10 safe-area-top">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onBack}
-              className="p-2"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-xl font-semibold text-foreground">Payment Methods</h1>
-          </div>
-        </div>
+    <Box h="100vh" bg="gray.0" style={{ paddingBottom: '80px', overflowY: 'auto' }}>
+      {/* Header */}
+      <Paper
+        pos="sticky"
+        top={0}
+        style={{ zIndex: 10 }}
+        bg="white"
+        style={{ borderBottom: '1px solid var(--mantine-color-gray-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+        className="safe-area-top"
+      >
+        <Group px="md" py="md" gap="md" align="center">
+          <ActionIcon onClick={onBack} variant="subtle" color="dark">
+            <IconArrowLeft size={24} />
+          </ActionIcon>
+          <Title order={3} fw={700} c="dark">Payment Methods</Title>
+        </Group>
+      </Paper>
 
-        <div className="p-4 space-y-4">
-          {/* Info Card */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <Building2 className="h-5 w-5 text-primary mt-0.5" />
-                <div>
-                  <h3 className="font-medium text-foreground mb-1">Bank Account Required</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Add your bank account to receive weekly payouts for your deliveries.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      <Stack gap="md" p="md">
+        {/* Info Card */}
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md">
+            <Group gap="md" align="flex-start">
+              <ThemeIcon size="lg" radius="md" color="orange" variant="light">
+                <IconBuilding size={20} />
+              </ThemeIcon>
+              <Box style={{ flex: 1 }}>
+                <Text fw={500} c="dark" mb={4}>Bank Account Required</Text>
+                <Text size="sm" c="dimmed">
+                  Add your bank account to receive weekly payouts for your deliveries.
+                </Text>
+              </Box>
+            </Group>
+          </Card.Section>
+        </Card>
 
-          {/* Current Payment Methods */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Payment Methods</CardTitle>
-                <Button
-                  onClick={() => setShowAddForm(true)}
-                  size="sm"
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Method
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="animate-pulse space-y-3">
-                  <div className="h-16 bg-muted rounded"></div>
-                </div>
-              ) : paymentMethods.length === 0 ? (
-                <div className="text-center py-6 text-muted-foreground">
-                  <CreditCard className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>No payment method added yet</p>
-                  <p className="text-sm">Add CashApp, PayPal, or other method</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {paymentMethods.map((method) => (
-                    <div key={method.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <CreditCard className="h-5 w-5 text-primary" />
-                        <div>
-                          <div className="font-medium flex items-center gap-2">
-                            {getMethodDisplayName(method.payment_type)}
+        {/* Current Payment Methods */}
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Group justify="space-between">
+              <Title order={4} fw={600}>Payment Methods</Title>
+              <Button
+                size="sm"
+                leftSection={<IconPlus size={16} />}
+                onClick={() => setShowAddForm(true)}
+                color="orange"
+              >
+                Add Method
+              </Button>
+            </Group>
+          </Card.Section>
+          <Card.Section p="md">
+            {loading ? (
+              <Loader size="md" color="orange" />
+            ) : paymentMethods.length === 0 ? (
+              <Stack align="center" gap="md" py="xl">
+                <ThemeIcon size="xl" radius="xl" color="gray" variant="light">
+                  <IconCreditCard size={32} />
+                </ThemeIcon>
+                <Text c="dimmed" ta="center">No payment method added yet</Text>
+                <Text size="sm" c="dimmed" ta="center">Add CashApp, PayPal, or other method</Text>
+              </Stack>
+            ) : (
+              <Stack gap="md">
+                {paymentMethods.map((method) => (
+                  <Paper key={method.id} p="md" bg="gray.0" radius="md">
+                    <Group justify="space-between">
+                      <Group gap="md">
+                        <ThemeIcon size="lg" radius="md" color="orange" variant="light">
+                          <IconCreditCard size={20} />
+                        </ThemeIcon>
+                        <Box>
+                          <Group gap="xs" align="center">
+                            <Text fw={500}>{getMethodDisplayName(method.payment_type)}</Text>
                             {method.is_primary && (
-                              <Badge variant="secondary" className="text-xs">Primary</Badge>
+                              <Badge color="green" variant="light" size="sm">Primary</Badge>
                             )}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
+                          </Group>
+                          <Text size="sm" c="dimmed">
                             {formatAccountIdentifier(method.payment_type, method.account_identifier)}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
+                          </Text>
+                        </Box>
+                      </Group>
+                      <Group gap="xs">
                         {!method.is_primary && (
                           <Button
-                            variant="ghost"
-                            size="sm"
+                            variant="subtle"
+                            size="xs"
                             onClick={() => handleSetPrimary(method.id)}
                           >
                             Set Primary
                           </Button>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                        <ActionIcon
+                          variant="subtle"
+                          color="red"
                           onClick={() => handleDelete(method.id)}
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                          <IconTrash size={16} />
+                        </ActionIcon>
+                      </Group>
+                    </Group>
+                  </Paper>
+                ))}
+              </Stack>
+            )}
+          </Card.Section>
+        </Card>
 
-          {/* Add Payment Method Form */}
-          {showAddForm && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Add Payment Method</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="payment_type">Payment Type</Label>
-                  <Select
-                    value={paymentDetails.payment_type}
-                    onValueChange={(value) => setPaymentDetails({ ...paymentDetails, payment_type: value })}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cashapp">Cash App</SelectItem>
-                      <SelectItem value="paypal">PayPal</SelectItem>
-                      <SelectItem value="venmo">Venmo</SelectItem>
-                      <SelectItem value="zelle">Zelle</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+        {/* Add Payment Method Form */}
+        {showAddForm && (
+          <Card shadow="sm" radius="lg" withBorder>
+            <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+              <Title order={4} fw={600}>Add Payment Method</Title>
+            </Card.Section>
+            <Card.Section p="md">
+              <Stack gap="md">
+                <Select
+                  label="Payment Type"
+                  value={paymentDetails.payment_type}
+                  onChange={(value) => setPaymentDetails({ ...paymentDetails, payment_type: value || 'cashapp' })}
+                  data={[
+                    { value: 'cashapp', label: 'Cash App' },
+                    { value: 'paypal', label: 'PayPal' },
+                    { value: 'venmo', label: 'Venmo' },
+                    { value: 'zelle', label: 'Zelle' },
+                  ]}
+                />
 
-                <div>
-                  <Label htmlFor="account_identifier">
-                    {paymentDetails.payment_type === 'cashapp' && 'CashTag (e.g., $username)'}
-                    {paymentDetails.payment_type === 'paypal' && 'PayPal Email'}
-                    {paymentDetails.payment_type === 'venmo' && 'Venmo Username (e.g., @username)'}
-                    {paymentDetails.payment_type === 'zelle' && 'Phone or Email'}
-                  </Label>
-                  <Input
-                    id="account_identifier"
-                    value={paymentDetails.account_identifier}
-                    onChange={(e) => setPaymentDetails({ ...paymentDetails, account_identifier: e.target.value })}
-                    placeholder={
-                      paymentDetails.payment_type === 'cashapp' ? '$username' :
-                      paymentDetails.payment_type === 'venmo' ? '@username' :
-                      paymentDetails.payment_type === 'paypal' ? 'email@example.com' :
-                      'Phone or email'
-                    }
-                    className="mt-1"
-                  />
-                </div>
+                <TextInput
+                  label={
+                    paymentDetails.payment_type === 'cashapp' ? 'CashTag (e.g., $username)' :
+                    paymentDetails.payment_type === 'paypal' ? 'PayPal Email' :
+                    paymentDetails.payment_type === 'venmo' ? 'Venmo Username (e.g., @username)' :
+                    'Phone or Email'
+                  }
+                  value={paymentDetails.account_identifier}
+                  onChange={(e) => setPaymentDetails({ ...paymentDetails, account_identifier: e.target.value })}
+                  placeholder={
+                    paymentDetails.payment_type === 'cashapp' ? '$username' :
+                    paymentDetails.payment_type === 'venmo' ? '@username' :
+                    paymentDetails.payment_type === 'paypal' ? 'email@example.com' :
+                    'Phone or email'
+                  }
+                />
 
-                <div className="flex gap-3 pt-2">
+                <Group gap="md" mt="md">
                   <Button
-                    variant="outline"
+                    variant="light"
                     onClick={() => setShowAddForm(false)}
-                    className="flex-1"
+                    style={{ flex: 1 }}
                   >
                     Cancel
                   </Button>
                   <Button
                     onClick={handleAddPaymentMethod}
-                    className="flex-1 bg-primary hover:bg-primary/90"
+                    color="orange"
+                    style={{ flex: 1 }}
                   >
                     Add Method
                   </Button>
-                </div>
+                </Group>
 
-                <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                  <strong>Note:</strong> For instant payouts, we recommend Cash App. 
-                  Make sure your account details are correct.
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Payout Schedule */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Payout Schedule</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Frequency</span>
-                  <span className="text-sm font-medium">Weekly</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Payout Day</span>
-                  <span className="text-sm font-medium">Every Tuesday</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Processing Time</span>
-                  <span className="text-sm font-medium">1-2 business days</span>
-                </div>
-              </div>
-            </CardContent>
+                <Paper p="md" bg="gray.0" radius="md">
+                  <Text size="xs" c="dimmed">
+                    <Text component="span" fw={600}>Note:</Text> For instant payouts, we recommend Cash App. 
+                    Make sure your account details are correct.
+                  </Text>
+                </Paper>
+              </Stack>
+            </Card.Section>
           </Card>
-        </div>
-      </div>
-    </div>
+        )}
+
+        {/* Payout Schedule */}
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Title order={4} fw={600}>Payout Schedule</Title>
+          </Card.Section>
+          <Card.Section p="md">
+            <Stack gap="md">
+              <Group justify="space-between">
+                <Text size="sm" c="dimmed">Frequency</Text>
+                <Text size="sm" fw={500}>Weekly</Text>
+              </Group>
+              <Group justify="space-between">
+                <Text size="sm" c="dimmed">Payout Day</Text>
+                <Text size="sm" fw={500}>Every Tuesday</Text>
+              </Group>
+              <Group justify="space-between">
+                <Text size="sm" c="dimmed">Processing Time</Text>
+                <Text size="sm" fw={500}>1-2 business days</Text>
+              </Group>
+            </Stack>
+          </Card.Section>
+        </Card>
+      </Stack>
+    </Box>
   );
 };

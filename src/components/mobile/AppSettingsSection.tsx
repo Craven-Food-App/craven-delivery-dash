@@ -1,13 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Bell, MapPin, Volume2, Smartphone, Moon, Sun, Navigation } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+import { IconArrowLeft, IconBell, IconMapPin, IconVolume, IconDeviceMobile, IconMoon, IconSun, IconNavigation } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import { useNavigation } from '@/hooks/useNavigation';
 import { IOSPushNotifications } from './IOSPushNotifications';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  Box,
+  Stack,
+  Text,
+  Button,
+  Group,
+  Card,
+  Title,
+  ActionIcon,
+  Switch,
+  Select,
+  Paper,
+  ThemeIcon,
+} from '@mantine/core';
 
 interface AppSettingsSectionProps {
   onBack: () => void;
@@ -25,7 +35,6 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ onBack }
     distanceUnit: 'miles'
   });
   const [userId, setUserId] = useState<string | null>(null);
-  const { toast } = useToast();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -37,269 +46,286 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ onBack }
 
   const handleSettingChange = (key: keyof typeof settings, value: boolean | string) => {
     setSettings(prev => ({ ...prev, [key]: value }));
-    toast({
+    notifications.show({
       title: "Setting updated",
-      description: "Your preference has been saved."
+      message: "Your preference has been saved.",
+      color: "green",
     });
   };
 
-  return (
-    <div className="min-h-screen bg-background pb-20 overflow-y-auto">
-      <div className="max-w-md mx-auto">
-        {/* Header */}
-        <div className="bg-background border-b border-border/50 px-4 py-3 sticky top-0 z-10 safe-area-top">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onBack}
-              className="p-2"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-xl font-semibold text-foreground">App Settings</h1>
-          </div>
-        </div>
+  const navigationOptions = [
+    { value: 'mapbox', label: "Crave'N Navigation (In-App)" },
+    { value: 'google', label: 'Google Maps' },
+    ...(/iPad|iPhone|iPod/.test(navigator.userAgent) ? [{ value: 'apple', label: 'Apple Maps' }] : []),
+    ...(/Android/.test(navigator.userAgent) ? [{ value: 'waze', label: 'Waze' }] : []),
+  ];
 
-        <div className="p-4 space-y-4">
-          {/* Notifications */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Bell className="h-5 w-5 text-primary" />
-                Notifications
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Push Notifications</div>
-                  <div className="text-sm text-muted-foreground">Receive order alerts</div>
-                </div>
+  return (
+    <Box h="100vh" bg="gray.0" style={{ paddingBottom: '80px', overflowY: 'auto' }}>
+      {/* Header */}
+      <Paper
+        pos="sticky"
+        top={0}
+        style={{ zIndex: 10 }}
+        bg="white"
+        style={{ borderBottom: '1px solid var(--mantine-color-gray-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+        className="safe-area-top"
+      >
+        <Group px="md" py="md" gap="md" align="center">
+          <ActionIcon onClick={onBack} variant="subtle" color="dark">
+            <IconArrowLeft size={24} />
+          </ActionIcon>
+          <Title order={3} fw={700} c="dark">App Settings</Title>
+        </Group>
+      </Paper>
+
+      <Stack gap="md" p="md">
+        {/* Notifications */}
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Group gap="xs">
+              <ThemeIcon size="lg" radius="md" color="orange" variant="light">
+                <IconBell size={20} />
+              </ThemeIcon>
+              <Title order={4} fw={600}>Notifications</Title>
+            </Group>
+          </Card.Section>
+          <Card.Section p="md">
+            <Stack gap="md">
+              <Group justify="space-between">
+                <Box>
+                  <Text fw={500}>Push Notifications</Text>
+                  <Text size="sm" c="dimmed">Receive order alerts</Text>
+                </Box>
                 <Switch
                   checked={settings.pushNotifications}
-                  onCheckedChange={(checked) => handleSettingChange('pushNotifications', checked)}
+                  onChange={(e) => handleSettingChange('pushNotifications', e.currentTarget.checked)}
+                  color="orange"
                 />
-              </div>
+              </Group>
               
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Sound Alerts</div>
-                  <div className="text-sm text-muted-foreground">Audio notifications</div>
-                </div>
+              <Group justify="space-between">
+                <Box>
+                  <Text fw={500}>Sound Alerts</Text>
+                  <Text size="sm" c="dimmed">Audio notifications</Text>
+                </Box>
                 <Switch
                   checked={settings.soundAlerts}
-                  onCheckedChange={(checked) => handleSettingChange('soundAlerts', checked)}
+                  onChange={(e) => handleSettingChange('soundAlerts', e.currentTarget.checked)}
+                  color="orange"
                 />
-              </div>
+              </Group>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Vibration</div>
-                  <div className="text-sm text-muted-foreground">Haptic feedback</div>
-                </div>
+              <Group justify="space-between">
+                <Box>
+                  <Text fw={500}>Vibration</Text>
+                  <Text size="sm" c="dimmed">Haptic feedback</Text>
+                </Box>
                 <Switch
                   checked={settings.vibration}
-                  onCheckedChange={(checked) => handleSettingChange('vibration', checked)}
+                  onChange={(e) => handleSettingChange('vibration', e.currentTarget.checked)}
+                  color="orange"
                 />
-              </div>
-            </CardContent>
-          </Card>
+              </Group>
+            </Stack>
+          </Card.Section>
+        </Card>
 
-          {/* iOS Push Notifications */}
-          {userId && <IOSPushNotifications userId={userId} />}
+        {/* iOS Push Notifications */}
+        {userId && <IOSPushNotifications userId={userId} />}
 
-          {/* Navigation */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Navigation className="h-5 w-5 text-primary" />
-                Navigation
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="font-medium mb-2">Navigation Provider</div>
+        {/* Navigation */}
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Group gap="xs">
+              <ThemeIcon size="lg" radius="md" color="orange" variant="light">
+                <IconNavigation size={20} />
+              </ThemeIcon>
+              <Title order={4} fw={600}>Navigation</Title>
+            </Group>
+          </Card.Section>
+          <Card.Section p="md">
+            <Stack gap="md">
+              <Box>
+                <Text fw={500} mb="xs">Navigation Provider</Text>
                 <Select
                   value={navigationSettings.provider}
-                  onValueChange={(value) => {
+                  onChange={(value) => {
                     updateSettings({ provider: value as any });
-                    toast({ title: 'Navigation provider updated' });
+                    notifications.show({
+                      title: 'Navigation provider updated',
+                      color: 'green',
+                    });
                   }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {/* In-app navigation */}
-                    <SelectItem value="mapbox">Crave'N Navigation (In-App)</SelectItem>
-                    {/* Google Maps available on all */}
-                    <SelectItem value="google">Google Maps</SelectItem>
-                    {/* Apple Maps only on iOS */}
-                    {/iPad|iPhone|iPod/.test(navigator.userAgent) && (
-                      <SelectItem value="apple">Apple Maps</SelectItem>
-                    )}
-                    {/* Waze only on Android */}
-                    {/Android/.test(navigator.userAgent) && (
-                      <SelectItem value="waze">Waze</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground mt-1">
+                  data={navigationOptions}
+                />
+                <Text size="xs" c="dimmed" mt="xs">
                   {navigationSettings.provider === 'mapbox' 
                     ? 'Turn-by-turn navigation within the app'
                     : 'Opens external navigation app'}
-                </p>
-              </div>
+                </Text>
+              </Box>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Voice Guidance</div>
-                  <div className="text-sm text-muted-foreground">Turn-by-turn voice instructions</div>
-                </div>
+              <Group justify="space-between">
+                <Box>
+                  <Text fw={500}>Voice Guidance</Text>
+                  <Text size="sm" c="dimmed">Turn-by-turn voice instructions</Text>
+                </Box>
                 <Switch
                   checked={navigationSettings.voiceGuidance}
-                  onCheckedChange={(checked) => updateSettings({ voiceGuidance: checked })}
+                  onChange={(e) => updateSettings({ voiceGuidance: e.currentTarget.checked })}
+                  color="orange"
                 />
-              </div>
+              </Group>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Avoid Tolls</div>
-                  <div className="text-sm text-muted-foreground">Route around toll roads</div>
-                </div>
+              <Group justify="space-between">
+                <Box>
+                  <Text fw={500}>Avoid Tolls</Text>
+                  <Text size="sm" c="dimmed">Route around toll roads</Text>
+                </Box>
                 <Switch
                   checked={navigationSettings.avoidTolls}
-                  onCheckedChange={(checked) => updateSettings({ avoidTolls: checked })}
+                  onChange={(e) => updateSettings({ avoidTolls: e.currentTarget.checked })}
+                  color="orange"
                 />
-              </div>
+              </Group>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Avoid Highways</div>
-                  <div className="text-sm text-muted-foreground">Use local roads when possible</div>
-                </div>
+              <Group justify="space-between">
+                <Box>
+                  <Text fw={500}>Avoid Highways</Text>
+                  <Text size="sm" c="dimmed">Use local roads when possible</Text>
+                </Box>
                 <Switch
                   checked={navigationSettings.avoidHighways}
-                  onCheckedChange={(checked) => updateSettings({ avoidHighways: checked })}
+                  onChange={(e) => updateSettings({ avoidHighways: e.currentTarget.checked })}
+                  color="orange"
                 />
-              </div>
-            </CardContent>
-          </Card>
+              </Group>
+            </Stack>
+          </Card.Section>
+        </Card>
 
-          {/* Location Services */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-primary" />
-                Location Services
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Location Access</div>
-                  <div className="text-sm text-muted-foreground">Required for deliveries</div>
-                </div>
+        {/* Location Services */}
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Group gap="xs">
+              <ThemeIcon size="lg" radius="md" color="orange" variant="light">
+                <IconMapPin size={20} />
+              </ThemeIcon>
+              <Title order={4} fw={600}>Location Services</Title>
+            </Group>
+          </Card.Section>
+          <Card.Section p="md">
+            <Stack gap="md">
+              <Group justify="space-between">
+                <Box>
+                  <Text fw={500}>Location Access</Text>
+                  <Text size="sm" c="dimmed">Required for deliveries</Text>
+                </Box>
                 <Switch
                   checked={settings.locationServices}
-                  onCheckedChange={(checked) => handleSettingChange('locationServices', checked)}
+                  onChange={(e) => handleSettingChange('locationServices', e.currentTarget.checked)}
+                  color="orange"
                 />
-              </div>
+              </Group>
 
-              <div>
-                <div className="font-medium mb-2">Distance Unit</div>
+              <Box>
+                <Text fw={500} mb="xs">Distance Unit</Text>
                 <Select
                   value={settings.distanceUnit}
-                  onValueChange={(value) => handleSettingChange('distanceUnit', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="miles">Miles</SelectItem>
-                    <SelectItem value="kilometers">Kilometers</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
+                  onChange={(value) => handleSettingChange('distanceUnit', value || 'miles')}
+                  data={[
+                    { value: 'miles', label: 'Miles' },
+                    { value: 'kilometers', label: 'Kilometers' },
+                  ]}
+                />
+              </Box>
+            </Stack>
+          </Card.Section>
+        </Card>
 
-          {/* Display */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Smartphone className="h-5 w-5 text-primary" />
-                Display
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Dark Mode</div>
-                  <div className="text-sm text-muted-foreground">Use dark theme</div>
-                </div>
+        {/* Display */}
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Group gap="xs">
+              <ThemeIcon size="lg" radius="md" color="orange" variant="light">
+                <IconDeviceMobile size={20} />
+              </ThemeIcon>
+              <Title order={4} fw={600}>Display</Title>
+            </Group>
+          </Card.Section>
+          <Card.Section p="md">
+            <Stack gap="md">
+              <Group justify="space-between">
+                <Box>
+                  <Text fw={500}>Dark Mode</Text>
+                  <Text size="sm" c="dimmed">Use dark theme</Text>
+                </Box>
                 <Switch
                   checked={settings.darkMode}
-                  onCheckedChange={(checked) => handleSettingChange('darkMode', checked)}
+                  onChange={(e) => handleSettingChange('darkMode', e.currentTarget.checked)}
+                  color="orange"
                 />
-              </div>
+              </Group>
 
-              <div>
-                <div className="font-medium mb-2">Language</div>
+              <Box>
+                <Text fw={500} mb="xs">Language</Text>
                 <Select
                   value={settings.language}
-                  onValueChange={(value) => handleSettingChange('language', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="english">English</SelectItem>
-                    <SelectItem value="spanish">Español</SelectItem>
-                    <SelectItem value="french">Français</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
+                  onChange={(value) => handleSettingChange('language', value || 'english')}
+                  data={[
+                    { value: 'english', label: 'English' },
+                    { value: 'spanish', label: 'Español' },
+                    { value: 'french', label: 'Français' },
+                  ]}
+                />
+              </Box>
+            </Stack>
+          </Card.Section>
+        </Card>
 
-          {/* Data & Storage */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Data & Storage</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button variant="outline" className="w-full">
+        {/* Data & Storage */}
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Title order={4} fw={600}>Data & Storage</Title>
+          </Card.Section>
+          <Card.Section p="md">
+            <Stack gap="md">
+              <Button variant="light" fullWidth>
                 Clear Cache
               </Button>
               
-              <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                <div className="font-medium mb-1">Cache Size: 23.4 MB</div>
-                Clearing cache may improve app performance but will require re-downloading some data.
-              </div>
-            </CardContent>
-          </Card>
+              <Paper p="md" bg="gray.0" radius="md">
+                <Text size="xs" c="dimmed">
+                  <Text component="span" fw={600}>Cache Size: 23.4 MB</Text>
+                  <br />
+                  Clearing cache may improve app performance but will require re-downloading some data.
+                </Text>
+              </Paper>
+            </Stack>
+          </Card.Section>
+        </Card>
 
-          {/* Privacy */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Privacy</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button variant="outline" className="w-full justify-start">
+        {/* Privacy */}
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md" style={{ borderBottom: '1px solid var(--mantine-color-gray-2)' }}>
+            <Title order={4} fw={600}>Privacy</Title>
+          </Card.Section>
+          <Card.Section p="md">
+            <Stack gap="xs">
+              <Button variant="light" fullWidth justify="flex-start">
                 Privacy Policy
               </Button>
-              <Button variant="outline" className="w-full justify-start">
+              <Button variant="light" fullWidth justify="flex-start">
                 Terms of Service
               </Button>
-              <Button variant="outline" className="w-full justify-start">
+              <Button variant="light" fullWidth justify="flex-start">
                 Data Usage
               </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
+            </Stack>
+          </Card.Section>
+        </Card>
+      </Stack>
+    </Box>
   );
 };
