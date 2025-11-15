@@ -32,13 +32,13 @@ SET placeholders = '[
 WHERE template_key = 'founders_agreement';
 
 -- Add optional company settings for Founders Agreement
-INSERT INTO public.company_settings (key, value, description)
+INSERT INTO public.company_settings (setting_key, setting_value)
 VALUES
-  ('trust_state', 'Ohio', 'State where Invero Business Trust is organized'),
-  ('founder_state', 'Ohio', 'State where founder individual resides'),
-  ('governing_law_state', 'Ohio', 'State governing law for Founders Agreement'),
-  ('arbitration_state', 'Ohio', 'State for arbitration location')
-ON CONFLICT (key) DO UPDATE SET 
-  value = EXCLUDED.value,
-  description = EXCLUDED.description;
+  ('trust_state', 'Ohio'),
+  ('founder_state', 'Ohio'),
+  ('governing_law_state', 'Ohio'),
+  ('arbitration_state', 'Ohio')
+ON CONFLICT (setting_key) DO UPDATE SET 
+  setting_value = EXCLUDED.setting_value,
+  updated_at = now();
 
