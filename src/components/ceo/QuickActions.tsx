@@ -367,19 +367,19 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate }) => {
         </p>
       </div>
 
-      <div className="flex flex-nowrap gap-2">
+      <div className="flex flex-nowrap gap-1.5">
         {actions.map((action, index) => (
           <Card
             key={index}
             className={`cursor-pointer hover:shadow-xl transition-all duration-300 bg-gradient-to-br ${action.color} border-0 flex-shrink-0`}
-            style={{ width: 'calc((100% - 14px) / 8)', padding: '12px 8px' }}
+            style={{ width: 'calc((100% - 10.5px) / 8)', padding: '10px 6px' }}
             onClick={action.action}
           >
-            <div className="text-center text-white space-y-1">
-              <div className="mb-1" style={{ fontSize: '20px' }}>{action.icon}</div>
-              <h3 className="text-xs font-semibold leading-tight">{action.title}</h3>
-              <p className="text-[10px] leading-tight opacity-90 line-clamp-2">{action.description}</p>
-              {action.loading && <div className="text-[10px] uppercase tracking-wide">Working…</div>}
+            <div className="text-center text-white space-y-0.5">
+              <div className="mb-0.5" style={{ fontSize: '18px' }}>{action.icon}</div>
+              <h3 className="text-[11px] font-semibold leading-tight">{action.title}</h3>
+              <p className="text-[9px] leading-tight opacity-90 line-clamp-2">{action.description}</p>
+              {action.loading && <div className="text-[9px] uppercase tracking-wide">Working…</div>}
             </div>
           </Card>
         ))}
