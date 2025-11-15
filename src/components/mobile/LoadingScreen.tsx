@@ -1,4 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Flex,
+  Text,
+  Image,
+  Spinner,
+  VStack,
+  HStack,
+} from '@chakra-ui/react';
 import cravenLogo from '@/assets/craven-c-new.png';
 
 interface LoadingScreenProps {
@@ -14,7 +23,6 @@ const LoadingScreen = ({ isLoading }: LoadingScreenProps) => {
 
     console.log('LoadingScreen: Displaying loading screen');
     
-    // Cycle through loading messages
     const messages = [
       'Getting ready...',
       'Loading your dashboard...',
@@ -33,20 +41,24 @@ const LoadingScreen = ({ isLoading }: LoadingScreenProps) => {
   if (!isLoading) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-orange-500 to-orange-600">
-      <div className="flex flex-col items-center space-y-8">
-        {/* Spinning C Logo or Fallback */}
-        <div className="relative">
+    <Box
+      position="fixed"
+      inset={0}
+      zIndex={50}
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      bgGradient="linear(to-br, orange.500, orange.600)"
+    >
+      <VStack spacing={8}>
+        <Box position="relative">
           {!imageError ? (
-            <img 
-              src={cravenLogo} 
-              alt="Crave'n" 
-              className="w-32 h-32 animate-spin"
-              style={{ 
-                animationDuration: '2s',
-                animationTimingFunction: 'ease-in-out',
-                animationIterationCount: 'infinite'
-              }}
+            <Image
+              src={cravenLogo}
+              alt="Crave'n"
+              w={32}
+              h={32}
+              animation="spin 2s ease-in-out infinite"
               onError={() => {
                 console.error('LoadingScreen: Failed to load logo image');
                 setImageError(true);
@@ -54,32 +66,50 @@ const LoadingScreen = ({ isLoading }: LoadingScreenProps) => {
               onLoad={() => console.log('LoadingScreen: Logo loaded successfully')}
             />
           ) : (
-            // Fallback spinner if image fails to load
-            <div className="w-32 h-32 border-8 border-white/30 border-t-white rounded-full animate-spin"
-              style={{ 
-                animationDuration: '1s',
-                animationTimingFunction: 'linear',
-                animationIterationCount: 'infinite'
-              }}
+            <Spinner
+              size="xl"
+              thickness="8px"
+              speed="1s"
+              color="whiteAlpha.300"
+              emptyColor="whiteAlpha.300"
             />
           )}
-          {/* Loading dots */}
-          <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2">
-            <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
-              <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-              <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-            </div>
-          </div>
-        </div>
+          <Box position="absolute" bottom={-8} left="50%" transform="translateX(-50%)">
+            <HStack spacing={1}>
+              <Box
+                w={2}
+                h={2}
+                bg="white"
+                borderRadius="full"
+                animation="pulse 1.4s ease-in-out infinite"
+                style={{ animationDelay: '0s' }}
+              />
+              <Box
+                w={2}
+                h={2}
+                bg="white"
+                borderRadius="full"
+                animation="pulse 1.4s ease-in-out infinite"
+                style={{ animationDelay: '0.2s' }}
+              />
+              <Box
+                w={2}
+                h={2}
+                bg="white"
+                borderRadius="full"
+                animation="pulse 1.4s ease-in-out infinite"
+                style={{ animationDelay: '0.4s' }}
+              />
+            </HStack>
+          </Box>
+        </Box>
         
-        {/* Loading text */}
-        <div className="text-center text-white">
-          <h1 className="text-2xl font-bold mb-2">CRAVE'N</h1>
-          <p className="text-lg opacity-90">{loadingText}</p>
-        </div>
-      </div>
-    </div>
+        <VStack spacing={2} textAlign="center" color="white">
+          <Text fontSize="2xl" fontWeight="bold">CRAVE'N</Text>
+          <Text fontSize="lg" opacity={0.9}>{loadingText}</Text>
+        </VStack>
+      </VStack>
+    </Box>
   );
 };
 
