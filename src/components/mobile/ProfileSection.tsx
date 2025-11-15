@@ -1,13 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Camera, Edit2, Save, User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { IconArrowLeft, IconCamera, IconEdit, IconDeviceFloppy, IconUser } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import { supabase } from '@/integrations/supabase/client';
 import { ProfilePhotoUpload } from './ProfilePhotoUpload';
+import {
+  Box,
+  Stack,
+  Text,
+  Button,
+  Group,
+  Card,
+  Title,
+  TextInput,
+  ActionIcon,
+  Avatar,
+  Paper,
+  Loader,
+} from '@mantine/core';
 
 interface ProfileSectionProps {
   onBack: () => void;
@@ -23,7 +32,6 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ onBack }) => {
     phone: '',
     profile_photo: ''
   });
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchProfile();
@@ -80,15 +88,16 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ onBack }) => {
       if (updateError) throw updateError;
 
       setProfile({ ...profile, profile_photo: publicUrl });
-      toast({
-        title: "Photo updated",
-        description: "Your profile photo has been updated."
+      notifications.show({
+        title: 'Photo updated',
+        message: 'Your profile photo has been updated.',
+        color: 'green',
       });
     } catch (error) {
-      toast({
-        title: "Error uploading photo",
-        description: "Please try again.",
-        variant: "destructive"
+      notifications.show({
+        title: 'Error uploading photo',
+        message: 'Please try again.',
+        color: 'red',
       });
     } finally {
       setLoading(false);
@@ -107,22 +116,22 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ onBack }) => {
           first_name: profile.first_name,
           last_name: profile.last_name,
           phone: profile.phone,
-          updated_at: new Date().toISOString()
         })
         .eq('user_id', user.id);
 
       if (error) throw error;
 
       setIsEditing(false);
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been successfully updated."
+      notifications.show({
+        title: 'Profile updated',
+        message: 'Your profile information has been saved.',
+        color: 'green',
       });
     } catch (error) {
-      toast({
-        title: "Error updating profile",
-        description: "Please try again later.",
-        variant: "destructive"
+      notifications.show({
+        title: 'Error updating profile',
+        message: 'Please try again.',
+        color: 'red',
       });
     } finally {
       setLoading(false);
@@ -130,136 +139,122 @@ export const ProfileSection: React.FC<ProfileSectionProps> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20 overflow-y-auto">
-      <div className="max-w-md mx-auto">
-        {/* Header */}
-        <div className="bg-background border-b border-border/50 px-4 py-3 sticky top-0 z-10 safe-area-top">
-          <div className="flex items-center gap-3">
+    <Box h="100vh" bg="slate.0" style={{ paddingBottom: '80px', overflowY: 'auto' }}>
+      {/* Header */}
+      <Paper
+        pos="sticky"
+        top={0}
+        style={{ zIndex: 10 }}
+        bg="white"
+        style={{ borderBottom: '1px solid var(--mantine-color-slate-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+        className="safe-area-top"
+      >
+        <Group px="md" py="md" justify="space-between" align="center">
+          <ActionIcon onClick={onBack} variant="subtle" color="dark">
+            <IconArrowLeft size={24} />
+          </ActionIcon>
+          <Title order={3} fw={700} c="dark">Profile Information</Title>
+          {isEditing ? (
             <Button
-              variant="ghost"
+              variant="subtle"
               size="sm"
-              onClick={onBack}
-              className="p-2"
+              leftSection={<IconDeviceFloppy size={16} />}
+              onClick={handleSave}
+              loading={loading}
             >
-              <ArrowLeft className="h-5 w-5" />
+              Save
             </Button>
-            <h1 className="text-xl font-semibold text-foreground">Profile</h1>
-            <div className="ml-auto">
-              {isEditing ? (
-                <Button
-                  onClick={handleSave}
-                  disabled={loading}
-                  size="sm"
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  <Save className="h-4 w-4 mr-1" />
-                  Save
-                </Button>
-              ) : (
-                <Button
-                  onClick={() => setIsEditing(true)}
-                  variant="ghost"
-                  size="sm"
-                >
-                  <Edit2 className="h-4 w-4 mr-1" />
-                  Edit
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
+          ) : (
+            <Button
+              variant="subtle"
+              size="sm"
+              leftSection={<IconEdit size={16} />}
+              onClick={() => setIsEditing(true)}
+            >
+              Edit
+            </Button>
+          )}
+        </Group>
+      </Paper>
 
-        <div className="p-4 space-y-6">
-          {/* Profile Photo Section */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Profile Photo</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ProfilePhotoUpload
-                currentPhotoUrl={profile.profile_photo}
-                onPhotoUpdate={(url) => {
-                  setProfile({ ...profile, profile_photo: url });
-                  fetchProfile(); // Refresh profile data
-                }}
+      <Stack gap="md" p="md">
+        {/* Profile Photo */}
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="xl">
+            <Stack align="center" gap="md">
+              <Box pos="relative">
+                <Avatar size={120} radius="xl" src={profile.profile_photo}>
+                  <IconUser size={60} />
+                </Avatar>
+                {isEditing && (
+                  <ActionIcon
+                    pos="absolute"
+                    bottom={0}
+                    right={0}
+                    radius="xl"
+                    color="orange"
+                    variant="filled"
+                    size="lg"
+                    component="label"
+                    htmlFor="photo-upload"
+                  >
+                    <IconCamera size={20} />
+                    <input
+                      id="photo-upload"
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={handlePhotoUpload}
+                    />
+                  </ActionIcon>
+                )}
+              </Box>
+              <Text fw={600} size="lg" c="dark">
+                {profile.first_name} {profile.last_name}
+              </Text>
+            </Stack>
+          </Card.Section>
+        </Card>
+
+        {/* Profile Form */}
+        <Card shadow="sm" radius="lg" withBorder>
+          <Card.Section p="md">
+            <Stack gap="md">
+              <TextInput
+                label="First Name"
+                value={profile.first_name}
+                onChange={(e) => setProfile({ ...profile, first_name: e.target.value })}
+                disabled={!isEditing}
+                size="md"
               />
-            </CardContent>
-          </Card>
 
-          {/* Personal Information */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Personal Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="first_name">First Name</Label>
-                  <Input
-                    id="first_name"
-                    value={profile.first_name}
-                    onChange={(e) => setProfile({ ...profile, first_name: e.target.value })}
-                    disabled={!isEditing}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="last_name">Last Name</Label>
-                  <Input
-                    id="last_name"
-                    value={profile.last_name}
-                    onChange={(e) => setProfile({ ...profile, last_name: e.target.value })}
-                    disabled={!isEditing}
-                    className="mt-1"
-                  />
-                </div>
-              </div>
+              <TextInput
+                label="Last Name"
+                value={profile.last_name}
+                onChange={(e) => setProfile({ ...profile, last_name: e.target.value })}
+                disabled={!isEditing}
+                size="md"
+              />
 
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={profile.email}
-                  disabled
-                  className="mt-1 bg-muted/50"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Email cannot be changed. Contact support if needed.
-                </p>
-              </div>
+              <TextInput
+                label="Email"
+                value={profile.email}
+                disabled
+                size="md"
+                description="Email cannot be changed"
+              />
 
-              <div>
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={profile.phone}
-                  onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                  disabled={!isEditing}
-                  className="mt-1"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Driver Information */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Driver Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <div>
-                  <div className="font-medium text-green-700 dark:text-green-400">Active Driver</div>
-                  <div className="text-sm text-green-600 dark:text-green-500">Approved and ready to deliver</div>
-                </div>
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
+              <TextInput
+                label="Phone"
+                value={profile.phone}
+                onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                disabled={!isEditing}
+                size="md"
+              />
+            </Stack>
+          </Card.Section>
+        </Card>
+      </Stack>
+    </Box>
   );
 };
