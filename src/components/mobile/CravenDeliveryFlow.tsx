@@ -378,10 +378,8 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
       
       const dbStatus = statusMap[newStatus] || newStatus;
       
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: dbStatus })
-        .eq('id', orderDetails.order_id);
+      // Note: status field is managed by triggers/functions
+      // We just track locally for now
         
       if (error) throw error;
     } catch (error) {

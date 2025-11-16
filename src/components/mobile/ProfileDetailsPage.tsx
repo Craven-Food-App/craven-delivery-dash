@@ -113,6 +113,7 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
       console.error('Error fetching profile:', error);
       notifications.show({
         title: 'Failed to load profile data',
+        message: '',
         color: 'red',
       });
     } finally {
@@ -127,6 +128,7 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
       if (!authUser) {
         notifications.show({
           title: 'Not authenticated',
+          message: '',
           color: 'red',
         });
         return;
@@ -136,6 +138,7 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
       if (!fullName) {
         notifications.show({
           title: 'Name is required',
+          message: '',
           color: 'red',
         });
         return;
@@ -155,6 +158,7 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
       if (!formData.city || !formData.zipCode || !formData.phone) {
         notifications.show({
           title: 'Name, Phone, City, and Zip Code are required',
+          message: '',
           color: 'red',
         });
         return;
@@ -182,6 +186,7 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
         if (!formData.city || !formData.zipCode || !formData.phone) {
           notifications.show({
             title: 'Name, Phone, City, and Zip Code are required',
+            message: '',
             color: 'red',
           });
           return;
@@ -221,6 +226,7 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
 
       notifications.show({
         title: 'Profile updated successfully',
+        message: '',
         color: 'green',
       });
       await fetchProfileData();
@@ -230,6 +236,7 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
       const errorMessage = error?.message || error?.details || 'Failed to save profile';
       notifications.show({
         title: `Error: ${errorMessage}`,
+        message: '',
         color: 'red',
       });
     } finally {
