@@ -150,35 +150,66 @@ export default function OrderHistory() {
         .in('order_status', ['pending', 'confirmed', 'preparing', 'ready_for_pickup', 'picked_up', 'out_for_delivery', 'delivering'])
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching orders:', error);
+        throw error;
+      }
+
+      // If no orders, return empty array
+      if (!data || data.length === 0) {
+        setOrders([]);
+        setLoading(false);
+        return;
+      }
 
       // Fetch driver info for orders that are being delivered
       const ordersWithDrivers = await Promise.all(
         (data || []).map(async (order: any) => {
           if (['picked_up', 'out_for_delivery', 'delivering'].includes(order.order_status)) {
-            const { data: assignment } = await supabase
-              .from('order_assignments')
-              .select(`
-                driver_id,
-                drivers (
-                  id,
-                  name,
-                  rating
-                )
-              `)
-              .eq('order_id', order.id)
-              .single();
+            try {
+              // First get the assignment
+              const { data: assignment } = await supabase
+                .from('order_assignments')
+                .select('driver_id')
+                .eq('order_id', order.id)
+                .eq('status', 'accepted')
+                .single();
 
-            if (assignment?.drivers) {
-              return {
-                ...order,
-                driver: {
-                  id: assignment.drivers.id,
-                  name: assignment.drivers.name,
-                  rating: assignment.drivers.rating || 4.9,
-                  distance: 2.3,
-                },
-              };
+              if (assignment?.driver_id) {
+                // Try to get driver profile and user profile for name
+                const [driverProfileResult, userProfileResult] = await Promise.all([
+                  supabase
+                    .from('driver_profiles')
+                    .select('user_id, rating')
+                    .eq('user_id', assignment.driver_id)
+                    .single()
+                    .catch(() => ({ data: null, error: null })),
+                  supabase
+                    .from('user_profiles')
+                    .select('user_id, full_name')
+                    .eq('user_id', assignment.driver_id)
+                    .single()
+                    .catch(() => ({ data: null, error: null })),
+                ]);
+
+                const driverProfile = driverProfileResult.data;
+                const userProfile = userProfileResult.data;
+                
+                if (driverProfile) {
+                  return {
+                    ...order,
+                    driver: {
+                      id: driverProfile.user_id,
+                      name: userProfile?.full_name || `Driver ${assignment.driver_id.substring(0, 8).toUpperCase()}`,
+                      rating: Number(driverProfile.rating) || 4.9,
+                      distance: 2.3,
+                    },
+                  };
+                }
+              }
+            } catch (error) {
+              // If driver lookup fails, just return order without driver info
+              console.warn('Error fetching driver info:', error);
             }
           }
           return order;
