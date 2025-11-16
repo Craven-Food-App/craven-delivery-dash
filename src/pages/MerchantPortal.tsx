@@ -36,7 +36,7 @@ import {
   IconMessageCircle,
   IconMail,
   IconClock,
-  IconCheckCircle,
+  IconCircleCheck,
 } from "@tabler/icons-react";
 import { useRestaurantSelector } from "@/hooks/useRestaurantSelector";
 import { useRestaurantOnboarding } from "@/hooks/useRestaurantOnboarding";
@@ -216,7 +216,7 @@ const RestaurantSetup = () => {
                   key={r.id}
                   onClick={() => selectRestaurant(r.id)}
                   leftSection={<IconBuildingStore size={16} />}
-                  rightSection={restaurant?.id === r.id ? <IconCheckCircle size={16} color="var(--mantine-color-orange-6)" /> : null}
+                  rightSection={restaurant?.id === r.id ? <IconCircleCheck size={16} color="var(--mantine-color-orange-6)" /> : null}
                   bg={restaurant?.id === r.id ? 'orange.0' : undefined}
                 >
                   {r.name}
@@ -467,7 +467,7 @@ const RestaurantSetup = () => {
                                 justifyContent: 'center',
                               }}
                             >
-                              <IconCheckCircle size={12} style={{ color: 'white' }} />
+                              <IconCircleCheck size={12} style={{ color: 'white' }} />
                             </Box>
                           </Box>
                         ) : (
@@ -510,7 +510,7 @@ const RestaurantSetup = () => {
                         }}
                       >
                         {progress?.menu_preparation_status === 'ready' ? (
-                          <IconCheckCircle size={24} style={{ color: 'white' }} />
+                          <IconCircleCheck size={24} style={{ color: 'white' }} />
                         ) : (
                           <IconClock size={24} style={{ color: 'white' }} />
                         )}

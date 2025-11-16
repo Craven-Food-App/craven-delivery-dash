@@ -7,7 +7,7 @@ import {
   IconBolt,
   IconChevronRight,
   IconHelpCircle,
-  IconInfo,
+  IconInfoCircle,
   IconX,
   IconCheck
 } from '@tabler/icons-react';

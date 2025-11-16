@@ -12,8 +12,8 @@ import {
   IconCamera, 
   IconX, 
   IconRotateClockwise, 
-  IconFlashlight, 
-  IconFlashlightOff,
+  IconBulb, 
+  IconBulbOff,
   IconCheck,
   IconArrowLeft
 } from '@tabler/icons-react';
