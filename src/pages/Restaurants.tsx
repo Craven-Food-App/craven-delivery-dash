@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -23,7 +24,6 @@ import {
   Divider,
   Container,
   Grid,
-  Grid.Col,
   SegmentedControl,
   Paper
 } from '@mantine/core';
@@ -887,7 +887,7 @@ const Restaurants = () => {
 
   // Desktop Layout (existing code - keep as is)
   return (
-    <div className="min-h-screen bg-white">
+    <div style={{ minHeight: '100vh', backgroundColor: 'white' }}>
       {/* Mobile Header - Mantine UI */}
       <Box 
         component="header"
@@ -959,17 +959,10 @@ const Restaurants = () => {
                 paddingRight: '12px'
               }}
             >
-<<<<<<< HEAD
               <Text size="sm" fw={500} lineClamp={1} style={{ flex: 1, textAlign: 'left' }}>
                 {location}
               </Text>
             </Button>
-=======
-              <IconMapPin className="w-4 h-4 text-gray-600 flex-shrink-0" />
-              <span className="text-sm font-medium text-gray-900 truncate flex-1">{location}</span>
-              <IconChevronDown className="w-4 h-4 text-gray-600 flex-shrink-0" />
-            </button>
->>>>>>> da49f6b594f502b349b2839dd8b4c6ab2e1c1e9e
             
             <SegmentedControl
               value={deliveryMode}
@@ -998,7 +991,6 @@ const Restaurants = () => {
           </Group>
           
           {/* Search Bar */}
-<<<<<<< HEAD
           <TextInput
             placeholder="Search restaurants or dishes"
             value={searchQuery}
@@ -1017,20 +1009,6 @@ const Restaurants = () => {
           />
         </Stack>
       </Box>
-=======
-          <div className="relative">
-            <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search restaurants or dishes"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-        </div>
-      </div>
->>>>>>> da49f6b594f502b349b2839dd8b4c6ab2e1c1e9e
 
       {/* Desktop Header - Hidden on Mobile */}
       <div className="hidden lg:block sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
@@ -1642,7 +1620,6 @@ const Restaurants = () => {
                     }
                   }}
                 >
-<<<<<<< HEAD
                   {category.label}
                 </Button>
               );
@@ -1650,30 +1627,6 @@ const Restaurants = () => {
           </Stack>
         </Stack>
       </Drawer>
-=======
-                  <IconX className="w-5 h-5" />
-                </button>
-              </div>
-              <nav className="space-y-1">
-                {navCategories.map((category) => (
-                  <button
-                    key={category.id}
-                    onClick={() => {
-                      handleCategoryClick(category.id);
-                      setShowMobileNav(false);
-                    }}
-                    className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  >
-                    <category.icon className="w-5 h-5" />
-                    <span className="font-medium">{category.label}</span>
-                  </button>
-                ))}
-              </nav>
-            </div>
-          </div>
-        </div>
-      )}
->>>>>>> da49f6b594f502b349b2839dd8b4c6ab2e1c1e9e
 
       <Footer />
 
