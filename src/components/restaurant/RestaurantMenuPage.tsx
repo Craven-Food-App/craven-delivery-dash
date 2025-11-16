@@ -595,46 +595,46 @@ const RestaurantMenuPage = () => {
         const rating = item.order_count ? Math.min(95, 75 + Math.floor(item.order_count / 10)) : 85;
         const reviews = item.order_count || Math.floor(Math.random() * 200) + 50;
 
-    return (
-      <Card
-        p={0}
-        withBorder
-        shadow="md"
-        style={{ cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
-        onClick={() => openItemModal(item)}
-      >
-        <Box style={{ height: '128px', overflow: 'hidden' }}>
-          <MantineImage
-            src={item.image_url || 'https://placehold.co/100x100/CCCCCC/666666?text=Item'}
-            alt={item.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            fit="cover"
-            onError={(e) => { e.currentTarget.src = "https://placehold.co/100x100/CCCCCC/666666?text=Item"; }}
-          />
-        </Box>
+        return (
+            <Card
+                p={0}
+                withBorder
+                shadow="md"
+                style={{ cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
+                onClick={() => openItemModal(item)}
+            >
+                <Box style={{ height: '128px', overflow: 'hidden' }}>
+                    <MantineImage
+                        src={item.image_url || 'https://placehold.co/100x100/CCCCCC/666666?text=Item'}
+                        alt={item.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        fit="cover"
+                        onError={(e) => { e.currentTarget.src = "https://placehold.co/100x100/CCCCCC/666666?text=Item"; }}
+                    />
+                </Box>
 
-        <Stack gap="xs" p="sm">
-          <Text size="sm" fw={800} lineClamp={2} style={{ lineHeight: '1.3' }}>{item.name}</Text>
-          <Stack gap={0}>
-            <Text size="sm" fw={600} c="gray.7">{formatPrice(item.price_cents)}</Text>
-            <Text size="xs" c="dimmed">{rating}% ({reviews})</Text>
-          </Stack>
-        </Stack>
+                <Stack gap="xs" p="sm">
+                    <Text size="sm" fw={800} lineClamp={2} style={{ lineHeight: '1.3' }}>{item.name}</Text>
+                    <Stack gap={0}>
+                        <Text size="sm" fw={600} c="gray.7">{formatPrice(item.price_cents)}</Text>
+                        <Text size="xs" c="dimmed">{rating}% ({reviews})</Text>
+                    </Stack>
+                </Stack>
 
-        <ActionIcon
-          onClick={(e) => {
-            e.stopPropagation();
-            openItemModal(item);
-          }}
-          color="orange"
-          variant="filled"
-          style={{ position: 'absolute', bottom: 8, right: 8 }}
-          size="sm"
-        >
-          <IconPlus size={14} />
-        </ActionIcon>
-      </Card>
-    );
+                <ActionIcon
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        openItemModal(item);
+                    }}
+                    color="orange"
+                    variant="filled"
+                    style={{ position: 'absolute', bottom: 8, right: 8 }}
+                    size="sm"
+                >
+                    <IconPlus size={14} />
+                </ActionIcon>
+            </Card>
+        );
     };
 
     const PickupInterface = () => {
@@ -691,80 +691,80 @@ const RestaurantMenuPage = () => {
             });
         };
 
-  return (
-    <Card p="sm" mb="lg" withBorder shadow="md">
-      <Stack gap="md">
-        {/* Top Row - Delivery/Pickup Buttons and Price/Time */}
-        <Group justify="space-between" align="center" gap="lg">
-          {/* Delivery/Pickup Tabs */}
-          <Button.Group>
-            <Button
-              variant={deliveryMethod === 'delivery' ? 'filled' : 'outline'}
-              onClick={() => setDeliveryMethod('delivery')}
-              size="sm"
-            >
-              Delivery
-            </Button>
-            <Button
-              variant={deliveryMethod === 'pickup' ? 'filled' : 'outline'}
-              onClick={() => setDeliveryMethod('pickup')}
-              size="sm"
-            >
-              Pickup
-            </Button>
-          </Button.Group>
+        return (
+            <Card p="sm" mb="lg" withBorder shadow="md">
+                <Stack gap="md">
+                    {/* Top Row - Delivery/Pickup Buttons and Price/Time */}
+                    <Group justify="space-between" align="center" gap="lg">
+                        {/* Delivery/Pickup Tabs */}
+                        <Button.Group>
+                            <Button
+                                variant={deliveryMethod === 'delivery' ? 'filled' : 'outline'}
+                                onClick={() => setDeliveryMethod('delivery')}
+                                size="sm"
+                            >
+                                Delivery
+                            </Button>
+                            <Button
+                                variant={deliveryMethod === 'pickup' ? 'filled' : 'outline'}
+                                onClick={() => setDeliveryMethod('pickup')}
+                                size="sm"
+                            >
+                                Pickup
+                            </Button>
+                        </Button.Group>
 
-          {/* Price/Time Info Box */}
-          <Group gap="md">
-            {/* Delivery Fee Box */}
-            <Box p="sm" style={{ backgroundColor: 'var(--mantine-color-green-0)', borderRadius: '8px' }}>
-              <Text fw={700} size="sm" c="green.7">$0 delivery fee</Text>
-              <Group gap="xs" mt={4}>
-                <Text size="xs" c="green.7">pricing & fees</Text>
-                <IconInfoCircle size={12} style={{ color: 'var(--mantine-color-green-7)' }} />
-              </Group>
-            </Box>
+                        {/* Price/Time Info Box */}
+                        <Group gap="md">
+                            {/* Delivery Fee Box */}
+                            <Box p="sm" style={{ backgroundColor: 'var(--mantine-color-green-0)', borderRadius: '8px' }}>
+                                <Text fw={700} size="sm" c="green.7">$0 delivery fee</Text>
+                                <Group gap="xs" mt={4}>
+                                    <Text size="xs" c="green.7">pricing & fees</Text>
+                                    <IconInfoCircle size={12} style={{ color: 'var(--mantine-color-green-7)' }} />
+                                </Group>
+                            </Box>
 
-            {/* Pickup Time */}
-            <Stack gap={0} align="flex-end">
-              <Text size="lg" fw={700} c="gray.9">{pickupInfo.readyTime} min</Text>
-              <Group gap="xs">
-                <Text size="sm" c="dimmed">ready for pickup</Text>
-                <IconArrowUp size={16} style={{ transform: 'rotate(90deg)', color: 'var(--mantine-color-gray-6)' }} />
-              </Group>
-            </Stack>
-          </Group>
-        </Group>
-        
-        {/* Main Content - Address and Map */}
-        <Group align="stretch" gap="xs">
-          {/* Address and Info - Left Side */}
-          <Stack justify="space-between" style={{ minWidth: '200px' }}>
-            <Stack gap="xs">
-              <Text size="sm" fw={600} c="gray.9">
-                Pick up this order at:
-              </Text>
-              <Text size="sm" c="blue.6" td="underline" style={{ cursor: 'pointer' }}>
-                {pickupInfo.address}
-              </Text>
-              <Group gap="xs">
-                <IconCar size={16} style={{ color: 'var(--mantine-color-gray-6)' }} />
-                <Text size="sm" c="dimmed">{pickupInfo.driveTime} min</Text>
-              </Group>
-            </Stack>
-          </Stack>
+                            {/* Pickup Time */}
+                            <Stack gap={0} align="flex-end">
+                                <Text size="lg" fw={700} c="gray.9">{pickupInfo.readyTime} min</Text>
+                                <Group gap="xs">
+                                    <Text size="sm" c="dimmed">ready for pickup</Text>
+                                    <IconArrowUp size={16} style={{ transform: 'rotate(90deg)', color: 'var(--mantine-color-gray-6)' }} />
+                                </Group>
+                            </Stack>
+                        </Group>
+                    </Group>
+                    
+                    {/* Main Content - Address and Map */}
+                    <Group align="stretch" gap="xs">
+                        {/* Address and Info - Left Side */}
+                        <Stack justify="space-between" style={{ minWidth: '200px' }}>
+                            <Stack gap="xs">
+                                <Text size="sm" fw={600} c="gray.9">
+                                    Pick up this order at:
+                                </Text>
+                                <Text size="sm" c="blue.6" td="underline" style={{ cursor: 'pointer' }}>
+                                    {pickupInfo.address}
+                                </Text>
+                                <Group gap="xs">
+                                    <IconCar size={16} style={{ color: 'var(--mantine-color-gray-6)' }} />
+                                    <Text size="sm" c="dimmed">{pickupInfo.driveTime} min</Text>
+                                </Group>
+                            </Stack>
+                        </Stack>
 
-          {/* Map Container - Right Side */}
-          <Box style={{ flex: 1, height: '128px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--mantine-color-gray-3)' }}>
-            <Box 
-              ref={mapContainer} 
-              style={{ width: '100%', height: '100%', minHeight: '128px' }}
-            />
-          </Box>
-        </Group>
-      </Stack>
-    </Card>
-  );
+                        {/* Map Container - Right Side */}
+                        <Box style={{ flex: 1, height: '128px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--mantine-color-gray-3)' }}>
+                            <Box 
+                                ref={mapContainer} 
+                                style={{ width: '100%', height: '100%', minHeight: '128px' }}
+                            />
+                        </Box>
+                    </Group>
+                </Stack>
+            </Card>
+        );
     };
 
     const TripleDipperModal = () => {
@@ -1010,84 +1010,84 @@ const RestaurantMenuPage = () => {
 
     const LeftColumn = () => (
         <Box
-          pt="xl"
-          style={{
-            display: 'none',
-            '@media (min-width: 1024px)': { display: 'block' },
-            ...(isMenuFixed ? {
-              position: 'fixed',
-              top: 4,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              '@media (min-width: 1024px)': {
-                left: 'auto',
-                transform: 'none',
-                maxWidth: 'calc(25% - 1rem)',
-              },
-              '@media (min-width: 1280px)': {
-                maxWidth: 'calc((1120px * 0.25) - 1rem)',
-              },
-              width: '100%',
-              maxWidth: '320px',
-            } : {}),
-          }}
+            pt="xl"
+            style={{
+                display: 'none',
+                '@media (min-width: 1024px)': { display: 'block' },
+                ...(isMenuFixed ? {
+                    position: 'fixed',
+                    top: 4,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    '@media (min-width: 1024px)': {
+                        left: 'auto',
+                        transform: 'none',
+                        maxWidth: 'calc(25% - 1rem)',
+                    },
+                    '@media (min-width: 1280px)': {
+                        maxWidth: 'calc((1120px * 0.25) - 1rem)',
+                    },
+                    width: '100%',
+                    maxWidth: '320px',
+                } : {}),
+            }}
         >
-          <Stack gap="md">
-            {/* Store Info */}
-            <Stack gap="xs">
-              <Text size="sm" fw={700} c="gray.7">Store Info</Text>
-              <Group gap="xs" wrap="nowrap">
-                <IconClock size={16} />
-                <Text size="sm" fw={600} c={restaurant?.is_open ? 'green.7' : 'orange.6'}>
-                  {restaurant?.is_open ? 'Open Now' : `Closed • Opens at ${restaurant?.opens_at || '9:00 AM'}`}
-                </Text>
-              </Group>
-              <Group gap="xs" wrap="nowrap">
-                <IconStar size={16} style={{ color: 'var(--mantine-color-yellow-5)', fill: 'var(--mantine-color-yellow-5)' }} />
-                <Text size="sm" c="dimmed">
-                  {restaurant?.rating || 4.0} <Text component="span" c="dimmed">({restaurant?.total_reviews || 0}+)</Text> • {(((restaurant?.latitude || 0) - 35) * 100).toFixed(1)} mi
-                </Text>
-              </Group>
-              <Group gap="xs" wrap="nowrap">
-                <IconMapPin size={16} style={{ color: 'var(--mantine-color-red-5)' }} />
-                <Text size="sm" c="dimmed">{restaurant?.cuisine_type}</Text>
-              </Group>
-              <Group gap="xs" wrap="nowrap">
-                <IconTruck size={16} style={{ color: 'var(--mantine-color-green-6)' }} />
-                <Text size="sm" c="dimmed">{formatPrice(restaurant?.delivery_fee_cents || 0)} delivery fee</Text>
-              </Group>
-            </Stack>
+            <Stack gap="md">
+                {/* Store Info */}
+                <Stack gap="xs">
+                    <Text size="sm" fw={700} c="gray.7">Store Info</Text>
+                    <Group gap="xs" wrap="nowrap">
+                        <IconClock size={16} />
+                        <Text size="sm" fw={600} c={restaurant?.is_open ? 'green.7' : 'orange.6'}>
+                            {restaurant?.is_open ? 'Open Now' : `Closed • Opens at ${restaurant?.opens_at || '9:00 AM'}`}
+                        </Text>
+                    </Group>
+                    <Group gap="xs" wrap="nowrap">
+                        <IconStar size={16} style={{ color: 'var(--mantine-color-yellow-5)', fill: 'var(--mantine-color-yellow-5)' }} />
+                        <Text size="sm" c="dimmed">
+                            {restaurant?.rating || 4.0} <Text component="span" c="dimmed">({restaurant?.total_reviews || 0}+)</Text> • {(((restaurant?.latitude || 0) - 35) * 100).toFixed(1)} mi
+                        </Text>
+                    </Group>
+                    <Group gap="xs" wrap="nowrap">
+                        <IconMapPin size={16} style={{ color: 'var(--mantine-color-red-5)' }} />
+                        <Text size="sm" c="dimmed">{restaurant?.cuisine_type}</Text>
+                    </Group>
+                    <Group gap="xs" wrap="nowrap">
+                        <IconTruck size={16} style={{ color: 'var(--mantine-color-green-6)' }} />
+                        <Text size="sm" c="dimmed">{formatPrice(restaurant?.delivery_fee_cents || 0)} delivery fee</Text>
+                    </Group>
+                </Stack>
 
-            {/* Full Menu Navigation */}
-            <Divider />
-            <Stack gap="xs" pt="md">
-              <Text size="sm" fw={700} c="gray.7" mb="xs">Full Menu</Text>
-              <Stack gap="xs">
-                {sidebarLinks.map(link => (
-                  <Button
-                    key={link.id}
-                    variant="subtle"
-                    fullWidth
-                    justify="flex-start"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      scrollToSection(link.id);
-                    }}
-                    style={{
-                      backgroundColor: activeSection === link.id ? 'var(--mantine-color-orange-0)' : 'transparent',
-                      color: activeSection === link.id ? 'var(--mantine-color-orange-6)' : 'var(--mantine-color-gray-7)',
-                      fontWeight: activeSection === link.id ? 600 : 500,
-                      borderLeft: activeSection === link.id ? '4px solid var(--mantine-color-orange-6)' : 'none',
-                      marginLeft: activeSection === link.id ? '-8px' : 0,
-                      paddingLeft: activeSection === link.id ? '12px' : '8px',
-                    }}
-                  >
-                    {link.label}
-                  </Button>
-                ))}
-              </Stack>
+                {/* Full Menu Navigation */}
+                <Divider />
+                <Stack gap="xs" pt="md">
+                    <Text size="sm" fw={700} c="gray.7" mb="xs">Full Menu</Text>
+                    <Stack gap="xs">
+                        {sidebarLinks.map(link => (
+                            <Button
+                                key={link.id}
+                                variant="subtle"
+                                fullWidth
+                                justify="flex-start"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    scrollToSection(link.id);
+                                }}
+                                style={{
+                                    backgroundColor: activeSection === link.id ? 'var(--mantine-color-orange-0)' : 'transparent',
+                                    color: activeSection === link.id ? 'var(--mantine-color-orange-6)' : 'var(--mantine-color-gray-7)',
+                                    fontWeight: activeSection === link.id ? 600 : 500,
+                                    borderLeft: activeSection === link.id ? '4px solid var(--mantine-color-orange-6)' : 'none',
+                                    marginLeft: activeSection === link.id ? '-8px' : 0,
+                                    paddingLeft: activeSection === link.id ? '12px' : '8px',
+                                }}
+                            >
+                                {link.label}
+                            </Button>
+                        ))}
+                    </Stack>
+                </Stack>
             </Stack>
-          </Stack>
         </Box>
     );
 
@@ -1115,38 +1115,38 @@ const RestaurantMenuPage = () => {
         );
     }
 
-  return (
-    <Box style={{ minHeight: '100vh', backgroundColor: 'white' }}>
-      {/* Mobile Header - DoorDash Style */}
-      <MobileHeader 
-        restaurant={restaurant}
-        onBack={() => navigate('/restaurants')}
-        onShare={() => {
-          if (navigator.share) {
-            navigator.share({
-              title: restaurant?.name,
-              text: `Check out ${restaurant?.name} on Crave'N`,
-              url: window.location.href
-            });
-          }
-        }}
-      />
+    return (
+        <Box style={{ minHeight: '100vh', backgroundColor: 'white' }}>
+            {/* Mobile Header - DoorDash Style */}
+            <MobileHeader 
+                restaurant={restaurant}
+                onBack={() => navigate('/restaurants')}
+                onShare={() => {
+                    if (navigator.share) {
+                        navigator.share({
+                            title: restaurant?.name,
+                            text: `Check out ${restaurant?.name} on Crave'N`,
+                            url: window.location.href
+                        });
+                    }
+                }}
+            />
 
-      {/* Desktop Header - Hidden on Mobile */}
-      <Box
-        style={{
-          display: 'none',
-          '@media (min-width: 1024px)': { display: 'block' },
-          position: 'sticky',
-          top: 0,
-          zIndex: 50,
-          backgroundColor: 'white',
-          borderBottom: '1px solid var(--mantine-color-gray-3)',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-        }}
-      >
-        <Box style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 16px' }}>
-          <Group justify="space-between" align="center" style={{ height: '64px' }}>
+            {/* Desktop Header - Hidden on Mobile */}
+            <Box
+                style={{
+                    display: 'none',
+                    '@media (min-width: 1024px)': { display: 'block' },
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 50,
+                    backgroundColor: 'white',
+                    borderBottom: '1px solid var(--mantine-color-gray-3)',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                }}
+            >
+                <Box style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 16px' }}>
+                    <Group justify="space-between" align="center" style={{ height: '64px' }}>
             {/* Left: Logo */}
             <Group gap="md">
               <MantineImage src={cravenLogo} alt="CRAVE'N" style={{ height: '40px' }} />

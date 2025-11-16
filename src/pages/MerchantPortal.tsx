@@ -171,6 +171,7 @@ const RestaurantSetup = () => {
       </Box>
     );
   }
+
   return (
     <Box style={{ display: 'flex', height: '100vh' }}>
       {/* Left Sidebar */}
