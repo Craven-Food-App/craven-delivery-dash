@@ -6,6 +6,8 @@ import { HeroImageManager } from '@/components/admin/HeroImageManager';
 import { CustomerManagement } from '@/components/admin/CustomerManagement';
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 import { ReferralProgram } from '@/components/ReferralProgram';
+import { ReferralVideoManager } from '@/components/admin/ReferralVideoManager';
+import { ReferralSettingsManager } from '@/components/admin/ReferralSettingsManager';
 import { LoyaltyDashboard } from '@/components/loyalty/LoyaltyDashboard';
 import AllCampaignOverview from '@/pages/marketing/AllCampaignOverview';
 import CustomerSegmentation from '@/pages/marketing/CustomerSegmentation';
@@ -24,6 +26,7 @@ import ExperimentalFeatures from '@/pages/marketing/ExperimentalFeatures';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   ArrowLeft, LayoutDashboard, Tag, Mail, Bell, Users, TrendingUp, BarChart, Gift, UserPlus, Award, 
   Megaphone, MessageSquare, Building2, Truck, DollarSign, FolderOpen, Zap, Plug, Shield, Settings, 
@@ -237,10 +240,28 @@ const MarketingPortal: React.FC = () => {
       case 'referral-program':
         return (
           <div className="space-y-6">
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Referral Program Management</h2>
-              <ReferralProgram userType="customer" />
-            </Card>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">Referral Program Management</h2>
+                <p className="text-muted-foreground">Manage referral settings, video content, and program configuration</p>
+              </div>
+            </div>
+            <Tabs defaultValue="program" className="w-full">
+              <TabsList>
+                <TabsTrigger value="program">Program</TabsTrigger>
+                <TabsTrigger value="video">Video Content</TabsTrigger>
+                <TabsTrigger value="settings">Settings</TabsTrigger>
+              </TabsList>
+              <TabsContent value="program" className="mt-6">
+                <ReferralProgram userType="customer" />
+              </TabsContent>
+              <TabsContent value="video" className="mt-6">
+                <ReferralVideoManager />
+              </TabsContent>
+              <TabsContent value="settings" className="mt-6">
+                <ReferralSettingsManager />
+              </TabsContent>
+            </Tabs>
           </div>
         );
       case 'loyalty-program':

@@ -60,7 +60,7 @@ const CustomerDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const tabFromUrl = searchParams.get('tab') || 'home';
+  const tabFromUrl = searchParams.get('tab') || 'account';
   const [activeTab, setActiveTab] = useState(tabFromUrl);
 
   useEffect(() => {

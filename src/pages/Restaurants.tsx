@@ -496,11 +496,11 @@ const Restaurants = () => {
       setCuisineFilter(categoryId);
     } else if (categoryId === 'orders') {
       // Navigate to orders page
-      window.location.href = '/customer-dashboard?tab=orders';
+      navigate('/order-history');
       return;
     } else if (categoryId === 'account') {
       // Navigate to customer dashboard account tab
-      window.location.href = '/customer-dashboard?tab=account';
+      navigate('/account');
       return;
     }
     
@@ -598,15 +598,15 @@ const Restaurants = () => {
   // Determine active nav item based on current location
   const getNavItems = () => {
     const isHome = currentLocation.pathname === '/restaurants' || currentLocation.pathname === '/';
-    const isOrders = currentLocation.pathname === '/customer-dashboard' && currentLocation.search.includes('tab=orders');
-    const isAccount = currentLocation.pathname === '/customer-dashboard' && currentLocation.search.includes('tab=account');
-    const isFavorites = currentLocation.pathname === '/customer-dashboard' && currentLocation.search.includes('tab=favorites');
+    const isOrders = currentLocation.pathname === '/order-history';
+    const isAccount = currentLocation.pathname === '/account';
+    const isFavorites = currentLocation.pathname === '/favorites';
 
     return [
       { name: 'Home', icon: IconHome, current: isHome, path: '/restaurants' },
-      { name: 'Favorites', icon: IconHeart, current: isFavorites, path: '/customer-dashboard?tab=favorites' },
-      { name: 'Orders', icon: IconPackage, current: isOrders, path: '/customer-dashboard?tab=orders' },
-      { name: 'Account', icon: IconUser, current: isAccount, path: '/customer-dashboard?tab=account' },
+      { name: 'Favorites', icon: IconHeart, current: isFavorites, path: '/favorites' },
+      { name: 'Orders', icon: IconPackage, current: isOrders, path: '/order-history' },
+      { name: 'Account', icon: IconUser, current: isAccount, path: '/account' },
     ];
   };
 
@@ -732,7 +732,7 @@ const Restaurants = () => {
 
             <Group gap="xs">
               <ActionIcon
-                onClick={() => navigate('/customer-dashboard?tab=notifications')}
+                onClick={() => navigate('/account')}
                 variant="subtle"
                 size="lg"
                 radius="xl"
@@ -744,7 +744,7 @@ const Restaurants = () => {
                 )}
               </ActionIcon>
               <ActionIcon
-                onClick={() => navigate('/customer-dashboard?tab=account')}
+                onClick={() => navigate('/account')}
                 variant="subtle"
                 size="lg"
                 radius="xl"

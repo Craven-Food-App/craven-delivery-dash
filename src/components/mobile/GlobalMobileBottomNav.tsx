@@ -62,8 +62,8 @@ const GlobalMobileBottomNav: React.FC = () => {
       id: 'account',
       label: 'Account',
       icon: IconUser,
-      path: user ? '/customer-dashboard?tab=account' : '/auth',
-      isActive: location.pathname === '/customer-dashboard' && location.search.includes('tab=account'),
+      path: user ? '/account' : '/auth',
+      isActive: location.pathname === '/account',
     },
     {
       id: 'cart',

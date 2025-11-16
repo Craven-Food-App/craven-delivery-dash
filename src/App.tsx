@@ -555,7 +555,8 @@ const App = () => {
           <Route path="/enhanced-onboarding/payout" element={<PayoutSetup />} />
           <Route path="/enhanced-onboarding/safety-quiz" element={<SafetyQuiz />} />
           <Route path="/admin/waitlist" element={<AdminDriverWaitlist />} />
-          <Route path="/customer-dashboard" element={<CustomerDashboard />} />
+          <Route path="/customer-dashboard" element={<Navigate to="/order-history" replace />} />
+          <Route path="/account" element={<CustomerDashboard />} />
           <Route path="/mobile" element={<MobileDriverDashboard />} />
           <Route path="/mobile/background-check-status" element={<MobileBackgroundCheckStatus />} />
           <Route path="/restaurant/auth" element={<RestaurantAuth />} />

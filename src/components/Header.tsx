@@ -246,13 +246,13 @@ const Header = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuItem asChild>
-                      <Link to="/customer-dashboard" className="flex items-center cursor-pointer">
+                      <Link to="/order-history" className="flex items-center cursor-pointer">
                         <User className="mr-2 h-4 w-4" />
                         <span>My Orders</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/customer-dashboard?tab=rewards" className="flex items-center cursor-pointer">
+                      <Link to="/account" className="flex items-center cursor-pointer">
                         <Gift className="mr-2 h-4 w-4" />
                         <span>Rewards</span>
                       </Link>
@@ -440,7 +440,7 @@ const Header = () => {
                       className="w-full justify-start text-lg h-12"
                       asChild
                     >
-                      <Link to="/customer-dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Link to="/order-history" onClick={() => setIsMobileMenuOpen(false)}>
                         <User className="mr-3 h-5 w-5" />
                         My Orders
                       </Link>
