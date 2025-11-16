@@ -22,8 +22,7 @@ import {
   Loader,
   Divider,
   Container,
-  Grid,
-  Grid.Col
+  Grid
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useIsMobile } from '@/hooks/use-mobile';

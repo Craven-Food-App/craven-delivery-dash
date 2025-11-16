@@ -21,11 +21,12 @@ import {
   IconPhone,
   IconCopy,
 } from "@tabler/icons-react";
+import { Grid } from "@mantine/core";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Order {
   id: string;
-  status: 'pending' | 'assigned' | 'picked_up' | 'delivered' | 'cancelled';
+  status: string;
   created_at: string;
   updated_at: string;
   pickup_name: string;
@@ -37,6 +38,17 @@ interface Order {
   assigned_craver_id?: string;
   order_number?: string;
   pickup_code?: string;
+  restaurant_id?: string;
+  customer_id?: string;
+  customer_name?: string;
+  customer_phone?: string;
+  delivery_address?: any;
+  delivery_fee?: number;
+  delivery_fee_cents?: number;
+  pickup_lat?: number;
+  pickup_lng?: number;
+  dropoff_lat?: number;
+  dropoff_lng?: number;
 }
 
 interface RestaurantOrderManagementProps {
@@ -119,7 +131,7 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
 
       if (error) throw error;
 
-      setOrders(data || []);
+      setOrders((data || []) as Order[]);
     } catch (error) {
       console.error("Error fetching orders:", error);
       notifications.show({
@@ -222,7 +234,7 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
 
       const { data, error } = await supabase
         .from('orders')
-        .insert(orderData)
+        .insert([orderData])
         .select();
 
       if (error) {

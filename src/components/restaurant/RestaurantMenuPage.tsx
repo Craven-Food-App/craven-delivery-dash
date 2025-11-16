@@ -33,21 +33,20 @@ import {
   IconShoppingCart,
   IconX,
   IconChevronLeft,
-  IconUtensils,
+  IconToolsKitchen2,
   IconHeart,
   IconShare,
   IconMapPin,
   IconPhone,
   IconNavigation,
   IconMessageCircle,
-  IconCheckCircle,
+  IconCircleCheck,
   IconFilter,
   IconSearch,
   IconChefHat,
   IconLeaf,
   IconInfoCircle,
   IconArrowUp,
-  IconTimer,
   IconFlame,
   IconCar,
   IconHome,
@@ -527,14 +526,14 @@ const RestaurantMenuPage = () => {
                                ? { ...cartItem, quantity: cartItem.quantity + modalQuantity }
                                : cartItem
                        ));
-                   } else {
-                       setCart([...cart, itemToAdd]);
-                   }
-                   notifications.show({
-                     title: "Added to cart",
-                     message: `${selectedItem.name} added to cart!`,
-                     color: "green",
-                   });
+                    } else {
+                        setCart([...cart, itemToAdd]);
+                    }
+                    notifications.show({
+                        title: "Added to cart",
+                        message: `${selectedItem.name} added to cart!`,
+                        color: "green",
+                    });
                    
                    // Show cart button and set timer to hide after 3 seconds
                    setShowCartButton(true);
@@ -1595,26 +1594,26 @@ const RestaurantMenuPage = () => {
                   </Group>
 
                   {/* Delivery/Pickup Toggle - Mobile */}
-                  <Button.Group fullWidth>
+                  <Group grow>
                     <Button
-                      variant={deliveryMethod === 'delivery' ? 'filled' : 'light'}
-                      color={deliveryMethod === 'delivery' ? 'dark' : 'gray'}
+                      variant={deliveryMode === 'delivery' ? 'filled' : 'light'}
+                      color={deliveryMode === 'delivery' ? 'dark' : 'gray'}
                       leftSection={<IconTruck size={16} />}
-                      onClick={() => setDeliveryMethod('delivery')}
+                      onClick={() => setDeliveryMode('delivery')}
                       style={{ flex: 1 }}
                     >
                       Delivery
                     </Button>
                     <Button
-                      variant={deliveryMethod === 'pickup' ? 'filled' : 'light'}
-                      color={deliveryMethod === 'pickup' ? 'dark' : 'gray'}
+                      variant={deliveryMode === 'pickup' ? 'filled' : 'light'}
+                      color={deliveryMode === 'pickup' ? 'dark' : 'gray'}
                       leftSection={<IconBuildingStore size={16} />}
-                      onClick={() => setDeliveryMethod('pickup')}
+                      onClick={() => setDeliveryMode('pickup')}
                       style={{ flex: 1 }}
                     >
                       Pickup
                     </Button>
-                  </Button.Group>
+                  </Group>
                 </Card>
 
                 {/* Sticky Category Tabs - Mobile */}
@@ -2029,18 +2028,18 @@ const RestaurantMenuPage = () => {
                         {/* Delivery/Pickup Tabs */}
                         <Button.Group>
                           <Button
-                            variant={deliveryMethod === 'delivery' ? 'filled' : 'outline'}
-                            color={deliveryMethod === 'delivery' ? 'orange' : 'gray'}
+                            variant={deliveryMode === 'delivery' ? 'filled' : 'outline'}
+                            color={deliveryMode === 'delivery' ? 'orange' : 'gray'}
                             size="sm"
-                            onClick={() => setDeliveryMethod('delivery')}
+                            onClick={() => setDeliveryMode('delivery')}
                           >
                             Delivery
                           </Button>
                           <Button
-                            variant={deliveryMethod === 'pickup' ? 'filled' : 'outline'}
-                            color={deliveryMethod === 'pickup' ? 'orange' : 'gray'}
+                            variant={deliveryMode === 'pickup' ? 'filled' : 'outline'}
+                            color={deliveryMode === 'pickup' ? 'orange' : 'gray'}
                             size="sm"
-                            onClick={() => setDeliveryMethod('pickup')}
+                            onClick={() => setDeliveryMode('pickup')}
                           >
                             Pickup
                           </Button>
