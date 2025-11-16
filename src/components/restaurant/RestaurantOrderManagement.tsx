@@ -49,6 +49,9 @@ interface Order {
   pickup_lng?: number;
   dropoff_lat?: number;
   dropoff_lng?: number;
+  subtotal_cents?: number;
+  total_cents?: number;
+  [key: string]: any; // Allow additional fields from database
 }
 
 interface RestaurantOrderManagementProps {
@@ -131,7 +134,7 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
 
       if (error) throw error;
 
-      setOrders((data || []) as Order[]);
+      setOrders((data || []) as unknown as Order[]);
     } catch (error) {
       console.error("Error fetching orders:", error);
       notifications.show({
@@ -227,7 +230,9 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
         dropoff_lng: -83.5552,
         payout_cents: Math.floor(Math.random() * 1000) + 800, // $8-18
         distance_km: Math.random() * 10 + 2, // 2-12 km
-        status: 'pending' as const
+        status: 'pending' as const,
+        subtotal_cents: 2500,
+        total_cents: 3000
       };
 
       console.log('Order data:', orderData);

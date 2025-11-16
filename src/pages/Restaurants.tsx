@@ -32,14 +32,14 @@ import {
   IconFilter, 
   IconStar, 
   IconClock, 
-  IconZap, 
+  IconBolt, 
   IconTrendingUp, 
   IconChevronLeft, 
   IconPlus,
   IconBell,
   IconShoppingCart,
   IconHome,
-  IconUtensils,
+  IconToolsKitchen2,
   IconCoffee,
   IconBuildingStore,
   IconHeart,
@@ -51,7 +51,7 @@ import {
   IconTruck,
   IconShield,
   IconCurrencyDollar,
-  IconTimer,
+  IconAlarm,
   IconNavigation,
   IconMenu2,
   IconX,
@@ -74,11 +74,11 @@ import {
   IconThumbUp,
   IconRefresh,
   IconChevronDown,
-  IconSliders,
+  IconAdjustments,
   IconSortAscending,
   IconGrid3x3,
   IconList,
-  IconLayers,
+  IconLayersLinked,
   IconCompass,
   IconPackage
 } from '@tabler/icons-react';
@@ -202,7 +202,7 @@ const Restaurants = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notificationsList, setNotificationsList] = useState<any[]>([]);
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [filteredRestaurants, setFilteredRestaurants] = useState<any[]>([]);
   const [showAccountPopup, setShowAccountPopup] = useState(false);
@@ -294,7 +294,7 @@ const Restaurants = () => {
         type: "delivery"
       }
     ];
-    setNotifications(mockNotifications);
+    setNotificationsList(mockNotifications);
   };
 
   // Cart functionality
@@ -658,7 +658,7 @@ const Restaurants = () => {
                 style={{ position: 'relative' }}
               >
                 <IconBell size={24} style={{ color: '#737373' }} />
-                {notifications.filter(n => !n.read).length > 0 && (
+                {notificationsList.filter(n => !n.read).length > 0 && (
                   <Box style={{ position: 'absolute', top: 4, right: 4, width: '10px', height: '10px', backgroundColor: '#b91c1c', borderRadius: '50%', border: '2px solid white' }} />
                 )}
               </ActionIcon>
@@ -895,8 +895,8 @@ const Restaurants = () => {
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="relative p-2"
               >
-                <Bell className="w-5 h-5 text-gray-600" />
-                {notifications.filter(n => !n.read).length > 0 && (
+                <IconBell className="w-5 h-5 text-gray-600" />
+                {notificationsList.filter(n => !n.read).length > 0 && (
                   <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
                 )}
               </button>
@@ -905,7 +905,7 @@ const Restaurants = () => {
               onClick={() => setShowMobileNav(!showMobileNav)}
               className="p-2 -mr-2 active:bg-gray-100 rounded-full transition-colors"
             >
-              {showMobileNav ? <X className="w-6 h-6 text-gray-900" /> : <Menu className="w-6 h-6 text-gray-900" />}
+              {showMobileNav ? <IconX className="w-6 h-6 text-gray-900" /> : <IconMenu2 className="w-6 h-6 text-gray-900" />}
             </button>
           </div>
           
@@ -915,9 +915,9 @@ const Restaurants = () => {
               onClick={() => setShowAddressSelector(!showAddressSelector)}
               className="flex-1 flex items-center space-x-2 bg-gray-100 rounded-lg px-3 py-2 min-w-0"
             >
-              <MapPin className="w-4 h-4 text-gray-600 flex-shrink-0" />
+              <IconMapPin className="w-4 h-4 text-gray-600 flex-shrink-0" />
               <span className="text-sm font-medium text-gray-900 truncate flex-1">{location}</span>
-              <ChevronDown className="w-4 h-4 text-gray-600 flex-shrink-0" />
+              <IconChevronDown className="w-4 h-4 text-gray-600 flex-shrink-0" />
             </button>
             
             <div className="flex bg-gray-100 rounded-lg p-0.5 flex-shrink-0">
