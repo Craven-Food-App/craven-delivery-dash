@@ -1,12 +1,6 @@
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { TextInput, Button, Select, Radio, Checkbox, Card, Stack, Grid, Text, Group, Box } from "@mantine/core";
 import { ApplicationStepProps } from "@/types/application";
 import { Shield, DollarSign, CreditCard, Wallet } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 
 export const BankingStep = ({ data, onUpdate, onNext, onBack, isValid }: ApplicationStepProps) => {
   const formatSSN = (value: string) => {
@@ -24,182 +18,171 @@ export const BankingStep = ({ data, onUpdate, onNext, onBack, isValid }: Applica
   };
 
   return (
-    <div className="space-y-6">
+    <Stack gap="lg">
       <div>
-        <h2 className="text-2xl font-bold mb-2">Payment & Tax Information</h2>
-        <p className="text-muted-foreground">Choose how you want to receive payments and provide tax information</p>
+        <Text fw={700} size="xl" mb="xs">Payment & Tax Information</Text>
+        <Text c="dimmed">Choose how you want to receive payments and provide tax information</Text>
       </div>
 
-      <Card className="border-primary/20 bg-primary/5">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-3">
-            <Shield className="h-5 w-5 text-primary mt-0.5" />
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Your information is secure</p>
-              <p className="text-xs text-muted-foreground">
-                Your Social Security Number is required for tax purposes. Payment information is encrypted and secure.
-              </p>
-            </div>
+      <Card p="md" style={{ borderColor: '#ff7a00', backgroundColor: 'rgba(255, 122, 0, 0.05)' }}>
+        <Group gap="md" align="flex-start">
+          <Shield size={20} style={{ color: '#ff7a00', marginTop: 2 }} />
+          <div>
+            <Text size="sm" fw={500}>Your information is secure</Text>
+            <Text size="xs" c="dimmed">
+              Your Social Security Number is required for tax purposes. Payment information is encrypted and secure.
+            </Text>
           </div>
-        </CardContent>
+        </Group>
       </Card>
 
       {/* Payout Method Selection */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 mb-2">
-          <Wallet className="h-4 w-4" />
-          <p className="text-sm font-medium">Payout Method *</p>
-        </div>
+      <div>
+        <Group gap="xs" mb="md">
+          <Wallet size={16} />
+          <Text size="sm" fw={500}>Payout Method *</Text>
+        </Group>
         
-        <RadioGroup 
-          value={data.payoutMethod || 'direct_deposit'} 
-          onValueChange={(value) => onUpdate('payoutMethod', value)}
+        <Radio.Group
+          value={data.payoutMethod || 'direct_deposit'}
+          onChange={(value) => onUpdate('payoutMethod', value)}
         >
-          <div className="flex items-center space-x-2 p-4 border rounded-lg">
-            <RadioGroupItem value="direct_deposit" id="direct_deposit" />
-            <Label htmlFor="direct_deposit" className="flex-1 cursor-pointer">
-              <div>
-                <p className="font-medium">Direct Deposit</p>
-                <p className="text-sm text-muted-foreground">Get paid directly to your bank account</p>
-              </div>
-            </Label>
-          </div>
-          
-          <div className="flex items-center space-x-2 p-4 border rounded-lg">
-            <RadioGroupItem value="cashapp" id="cashapp" />
-            <Label htmlFor="cashapp" className="flex-1 cursor-pointer">
-              <div>
-                <p className="font-medium">Cash App</p>
-                <p className="text-sm text-muted-foreground">Instant payouts to your Cash App</p>
-              </div>
-            </Label>
-          </div>
-        </RadioGroup>
+          <Stack gap="md">
+            <Card withBorder p="md" style={{ cursor: 'pointer' }} onClick={() => onUpdate('payoutMethod', 'direct_deposit')}>
+              <Group>
+                <Radio value="direct_deposit" />
+                <div style={{ flex: 1 }}>
+                  <Text fw={500}>Direct Deposit</Text>
+                  <Text size="sm" c="dimmed">Get paid directly to your bank account</Text>
+                </div>
+              </Group>
+            </Card>
+            
+            <Card withBorder p="md" style={{ cursor: 'pointer' }} onClick={() => onUpdate('payoutMethod', 'cashapp')}>
+              <Group>
+                <Radio value="cashapp" />
+                <div style={{ flex: 1 }}>
+                  <Text fw={500}>Cash App</Text>
+                  <Text size="sm" c="dimmed">Instant payouts to your Cash App</Text>
+                </div>
+              </Group>
+            </Card>
+          </Stack>
+        </Radio.Group>
       </div>
 
       {/* Direct Deposit Fields */}
       {data.payoutMethod === 'direct_deposit' && (
-        <div className="space-y-4 p-4 border rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <CreditCard className="h-4 w-4" />
-            <p className="text-sm font-medium">Bank Account Information</p>
-          </div>
-          
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="bankAccountType">Account Type *</Label>
-              <Select 
-                value={data.bankAccountType || ''} 
-                onValueChange={(value) => onUpdate('bankAccountType', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select account type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="checking">Checking</SelectItem>
-                  <SelectItem value="savings">Savings</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <Box p="md" withBorder style={{ borderRadius: '8px' }}>
+          <Stack gap="md">
+            <Group gap="xs">
+              <CreditCard size={16} />
+              <Text size="sm" fw={500}>Bank Account Information</Text>
+            </Group>
             
-            <div>
-              <Label htmlFor="routingNumber">Routing Number *</Label>
-              <Input
-                id="routingNumber"
-                value={data.routingNumber || ''}
-                onChange={(e) => onUpdate('routingNumber', e.target.value)}
-                placeholder="9-digit routing number"
-                maxLength={9}
-              />
-            </div>
+            <Select
+              label="Account Type"
+              placeholder="Select account type"
+              value={data.bankAccountType || ''}
+              onChange={(value) => onUpdate('bankAccountType', value || '')}
+              data={[
+                { value: 'checking', label: 'Checking' },
+                { value: 'savings', label: 'Savings' },
+              ]}
+              required
+              withAsterisk
+            />
             
-            <div>
-              <Label htmlFor="accountNumber">Account Number *</Label>
-              <Input
-                id="accountNumber"
-                value={data.accountNumber || ''}
-                onChange={(e) => onUpdate('accountNumber', e.target.value)}
-                placeholder="Account number"
-                type="password"
-              />
-            </div>
-          </div>
-        </div>
+            <TextInput
+              label="Routing Number"
+              placeholder="9-digit routing number"
+              value={data.routingNumber || ''}
+              onChange={(e) => onUpdate('routingNumber', e.target.value)}
+              maxLength={9}
+              required
+              withAsterisk
+            />
+            
+            <TextInput
+              label="Account Number"
+              placeholder="Account number"
+              value={data.accountNumber || ''}
+              onChange={(e) => onUpdate('accountNumber', e.target.value)}
+              type="password"
+              required
+              withAsterisk
+            />
+          </Stack>
+        </Box>
       )}
 
       {/* Cash App Fields */}
       {data.payoutMethod === 'cashapp' && (
-        <div className="space-y-4 p-4 border rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <Wallet className="h-4 w-4" />
-            <p className="text-sm font-medium">Cash App Information</p>
-          </div>
-          
-          <div>
-            <Label htmlFor="cashTag">Cash App Tag *</Label>
-            <Input
-              id="cashTag"
+        <Box p="md" withBorder style={{ borderRadius: '8px' }}>
+          <Stack gap="md">
+            <Group gap="xs">
+              <Wallet size={16} />
+              <Text size="sm" fw={500}>Cash App Information</Text>
+            </Group>
+            
+            <TextInput
+              label="Cash App Tag"
+              placeholder="@yourcashtag"
               value={data.cashTag || ''}
               onChange={(e) => onUpdate('cashTag', e.target.value)}
-              placeholder="@yourcashtag"
+              description="Enter your Cash App username (without the @ symbol)"
+              required
+              withAsterisk
             />
-            <p className="text-xs text-muted-foreground mt-1">
-              Enter your Cash App username (without the @ symbol)
-            </p>
-          </div>
-        </div>
+          </Stack>
+        </Box>
       )}
 
       {/* SSN for Tax Purposes */}
-      <div className="space-y-4 p-4 border rounded-lg">
-        <div className="flex items-center gap-2 mb-2">
-          <DollarSign className="h-4 w-4" />
-          <p className="text-sm font-medium">Tax Information</p>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="ssn">Social Security Number *</Label>
-          <Input
-            id="ssn"
+      <Box p="md" withBorder style={{ borderRadius: '8px' }}>
+        <Stack gap="md">
+          <Group gap="xs">
+            <DollarSign size={16} />
+            <Text size="sm" fw={500}>Tax Information</Text>
+          </Group>
+          <TextInput
+            label="Social Security Number"
+            placeholder="XXX-XX-XXXX"
             value={data.ssn}
             onChange={(e) => handleSSNChange(e.target.value)}
-            placeholder="XXX-XX-XXXX"
             maxLength={11}
-            type="text"
+            description="Required for tax reporting purposes (format: XXX-XX-XXXX)"
+            required
+            withAsterisk
           />
-          <p className="text-xs text-muted-foreground">
-            Required for tax reporting purposes (format: XXX-XX-XXXX)
-          </p>
-        </div>
-      </div>
+        </Stack>
+      </Box>
 
       {/* Background Check Consent */}
-      <Card className="p-4 border-2">
-        <div className="flex items-start space-x-3">
+      <Card p="md" withBorder style={{ borderWidth: 2 }}>
+        <Group align="flex-start" gap="md">
           <Checkbox
-            id="background_check_consent"
             checked={data.backgroundCheckConsent}
-            onCheckedChange={(checked) => onUpdate('backgroundCheckConsent', checked as boolean)}
+            onChange={(e) => onUpdate('backgroundCheckConsent', e.currentTarget.checked)}
           />
-          <div className="flex-1">
-            <Label htmlFor="background_check_consent" className="cursor-pointer">
-              <p className="text-sm font-medium">Background Check Authorization *</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                I authorize Crave'N to obtain a consumer report and/or investigative consumer report for employment purposes. 
-                I understand this may include criminal history, motor vehicle records, and employment verification as permitted by law.
-              </p>
-            </Label>
+          <div style={{ flex: 1 }}>
+            <Text size="sm" fw={500} mb="xs">Background Check Authorization *</Text>
+            <Text size="xs" c="dimmed">
+              I authorize Crave'N to obtain a consumer report and/or investigative consumer report for employment purposes. 
+              I understand this may include criminal history, motor vehicle records, and employment verification as permitted by law.
+            </Text>
           </div>
-        </div>
+        </Group>
       </Card>
 
-      <div className="flex gap-3">
-        <Button variant="outline" onClick={onBack} className="w-full" size="lg">
+      <Group gap="md" mt="md">
+        <Button variant="outline" onClick={onBack} style={{ flex: 1 }} size="lg">
           Back
         </Button>
-        <Button onClick={onNext} disabled={!isValid} className="w-full" size="lg">
+        <Button onClick={onNext} disabled={!isValid} style={{ flex: 1 }} size="lg" color="#ff7a00">
           Continue
         </Button>
-      </div>
-    </div>
+      </Group>
+    </Stack>
   );
 };

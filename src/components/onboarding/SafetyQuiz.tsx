@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
+import { Card, Button, Radio, Progress, Stack, Text, Group, Box } from '@mantine/core';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, ArrowRight, Shield, CheckCircle, XCircle } from 'lucide-react';
@@ -246,125 +242,135 @@ export const SafetyQuiz: React.FC = () => {
 
   if (showResults) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-2xl mx-auto">
+      <Box style={{ minHeight: '100vh', backgroundColor: 'var(--mantine-color-gray-0)', padding: 24 }}>
+        <Box style={{ maxWidth: 672, margin: '0 auto' }}>
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <Stack gap="lg" p="lg">
+              <Group gap="xs">
                 {passed ? (
-                  <CheckCircle className="h-6 w-6 text-green-500" />
+                  <CheckCircle size={24} style={{ color: '#22c55e' }} />
                 ) : (
-                  <XCircle className="h-6 w-6 text-red-500" />
+                  <XCircle size={24} style={{ color: '#ef4444' }} />
                 )}
-                {passed ? 'Quiz Passed!' : 'Quiz Failed'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="text-center">
-                <div className="text-6xl font-bold mb-2" style={{ color: passed ? '#22c55e' : '#ef4444' }}>
+                <Text fw={600} size="lg">
+                  {passed ? 'Quiz Passed!' : 'Quiz Failed'}
+                </Text>
+              </Group>
+              <Box ta="center">
+                <Text fw={700} size="3xl" mb="xs" c={passed ? '#22c55e' : '#ef4444'}>
                   {percentage.toFixed(0)}%
-                </div>
-                <div className="text-lg text-gray-600">
+                </Text>
+                <Text size="lg" c="dimmed">
                   {correctAnswers} out of {QUIZ_QUESTIONS.length} correct
-                </div>
-              </div>
+                </Text>
+              </Box>
 
               {passed ? (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                  <p className="text-green-800 font-medium">
+                <Card p="md" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', borderColor: '#22c55e' }}>
+                  <Text fw={500} c="#166534" ta="center">
                     Excellent work! You've demonstrated strong safety knowledge. Redirecting...
-                  </p>
-                </div>
+                  </Text>
+                </Card>
               ) : (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-red-800 mb-2">
+                <Card p="md" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: '#ef4444' }}>
+                  <Text c="#991b1b">
                     You need at least 95% (24/25) to pass. Please review the questions and try again.
-                  </p>
-                </div>
+                  </Text>
+                </Card>
               )}
 
               {!passed && (
-                <Button onClick={retakeQuiz} className="w-full bg-orange-500 hover:bg-orange-600">
+                <Button onClick={retakeQuiz} fullWidth color="#ff7a00">
                   Retake Quiz
                 </Button>
               )}
-            </CardContent>
+            </Stack>
           </Card>
-        </div>
-      </div>
+        </Box>
+      </Box>
     );
   }
 
   const progress = ((currentQuestion + 1) / QUIZ_QUESTIONS.length) * 100;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-2xl mx-auto">
+    <Box style={{ minHeight: '100vh', backgroundColor: 'var(--mantine-color-gray-0)', padding: 24 }}>
+      <Box style={{ maxWidth: 672, margin: '0 auto' }}>
         <Button
-          variant="ghost"
+          variant="subtle"
           onClick={() => navigate('/enhanced-onboarding')}
-          className="mb-4"
+          mb="md"
+          leftSection={<ArrowLeft size={16} />}
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Onboarding
         </Button>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-blue-500" />
-              Safety Quiz - Question {currentQuestion + 1} of {QUIZ_QUESTIONS.length}
-            </CardTitle>
-            <Progress value={progress} className="mt-2" />
-            <p className="text-sm text-gray-600 mt-2">
-              You need 95% (24/25 correct) to pass
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-6">
+          <Stack gap="lg" p="lg">
             <div>
-              <h3 className="text-lg font-medium mb-4">
-                {QUIZ_QUESTIONS[currentQuestion].question}
-              </h3>
-
-              <RadioGroup 
-                value={answers[currentQuestion]?.toString()} 
-                onValueChange={(value) => handleAnswer(parseInt(value))}
-              >
-                <div className="space-y-3">
-                  {QUIZ_QUESTIONS[currentQuestion].options.map((option, index) => (
-                    <div key={index} className="flex items-center space-x-2 border rounded-lg p-4 hover:bg-gray-50">
-                      <RadioGroupItem value={index.toString()} id={`option-${index}`} />
-                      <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">
-                        {option}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </RadioGroup>
+              <Group gap="xs" mb="md">
+                <Shield size={20} style={{ color: 'var(--mantine-color-blue-6)' }} />
+                <Text fw={600} size="lg">
+                  Safety Quiz - Question {currentQuestion + 1} of {QUIZ_QUESTIONS.length}
+                </Text>
+              </Group>
+              <Progress value={progress} size="sm" color="blue" mb="xs" />
+              <Text size="sm" c="dimmed">
+                You need 95% (24/25 correct) to pass
+              </Text>
             </div>
 
-            <div className="flex gap-3">
+            <div>
+              <Text fw={500} size="lg" mb="md">
+                {QUIZ_QUESTIONS[currentQuestion].question}
+              </Text>
+
+              <Radio.Group
+                value={answers[currentQuestion]?.toString()}
+                onChange={(value) => handleAnswer(parseInt(value))}
+              >
+                <Stack gap="md">
+                  {QUIZ_QUESTIONS[currentQuestion].options.map((option, index) => (
+                    <Card
+                      key={index}
+                      withBorder
+                      p="md"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => handleAnswer(index)}
+                    >
+                      <Group>
+                        <Radio value={index.toString()} />
+                        <Text style={{ flex: 1 }}>{option}</Text>
+                      </Group>
+                    </Card>
+                  ))}
+                </Stack>
+              </Radio.Group>
+            </div>
+
+            <Group gap="md" mt="md">
               <Button
                 onClick={handleBack}
                 disabled={currentQuestion === 0}
                 variant="outline"
-                className="flex-1"
+                style={{ flex: 1 }}
+                leftSection={<ArrowLeft size={16} />}
               >
-                <ArrowLeft className="mr-2 h-4 w-4" />
                 Previous
               </Button>
               <Button
                 onClick={handleNext}
                 disabled={answers[currentQuestion] === -1}
-                className="flex-1 bg-orange-500 hover:bg-orange-600"
+                style={{ flex: 1 }}
+                color="#ff7a00"
+                rightSection={<ArrowRight size={16} />}
               >
                 {currentQuestion === QUIZ_QUESTIONS.length - 1 ? 'Submit Quiz' : 'Next'}
-                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-            </div>
-          </CardContent>
+            </Group>
+          </Stack>
         </Card>
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 };

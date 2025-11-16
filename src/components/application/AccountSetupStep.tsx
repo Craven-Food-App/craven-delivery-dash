@@ -1,9 +1,6 @@
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { TextInput, Button, Alert, Stack, Grid, Text } from "@mantine/core";
 import { AlertCircle } from "lucide-react";
 import { ApplicationStepProps } from "@/types/application";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const AccountSetupStep = ({ data, onUpdate, onNext, isValid }: ApplicationStepProps) => {
   const maxDate = new Date();
@@ -11,84 +8,74 @@ export const AccountSetupStep = ({ data, onUpdate, onNext, isValid }: Applicatio
   const minDate = new Date('1900-01-01');
 
   return (
-    <div className="space-y-6">
+    <Stack gap="lg">
       <div>
-        <h2 className="text-2xl font-bold mb-2">Let's Get Started</h2>
-        <p className="text-muted-foreground">Tell us about yourself</p>
+        <Text fw={700} size="xl" mb="xs">Let's Get Started</Text>
+        <Text c="dimmed">Tell us about yourself</Text>
       </div>
 
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          {data.email ? "If you already have an account, you'll be asked to sign in during submission." : "We'll create your account when you submit the application."}
-        </AlertDescription>
+      <Alert icon={<AlertCircle size={16} />} color="blue">
+        {data.email ? "If you already have an account, you'll be asked to sign in during submission." : "We'll create your account when you submit the application."}
       </Alert>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="firstName">First Name *</Label>
-          <Input
-            id="firstName"
+      <Grid gutter="md">
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <TextInput
+            label="First Name"
+            placeholder="John"
             value={data.firstName}
             onChange={(e) => onUpdate('firstName', e.target.value)}
-            placeholder="John"
             required
+            withAsterisk
           />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="lastName">Last Name *</Label>
-          <Input
-            id="lastName"
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <TextInput
+            label="Last Name"
+            placeholder="Doe"
             value={data.lastName}
             onChange={(e) => onUpdate('lastName', e.target.value)}
-            placeholder="Doe"
             required
+            withAsterisk
           />
-        </div>
-      </div>
+        </Grid.Col>
+      </Grid>
 
-      <div className="space-y-2">
-        <Label htmlFor="email">Email Address *</Label>
-        <Input
-          id="email"
-          type="email"
-          value={data.email}
-          onChange={(e) => onUpdate('email', e.target.value)}
-          placeholder="john.doe@example.com"
-          required
-        />
-      </div>
+      <TextInput
+        label="Email Address"
+        type="email"
+        placeholder="john.doe@example.com"
+        value={data.email}
+        onChange={(e) => onUpdate('email', e.target.value)}
+        required
+        withAsterisk
+      />
 
-      <div className="space-y-2">
-        <Label htmlFor="phone">Phone Number *</Label>
-        <Input
-          id="phone"
-          type="tel"
-          value={data.phone}
-          onChange={(e) => onUpdate('phone', e.target.value)}
-          placeholder="(555) 123-4567"
-          required
-        />
-      </div>
+      <TextInput
+        label="Phone Number"
+        type="tel"
+        placeholder="(555) 123-4567"
+        value={data.phone}
+        onChange={(e) => onUpdate('phone', e.target.value)}
+        required
+        withAsterisk
+      />
 
-      <div className="space-y-2">
-        <Label htmlFor="dateOfBirth">Date of Birth *</Label>
-        <Input
-          id="dateOfBirth"
-          type="date"
-          value={data.dateOfBirth || ''}
-          onChange={(e) => onUpdate('dateOfBirth', e.target.value)}
-          max={maxDate.toISOString().split('T')[0]}
-          min={minDate.toISOString().split('T')[0]}
-          required
-          className="w-full"
-        />
-        <p className="text-xs text-muted-foreground">You must be at least 18 years old</p>
-      </div>
+      <TextInput
+        label="Date of Birth"
+        type="date"
+        value={data.dateOfBirth || ''}
+        onChange={(e) => onUpdate('dateOfBirth', e.target.value)}
+        max={maxDate.toISOString().split('T')[0]}
+        min={minDate.toISOString().split('T')[0]}
+        required
+        withAsterisk
+        description="You must be at least 18 years old"
+      />
 
-      <Button onClick={onNext} disabled={!isValid} className="w-full" size="lg">
+      <Button onClick={onNext} disabled={!isValid} fullWidth size="lg" color="#ff7a00">
         Continue
       </Button>
-    </div>
+    </Stack>
   );
 };

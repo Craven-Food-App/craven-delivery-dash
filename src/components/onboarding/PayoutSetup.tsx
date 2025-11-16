@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Card, Button, TextInput, Radio, Stack, Text, Group, Box } from '@mantine/core';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, DollarSign } from 'lucide-react';
@@ -138,116 +134,107 @@ export const PayoutSetup: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-2xl mx-auto">
+    <Box style={{ minHeight: '100vh', backgroundColor: 'var(--mantine-color-gray-0)', padding: 24 }}>
+      <Box style={{ maxWidth: 672, margin: '0 auto' }}>
         <Button
-          variant="ghost"
+          variant="subtle"
           onClick={() => navigate('/enhanced-onboarding')}
-          className="mb-4"
+          mb="md"
+          leftSection={<ArrowLeft size={16} />}
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Onboarding
         </Button>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-500" />
-              Set Up Payout Method
-            </CardTitle>
-            <p className="text-sm text-gray-600">
-              Choose how you'd like to receive your earnings
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <RadioGroup value={payoutMethod} onValueChange={(value: any) => setPayoutMethod(value)}>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2 border rounded-lg p-4">
-                  <RadioGroupItem value="cashapp" id="cashapp" />
-                  <Label htmlFor="cashapp" className="flex-1 cursor-pointer">
-                    <div className="font-medium">Cash App</div>
-                    <div className="text-sm text-gray-500">Fast and easy payouts</div>
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2 border rounded-lg p-4">
-                  <RadioGroupItem value="direct_deposit" id="direct_deposit" />
-                  <Label htmlFor="direct_deposit" className="flex-1 cursor-pointer">
-                    <div className="font-medium">Direct Deposit</div>
-                    <div className="text-sm text-gray-500">Direct to your bank account</div>
-                  </Label>
-                </div>
-              </div>
-            </RadioGroup>
+          <Stack gap="lg" p="lg">
+            <div>
+              <Group gap="xs" mb="xs">
+                <DollarSign size={20} style={{ color: '#22c55e' }} />
+                <Text fw={600} size="lg">Set Up Payout Method</Text>
+              </Group>
+              <Text size="sm" c="dimmed">
+                Choose how you'd like to receive your earnings
+              </Text>
+            </div>
+            <Radio.Group
+              value={payoutMethod}
+              onChange={(value) => setPayoutMethod(value as 'direct_deposit' | 'cashapp')}
+            >
+              <Stack gap="md">
+                <Card withBorder p="md" style={{ cursor: 'pointer' }} onClick={() => setPayoutMethod('cashapp')}>
+                  <Group>
+                    <Radio value="cashapp" />
+                    <div style={{ flex: 1 }}>
+                      <Text fw={500}>Cash App</Text>
+                      <Text size="sm" c="dimmed">Fast and easy payouts</Text>
+                    </div>
+                  </Group>
+                </Card>
+                <Card withBorder p="md" style={{ cursor: 'pointer' }} onClick={() => setPayoutMethod('direct_deposit')}>
+                  <Group>
+                    <Radio value="direct_deposit" />
+                    <div style={{ flex: 1 }}>
+                      <Text fw={500}>Direct Deposit</Text>
+                      <Text size="sm" c="dimmed">Direct to your bank account</Text>
+                    </div>
+                  </Group>
+                </Card>
+              </Stack>
+            </Radio.Group>
 
             {payoutMethod === 'cashapp' && (
-              <div className="space-y-2">
-                <Label htmlFor="cashTag">Cash App Tag</Label>
-                <Input
-                  id="cashTag"
-                  placeholder="$yourcashtag"
-                  value={payoutData.cashTag}
-                  onChange={(e) => setPayoutData({ ...payoutData, cashTag: e.target.value })}
-                />
-                <p className="text-xs text-gray-500">
-                  Enter your Cash App tag (e.g., $johndoe)
-                </p>
-              </div>
+              <TextInput
+                label="Cash App Tag"
+                placeholder="$yourcashtag"
+                value={payoutData.cashTag}
+                onChange={(e) => setPayoutData({ ...payoutData, cashTag: e.target.value })}
+                description="Enter your Cash App tag (e.g., $johndoe)"
+              />
             )}
 
             {payoutMethod === 'direct_deposit' && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Account Type</Label>
-                  <RadioGroup 
-                    value={payoutData.bankAccountType} 
-                    onValueChange={(value: any) => setPayoutData({ ...payoutData, bankAccountType: value })}
+              <Stack gap="md">
+                <div>
+                  <Text size="sm" fw={500} mb="xs">Account Type</Text>
+                  <Radio.Group
+                    value={payoutData.bankAccountType}
+                    onChange={(value) => setPayoutData({ ...payoutData, bankAccountType: value as 'checking' | 'savings' })}
                   >
-                    <div className="flex gap-4">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="checking" id="checking" />
-                        <Label htmlFor="checking">Checking</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="savings" id="savings" />
-                        <Label htmlFor="savings">Savings</Label>
-                      </div>
-                    </div>
-                  </RadioGroup>
+                    <Group gap="lg">
+                      <Radio value="checking" label="Checking" />
+                      <Radio value="savings" label="Savings" />
+                    </Group>
+                  </Radio.Group>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="routingNumber">Routing Number</Label>
-                  <Input
-                    id="routingNumber"
-                    placeholder="9 digits"
-                    value={payoutData.routingNumber}
-                    onChange={(e) => setPayoutData({ ...payoutData, routingNumber: e.target.value })}
-                    maxLength={9}
-                  />
-                </div>
+                <TextInput
+                  label="Routing Number"
+                  placeholder="9 digits"
+                  value={payoutData.routingNumber}
+                  onChange={(e) => setPayoutData({ ...payoutData, routingNumber: e.target.value })}
+                  maxLength={9}
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="accountNumber">Account Number</Label>
-                  <Input
-                    id="accountNumber"
-                    placeholder="Your account number"
-                    value={payoutData.accountNumber}
-                    onChange={(e) => setPayoutData({ ...payoutData, accountNumber: e.target.value })}
-                  />
-                </div>
-              </div>
+                <TextInput
+                  label="Account Number"
+                  placeholder="Your account number"
+                  value={payoutData.accountNumber}
+                  onChange={(e) => setPayoutData({ ...payoutData, accountNumber: e.target.value })}
+                />
+              </Stack>
             )}
 
             <Button
               onClick={handleSave}
               disabled={loading}
-              className="w-full bg-orange-500 hover:bg-orange-600"
+              fullWidth
+              color="#ff7a00"
             >
               {loading ? 'Saving...' : 'Save & Complete Task'}
             </Button>
-          </CardContent>
+          </Stack>
         </Card>
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 };

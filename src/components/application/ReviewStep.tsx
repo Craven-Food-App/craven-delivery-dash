@@ -1,11 +1,7 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button, TextInput, Card, Stack, Alert, Group, Text, Box, Loader } from "@mantine/core";
 import { ApplicationData, ApplicationFiles } from "@/types/application";
 import { CheckCircle, Edit, Loader2, AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { validatePassword } from "@/utils/applicationValidation";
 
 interface ReviewStepProps {
@@ -45,44 +41,37 @@ export const ReviewStep = ({ data, files, existingUser, onBack, onEdit, onSubmit
 
   const InfoSection = ({ title, step, items }: { title: string; step: number; items: { label: string; value: string }[] }) => (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-3">
-        <CardTitle className="text-lg">{title}</CardTitle>
-        <Button variant="ghost" size="sm" onClick={() => onEdit(step)}>
-          <Edit className="h-4 w-4 mr-1" />
+      <Group justify="space-between" mb="md">
+        <Text fw={600} size="lg">{title}</Text>
+        <Button variant="subtle" size="sm" onClick={() => onEdit(step)} leftSection={<Edit size={16} />}>
           Edit
         </Button>
-      </CardHeader>
-      <CardContent className="space-y-2">
+      </Group>
+      <Stack gap="xs">
         {items.map((item, idx) => (
-          <div key={idx} className="flex justify-between text-sm">
-            <span className="text-muted-foreground">{item.label}:</span>
-            <span className="font-medium">{item.value}</span>
-          </div>
+          <Group justify="space-between" key={idx}>
+            <Text size="sm" c="dimmed">{item.label}:</Text>
+            <Text size="sm" fw={500}>{item.value}</Text>
+          </Group>
         ))}
-      </CardContent>
+      </Stack>
     </Card>
   );
 
   return (
-    <div className="space-y-6">
+    <Stack gap="lg">
       <div>
-        <h2 className="text-2xl font-bold mb-2">Review & Submit</h2>
-        <p className="text-muted-foreground">Please review your information before submitting</p>
+        <Text fw={700} size="xl" mb="xs">Review & Submit</Text>
+        <Text c="dimmed">Please review your information before submitting</Text>
       </div>
 
       {existingUser ? (
-        <Alert>
-          <CheckCircle className="h-4 w-4" />
-          <AlertDescription>
-            You're already signed in as {existingUser.email}. Your application will be linked to this account.
-          </AlertDescription>
+        <Alert icon={<CheckCircle size={16} />} color="green">
+          You're already signed in as {existingUser.email}. Your application will be linked to this account.
         </Alert>
       ) : (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Create a password for your new account. You'll use this to sign in after your application is approved.
-          </AlertDescription>
+        <Alert icon={<AlertCircle size={16} />} color="blue">
+          Create a password for your new account. You'll use this to sign in after your application is approved.
         </Alert>
       )}
 
@@ -142,79 +131,65 @@ export const ReviewStep = ({ data, files, existingUser, onBack, onEdit, onSubmit
       />
 
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Documents</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
+        <Text fw={600} size="lg" mb="md">Documents</Text>
+        <Stack gap="xs">
           {Object.entries(files).map(([key, file]) => file && (
-            <div key={key} className="flex items-center gap-2 text-sm">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <span>{file.name}</span>
-            </div>
+            <Group key={key} gap="xs">
+              <CheckCircle size={16} style={{ color: '#22c55e' }} />
+              <Text size="sm">{file.name}</Text>
+            </Group>
           ))}
-        </CardContent>
+        </Stack>
       </Card>
 
       {!existingUser && (
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Create Password</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="password">Password *</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Minimum 6 characters"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password *</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Re-enter password"
-              />
-              {password && confirmPassword && password !== confirmPassword && (
-                <p className="text-sm text-destructive">Passwords do not match</p>
-              )}
-            </div>
-          </CardContent>
+          <Text fw={600} size="lg" mb="md">Create Password</Text>
+          <Stack gap="md">
+            <TextInput
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Minimum 6 characters"
+              required
+              withAsterisk
+            />
+            <TextInput
+              label="Confirm Password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Re-enter password"
+              required
+              withAsterisk
+              error={password && confirmPassword && password !== confirmPassword ? "Passwords do not match" : undefined}
+            />
+          </Stack>
         </Card>
       )}
 
       {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
+        <Alert icon={<AlertCircle size={16} />} color="red">
+          {error}
         </Alert>
       )}
 
-      <div className="flex gap-3">
-        <Button variant="outline" onClick={onBack} disabled={isSubmitting} className="w-full" size="lg">
+      <Group gap="md" mt="md">
+        <Button variant="outline" onClick={onBack} disabled={isSubmitting} style={{ flex: 1 }} size="lg">
           Back
         </Button>
         <Button 
           onClick={handleSubmit} 
           disabled={isSubmitting || (!existingUser && !passwordValidation.isValid)} 
-          className="w-full" 
+          style={{ flex: 1 }} 
           size="lg"
+          color="#ff7a00"
+          leftSection={isSubmitting ? <Loader size={16} /> : undefined}
         >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Submitting...
-            </>
-          ) : (
-            'Submit Application'
-          )}
+          {isSubmitting ? 'Submitting...' : 'Submit Application'}
         </Button>
-      </div>
-    </div>
+      </Group>
+    </Stack>
   );
 };

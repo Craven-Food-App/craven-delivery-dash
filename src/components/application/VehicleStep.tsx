@@ -1,11 +1,6 @@
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TextInput, Button, Select, Card, Stack, Grid, Text, Group, Box } from "@mantine/core";
 import { Car, Bike, Footprints } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { ApplicationStepProps, US_STATES } from "@/types/application";
-import { Card, CardContent } from "@/components/ui/card";
 
 const VEHICLE_TYPES = [
   { value: 'car', label: 'Car', icon: Car },
@@ -19,145 +14,155 @@ export const VehicleStep = ({ data, onUpdate, onNext, onBack, isValid }: Applica
   minDate.setDate(minDate.getDate() + 1); // License must be valid tomorrow at minimum
 
   return (
-    <div className="space-y-6">
+    <Stack gap="lg">
       <div>
-        <h2 className="text-2xl font-bold mb-2">Vehicle & License</h2>
-        <p className="text-muted-foreground">How will you make deliveries?</p>
+        <Text fw={700} size="xl" mb="xs">Vehicle & License</Text>
+        <Text c="dimmed">How will you make deliveries?</Text>
       </div>
 
-      <div className="space-y-3">
-        <Label>Vehicle Type *</Label>
-        <div className="grid gap-3 md:grid-cols-3">
+      <div>
+        <Text size="sm" fw={500} mb="xs">Vehicle Type *</Text>
+        <Grid gutter="md">
           {VEHICLE_TYPES.map((type) => {
             const Icon = type.icon;
+            const isSelected = data.vehicleType === type.value;
             return (
-              <Card
-                key={type.value}
-                className={cn(
-                  "cursor-pointer transition-all hover:border-primary",
-                  data.vehicleType === type.value && "border-primary bg-primary/5"
-                )}
-                onClick={() => onUpdate('vehicleType', type.value)}
-              >
-                <CardContent className="flex flex-col items-center justify-center p-6 text-center">
-                  <Icon className={cn(
-                    "h-8 w-8 mb-2",
-                    data.vehicleType === type.value ? "text-primary" : "text-muted-foreground"
-                  )} />
-                  <span className="font-medium">{type.label}</span>
-                </CardContent>
-              </Card>
+              <Grid.Col key={type.value} span={{ base: 12, md: 4 }}>
+                <Card
+                  withBorder
+                  style={{
+                    cursor: 'pointer',
+                    borderColor: isSelected ? '#ff7a00' : undefined,
+                    backgroundColor: isSelected ? 'rgba(255, 122, 0, 0.05)' : undefined,
+                  }}
+                  onClick={() => onUpdate('vehicleType', type.value)}
+                >
+                  <Stack align="center" gap="sm" p="md">
+                    <Icon 
+                      size={32} 
+                      style={{ 
+                        color: isSelected ? '#ff7a00' : 'var(--mantine-color-gray-6)' 
+                      }} 
+                    />
+                    <Text fw={500}>{type.label}</Text>
+                  </Stack>
+                </Card>
+              </Grid.Col>
             );
           })}
-        </div>
+        </Grid>
       </div>
 
       {needsVehicleInfo && (
-        <div className="space-y-4 p-4 border rounded-lg bg-muted/20">
-          <p className="text-sm font-medium">Vehicle Information</p>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="vehicleMake">Make *</Label>
-              <Input
-                id="vehicleMake"
-                value={data.vehicleMake}
-                onChange={(e) => onUpdate('vehicleMake', e.target.value)}
-                placeholder="Toyota"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="vehicleModel">Model *</Label>
-              <Input
-                id="vehicleModel"
-                value={data.vehicleModel}
-                onChange={(e) => onUpdate('vehicleModel', e.target.value)}
-                placeholder="Camry"
-              />
-            </div>
-          </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="vehicleYear">Year *</Label>
-              <Input
-                id="vehicleYear"
-                value={data.vehicleYear}
-                onChange={(e) => onUpdate('vehicleYear', e.target.value)}
-                placeholder="2020"
-                maxLength={4}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="vehicleColor">Color *</Label>
-              <Input
-                id="vehicleColor"
-                value={data.vehicleColor}
-                onChange={(e) => onUpdate('vehicleColor', e.target.value)}
-                placeholder="Silver"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="licensePlate">License Plate *</Label>
-              <Input
-                id="licensePlate"
-                value={data.licensePlate}
-                onChange={(e) => onUpdate('licensePlate', e.target.value.toUpperCase())}
-                placeholder="ABC123"
-              />
-            </div>
-          </div>
-        </div>
+        <Box p="md" style={{ border: '1px solid var(--mantine-color-gray-3)', borderRadius: '8px', backgroundColor: 'var(--mantine-color-gray-0)' }}>
+          <Stack gap="md">
+            <Text size="sm" fw={500}>Vehicle Information</Text>
+            <Grid gutter="md">
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <TextInput
+                  label="Make"
+                  placeholder="Toyota"
+                  value={data.vehicleMake}
+                  onChange={(e) => onUpdate('vehicleMake', e.target.value)}
+                  required
+                  withAsterisk
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <TextInput
+                  label="Model"
+                  placeholder="Camry"
+                  value={data.vehicleModel}
+                  onChange={(e) => onUpdate('vehicleModel', e.target.value)}
+                  required
+                  withAsterisk
+                />
+              </Grid.Col>
+            </Grid>
+            <Grid gutter="md">
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <TextInput
+                  label="Year"
+                  placeholder="2020"
+                  value={data.vehicleYear}
+                  onChange={(e) => onUpdate('vehicleYear', e.target.value)}
+                  maxLength={4}
+                  required
+                  withAsterisk
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <TextInput
+                  label="Color"
+                  placeholder="Silver"
+                  value={data.vehicleColor}
+                  onChange={(e) => onUpdate('vehicleColor', e.target.value)}
+                  required
+                  withAsterisk
+                />
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <TextInput
+                  label="License Plate"
+                  placeholder="ABC123"
+                  value={data.licensePlate}
+                  onChange={(e) => onUpdate('licensePlate', e.target.value.toUpperCase())}
+                  required
+                  withAsterisk
+                />
+              </Grid.Col>
+            </Grid>
+          </Stack>
+        </Box>
       )}
 
-      <div className="space-y-4 p-4 border rounded-lg">
-        <p className="text-sm font-medium">Driver's License Information</p>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="licenseNumber">License Number *</Label>
-            <Input
-              id="licenseNumber"
-              value={data.licenseNumber}
-              onChange={(e) => onUpdate('licenseNumber', e.target.value)}
-              placeholder="D1234567"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="licenseState">License State *</Label>
-            <Select value={data.licenseState} onValueChange={(value) => onUpdate('licenseState', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select state" />
-              </SelectTrigger>
-              <SelectContent>
-                {US_STATES.map((state) => (
-                  <SelectItem key={state} value={state}>
-                    {state}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="licenseExpiry">Expiration Date *</Label>
-          <Input
-            id="licenseExpiry"
+      <Box p="md" withBorder style={{ borderRadius: '8px' }}>
+        <Stack gap="md">
+          <Text size="sm" fw={500}>Driver's License Information</Text>
+          <Grid gutter="md">
+            <Grid.Col span={{ base: 12, md: 6 }}>
+              <TextInput
+                label="License Number"
+                placeholder="D1234567"
+                value={data.licenseNumber}
+                onChange={(e) => onUpdate('licenseNumber', e.target.value)}
+                required
+                withAsterisk
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, md: 6 }}>
+              <Select
+                label="License State"
+                placeholder="Select state"
+                value={data.licenseState}
+                onChange={(value) => onUpdate('licenseState', value || '')}
+                data={US_STATES}
+                required
+                withAsterisk
+                searchable
+              />
+            </Grid.Col>
+          </Grid>
+          <TextInput
+            label="Expiration Date"
             type="date"
             value={data.licenseExpiry || ''}
             onChange={(e) => onUpdate('licenseExpiry', e.target.value)}
             min={minDate.toISOString().split('T')[0]}
             required
-            className="w-full"
+            withAsterisk
           />
-        </div>
-      </div>
+        </Stack>
+      </Box>
 
-      <div className="flex gap-3">
-        <Button variant="outline" onClick={onBack} className="w-full" size="lg">
+      <Group gap="md" mt="md">
+        <Button variant="outline" onClick={onBack} style={{ flex: 1 }} size="lg">
           Back
         </Button>
-        <Button onClick={onNext} disabled={!isValid} className="w-full" size="lg">
+        <Button onClick={onNext} disabled={!isValid} style={{ flex: 1 }} size="lg" color="#ff7a00">
           Continue
         </Button>
-      </div>
-    </div>
+      </Group>
+    </Stack>
   );
 };

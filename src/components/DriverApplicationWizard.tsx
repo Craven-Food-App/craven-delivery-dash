@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { X, CheckCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Button, Card, Progress, Stepper, Stack, Group, Text, Box, Loader, Center } from "@mantine/core";
 import { useApplicationState } from "@/hooks/useApplicationState";
 import { validateStep } from "@/utils/applicationValidation";
 import { useToast } from "@/hooks/use-toast";
@@ -54,11 +52,27 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
-        <Card className="w-full max-w-md p-8 text-center">
-          <p className="text-muted-foreground">Loading your application...</p>
+      <Box
+        style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 50,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Card p="xl" style={{ maxWidth: 448, width: '100%' }}>
+          <Center>
+            <Stack align="center" gap="md">
+              <Loader size="md" />
+              <Text c="dimmed">Loading your application...</Text>
+            </Stack>
+          </Center>
         </Card>
-      </div>
+      </Box>
     );
   }
 
@@ -297,75 +311,74 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
 
   return (
     <>
-      <div className="fixed inset-0 bg-background z-50 overflow-y-auto">
+      <Box
+        style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'var(--mantine-color-body)',
+          zIndex: 50,
+          overflowY: 'auto',
+        }}
+      >
         {/* Header */}
-        <div className="bg-primary text-primary-foreground py-4">
-          <div className="w-full max-w-4xl mx-auto px-4 flex items-center justify-between">
-            <h1 className="text-xl font-bold">Crave'N Driver Application</h1>
+        <Box
+          style={{
+            backgroundColor: '#ff7a00',
+            color: 'white',
+            padding: '16px 0',
+          }}
+        >
+          <Group justify="space-between" style={{ maxWidth: 896, margin: '0 auto', padding: '0 16px' }}>
+            <Text fw={700} size="xl">Crave'N Driver Application</Text>
             <Button
-              variant="ghost"
+              variant="subtle"
               size="sm"
-              className="text-primary-foreground hover:bg-primary-foreground/20"
+              color="white"
               onClick={onClose}
+              leftSection={<X size={16} />}
             >
-              <X className="h-4 w-4 mr-2" />
               Close
             </Button>
-          </div>
-        </div>
+          </Group>
+        </Box>
         
-        <div className="w-full max-w-4xl mx-auto p-4 pb-8">
-          <Card className="w-full relative">
-
-          {/* Progress header */}
-          <div className="p-6 border-b">
-            <div className="mb-4">
-              <h1 className="text-2xl font-bold text-primary">Feeder Application</h1>
-              <p className="text-sm text-muted-foreground">Step {currentStep} of {STEPS.length}</p>
-            </div>
-            
-            <Progress value={progress} className="h-2" />
-            
-            {/* Step indicators */}
-            <div className="flex justify-between mt-4">
-              {STEPS.map((step) => (
-                <div
-                  key={step.number}
-                  className="flex flex-col items-center gap-1 flex-1"
-                >
-                  <div
-                    className={`
-                      w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
-                      transition-all duration-200
-                      ${step.number < currentStep
-                        ? 'bg-green-500 text-white'
-                        : step.number === currentStep
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground'
-                      }
-                    `}
-                  >
-                    {step.number < currentStep ? (
-                      <CheckCircle className="h-4 w-4" />
-                    ) : (
-                      step.number
-                    )}
-                  </div>
-                  <span className="text-xs text-center hidden sm:block">
-                    {step.title}
-                  </span>
+        <Box style={{ maxWidth: 896, margin: '0 auto', padding: '16px', paddingBottom: '32px' }}>
+          <Card p={0} style={{ width: '100%' }}>
+            {/* Progress header */}
+            <Box p="xl" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}>
+              <Stack gap="md">
+                <div>
+                  <Text fw={700} size="xl" c="#ff7a00">Feeder Application</Text>
+                  <Text size="sm" c="dimmed">Step {currentStep} of {STEPS.length}</Text>
                 </div>
-              ))}
-            </div>
-          </div>
+                
+                <Progress value={progress} size="sm" color="#ff7a00" />
+                
+                {/* Step indicators */}
+                <Stepper
+                  active={currentStep - 1}
+                  breakpoint="sm"
+                  mt="md"
+                >
+                  {STEPS.map((step, index) => (
+                    <Stepper.Step
+                      key={step.number}
+                      label={step.title}
+                      description={index < currentStep - 1 ? 'Completed' : index === currentStep - 1 ? 'Current' : 'Upcoming'}
+                      icon={step.number < currentStep ? <CheckCircle size={16} /> : step.number}
+                    />
+                  ))}
+                </Stepper>
+              </Stack>
+            </Box>
 
-          {/* Step content */}
-          <div className="p-6">
-            {renderStep()}
-          </div>
-        </Card>
-        </div>
-      </div>
+            {/* Step content */}
+            <Box p="xl">
+              {renderStep()}
+            </Box>
+          </Card>
+        </Box>
+      </Box>
     
       {/* Waitlist Success Modal (appears on top of wizard) */}
       {showWaitlistModal && waitlistData && (

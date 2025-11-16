@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
+import { Card, Button, Progress, Badge, Grid, Stack, Group, Text, Box, Center, Loader } from '@mantine/core';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -271,48 +268,65 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your progress...</p>
-        </div>
-      </div>
+      <Box style={{ minHeight: '100vh', backgroundColor: 'var(--mantine-color-gray-0)' }}>
+        <Center style={{ height: '100vh' }}>
+          <Stack align="center" gap="md">
+            <Loader size="lg" color="#ff7a00" />
+            <Text c="dimmed">Loading your progress...</Text>
+          </Stack>
+        </Center>
+      </Box>
     );
   }
 
   if (isActivated) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-8 text-center">
-            <div className="bg-green-500 rounded-full p-6 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
-              <CheckCircle className="h-12 w-12 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold text-green-900 mb-2">
-              You're Activated! 🎉
-            </h2>
-            <p className="text-gray-600 mb-4">
-              Congratulations! Your region is open and you're ready to deliver.
-            </p>
-            <p className="text-sm text-gray-500 mb-4">
-              Redirecting to your driver dashboard...
-            </p>
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto"></div>
-          </CardContent>
-        </Card>
-      </div>
+      <Box style={{ minHeight: '100vh', backgroundColor: 'var(--mantine-color-gray-0)' }}>
+        <Center style={{ height: '100vh' }}>
+          <Card p="xl" style={{ maxWidth: 448, width: '100%' }}>
+            <Stack align="center" gap="lg">
+              <Box
+                style={{
+                  backgroundColor: '#22c55e',
+                  borderRadius: '50%',
+                  padding: 24,
+                  width: 96,
+                  height: 96,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <CheckCircle size={48} style={{ color: 'white' }} />
+              </Box>
+              <Text fw={700} size="xl" c="#15803d">
+                You're Activated! 🎉
+              </Text>
+              <Text c="dimmed" ta="center">
+                Congratulations! Your region is open and you're ready to deliver.
+              </Text>
+              <Text size="sm" c="dimmed" ta="center">
+                Redirecting to your driver dashboard...
+              </Text>
+              <Loader size="sm" color="#22c55e" />
+            </Stack>
+          </Card>
+        </Center>
+      </Box>
     );
   }
 
   if (!progress) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-8 text-center">
-            <p className="text-gray-600">No application found. Please complete your driver application first.</p>
-          </CardContent>
-        </Card>
-      </div>
+      <Box style={{ minHeight: '100vh', backgroundColor: 'var(--mantine-color-gray-0)' }}>
+        <Center style={{ height: '100vh' }}>
+          <Card p="xl" style={{ maxWidth: 448, width: '100%' }}>
+            <Text c="dimmed" ta="center">
+              No application found. Please complete your driver application first.
+            </Text>
+          </Card>
+        </Center>
+      </Box>
     );
   }
 
@@ -334,7 +348,7 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
           <Button
             size="sm"
             onClick={() => navigate('/enhanced-onboarding/profile')}
-            className="bg-orange-500 hover:bg-orange-600"
+            color="#ff7a00"
           >
             Start Task
           </Button>
@@ -344,7 +358,7 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
           <Button
             size="sm"
             onClick={() => navigate('/enhanced-onboarding/vehicle-photos')}
-            className="bg-orange-500 hover:bg-orange-600"
+            color="#ff7a00"
           >
             Upload Photos
           </Button>
@@ -354,7 +368,7 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
           <Button
             size="sm"
             onClick={() => navigate('/enhanced-onboarding/payout')}
-            className="bg-orange-500 hover:bg-orange-600"
+            color="#ff7a00"
           >
             Set Up Payout
           </Button>
@@ -364,7 +378,7 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
           <Button
             size="sm"
             onClick={() => navigate('/enhanced-onboarding/safety-quiz')}
-            className="bg-blue-500 hover:bg-blue-600"
+            color="blue"
           >
             Take Quiz
           </Button>
@@ -372,7 +386,7 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
       case 'upload_documents':
         // Auto-completed if documents were uploaded during application
         return (
-          <Badge variant="outline" className="text-green-600 border-green-200">
+          <Badge variant="outline" color="green">
             Auto-Checking...
           </Badge>
         );
@@ -381,7 +395,7 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
           <Button
             size="sm"
             onClick={getReferralLink}
-            className="bg-purple-500 hover:bg-purple-600"
+            color="violet"
           >
             Get Referral Link
           </Button>
@@ -394,7 +408,7 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
             size="sm"
             onClick={() => completeTask(task.id, task.task_key)}
             disabled={isLoading}
-            className="bg-green-500 hover:bg-green-600"
+            color="green"
           >
             {isLoading ? 'Processing...' : "I've Done This"}
           </Button>
@@ -414,286 +428,340 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome to Crave'n, {application.first_name}! 🚗
-          </h1>
-          <p className="text-gray-600">
-            Complete your onboarding to move up in the queue and start earning sooner!
-          </p>
-        </div>
+    <Box style={{ minHeight: '100vh', backgroundColor: 'var(--mantine-color-gray-0)' }}>
+      <Box style={{ maxWidth: 896, margin: '0 auto', padding: 24 }}>
+        <Stack gap="lg">
+          {/* Header */}
+          <Box ta="center" mb="xl">
+            <Text fw={700} size="2xl" mb="xs">
+              Welcome to Crave'n, {application.first_name}! 🚗
+            </Text>
+            <Text c="dimmed">
+              Complete your onboarding to move up in the queue and start earning sooner!
+            </Text>
+          </Box>
 
-        {/* Status Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Queue Position */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Queue Position</p>
-                  <p className="text-2xl font-bold text-orange-600">
-                    #{queuePosition?.queue_position || 'N/A'}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    of {queuePosition?.total_in_region || 0} in {queuePosition?.region_name || 'your region'}
-                  </p>
-                </div>
-                <Users className="h-8 w-8 text-orange-500" />
-              </div>
-            </CardContent>
-          </Card>
+          {/* Status Cards */}
+          <Grid gutter="md" mb="xl">
+            {/* Queue Position */}
+            <Grid.Col span={{ base: 12, md: 4 }}>
+              <Card p="lg">
+                <Group justify="space-between">
+                  <div>
+                    <Text size="sm" c="dimmed" fw={500}>Queue Position</Text>
+                    <Text fw={700} size="xl" c="#ff7a00">
+                      #{queuePosition?.queue_position || 'N/A'}
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      of {queuePosition?.total_in_region || 0} in {queuePosition?.region_name || 'your region'}
+                    </Text>
+                  </div>
+                  <Users size={32} style={{ color: '#ff7a00' }} />
+                </Group>
+              </Card>
+            </Grid.Col>
 
-          {/* Points */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Points</p>
-                  <p className="text-2xl font-bold text-green-600">{totalPoints}</p>
-                  <p className="text-xs text-gray-500">Earn more to move up!</p>
-                </div>
-                <Star className="h-8 w-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
+            {/* Points */}
+            <Grid.Col span={{ base: 12, md: 4 }}>
+              <Card p="lg">
+                <Group justify="space-between">
+                  <div>
+                    <Text size="sm" c="dimmed" fw={500}>Total Points</Text>
+                    <Text fw={700} size="xl" c="#22c55e">{totalPoints}</Text>
+                    <Text size="xs" c="dimmed">Earn more to move up!</Text>
+                  </div>
+                  <Star size={32} style={{ color: '#22c55e' }} />
+                </Group>
+              </Card>
+            </Grid.Col>
 
-          {/* Progress */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Onboarding Progress</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {completedTasks}/{totalTasks}
-                  </p>
-                  <p className="text-xs text-gray-500">Tasks completed</p>
-                </div>
-                <Target className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            {/* Progress */}
+            <Grid.Col span={{ base: 12, md: 4 }}>
+              <Card p="lg">
+                <Group justify="space-between">
+                  <div>
+                    <Text size="sm" c="dimmed" fw={500}>Onboarding Progress</Text>
+                    <Text fw={700} size="xl" c="blue">
+                      {completedTasks}/{totalTasks}
+                    </Text>
+                    <Text size="xs" c="dimmed">Tasks completed</Text>
+                  </div>
+                  <Target size={32} style={{ color: 'var(--mantine-color-blue-6)' }} />
+                </Group>
+              </Card>
+            </Grid.Col>
+          </Grid>
 
-        {/* Congratulations Message */}
-        {isOnboardingComplete && application.status === 'approved' && (
-          <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="bg-green-500 rounded-full p-3">
-                  <CheckCircle className="h-8 w-8 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-green-900 mb-2">
+          {/* Congratulations Message */}
+          {isOnboardingComplete && application.status === 'approved' && (
+            <Card p="lg" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', borderColor: '#22c55e' }}>
+              <Group align="flex-start" gap="md">
+                <Box
+                  style={{
+                    backgroundColor: '#22c55e',
+                    borderRadius: '50%',
+                    padding: 12,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <CheckCircle size={32} style={{ color: 'white' }} />
+                </Box>
+                <div style={{ flex: 1 }}>
+                  <Text fw={700} size="xl" c="#15803d" mb="xs">
                     🎉 You're Activated!
-                  </h3>
-                  <p className="text-green-800 mb-3">
+                  </Text>
+                  <Text c="#166534" mb="md">
                     Your region is open! You can now start accepting deliveries.
-                  </p>
+                  </Text>
                   <Button 
                     onClick={() => navigate('/mobile')}
-                    className="bg-green-600 hover:bg-green-700"
+                    color="green"
                   >
                     Go to Driver Dashboard →
                   </Button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        
-        {isOnboardingComplete && application.status !== 'approved' && (
-          <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="bg-green-500 rounded-full p-3">
-                  <CheckCircle className="h-8 w-8 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-green-900 mb-2">
+              </Group>
+            </Card>
+          )}
+          
+          {isOnboardingComplete && application.status !== 'approved' && (
+            <Card p="lg" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', borderColor: '#22c55e' }}>
+              <Group align="flex-start" gap="md">
+                <Box
+                  style={{
+                    backgroundColor: '#22c55e',
+                    borderRadius: '50%',
+                    padding: 12,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <CheckCircle size={32} style={{ color: 'white' }} />
+                </Box>
+                <div style={{ flex: 1 }}>
+                  <Text fw={700} size="xl" c="#15803d" mb="xs">
                     🎉 Congratulations! Onboarding Complete!
-                  </h3>
-                  <p className="text-green-800 mb-3">
-                    You've completed all onboarding tasks! You're now in position <span className="font-bold">#{queuePosition?.queue_position || 'N/A'}</span> in the waitlist for <span className="font-bold">{queuePosition?.region_name}</span>.
-                  </p>
-                  <p className="text-green-700 text-sm">
+                  </Text>
+                  <Text c="#166534" mb="xs">
+                    You've completed all onboarding tasks! You're now in position <Text component="span" fw={700}>#{queuePosition?.queue_position || 'N/A'}</Text> in the waitlist for <Text component="span" fw={700}>{queuePosition?.region_name}</Text>.
+                  </Text>
+                  <Text size="sm" c="#15803d">
                     ✉️ We'll email you when your region opens up and you're activated as a driver. Stay tuned!
-                  </p>
+                  </Text>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+              </Group>
+            </Card>
+          )}
 
-        {/* Progress Bar */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Onboarding Progress</h3>
-                <Badge variant="outline" className="text-orange-600 border-orange-200">
+          {/* Progress Bar */}
+          <Card p="lg">
+            <Stack gap="md">
+              <Group justify="space-between">
+                <Text fw={600} size="lg">Onboarding Progress</Text>
+                <Badge variant="outline" color="#ff7a00">
                   {Math.round(progressPercentage)}% Complete
                 </Badge>
-              </div>
-              <Progress value={progressPercentage} className="h-3" />
-              <p className="text-sm text-gray-600">
+              </Group>
+              <Progress value={progressPercentage} size="sm" color="#ff7a00" />
+              <Text size="sm" c="dimmed">
                 {isOnboardingComplete 
                   ? 'All tasks complete! You\'re in the waitlist queue.'
                   : 'Complete all tasks to maximize your priority score and move up in the queue!'
                 }
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Onboarding Tasks */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-500" />
-              Onboarding Tasks
-            </CardTitle>
-            <p className="text-sm text-gray-600">
-              Complete these tasks to earn points and improve your queue position
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {tasks.map((task) => (
-              <div
-                key={task.id}
-                className={`flex items-center justify-between p-4 rounded-lg border ${
-                  task.completed 
-                    ? 'bg-green-50 border-green-200' 
-                    : 'bg-gray-50 border-gray-200'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  {task.completed ? (
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <Clock className="h-5 w-5 text-gray-400" />
-                  )}
-                  <div>
-                    <h4 className="font-medium">{task.task_name}</h4>
-                    <p className="text-sm text-gray-600">{task.description}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="text-orange-600">
-                    +{task.points_reward} pts
-                  </Badge>
-                  {task.completed ? (
-                    <Badge variant="default" className="bg-green-500 flex items-center gap-1">
-                      <CheckCircle className="h-3 w-3" />
-                      Complete
-                    </Badge>
-                  ) : (
-                    getTaskActionButton(task)
-                  )}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Referral Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Gift className="h-5 w-5 text-purple-500" />
-              Refer Friends & Earn Bonus Points
-            </CardTitle>
-            <p className="text-sm text-gray-600">
-              Share your referral link to earn 50 bonus points for each friend who joins!
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <Button
-                onClick={getReferralLink}
-                className="bg-purple-500 hover:bg-purple-600"
-                size="lg"
-              >
-                <Share2 className="h-4 w-4 mr-2" />
-                Get Referral Link
-              </Button>
-              <div className="text-sm text-gray-600">
-                <p>• Earn 50 points per referral</p>
-                <p>• Move up in the queue faster</p>
-                <p>• Help friends join Crave'n!</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Region Status */}
-        {queuePosition && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-blue-500" />
-                Your Region Status
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium text-gray-900">{queuePosition.region_name}</h4>
-                  <p className="text-sm text-gray-600">
-                    You're #{queuePosition.queue_position} of {queuePosition.total_in_region} drivers
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">Priority Score</h4>
-                  <p className="text-sm text-gray-600">
-                    {application.priority_score || 0} points
-                  </p>
-                </div>
-              </div>
-            </CardContent>
+              </Text>
+            </Stack>
           </Card>
-        )}
 
-        {/* Next Steps */}
-        <Card>
-          <CardHeader>
-            <CardTitle>What's Next?</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
-                  <span className="text-xs font-bold text-orange-600">1</span>
-                </div>
-                <p className="text-sm">Complete all onboarding tasks to maximize your points</p>
+          {/* Onboarding Tasks */}
+          <Card>
+            <Stack gap="md" p="lg">
+              <div>
+                <Group gap="xs" mb="xs">
+                  <Trophy size={20} style={{ color: '#eab308' }} />
+                  <Text fw={600} size="lg">Onboarding Tasks</Text>
+                </Group>
+                <Text size="sm" c="dimmed">
+                  Complete these tasks to earn points and improve your queue position
+                </Text>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
-                  <span className="text-xs font-bold text-orange-600">2</span>
-                </div>
-                <p className="text-sm">Share your referral link to earn bonus points</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
-                  <span className="text-xs font-bold text-orange-600">3</span>
-                </div>
-                <p className="text-sm">Wait for activation when your region opens up</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                </div>
-                <p className="text-sm font-medium text-green-700">
-                  You'll receive an email when it's time to activate your account!
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              <Stack gap="md">
+                {tasks.map((task) => (
+                  <Box
+                    key={task.id}
+                    p="md"
+                    withBorder
+                    style={{
+                      backgroundColor: task.completed ? 'rgba(34, 197, 94, 0.1)' : 'var(--mantine-color-gray-0)',
+                      borderColor: task.completed ? '#22c55e' : 'var(--mantine-color-gray-3)',
+                      borderRadius: 8,
+                    }}
+                  >
+                    <Group justify="space-between">
+                      <Group gap="md">
+                        {task.completed ? (
+                          <CheckCircle size={20} style={{ color: '#22c55e' }} />
+                        ) : (
+                          <Clock size={20} style={{ color: 'var(--mantine-color-gray-6)' }} />
+                        )}
+                        <div>
+                          <Text fw={500}>{task.task_name}</Text>
+                          <Text size="sm" c="dimmed">{task.description}</Text>
+                        </div>
+                      </Group>
+                      <Group gap="md">
+                        <Badge variant="outline" color="#ff7a00">
+                          +{task.points_reward} pts
+                        </Badge>
+                        {task.completed ? (
+                          <Badge color="green" leftSection={<CheckCircle size={12} />}>
+                            Complete
+                          </Badge>
+                        ) : (
+                          getTaskActionButton(task)
+                        )}
+                      </Group>
+                    </Group>
+                  </Box>
+                ))}
+              </Stack>
+            </Stack>
+          </Card>
 
-    </div>
+          {/* Referral Section */}
+          <Card>
+            <Stack gap="md" p="lg">
+              <div>
+                <Group gap="xs" mb="xs">
+                  <Gift size={20} style={{ color: '#a855f7' }} />
+                  <Text fw={600} size="lg">Refer Friends & Earn Bonus Points</Text>
+                </Group>
+                <Text size="sm" c="dimmed">
+                  Share your referral link to earn 50 bonus points for each friend who joins!
+                </Text>
+              </div>
+              <Group gap="lg" align="flex-start">
+                <Button
+                  onClick={getReferralLink}
+                  color="violet"
+                  size="lg"
+                  leftSection={<Share2 size={16} />}
+                >
+                  Get Referral Link
+                </Button>
+                <Stack gap="xs">
+                  <Text size="sm" c="dimmed">• Earn 50 points per referral</Text>
+                  <Text size="sm" c="dimmed">• Move up in the queue faster</Text>
+                  <Text size="sm" c="dimmed">• Help friends join Crave'n!</Text>
+                </Stack>
+              </Group>
+            </Stack>
+          </Card>
+
+          {/* Region Status */}
+          {queuePosition && (
+            <Card>
+              <Stack gap="md" p="lg">
+                <Group gap="xs">
+                  <MapPin size={20} style={{ color: 'var(--mantine-color-blue-6)' }} />
+                  <Text fw={600} size="lg">Your Region Status</Text>
+                </Group>
+                <Grid gutter="md">
+                  <Grid.Col span={{ base: 12, md: 6 }}>
+                    <Text fw={500}>{queuePosition.region_name}</Text>
+                    <Text size="sm" c="dimmed">
+                      You're #{queuePosition.queue_position} of {queuePosition.total_in_region} drivers
+                    </Text>
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, md: 6 }}>
+                    <Text fw={500}>Priority Score</Text>
+                    <Text size="sm" c="dimmed">
+                      {application.priority_score || 0} points
+                    </Text>
+                  </Grid.Col>
+                </Grid>
+              </Stack>
+            </Card>
+          )}
+
+          {/* Next Steps */}
+          <Card>
+            <Stack gap="md" p="lg">
+              <Text fw={600} size="lg">What's Next?</Text>
+              <Stack gap="md">
+                <Group gap="md">
+                  <Box
+                    style={{
+                      width: 24,
+                      height: 24,
+                      backgroundColor: 'rgba(255, 122, 0, 0.1)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text size="xs" fw={700} c="#ff7a00">1</Text>
+                  </Box>
+                  <Text size="sm">Complete all onboarding tasks to maximize your points</Text>
+                </Group>
+                <Group gap="md">
+                  <Box
+                    style={{
+                      width: 24,
+                      height: 24,
+                      backgroundColor: 'rgba(255, 122, 0, 0.1)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text size="xs" fw={700} c="#ff7a00">2</Text>
+                  </Box>
+                  <Text size="sm">Share your referral link to earn bonus points</Text>
+                </Group>
+                <Group gap="md">
+                  <Box
+                    style={{
+                      width: 24,
+                      height: 24,
+                      backgroundColor: 'rgba(255, 122, 0, 0.1)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text size="xs" fw={700} c="#ff7a00">3</Text>
+                  </Box>
+                  <Text size="sm">Wait for activation when your region opens up</Text>
+                </Group>
+                <Group gap="md">
+                  <Box
+                    style={{
+                      width: 24,
+                      height: 24,
+                      backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <CheckCircle size={16} style={{ color: '#22c55e' }} />
+                  </Box>
+                  <Text size="sm" fw={500} c="#15803d">
+                    You'll receive an email when it's time to activate your account!
+                  </Text>
+                </Group>
+              </Stack>
+            </Stack>
+          </Card>
+        </Stack>
+      </Box>
+    </Box>
   );
 };

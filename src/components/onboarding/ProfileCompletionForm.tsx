@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Card, Button, TextInput, Stack, Grid, Text, Group, Box } from '@mantine/core';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Save } from 'lucide-react';
@@ -126,111 +123,98 @@ export const ProfileCompletionForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-2xl mx-auto">
+    <Box style={{ minHeight: '100vh', backgroundColor: 'var(--mantine-color-gray-0)', padding: 24 }}>
+      <Box style={{ maxWidth: 672, margin: '0 auto' }}>
         <Button
-          variant="ghost"
+          variant="subtle"
           onClick={() => navigate('/enhanced-onboarding')}
-          className="mb-4"
+          mb="md"
+          leftSection={<ArrowLeft size={16} />}
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Onboarding
         </Button>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Complete Your Profile</CardTitle>
-            <p className="text-sm text-gray-600">
-              Fill in your personal information to complete this task
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
+          <Stack gap="md" p="lg">
+            <div>
+              <Text fw={600} size="lg" mb="xs">Complete Your Profile</Text>
+              <Text size="sm" c="dimmed">
+                Fill in your personal information to complete this task
+              </Text>
+            </div>
+            <Grid gutter="md">
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <TextInput
+                  label="First Name"
                   value={profile.firstName}
                   onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <TextInput
+                  label="Last Name"
                   value={profile.lastName}
                   onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
                 />
-              </div>
-            </div>
+              </Grid.Col>
+            </Grid>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={profile.email}
-                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-              />
-            </div>
+            <TextInput
+              label="Email"
+              type="email"
+              value={profile.email}
+              onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={profile.phone}
-                onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-              />
-            </div>
+            <TextInput
+              label="Phone Number"
+              type="tel"
+              value={profile.phone}
+              onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="streetAddress">Street Address</Label>
-              <Input
-                id="streetAddress"
-                value={profile.streetAddress}
-                onChange={(e) => setProfile({ ...profile, streetAddress: e.target.value })}
-              />
-            </div>
+            <TextInput
+              label="Street Address"
+              value={profile.streetAddress}
+              onChange={(e) => setProfile({ ...profile, streetAddress: e.target.value })}
+            />
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
-                <Input
-                  id="city"
+            <Grid gutter="md">
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <TextInput
+                  label="City"
                   value={profile.city}
                   onChange={(e) => setProfile({ ...profile, city: e.target.value })}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="state">State</Label>
-                <Input
-                  id="state"
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <TextInput
+                  label="State"
                   value={profile.state}
                   onChange={(e) => setProfile({ ...profile, state: e.target.value })}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="zipCode">Zip Code</Label>
-                <Input
-                  id="zipCode"
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 4 }}>
+                <TextInput
+                  label="Zip Code"
                   value={profile.zipCode}
                   onChange={(e) => setProfile({ ...profile, zipCode: e.target.value })}
                 />
-              </div>
-            </div>
+              </Grid.Col>
+            </Grid>
 
             <Button
               onClick={handleSave}
               disabled={loading}
-              className="w-full bg-orange-500 hover:bg-orange-600"
+              fullWidth
+              color="#ff7a00"
+              leftSection={<Save size={16} />}
             >
-              <Save className="mr-2 h-4 w-4" />
               {loading ? 'Saving...' : 'Save & Complete Task'}
             </Button>
-          </CardContent>
+          </Stack>
         </Card>
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 };

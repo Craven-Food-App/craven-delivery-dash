@@ -1,6 +1,5 @@
 import { CheckCircle, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Modal, Button, Card, Stack, Text, Group, Box, List } from "@mantine/core";
 
 interface WaitlistSuccessModalProps {
   firstName: string;
@@ -22,86 +21,107 @@ export const WaitlistSuccessModal = ({
   const displayRegion = regionName || `${city}, ${state}`;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <Card className="max-w-lg w-full p-8 text-center space-y-6 animate-in fade-in zoom-in duration-300">
+    <Modal
+      opened={true}
+      onClose={onClose}
+      centered
+      size="lg"
+      title={null}
+      withCloseButton={false}
+      overlayProps={{
+        backgroundOpacity: 0.5,
+        blur: 4,
+      }}
+    >
+      <Stack gap="lg" align="center">
         {/* Animated Checkmark */}
-        <div className="mx-auto w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
-          <CheckCircle className="w-12 h-12 text-green-600 animate-in zoom-in duration-500" />
-        </div>
+        <Box
+          style={{
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <CheckCircle size={48} style={{ color: '#22c55e' }} />
+        </Box>
         
         {/* Headline */}
-        <div>
-          <h2 className="text-3xl font-bold text-foreground mb-2">
+        <div style={{ textAlign: 'center' }}>
+          <Text fw={700} size="2xl" mb="xs">
             You're on the List! 🎉
-          </h2>
-          <p className="text-lg text-muted-foreground">
+          </Text>
+          <Text size="lg" c="dimmed">
             Thanks for applying, {firstName}!
-          </p>
+          </Text>
         </div>
         
         {/* Body Text */}
-        <div className="bg-muted/50 rounded-lg p-6 text-left space-y-3">
-          <p className="text-sm text-foreground">
-            Your application has been received and <strong>you've been placed on our driver waitlist</strong> for <strong>{displayRegion}</strong>. We matched your region automatically based on the address you submitted.
-          </p>
-          
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-foreground">What happens next:</p>
-            <ul className="space-y-1 text-sm text-muted-foreground">
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                <span>We'll review your documents within 48 hours</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                <span>You'll receive an email confirmation shortly</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <Clock className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                <span>When routes open in {displayRegion}, we'll send you an invitation to complete your background check and start delivering</span>
-              </li>
-            </ul>
-          </div>
-          
-          <div className="bg-primary/10 border border-primary/20 rounded p-3 text-sm">
-            <p className="text-foreground">
-              <strong>Your Position:</strong> #{waitlistPosition} in {displayRegion}
-            </p>
-            <p className="text-muted-foreground text-xs mt-1">
-              Estimated wait time: 2-8 weeks (we're growing fast!)
-            </p>
-          </div>
-        </div>
+        <Card p="lg" style={{ backgroundColor: 'var(--mantine-color-gray-0)', width: '100%' }}>
+          <Stack gap="md" align="flex-start">
+            <Text size="sm">
+              Your application has been received and <Text component="span" fw={700}>you've been placed on our driver waitlist</Text> for <Text component="span" fw={700}>{displayRegion}</Text>. We matched your region automatically based on the address you submitted.
+            </Text>
+            
+            <div>
+              <Text size="sm" fw={500} mb="xs">What happens next:</Text>
+              <List spacing="xs" size="sm" c="dimmed">
+                <List.Item icon={<CheckCircle size={16} style={{ color: '#22c55e' }} />}>
+                  We'll review your documents within 48 hours
+                </List.Item>
+                <List.Item icon={<CheckCircle size={16} style={{ color: '#22c55e' }} />}>
+                  You'll receive an email confirmation shortly
+                </List.Item>
+                <List.Item icon={<Clock size={16} style={{ color: '#ff7a00' }} />}>
+                  When routes open in {displayRegion}, we'll send you an invitation to complete your background check and start delivering
+                </List.Item>
+              </List>
+            </div>
+            
+            <Card p="md" style={{ backgroundColor: 'rgba(255, 122, 0, 0.1)', borderColor: '#ff7a00', width: '100%' }}>
+              <Text size="sm" fw={500} mb="xs">
+                Your Position: #{waitlistPosition} in {displayRegion}
+              </Text>
+              <Text size="xs" c="dimmed">
+                Estimated wait time: 2-8 weeks (we're growing fast!)
+              </Text>
+            </Card>
+          </Stack>
+        </Card>
         
         {/* Contact Info */}
-        <p className="text-sm text-muted-foreground">
-          Questions? Email us at <a href="mailto:drivers@craven.com" className="text-primary hover:underline">drivers@craven.com</a> or text <span className="font-medium">(419) 555-CRAVE</span>
-        </p>
+        <Text size="sm" c="dimmed" ta="center">
+          Questions? Email us at <Text component="a" href="mailto:drivers@craven.com" c="#ff7a00" style={{ textDecoration: 'underline' }}>drivers@craven.com</Text> or text <Text component="span" fw={500}>(419) 555-CRAVE</Text>
+        </Text>
         
         {/* CTA Buttons */}
-        <div className="space-y-3">
+        <Stack gap="md" style={{ width: '100%' }}>
           <Button 
             size="lg" 
-            className="w-full"
+            fullWidth
             onClick={() => window.open('/', '_blank')}
+            color="#ff7a00"
           >
             Explore Crave'N
           </Button>
           <Button 
             variant="outline" 
             size="lg" 
-            className="w-full"
+            fullWidth
             onClick={onClose}
           >
             Close
           </Button>
-        </div>
+        </Stack>
         
         {/* Social Proof */}
-        <p className="text-xs text-muted-foreground">
+        <Text size="xs" c="dimmed" ta="center">
           Join 1,200+ drivers already on our waitlist across 15 cities
-        </p>
-      </Card>
-    </div>
+        </Text>
+      </Stack>
+    </Modal>
   );
 };

@@ -1,9 +1,6 @@
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Button, Text, Card, Stack, Alert, Group, FileButton } from "@mantine/core";
 import { ApplicationStepProps } from "@/types/application";
 import { Upload, CheckCircle, X } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface FileUploadFieldProps {
   label: string;
@@ -16,77 +13,77 @@ interface FileUploadFieldProps {
 
 const FileUploadField = ({ label, description, required, file, onUpload, onRemove }: FileUploadFieldProps) => {
   return (
-    <div className="space-y-2">
-      <Label>
-        {label} {required && <span className="text-destructive">*</span>}
-      </Label>
-      <p className="text-xs text-muted-foreground">{description}</p>
+    <Stack gap="xs">
+      <Text size="sm" fw={500}>
+        {label} {required && <Text component="span" c="red">*</Text>}
+      </Text>
+      <Text size="xs" c="dimmed">{description}</Text>
       {file ? (
-        <Card className="border-green-500/50 bg-green-50 dark:bg-green-950/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="text-sm font-medium">{file.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {(file.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
-                </div>
+        <Card p="md" style={{ borderColor: '#22c55e', backgroundColor: 'rgba(34, 197, 94, 0.1)' }}>
+          <Group justify="space-between">
+            <Group gap="md">
+              <CheckCircle size={20} style={{ color: '#22c55e' }} />
+              <div>
+                <Text size="sm" fw={500}>{file.name}</Text>
+                <Text size="xs" c="dimmed">
+                  {(file.size / 1024 / 1024).toFixed(2)} MB
+                </Text>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onRemove}
-                className="text-destructive hover:text-destructive"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
+            </Group>
+            <Button
+              variant="subtle"
+              size="sm"
+              color="red"
+              onClick={onRemove}
+              leftSection={<X size={16} />}
+            >
+              Remove
+            </Button>
+          </Group>
         </Card>
       ) : (
-        <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
-          <input
-            type="file"
-            accept="image/*,.pdf"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) onUpload(file);
-            }}
-            className="hidden"
-            id={`upload-${label.replace(/\s+/g, '-').toLowerCase()}`}
-          />
-          <label
-            htmlFor={`upload-${label.replace(/\s+/g, '-').toLowerCase()}`}
-            className="cursor-pointer flex flex-col items-center gap-2"
-          >
-            <div className="p-3 bg-primary/10 rounded-full">
-              <Upload className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-medium">Click to upload</p>
-              <p className="text-xs text-muted-foreground">PNG, JPG or PDF (max 10MB)</p>
-            </div>
-          </label>
-        </div>
+        <FileButton
+          onChange={(file) => file && onUpload(file)}
+          accept="image/*,.pdf"
+        >
+          {(props) => (
+            <Card
+              withBorder
+              p="xl"
+              style={{
+                borderStyle: 'dashed',
+                cursor: 'pointer',
+                textAlign: 'center',
+              }}
+              {...props}
+            >
+              <Stack align="center" gap="md">
+                <div style={{ padding: 12, backgroundColor: 'rgba(255, 122, 0, 0.1)', borderRadius: '50%' }}>
+                  <Upload size={24} style={{ color: '#ff7a00' }} />
+                </div>
+                <div>
+                  <Text size="sm" fw={500}>Click to upload</Text>
+                  <Text size="xs" c="dimmed">PNG, JPG or PDF (max 10MB)</Text>
+                </div>
+              </Stack>
+            </Card>
+          )}
+        </FileButton>
       )}
-    </div>
+    </Stack>
   );
 };
 
 export const DocumentsStep = ({ files, onFileUpload, onNext, onBack, isValid }: ApplicationStepProps) => {
   return (
-    <div className="space-y-6">
+    <Stack gap="lg">
       <div>
-        <h2 className="text-2xl font-bold mb-2">Upload Documents</h2>
-        <p className="text-muted-foreground">We need a few documents to verify your identity</p>
+        <Text fw={700} size="xl" mb="xs">Upload Documents</Text>
+        <Text c="dimmed">We need a few documents to verify your identity</Text>
       </div>
 
-      <Alert>
-        <AlertDescription>
-          All documents must be clear, unedited photos or scans. Make sure all text is readable.
-        </AlertDescription>
+      <Alert color="blue">
+        All documents must be clear, unedited photos or scans. Make sure all text is readable.
       </Alert>
 
       <FileUploadField
@@ -95,7 +92,7 @@ export const DocumentsStep = ({ files, onFileUpload, onNext, onBack, isValid }: 
         required
         file={files.driversLicenseFront}
         onUpload={(file) => onFileUpload('driversLicenseFront', file)}
-        onRemove={() => {}}
+        onRemove={() => onFileUpload('driversLicenseFront', undefined as any)}
       />
 
       <FileUploadField
@@ -104,7 +101,7 @@ export const DocumentsStep = ({ files, onFileUpload, onNext, onBack, isValid }: 
         required={false}
         file={files.driversLicenseBack}
         onUpload={(file) => onFileUpload('driversLicenseBack', file)}
-        onRemove={() => {}}
+        onRemove={() => onFileUpload('driversLicenseBack', undefined as any)}
       />
 
       <FileUploadField
@@ -113,7 +110,7 @@ export const DocumentsStep = ({ files, onFileUpload, onNext, onBack, isValid }: 
         required={false}
         file={files.insuranceDocument}
         onUpload={(file) => onFileUpload('insuranceDocument', file)}
-        onRemove={() => {}}
+        onRemove={() => onFileUpload('insuranceDocument', undefined as any)}
       />
 
       <FileUploadField
@@ -122,17 +119,17 @@ export const DocumentsStep = ({ files, onFileUpload, onNext, onBack, isValid }: 
         required={false}
         file={files.vehicleRegistration}
         onUpload={(file) => onFileUpload('vehicleRegistration', file)}
-        onRemove={() => {}}
+        onRemove={() => onFileUpload('vehicleRegistration', undefined as any)}
       />
 
-      <div className="flex gap-3">
-        <Button variant="outline" onClick={onBack} className="w-full" size="lg">
+      <Group gap="md" mt="md">
+        <Button variant="outline" onClick={onBack} style={{ flex: 1 }} size="lg">
           Back
         </Button>
-        <Button onClick={onNext} disabled={!isValid} className="w-full" size="lg">
+        <Button onClick={onNext} disabled={!isValid} style={{ flex: 1 }} size="lg" color="#ff7a00">
           Continue to Review
         </Button>
-      </div>
-    </div>
+      </Group>
+    </Stack>
   );
 };

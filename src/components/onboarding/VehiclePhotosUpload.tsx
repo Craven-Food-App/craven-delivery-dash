@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, Button, FileButton, Stack, Grid, Text, Group, Box, Image } from '@mantine/core';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Camera, Upload, CheckCircle } from 'lucide-react';
@@ -155,82 +154,105 @@ export const VehiclePhotosUpload: React.FC = () => {
 
   const PhotoCard = ({ side, label }: { side: 'front' | 'back' | 'left' | 'right', label: string }) => (
     <Card>
-      <CardContent className="p-4">
-        <div className="text-center space-y-3">
-          <div className="font-medium">{label}</div>
-          {photos[side] ? (
-            <div className="relative">
-              <img src={photos[side]!} alt={`${label} view`} className="w-full h-40 object-cover rounded-lg" />
-              <div className="absolute top-2 right-2 bg-green-500 rounded-full p-1">
-                <CheckCircle className="h-4 w-4 text-white" />
-              </div>
-            </div>
-          ) : (
-            <div className="h-40 bg-gray-100 rounded-lg flex items-center justify-center">
-              <Camera className="h-12 w-12 text-gray-400" />
-            </div>
-          )}
-          <input
-            ref={fileInputRefs[side]}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handlePhotoCapture(side, file);
+      <Stack gap="md" p="md" align="center">
+        <Text fw={500}>{label}</Text>
+        {photos[side] ? (
+          <Box style={{ position: 'relative', width: '100%' }}>
+            <Image src={photos[side]!} alt={`${label} view`} style={{ width: '100%', height: 160, objectFit: 'cover' }} radius="md" />
+            <Box
+              style={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                backgroundColor: '#22c55e',
+                borderRadius: '50%',
+                padding: 4,
+              }}
+            >
+              <CheckCircle size={16} style={{ color: 'white' }} />
+            </Box>
+          </Box>
+        ) : (
+          <Box
+            style={{
+              height: 160,
+              backgroundColor: 'var(--mantine-color-gray-1)',
+              borderRadius: 8,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '100%',
             }}
-          />
-          <Button
-            onClick={() => fileInputRefs[side].current?.click()}
-            variant="outline"
-            size="sm"
-            className="w-full"
           >
-            <Upload className="mr-2 h-4 w-4" />
-            {photos[side] ? 'Retake Photo' : 'Take Photo'}
-          </Button>
-        </div>
-      </CardContent>
+            <Camera size={48} style={{ color: 'var(--mantine-color-gray-6)' }} />
+          </Box>
+        )}
+        <FileButton
+          onChange={(file) => file && handlePhotoCapture(side, file)}
+          accept="image/*"
+          capture="environment"
+        >
+          {(props) => (
+            <Button
+              {...props}
+              variant="outline"
+              size="sm"
+              fullWidth
+              leftSection={<Upload size={16} />}
+            >
+              {photos[side] ? 'Retake Photo' : 'Take Photo'}
+            </Button>
+          )}
+        </FileButton>
+      </Stack>
     </Card>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto">
+    <Box style={{ minHeight: '100vh', backgroundColor: 'var(--mantine-color-gray-0)', padding: 24 }}>
+      <Box style={{ maxWidth: 896, margin: '0 auto' }}>
         <Button
-          variant="ghost"
+          variant="subtle"
           onClick={() => navigate('/enhanced-onboarding')}
-          className="mb-4"
+          mb="md"
+          leftSection={<ArrowLeft size={16} />}
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Onboarding
         </Button>
 
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Upload Vehicle Photos</CardTitle>
-            <p className="text-sm text-gray-600">
+        <Card mb="lg">
+          <Stack gap="xs" p="lg">
+            <Text fw={600} size="lg">Upload Vehicle Photos</Text>
+            <Text size="sm" c="dimmed">
               Take clear photos of your vehicle from all 4 angles
-            </p>
-          </CardHeader>
+            </Text>
+          </Stack>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <PhotoCard side="front" label="Front View" />
-          <PhotoCard side="back" label="Back View" />
-          <PhotoCard side="left" label="Left Side" />
-          <PhotoCard side="right" label="Right Side" />
-        </div>
+        <Grid gutter="md" mb="lg">
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <PhotoCard side="front" label="Front View" />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <PhotoCard side="back" label="Back View" />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <PhotoCard side="left" label="Left Side" />
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <PhotoCard side="right" label="Right Side" />
+          </Grid.Col>
+        </Grid>
 
         <Button
           onClick={handleComplete}
           disabled={loading || !Object.values(photos).every(p => p)}
-          className="w-full bg-orange-500 hover:bg-orange-600"
+          fullWidth
+          color="#ff7a00"
         >
           {loading ? 'Saving...' : 'Complete Task'}
         </Button>
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 };

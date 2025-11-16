@@ -1,8 +1,5 @@
 import React from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TextInput, Button, Select, Stack, Grid, Text, Group } from "@mantine/core";
 import { ApplicationStepProps, US_STATES } from "@/types/application";
 import { AddressAutocomplete } from "@/components/common/AddressAutocomplete";
 import { MapPin } from "lucide-react";
@@ -20,84 +17,77 @@ export const AddressStep = ({ data, onUpdate, onNext, onBack, isValid }: Applica
   };
 
   return (
-    <div className="space-y-6">
+    <Stack gap="lg">
       <div>
-        <h2 className="text-2xl font-bold mb-2">Your Address</h2>
-        <p className="text-muted-foreground">Where should we send your delivery earnings?</p>
+        <Text fw={700} size="xl" mb="xs">Your Address</Text>
+        <Text c="dimmed">Where should we send your delivery earnings?</Text>
       </div>
 
-      <div className="space-y-2">
-        <Label className="flex items-center gap-2">
-          <MapPin className="h-4 w-4" />
-          Search Address
-        </Label>
+      <div>
+        <Group gap="xs" mb="xs">
+          <MapPin size={16} />
+          <Text size="sm" fw={500}>Search Address</Text>
+        </Group>
         <AddressAutocomplete 
           value={addressSearch}
           onChange={(value) => setAddressSearch(value)}
           onAddressParsed={handleAddressParsed} 
         />
-        <p className="text-xs text-muted-foreground">Or enter your address manually below</p>
+        <Text size="xs" c="dimmed" mt="xs">Or enter your address manually below</Text>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="streetAddress">Street Address *</Label>
-        <Input
-          id="streetAddress"
-          value={data.streetAddress}
-          onChange={(e) => onUpdate('streetAddress', e.target.value)}
-          placeholder="123 Main St, Apt 4B"
-          required
-        />
-      </div>
+      <TextInput
+        label="Street Address"
+        placeholder="123 Main St, Apt 4B"
+        value={data.streetAddress}
+        onChange={(e) => onUpdate('streetAddress', e.target.value)}
+        required
+        withAsterisk
+      />
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="city">City *</Label>
-          <Input
-            id="city"
+      <Grid gutter="md">
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <TextInput
+            label="City"
+            placeholder="Los Angeles"
             value={data.city}
             onChange={(e) => onUpdate('city', e.target.value)}
-            placeholder="Los Angeles"
             required
+            withAsterisk
           />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="state">State *</Label>
-          <Select value={data.state} onValueChange={(value) => onUpdate('state', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select state" />
-            </SelectTrigger>
-            <SelectContent>
-              {US_STATES.map((state) => (
-                <SelectItem key={state} value={state}>
-                  {state}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <Select
+            label="State"
+            placeholder="Select state"
+            value={data.state}
+            onChange={(value) => onUpdate('state', value || '')}
+            data={US_STATES}
+            required
+            withAsterisk
+            searchable
+          />
+        </Grid.Col>
+      </Grid>
 
-      <div className="space-y-2">
-        <Label htmlFor="zipCode">ZIP Code *</Label>
-        <Input
-          id="zipCode"
-          value={data.zipCode}
-          onChange={(e) => onUpdate('zipCode', e.target.value)}
-          placeholder="90210"
-          maxLength={10}
-          required
-        />
-      </div>
+      <TextInput
+        label="ZIP Code"
+        placeholder="90210"
+        value={data.zipCode}
+        onChange={(e) => onUpdate('zipCode', e.target.value)}
+        maxLength={10}
+        required
+        withAsterisk
+      />
 
-      <div className="flex gap-3">
-        <Button variant="outline" onClick={onBack} className="w-full" size="lg">
+      <Group gap="md" mt="md">
+        <Button variant="outline" onClick={onBack} style={{ flex: 1 }} size="lg">
           Back
         </Button>
-        <Button onClick={onNext} disabled={!isValid} className="w-full" size="lg">
+        <Button onClick={onNext} disabled={!isValid} style={{ flex: 1 }} size="lg" color="#ff7a00">
           Continue
         </Button>
-      </div>
-    </div>
+      </Group>
+    </Stack>
   );
 };
