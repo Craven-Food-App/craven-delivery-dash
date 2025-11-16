@@ -878,13 +878,13 @@ const Restaurants = () => {
             </Box>
 
             {/* Spacing for Nav */}
-            <Box style={{ height: '96px' }} />
+            <Box style={{ height: '64px' }} />
           </Box>
         </ScrollArea>
 
         {/* Bottom Navigation: Floating and Robust */}
         <Box component="nav" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, maxWidth: '430px', margin: '0 auto', backgroundColor: 'white', borderTop: '1px solid #e5e7eb', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', zIndex: 30 }}>
-          <Group justify="space-around" pt="md" pb="xl">
+          <Group justify="space-around" py="xs" px="xs">
             {NAV_ITEMS.map(item => {
               const IconComponent = item.icon;
               return (
@@ -896,23 +896,25 @@ const Restaurants = () => {
                     display: 'flex', 
                     flexDirection: 'column', 
                     alignItems: 'center', 
-                    gap: '4px', 
-                    padding: '4px',
+                    gap: '2px', 
+                    padding: '2px 4px',
+                    minWidth: 'auto',
+                    flex: '1 1 0',
                     color: item.current ? '#b91c1c' : '#737373',
                     position: 'relative'
                   }}
                 >
-                  <IconComponent size={24} style={{ color: item.current ? '#b91c1c' : '#737373' }} />
-                  <Text size="xs" fw={600} c={item.current ? 'red.7' : 'gray.6'}>{item.name}</Text>
+                  <IconComponent size={18} style={{ color: item.current ? '#b91c1c' : '#737373' }} />
+                  <Text size="10px" fw={500} c={item.current ? 'red.7' : 'gray.6'} style={{ lineHeight: 1 }}>{item.name}</Text>
                   
                   {item.name === 'Favorites' && likedItems.size > 0 && (
-                    <Badge size="xs" color="red" style={{ position: 'absolute', top: 0, right: 4, minWidth: '16px', height: '16px', padding: '0 4px' }}>
+                    <Badge size="xs" color="red" style={{ position: 'absolute', top: -2, right: 2, minWidth: '14px', height: '14px', padding: '0 3px', fontSize: '9px' }}>
                       {likedItems.size}
                     </Badge>
                   )}
 
                   {item.name === 'Orders' && (
-                    <Box style={{ position: 'absolute', top: 0, right: 4, width: '10px', height: '10px', backgroundColor: '#22c55e', borderRadius: '50%', border: '2px solid white' }} />
+                    <Box style={{ position: 'absolute', top: -2, right: 2, width: '8px', height: '8px', backgroundColor: '#22c55e', borderRadius: '50%', border: '2px solid white' }} />
                   )}
                 </Button>
               );
@@ -926,16 +928,18 @@ const Restaurants = () => {
                 display: 'flex', 
                 flexDirection: 'column', 
                 alignItems: 'center', 
-                gap: '4px', 
-                padding: '4px',
+                gap: '2px', 
+                padding: '2px 4px',
+                minWidth: 'auto',
+                flex: '1 1 0',
                 color: '#b91c1c',
                 position: 'relative'
               }}
             >
-              <IconShoppingCart size={24} style={{ color: '#b91c1c', fill: 'rgba(185, 28, 28, 0.1)' }} />
-              <Text size="xs" fw={700} c="red.7">Cart</Text>
+              <IconShoppingCart size={18} style={{ color: '#b91c1c', fill: 'rgba(185, 28, 28, 0.1)' }} />
+              <Text size="10px" fw={600} c="red.7" style={{ lineHeight: 1 }}>Cart</Text>
               {cartCount > 0 && (
-                <Badge size="sm" color="red" style={{ position: 'absolute', top: -4, right: 8, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+                <Badge size="xs" color="red" style={{ position: 'absolute', top: -4, right: 4, minWidth: '14px', height: '14px', padding: '0 3px', fontSize: '9px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
                   {cartCount}
                 </Badge>
               )}
