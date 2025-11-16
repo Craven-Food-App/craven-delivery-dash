@@ -1058,10 +1058,10 @@ const Restaurants = () => {
                   onClick={() => setShowNotifications(!showNotifications)}
                   className="relative"
                 >
-                  <Bell className="w-6 h-6 text-gray-600 hover:text-gray-900 transition-colors" />
-                  {notifications.filter(n => !n.read).length > 0 && (
+                  <IconBell className="w-6 h-6 text-gray-600 hover:text-gray-900 transition-colors" />
+                  {notificationsList.filter(n => !n.read).length > 0 && (
                     <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-white text-xs rounded-full flex items-center justify-center">
-                      {notifications.filter(n => !n.read).length}
+                      {notificationsList.filter(n => !n.read).length}
                     </span>
                   )}
                 </button>
@@ -1075,7 +1075,7 @@ const Restaurants = () => {
                         <button className="text-sm text-orange-600">Mark all as read</button>
                       </div>
                       <div className="space-y-3 max-h-64 overflow-y-auto">
-                        {notifications.map((notification) => (
+                        {notificationsList.map((notification) => (
                           <div 
                             key={notification.id}
                             className={`p-3 rounded-lg border ${
@@ -1106,7 +1106,7 @@ const Restaurants = () => {
                   onClick={() => setShowCart(!showCart)}
                   className="relative"
                 >
-                  <ShoppingCart className="w-6 h-6 text-gray-600 hover:text-gray-900 transition-colors" />
+                  <IconShoppingCart className="w-6 h-6 text-gray-600 hover:text-gray-900 transition-colors" />
                   {cartItems.length > 0 && (
                     <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 text-white text-xs rounded-full flex items-center justify-center">
                       {cartItems.length}
@@ -1134,7 +1134,7 @@ const Restaurants = () => {
                                 onClick={() => removeFromCart(item.id)}
                                 className="text-primary hover:text-primary"
                               >
-                                <X className="w-4 h-4" />
+                                <IconX className="w-4 h-4" />
                               </button>
                             </div>
                           ))}
@@ -1149,7 +1149,7 @@ const Restaurants = () => {
                         </div>
                       ) : (
                         <div className="text-center py-8">
-                          <ShoppingCart className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                          <IconShoppingCart className="w-12 h-12 text-gray-400 mx-auto mb-2" />
                           <p className="text-gray-500 text-sm">Your cart is empty</p>
                         </div>
                       )}
@@ -1163,7 +1163,7 @@ const Restaurants = () => {
                 onClick={() => setShowMobileNav(!showMobileNav)}
                 className="lg:hidden p-2"
               >
-                {showMobileNav ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                {showMobileNav ? <IconX className="w-6 h-6" /> : <IconMenu2 className="w-6 h-6" />}
               </button>
             </div>
           </div>
@@ -1250,13 +1250,13 @@ const Restaurants = () => {
                       onClick={scrollFeaturedLeft}
                       className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
                     >
-                      <ChevronLeft className="w-4 h-4" />
+                      <IconChevronLeft className="w-4 h-4" />
                     </button>
                     <button 
                       onClick={scrollFeaturedRight}
                       className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
                     >
-                      <ChevronRight className="w-4 h-4" />
+                      <IconChevronRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -1324,10 +1324,10 @@ const Restaurants = () => {
                     <div className="p-3">
                       <div className="flex items-center justify-between mb-1">
                         <h3 className="font-semibold text-gray-900 text-sm">{restaurant.name}</h3>
-                        <ChevronRight className="w-4 h-4 text-green-500" />
+                        <IconChevronRight className="w-4 h-4 text-green-500" />
                       </div>
                       <div className="flex items-center text-xs text-gray-600 mb-1">
-                        <Star className="w-3 h-3 text-yellow-500 fill-yellow-500 mr-1" />
+                        <IconStar className="w-3 h-3 text-yellow-500 fill-yellow-500 mr-1" />
                         <span>{restaurant.rating} ★ ({restaurant.reviews}) • {restaurant.distance} • {restaurant.time}</span>
                       </div>
                       <div className="space-y-0.5">
@@ -1335,7 +1335,7 @@ const Restaurants = () => {
                         <p className="text-xs text-gray-600">{restaurant.freeDelivery}</p>
                         {restaurant.badge && (
                           <div className="flex items-center text-orange-600 font-semibold text-xs">
-                            <Plus className="w-3 h-3 mr-1" />
+                            <IconPlus className="w-3 h-3 mr-1" />
                             <span>{restaurant.badge}</span>
                           </div>
                         )}
@@ -1359,13 +1359,13 @@ const Restaurants = () => {
                       onClick={scrollWeeklyDealsLeft}
                       className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
                     >
-                      <ChevronLeft className="w-4 h-4" />
+                      <IconChevronLeft className="w-4 h-4" />
                     </button>
                     <button 
                       onClick={scrollWeeklyDealsRight}
                       className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
                     >
-                      <ChevronRight className="w-4 h-4" />
+                      <IconChevronRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -1434,7 +1434,7 @@ const Restaurants = () => {
                         <div className="p-3">
                           <h3 className="font-semibold text-gray-900 mb-1 text-sm">{restaurant.name}</h3>
                           <div className="flex items-center text-xs text-gray-600 mb-1">
-                            <Star className="w-3 h-3 text-yellow-500 fill-yellow-500 mr-1" />
+                            <IconStar className="w-3 h-3 text-yellow-500 fill-yellow-500 mr-1" />
                             <span>{restaurant.rating.toFixed(1)} ★ • {restaurant.min_delivery_time}-{restaurant.max_delivery_time} min</span>
                           </div>
                           <p className="text-xs font-semibold text-gray-900 mb-1">
@@ -1442,7 +1442,7 @@ const Restaurants = () => {
                           </p>
                           <p className="text-xs text-gray-500 mb-1">Sponsored</p>
                           <div className="flex items-center text-orange-600 font-semibold text-xs">
-                            <Plus className="w-3 h-3 mr-1" />
+                            <IconPlus className="w-3 h-3 mr-1" />
                             <span>{formatPromotionTitle()}</span>
                           </div>
                           {restaurant.promotion_description && (
@@ -1472,7 +1472,7 @@ const Restaurants = () => {
                   </h2>
                   {location && (
                     <p className="text-gray-600 flex items-center">
-                      <MapPin className="w-4 h-4 mr-2" />
+                      <IconMapPin className="w-4 h-4 mr-2" />
                       Delivering to: {location}
                     </p>
                   )}
@@ -1501,7 +1501,7 @@ const Restaurants = () => {
                   onClick={() => setShowMobileNav(false)}
                   className="p-2"
                 >
-                  <X className="w-5 h-5" />
+                  <IconX className="w-5 h-5" />
                 </button>
               </div>
               <nav className="space-y-1">
