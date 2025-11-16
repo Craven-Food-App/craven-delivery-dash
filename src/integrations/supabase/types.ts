@@ -6664,6 +6664,7 @@ export type Database = {
           order_status: string | null
           payout_cents: number | null
           pickup_address: Json | null
+          pickup_code: string | null
           pickup_confirmed_at: string | null
           pickup_photo_url: string | null
           restaurant_id: string | null
@@ -6697,6 +6698,7 @@ export type Database = {
           order_status?: string | null
           payout_cents?: number | null
           pickup_address?: Json | null
+          pickup_code?: string | null
           pickup_confirmed_at?: string | null
           pickup_photo_url?: string | null
           restaurant_id?: string | null
@@ -6730,6 +6732,7 @@ export type Database = {
           order_status?: string | null
           payout_cents?: number | null
           pickup_address?: Json | null
+          pickup_code?: string | null
           pickup_confirmed_at?: string | null
           pickup_photo_url?: string | null
           restaurant_id?: string | null
@@ -10725,6 +10728,7 @@ export type Database = {
           total_amount: number
         }[]
       }
+      generate_pickup_code: { Args: never; Returns: string }
       generate_referral_code: {
         Args: { p_user_id: string; p_user_type: string }
         Returns: string
