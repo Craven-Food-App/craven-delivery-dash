@@ -3393,6 +3393,65 @@ export type Database = {
           },
         ]
       }
+      driver_quiz_questions: {
+        Row: {
+          correct_answer: string
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          points: number
+          question_text: string
+          section: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          correct_answer: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          points?: number
+          question_text: string
+          section: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          correct_answer?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          option_a?: string
+          option_b?: string
+          option_c?: string
+          option_d?: string
+          points?: number
+          question_text?: string
+          section?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_quiz_questions_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "effective_permissions"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       driver_referrals: {
         Row: {
           activated_at: string | null
@@ -6639,7 +6698,22 @@ export type Database = {
           special_instructions?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "order_items_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       order_notifications: {
         Row: {
@@ -7712,12 +7786,20 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          milestone_1_amount_cents: number | null
+          milestone_1_delivery_count: number | null
+          milestone_2_amount_cents: number | null
+          milestone_2_delivery_count: number | null
           min_orders_required: number
           referral_type: string | null
           referred_bonus_amount: number | null
           referred_bonus_cents: number
           referrer_bonus_amount: number | null
           referrer_bonus_cents: number
+          require_background_check: boolean | null
+          require_documents: boolean | null
+          required_days_active: number | null
+          required_min_rating: number | null
           requirements: Json | null
           updated_at: string
         }
@@ -7725,12 +7807,20 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          milestone_1_amount_cents?: number | null
+          milestone_1_delivery_count?: number | null
+          milestone_2_amount_cents?: number | null
+          milestone_2_delivery_count?: number | null
           min_orders_required?: number
           referral_type?: string | null
           referred_bonus_amount?: number | null
           referred_bonus_cents?: number
           referrer_bonus_amount?: number | null
           referrer_bonus_cents?: number
+          require_background_check?: boolean | null
+          require_documents?: boolean | null
+          required_days_active?: number | null
+          required_min_rating?: number | null
           requirements?: Json | null
           updated_at?: string
         }
@@ -7738,23 +7828,79 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          milestone_1_amount_cents?: number | null
+          milestone_1_delivery_count?: number | null
+          milestone_2_amount_cents?: number | null
+          milestone_2_delivery_count?: number | null
           min_orders_required?: number
           referral_type?: string | null
           referred_bonus_amount?: number | null
           referred_bonus_cents?: number
           referrer_bonus_amount?: number | null
           referrer_bonus_cents?: number
+          require_background_check?: boolean | null
+          require_documents?: boolean | null
+          required_days_active?: number | null
+          required_min_rating?: number | null
           requirements?: Json | null
           updated_at?: string
         }
         Relationships: []
       }
+      referral_video_content: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          referral_type: string
+          thumbnail_url: string | null
+          title: string | null
+          updated_at: string | null
+          video_url: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          referral_type: string
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string | null
+          video_url: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          referral_type?: string
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string | null
+          video_url?: string
+        }
+        Relationships: []
+      }
       referrals: {
         Row: {
+          background_check_passed: boolean | null
           completed_at: string | null
           created_at: string | null
+          current_rating: number | null
+          days_active: number | null
+          documents_uploaded: boolean | null
           id: string
+          milestone_1_paid: boolean | null
+          milestone_1_paid_at: string | null
+          milestone_2_paid: boolean | null
+          milestone_2_paid_at: string | null
           paid_at: string | null
+          referee_completed_deliveries: number | null
           referral_code: string
           referral_type: string
           referred_bonus_amount: number | null
@@ -7765,10 +7911,19 @@ export type Database = {
           status: string | null
         }
         Insert: {
+          background_check_passed?: boolean | null
           completed_at?: string | null
           created_at?: string | null
+          current_rating?: number | null
+          days_active?: number | null
+          documents_uploaded?: boolean | null
           id?: string
+          milestone_1_paid?: boolean | null
+          milestone_1_paid_at?: string | null
+          milestone_2_paid?: boolean | null
+          milestone_2_paid_at?: string | null
           paid_at?: string | null
+          referee_completed_deliveries?: number | null
           referral_code: string
           referral_type: string
           referred_bonus_amount?: number | null
@@ -7779,10 +7934,19 @@ export type Database = {
           status?: string | null
         }
         Update: {
+          background_check_passed?: boolean | null
           completed_at?: string | null
           created_at?: string | null
+          current_rating?: number | null
+          days_active?: number | null
+          documents_uploaded?: boolean | null
           id?: string
+          milestone_1_paid?: boolean | null
+          milestone_1_paid_at?: string | null
+          milestone_2_paid?: boolean | null
+          milestone_2_paid_at?: string | null
           paid_at?: string | null
+          referee_completed_deliveries?: number | null
           referral_code?: string
           referral_type?: string
           referred_bonus_amount?: number | null
@@ -11103,6 +11267,10 @@ export type Database = {
       }
       postgis_version: { Args: never; Returns: string }
       postgis_wagyu_version: { Args: never; Returns: string }
+      process_driver_referral_milestone: {
+        Args: { p_milestone_number: number; p_referral_id: string }
+        Returns: boolean
+      }
       refresh_effective_permissions: { Args: never; Returns: undefined }
       soundex: { Args: { "": string }; Returns: string }
       st_3dclosestpoint: {

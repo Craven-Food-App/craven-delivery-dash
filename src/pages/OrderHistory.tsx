@@ -25,6 +25,7 @@ import {
   IconPhone,
   IconMessageCircle,
   IconPackage,
+  IconStar,
 } from '@tabler/icons-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -184,13 +185,13 @@ export default function OrderHistory() {
                     .select('user_id, rating')
                     .eq('user_id', assignment.driver_id)
                     .single()
-                    .catch(() => ({ data: null, error: null })),
+                    .then(res => res, () => ({ data: null, error: null })),
                   supabase
                     .from('user_profiles')
                     .select('user_id, full_name')
                     .eq('user_id', assignment.driver_id)
                     .single()
-                    .catch(() => ({ data: null, error: null })),
+                    .then(res => res, () => ({ data: null, error: null })),
                 ]);
 
                 const driverProfile = driverProfileResult.data;
