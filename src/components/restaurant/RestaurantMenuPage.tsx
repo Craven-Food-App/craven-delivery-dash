@@ -197,7 +197,7 @@ const RestaurantMenuPage = () => {
   const [isMenuHovered, setIsMenuHovered] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
   const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notificationsList, setNotificationsList] = useState<any[]>([]);
   const [showCartButton, setShowCartButton] = useState(false);
   const cartButtonTimerRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -292,7 +292,7 @@ const RestaurantMenuPage = () => {
                 type: "delivery"
             }
         ];
-        setNotifications(mockNotifications);
+        setNotificationsList(mockNotifications);
     };
 
     const handleCategoryClick = (categoryId: string) => {
@@ -1246,7 +1246,7 @@ const RestaurantMenuPage = () => {
                     style={{ position: 'relative' }}
                   >
                     <IconBell size={24} style={{ color: 'var(--mantine-color-gray-6)' }} />
-                    {notifications.filter(n => !n.read).length > 0 && (
+                    {notificationsList.filter(n => !n.read).length > 0 && (
                       <Badge
                         size="xs"
                         color="orange"
@@ -1262,7 +1262,7 @@ const RestaurantMenuPage = () => {
                           justifyContent: 'center',
                         }}
                       >
-                        {notifications.filter(n => !n.read).length}
+                        {notificationsList.filter(n => !n.read).length}
                       </Badge>
                     )}
                   </ActionIcon>
@@ -1275,10 +1275,10 @@ const RestaurantMenuPage = () => {
                         Mark all as read
                       </Button>
                     </Group>
-                    <ScrollArea style={{ maxHeight: '256px' }}>
-                      <Stack gap="sm">
-                        {notifications.map((notification) => (
-                          <Card
+                     <ScrollArea style={{ maxHeight: '256px' }}>
+                       <Stack gap="sm">
+                         {notificationsList.map((notification) => (
+                           <Card
                             key={notification.id}
                             p="sm"
                             withBorder
