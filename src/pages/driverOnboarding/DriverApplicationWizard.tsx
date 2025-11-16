@@ -98,7 +98,6 @@ export const DriverApplicationWizard: React.FC = () => {
         >
           <Stepper
             active={currentStep}
-            breakpoint="sm"
           >
             {steps.map((step, index) => (
               <Stepper.Step

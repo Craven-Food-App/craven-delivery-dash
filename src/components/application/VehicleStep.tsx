@@ -116,7 +116,7 @@ export const VehicleStep = ({ data, onUpdate, onNext, onBack, isValid }: Applica
         </Box>
       )}
 
-      <Box p="md" withBorder style={{ borderRadius: '8px' }}>
+      <Box p="md" style={{ borderRadius: '8px', border: '1px solid var(--mantine-color-gray-3)' }}>
         <Stack gap="md">
           <Text size="sm" fw={500}>Driver's License Information</Text>
           <Grid gutter="md">

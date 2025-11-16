@@ -73,7 +73,7 @@ export const BankingStep = ({ data, onUpdate, onNext, onBack, isValid }: Applica
 
       {/* Direct Deposit Fields */}
       {data.payoutMethod === 'direct_deposit' && (
-        <Box p="md" withBorder style={{ borderRadius: '8px' }}>
+        <Box p="md" style={{ borderRadius: '8px', border: '1px solid var(--mantine-color-gray-3)' }}>
           <Stack gap="md">
             <Group gap="xs">
               <CreditCard size={16} />
@@ -118,7 +118,7 @@ export const BankingStep = ({ data, onUpdate, onNext, onBack, isValid }: Applica
 
       {/* Cash App Fields */}
       {data.payoutMethod === 'cashapp' && (
-        <Box p="md" withBorder style={{ borderRadius: '8px' }}>
+        <Box p="md" style={{ borderRadius: '8px', border: '1px solid var(--mantine-color-gray-3)' }}>
           <Stack gap="md">
             <Group gap="xs">
               <Wallet size={16} />
@@ -139,7 +139,7 @@ export const BankingStep = ({ data, onUpdate, onNext, onBack, isValid }: Applica
       )}
 
       {/* SSN for Tax Purposes */}
-      <Box p="md" withBorder style={{ borderRadius: '8px' }}>
+      <Box p="md" style={{ borderRadius: '8px', border: '1px solid var(--mantine-color-gray-3)' }}>
         <Stack gap="md">
           <Group gap="xs">
             <DollarSign size={16} />

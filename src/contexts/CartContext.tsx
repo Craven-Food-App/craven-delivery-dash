@@ -53,7 +53,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (persistedCart) {
-        setCartItems(Array.isArray(persistedCart.items) ? persistedCart.items as CartItem[] : []);
+        setCartItems(Array.isArray(persistedCart.items) ? persistedCart.items as unknown as CartItem[] : []);
         setRestaurantId(persistedCart.restaurant_id || null);
       }
     } catch (error) {
