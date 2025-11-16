@@ -188,7 +188,6 @@ const RestaurantMenuPage = () => {
   // New state for header and side menu
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('6759 Nebraska Ave');
-  const [deliveryMode, setDeliveryMode] = useState<'delivery' | 'pickup'>('delivery');
   const [showAddressSelector, setShowAddressSelector] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showCart, setShowCart] = useState(false);
@@ -204,6 +203,7 @@ const RestaurantMenuPage = () => {
     const [activeSection, setActiveSection] = useState('featured');
     const [isMenuFixed, setIsMenuFixed] = useState(false);
     const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
+    // Use deliveryMethod for both mobile and desktop - synced state
            const [pickupInfo, setPickupInfo] = useState({
                address: '',
                driveTime: 0,
@@ -648,7 +648,18 @@ const RestaurantMenuPage = () => {
         }, [deliveryMethod, restaurant, mapLoaded]);
 
         const initializePickupMap = async () => {
-            if (!mapContainer.current || !restaurant.latitude || !restaurant.longitude) return;
+            if (!mapContainer.current) {
+                console.log('Map container not found');
+                return;
+            }
+            
+            if (!restaurant.latitude || !restaurant.longitude) {
+                console.log('Restaurant missing coordinates:', { 
+                    latitude: restaurant.latitude, 
+                    longitude: restaurant.longitude 
+                });
+                return;
+            }
 
             try {
                 // Load Mapbox script if not already loaded
@@ -658,6 +669,9 @@ const RestaurantMenuPage = () => {
                     script.onload = () => {
                         (window.mapboxgl as any).accessToken = 'pk.eyJ1IjoiY3JhdmUtbiIsImEiOiJjbWVxb21qbTQyNTRnMm1vaHg5bDZwcmw2In0.aOsYrL2B0cjfcCGW1jHAdw';
                         createMap();
+                    };
+                    script.onerror = () => {
+                        console.error('Failed to load Mapbox script');
                     };
                     document.head.appendChild(script);
                 } else {
@@ -693,72 +707,47 @@ const RestaurantMenuPage = () => {
         return (
             <Card p="sm" mb="lg" withBorder shadow="md">
                 <Stack gap="md">
-                    {/* Top Row - Delivery/Pickup Buttons and Price/Time */}
-                    <Group justify="space-between" align="center" gap="lg">
-                        {/* Delivery/Pickup Tabs */}
-                        <Button.Group>
-                            <Button
-                                variant={deliveryMethod === 'delivery' ? 'filled' : 'outline'}
-                                onClick={() => setDeliveryMethod('delivery')}
-                                size="sm"
-                            >
-                                Delivery
-                            </Button>
-                            <Button
-                                variant={deliveryMethod === 'pickup' ? 'filled' : 'outline'}
-                                onClick={() => setDeliveryMethod('pickup')}
-                                size="sm"
-                            >
-                                Pickup
-                            </Button>
-                        </Button.Group>
-
-                        {/* Price/Time Info Box */}
-                        <Group gap="md">
-                            {/* Delivery Fee Box */}
-                            <Box p="sm" style={{ backgroundColor: 'var(--mantine-color-green-0)', borderRadius: '8px' }}>
-                                <Text fw={700} size="sm" c="green.7">$0 delivery fee</Text>
-                                <Group gap="xs" mt={4}>
-                                    <Text size="xs" c="green.7">pricing & fees</Text>
-                                    <IconInfoCircle size={12} style={{ color: 'var(--mantine-color-green-7)' }} />
-                                </Group>
-                            </Box>
-
-                            {/* Pickup Time */}
-                            <Stack gap={0} align="flex-end">
-                                <Text size="lg" fw={700} c="gray.9">{pickupInfo.readyTime} min</Text>
-                                <Group gap="xs">
-                                    <Text size="sm" c="dimmed">ready for pickup</Text>
-                                    <IconArrowUp size={16} style={{ transform: 'rotate(90deg)', color: 'var(--mantine-color-gray-6)' }} />
-                                </Group>
-                            </Stack>
-                        </Group>
+                    {/* Pickup Time Info */}
+                    <Group justify="space-between" align="center">
+                        <Stack gap={0}>
+                            <Text size="lg" fw={700} c="gray.9">{pickupInfo.readyTime} min</Text>
+                            <Text size="sm" c="dimmed">ready for pickup</Text>
+                        </Stack>
+                        <Badge color="green" size="lg">$0 delivery fee</Badge>
                     </Group>
                     
                     {/* Main Content - Address and Map */}
-                    <Group align="stretch" gap="xs">
+                    <Group align="stretch" gap="md">
                         {/* Address and Info - Left Side */}
-                        <Stack justify="space-between" style={{ minWidth: '200px' }}>
+                        <Stack justify="space-between" style={{ minWidth: '200px', flex: 1 }}>
                             <Stack gap="xs">
                                 <Text size="sm" fw={600} c="gray.9">
                                     Pick up this order at:
                                 </Text>
                                 <Text size="sm" c="blue.6" td="underline" style={{ cursor: 'pointer' }}>
-                                    {pickupInfo.address}
+                                    {pickupInfo.address || restaurant.address}
                                 </Text>
                                 <Group gap="xs">
                                     <IconCar size={16} style={{ color: 'var(--mantine-color-gray-6)' }} />
-                                    <Text size="sm" c="dimmed">{pickupInfo.driveTime} min</Text>
+                                    <Text size="sm" c="dimmed">{pickupInfo.driveTime} min drive</Text>
                                 </Group>
                             </Stack>
                         </Stack>
 
                         {/* Map Container - Right Side */}
-                        <Box style={{ flex: 1, height: '128px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--mantine-color-gray-3)' }}>
-                            <Box 
-                                ref={mapContainer} 
-                                style={{ width: '100%', height: '100%', minHeight: '128px' }}
-                            />
+                        <Box style={{ flex: 1, height: '200px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--mantine-color-gray-3)', backgroundColor: '#f5f5f5' }}>
+                            {restaurant.latitude && restaurant.longitude ? (
+                                <Box 
+                                    ref={mapContainer} 
+                                    style={{ width: '100%', height: '100%', minHeight: '200px' }}
+                                />
+                            ) : (
+                                <Stack align="center" justify="center" h="100%">
+                                    <IconMapPin size={32} style={{ color: 'var(--mantine-color-gray-5)' }} />
+                                    <Text size="sm" c="dimmed">Map unavailable</Text>
+                                    <Text size="xs" c="dimmed">{restaurant.address}</Text>
+                                </Stack>
+                            )}
                         </Box>
                     </Group>
                 </Stack>
@@ -1215,18 +1204,18 @@ const RestaurantMenuPage = () => {
               {/* Delivery/Pickup Toggle */}
               <Button.Group>
                 <Button
-                  variant={deliveryMode === 'delivery' ? 'filled' : 'subtle'}
-                  color={deliveryMode === 'delivery' ? 'orange' : 'gray'}
+                  variant={deliveryMethod === 'delivery' ? 'filled' : 'subtle'}
+                  color={deliveryMethod === 'delivery' ? 'orange' : 'gray'}
                   size="sm"
-                  onClick={() => setDeliveryMode('delivery')}
+                  onClick={() => setDeliveryMethod('delivery')}
                 >
                   Delivery
                 </Button>
                 <Button
-                  variant={deliveryMode === 'pickup' ? 'filled' : 'subtle'}
-                  color={deliveryMode === 'pickup' ? 'orange' : 'gray'}
+                  variant={deliveryMethod === 'pickup' ? 'filled' : 'subtle'}
+                  color={deliveryMethod === 'pickup' ? 'orange' : 'gray'}
                   size="sm"
-                  onClick={() => setDeliveryMode('pickup')}
+                  onClick={() => setDeliveryMethod('pickup')}
                 >
                   Pickup
                 </Button>
@@ -1596,25 +1585,32 @@ const RestaurantMenuPage = () => {
                   {/* Delivery/Pickup Toggle - Mobile */}
                   <Group grow>
                     <Button
-                      variant={deliveryMode === 'delivery' ? 'filled' : 'light'}
-                      color={deliveryMode === 'delivery' ? 'dark' : 'gray'}
+                      variant={deliveryMethod === 'delivery' ? 'filled' : 'light'}
+                      color={deliveryMethod === 'delivery' ? 'dark' : 'gray'}
                       leftSection={<IconTruck size={16} />}
-                      onClick={() => setDeliveryMode('delivery')}
+                      onClick={() => setDeliveryMethod('delivery')}
                       style={{ flex: 1 }}
                     >
                       Delivery
                     </Button>
                     <Button
-                      variant={deliveryMode === 'pickup' ? 'filled' : 'light'}
-                      color={deliveryMode === 'pickup' ? 'dark' : 'gray'}
+                      variant={deliveryMethod === 'pickup' ? 'filled' : 'light'}
+                      color={deliveryMethod === 'pickup' ? 'dark' : 'gray'}
                       leftSection={<IconBuildingStore size={16} />}
-                      onClick={() => setDeliveryMode('pickup')}
+                      onClick={() => setDeliveryMethod('pickup')}
                       style={{ flex: 1 }}
                     >
                       Pickup
                     </Button>
                   </Group>
                 </Card>
+
+                {/* Pickup Interface - Mobile - Show when pickup is selected */}
+                {deliveryMethod === 'pickup' && (
+                  <Box px="md" pb="md">
+                    <PickupInterface />
+                  </Box>
+                )}
 
                 {/* Sticky Category Tabs - Mobile */}
                 <ScrollArea
@@ -2028,18 +2024,18 @@ const RestaurantMenuPage = () => {
                         {/* Delivery/Pickup Tabs */}
                         <Button.Group>
                           <Button
-                            variant={deliveryMode === 'delivery' ? 'filled' : 'outline'}
-                            color={deliveryMode === 'delivery' ? 'orange' : 'gray'}
+                            variant={deliveryMethod === 'delivery' ? 'filled' : 'outline'}
+                            color={deliveryMethod === 'delivery' ? 'orange' : 'gray'}
                             size="sm"
-                            onClick={() => setDeliveryMode('delivery')}
+                            onClick={() => setDeliveryMethod('delivery')}
                           >
                             Delivery
                           </Button>
                           <Button
-                            variant={deliveryMode === 'pickup' ? 'filled' : 'outline'}
-                            color={deliveryMode === 'pickup' ? 'orange' : 'gray'}
+                            variant={deliveryMethod === 'pickup' ? 'filled' : 'outline'}
+                            color={deliveryMethod === 'pickup' ? 'orange' : 'gray'}
                             size="sm"
-                            onClick={() => setDeliveryMode('pickup')}
+                            onClick={() => setDeliveryMethod('pickup')}
                           >
                             Pickup
                           </Button>

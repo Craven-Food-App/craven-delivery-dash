@@ -154,18 +154,21 @@ const RestaurantCard = ({
   restaurant: any; 
   likedItems: Set<string>; 
   toggleLike: (id: string) => void;
-}) => (
-  <Card
-    style={{ 
-      minWidth: '280px', 
-      cursor: 'pointer',
-      transition: 'all 0.3s',
-      border: '1px solid #e5e7eb'
-    }}
-    shadow="md"
-    radius="md"
-    onClick={() => {}}
-  >
+}) => {
+  const navigate = useNavigate();
+  
+  return (
+    <Card
+      style={{ 
+        minWidth: '280px', 
+        cursor: 'pointer',
+        transition: 'all 0.3s',
+        border: '1px solid #e5e7eb'
+      }}
+      shadow="md"
+      radius="md"
+      onClick={() => navigate(`/restaurant/${restaurant.id}/menu`)}
+    >
     <Box style={{ position: 'relative', height: '160px', backgroundColor: '#f5f5f5', overflow: 'hidden' }}>
       <MantineImage
         src={restaurant.image || restaurant.image_url || `https://placehold.co/600x400/f5f5f5/333?text=Craven`}
@@ -229,7 +232,8 @@ const RestaurantCard = ({
       )}
     </Stack>
   </Card>
-);
+  );
+};
 
 const Restaurants = () => {
   const [searchParams, setSearchParams] = useSearchParams();
