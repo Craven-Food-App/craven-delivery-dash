@@ -122,12 +122,14 @@ export const PaymentMethodsSection: React.FC<PaymentMethodsSectionProps> = ({ on
 
       notifications.show({
         title: "Payment method removed",
+        message: "",
         color: "green",
       });
       fetchPaymentMethods();
     } catch (error) {
       notifications.show({
         title: "Error removing payment method",
+        message: "",
         color: "red",
       });
     }
@@ -154,12 +156,14 @@ export const PaymentMethodsSection: React.FC<PaymentMethodsSectionProps> = ({ on
 
       notifications.show({
         title: "Primary method updated",
+        message: "",
         color: "green",
       });
       fetchPaymentMethods();
     } catch (error) {
       notifications.show({
         title: "Error updating primary method",
+        message: "",
         color: "red",
       });
     }

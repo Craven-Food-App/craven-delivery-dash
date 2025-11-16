@@ -113,6 +113,7 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
       console.error('Error fetching profile:', error);
       notifications.show({
         title: 'Failed to load profile data',
+        message: "",
         color: 'red',
       });
     } finally {
@@ -221,6 +222,7 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
 
       notifications.show({
         title: 'Profile updated successfully',
+        message: "",
         color: 'green',
       });
       await fetchProfileData();

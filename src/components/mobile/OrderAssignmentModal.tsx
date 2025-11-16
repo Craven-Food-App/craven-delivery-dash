@@ -434,7 +434,7 @@ export const OrderAssignmentModal: React.FC<OrderAssignmentModalProps> = ({
             </Group>
             
             <Divider mb="md" />
-            <Grid gutter="md" size="sm">
+            <Grid gutter="md">
               <Grid.Col span={6}>
                 <Group justify="space-between">
                   <Text c="dimmed" size="sm">Subtotal:</Text>
