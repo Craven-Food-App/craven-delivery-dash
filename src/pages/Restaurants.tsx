@@ -238,6 +238,8 @@ const Restaurants = () => {
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'rating');
   const [weeklyDeals, setWeeklyDeals] = useState<any[]>([]);
   const [loadingDeals, setLoadingDeals] = useState(true);
+  const [promotionalBanners, setPromotionalBanners] = useState<any[]>([]);
+  const [loadingBanners, setLoadingBanners] = useState(true);
   const [activeFilter, setActiveFilter] = useState('deals');
   const [showMobileNav, setShowMobileNav] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
@@ -439,6 +441,7 @@ const Restaurants = () => {
   useEffect(() => {
     fetchWeeklyDeals();
     fetchNotifications();
+    fetchPromotionalBanners();
   }, []);
 
   // Update filter options based on delivery mode
@@ -513,33 +516,28 @@ const Restaurants = () => {
     { id: 'dashpass', label: 'CravePass' }
   ];
 
-  // Promo data
-  const PROMOS_DATA = [
-    {
-      id: 1,
-      title: "Exclusive: 20% Off All Sushi Orders",
-      subtitle: "Limited to the first 500 customers. Code: LUXURY20",
-      image: "https://images.unsplash.com/photo-1545624773-a261c6b12d7f?w=800&h=600&fit=crop&q=80"
-    },
-    {
-      id: 2,
-      title: "Free Premium Delivery on $30+ orders",
-      subtitle: "Valid today only. Elevate your weekend plans.",
-      image: "https://images.unsplash.com/photo-1577219549323-5e98218991f8?w=800&h=600&fit=crop&q=80"
-    },
-    {
-      id: 3,
-      title: "Weekend Special: 30% Off All Orders",
-      subtitle: "Use code WEEKEND30. Valid Friday-Sunday only.",
-      image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&h=600&fit=crop&q=80"
-    },
-    {
-      id: 4,
-      title: "New Restaurant Alert: Try Our Premium Menu",
-      subtitle: "Discover exclusive dishes from top-rated chefs.",
-      image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=600&fit=crop&q=80"
+  // Fetch promotional banners from database
+  const fetchPromotionalBanners = async () => {
+    try {
+      setLoadingBanners(true);
+      const { data, error } = await supabase
+        .from('promotional_banners')
+        .select('*')
+        .eq('is_active', true)
+        .or(`valid_until.is.null,valid_until.gt.${new Date().toISOString()}`)
+        .order('display_order', { ascending: true })
+        .limit(10);
+
+      if (error) throw error;
+      setPromotionalBanners(data || []);
+    } catch (error) {
+      console.error('Error fetching promotional banners:', error);
+      // Fallback to empty array if fetch fails
+      setPromotionalBanners([]);
+    } finally {
+      setLoadingBanners(false);
     }
-  ];
+  };
 
   // Restaurant data - transform from database
   const getRestaurantData = () => {
@@ -785,22 +783,37 @@ const Restaurants = () => {
             </Group>
 
             {/* Promo Carousel */}
-            <Box py="xl" px="md">
-              <Carousel
-                slideSize={{ base: '100%', sm: '50%' }}
-                slideGap="md"
-                align="start"
-                slidesToScroll={mobile ? 1 : 2}
-                withIndicators
-                loop
-              >
-                {PROMOS_DATA.map((promo) => (
-                  <Carousel.Slide key={promo.id}>
-                    <PromoCard title={promo.title} subtitle={promo.subtitle} image={promo.image} />
-                  </Carousel.Slide>
-                ))}
-              </Carousel>
-            </Box>
+            {loadingBanners ? (
+              <Box py="xl" px="md">
+                <Group gap="md">
+                  {[...Array(4)].map((_, i) => (
+                    <Card key={i} style={{ height: '440px', width: '100%' }}>
+                      <Loader />
+                    </Card>
+                  ))}
+                </Group>
+              </Box>
+            ) : promotionalBanners.length > 0 ? (
+              <Box py="xl" px="md">
+                <Carousel
+                  slideSize="100%"
+                  slideGap="md"
+                  withIndicators
+                  loop
+                  withControls
+                >
+                  {promotionalBanners.map((banner) => (
+                    <Carousel.Slide key={banner.id}>
+                      <PromoCard 
+                        title={banner.title} 
+                        subtitle={banner.subtitle}
+                        image={banner.image_url} 
+                      />
+                    </Carousel.Slide>
+                  ))}
+                </Carousel>
+              </Box>
+            ) : null}
 
             {/* Fastest near you */}
             <Box px="md" py="xl" style={{ backgroundColor: 'white', borderTop: '1px solid #e5e7eb' }}>

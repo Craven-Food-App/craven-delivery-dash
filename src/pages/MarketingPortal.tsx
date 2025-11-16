@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MarketingAccessGuard } from '@/components/MarketingAccessGuard';
 import { PromoCodeManager } from '@/components/admin/PromoCodeManager';
+import { PromotionalBannerManager } from '@/components/admin/PromotionalBannerManager';
 import { CustomerManagement } from '@/components/admin/CustomerManagement';
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 import { ReferralProgram } from '@/components/ReferralProgram';
@@ -25,7 +26,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   ArrowLeft, LayoutDashboard, Tag, Mail, Bell, Users, TrendingUp, BarChart, Gift, UserPlus, Award, 
   Megaphone, MessageSquare, Building2, Truck, DollarSign, FolderOpen, Zap, Plug, Shield, Settings, 
-  Sparkles, Filter, PieChart
+  Sparkles, Filter, PieChart, Image as ImageIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -136,6 +137,7 @@ const MarketingPortal: React.FC = () => {
       icon: Gift,
       items: [
         { id: 'promo-codes', label: 'Promo Codes', icon: Tag },
+        { id: 'promotional-banners', label: 'Promotional Banners', icon: ImageIcon },
         { id: 'referral-program', label: 'Referral Program', icon: UserPlus },
         { id: 'loyalty-program', label: 'Loyalty Program', icon: Award },
       ]
@@ -226,6 +228,8 @@ const MarketingPortal: React.FC = () => {
       // Promotions
       case 'promo-codes':
         return <PromoCodeManager />;
+      case 'promotional-banners':
+        return <PromotionalBannerManager />;
       case 'referral-program':
         return (
           <div className="space-y-6">
