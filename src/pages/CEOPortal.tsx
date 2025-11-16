@@ -70,11 +70,11 @@ const CEOPortal: React.FC = () => {
     const pendingApprovals = metrics?.pendingApprovals ?? 0;
 
     return [
-      { id: 'overview', label: 'Command Center', icon: IconChartBar },
+      { id: 'overview', label: 'Command Center', icon: IconChartBar as any },
       {
         id: 'personnel',
         label: `Manage People (${totalEmployees})`,
-        icon: IconUsers,
+        icon: IconUsers as any,
       },
       {
         id: 'financial',
@@ -82,16 +82,16 @@ const CEOPortal: React.FC = () => {
           pendingApprovals > 0
             ? `Approve Spend (${pendingApprovals})`
             : 'Approve Spend',
-        icon: IconCurrencyDollar,
+        icon: IconCurrencyDollar as any,
       },
-      { id: 'equity', label: 'Review Equity', icon: IconTrophy },
-      { id: 'strategic', label: 'Drive Strategy', icon: IconRocket },
-      { id: 'mindmap', label: 'Map Decisions', icon: IconBulb },
-      { id: 'emergency', label: 'Run Emergency Playbooks', icon: IconShield },
-      { id: 'audit', label: 'Audit Activity', icon: IconFileText },
-      { id: 'signature', label: 'Sign Documents', icon: IconPencil },
-      { id: 'communications', label: 'Direct Communications', icon: IconMail },
-      { id: 'word', label: 'Draft Briefings', icon: IconFileText },
+      { id: 'equity', label: 'Review Equity', icon: IconTrophy as any },
+      { id: 'strategic', label: 'Drive Strategy', icon: IconRocket as any },
+      { id: 'mindmap', label: 'Map Decisions', icon: IconBulb as any },
+      { id: 'emergency', label: 'Run Emergency Playbooks', icon: IconShield as any },
+      { id: 'audit', label: 'Audit Activity', icon: IconFileText as any },
+      { id: 'signature', label: 'Sign Documents', icon: IconPencil as any },
+      { id: 'communications', label: 'Direct Communications', icon: IconMail as any },
+      { id: 'word', label: 'Draft Briefings', icon: IconFileText as any },
     ];
   }, [metrics?.totalEmployees, metrics?.pendingApprovals]);
 
@@ -147,7 +147,7 @@ const CEOPortal: React.FC = () => {
       case 'word':
         return <ExecutiveWordProcessor storageKey="ceo" />;
       default:
-        return <QuickActions />;
+        return <QuickActions onNavigate={setActiveTab} />;
     }
   };
 
@@ -237,7 +237,7 @@ const CEOPortal: React.FC = () => {
         burnRate: totalPayroll / 12,
         runway: monthlyRevenue > 0 ? Math.floor((monthlyRevenue * 0.35) / (totalPayroll / 12)) : 0,
         totalEmployees: employees.length,
-        admins: activeEmployees.filter(e => e.employment_type === 'full-time').length,
+        admins: activeEmployees.length,
         feeders: 0, // From feeders table when available
         merchants: 0, // From merchants table when available
         pendingApprovals: pendingApprovals.length,
