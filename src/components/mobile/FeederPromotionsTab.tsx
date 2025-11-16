@@ -137,6 +137,7 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
       console.error('Error fetching promotions:', error);
       notifications.show({
         title: 'Failed to load promotions',
+        message: '',
         color: 'red',
       });
     } finally {
@@ -217,6 +218,7 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
             } else {
               notifications.show({
                 title: 'Menu coming soon.',
+                message: '',
                 color: 'blue',
               });
             }
@@ -234,6 +236,7 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
             } else {
               notifications.show({
                 title: 'Notifications coming soon.',
+                message: '',
                 color: 'blue',
               });
             }
@@ -324,7 +327,7 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
                     <Text c="dark" fw={700} size="lg">{promo.zone}</Text>
                   </Group>
                   
-                  <Group gap="md" c="dark.7" size="sm">
+                  <Group gap="md" c="dark.7">
                     <Group gap="xs">
                       <IconClock size={16} />
                       <Text fw={600}>{promo.date}</Text>
@@ -406,7 +409,7 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
                   </Group>
 
                   <Stack gap="xs">
-                    <Group justify="space-between" size="sm">
+                    <Group justify="space-between">
                       <Text c="dark.7" fw={600} size="sm">Progress</Text>
                       <Text c="dark" fw={700}>{challenge.progress}/{challenge.total}</Text>
                     </Group>
@@ -419,7 +422,7 @@ const FeederPromotionsTab: React.FC<FeederPromotionsTabProps> = ({
                         root: {
                           backgroundColor: 'var(--mantine-color-gray-2)',
                         },
-                        bar: {
+                        section: {
                           background: `linear-gradient(to right, var(--mantine-color-${colors.progressFrom}), var(--mantine-color-${colors.progressTo}))`,
                         },
                       }}

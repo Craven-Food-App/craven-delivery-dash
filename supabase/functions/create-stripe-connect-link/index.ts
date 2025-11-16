@@ -152,6 +152,7 @@ serve(async (req) => {
         }
         
         console.log('Saved Stripe account ID to database');
+      } catch (stripeError: any) {
         const rawMsg: string = (stripeError?.raw?.message || String(stripeError?.message || stripeError));
         console.error('Error creating Stripe account:', stripeError);
 
@@ -174,6 +175,7 @@ serve(async (req) => {
           JSON.stringify({ error: friendly, details: rawMsg, code }),
           { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+      }
     } else {
       console.log('Using existing Stripe account:', accountId);
     }

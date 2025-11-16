@@ -95,12 +95,14 @@ export default function ScheduleSection() {
       setCurrentStatus('online');
       notifications.show({
         title: 'You are now online',
+        message: '',
         color: 'green',
       });
     } catch (error) {
       console.error('Error going online:', error);
       notifications.show({
         title: 'Failed to go online',
+        message: '',
         color: 'red',
       });
     }
@@ -125,6 +127,7 @@ export default function ScheduleSection() {
       setCurrentStatus('offline');
       notifications.show({
         title: 'You are now offline',
+        message: '',
         color: 'blue',
       });
     } catch (error) {
@@ -167,6 +170,7 @@ export default function ScheduleSection() {
       await fetchSchedule();
       notifications.show({
         title: 'Schedule updated',
+        message: '',
         color: 'green',
       });
       setShowAddModal(false);
@@ -174,6 +178,7 @@ export default function ScheduleSection() {
       console.error('Error saving schedule:', error);
       notifications.show({
         title: 'Failed to save schedule',
+        message: '',
         color: 'red',
       });
     }
@@ -191,12 +196,14 @@ export default function ScheduleSection() {
       await fetchSchedule();
       notifications.show({
         title: 'Schedule deleted',
+        message: '',
         color: 'green',
       });
     } catch (error) {
       console.error('Error deleting schedule:', error);
       notifications.show({
         title: 'Failed to delete schedule',
+        message: '',
         color: 'red',
       });
     }
@@ -234,9 +241,8 @@ export default function ScheduleSection() {
         <Paper
           pos="sticky"
           top={0}
-          style={{ zIndex: 10 }}
           bg="white"
-          style={{ borderBottom: '1px solid var(--mantine-color-slate-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+          style={{ zIndex: 10, borderBottom: '1px solid var(--mantine-color-slate-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
           className="safe-area-top"
         >
           <Box p="md">
@@ -331,9 +337,9 @@ export default function ScheduleSection() {
                   style={{
                     borderColor: isToday ? 'var(--mantine-color-orange-5)' : 'var(--mantine-color-slate-2)',
                     backgroundColor: isToday ? 'var(--mantine-color-orange-0)' : 'white',
+                    cursor: 'pointer'
                   }}
                   onClick={() => setSelectedDay(index)}
-                  style={{ cursor: 'pointer' }}
                 >
                   <Group justify="space-between">
                     <Group gap="md">

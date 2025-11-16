@@ -128,6 +128,7 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
       if (!authUser) {
         notifications.show({
           title: 'Not authenticated',
+          message: '',
           color: 'red',
         });
         return;
@@ -137,6 +138,7 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
       if (!fullName) {
         notifications.show({
           title: 'Name is required',
+          message: '',
           color: 'red',
         });
         return;
@@ -156,6 +158,7 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
       if (!formData.city || !formData.zipCode || !formData.phone) {
         notifications.show({
           title: 'Name, Phone, City, and Zip Code are required',
+          message: '',
           color: 'red',
         });
         return;
@@ -183,6 +186,7 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
         if (!formData.city || !formData.zipCode || !formData.phone) {
           notifications.show({
             title: 'Name, Phone, City, and Zip Code are required',
+            message: '',
             color: 'red',
           });
           return;
@@ -232,6 +236,7 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
       const errorMessage = error?.message || error?.details || 'Failed to save profile';
       notifications.show({
         title: `Error: ${errorMessage}`,
+        message: '',
         color: 'red',
       });
     } finally {
@@ -253,9 +258,8 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
       <Paper
         pos="sticky"
         top={0}
-        style={{ zIndex: 10 }}
         bg="white"
-        style={{ borderBottom: '1px solid var(--mantine-color-gray-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+        style={{ zIndex: 10, borderBottom: '1px solid var(--mantine-color-gray-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
         className="safe-area-top"
       >
         <Group px="xl" py="md" justify="space-between" align="center">

@@ -153,6 +153,7 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ onBack }
                     updateSettings({ provider: value as any });
                     notifications.show({
                       title: 'Navigation provider updated',
+                      message: '',
                       color: 'green',
                     });
                   }}
