@@ -216,30 +216,37 @@ const ExecutiveDocumentSign = () => {
     setIsSigning(true);
     setSuccessMessage(null);
 
-    const { data, error: submitError } = await supabase.functions.invoke('submit-executive-document-signature', {
-      body: {
+    // Use fetch directly for better error handling
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/submit-executive-document-signature`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+      },
+      body: JSON.stringify({
         document_id: document.id,
         typed_name: typedName.trim() || document.officer_name || null,
         signature_png_base64: signatureDataUrl,
         signer_user_agent: window.navigator.userAgent,
         signature_token: token,
-      },
+      }),
     });
 
-    // Handle edge function errors - when status is non-2xx, data may contain the error response
-    if (submitError) {
-      // When edge function returns non-2xx, data might still contain the error JSON
-      let errorMessage = 'Failed to submit signature. Please try again.';
-      
-      if (data?.error) {
-        errorMessage = data.error;
-      } else if (submitError.message && submitError.message !== 'Edge Function returned a non-2xx status code') {
-        errorMessage = submitError.message;
-      } else if (typeof submitError === 'object' && 'error' in submitError) {
-        errorMessage = String(submitError.error);
-      }
-      
-      console.error('Signature submission error:', { submitError, data });
+    let data: any;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      message.error('Failed to parse server response');
+      setIsSigning(false);
+      return;
+    }
+
+    if (!response.ok) {
+      const errorMessage = data?.error || `Server error: ${response.status} ${response.statusText}`;
+      console.error('Signature submission error:', { status: response.status, data });
       message.error(errorMessage);
       setIsSigning(false);
       return;
