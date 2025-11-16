@@ -587,6 +587,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
             } else {
               notifications.show({
                 title: 'Menu coming soon.',
+                message: '',
                 color: 'blue',
               });
             }
@@ -604,6 +605,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
             } else {
               notifications.show({
                 title: 'Notifications coming soon.',
+                message: '',
                 color: 'blue',
               });
             }

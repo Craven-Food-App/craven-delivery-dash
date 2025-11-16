@@ -380,10 +380,8 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
       
       // Note: status field is managed by triggers/functions
       // We just track locally for now
-        
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error updating order status:', error);
+    } catch (err) {
+      console.error('Error updating order status:', err);
     }
   };
 

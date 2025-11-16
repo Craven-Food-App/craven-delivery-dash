@@ -258,9 +258,8 @@ const ProfileDetailsPage: React.FC<ProfileDetailsPageProps> = ({ onBack }) => {
       <Paper
         pos="sticky"
         top={0}
-        style={{ zIndex: 10 }}
+        style={{ zIndex: 10, borderBottom: '1px solid var(--mantine-color-gray-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
         bg="white"
-        style={{ borderBottom: '1px solid var(--mantine-color-gray-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
         className="safe-area-top"
       >
         <Group px="xl" py="md" justify="space-between" align="center">

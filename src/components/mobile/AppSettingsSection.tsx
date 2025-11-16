@@ -150,11 +150,12 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ onBack }
                 <Select
                   value={navigationSettings.provider}
                   onChange={(value) => {
-                    updateSettings({ provider: value as any });
-                    notifications.show({
-                      title: 'Navigation provider updated',
-                      color: 'green',
-                    });
+                  updateSettings({ provider: value as any });
+                  notifications.show({
+                    title: 'Navigation provider updated',
+                    message: '',
+                    color: 'green',
+                  });
                   }}
                   data={navigationOptions}
                 />
