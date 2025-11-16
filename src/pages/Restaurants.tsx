@@ -946,7 +946,7 @@ const Restaurants = () => {
           
           {/* Search Bar */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               placeholder="Search restaurants or dishes"
@@ -970,8 +970,8 @@ const Restaurants = () => {
             {/* Center: Search */}
             <div className="flex-1 max-w-2xl mx-8">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <Input 
+                <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <TextInput 
                   placeholder="Search Crave'N" 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -988,9 +988,9 @@ const Restaurants = () => {
                   onClick={() => setShowAddressSelector(!showAddressSelector)}
                   className="flex items-center space-x-1 text-gray-600 hover:text-gray-900 transition-colors"
                 >
-                  <MapPin className="w-4 h-4" />
+                  <IconMapPin className="w-4 h-4" />
                   <span className="text-sm font-medium max-w-32 truncate">{location}</span>
-                  <ChevronRight className="w-4 h-4" />
+                  <IconChevronRight className="w-4 h-4" />
                 </button>
                 
                 {/* Address Selector Dropdown */}
@@ -999,7 +999,7 @@ const Restaurants = () => {
                     <div className="p-4">
                       <h3 className="font-semibold text-gray-900 mb-3">Select delivery address</h3>
                       <div className="space-y-2">
-                        <Input
+                        <TextInput
                           placeholder="Search for an address"
                           onChange={(e) => handleAddressSearch(e.target.value)}
                           className="w-full"
