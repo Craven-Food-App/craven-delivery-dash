@@ -2388,15 +2388,15 @@ const RestaurantMenuPage = () => {
                 }
             `}</style>
             
-                   {/* Triple Dipper Modal */}
-                   <TripleDipperModal />
+            {/* Triple Dipper Modal */}
+            <TripleDipperModal />
 
-                   {/* Mapbox CSS */}
-                   <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
-          </div>
-        </div>
-      </div>
-    </div>
+            {/* Mapbox CSS */}
+            <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
+          </Box>
+        </Box>
+      </Box>
+    </Box>
   );
 };
 

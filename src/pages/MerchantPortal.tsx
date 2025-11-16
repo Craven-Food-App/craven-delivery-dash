@@ -781,9 +781,8 @@ const RestaurantSetup = () => {
               </Card>
             </Stack>
           </Box>
-        </div>
-          )
-        ) : activeTab === 'insights' ? <InsightsDashboard /> : activeTab === 'reports' ? <ReportsDashboard /> : activeTab === 'customers' ? <CustomersDashboard /> : activeTab === 'orders' ? <RestaurantCustomerOrderManagement restaurantId={restaurant.id} /> : activeTab === 'menu' ? <MenuDashboard restaurantId={restaurant.id} /> : activeTab === 'availability' ? <StoreAvailabilityDashboard /> : activeTab === 'financials' ? <FinancialsDashboard /> : activeTab === 'settings' ? <SettingsDashboard defaultTab={settingsTab} /> : activeTab === 'commerce' ? <CommercePlatformDashboard /> : activeTab === 'request-delivery' ? <RequestDeliveryDashboard /> : null}
+        )
+      ) : activeTab === 'insights' ? <InsightsDashboard /> : activeTab === 'reports' ? <ReportsDashboard /> : activeTab === 'customers' ? <CustomersDashboard /> : activeTab === 'orders' ? <RestaurantCustomerOrderManagement restaurantId={restaurant.id} /> : activeTab === 'menu' ? <MenuDashboard restaurantId={restaurant.id} /> : activeTab === 'availability' ? <StoreAvailabilityDashboard /> : activeTab === 'financials' ? <FinancialsDashboard /> : activeTab === 'settings' ? <SettingsDashboard defaultTab={settingsTab} /> : activeTab === 'commerce' ? <CommercePlatformDashboard /> : activeTab === 'request-delivery' ? <RequestDeliveryDashboard /> : null}
         </Box>
       </ScrollArea>
 
