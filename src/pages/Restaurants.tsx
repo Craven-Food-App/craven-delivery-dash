@@ -4,102 +4,94 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import RestaurantGrid from '@/components/RestaurantGrid';
 import AccountPopup from '@/components/AccountPopup';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
+import { 
+  Box, 
+  Stack, 
+  Group, 
+  Text, 
+  Title, 
+  Button, 
+  TextInput, 
+  Badge, 
+  Card, 
+  ActionIcon, 
+  Image as MantineImage,
+  ScrollArea,
+  Menu,
+  Drawer,
+  Loader,
+  Divider,
+  Container,
+  Grid,
+  Grid.Col
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { 
-  Search, 
-  MapPin, 
-  Filter, 
-  Star, 
-  Clock, 
-  Zap, 
-  TrendingUp, 
-  ChevronLeft, 
-  Plus,
-  Bell,
-  ShoppingCart,
-  Home,
-  Utensils,
-  Coffee,
-  Store,
-  Heart,
-  User,
-  Settings,
-  ChevronRight,
-  Flame,
-  Award,
-  Truck,
-  Shield,
-  DollarSign,
-  Timer,
-  Navigation,
-  Menu,
-  X,
-  Sparkles,
-  Crown,
-  Gift,
-  Target,
-  TrendingDown,
-  Users,
-  Globe,
-  Smartphone,
-  Wifi,
-  CreditCard,
-  ShieldCheck,
-  TruckIcon,
-  MapIcon,
-  Phone,
-  MessageCircle,
-  Share2,
-  Bookmark,
-  Eye,
-  ThumbsUp,
-  RefreshCw,
-  ChevronDown,
-  SlidersHorizontal,
-  SortAsc,
-  Grid3X3,
-  List,
-  Layers,
-  Compass,
-  Zap as Lightning,
-  Star as StarIcon,
-  Clock as ClockIcon,
-  DollarSign as DollarIcon,
-  Truck as TruckIconAlt,
-  Navigation as NavigationIcon,
-  MapPin as MapPinIcon,
-  Phone as PhoneIcon,
-  MessageCircle as MessageIcon,
-  Share2 as ShareIcon,
-  Bookmark as BookmarkIcon,
-  Eye as EyeIcon,
-  ThumbsUp as ThumbsUpIcon,
-  RefreshCw as RefreshIcon,
-  ChevronDown as ChevronDownIcon,
-  SlidersHorizontal as SlidersIcon,
-  SortAsc as SortIcon,
-  Grid3X3 as GridIcon,
-  List as ListIcon,
-  Layers as LayersIcon,
-  Compass as CompassIcon,
-  Package
-} from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+  IconSearch, 
+  IconMapPin, 
+  IconFilter, 
+  IconStar, 
+  IconClock, 
+  IconZap, 
+  IconTrendingUp, 
+  IconChevronLeft, 
+  IconPlus,
+  IconBell,
+  IconShoppingCart,
+  IconHome,
+  IconUtensils,
+  IconCoffee,
+  IconBuildingStore,
+  IconHeart,
+  IconUser,
+  IconSettings,
+  IconChevronRight,
+  IconFlame,
+  IconAward,
+  IconTruck,
+  IconShield,
+  IconCurrencyDollar,
+  IconTimer,
+  IconNavigation,
+  IconMenu2,
+  IconX,
+  IconSparkles,
+  IconCrown,
+  IconGift,
+  IconTarget,
+  IconTrendingDown,
+  IconUsers,
+  IconWorld,
+  IconDeviceMobile,
+  IconWifi,
+  IconCreditCard,
+  IconShieldCheck,
+  IconPhone,
+  IconMessageCircle,
+  IconShare,
+  IconBookmark,
+  IconEye,
+  IconThumbUp,
+  IconRefresh,
+  IconChevronDown,
+  IconSliders,
+  IconSortAscending,
+  IconGrid3x3,
+  IconList,
+  IconLayers,
+  IconCompass,
+  IconPackage
+} from '@tabler/icons-react';
 import { supabase } from '@/integrations/supabase/client';
 import cravenLogo from "@/assets/craven-logo.png";
 
 // Professional Rating Icon Component
 const RatingPill = ({ rating }: { rating: number }) => (
-  <span className="flex items-center gap-1 bg-white px-2 py-0.5 rounded-full shadow-md">
-    <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-    <span className="text-xs font-semibold text-neutral-900">{rating}</span>
-  </span>
+  <Group gap={4} style={{ backgroundColor: 'white', padding: '4px 8px', borderRadius: '9999px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+    <IconStar size={12} style={{ color: '#f59e0b', fill: '#f59e0b' }} />
+    <Text size="xs" fw={600} c="gray.9">{rating}</Text>
+  </Group>
 );
 
 // Professional Restaurant Card
@@ -112,68 +104,80 @@ const RestaurantCard = ({
   likedItems: Set<string>; 
   toggleLike: (id: string) => void;
 }) => (
-  <article
-    className="min-w-[280px] bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer active:scale-[0.98] border border-neutral-100"
+  <Card
+    style={{ 
+      minWidth: '280px', 
+      cursor: 'pointer',
+      transition: 'all 0.3s',
+      border: '1px solid #e5e7eb'
+    }}
+    shadow="md"
+    radius="md"
+    onClick={() => {}}
   >
-    <div className="relative h-40 bg-neutral-100">
-      <img
+    <Box style={{ position: 'relative', height: '160px', backgroundColor: '#f5f5f5', overflow: 'hidden' }}>
+      <MantineImage
         src={restaurant.image || restaurant.image_url || `https://placehold.co/600x400/f5f5f5/333?text=Craven`}
         alt={restaurant.name}
+        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         onError={(e) => { 
-          const target = e.target as HTMLImageElement;
-          target.onerror = null; 
-          target.src = "https://placehold.co/600x400/f5f5f5/333?text=Craven"; 
+          e.currentTarget.src = "https://placehold.co/600x400/f5f5f5/333?text=Craven"; 
         }}
-        className="w-full h-full object-cover transition-opacity duration-500"
       />
 
-      <div className="absolute top-0 right-0 p-3">
-        <button
+      <Box style={{ position: 'absolute', top: 12, right: 12 }}>
+        <ActionIcon
           onClick={(e) => {
             e.stopPropagation();
             toggleLike(restaurant.id);
           }}
-          className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center transition-transform active:scale-90 shadow"
-          aria-label={`Favorite ${restaurant.name}`}
+          variant="filled"
+          color="white"
+          size="md"
+          radius="xl"
+          style={{ 
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(4px)'
+          }}
         >
-          <Heart
-            className={`w-4 h-4 transition-colors ${
-              likedItems.has(restaurant.id)
-                ? 'fill-red-700 text-red-700'
-                : 'text-neutral-500'
-            }`}
+          <IconHeart 
+            size={16} 
+            style={{ 
+              color: likedItems.has(restaurant.id) ? '#b91c1c' : '#737373',
+              fill: likedItems.has(restaurant.id) ? '#b91c1c' : 'none'
+            }} 
           />
-        </button>
-      </div>
+        </ActionIcon>
+      </Box>
 
-      <div className="absolute bottom-3 left-3">
+      <Box style={{ position: 'absolute', bottom: 12, left: 12 }}>
         <RatingPill rating={restaurant.rating || 4.5} />
-      </div>
+      </Box>
 
       {restaurant.time && (
-        <div className="absolute bottom-3 right-3 bg-white px-3 py-1 rounded-full shadow-md">
-          <div className="flex items-center gap-1 text-sm font-semibold text-neutral-800">
-            <Clock className="w-4 h-4 text-neutral-500" />
-            <span>{restaurant.time}</span>
-          </div>
-        </div>
+        <Box style={{ position: 'absolute', bottom: 12, right: 12, backgroundColor: 'white', padding: '4px 12px', borderRadius: '9999px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+          <Group gap={4}>
+            <IconClock size={16} style={{ color: '#737373' }} />
+            <Text size="sm" fw={600} c="gray.8">{restaurant.time}</Text>
+          </Group>
+        </Box>
       )}
-    </div>
+    </Box>
 
-    <div className="p-4">
-      <h3 className="text-lg font-extrabold text-neutral-900 mb-0.5 truncate">
+    <Stack gap="xs" p="md">
+      <Text size="lg" fw={800} c="gray.9" lineClamp={1}>
         {restaurant.name}
-      </h3>
-      <div className="flex items-center gap-2 text-sm text-neutral-600 mb-1">
-        <span>{restaurant.distance || '0.5 mi'}</span>
-        <span className="text-neutral-400">•</span>
-        <span>{restaurant.reviews || '0'} reviews</span>
-      </div>
+      </Text>
+      <Group gap="xs">
+        <Text size="sm" c="gray.6">{restaurant.distance || '0.5 mi'}</Text>
+        <Text size="sm" c="gray.4">•</Text>
+        <Text size="sm" c="gray.6">{restaurant.reviews || '0'} reviews</Text>
+      </Group>
       {restaurant.promo && (
-        <p className="text-sm font-semibold text-red-700 mt-2">{restaurant.promo}</p>
+        <Text size="sm" fw={600} c="red.7" mt="xs">{restaurant.promo}</Text>
       )}
-    </div>
-  </article>
+    </Stack>
+  </Card>
 );
 
 const Restaurants = () => {
@@ -205,7 +209,6 @@ const Restaurants = () => {
   const [showAccountPopup, setShowAccountPopup] = useState(false);
   const [accountPopupPosition, setAccountPopupPosition] = useState({ top: 0, left: 0 });
   
-  const { toast } = useToast();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const currentLocation = useLocation();
@@ -256,9 +259,10 @@ const Restaurants = () => {
   const selectAddress = (address: string) => {
     setLocation(address);
     setShowAddressSelector(false);
-    toast({
+    notifications.show({
       title: "Location Updated",
-      description: `Delivery address set to ${address}`,
+      message: `Delivery address set to ${address}`,
+      color: 'orange',
     });
   };
 
@@ -297,9 +301,10 @@ const Restaurants = () => {
   // Cart functionality
   const addToCart = (item: any) => {
     setCartItems(prev => [...prev, item]);
-    toast({
+    notifications.show({
       title: "Added to Cart",
-      description: `${item.name} has been added to your cart`,
+      message: `${item.name} has been added to your cart`,
+      color: 'orange',
     });
   };
 
@@ -314,10 +319,11 @@ const Restaurants = () => {
   // Filter functionality
   const applyFilters = () => {
     // This would filter restaurants based on active filters
-    // For now, we'll just show a toast
-    toast({
+    // For now, we'll just show a notification
+    notifications.show({
       title: "Filters Applied",
-      description: `Showing ${activeFilter} restaurants`,
+      message: `Showing ${activeFilter} restaurants`,
+      color: 'orange',
     });
   };
 
@@ -410,16 +416,16 @@ const Restaurants = () => {
 
   // Navigation categories
   const navCategories = [
-    { id: 'all', label: 'All', icon: Home, active: activeCategory === 'all' },
-    { id: 'grocery', label: 'Grocery', icon: Store, active: activeCategory === 'grocery' },
-    { id: 'convenience', label: 'Convenience', icon: Coffee, active: activeCategory === 'convenience' },
-    { id: 'dashmart', label: "Craven'Z", icon: Store, active: activeCategory === 'dashmart' },
-    { id: 'beauty', label: 'Beauty', icon: Heart, active: activeCategory === 'beauty' },
-    { id: 'pets', label: 'Pets', icon: Heart, active: activeCategory === 'pets' },
-    { id: 'health', label: 'Health', icon: Shield, active: activeCategory === 'health' },
-    { id: 'browse', label: 'Browse All', icon: Search, active: activeCategory === 'browse' },
-    { id: 'orders', label: 'Orders', icon: Clock, active: activeCategory === 'orders' },
-    { id: 'account', label: 'Account', icon: User, active: activeCategory === 'account' }
+    { id: 'all', label: 'All', icon: IconHome, active: activeCategory === 'all' },
+    { id: 'grocery', label: 'Grocery', icon: IconBuildingStore, active: activeCategory === 'grocery' },
+    { id: 'convenience', label: 'Convenience', icon: IconCoffee, active: activeCategory === 'convenience' },
+    { id: 'dashmart', label: "Craven'Z", icon: IconBuildingStore, active: activeCategory === 'dashmart' },
+    { id: 'beauty', label: 'Beauty', icon: IconHeart, active: activeCategory === 'beauty' },
+    { id: 'pets', label: 'Pets', icon: IconHeart, active: activeCategory === 'pets' },
+    { id: 'health', label: 'Health', icon: IconShield, active: activeCategory === 'health' },
+    { id: 'browse', label: 'Browse All', icon: IconSearch, active: activeCategory === 'browse' },
+    { id: 'orders', label: 'Orders', icon: IconClock, active: activeCategory === 'orders' },
+    { id: 'account', label: 'Account', icon: IconUser, active: activeCategory === 'account' }
   ];
 
   const handleCategoryClick = (categoryId: string) => {
@@ -511,10 +517,10 @@ const Restaurants = () => {
     const isFavorites = currentLocation.pathname === '/customer-dashboard' && currentLocation.search.includes('tab=favorites');
 
     return [
-      { name: 'Home', icon: Home, current: isHome, path: '/restaurants' },
-      { name: 'Favorites', icon: Heart, current: isFavorites, path: '/customer-dashboard?tab=favorites' },
-      { name: 'Orders', icon: Package, current: isOrders, path: '/customer-dashboard?tab=orders' },
-      { name: 'Account', icon: User, current: isAccount, path: '/customer-dashboard?tab=account' },
+      { name: 'Home', icon: IconHome, current: isHome, path: '/restaurants' },
+      { name: 'Favorites', icon: IconHeart, current: isFavorites, path: '/customer-dashboard?tab=favorites' },
+      { name: 'Orders', icon: IconPackage, current: isOrders, path: '/customer-dashboard?tab=orders' },
+      { name: 'Account', icon: IconUser, current: isAccount, path: '/customer-dashboard?tab=account' },
     ];
   };
 
@@ -532,266 +538,348 @@ const Restaurants = () => {
   // Mobile App Landing Page
   if (isMobile && !showMain) {
     return (
-      <div className="w-full max-w-[430px] mx-auto h-screen bg-gradient-to-br from-red-50 via-white to-neutral-50 flex flex-col overflow-y-auto font-sans">
+      <Box style={{ width: '100%', maxWidth: '430px', margin: '0 auto', minHeight: '100vh', background: 'linear-gradient(to bottom right, #fef2f2, white, #fafafa)', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
         {/* Status Bar */}
-        <div className="h-11 flex items-center justify-between px-6 bg-white/80 backdrop-blur-sm text-neutral-900">
-          <div className="text-sm font-semibold">9:41</div>
-          <div className="flex items-center gap-1">
-            <span className="text-xs font-mono">LTE</span>
-          </div>
-        </div>
+        <Group justify="space-between" p="md" style={{ height: '44px', backgroundColor: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(4px)' }}>
+          <Text size="sm" fw={600} c="gray.9">9:41</Text>
+          <Group gap={4}>
+            <Text size="xs" style={{ fontFamily: 'monospace' }}>LTE</Text>
+          </Group>
+        </Group>
 
         {/* Hero Section - Light, Premium */}
-        <div className="px-6 pt-16 pb-12 relative overflow-hidden flex flex-col justify-between flex-1">
+        <Box style={{ padding: '24px', paddingTop: '64px', paddingBottom: '48px', position: 'relative', overflow: 'hidden', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           {/* Logo and Tagline */}
-          <div className="relative z-10">
-            <h1 className="text-7xl font-black text-neutral-900 mb-2 tracking-tighter">Craven.</h1>
-            <p className="text-2xl font-light text-neutral-700 max-w-xs">
+          <Box style={{ position: 'relative', zIndex: 10 }}>
+            <Title order={1} style={{ fontSize: '72px', fontWeight: 900, marginBottom: '8px', letterSpacing: '-0.05em', color: '#171717' }}>Craven.</Title>
+            <Text size="xl" fw={300} c="gray.7" style={{ maxWidth: '320px' }}>
               Your premium choice for food delivery.
-            </p>
-          </div>
+            </Text>
+          </Box>
           
           {/* Decorative background image (Subtle) */}
-          <div className="absolute inset-0 z-0 opacity-5">
-            <img 
+          <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0, opacity: 0.05 }}>
+            <MantineImage 
               src="https://images.unsplash.com/photo-1542456578-1a52c34c568f?w=600&h=800&fit=crop&q=80" 
               alt="Background texture" 
-              className="w-full h-full object-cover" 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
-          </div>
+          </Box>
 
           {/* Action Area */}
-          <div className="relative z-10 pt-16">
-            <p className="text-neutral-600 text-sm mb-4">Enter your corporate or residential address to begin.</p>
-            <div className="relative bg-white rounded-xl overflow-hidden shadow-2xl shadow-red-900/20 border border-red-100">
-              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-red-700" />
-              <input
-                type="text"
+          <Box style={{ position: 'relative', zIndex: 10, paddingTop: '64px' }}>
+            <Text size="sm" c="gray.6" mb="md">Enter your corporate or residential address to begin.</Text>
+            <Box style={{ position: 'relative', backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(127, 29, 29, 0.25)', border: '1px solid #fee2e2' }}>
+              <IconMapPin size={20} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#b91c1c' }} />
+              <TextInput
                 value={location}
-                onChange={(e) => setLocation(e.target.value)}
+                onChange={(e) => setLocation(e.currentTarget.value)}
                 placeholder="Enter delivery address"
-                className="w-full pl-12 pr-16 py-4 text-base font-medium text-neutral-900 placeholder-neutral-500 border-2 border-transparent focus:border-red-600 focus:outline-none transition-colors rounded-xl"
+                style={{ paddingLeft: '48px', paddingRight: '64px' }}
+                styles={{ input: { border: '2px solid transparent', fontSize: '16px', fontWeight: 500, padding: '16px', borderRadius: '12px' } }}
               />
-              <button
+              <ActionIcon
                 onClick={() => setShowMain(true)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-red-700 rounded-lg flex items-center justify-center active:scale-95 transition-transform shadow-lg shadow-red-700/50"
+                color="red"
+                variant="filled"
+                size="lg"
+                radius="md"
+                style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', backgroundColor: '#b91c1c', boxShadow: '0 10px 15px -3px rgba(185, 28, 28, 0.5)' }}
               >
-                <ChevronRight className="w-5 h-5 text-white" />
-              </button>
-            </div>
+                <IconChevronRight size={20} />
+              </ActionIcon>
+            </Box>
 
-            <div className="flex justify-between items-center mt-6">
-              <button
+            <Group justify="space-between" mt="lg">
+              <Button
                 onClick={() => setShowMain(true)}
-                className="flex items-center gap-2 px-4 py-2 text-neutral-600 text-sm font-medium hover:text-neutral-900 transition-colors"
+                variant="subtle"
+                leftSection={<IconUser size={16} />}
+                style={{ color: '#737373', fontWeight: 500 }}
               >
-                <User className="w-4 h-4" />
                 Sign In / Sign Up
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setShowMain(true)}
-                className="flex items-center gap-2 px-4 py-2 text-red-700 text-sm font-medium hover:text-red-800 transition-colors"
+                variant="subtle"
+                leftSection={<IconNavigation size={16} />}
+                style={{ color: '#b91c1c', fontWeight: 500 }}
               >
-                <Navigation className="w-4 h-4" />
                 Use My Location
-              </button>
-            </div>
-          </div>
-        </div>
+              </Button>
+            </Group>
+          </Box>
+        </Box>
 
         {/* Footer Links */}
-        <div className="bg-white/80 backdrop-blur-sm px-6 py-4 border-t border-neutral-200">
-          <div className="grid grid-cols-3 text-center text-xs text-neutral-600">
-            <a href="#" className="hover:text-red-700 transition-colors">Deliver</a>
-            <a href="#" className="hover:text-red-700 transition-colors">Partner</a>
-            <a href="#" className="hover:text-red-700 transition-colors">Help</a>
-          </div>
-        </div>
-      </div>
+        <Group justify="center" p="md" style={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(4px)', borderTop: '1px solid #e5e7eb' }}>
+          <Text size="xs" c="gray.6" component="a" href="#" style={{ textDecoration: 'none', cursor: 'pointer' }}>Deliver</Text>
+          <Text size="xs" c="gray.6" component="a" href="#" style={{ textDecoration: 'none', cursor: 'pointer' }}>Partner</Text>
+          <Text size="xs" c="gray.6" component="a" href="#" style={{ textDecoration: 'none', cursor: 'pointer' }}>Help</Text>
+        </Group>
+      </Box>
     );
   }
 
   // Mobile App Main Interface
   if (isMobile && showMain) {
     return (
-      <div className="w-full max-w-[430px] mx-auto h-screen bg-white flex flex-col overflow-hidden font-sans">
+      <Box style={{ width: '100%', maxWidth: '430px', margin: '0 auto', minHeight: '100vh', backgroundColor: 'white', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Status Bar */}
-        <div className="h-11 bg-white flex items-center justify-between px-4">
-          <div className="text-sm font-semibold">9:41</div>
-          <div className="flex items-center gap-1 text-xs">LTE</div>
-        </div>
+        <Group justify="space-between" p="md" style={{ height: '44px', backgroundColor: 'white' }}>
+          <Text size="sm" fw={600}>9:41</Text>
+          <Group gap={4}>
+            <Text size="xs">LTE</Text>
+          </Group>
+        </Group>
         
         {/* Search & Address Bar (Sticky Header) */}
-        <header className="bg-white sticky top-0 z-20 shadow-sm border-b border-neutral-100 px-4 pt-2 pb-3">
+        <Box component="header" style={{ backgroundColor: 'white', position: 'sticky', top: 0, zIndex: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderBottom: '1px solid #e5e7eb', padding: '8px 16px 12px' }}>
           {/* Address and Account */}
-          <div className="flex items-center justify-between mb-3">
-            <button 
-              className="flex items-center p-2 rounded-xl active:bg-neutral-100 transition-colors"
+          <Group justify="space-between" mb="md">
+            <Button
+              variant="subtle"
+              leftSection={<IconMapPin size={20} style={{ color: '#b91c1c' }} />}
+              rightSection={<IconChevronRight size={16} style={{ color: '#a3a3a3' }} />}
               onClick={() => setShowMain(false)}
+              style={{ padding: '8px', borderRadius: '12px' }}
             >
-              <MapPin className="w-5 h-5 text-red-700" />
-              <div className="text-left ml-2">
-                <p className="text-xs text-neutral-500 font-medium leading-none">Deliver to</p>
-                <p className="text-sm font-bold text-neutral-900 truncate max-w-[150px]">{location.split(',')[0]}...</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-neutral-400 ml-1" />
-            </button>
+              <Stack gap={0} align="flex-start">
+                <Text size="xs" c="gray.5" fw={500} style={{ lineHeight: 1 }}>Deliver to</Text>
+                <Text size="sm" fw={700} c="gray.9" lineClamp={1} style={{ maxWidth: '150px' }}>{location.split(',')[0]}...</Text>
+              </Stack>
+            </Button>
 
-            <div className="flex items-center gap-2">
-              <button 
+            <Group gap="xs">
+              <ActionIcon
                 onClick={() => navigate('/customer-dashboard?tab=notifications')}
-                className="p-2 active:bg-neutral-100 rounded-full transition-colors relative"
+                variant="subtle"
+                size="lg"
+                radius="xl"
+                style={{ position: 'relative' }}
               >
-                <Bell className="w-6 h-6 text-neutral-600" />
+                <IconBell size={24} style={{ color: '#737373' }} />
                 {notifications.filter(n => !n.read).length > 0 && (
-                  <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-700 rounded-full border-2 border-white"></span>
+                  <Box style={{ position: 'absolute', top: 4, right: 4, width: '10px', height: '10px', backgroundColor: '#b91c1c', borderRadius: '50%', border: '2px solid white' }} />
                 )}
-              </button>
-              <button 
+              </ActionIcon>
+              <ActionIcon
                 onClick={() => navigate('/customer-dashboard?tab=account')}
-                className="p-2 active:bg-neutral-100 rounded-full transition-colors"
+                variant="subtle"
+                size="lg"
+                radius="xl"
               >
-                <User className="w-6 h-6 text-neutral-900" />
-              </button>
-            </div>
-          </div>
+                <IconUser size={24} style={{ color: '#171717' }} />
+              </ActionIcon>
+            </Group>
+          </Group>
 
           {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
-            <input
-              type="text"
+          <Box style={{ position: 'relative' }}>
+            <IconSearch size={20} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#a3a3a3', zIndex: 1 }} />
+            <TextInput
               placeholder="Search Craven, Restaurants, or Food"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 text-base bg-neutral-50 border-0 rounded-xl focus:ring-2 focus:ring-red-200 focus:bg-white focus:outline-none transition-all font-medium"
+              onChange={(e) => setSearchQuery(e.currentTarget.value)}
+              styles={{ 
+                input: { 
+                  paddingLeft: '44px', 
+                  paddingRight: '16px', 
+                  paddingTop: '12px', 
+                  paddingBottom: '12px', 
+                  fontSize: '16px', 
+                  backgroundColor: '#fafafa', 
+                  border: 'none', 
+                  borderRadius: '12px',
+                  fontWeight: 500
+                }
+              }}
             />
-          </div>
-        </header>
+          </Box>
+        </Box>
 
         {/* Scrollable Content */}
-        <main className="flex-1 overflow-y-auto bg-neutral-50">
-          {/* Quick Filters/Categories */}
-          <div className="px-4 py-3 flex gap-2 overflow-x-auto whitespace-nowrap border-b border-neutral-100 bg-white">
-            {['Fast Delivery', 'High Rated', 'Breakfast', 'Deals', 'Grocery', 'Dessert'].map((item) => (
-              <button 
-                key={item}
-                className="flex items-center bg-white border border-neutral-200 text-neutral-700 text-sm font-medium px-4 py-2 rounded-full shadow-sm active:bg-red-50 active:border-red-200 transition-all hover:bg-neutral-100"
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-
-          {/* Promo Carousel */}
-          <section className="py-5">
-            <div className="flex gap-4 px-4 overflow-x-auto pb-3 -mx-4 px-4">
-              {PROMOS_DATA.map((promo) => (
-                <div
-                  key={promo.id}
-                  className={`min-w-[320px] max-w-[90vw] bg-gradient-to-br ${promo.color} rounded-2xl p-5 flex items-center justify-between shadow-xl cursor-pointer active:scale-[0.99] transition-transform`}
+        <ScrollArea style={{ flex: 1, backgroundColor: '#fafafa' }}>
+          <Box component="main">
+            {/* Quick Filters/Categories */}
+            <Group gap="xs" p="md" style={{ overflowX: 'auto', whiteSpace: 'nowrap', borderBottom: '1px solid #e5e7eb', backgroundColor: 'white' }}>
+              {['Fast Delivery', 'High Rated', 'Breakfast', 'Deals', 'Grocery', 'Dessert'].map((item) => (
+                <Button
+                  key={item}
+                  variant="outline"
+                  size="sm"
+                  radius="xl"
+                  style={{ 
+                    backgroundColor: 'white', 
+                    borderColor: '#e5e7eb',
+                    color: '#404040',
+                    fontWeight: 500,
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
+                  }}
                 >
-                  <div className="flex-1 pr-4">
-                    <h3 className="text-xl font-bold text-white mb-1 leading-snug">
-                      {promo.title}
-                    </h3>
-                    <p className="text-sm text-neutral-300 mb-4">{promo.subtitle}</p>
-                    <button className="px-5 py-2.5 bg-white text-red-700 text-sm font-extrabold rounded-lg shadow-md hover:bg-neutral-100 active:scale-95 transition-transform">
-                      View Details
-                    </button>
-                  </div>
-                  <div className="w-20 h-20 flex-shrink-0 opacity-80">
-                    <img src={promo.image} alt="" className="w-full h-full object-cover rounded-xl" />
-                  </div>
-                </div>
+                  {item}
+                </Button>
               ))}
-            </div>
-          </section>
+            </Group>
 
-          {/* Fastest near you */}
-          <section className="px-4 py-5 bg-white border-t border-neutral-100">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-extrabold text-neutral-900">Craven Quick Picks</h2>
-              <button className="p-1 active:bg-neutral-100 rounded-full transition-colors text-red-700">
-                <ChevronRight className="w-6 h-6" />
-              </button>
-            </div>
-            
-            <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4">
-              {RESTAURANTS_DATA.fastest.map((restaurant) => (
-                <RestaurantCard 
-                  key={restaurant.id} 
-                  restaurant={restaurant} 
-                  likedItems={likedItems} 
-                  toggleLike={toggleLike} 
-                />
-              ))}
-            </div>
-          </section>
+            {/* Promo Carousel */}
+            <Box py="xl" px="md">
+              <Group gap="md" style={{ overflowX: 'auto', paddingBottom: '12px' }}>
+                {PROMOS_DATA.map((promo) => {
+                  const gradientMap: Record<string, string> = {
+                    'from-slate-800 to-red-900': 'linear-gradient(to bottom right, #1e293b, #7f1d1d)',
+                    'from-red-700 to-amber-600': 'linear-gradient(to bottom right, #b91c1c, #d97706)',
+                  };
+                  const gradient = gradientMap[promo.color] || 'linear-gradient(to bottom right, #1e293b, #7f1d1d)';
+                  
+                  return (
+                    <Card
+                      key={promo.id}
+                      style={{ 
+                        minWidth: '320px', 
+                        maxWidth: '90vw',
+                        background: gradient,
+                        cursor: 'pointer',
+                        boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+                      }}
+                      radius="lg"
+                      p="lg"
+                    >
+                      <Group justify="space-between" align="flex-start">
+                        <Stack gap="xs" style={{ flex: 1, paddingRight: '16px' }}>
+                          <Title order={3} c="white" fw={700} style={{ fontSize: '20px', lineHeight: '1.3' }}>
+                            {promo.title}
+                          </Title>
+                          <Text size="sm" c="gray.3" mb="md">{promo.subtitle}</Text>
+                          <Button
+                            variant="filled"
+                            color="white"
+                            size="sm"
+                            radius="md"
+                            style={{ color: '#b91c1c', fontWeight: 800, boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                          >
+                            View Details
+                          </Button>
+                        </Stack>
+                        <Box style={{ width: '80px', height: '80px', flexShrink: 0, opacity: 0.8 }}>
+                          <MantineImage src={promo.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }} />
+                        </Box>
+                      </Group>
+                    </Card>
+                  );
+                })}
+              </Group>
+            </Box>
 
-          {/* Premium Selections */}
-          <section className="px-4 py-5 mt-3 bg-white border-t border-neutral-100">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-extrabold text-neutral-900">Premium Selections</h2>
-              <button className="p-1 active:bg-neutral-100 rounded-full transition-colors text-red-700">
-                <ChevronRight className="w-6 h-6" />
-              </button>
-            </div>
-            
-            <div className="flex flex-col gap-4">
-              {RESTAURANTS_DATA.premium.map((restaurant) => (
-                <RestaurantCard 
-                  key={restaurant.id} 
-                  restaurant={restaurant} 
-                  likedItems={likedItems} 
-                  toggleLike={toggleLike} 
-                />
-              ))}
-            </div>
-          </section>
+            {/* Fastest near you */}
+            <Box px="md" py="xl" style={{ backgroundColor: 'white', borderTop: '1px solid #e5e7eb' }}>
+              <Group justify="space-between" mb="md">
+                <Title order={2} fw={800} c="gray.9" style={{ fontSize: '24px' }}>Craven Quick Picks</Title>
+                <ActionIcon variant="subtle" color="red" radius="xl">
+                  <IconChevronRight size={24} />
+                </ActionIcon>
+              </Group>
+              
+              <Group gap="md" style={{ overflowX: 'auto', paddingBottom: '8px' }}>
+                {RESTAURANTS_DATA.fastest.map((restaurant) => (
+                  <RestaurantCard 
+                    key={restaurant.id} 
+                    restaurant={restaurant} 
+                    likedItems={likedItems} 
+                    toggleLike={toggleLike} 
+                  />
+                ))}
+              </Group>
+            </Box>
 
-          {/* Spacing for Nav */}
-          <div className="h-24"></div> 
-        </main>
+            {/* Premium Selections */}
+            <Box px="md" py="xl" mt="md" style={{ backgroundColor: 'white', borderTop: '1px solid #e5e7eb' }}>
+              <Group justify="space-between" mb="md">
+                <Title order={2} fw={800} c="gray.9" style={{ fontSize: '24px' }}>Premium Selections</Title>
+                <ActionIcon variant="subtle" color="red" radius="xl">
+                  <IconChevronRight size={24} />
+                </ActionIcon>
+              </Group>
+              
+              <Stack gap="md">
+                {RESTAURANTS_DATA.premium.map((restaurant) => (
+                  <RestaurantCard 
+                    key={restaurant.id} 
+                    restaurant={restaurant} 
+                    likedItems={likedItems} 
+                    toggleLike={toggleLike} 
+                  />
+                ))}
+              </Stack>
+            </Box>
+
+            {/* Spacing for Nav */}
+            <Box style={{ height: '96px' }} />
+          </Box>
+        </ScrollArea>
 
         {/* Bottom Navigation: Floating and Robust */}
-        <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-white border-t border-neutral-100 shadow-2xl shadow-neutral-300/50 z-30">
-          <div className="flex justify-around pt-3 pb-6">
-            {NAV_ITEMS.map(item => (
-              <button 
-                key={item.name}
-                onClick={() => handleNavClick(item.path)}
-                className="flex flex-col items-center gap-1 py-1 text-neutral-500 hover:text-red-700 active:scale-95 transition-all relative"
-              >
-                <item.icon className={`w-6 h-6 transition-colors ${item.current ? 'text-red-700' : 'text-neutral-500'}`} />
-                <span className={`text-[11px] font-semibold transition-colors ${item.current ? 'text-red-700' : 'text-neutral-600'}`}>{item.name}</span>
-                
-                {item.name === 'Favorites' && likedItems.size > 0 && (
-                  <span className="absolute top-0 right-1 bg-red-700 text-white text-[10px] font-bold min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center pointer-events-none">
-                    {likedItems.size}
-                  </span>
-                )}
+        <Box component="nav" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, maxWidth: '430px', margin: '0 auto', backgroundColor: 'white', borderTop: '1px solid #e5e7eb', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', zIndex: 30 }}>
+          <Group justify="space-around" pt="md" pb="xl">
+            {NAV_ITEMS.map(item => {
+              const IconComponent = item.icon;
+              return (
+                <Button
+                  key={item.name}
+                  onClick={() => handleNavClick(item.path)}
+                  variant="subtle"
+                  style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    alignItems: 'center', 
+                    gap: '4px', 
+                    padding: '4px',
+                    color: item.current ? '#b91c1c' : '#737373',
+                    position: 'relative'
+                  }}
+                >
+                  <IconComponent size={24} style={{ color: item.current ? '#b91c1c' : '#737373' }} />
+                  <Text size="xs" fw={600} c={item.current ? 'red.7' : 'gray.6'}>{item.name}</Text>
+                  
+                  {item.name === 'Favorites' && likedItems.size > 0 && (
+                    <Badge size="xs" color="red" style={{ position: 'absolute', top: 0, right: 4, minWidth: '16px', height: '16px', padding: '0 4px' }}>
+                      {likedItems.size}
+                    </Badge>
+                  )}
 
-                {item.name === 'Orders' && <span className="absolute top-0 right-1 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></span>}
-              </button>
-            ))}
+                  {item.name === 'Orders' && (
+                    <Box style={{ position: 'absolute', top: 0, right: 4, width: '10px', height: '10px', backgroundColor: '#22c55e', borderRadius: '50%', border: '2px solid white' }} />
+                  )}
+                </Button>
+              );
+            })}
             
             {/* Dedicated Cart Button */}
-            <button 
+            <Button
               onClick={() => navigate('/cart')}
-              className="flex flex-col items-center gap-1 py-1 text-red-700 relative"
+              variant="subtle"
+              style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                gap: '4px', 
+                padding: '4px',
+                color: '#b91c1c',
+                position: 'relative'
+              }}
             >
-              <ShoppingCart className="w-6 h-6 fill-red-700/10" />
-              <span className="text-[11px] font-bold text-red-700">Cart</span>
+              <IconShoppingCart size={24} style={{ color: '#b91c1c', fill: 'rgba(185, 28, 28, 0.1)' }} />
+              <Text size="xs" fw={700} c="red.7">Cart</Text>
               {cartCount > 0 && (
-                <span className="absolute -top-1 right-2 bg-red-700 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-lg pointer-events-none">
+                <Badge size="sm" color="red" style={{ position: 'absolute', top: -4, right: 8, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
                   {cartCount}
-                </span>
+                </Badge>
               )}
-            </button>
-          </div>
-        </nav>
-      </div>
+            </Button>
+          </Group>
+        </Box>
+      </Box>
     );
   }
 
