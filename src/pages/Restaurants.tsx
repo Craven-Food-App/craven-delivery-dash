@@ -25,8 +25,11 @@ import {
   Container,
   Grid,
   SegmentedControl,
-  Paper
+  Paper,
+  Overlay
 } from '@mantine/core';
+import { Carousel } from '@mantine/carousel';
+import { useMediaQuery } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { 
@@ -94,6 +97,51 @@ const RatingPill = ({ rating }: { rating: number }) => (
     <IconStar size={12} style={{ color: '#f59e0b', fill: '#f59e0b' }} />
     <Text size="xs" fw={600} c="gray.9">{rating}</Text>
   </Group>
+);
+
+// Promo Card Component
+const PromoCard = ({ title, subtitle, image }: { title: string; subtitle: string; image: string }) => (
+  <Paper
+    shadow="md"
+    p="xl"
+    radius="md"
+    style={{
+      height: '440px',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundImage: `url(${image})`,
+      position: 'relative'
+    }}
+  >
+    <Overlay
+      opacity={0.55}
+      zIndex={0}
+      style={{
+        backgroundImage: 'linear-gradient(105deg, var(--mantine-color-black) 20%, #312f2f 50%, var(--mantine-color-gray-4) 100%)'
+      }}
+    />
+    <Box style={{ position: 'absolute', inset: 0, padding: 'var(--mantine-spacing-xl)', zIndex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+      <Box>
+        <Title order={3} c="white" fw={600} style={{ lineHeight: 1.2, fontSize: '32px', marginTop: 'var(--mantine-spacing-xs)' }}>
+          {title}
+        </Title>
+        <Text size="sm" c="white" style={{ opacity: 0.9, marginTop: 'var(--mantine-spacing-xs)' }}>
+          {subtitle}
+        </Text>
+      </Box>
+      <Button
+        variant="white"
+        color="dark"
+        style={{ position: 'absolute', bottom: 'var(--mantine-spacing-xl)', right: 'var(--mantine-spacing-xl)' }}
+      >
+        View Details
+      </Button>
+    </Box>
+  </Paper>
 );
 
 // Professional Restaurant Card
@@ -214,6 +262,7 @@ const Restaurants = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const currentLocation = useLocation();
+  const mobile = useMediaQuery('(max-width: 48em)');
   const resultsRef = useRef<HTMLDivElement | null>(null);
   const weeklyDealsScrollRef = useRef<HTMLDivElement>(null);
   const featuredScrollRef = useRef<HTMLDivElement>(null);
@@ -470,15 +519,25 @@ const Restaurants = () => {
       id: 1,
       title: "Exclusive: 20% Off All Sushi Orders",
       subtitle: "Limited to the first 500 customers. Code: LUXURY20",
-      color: "from-slate-800 to-red-900",
-      image: "https://images.unsplash.com/photo-1545624773-a261c6b12d7f?w=400&h=300&fit=crop&q=80"
+      image: "https://images.unsplash.com/photo-1545624773-a261c6b12d7f?w=800&h=600&fit=crop&q=80"
     },
     {
       id: 2,
       title: "Free Premium Delivery on $30+ orders",
       subtitle: "Valid today only. Elevate your weekend plans.",
-      color: "from-red-700 to-amber-600",
-      image: "https://images.unsplash.com/photo-1577219549323-5e98218991f8?w=400&h=300&fit=crop&q=80"
+      image: "https://images.unsplash.com/photo-1577219549323-5e98218991f8?w=800&h=600&fit=crop&q=80"
+    },
+    {
+      id: 3,
+      title: "Weekend Special: 30% Off All Orders",
+      subtitle: "Use code WEEKEND30. Valid Friday-Sunday only.",
+      image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&h=600&fit=crop&q=80"
+    },
+    {
+      id: 4,
+      title: "New Restaurant Alert: Try Our Premium Menu",
+      subtitle: "Discover exclusive dishes from top-rated chefs.",
+      image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=600&fit=crop&q=80"
     }
   ];
 
@@ -727,51 +786,20 @@ const Restaurants = () => {
 
             {/* Promo Carousel */}
             <Box py="xl" px="md">
-              <Group gap="md" style={{ overflowX: 'auto', paddingBottom: '12px' }}>
-                {PROMOS_DATA.map((promo) => {
-                  const gradientMap: Record<string, string> = {
-                    'from-slate-800 to-red-900': 'linear-gradient(to bottom right, #1e293b, #7f1d1d)',
-                    'from-red-700 to-amber-600': 'linear-gradient(to bottom right, #b91c1c, #d97706)',
-                  };
-                  const gradient = gradientMap[promo.color] || 'linear-gradient(to bottom right, #1e293b, #7f1d1d)';
-                  
-                  return (
-                    <Card
-                      key={promo.id}
-                      style={{ 
-                        minWidth: '320px', 
-                        maxWidth: '90vw',
-                        background: gradient,
-                        cursor: 'pointer',
-                        boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
-                      }}
-                      radius="lg"
-                      p="lg"
-                    >
-                      <Group justify="space-between" align="flex-start">
-                        <Stack gap="xs" style={{ flex: 1, paddingRight: '16px' }}>
-                          <Title order={3} c="white" fw={700} style={{ fontSize: '20px', lineHeight: '1.3' }}>
-                            {promo.title}
-                          </Title>
-                          <Text size="sm" c="gray.3" mb="md">{promo.subtitle}</Text>
-                          <Button
-                            variant="filled"
-                            color="white"
-                            size="sm"
-                            radius="md"
-                            style={{ color: '#b91c1c', fontWeight: 800, boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
-                          >
-                            View Details
-                          </Button>
-                        </Stack>
-                        <Box style={{ width: '80px', height: '80px', flexShrink: 0, opacity: 0.8 }}>
-                          <MantineImage src={promo.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }} />
-                        </Box>
-                      </Group>
-                    </Card>
-                  );
-                })}
-              </Group>
+              <Carousel
+                slideSize={{ base: '100%', sm: '50%' }}
+                slideGap="md"
+                align="start"
+                slidesToScroll={mobile ? 1 : 2}
+                withIndicators
+                loop
+              >
+                {PROMOS_DATA.map((promo) => (
+                  <Carousel.Slide key={promo.id}>
+                    <PromoCard title={promo.title} subtitle={promo.subtitle} image={promo.image} />
+                  </Carousel.Slide>
+                ))}
+              </Carousel>
             </Box>
 
             {/* Fastest near you */}
