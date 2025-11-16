@@ -25,6 +25,7 @@ import {
   IconPhone,
   IconMessageCircle,
   IconPackage,
+  IconStar,
 } from '@tabler/icons-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -49,6 +50,7 @@ interface Order {
   total_amount: number;
   order_status: string;
   delivery_method: string;
+  estimated_delivery_time?: string;
   restaurant: {
     id: string;
     name: string;
@@ -56,16 +58,22 @@ interface Order {
   };
   order_items: OrderItem[];
   driver?: Driver;
+  status_history?: Array<{
+    status: string;
+    timestamp: string;
+  }>;
 }
 
-const STATUS_CONFIG: Record<string, { label: string; gradient: string }> = {
-  pending: { label: 'Pending', gradient: 'linear-gradient(135deg, #ea580c, #dc2626)' },
-  confirmed: { label: 'Confirmed', gradient: 'linear-gradient(135deg, #ea580c, #dc2626)' },
-  preparing: { label: 'Preparing', gradient: 'linear-gradient(135deg, #f59e0b, #ea580c)' },
-  ready_for_pickup: { label: 'Ready', gradient: 'linear-gradient(135deg, #10b981, #059669)' },
-  picked_up: { label: 'Picked Up', gradient: 'linear-gradient(135deg, #3b82f6, #2563eb)' },
-  out_for_delivery: { label: 'Delivering', gradient: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' },
-  delivering: { label: 'Delivering', gradient: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' },
+const STATUS_CONFIG: Record<string, { label: string; color: string; gradient: string }> = {
+  pending: { label: 'Pending', color: 'orange', gradient: 'linear-gradient(135deg, #ea580c, #dc2626)' },
+  confirmed: { label: 'Confirmed', color: 'orange', gradient: 'linear-gradient(135deg, #ea580c, #dc2626)' },
+  preparing: { label: 'Preparing', color: 'yellow', gradient: 'linear-gradient(135deg, #f59e0b, #ea580c)' },
+  ready_for_pickup: { label: 'Ready', color: 'green', gradient: 'linear-gradient(135deg, #10b981, #059669)' },
+  picked_up: { label: 'Picked Up', color: 'blue', gradient: 'linear-gradient(135deg, #3b82f6, #2563eb)' },
+  out_for_delivery: { label: 'Delivering', color: 'violet', gradient: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' },
+  delivering: { label: 'Delivering', color: 'violet', gradient: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' },
+  delivered: { label: 'Delivered', color: 'green', gradient: 'linear-gradient(135deg, #10b981, #059669)' },
+  cancelled: { label: 'Cancelled', color: 'red', gradient: 'linear-gradient(135deg, #dc2626, #991b1b)' },
 };
 
 const TIMELINE_STEPS = [
@@ -96,7 +104,7 @@ function getTimelineStatus(orderStatus: string, stepKey: string): 'completed' | 
   return 'pending';
 }
 
-export default function OrderHistory() {
+export default function ActiveOrders() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -156,6 +164,7 @@ export default function OrderHistory() {
       const ordersWithDrivers = await Promise.all(
         (data || []).map(async (order: any) => {
           if (['picked_up', 'out_for_delivery', 'delivering'].includes(order.order_status)) {
+            // Try to get driver assignment
             const { data: assignment } = await supabase
               .from('order_assignments')
               .select(`
@@ -176,7 +185,7 @@ export default function OrderHistory() {
                   id: assignment.drivers.id,
                   name: assignment.drivers.name,
                   rating: assignment.drivers.rating || 4.9,
-                  distance: 2.3,
+                  distance: 2.3, // Mock distance
                 },
               };
             }
@@ -199,6 +208,7 @@ export default function OrderHistory() {
   };
 
   const handleCallDriver = (driver: Driver) => {
+    // Implement phone call functionality
     toast({
       title: 'Calling Driver',
       description: `Calling ${driver.name}...`,
@@ -206,6 +216,7 @@ export default function OrderHistory() {
   };
 
   const handleMessageDriver = (driver: Driver) => {
+    // Implement messaging functionality
     toast({
       title: 'Messaging Driver',
       description: `Opening chat with ${driver.name}...`,
@@ -213,6 +224,7 @@ export default function OrderHistory() {
   };
 
   const handleCallRestaurant = (restaurant: { name: string }) => {
+    // Implement restaurant call functionality
     toast({
       title: 'Calling Restaurant',
       description: `Calling ${restaurant.name}...`,
@@ -236,7 +248,11 @@ export default function OrderHistory() {
     return `${diffHours} hours ago`;
   };
 
-  const getEstimatedTime = (orderStatus: string) => {
+  const getEstimatedTime = (orderStatus: string, createdAt: string) => {
+    const now = new Date();
+    const orderTime = new Date(createdAt);
+    const diffMinutes = Math.floor((now.getTime() - orderTime.getTime()) / 60000);
+    
     if (orderStatus === 'delivering' || orderStatus === 'out_for_delivery') {
       return '12 mins';
     }
@@ -292,7 +308,7 @@ export default function OrderHistory() {
               {orders.map((order) => {
                 const statusConfig = STATUS_CONFIG[order.order_status] || STATUS_CONFIG.pending;
                 const progress = getProgressPercentage(order.order_status);
-                const estimatedTime = getEstimatedTime(order.order_status);
+                const estimatedTime = getEstimatedTime(order.order_status, order.created_at);
 
                 return (
                   <Card
@@ -352,7 +368,9 @@ export default function OrderHistory() {
                           size="sm"
                           radius="md"
                           color="#ff7a00"
-                          style={{ height: '8px' }}
+                          style={{
+                            height: '8px',
+                          }}
                         />
                       </Box>
 
@@ -416,7 +434,7 @@ export default function OrderHistory() {
                       {/* Timeline */}
                       <Box>
                         <Stack gap="md">
-                          {TIMELINE_STEPS.map((step) => {
+                          {TIMELINE_STEPS.map((step, index) => {
                             const timelineStatus = getTimelineStatus(order.order_status, step.key);
                             const StepIcon = step.icon;
                             
@@ -541,3 +559,4 @@ export default function OrderHistory() {
     </Box>
   );
 }
+
