@@ -90,6 +90,7 @@ import {
 } from '@tabler/icons-react';
 import { supabase } from '@/integrations/supabase/client';
 import cravenLogo from "@/assets/craven-logo.png";
+import heroPromoImage from "@/assets/20251116_0529_Crave'n Delivery Promo_remix_01ka63adc2e2et6qwwt2p909xn.png";
 
 // Professional Rating Icon Component
 const RatingPill = ({ rating }: { rating: number }) => (
@@ -608,26 +609,36 @@ const Restaurants = () => {
 
         {/* Hero Section - Light, Premium */}
         <Box style={{ padding: '24px', paddingTop: '64px', paddingBottom: '48px', position: 'relative', overflow: 'hidden', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          {/* Logo and Tagline */}
-          <Box style={{ position: 'relative', zIndex: 10 }}>
-            <Title order={1} style={{ fontSize: '72px', fontWeight: 900, marginBottom: '8px', letterSpacing: '-0.05em', color: '#171717' }}>Craven.</Title>
-            <Text size="xl" fw={300} c="gray.7" style={{ maxWidth: '320px' }}>
-              Your premium choice for food delivery.
-            </Text>
-          </Box>
-          
-          {/* Decorative background image (Subtle) */}
-          <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0, opacity: 0.05 }}>
+          {/* Hero Image - Promotional Banner */}
+          <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
             <MantineImage 
-              src="https://images.unsplash.com/photo-1542456578-1a52c34c568f?w=600&h=800&fit=crop&q=80" 
-              alt="Background texture" 
+              src={heroPromoImage} 
+              alt="Crave'n Delivery Hero" 
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
+            {/* Overlay for better text readability */}
+            <Box style={{ 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              right: 0, 
+              bottom: 0, 
+              background: 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.4) 100%)',
+              zIndex: 1
+            }} />
+          </Box>
+
+          {/* Logo and Tagline */}
+          <Box style={{ position: 'relative', zIndex: 10 }}>
+            <Title order={1} style={{ fontSize: '72px', fontWeight: 900, marginBottom: '8px', letterSpacing: '-0.05em', color: '#ffffff', textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>Craven.</Title>
+            <Text size="xl" fw={300} c="white" style={{ maxWidth: '320px', textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
+              Your premium choice for food delivery.
+            </Text>
           </Box>
 
           {/* Action Area */}
           <Box style={{ position: 'relative', zIndex: 10, paddingTop: '64px' }}>
-            <Text size="sm" c="gray.6" mb="md">Enter your corporate or residential address to begin.</Text>
+            <Text size="sm" c="white" mb="md" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>Enter your corporate or residential address to begin.</Text>
             <Box style={{ position: 'relative', backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(127, 29, 29, 0.25)', border: '1px solid #fee2e2' }}>
               <IconMapPin size={20} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#b91c1c' }} />
               <TextInput
@@ -799,7 +810,6 @@ const Restaurants = () => {
                   slideSize="100%"
                   slideGap="md"
                   withIndicators
-                  loop
                   withControls
                 >
                   {promotionalBanners.map((banner) => (
