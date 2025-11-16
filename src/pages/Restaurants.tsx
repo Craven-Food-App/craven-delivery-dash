@@ -625,14 +625,6 @@ const Restaurants = () => {
   if (isMobile && !showMain) {
     return (
       <Box style={{ width: '100%', maxWidth: '430px', margin: '0 auto', minHeight: '100vh', background: 'linear-gradient(to bottom right, #fef2f2, white, #fafafa)', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-        {/* Status Bar */}
-        <Group justify="space-between" p="md" style={{ height: '44px', backgroundColor: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(4px)' }}>
-          <Text size="sm" fw={600} c="gray.9">9:41</Text>
-          <Group gap={4}>
-            <Text size="xs" style={{ fontFamily: 'monospace' }}>LTE</Text>
-          </Group>
-        </Group>
-
         {/* Hero Section - Light, Premium */}
         <Box style={{ padding: '24px', paddingTop: '64px', paddingBottom: '48px', position: 'relative', overflow: 'hidden', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           {/* Hero Image - Promotional Banner */}
@@ -721,14 +713,6 @@ const Restaurants = () => {
   if (isMobile && showMain) {
     return (
       <Box style={{ width: '100%', maxWidth: '430px', margin: '0 auto', minHeight: '100vh', backgroundColor: 'white', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {/* Status Bar */}
-        <Group justify="space-between" p="md" style={{ height: '44px', backgroundColor: 'white' }}>
-          <Text size="sm" fw={600}>9:41</Text>
-          <Group gap={4}>
-            <Text size="xs">LTE</Text>
-          </Group>
-        </Group>
-        
         {/* Search & Address Bar (Sticky Header) */}
         <Box component="header" style={{ backgroundColor: 'white', position: 'sticky', top: 0, zIndex: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderBottom: '1px solid #e5e7eb', padding: '8px 16px 12px' }}>
           {/* Address and Account */}
