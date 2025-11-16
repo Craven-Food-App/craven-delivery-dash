@@ -46,7 +46,8 @@ interface Order {
   id: string;
   order_number: string;
   created_at: string;
-  total_amount: number;
+  total_cents?: number;
+  total_amount?: number;
   order_status: string;
   delivery_method: string;
   restaurant: {
@@ -528,7 +529,7 @@ export default function OrderHistory() {
                           </Text>
                         </Group>
                         <Text fw={900} size="lg" c="#171717">
-                          ${(order.total_amount / 100).toFixed(2)}
+                          ${((order.total_cents || order.total_amount || 0) / 100).toFixed(2)}
                         </Text>
                       </Group>
 
