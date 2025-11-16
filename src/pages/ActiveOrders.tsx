@@ -167,27 +167,36 @@ export default function ActiveOrders() {
             // Try to get driver assignment
             const { data: assignment } = await supabase
               .from('order_assignments')
-              .select(`
-                driver_id,
-                drivers (
-                  id,
-                  name,
-                  rating
-                )
-              `)
+              .select('driver_id')
               .eq('order_id', order.id)
               .single();
 
-            if (assignment?.drivers) {
-              return {
-                ...order,
-                driver: {
-                  id: assignment.drivers.id,
-                  name: assignment.drivers.name,
-                  rating: assignment.drivers.rating || 4.9,
-                  distance: 2.3, // Mock distance
-                },
-              };
+            if (assignment?.driver_id) {
+              // Fetch driver profile
+              const { data: driverProfile } = await supabase
+                .from('driver_profiles')
+                .select('user_id, rating')
+                .eq('user_id', assignment.driver_id)
+                .single();
+
+              // Fetch user profile for name
+              const { data: userProfile } = await supabase
+                .from('user_profiles')
+                .select('full_name')
+                .eq('user_id', assignment.driver_id)
+                .single();
+
+              if (driverProfile) {
+                return {
+                  ...order,
+                  driver: {
+                    id: driverProfile.user_id,
+                    name: userProfile?.full_name || 'Driver',
+                    rating: driverProfile.rating || 4.9,
+                    distance: 2.3, // Mock distance
+                  },
+                };
+              }
             }
           }
           return order;
