@@ -819,7 +819,6 @@ const Restaurants = () => {
                 <Carousel
                   slideSize="100%"
                   slideGap="md"
-                  withIndicators
                   withControls
                 >
                   {promotionalBanners.map((banner) => (
