@@ -47,7 +47,7 @@ import {
   IconLeaf,
   IconInfoCircle,
   IconArrowUp,
-  IconClock,
+  IconFlame,
   IconFlame,
   IconCar,
   IconHome,
