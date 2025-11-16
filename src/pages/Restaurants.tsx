@@ -23,7 +23,9 @@ import {
   Divider,
   Container,
   Grid,
-  Grid.Col
+  Grid.Col,
+  SegmentedControl,
+  Paper
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -886,78 +888,127 @@ const Restaurants = () => {
   // Desktop Layout (existing code - keep as is)
   return (
     <div className="min-h-screen bg-white">
-      {/* Mobile Header - DoorDash Style */}
-      <div className="lg:hidden sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center space-x-2">
-              <img src={cravenLogo} alt="CRAVE'N" className="h-8" />
-              <button 
+      {/* Mobile Header - Mantine UI */}
+      <Box 
+        component="header"
+        style={{ 
+          display: isMobile ? 'block' : 'none',
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+          backgroundColor: 'white',
+          borderBottom: '1px solid #e5e7eb',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}
+      >
+        <Stack gap="md" p="md">
+          <Group justify="space-between">
+            <Group gap="xs">
+              <MantineImage src={cravenLogo} alt="CRAVE'N" style={{ height: '32px' }} />
+              <ActionIcon
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2"
+                variant="subtle"
+                size="lg"
+                radius="xl"
+                style={{ position: 'relative' }}
               >
-                <Bell className="w-5 h-5 text-gray-600" />
+                <IconBell size={20} style={{ color: '#4b5563' }} />
                 {notifications.filter(n => !n.read).length > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
+                  <Box 
+                    style={{ 
+                      position: 'absolute', 
+                      top: 4, 
+                      right: 4, 
+                      width: '8px', 
+                      height: '8px', 
+                      backgroundColor: '#ff6b35', 
+                      borderRadius: '50%' 
+                    }} 
+                  />
                 )}
-              </button>
-            </div>
-            <button 
+              </ActionIcon>
+            </Group>
+            <ActionIcon
               onClick={() => setShowMobileNav(!showMobileNav)}
-              className="p-2 -mr-2 active:bg-gray-100 rounded-full transition-colors"
+              variant="subtle"
+              size="lg"
+              radius="xl"
             >
-              {showMobileNav ? <X className="w-6 h-6 text-gray-900" /> : <Menu className="w-6 h-6 text-gray-900" />}
-            </button>
-          </div>
+              {showMobileNav ? (
+                <IconX size={24} style={{ color: '#171717' }} />
+              ) : (
+                <IconMenu2 size={24} style={{ color: '#171717' }} />
+              )}
+            </ActionIcon>
+          </Group>
           
           {/* Location & Delivery Mode */}
-          <div className="flex items-center space-x-2 mb-3">
-            <button 
+          <Group gap="xs">
+            <Button
               onClick={() => setShowAddressSelector(!showAddressSelector)}
-              className="flex-1 flex items-center space-x-2 bg-gray-100 rounded-lg px-3 py-2 min-w-0"
+              variant="subtle"
+              leftSection={<IconMapPin size={16} style={{ color: '#4b5563' }} />}
+              rightSection={<IconChevronDown size={16} style={{ color: '#4b5563' }} />}
+              style={{ 
+                flex: 1,
+                backgroundColor: '#f3f4f6',
+                color: '#111827',
+                fontWeight: 500,
+                justifyContent: 'space-between',
+                paddingLeft: '12px',
+                paddingRight: '12px'
+              }}
             >
-              <MapPin className="w-4 h-4 text-gray-600 flex-shrink-0" />
-              <span className="text-sm font-medium text-gray-900 truncate flex-1">{location}</span>
-              <ChevronDown className="w-4 h-4 text-gray-600 flex-shrink-0" />
-            </button>
+              <Text size="sm" fw={500} lineClamp={1} style={{ flex: 1, textAlign: 'left' }}>
+                {location}
+              </Text>
+            </Button>
             
-            <div className="flex bg-gray-100 rounded-lg p-0.5 flex-shrink-0">
-              <button 
-                onClick={() => setDeliveryMode('delivery')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                  deliveryMode === 'delivery' 
-                    ? 'bg-black text-white' 
-                    : 'text-gray-600'
-                }`}
-              >
-                Delivery
-              </button>
-              <button 
-                onClick={() => setDeliveryMode('pickup')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                  deliveryMode === 'pickup' 
-                    ? 'bg-black text-white' 
-                    : 'text-gray-600'
-                }`}
-              >
-                Pickup
-              </button>
-            </div>
-          </div>
+            <SegmentedControl
+              value={deliveryMode}
+              onChange={(value) => setDeliveryMode(value as 'delivery' | 'pickup')}
+              data={[
+                { label: 'Delivery', value: 'delivery' },
+                { label: 'Pickup', value: 'pickup' }
+              ]}
+              size="sm"
+              radius="md"
+              styles={{
+                root: {
+                  backgroundColor: '#f3f4f6',
+                  padding: '2px'
+                },
+                indicator: {
+                  backgroundColor: '#000000'
+                },
+                label: {
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  padding: '6px 12px'
+                }
+              }}
+            />
+          </Group>
           
           {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search restaurants or dishes"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-        </div>
-      </div>
+          <TextInput
+            placeholder="Search restaurants or dishes"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.currentTarget.value)}
+            leftSection={<IconSearch size={16} style={{ color: '#9ca3af' }} />}
+            styles={{
+              input: {
+                backgroundColor: '#f3f4f6',
+                border: 'none',
+                fontSize: '14px',
+                paddingTop: '10px',
+                paddingBottom: '10px'
+              }
+            }}
+            radius="md"
+          />
+        </Stack>
+      </Box>
 
       {/* Desktop Header - Hidden on Mobile */}
       <div className="hidden lg:block sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
@@ -1171,27 +1222,47 @@ const Restaurants = () => {
         </div>
       </div>
 
-      {/* Mobile Filter Pills */}
-      <div className="lg:hidden sticky top-[140px] z-40 bg-white border-b border-gray-200 overflow-x-auto scrollbar-hide">
-        <div className="flex space-x-2 px-4 py-3">
-          {filterOptions.map((filter) => (
-            <button
-              key={filter.id}
-              onClick={() => {
-                setActiveFilter(filter.id);
-                applyFilters();
-              }}
-              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
-                activeFilter === filter.id
-                  ? 'bg-black text-white'
-                  : 'bg-gray-100 text-gray-700'
-              }`}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Mobile Filter Pills - Mantine UI */}
+      <Box
+        component="nav"
+        style={{
+          display: isMobile ? 'block' : 'none',
+          position: 'sticky',
+          top: '140px',
+          zIndex: 40,
+          backgroundColor: 'white',
+          borderBottom: '1px solid #e5e7eb',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch'
+        }}
+      >
+        <ScrollArea type="scroll" scrollbars="x" style={{ width: '100%' }}>
+          <Group gap="xs" p="md" style={{ flexWrap: 'nowrap', width: 'max-content' }}>
+            {filterOptions.map((filter) => (
+              <Button
+                key={filter.id}
+                onClick={() => {
+                  setActiveFilter(filter.id);
+                  applyFilters();
+                }}
+                variant={activeFilter === filter.id ? 'filled' : 'light'}
+                size="sm"
+                radius="xl"
+                style={{
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
+                  backgroundColor: activeFilter === filter.id ? '#000000' : '#f3f4f6',
+                  color: activeFilter === filter.id ? '#ffffff' : '#374151',
+                  fontWeight: 500,
+                  fontSize: '14px'
+                }}
+              >
+                {filter.label}
+              </Button>
+            ))}
+          </Group>
+        </ScrollArea>
+      </Box>
 
       <div className="flex">
         {/* Right Side Navigation - Desktop Only */}
@@ -1491,39 +1562,71 @@ const Restaurants = () => {
         </div>
       </div>
 
-      {/* Mobile Navigation Overlay */}
-      {showMobileNav && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-black bg-opacity-50">
-          <div className="fixed right-0 top-0 h-full w-64 bg-white shadow-xl">
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold">Browse</h3>
-                <button 
-                  onClick={() => setShowMobileNav(false)}
-                  className="p-2"
+      {/* Mobile Navigation Overlay - Mantine Drawer */}
+      <Drawer
+        opened={showMobileNav}
+        onClose={() => setShowMobileNav(false)}
+        position="right"
+        size="256px"
+        zIndex={50}
+        styles={{
+          overlay: {
+            backgroundColor: 'rgba(0, 0, 0, 0.5)'
+          },
+          content: {
+            boxShadow: '-10px 0 25px rgba(0,0,0,0.1)'
+          }
+        }}
+      >
+        <Stack gap="md">
+          <Group justify="space-between" mb="lg">
+            <Title order={3} fw={600}>Browse</Title>
+            <ActionIcon
+              onClick={() => setShowMobileNav(false)}
+              variant="subtle"
+              size="lg"
+              radius="xl"
+            >
+              <IconX size={20} />
+            </ActionIcon>
+          </Group>
+          <Stack gap="xs">
+            {navCategories.map((category) => {
+              const IconComponent = category.icon;
+              return (
+                <Button
+                  key={category.id}
+                  onClick={() => {
+                    handleCategoryClick(category.id);
+                    setShowMobileNav(false);
+                  }}
+                  variant="subtle"
+                  leftSection={<IconComponent size={20} />}
+                  justify="flex-start"
+                  fullWidth
+                  style={{
+                    justifyContent: 'flex-start',
+                    paddingLeft: '12px',
+                    paddingRight: '12px',
+                    color: '#4b5563',
+                    fontWeight: 500
+                  }}
+                  styles={{
+                    root: {
+                      '&:hover': {
+                        backgroundColor: '#f3f4f6',
+                        color: '#111827'
+                      }
+                    }
+                  }}
                 >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <nav className="space-y-1">
-                {navCategories.map((category) => (
-                  <button
-                    key={category.id}
-                    onClick={() => {
-                      handleCategoryClick(category.id);
-                      setShowMobileNav(false);
-                    }}
-                    className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  >
-                    <category.icon className="w-5 h-5" />
-                    <span className="font-medium">{category.label}</span>
-                  </button>
-                ))}
-              </nav>
-            </div>
-          </div>
-        </div>
-      )}
+                  {category.label}
+                </Button>
+              );
+            })}
+          </Stack>
+        </Stack>
+      </Drawer>
 
       <Footer />
 
