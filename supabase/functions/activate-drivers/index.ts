@@ -58,12 +58,15 @@ Deno.serve(async (req) => {
         }
 
         // Send approval email
+        let emailSent = false;
+        let emailError: string | null = null;
+        
         try {
           const emailResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-approval-email`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
             },
             body: JSON.stringify({
               driverName: `${application.first_name} ${application.last_name}`,
@@ -72,11 +75,18 @@ Deno.serve(async (req) => {
             }),
           });
 
+          const emailData = await emailResponse.json();
+          
           if (!emailResponse.ok) {
-            console.log('Warning: Email sending failed');
+            console.error('Email sending failed:', emailData);
+            emailError = emailData.error || 'Email sending failed';
+          } else {
+            console.log('Email sent successfully to:', application.email);
+            emailSent = true;
           }
-        } catch (emailError) {
-          console.log('Warning: Email sending error:', emailError);
+        } catch (emailErr) {
+          console.error('Email sending error:', emailErr);
+          emailError = emailErr instanceof Error ? emailErr.message : 'Unknown error';
         }
 
         // Remove from activation_queue
@@ -89,7 +99,9 @@ Deno.serve(async (req) => {
           driver_id: driverId, 
           success: true, 
           email: application.email,
-          name: `${application.first_name} ${application.last_name}`
+          name: `${application.first_name} ${application.last_name}`,
+          email_sent: emailSent,
+          email_error: emailError
         });
 
         console.log('Driver activated successfully:', application.email);

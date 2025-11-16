@@ -17,7 +17,8 @@ import {
   Send,
   Eye,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Mail
 } from 'lucide-react';
 
 interface Driver {
@@ -165,15 +166,27 @@ export const DriverWaitlistDashboard: React.FC = () => {
 
       if (error) throw error;
 
+      const emailResults = data.results || [];
+      const emailSentCount = emailResults.filter((r: any) => r.email_sent === true).length;
+      const emailFailedCount = emailResults.filter((r: any) => r.email_sent === false).length;
+
       toast({
         title: "Drivers Activated! 🎉",
         description: `${data.activated_count} of ${data.total} drivers have been activated successfully.`,
       });
 
-      if (data.activated_count > 0) {
+      if (emailSentCount > 0) {
         toast({
           title: "Emails Sent ✉️",
-          description: `Activation emails sent to all ${data.activated_count} drivers.`,
+          description: `Activation emails sent to ${emailSentCount} driver${emailSentCount > 1 ? 's' : ''}.`,
+        });
+      }
+
+      if (emailFailedCount > 0) {
+        toast({
+          title: "Email Warning ⚠️",
+          description: `Failed to send emails to ${emailFailedCount} driver${emailFailedCount > 1 ? 's' : ''}. Use the resend button to try again.`,
+          variant: "destructive",
         });
       }
 
@@ -185,6 +198,32 @@ export const DriverWaitlistDashboard: React.FC = () => {
       toast({
         title: "Error",
         description: "Failed to activate drivers",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resendActivationEmail = async (driverId: string, driverEmail: string, driverName: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('send-approval-email', {
+        body: {
+          driverName: driverName,
+          driverEmail: driverEmail,
+          applicationId: driverId,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Email Sent! ✉️",
+        description: `Activation email resent to ${driverEmail}`,
+      });
+    } catch (error) {
+      console.error('Error resending email:', error);
+      toast({
+        title: "Error",
+        description: "Failed to resend email. Please try again.",
         variant: "destructive",
       });
     }
@@ -575,6 +614,21 @@ export const DriverWaitlistDashboard: React.FC = () => {
                               Activate
                             </Button>
                           )}
+                          {driver.status === 'approved' && (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => resendActivationEmail(
+                                driver.id,
+                                driver.email,
+                                `${driver.first_name} ${driver.last_name}`
+                              )}
+                              title="Resend activation email"
+                              className="border-blue-500 text-blue-500 hover:bg-blue-50"
+                            >
+                              <Mail className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -686,6 +740,22 @@ export const DriverWaitlistDashboard: React.FC = () => {
                   >
                     <CheckCircle className="h-4 w-4 mr-2" />
                     Activate Driver
+                  </Button>
+                )}
+                {viewingDriver.status === 'approved' && (
+                  <Button 
+                    onClick={() => {
+                      resendActivationEmail(
+                        viewingDriver.id,
+                        viewingDriver.email,
+                        `${viewingDriver.first_name} ${viewingDriver.last_name}`
+                      );
+                    }}
+                    variant="outline"
+                    className="border-blue-500 text-blue-500 hover:bg-blue-50"
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    Resend Email
                   </Button>
                 )}
                 <Button 
