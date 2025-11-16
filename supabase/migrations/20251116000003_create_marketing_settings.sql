@@ -12,12 +12,17 @@ CREATE TABLE IF NOT EXISTS public.marketing_settings (
 );
 
 -- Create unique constraint to ensure only one row exists
+-- Using a partial unique index on a constant to ensure singleton pattern
 CREATE UNIQUE INDEX IF NOT EXISTS idx_marketing_settings_single_row ON public.marketing_settings((1));
 
--- Insert default row
-INSERT INTO public.marketing_settings (mobile_hero_image_url)
-VALUES (NULL)
-ON CONFLICT DO NOTHING;
+-- Insert default row only if table is empty
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.marketing_settings LIMIT 1) THEN
+    INSERT INTO public.marketing_settings (mobile_hero_image_url)
+    VALUES (NULL);
+  END IF;
+END $$;
 
 -- Enable RLS
 ALTER TABLE public.marketing_settings ENABLE ROW LEVEL SECURITY;

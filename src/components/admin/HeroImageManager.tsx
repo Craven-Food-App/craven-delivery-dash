@@ -154,15 +154,34 @@ export const HeroImageManager: React.FC = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Update or insert marketing settings
-      const { error } = await supabase
+      // Check if a row exists
+      const { data: existing } = await supabase
         .from('marketing_settings')
-        .upsert({
-          mobile_hero_image_url: heroImageUrl || null,
-          updated_by: user.id,
-        }, {
-          onConflict: 'id'
-        });
+        .select('id')
+        .limit(1)
+        .single();
+
+      let error;
+      if (existing) {
+        // Update existing row
+        const { error: updateError } = await supabase
+          .from('marketing_settings')
+          .update({
+            mobile_hero_image_url: heroImageUrl || null,
+            updated_by: user.id,
+          })
+          .eq('id', existing.id);
+        error = updateError;
+      } else {
+        // Insert new row (shouldn't happen due to unique constraint, but handle it)
+        const { error: insertError } = await supabase
+          .from('marketing_settings')
+          .insert({
+            mobile_hero_image_url: heroImageUrl || null,
+            updated_by: user.id,
+          });
+        error = insertError;
+      }
 
       if (error) throw error;
 
