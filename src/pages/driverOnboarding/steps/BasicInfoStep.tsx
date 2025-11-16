@@ -1,10 +1,9 @@
-// @ts-nocheck
-import React, { useState } from 'react';
-import { Form, Input, Button, Card, Typography, Space, message, Row, Col, Checkbox } from 'antd';
-import { UserOutlined, MailOutlined, PhoneOutlined, EnvironmentOutlined, LockOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { TextInput, Button, Card, Text, Stack, Checkbox, Alert, Grid, Box, Loader } from '@mantine/core';
+import { User, Mail, Phone, MapPin, Lock, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-
-const { Title, Text, Paragraph } = Typography;
+import { useForm } from '@mantine/form';
+import { useToast } from '@/hooks/use-toast';
 
 interface BasicInfoStepProps {
   onNext: (data: any) => void;
@@ -13,13 +12,34 @@ interface BasicInfoStepProps {
 }
 
 export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, applicationData }) => {
-  const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [detectedLocation, setDetectedLocation] = useState<{ city: string; state: string; zip: string } | null>(null);
   const [locationLoading, setLocationLoading] = useState(true);
+  const { toast } = useToast();
+
+  const form = useForm({
+    initialValues: {
+      fullName: '',
+      email: '',
+      phone: '',
+      zip: '',
+      password: '',
+      confirmPassword: '',
+      ageVerified: false,
+    },
+    validate: {
+      fullName: (value) => (!value ? 'Please enter your full name' : value.length < 3 ? 'Name must be at least 3 characters' : null),
+      email: (value) => (!value ? 'Please enter your email' : !/^\S+@\S+$/.test(value) ? 'Invalid email format' : null),
+      phone: (value) => (!value ? 'Please enter your phone number' : !/^[\d\s\-()+]+$/.test(value) ? 'Invalid phone format' : null),
+      zip: (value) => (!value ? 'Please confirm your ZIP code' : !/^\d{5}(-\d{4})?$/.test(value) ? 'Invalid ZIP format' : null),
+      password: (value) => (!value ? 'Please enter a password' : value.length < 8 ? 'Password must be at least 8 characters' : null),
+      confirmPassword: (value, values) => (!value ? 'Please confirm your password' : value !== values.password ? 'Passwords do not match' : null),
+      ageVerified: (value) => (!value ? 'You must confirm you are 18+ to apply' : null),
+    },
+  });
 
   // Detect location on mount
-  React.useEffect(() => {
+  useEffect(() => {
     const detectLocation = async () => {
       try {
         if (navigator.geolocation) {
@@ -43,14 +63,21 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
                 
                 const location = { city, state: stateAbbr, zip };
                 setDetectedLocation(location);
-                form.setFieldsValue({ zip });
-                message.success(`Location detected: ${city}, ${stateAbbr}`);
+                form.setFieldValue('zip', zip);
+                toast({
+                  title: "Location Detected",
+                  description: `${city}, ${stateAbbr}`,
+                });
               }
               setLocationLoading(false);
             },
             (error) => {
               console.error('Geolocation error:', error);
-              message.warning('Could not detect location. Using IP-based detection...');
+              toast({
+                title: "Location Detection",
+                description: "Could not detect location. Using IP-based detection...",
+                variant: "default",
+              });
               fallbackToIPLocation();
             }
           );
@@ -60,7 +87,11 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
       } catch (error) {
         console.error('Location detection error:', error);
         setLocationLoading(false);
-        message.error('Location detection failed');
+        toast({
+          title: "Error",
+          description: "Location detection failed",
+          variant: "destructive",
+        });
       }
     };
 
@@ -75,18 +106,25 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
           zip: data.postal || ''
         };
         setDetectedLocation(location);
-        form.setFieldsValue({ zip: location.zip });
-        message.success(`Location detected: ${location.city}, ${location.state}`);
+        form.setFieldValue('zip', location.zip);
+        toast({
+          title: "Location Detected",
+          description: `${location.city}, ${location.state}`,
+        });
       } catch (error) {
         console.error('IP location error:', error);
-        message.error('Could not detect location automatically');
+        toast({
+          title: "Error",
+          description: "Could not detect location automatically",
+          variant: "destructive",
+        });
       } finally {
         setLocationLoading(false);
       }
     };
 
     detectLocation();
-  }, [form]);
+  }, []);
 
   // Helper function to convert state names to abbreviations
   const getStateAbbreviation = (stateName: string): string => {
@@ -105,7 +143,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
     return stateMap[stateName] || stateName.substring(0, 2).toUpperCase();
   };
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: typeof form.values) => {
     setLoading(true);
     try {
       // 1. Create auth user
@@ -213,7 +251,10 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
         console.log('Warning: Waitlist email sending error:', emailError);
       }
 
-      message.success('Application submitted successfully!');
+      toast({
+        title: "Success",
+        description: "Application submitted successfully!",
+      });
 
       // Continue to success step
       onNext({
@@ -228,7 +269,11 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
 
     } catch (error: any) {
       console.error('Application error:', error);
-      message.error(error.message || 'Failed to submit application');
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to submit application',
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -236,219 +281,160 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({ onNext, onBack, ap
 
   return (
     <Card
+      p="lg"
       style={{
         borderRadius: '12px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-        border: 'none'
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}
     >
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+      <Stack gap="lg">
         {/* Header */}
-        <div style={{ textAlign: 'center' }}>
-          <UserOutlined style={{ fontSize: '48px', color: '#ff7a00' }} />
-          <Title level={2} style={{ marginTop: '16px' }}>
-            Tell Us About Yourself
-          </Title>
-          <Paragraph style={{ fontSize: '16px', color: '#595959' }}>
-            We need some basic information to get started
-          </Paragraph>
+        <Stack align="center" gap="md">
+          <Box
+            style={{
+              padding: 12,
+              backgroundColor: 'rgba(255, 122, 0, 0.1)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <User size={48} style={{ color: '#ff7a00' }} />
+          </Box>
+          <div style={{ textAlign: 'center' }}>
+            <Text fw={700} size="xl">Tell Us About Yourself</Text>
+            <Text c="dimmed" size="sm" mt="xs">
+              We need some basic information to get started
+            </Text>
+          </div>
           {locationLoading && (
-            <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#e6f7ff', borderRadius: '8px' }}>
-              <Text>📍 Detecting your location...</Text>
-            </div>
+            <Alert color="blue" icon={<Loader size={16} />}>
+              📍 Detecting your location...
+            </Alert>
           )}
           {detectedLocation && (
-            <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#f6ffed', borderRadius: '8px', border: '1px solid #b7eb8f' }}>
-              <Text style={{ color: '#52c41a', fontWeight: 500 }}>
-                ✓ Location Detected: {detectedLocation.city}, {detectedLocation.state}
-              </Text>
-            </div>
+            <Alert color="green">
+              ✓ Location Detected: {detectedLocation.city}, {detectedLocation.state}
+            </Alert>
           )}
-        </div>
+        </Stack>
 
         {/* Form */}
-        <Form
-          form={form}
-          name="basic_info"
-          onFinish={handleSubmit}
-          layout="vertical"
-          requiredMark="optional"
-          autoComplete="off"
-        >
-          <Form.Item
-            label="Full Name"
-            name="fullName"
-            rules={[
-              { required: true, message: 'Please enter your full name' },
-              { min: 3, message: 'Name must be at least 3 characters' }
-            ]}
-          >
-            <Input
-              prefix={<UserOutlined style={{ color: '#ff7a00' }} />}
+        <form onSubmit={form.onSubmit(handleSubmit)}>
+          <Stack gap="md">
+            <TextInput
+              label="Full Name"
               placeholder="John Smith"
-              size="large"
+              leftSection={<User size={16} style={{ color: '#ff7a00' }} />}
+              size="lg"
+              {...form.getInputProps('fullName')}
             />
-          </Form.Item>
 
-          <Row gutter={16}>
-            <Col xs={24} sm={12}>
-              <Form.Item
-                label="Email"
-                name="email"
-                rules={[
-                  { required: true, message: 'Please enter your email' },
-                  { type: 'email', message: 'Invalid email format' }
-                ]}
-              >
-                <Input
-                  prefix={<MailOutlined style={{ color: '#ff7a00' }} />}
+            <Grid gutter="md">
+              <Grid.Col span={{ base: 12, sm: 6 }}>
+                <TextInput
+                  label="Email"
+                  type="email"
                   placeholder="john@example.com"
-                  size="large"
+                  leftSection={<Mail size={16} style={{ color: '#ff7a00' }} />}
+                  size="lg"
+                  {...form.getInputProps('email')}
                 />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item
-                label="Phone"
-                name="phone"
-                rules={[
-                  { required: true, message: 'Please enter your phone number' },
-                  { pattern: /^[\d\s\-()+]+$/, message: 'Invalid phone format' }
-                ]}
-              >
-                <Input
-                  prefix={<PhoneOutlined style={{ color: '#ff7a00' }} />}
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6 }}>
+                <TextInput
+                  label="Phone"
                   placeholder="(555) 123-4567"
-                  size="large"
+                  leftSection={<Phone size={16} style={{ color: '#ff7a00' }} />}
+                  size="lg"
+                  {...form.getInputProps('phone')}
                 />
-              </Form.Item>
-            </Col>
-          </Row>
+              </Grid.Col>
+            </Grid>
 
-          <Row gutter={16}>
-            <Col xs={24}>
-              <Form.Item
-                label="ZIP Code (Auto-detected)"
-                name="zip"
-                rules={[
-                  { required: true, message: 'Please confirm your ZIP code' },
-                  { pattern: /^\d{5}(-\d{4})?$/, message: 'Invalid ZIP format' }
-                ]}
-              >
-                <Input
-                  prefix={<EnvironmentOutlined style={{ color: '#ff7a00' }} />}
-                  placeholder="ZIP code will be auto-detected"
-                  size="large"
-                  disabled={locationLoading}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+            <TextInput
+              label="ZIP Code (Auto-detected)"
+              placeholder="ZIP code will be auto-detected"
+              leftSection={<MapPin size={16} style={{ color: '#ff7a00' }} />}
+              size="lg"
+              disabled={locationLoading}
+              {...form.getInputProps('zip')}
+            />
 
-          <Row gutter={16}>
-            <Col xs={24} sm={12}>
-              <Form.Item
-                label="Password"
-                name="password"
-                rules={[
-                  { required: true, message: 'Please enter a password' },
-                  { min: 8, message: 'Password must be at least 8 characters' }
-                ]}
-              >
-                <Input.Password
-                  prefix={<LockOutlined style={{ color: '#ff7a00' }} />}
+            <Grid gutter="md">
+              <Grid.Col span={{ base: 12, sm: 6 }}>
+                <TextInput
+                  label="Password"
+                  type="password"
                   placeholder="Create password"
-                  size="large"
+                  leftSection={<Lock size={16} style={{ color: '#ff7a00' }} />}
+                  size="lg"
+                  {...form.getInputProps('password')}
                 />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item
-                label="Confirm Password"
-                name="confirmPassword"
-                dependencies={['password']}
-                rules={[
-                  { required: true, message: 'Please confirm your password' },
-                  ({ getFieldValue }) => ({
-                    validator(_, value) {
-                      if (!value || getFieldValue('password') === value) {
-                        return Promise.resolve();
-                      }
-                      return Promise.reject(new Error('Passwords do not match'));
-                    }
-                  })
-                ]}
-              >
-                <Input.Password
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6 }}>
+                <TextInput
+                  label="Confirm Password"
+                  type="password"
                   placeholder="Confirm password"
-                  size="large"
+                  size="lg"
+                  {...form.getInputProps('confirmPassword')}
                 />
-              </Form.Item>
-            </Col>
-          </Row>
+              </Grid.Col>
+            </Grid>
 
-          {/* Age Verification */}
-          <Form.Item
-            name="ageVerified"
-            valuePropName="checked"
-            rules={[
-              {
-                validator: (_, value) =>
-                  value
-                    ? Promise.resolve()
-                    : Promise.reject(new Error('You must confirm you are 18+ to apply'))
-              }
-            ]}
-          >
-            <div style={{
-              padding: '16px',
-              backgroundColor: '#fffbe6',
-              borderRadius: '8px',
-              border: '1px solid #ffd666'
-            }}>
-              <Checkbox style={{ width: '100%' }}>
-                <Text style={{ fontSize: '14px' }}>
-                  I confirm that I am at least 18 years of age and legally authorized to work as a delivery driver.
-                </Text>
-              </Checkbox>
-            </div>
-          </Form.Item>
+            {/* Age Verification */}
+            <Box
+              p="md"
+              style={{
+                backgroundColor: '#fffbe6',
+                borderRadius: '8px',
+                border: '1px solid #ffd666'
+              }}
+            >
+              <Checkbox
+                {...form.getInputProps('ageVerified', { type: 'checkbox' })}
+                label={
+                  <Text size="sm">
+                    I confirm that I am at least 18 years of age and legally authorized to work as a delivery driver.
+                  </Text>
+                }
+              />
+            </Box>
 
-          {/* Action Buttons */}
-          <Form.Item style={{ marginTop: '24px' }}>
-            <Row gutter={16}>
-              <Col xs={24} sm={12}>
+            {/* Action Buttons */}
+            <Grid gutter="md" mt="md">
+              <Grid.Col span={{ base: 12, sm: 6 }}>
                 <Button
-                  size="large"
-                  block
+                  size="lg"
+                  fullWidth
+                  variant="outline"
                   onClick={onBack}
-                  icon={<ArrowLeftOutlined />}
+                  leftSection={<ArrowLeft size={18} />}
                   style={{ height: '50px' }}
                 >
                   Back
                 </Button>
-              </Col>
-              <Col xs={24} sm={12}>
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, sm: 6 }}>
                 <Button
-                  type="primary"
-                  size="large"
-                  block
-                  htmlType="submit"
+                  type="submit"
+                  size="lg"
+                  fullWidth
                   loading={loading}
                   style={{
                     height: '50px',
-                    backgroundColor: '#ff7a00',
-                    borderColor: '#ff7a00'
                   }}
+                  color="#ff7a00"
                 >
                   Submit Application
                 </Button>
-              </Col>
-            </Row>
-          </Form.Item>
-        </Form>
-      </Space>
+              </Grid.Col>
+            </Grid>
+          </Stack>
+        </form>
+      </Stack>
     </Card>
   );
 };
-

@@ -1,11 +1,8 @@
-// @ts-nocheck
 import React, { useState, useEffect } from 'react';
-import { Card, Typography, Space, Alert, Divider } from 'antd';
-import { CheckCircleOutlined, ClockCircleOutlined, MailOutlined } from '@ant-design/icons';
+import { Card, Text, Stack, Alert, Divider, Box, Loader } from '@mantine/core';
+import { CheckCircle, Clock, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-
-const { Title, Text, Paragraph } = Typography;
 
 interface WaitlistSuccessStepProps {
   applicationData: any;
@@ -42,141 +39,150 @@ export const WaitlistSuccessStep: React.FC<WaitlistSuccessStepProps> = ({ applic
 
   return (
     <Card
+      p="lg"
       style={{
         borderRadius: '12px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-        border: 'none'
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}
     >
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+      <Stack gap="lg">
         {/* Success Icon */}
-        <div style={{ textAlign: 'center' }}>
-          <CheckCircleOutlined
-            style={{ fontSize: '80px', color: '#52c41a' }}
-          />
-        </div>
+        <Box ta="center">
+          <Box
+            style={{
+              display: 'inline-block',
+              padding: 16,
+              backgroundColor: 'rgba(34, 197, 94, 0.1)',
+              borderRadius: '50%',
+            }}
+          >
+            <CheckCircle size={80} style={{ color: '#22c55e' }} />
+          </Box>
+        </Box>
 
         {/* Header */}
-        <div style={{ textAlign: 'center' }}>
-          <Title level={2} style={{ margin: 0 }}>
-            Application Submitted!
-          </Title>
-          <Paragraph style={{ fontSize: '18px', color: '#595959', marginTop: '8px' }}>
+        <Stack align="center" gap="xs">
+          <Text fw={700} size="xl">Application Submitted!</Text>
+          <Text size="md" c="dimmed">
             You've been placed on our waitlist
-          </Paragraph>
-        </div>
+          </Text>
+        </Stack>
 
         {/* Info Alert */}
         <Alert
-          message="You're on the Waitlist"
-          description={
-            <>
-              <Paragraph style={{ marginBottom: '8px' }}>
-                Thanks for applying! We've received your information and added you to our
-                waitlist for your area.
-              </Paragraph>
-              <Paragraph style={{ margin: 0 }}>
-                We're currently planning our launch in <strong>{applicationData.city}</strong>.
-                You'll be notified by email when we're ready to activate you as a driver.
-              </Paragraph>
-            </>
-          }
-          type="info"
-          icon={<ClockCircleOutlined />}
-          showIcon
-        />
+          title="You're on the Waitlist"
+          color="blue"
+          icon={<Clock size={16} />}
+        >
+          <Stack gap="xs">
+            <Text size="sm">
+              Thanks for applying! We've received your information and added you to our
+              waitlist for your area.
+            </Text>
+            <Text size="sm">
+              We're currently planning our launch in <strong>{applicationData.city}</strong>.
+              You'll be notified by email when we're ready to activate you as a driver.
+            </Text>
+          </Stack>
+        </Alert>
 
         {/* What Happens Next */}
         <Card
-          type="inner"
-          style={{ backgroundColor: '#f6ffed' }}
+          p="md"
+          style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)' }}
         >
-          <Title level={4} style={{ marginBottom: '16px' }}>
-            What Happens Next?
-          </Title>
-          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Text fw={600} size="lg" mb="md">What Happens Next?</Text>
+          <Stack gap="md">
             <div>
-              <Text strong>📧 Email Confirmation</Text>
-              <Paragraph style={{ marginBottom: 0 }}>
+              <Text fw={500} size="sm">📧 Email Confirmation</Text>
+              <Text size="sm" c="dimmed">
                 Check your inbox at <strong>{applicationData.email}</strong> for a confirmation
                 message with your waitlist position.
-              </Paragraph>
+              </Text>
             </div>
-            <Divider style={{ margin: '8px 0' }} />
+            <Divider />
             <div>
-              <Text strong>📍 Area Launch</Text>
-              <Paragraph style={{ marginBottom: 0 }}>
+              <Text fw={500} size="sm">📍 Area Launch</Text>
+              <Text size="sm" c="dimmed">
                 We'll contact you when we're ready to launch in your area and need drivers.
-              </Paragraph>
+              </Text>
             </div>
-            <Divider style={{ margin: '8px 0' }} />
+            <Divider />
             <div>
-              <Text strong>✅ Background Check</Text>
-              <Paragraph style={{ marginBottom: 0 }}>
+              <Text fw={500} size="sm">✅ Background Check</Text>
+              <Text size="sm" c="dimmed">
                 When we activate you, we'll run a background check and complete onboarding.
-              </Paragraph>
+              </Text>
             </div>
-            <Divider style={{ margin: '8px 0' }} />
+            <Divider />
             <div>
-              <Text strong>🚗 Start Earning</Text>
-              <Paragraph style={{ marginBottom: 0 }}>
+              <Text fw={500} size="sm">🚗 Start Earning</Text>
+              <Text size="sm" c="dimmed">
                 Once activated, you can start accepting delivery orders and earning money!
-              </Paragraph>
+              </Text>
             </div>
-          </Space>
+          </Stack>
         </Card>
 
         {/* Waitlist Position Info */}
-        {queuePosition && (
+        {loading ? (
+          <Box ta="center" p="md">
+            <Loader size="sm" />
+            <Text size="sm" c="dimmed" mt="xs">Loading queue position...</Text>
+          </Box>
+        ) : queuePosition && (
           <Card
-            type="inner"
-            style={{ backgroundColor: '#fff7e6', border: '2px solid #ff7a00' }}
+            p="md"
+            style={{
+              backgroundColor: '#fff7e6',
+              border: '2px solid #ff7a00'
+            }}
           >
-            <Space direction="vertical" size="small" style={{ width: '100%', textAlign: 'center' }}>
-              <Text strong style={{ fontSize: '18px', color: '#ff7a00' }}>
+            <Stack align="center" gap="xs">
+              <Text fw={600} size="md" c="#ff7a00">
                 🎯 Your Position in Queue
               </Text>
-              <div style={{ marginTop: '8px' }}>
-                <Text style={{ fontSize: '48px', fontWeight: 'bold', color: '#ff7a00' }}>
-                  #{queuePosition.queue_position}
-                </Text>
-              </div>
-              <Paragraph style={{ marginBottom: 0, fontSize: '14px', marginTop: '8px' }}>
+              <Text
+                fw={700}
+                size="3xl"
+                c="#ff7a00"
+              >
+                #{queuePosition.queue_position}
+              </Text>
+              <Text size="sm" c="dimmed">
                 out of <strong>{queuePosition.total_in_region}</strong> drivers in {queuePosition.region_name || 'your area'}
-              </Paragraph>
-            </Space>
+              </Text>
+            </Stack>
           </Card>
         )}
 
         {/* Additional Info */}
         <Card
-          type="inner"
-          style={{ backgroundColor: '#fafafa' }}
+          p="md"
+          style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}
         >
-          <Space direction="vertical" size="small" style={{ width: '100%' }}>
-            <Text strong>
-              <MailOutlined /> Stay Updated
+          <Stack gap="xs">
+            <Text fw={500} size="sm">
+              <Mail size={16} style={{ display: 'inline', marginRight: 8 }} />
+              Stay Updated
             </Text>
-            <Paragraph style={{ marginBottom: 0, fontSize: '14px' }}>
+            <Text size="sm" c="dimmed">
               We'll send you regular updates about our launch timeline and when you can
               expect to start driving. Check your email regularly!
-            </Paragraph>
-          </Space>
+            </Text>
+          </Stack>
         </Card>
 
         {/* Footer Message */}
-        <div style={{ textAlign: 'center', padding: '16px 0' }}>
-          <Paragraph style={{ marginBottom: '8px' }}>
-            <Text strong style={{ color: '#52c41a' }}>
-              Welcome to the Crave'N Family!
-            </Text>
-          </Paragraph>
-          <Text type="secondary" style={{ fontSize: '14px' }}>
+        <Box ta="center" p="md">
+          <Text fw={600} size="md" c="#22c55e" mb="xs">
+            Welcome to the Crave'N Family!
+          </Text>
+          <Text size="sm" c="dimmed">
             We're excited to have you join us as we revolutionize food delivery.
           </Text>
-        </div>
-      </Space>
+        </Box>
+      </Stack>
     </Card>
   );
 };
-

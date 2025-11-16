@@ -1,9 +1,6 @@
-// @ts-nocheck
 import React, { useState } from 'react';
-import { Button, Card, Typography, Space, Checkbox, Alert, Divider } from 'antd';
-import { FileProtectOutlined, SafetyOutlined, CheckCircleOutlined } from '@ant-design/icons';
-
-const { Title, Text, Paragraph } = Typography;
+import { Button, Card, Text, Stack, Checkbox, Alert, Divider, Box } from '@mantine/core';
+import { FileText, Shield, CheckCircle } from 'lucide-react';
 
 interface TermsAndPrivacyStepProps {
   onNext: (data: any) => void;
@@ -28,132 +25,138 @@ export const TermsAndPrivacyStep: React.FC<TermsAndPrivacyStepProps> = ({ onNext
 
   return (
     <Card
+      p="lg"
       style={{
         borderRadius: '12px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-        border: 'none'
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}
     >
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+      <Stack gap="lg">
         {/* Header */}
-        <div style={{ textAlign: 'center' }}>
-          <FileProtectOutlined style={{ fontSize: '48px', color: '#ff7a00' }} />
-          <Title level={2} style={{ marginTop: '16px' }}>
-            Legal Agreements
-          </Title>
-          <Paragraph style={{ fontSize: '16px', color: '#595959' }}>
-            Please review and accept our legal agreements to continue with your application
-          </Paragraph>
-        </div>
+        <Stack align="center" gap="md">
+          <Box
+            style={{
+              padding: 12,
+              backgroundColor: 'rgba(255, 122, 0, 0.1)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <FileText size={48} style={{ color: '#ff7a00' }} />
+          </Box>
+          <div style={{ textAlign: 'center' }}>
+            <Text fw={700} size="xl">Legal Agreements</Text>
+            <Text c="dimmed" size="sm" mt="xs">
+              Please review and accept our legal agreements to continue with your application
+            </Text>
+          </div>
+        </Stack>
 
         {/* Important Notice */}
         <Alert
-          message="Before We Start"
-          description="We need your consent to proceed with your application. Please read each agreement carefully."
-          type="info"
-          icon={<SafetyOutlined />}
-          showIcon
-        />
+          icon={<Shield size={16} />}
+          title="Before We Start"
+          color="blue"
+        >
+          We need your consent to proceed with your application. Please read each agreement carefully.
+        </Alert>
 
         {/* Terms of Service */}
         <Card
-          type="inner"
-          style={{ backgroundColor: '#fafafa' }}
+          p="md"
+          style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}
         >
-          <Space direction="vertical" size="small" style={{ width: '100%' }}>
-            <Text strong style={{ fontSize: '16px' }}>
-              Terms of Service
-            </Text>
-            <Paragraph style={{ marginBottom: '16px' }}>
+          <Stack gap="sm">
+            <Text fw={600} size="md">Terms of Service</Text>
+            <Text size="sm" c="dimmed">
               By clicking the link below, you'll read our complete Terms of Service which
               govern your use of the Crave'N platform as a driver.
-            </Paragraph>
+            </Text>
             <Checkbox
               checked={termsAccepted}
-              onChange={(e) => setTermsAccepted(e.target.checked)}
-            >
-              <Text>
-                I have read and agree to the{' '}
-                <a
-                  href="/terms-of-service"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.open('/terms-of-service', '_blank');
-                  }}
-                  style={{ color: '#ff7a00', fontWeight: 'bold' }}
-                >
-                  Terms of Service
-                </a>
-              </Text>
-            </Checkbox>
-          </Space>
+              onChange={(e) => setTermsAccepted(e.currentTarget.checked)}
+              label={
+                <Text size="sm">
+                  I have read and agree to the{' '}
+                  <a
+                    href="/terms-of-service"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.open('/terms-of-service', '_blank');
+                    }}
+                    style={{ color: '#ff7a00', fontWeight: 'bold' }}
+                  >
+                    Terms of Service
+                  </a>
+                </Text>
+              }
+            />
+          </Stack>
         </Card>
 
         {/* Privacy Policy */}
         <Card
-          type="inner"
-          style={{ backgroundColor: '#fafafa' }}
+          p="md"
+          style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}
         >
-          <Space direction="vertical" size="small" style={{ width: '100%' }}>
-            <Text strong style={{ fontSize: '16px' }}>
-              Privacy Policy
-            </Text>
-            <Paragraph style={{ marginBottom: '16px' }}>
+          <Stack gap="sm">
+            <Text fw={600} size="md">Privacy Policy</Text>
+            <Text size="sm" c="dimmed">
               Your privacy is important to us. Review our Privacy Policy to understand how
               we collect, use, and protect your personal information.
-            </Paragraph>
+            </Text>
             <Checkbox
               checked={privacyAccepted}
-              onChange={(e) => setPrivacyAccepted(e.target.checked)}
-            >
-              <Text>
-                I have read and agree to the{' '}
-                <a
-                  href="/privacy-policy"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.open('/privacy-policy', '_blank');
-                  }}
-                  style={{ color: '#ff7a00', fontWeight: 'bold' }}
-                >
-                  Privacy Policy
-                </a>
-              </Text>
-            </Checkbox>
-          </Space>
+              onChange={(e) => setPrivacyAccepted(e.currentTarget.checked)}
+              label={
+                <Text size="sm">
+                  I have read and agree to the{' '}
+                  <a
+                    href="/privacy-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.open('/privacy-policy', '_blank');
+                    }}
+                    style={{ color: '#ff7a00', fontWeight: 'bold' }}
+                  >
+                    Privacy Policy
+                  </a>
+                </Text>
+              }
+            />
+          </Stack>
         </Card>
 
         <Divider />
 
         {/* Continue Button */}
         <Button
-          type="primary"
-          size="large"
-          block
+          size="lg"
+          fullWidth
           disabled={!termsAccepted || !privacyAccepted}
           onClick={handleContinue}
-          icon={<CheckCircleOutlined />}
+          leftSection={<CheckCircle size={18} />}
           style={{
             height: '50px',
             fontSize: '18px',
             fontWeight: 'bold',
             borderRadius: '8px',
-            backgroundColor: '#ff7a00',
-            borderColor: '#ff7a00'
           }}
+          color="#ff7a00"
         >
           Continue to Application
         </Button>
 
-        <Text type="secondary" style={{ display: 'block', textAlign: 'center', fontSize: '13px' }}>
+        <Text size="xs" c="dimmed" ta="center">
           By continuing, you agree to our legal agreements and consent to processing your information
         </Text>
-      </Space>
+      </Stack>
     </Card>
   );
 };
-

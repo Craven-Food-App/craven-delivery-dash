@@ -1,18 +1,9 @@
-// @ts-nocheck
 import React, { useState } from 'react';
-import { Steps, Card, Typography, Space } from 'antd';
-import { FileProtectOutlined, UserOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { Stepper, Card, Text, Box, Stack } from '@mantine/core';
+import { FileText, User, CheckCircle } from 'lucide-react';
 import { TermsAndPrivacyStep } from './steps/TermsAndPrivacyStep';
 import { BasicInfoStep } from './steps/BasicInfoStep';
 import { WaitlistSuccessStep } from './steps/WaitlistSuccessStep';
-
-const { Title } = Typography;
-
-const STEP_ICONS = {
-  0: <FileProtectOutlined />,
-  1: <UserOutlined />,
-  2: <CheckCircleOutlined />
-};
 
 export const DriverApplicationWizard: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -73,58 +64,60 @@ export const DriverApplicationWizard: React.FC = () => {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #ff7a00 0%, #ff9f40 100%)',
-      padding: '24px'
-    }}>
-      <div style={{
-        maxWidth: '800px',
-        margin: '0 auto'
-      }}>
+    <Box
+      style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #ff7a00 0%, #ff9f40 100%)',
+        padding: '24px'
+      }}
+    >
+      <Box style={{ maxWidth: '800px', margin: '0 auto' }}>
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <Title level={1} style={{
-            color: 'white',
-            margin: 0,
-            fontSize: '36px',
-            fontWeight: 'bold'
-          }}>
+        <Stack align="center" gap="xs" mb="xl">
+          <Text
+            fw={700}
+            size="2xl"
+            c="white"
+            style={{ fontSize: '36px' }}
+          >
             Apply to Drive with Crave'N
-          </Title>
-          <Title level={3} style={{
-            color: 'rgba(255,255,255,0.9)',
-            marginTop: '8px',
-            fontWeight: 'normal'
-          }}>
+          </Text>
+          <Text size="lg" c="rgba(255,255,255,0.9)" fw={400}>
             Join thousands of drivers earning great money
-          </Title>
-        </div>
+          </Text>
+        </Stack>
 
         {/* Progress Steps */}
         <Card
+          p="lg"
+          mb="lg"
           style={{
-            marginBottom: '24px',
             borderRadius: '12px',
-            border: 'none',
             boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
           }}
         >
-          <Steps
-            current={currentStep}
-            items={steps.map((step, index) => ({
-              title: step.title,
-              description: step.description,
-              icon: currentStep === index ? STEP_ICONS[index as keyof typeof STEP_ICONS] : undefined
-            }))}
-            responsive
-          />
+          <Stepper
+            active={currentStep}
+            breakpoint="sm"
+          >
+            {steps.map((step, index) => (
+              <Stepper.Step
+                key={index}
+                label={step.title}
+                description={step.description}
+                icon={
+                  index === 0 ? <FileText size={16} /> :
+                  index === 1 ? <User size={16} /> :
+                  <CheckCircle size={16} />
+                }
+              />
+            ))}
+          </Stepper>
         </Card>
 
         {/* Step Content */}
         {renderStepContent()}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 };
-
