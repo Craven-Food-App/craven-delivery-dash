@@ -1378,6 +1378,7 @@ const RestaurantMenuPage = () => {
                             onClick={() => {
                               localStorage.setItem('checkout_cart', JSON.stringify(cart));
                               localStorage.setItem('checkout_restaurant', JSON.stringify(restaurant));
+                              localStorage.setItem('checkout_delivery_method', deliveryMethod);
                               navigate('/checkout');
                             }}
                           >
@@ -2306,7 +2307,10 @@ const RestaurantMenuPage = () => {
                   size="lg"
                   color="orange"
                   radius="xl"
-                  onClick={() => navigate('/checkout')}
+                  onClick={() => {
+                    localStorage.setItem('checkout_delivery_method', deliveryMethod);
+                    navigate('/checkout');
+                  }}
                   style={{
                     boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
                   }}
@@ -2356,7 +2360,10 @@ const RestaurantMenuPage = () => {
                 <Button
                   color="orange"
                   leftSection={<IconShoppingCart size={20} />}
-                  onClick={() => navigate('/checkout')}
+                  onClick={() => {
+                    localStorage.setItem('checkout_delivery_method', deliveryMethod);
+                    navigate('/checkout');
+                  }}
                   style={{
                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
                   }}

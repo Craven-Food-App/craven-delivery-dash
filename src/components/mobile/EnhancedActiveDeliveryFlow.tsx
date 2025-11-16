@@ -362,8 +362,20 @@ const App: React.FC<AppProps> = ({
         customerPhone={orderDetails.customer_phone}
         dropoffAddress={getCurrentDestination.address}
         deliveryInstructions={orderDetails.delivery_notes}
-        onCall={() => toast({ title: "Calling customer...", description: "Feature coming soon!" })}
-        onMessage={() => toast({ title: "Messaging customer...", description: "Feature coming soon!" })}
+        onCall={() => {
+          if (orderDetails.customer_phone) {
+            window.open(`tel:${orderDetails.customer_phone}`);
+          } else {
+            toast({ title: "No phone number", description: "Customer phone number not available", variant: "destructive" });
+          }
+        }}
+        onMessage={() => {
+          if (orderDetails.customer_phone) {
+            window.open(`sms:${orderDetails.customer_phone}`);
+          } else {
+            toast({ title: "No phone number", description: "Customer phone number not available", variant: "destructive" });
+          }
+        }}
         onDirections={() => {
           const { openExternalNavigation } = useNavigation();
           openExternalNavigation({
@@ -520,14 +532,26 @@ const App: React.FC<AppProps> = ({
             <ButtonMock
                 variant="outline"
                 className="w-1/4 h-14 border-gray-400 hover:bg-orange-50"
-                onClick={() => toast({ title: "Calling...", description: "Feature coming soon!" })}
+                onClick={() => {
+                  if (orderDetails.customer_phone) {
+                    window.open(`tel:${orderDetails.customer_phone}`);
+                  } else {
+                    toast({ title: "No phone number", description: "Customer phone number not available", variant: "destructive" });
+                  }
+                }}
             >
                 <Phone className="h-6 w-6 text-orange-600" />
             </ButtonMock>
             <ButtonMock
                 variant="outline"
                 className="w-1/4 h-14 border-gray-400 hover:bg-orange-50"
-                onClick={() => toast({ title: "Messaging...", description: "Feature coming soon!" })}
+                onClick={() => {
+                  if (orderDetails.customer_phone) {
+                    window.open(`sms:${orderDetails.customer_phone}`);
+                  } else {
+                    toast({ title: "No phone number", description: "Customer phone number not available", variant: "destructive" });
+                  }
+                }}
             >
                 <MessageSquare className="h-6 w-6 text-orange-600" />
             </ButtonMock>

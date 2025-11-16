@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Address {
   label: string;
@@ -18,172 +19,106 @@ interface AddressSelectorProps {
 
 export const AddressSelector: React.FC<AddressSelectorProps> = ({ onAddressSelect, initialAddress }) => {
   const { toast } = useToast();
-  const [addresses, setAddresses] = useState<Record<string, Address>>({});
-  const [selectedTab, setSelectedTab] = useState('Home');
-  const [showEditForm, setShowEditForm] = useState(true);
-  const [editingAddress, setEditingAddress] = useState<Address>({
-    label: 'Home',
-    name: '',
-    address: '',
-    apt_suite: '',
-    city: '',
-    state: '',
-    zip: ''
-  });
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [selectedAddress, setSelectedAddress] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load saved addresses from localStorage
-    const saved = localStorage.getItem('saved_addresses');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setAddresses(parsed);
-      
-      // Auto-select first available address
-      const firstAddr = parsed[selectedTab] || Object.values(parsed)[0];
-      if (firstAddr) {
-        onAddressSelect(firstAddr);
-        setEditingAddress(firstAddr as Address);
-        setShowEditForm(false);
+    const loadAddresses = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setLoading(false);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('delivery_addresses')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('is_default', { ascending: false });
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          setAddresses(data);
+          const defaultAddr = data.find((a: any) => a.is_default) || data[0];
+          setSelectedAddress(defaultAddr);
+          
+          // Format and pass to parent
+          onAddressSelect({
+            name: initialAddress?.name || '',
+            address: defaultAddr.street_address,
+            apt_suite: defaultAddr.apt_suite || '',
+            city: defaultAddr.city,
+            state: defaultAddr.state,
+            zip: defaultAddr.zip_code,
+          });
+        }
+      } catch (error) {
+        console.error('Error loading addresses:', error);
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    loadAddresses();
   }, []);
 
-  const handleTabClick = (label: string) => {
-    setSelectedTab(label);
-    const addr = addresses[label];
-    if (addr) {
-      onAddressSelect(addr);
-      setEditingAddress(addr);
-      setShowEditForm(false);
-    } else {
-      setShowEditForm(true);
-      setEditingAddress({
-        label,
-        name: '',
-        address: '',
-        apt_suite: '',
-        city: '',
-        state: '',
-        zip: ''
-      });
-    }
+  const handleAddressSelect = (address: any) => {
+    setSelectedAddress(address);
+    onAddressSelect({
+      name: initialAddress?.name || '',
+      address: address.street_address,
+      apt_suite: address.apt_suite || '',
+      city: address.city,
+      state: address.state,
+      zip: address.zip_code,
+    });
   };
 
-  const handleSaveAddress = () => {
-    if (!editingAddress.name || !editingAddress.address || !editingAddress.city || !editingAddress.state || !editingAddress.zip) {
-      toast({ title: "Error", description: "Please fill all required fields", variant: "destructive" });
-      return;
-    }
+  if (loading) {
+    return <div className="text-sm text-gray-500">Loading addresses...</div>;
+  }
 
-    const updated = { ...addresses, [selectedTab]: { ...editingAddress, label: selectedTab } };
-    setAddresses(updated);
-    localStorage.setItem('saved_addresses', JSON.stringify(updated));
-    onAddressSelect(editingAddress);
-    setShowEditForm(false);
-    toast({ title: "Success", description: "Address saved successfully" });
-  };
-
-  const selectedAddress = addresses[selectedTab];
+  if (addresses.length === 0) {
+    return (
+      <div className="p-4 border rounded-lg bg-yellow-50">
+        <p className="text-sm text-gray-600 mb-2">No delivery address found.</p>
+        <p className="text-sm text-gray-500">Please add a delivery address in your account settings.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-2 overflow-x-auto hide-scrollbar">
-        {['Home', 'Work', 'Recent'].map((label) => (
-          <button
-            key={label}
-            onClick={() => handleTabClick(label)}
-            className={`px-3 py-2 rounded-full border text-sm whitespace-nowrap transition-colors ${
-              selectedTab === label 
-                ? 'bg-orange-500 text-white border-orange-500' 
-                : 'hover:border-orange-300'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {selectedAddress && !showEditForm ? (
-        <div className="p-3 border rounded-lg bg-gray-50">
+      {addresses.map((addr) => (
+        <div
+          key={addr.id}
+          onClick={() => handleAddressSelect(addr)}
+          className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+            selectedAddress?.id === addr.id
+              ? 'bg-orange-50 border-orange-500'
+              : 'bg-gray-50 hover:bg-gray-100'
+          }`}
+        >
           <div className="flex justify-between items-start">
             <div>
-              <p className="font-medium">{selectedAddress.name}</p>
-              <p className="text-sm text-gray-600">
-                {selectedAddress.address}
-                {selectedAddress.apt_suite && `, ${selectedAddress.apt_suite}`}
+              <p className="font-medium text-sm">{addr.label || 'Address'}</p>
+              <p className="text-sm text-gray-600 mt-1">
+                {addr.street_address}
+                {addr.apt_suite && `, ${addr.apt_suite}`}
               </p>
               <p className="text-sm text-gray-600">
-                {selectedAddress.city}, {selectedAddress.state} {selectedAddress.zip}
+                {addr.city}, {addr.state} {addr.zip_code}
               </p>
             </div>
-            <button
-              onClick={() => setShowEditForm(true)}
-              className="text-sm text-orange-500 hover:text-orange-600"
-            >
-              Edit
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input
-              className="border rounded-lg px-3 py-2"
-              placeholder="Full name"
-              value={editingAddress.name}
-              onChange={(e) => setEditingAddress({ ...editingAddress, name: e.target.value })}
-            />
-            <input
-              className="border rounded-lg px-3 py-2"
-              placeholder="Street address"
-              value={editingAddress.address}
-              onChange={(e) => setEditingAddress({ ...editingAddress, address: e.target.value })}
-            />
-            <input
-              className="border rounded-lg px-3 py-2"
-              placeholder="Apt, suite (optional)"
-              value={editingAddress.apt_suite}
-              onChange={(e) => setEditingAddress({ ...editingAddress, apt_suite: e.target.value })}
-            />
-            <input
-              className="border rounded-lg px-3 py-2"
-              placeholder="City"
-              value={editingAddress.city}
-              onChange={(e) => setEditingAddress({ ...editingAddress, city: e.target.value })}
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                className="border rounded-lg px-3 py-2"
-                placeholder="State"
-                value={editingAddress.state}
-                onChange={(e) => setEditingAddress({ ...editingAddress, state: e.target.value })}
-              />
-              <input
-                className="border rounded-lg px-3 py-2"
-                placeholder="ZIP"
-                value={editingAddress.zip}
-                onChange={(e) => setEditingAddress({ ...editingAddress, zip: e.target.value })}
-              />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={handleSaveAddress}
-              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm"
-            >
-              Save Address
-            </button>
-            {selectedAddress && (
-              <button
-                onClick={() => setShowEditForm(false)}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50 text-sm"
-              >
-                Cancel
-              </button>
+            {addr.is_default && (
+              <span className="text-xs bg-orange-500 text-white px-2 py-1 rounded">Default</span>
             )}
           </div>
         </div>
-      )}
+      ))}
     </div>
   );
 };

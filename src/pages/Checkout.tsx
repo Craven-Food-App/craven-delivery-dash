@@ -44,8 +44,57 @@ const Checkout: React.FC = () => {
   useEffect(() => {
     const savedCart = localStorage.getItem('checkout_cart');
     const savedRestaurant = localStorage.getItem('checkout_restaurant');
+    const savedDeliveryMethod = localStorage.getItem('checkout_delivery_method');
     if (savedCart) setCart(JSON.parse(savedCart));
     if (savedRestaurant) setRestaurant(JSON.parse(savedRestaurant));
+    if (savedDeliveryMethod) {
+      setFormData(prev => ({ ...prev, deliveryMethod: savedDeliveryMethod as 'delivery' | 'pickup' }));
+    }
+  }, []);
+
+  // Load customer profile and address data
+  useEffect(() => {
+    const loadCustomerData = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Load user profile
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('full_name, phone')
+          .eq('user_id', user.id)
+          .single();
+
+        // Load default delivery address
+        const { data: address } = await supabase
+          .from('delivery_addresses')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_default', true)
+          .single();
+
+        // Update form data with profile info
+        if (profile || address || user.email) {
+          setFormData(prev => ({
+            ...prev,
+            name: profile?.full_name || prev.name,
+            phone: profile?.phone || prev.phone,
+            email: user.email || prev.email,
+            address: address?.street_address || prev.address,
+            aptSuite: address?.apt_suite || prev.aptSuite,
+            city: address?.city || prev.city,
+            state: address?.state || prev.state,
+            zip: address?.zip_code || prev.zip,
+          }));
+        }
+      } catch (error) {
+        console.error('Error loading customer data:', error);
+        // Continue with empty form if profile doesn't exist
+      }
+    };
+
+    loadCustomerData();
   }, []);
 
   const subtotal = useMemo(() => 
@@ -85,8 +134,14 @@ const Checkout: React.FC = () => {
     }
 
     // Validate required fields
-    if (!formData.name || !formData.phone || !formData.email || !formData.address || !formData.city || !formData.state || !formData.zip) {
-      toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
+    if (!formData.name || !formData.phone || !formData.email) {
+      toast({ title: "Error", description: "Please complete your profile with name, phone, and email", variant: "destructive" });
+      return;
+    }
+
+    // For delivery orders, validate address
+    if (formData.deliveryMethod === 'delivery' && (!formData.address || !formData.city || !formData.state || !formData.zip)) {
+      toast({ title: "Error", description: "Please add a delivery address in your account settings", variant: "destructive" });
       return;
     }
 
@@ -210,6 +265,7 @@ const Checkout: React.FC = () => {
       // Clear cart
       localStorage.removeItem('checkout_cart');
       localStorage.removeItem('checkout_restaurant');
+      localStorage.removeItem('checkout_delivery_method');
 
       // Redirect to payment page
       window.location.href = paymentData.url;
@@ -234,9 +290,11 @@ const Checkout: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left: Forms */}
           <div className="lg:col-span-2 space-y-6">
-            <Section title="Delivery Address">
-              <AddressSelector onAddressSelect={handleAddressSelect} initialAddress={formData} />
-            </Section>
+            {formData.deliveryMethod === 'delivery' && (
+              <Section title="Delivery Address">
+                <AddressSelector onAddressSelect={handleAddressSelect} initialAddress={formData} />
+              </Section>
+            )}
 
             <Section title="Delivery Options">
               <div className="flex items-center gap-4">
@@ -294,24 +352,30 @@ const Checkout: React.FC = () => {
             </Section>
 
             <Section title="Contact Info">
+              <div className="text-sm text-gray-600 mb-3">
+                This information is from your account profile. You can update it in your account settings.
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input 
-                  className="border rounded-lg px-3 py-2" 
+                  className="border rounded-lg px-3 py-2 bg-gray-50" 
                   placeholder="Full name" 
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  readOnly
                 />
                 <input 
-                  className="border rounded-lg px-3 py-2" 
+                  className="border rounded-lg px-3 py-2 bg-gray-50" 
                   placeholder="Phone number" 
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  readOnly
                 />
                 <input 
-                  className="sm:col-span-2 border rounded-lg px-3 py-2" 
+                  className="sm:col-span-2 border rounded-lg px-3 py-2 bg-gray-50" 
                   placeholder="Email (receipt)" 
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  readOnly
                 />
               </div>
             </Section>

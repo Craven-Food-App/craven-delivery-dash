@@ -602,14 +602,26 @@ const ProfessionalActiveDeliveryFlow = ({ orderDetails, onCompleteDelivery, onPr
           <div className="grid grid-cols-2 gap-3">
             <DeliveryButton
               variant="outline"
-              onClick={() => toast({ title: "Calling customer...", description: "Feature coming soon!" })}
+              onClick={() => {
+                if (orderDetails.customer_phone) {
+                  window.open(`tel:${orderDetails.customer_phone}`);
+                } else {
+                  toast({ title: "No phone number", description: "Customer phone number not available", variant: "destructive" });
+                }
+              }}
               icon={<Phone className="w-4 h-4" />}
             >
               Call
             </DeliveryButton>
             <DeliveryButton
               variant="outline"
-              onClick={() => toast({ title: "Messaging customer...", description: "Feature coming soon!" })}
+              onClick={() => {
+                if (orderDetails.customer_phone) {
+                  window.open(`sms:${orderDetails.customer_phone}`);
+                } else {
+                  toast({ title: "No phone number", description: "Customer phone number not available", variant: "destructive" });
+                }
+              }}
               icon={<MessageCircle className="w-4 h-4" />}
             >
               Message
