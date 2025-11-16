@@ -151,12 +151,14 @@ export const AccountSection: React.FC<{
       await supabase.auth.signOut();
       notifications.show({
         title: 'Signed out successfully',
+        message: '',
         color: 'green',
       });
       window.location.href = '/mobile';
     } catch (error) {
       notifications.show({
         title: 'Failed to sign out',
+        message: '',
         color: 'red',
       });
     }
@@ -196,9 +198,8 @@ export const AccountSection: React.FC<{
       <Paper
         pos="sticky"
         top={0}
-        style={{ zIndex: 10 }}
+        style={{ zIndex: 10, borderBottom: '1px solid var(--mantine-color-slate-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
         bg="white"
-        style={{ borderBottom: '1px solid var(--mantine-color-slate-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
         className="safe-area-top"
       >
         <Box p="md">
@@ -391,36 +392,34 @@ export const AccountSection: React.FC<{
           
           <Anchor
             href="tel:+18883728368"
-            component="button"
+            component="a"
             variant="subtle"
-            fullWidth
-            style={{ height: 'auto', padding: '16px', textDecoration: 'none' }}
-            leftSection={
+            style={{ height: 'auto', padding: '16px', textDecoration: 'none', display: 'block' }}
+          >
+            <Group>
               <ThemeIcon size="lg" radius="xl" color="blue" variant="light">
                 <IconPhone size={20} color="var(--mantine-color-blue-6)" />
               </ThemeIcon>
-            }
-            rightSection={<IconChevronRight size={20} color="var(--mantine-color-slate-4)" />}
-          >
-            <Text fw={500} c="slate.9">Call Support</Text>
+              <Text fw={500} c="slate.9" style={{ flex: 1 }}>Call Support</Text>
+              <IconChevronRight size={20} color="var(--mantine-color-slate-4)" />
+            </Group>
           </Anchor>
 
           <Divider />
 
           <Anchor
             href="mailto:support@crave-n.shop"
-            component="button"
+            component="a"
             variant="subtle"
-            fullWidth
-            style={{ height: 'auto', padding: '16px', textDecoration: 'none' }}
-            leftSection={
+            style={{ height: 'auto', padding: '16px', textDecoration: 'none', display: 'block' }}
+          >
+            <Group>
               <ThemeIcon size="lg" radius="xl" color="purple" variant="light">
                 <IconMail size={20} color="var(--mantine-color-purple-6)" />
               </ThemeIcon>
-            }
-            rightSection={<IconChevronRight size={20} color="var(--mantine-color-slate-4)" />}
-          >
-            <Text fw={500} c="slate.9">Email Support</Text>
+              <Text fw={500} c="slate.9" style={{ flex: 1 }}>Email Support</Text>
+              <IconChevronRight size={20} color="var(--mantine-color-slate-4)" />
+            </Group>
           </Anchor>
         </Card>
 
