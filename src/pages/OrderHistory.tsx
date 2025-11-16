@@ -22,10 +22,10 @@ import {
   IconClock,
   IconStar,
   IconHeart,
-  IconRefreshCw,
+  IconRefresh,
   IconMapPin,
-  IconStore,
-  IconDollarSign,
+  IconBuildingStore,
+  IconCurrencyDollar,
   IconChevronRight,
   IconFilter,
   IconSearch,
@@ -358,7 +358,7 @@ export default function OrderHistory() {
                                     justifyContent: 'center',
                                   }}
                                 >
-                                  <IconStore size={40} style={{ color: 'var(--mantine-color-gray-5)' }} />
+                                  <IconBuildingStore size={40} style={{ color: 'var(--mantine-color-gray-5)' }} />
                                 </Box>
                               )}
 
@@ -442,7 +442,7 @@ export default function OrderHistory() {
                             <Button
                               onClick={() => handleReorder(order)}
                               variant="outline"
-                              leftSection={<IconRefreshCw size={16} />}
+                              leftSection={<IconRefresh size={16} />}
                               style={{ flex: 1 }}
                             >
                               Reorder
