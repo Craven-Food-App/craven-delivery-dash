@@ -94,9 +94,15 @@ const BankAccountDashboard = () => {
       }
     } catch (err: any) {
       console.error('Error creating Stripe link:', err);
-      const errorMessage = err.message || 'Failed to open banking setup';
-      setError(errorMessage);
-      toast.error(errorMessage);
+      const serverMsg: string = err?.message || err?.error || 'Failed to open banking setup';
+      let friendly = serverMsg;
+      if (serverMsg.toLowerCase().includes('rejected') || serverMsg.toLowerCase().includes('platform account')) {
+        friendly = 'Banking setup is temporarily unavailable because the Stripe platform account is rejected. Please contact Stripe Support to resolve.';
+      } else if (serverMsg.toLowerCase().includes('connect is not enabled')) {
+        friendly = 'Stripe Connect is not enabled for this key. Enable Connect in your Stripe dashboard or use a Connect-enabled key.';
+      }
+      setError(friendly);
+      toast.error(friendly);
       setCreatingLink(false);
     }
   };

@@ -152,17 +152,28 @@ serve(async (req) => {
         }
         
         console.log('Saved Stripe account ID to database');
-      } catch (stripeError: any) {
-        const msg: string = stripeError?.raw?.message || String(stripeError?.message || stripeError);
+        const rawMsg: string = (stripeError?.raw?.message || String(stripeError?.message || stripeError));
         console.error('Error creating Stripe account:', stripeError);
-        const friendly = msg.includes('signed up for Connect')
-          ? 'Stripe Connect not enabled for this API key. Please enable Connect in your Stripe dashboard or provide a Connect-enabled secret key.'
-          : 'Failed to create Stripe account';
+
+        // Provide actionable, user-friendly errors with appropriate status codes
+        let status = 400 as number;
+        let friendly = 'Failed to create Stripe account';
+        let code = 'stripe_error';
+
+        if (rawMsg.toLowerCase().includes('rejected')) {
+          status = 409; // conflict / cannot proceed
+          code = 'platform_rejected';
+          friendly = 'Banking setup is blocked: your Stripe platform account is rejected. Please contact Stripe Support to resolve before creating Connect accounts.';
+        } else if (rawMsg.includes('signed up for Connect')) {
+          status = 400;
+          code = 'connect_not_enabled';
+          friendly = 'Stripe Connect is not enabled for this API key. Enable Connect in your Stripe dashboard or use a Connect-enabled secret key.';
+        }
+
         return new Response(
-          JSON.stringify({ error: friendly, details: msg }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: friendly, details: rawMsg, code }),
+          { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
-      }
     } else {
       console.log('Using existing Stripe account:', accountId);
     }
