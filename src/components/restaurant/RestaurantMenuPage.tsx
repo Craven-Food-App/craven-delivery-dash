@@ -1008,88 +1008,88 @@ const RestaurantMenuPage = () => {
         </Stack>
     );
 
-    const LeftColumn = () => (
-        <Box
-            pt="xl"
-            style={{
-                display: 'none',
-                '@media (min-width: 1024px)': { display: 'block' },
-                ...(isMenuFixed ? {
-                    position: 'fixed',
-                    top: 4,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    '@media (min-width: 1024px)': {
-                        left: 'auto',
-                        transform: 'none',
-                        maxWidth: 'calc(25% - 1rem)',
-                    },
-                    '@media (min-width: 1280px)': {
-                        maxWidth: 'calc((1120px * 0.25) - 1rem)',
-                    },
-                    width: '100%',
-                    maxWidth: '320px',
-                } : {})
-            }}
-        >
-            <Stack gap="md">
-                {/* Store Info */}
-                <Stack gap="xs">
-                    <Text size="sm" fw={700} c="gray.7">Store Info</Text>
-                    <Group gap="xs" wrap="nowrap">
-                        <IconClock size={16} />
-                        <Text size="sm" fw={600} c={restaurant?.is_open ? 'green.7' : 'orange.6'}>
-                            {restaurant?.is_open ? 'Open Now' : `Closed • Opens at ${restaurant?.opens_at || '9:00 AM'}`}
-                        </Text>
-                    </Group>
-                    <Group gap="xs" wrap="nowrap">
-                        <IconStar size={16} style={{ color: 'var(--mantine-color-yellow-5)', fill: 'var(--mantine-color-yellow-5)' }} />
-                        <Text size="sm" c="dimmed">
-                            {restaurant?.rating || 4.0} <Text component="span" c="dimmed">({restaurant?.total_reviews || 0}+)</Text> • {(((restaurant?.latitude || 0) - 35) * 100).toFixed(1)} mi
-                        </Text>
-                    </Group>
-                    <Group gap="xs" wrap="nowrap">
-                        <IconMapPin size={16} style={{ color: 'var(--mantine-color-red-5)' }} />
-                        <Text size="sm" c="dimmed">{restaurant?.cuisine_type}</Text>
-                    </Group>
-                    <Group gap="xs" wrap="nowrap">
-                        <IconTruck size={16} style={{ color: 'var(--mantine-color-green-6)' }} />
-                        <Text size="sm" c="dimmed">{formatPrice(restaurant?.delivery_fee_cents || 0)} delivery fee</Text>
-                    </Group>
-                </Stack>
+  const LeftColumn = () => (
+    <Box
+      pt="xl"
+      style={{
+        display: 'none',
+        '@media (min-width: 1024px)': { display: 'block' },
+        ...(isMenuFixed ? {
+          position: 'fixed',
+          top: 4,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          '@media (min-width: 1024px)': {
+            left: 'auto',
+            transform: 'none',
+            maxWidth: 'calc(25% - 1rem)',
+          },
+          '@media (min-width: 1280px)': {
+            maxWidth: 'calc((1120px * 0.25) - 1rem)',
+          },
+          width: '100%',
+          maxWidth: '320px',
+        } : {})
+      }}
+    >
+      <Stack gap="md">
+        {/* Store Info */}
+        <Stack gap="xs">
+          <Text size="sm" fw={700} c="gray.7">Store Info</Text>
+          <Group gap="xs" wrap="nowrap">
+            <IconClock size={16} />
+            <Text size="sm" fw={600} c={restaurant?.is_open ? 'green.7' : 'orange.6'}>
+              {restaurant?.is_open ? 'Open Now' : `Closed • Opens at ${restaurant?.opens_at || '9:00 AM'}`}
+            </Text>
+          </Group>
+          <Group gap="xs" wrap="nowrap">
+            <IconStar size={16} style={{ color: 'var(--mantine-color-yellow-5)', fill: 'var(--mantine-color-yellow-5)' }} />
+            <Text size="sm" c="dimmed">
+              {restaurant?.rating || 4.0} <Text component="span" c="dimmed">({restaurant?.total_reviews || 0}+)</Text> • {(((restaurant?.latitude || 0) - 35) * 100).toFixed(1)} mi
+            </Text>
+          </Group>
+          <Group gap="xs" wrap="nowrap">
+            <IconMapPin size={16} style={{ color: 'var(--mantine-color-red-5)' }} />
+            <Text size="sm" c="dimmed">{restaurant?.cuisine_type}</Text>
+          </Group>
+          <Group gap="xs" wrap="nowrap">
+            <IconTruck size={16} style={{ color: 'var(--mantine-color-green-6)' }} />
+            <Text size="sm" c="dimmed">{formatPrice(restaurant?.delivery_fee_cents || 0)} delivery fee</Text>
+          </Group>
+        </Stack>
 
-                {/* Full Menu Navigation */}
-                <Divider />
-                <Stack gap="xs" pt="md">
-                    <Text size="sm" fw={700} c="gray.7" mb="xs">Full Menu</Text>
-                    <Stack gap="xs">
-                        {sidebarLinks.map(link => (
-                            <Button
-                                key={link.id}
-                                variant="subtle"
-                                fullWidth
-                                justify="flex-start"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    scrollToSection(link.id);
-                                }}
-                                style={{
-                                    backgroundColor: activeSection === link.id ? 'var(--mantine-color-orange-0)' : 'transparent',
-                                    color: activeSection === link.id ? 'var(--mantine-color-orange-6)' : 'var(--mantine-color-gray-7)',
-                                    fontWeight: activeSection === link.id ? 600 : 500,
-                                    borderLeft: activeSection === link.id ? '4px solid var(--mantine-color-orange-6)' : 'none',
-                                    marginLeft: activeSection === link.id ? '-8px' : 0,
-                                    paddingLeft: activeSection === link.id ? '12px' : '8px',
-                                }}
-                            >
-                                {link.label}
-                            </Button>
-                        ))}
-                    </Stack>
-                </Stack>
-            </Stack>
-        </Box>
-    );
+        {/* Full Menu Navigation */}
+        <Divider />
+        <Stack gap="xs" pt="md">
+          <Text size="sm" fw={700} c="gray.7" mb="xs">Full Menu</Text>
+          <Stack gap="xs">
+            {sidebarLinks.map(link => (
+              <Button
+                key={link.id}
+                variant="subtle"
+                fullWidth
+                justify="flex-start"
+                onClick={(e) => {
+                  e.preventDefault();
+                  scrollToSection(link.id);
+                }}
+                style={{
+                  backgroundColor: activeSection === link.id ? 'var(--mantine-color-orange-0)' : 'transparent',
+                  color: activeSection === link.id ? 'var(--mantine-color-orange-6)' : 'var(--mantine-color-gray-7)',
+                  fontWeight: activeSection === link.id ? 600 : 500,
+                  borderLeft: activeSection === link.id ? '4px solid var(--mantine-color-orange-6)' : 'none',
+                  marginLeft: activeSection === link.id ? '-8px' : 0,
+                  paddingLeft: activeSection === link.id ? '12px' : '8px',
+                }}
+              >
+                {link.label}
+              </Button>
+            ))}
+          </Stack>
+        </Stack>
+      </Stack>
+    </Box>
+  );
 
   if (loading) {
     return (
