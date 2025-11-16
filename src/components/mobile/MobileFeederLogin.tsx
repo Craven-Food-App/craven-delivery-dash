@@ -46,9 +46,42 @@ const MobileFeederLogin: React.FC<MobileFeederLoginProps> = ({ onBack, onLoginSu
     try {
       const { data: application, error } = await supabase
         .from('craver_applications')
-        .select('status, first_name, background_check, background_check_approved_at, background_check_initiated_at, welcome_screen_shown, onboarding_completed_at')
+        .select(`
+          status,
+          first_name,
+          welcome_screen_shown,
+          onboarding_completed_at,
+          contract_signed_at,
+          payout_method,
+          vehicle_make,
+          vehicle_model,
+          vehicle_year,
+          vehicle_color,
+          vehicle_type,
+          license_plate,
+          date_of_birth,
+          street_address,
+          drivers_license,
+          license_state,
+          license_expiry,
+          drivers_license_front,
+          drivers_license_back,
+          insurance_provider,
+          insurance_policy,
+          insurance_document,
+          background_check_consent,
+          criminal_history_consent,
+          facial_image_consent,
+          electronic_1099_consent,
+          w9_signed,
+          background_check,
+          background_check_approved_at,
+          background_check_initiated_at
+        `)
         .eq('user_id', userId)
-        .single();
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
       
       if (error) {
         console.error('MobileFeederLogin: Error fetching application:', error);
@@ -69,26 +102,82 @@ const MobileFeederLogin: React.FC<MobileFeederLoginProps> = ({ onBack, onLoginSu
         return;
       }
 
-      // Check if background check is pending or in progress
-      if (application.background_check_initiated_at && !application.background_check_approved_at) {
-        // Background check is in progress - navigate to mobile background check status
+      // If approved but haven't shown welcome confetti, show it (will redirect after)
+      if (application.status === 'approved' && !application.welcome_screen_shown) {
+        // Mark welcome screen as shown and continue to routing
+        await supabase
+          .from('craver_applications')
+          .update({ welcome_screen_shown: true })
+          .eq('user_id', userId);
+      }
+
+      if (application.status !== 'approved') {
+        // Check if background check is pending or in progress
+        if (application.background_check_initiated_at && !application.background_check_approved_at) {
+          navigate('/mobile/background-check-status');
+          return;
+        }
+        // Application not approved yet
         navigate('/mobile/background-check-status');
         return;
       }
 
-      // Check if background check hasn't been initiated yet
-      if (!application.background_check && !application.background_check_approved_at) {
-        toast({
-          title: "Application Pending",
-          description: "Your application is being reviewed. We'll notify you when your background check begins!",
-        });
-        // Stay on login screen or navigate to a pending status page
+      // Application is approved - check if they need to complete required info
+      const requiredStrings = [
+        'date_of_birth',
+        'street_address',
+        'drivers_license',
+        'license_state',
+        'license_expiry',
+        'vehicle_type',
+        'vehicle_make',
+        'vehicle_model',
+        'vehicle_color',
+        'license_plate',
+        'insurance_provider',
+        'insurance_policy',
+        'payout_method',
+      ];
+
+      const requiredDocuments = [
+        'drivers_license_front',
+        'drivers_license_back',
+        'insurance_document',
+      ];
+
+      const requiredConsents = [
+        'background_check_consent',
+        'criminal_history_consent',
+        'facial_image_consent',
+        'electronic_1099_consent',
+        'w9_signed',
+      ];
+
+      const hasAllStrings = requiredStrings.every((field) => {
+        const value = application[field as keyof typeof application];
+        return typeof value === 'string' && value && value.trim().length > 0;
+      });
+
+      const hasAllDocuments = requiredDocuments.every((field) => {
+        const value = application[field as keyof typeof application];
+        return typeof value === 'string' && value && value.trim().length > 0;
+      });
+
+      const hasAllConsents = requiredConsents.every((field) => application[field as keyof typeof application] === true);
+      const hasVehicleYear = Boolean(application.vehicle_year);
+      const hasContract = typeof application.contract_signed_at === 'string' && application.contract_signed_at.length > 0;
+
+      // If required info not collected, go to post-waitlist onboarding
+      const needsPostWaitlist = !hasAllStrings || !hasAllDocuments || !hasAllConsents || !hasVehicleYear || !hasContract;
+
+      if (needsPostWaitlist) {
+        navigate('/driver/post-waitlist-onboarding');
         return;
       }
 
-      // Background check is approved, check onboarding
+      // If onboarding not complete, go to enhanced onboarding
       if (!application.onboarding_completed_at) {
-        navigate('/onboarding');
+        navigate('/enhanced-onboarding');
         return;
       }
 
