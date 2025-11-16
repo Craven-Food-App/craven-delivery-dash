@@ -380,7 +380,7 @@ const CravenDeliveryFlow: React.FC<ActiveDeliveryProps> = ({
       
       const { error } = await supabase
         .from('orders')
-        .update({ status: dbStatus })
+        .update({ updated_at: new Date().toISOString() })
         .eq('id', orderDetails.order_id);
         
       if (error) throw error;

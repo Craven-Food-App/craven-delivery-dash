@@ -85,7 +85,7 @@ export const OfferCard: React.FC<OfferCardProps> = ({
                     <Text size="sm" fw={500}>{offer.pickupRating}</Text>
                   </Group>
                 </Group>
-                <Group gap="md" size="sm" c="dimmed">
+                <Group gap="md" c="dimmed">
                   <Group gap={4}>
                     <IconMapPin size={16} />
                     <Text size="sm">{offer.dropoffDistance} mi</Text>
