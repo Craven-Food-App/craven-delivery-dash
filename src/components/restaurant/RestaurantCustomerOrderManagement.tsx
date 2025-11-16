@@ -180,10 +180,10 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
       setOrders(transformedOrders as CustomerOrder[]);
     } catch (error) {
       console.error('Error fetching orders:', error);
-      toast({
+      notifications.show({
         title: "Error",
-        description: "Failed to fetch orders. Check console for details.",
-        variant: "destructive",
+        message: "Failed to fetch orders. Check console for details.",
+        color: "red",
       });
     } finally {
       setLoading(false);
@@ -351,7 +351,7 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
                   {/* Order Number and Pickup Code */}
                   <Grid gutter="md">
                     <Grid.Col span={{ base: 12, md: 6 }}>
-                      <Box p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)', borderRadius: '8px' }} withBorder>
+                      <Box p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)', borderRadius: '8px', border: '1px solid var(--mantine-color-gray-3)' }}>
                         <Stack gap="xs">
                           <Text size="xs" fw={600} c="gray.6" tt="uppercase">Order Number</Text>
                           <Text size="lg" fw={700} style={{ fontFamily: 'monospace' }}>
@@ -414,7 +414,9 @@ export const RestaurantCustomerOrderManagement = ({ restaurantId }: RestaurantCu
                           <Text size="sm">
                             {typeof order.delivery_address === 'string' 
                               ? order.delivery_address 
-                              : `${order.delivery_address.street}, ${order.delivery_address.city}, ${order.delivery_address.state} ${order.delivery_address.zip}`
+                              : order.delivery_address && typeof order.delivery_address === 'object' && 'street' in order.delivery_address
+                                ? `${(order.delivery_address as any).street}, ${(order.delivery_address as any).city}, ${(order.delivery_address as any).state} ${(order.delivery_address as any).zip}`
+                                : 'N/A'
                             }
                           </Text>
                         </Group>
