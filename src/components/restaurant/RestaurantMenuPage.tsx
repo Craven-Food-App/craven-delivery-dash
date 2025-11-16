@@ -570,9 +570,9 @@ const RestaurantMenuPage = () => {
         .sort((a, b) => (b.order_count || 0) - (a.order_count || 0))
         .slice(0, 8);
 
-  const getItemsByCategory = (categoryId: string) => {
-    return menuItems.filter(item => item.category_id === categoryId);
-  };
+    const getItemsByCategory = (categoryId: string) => {
+        return menuItems.filter(item => item.category_id === categoryId);
+    };
 
     const formatPrice = (cents: number) => {
         return `$${(cents / 100).toFixed(2)}`;
