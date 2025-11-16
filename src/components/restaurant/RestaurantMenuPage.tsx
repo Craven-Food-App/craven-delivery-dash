@@ -57,7 +57,7 @@ import {
   IconUser,
   IconBell,
   IconMenu2,
-  IconBanana,
+  IconApple,
   IconPill,
   IconPaw,
   IconReceipt,
@@ -231,7 +231,7 @@ const RestaurantMenuPage = () => {
     // Navigation categories for side menu
     const navCategories = [
         { id: 'all', label: 'All', icon: IconHome, active: activeCategory === 'all' },
-        { id: 'grocery', label: 'Grocery', icon: IconBanana, active: activeCategory === 'grocery' },
+        { id: 'grocery', label: 'Grocery', icon: IconApple, active: activeCategory === 'grocery' },
         { id: 'convenience', label: 'Convenience', icon: IconCoffee, active: activeCategory === 'convenience' },
         { id: 'dashmart', label: "Craven'Z", icon: IconBuildingStore, active: activeCategory === 'dashmart' },
         { id: 'beauty', label: 'Beauty', icon: IconHeart, active: activeCategory === 'beauty' },
