@@ -63,6 +63,7 @@ import {
 } from "@tabler/icons-react";
 import { supabase } from '@/integrations/supabase/client';
 import cravenLogo from "@/assets/craven-logo.png";
+import { useCart } from '@/contexts/CartContext';
 
 // --- Type Definitions (matching your database) ---
 interface Restaurant {
@@ -182,7 +183,7 @@ const RestaurantMenuPage = () => {
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
     const [promos, setPromos] = useState<PromoCode[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const { cartItems, addToCart: addToCartContext, removeFromCart: removeFromCartContext, clearCart } = useCart();
   const [loading, setLoading] = useState(true);
 
   // New state for header and side menu
@@ -477,22 +478,27 @@ const RestaurantMenuPage = () => {
     }, []);
 
            // Cart functions
-           const addToCart = useCallback((item: MenuItem) => {
-    const existingItem = cart.find(cartItem => cartItem.id === item.id);
-    if (existingItem) {
-      setCart(cart.map(cartItem =>
-        cartItem.id === item.id
-                           ? { ...cartItem, quantity: cartItem.quantity + 1 }
-          : cartItem
-      ));
-    } else {
-                   setCart([...cart, { ...item, quantity: 1, key: item.id }]);
+           const addToCart = useCallback(async (item: MenuItem) => {
+    if (!restaurant?.id) {
+      notifications.show({
+        title: "Error",
+        message: "Restaurant information not loaded",
+        color: "red",
+      });
+      return;
     }
-    notifications.show({
-      title: "Added to cart",
-      message: `${item.name} added to cart!`,
-      color: "green",
-    });
+
+    const cartItem = {
+      id: item.id,
+      name: item.name,
+      price_cents: item.price_cents,
+      quantity: 1,
+      modifiers: [],
+      special_instructions: undefined,
+      restaurant_id: restaurant.id,
+    };
+
+    await addToCartContext(cartItem, restaurant.id);
     
     // Show cart button and set timer to hide after 3 seconds
     setShowCartButton(true);
@@ -502,7 +508,7 @@ const RestaurantMenuPage = () => {
     cartButtonTimerRef.current = setTimeout(() => {
       setShowCartButton(false);
     }, 3000);
-  }, [cart]);
+  }, [restaurant?.id, addToCartContext]);
 
            const openItemModal = useCallback((item: MenuItem) => {
                setSelectedItem(item);
@@ -516,24 +522,19 @@ const RestaurantMenuPage = () => {
                setModalQuantity(1);
            }, []);
 
-           const addToCartFromModal = useCallback(() => {
-               if (selectedItem) {
-                   const itemToAdd = { ...selectedItem, quantity: modalQuantity, key: selectedItem.id };
-                   const existingItem = cart.find(cartItem => cartItem.id === selectedItem.id);
-                   if (existingItem) {
-                       setCart(cart.map(cartItem =>
-                           cartItem.id === selectedItem.id
-                               ? { ...cartItem, quantity: cartItem.quantity + modalQuantity }
-                               : cartItem
-                       ));
-                    } else {
-                        setCart([...cart, itemToAdd]);
-                    }
-                    notifications.show({
-                        title: "Added to cart",
-                        message: `${selectedItem.name} added to cart!`,
-                        color: "green",
-                    });
+           const addToCartFromModal = useCallback(async () => {
+               if (selectedItem && restaurant?.id) {
+                   const cartItem = {
+                       id: selectedItem.id,
+                       name: selectedItem.name,
+                       price_cents: selectedItem.price_cents,
+                       quantity: modalQuantity,
+                       modifiers: [],
+                       special_instructions: undefined,
+                       restaurant_id: restaurant.id,
+                   };
+
+                   await addToCartContext(cartItem, restaurant.id);
                    
                    // Show cart button and set timer to hide after 3 seconds
                    setShowCartButton(true);
@@ -546,21 +547,16 @@ const RestaurantMenuPage = () => {
                    
                    closeItemModal();
                }
-           }, [selectedItem, modalQuantity, cart, closeItemModal]);
+           }, [selectedItem, modalQuantity, restaurant?.id, addToCartContext, closeItemModal]);
 
   const removeFromCart = useCallback((itemId: string) => {
-    setCart(cart.filter(item => item.id !== itemId));
-  }, [cart]);
+    removeFromCartContext(itemId);
+  }, [removeFromCartContext]);
 
   const updateCartQuantity = useCallback((itemId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(itemId);
-      return;
-    }
-    setCart(cart.map(item =>
-      item.id === itemId ? { ...item, quantity } : item
-    ));
-  }, [cart, removeFromCart]);
+    // This function is kept for compatibility but cart management is handled by CartContext
+    // The actual update should be done through CartContext's updateCartItem
+  }, []);
 
     // Get items by category or filter
     const featuredItems = menuItems.filter(item => item.is_featured);
@@ -1315,7 +1311,7 @@ const RestaurantMenuPage = () => {
                     style={{ position: 'relative' }}
                   >
                     <IconShoppingCart size={24} style={{ color: 'var(--mantine-color-gray-6)' }} />
-                    {cart.length > 0 && (
+                    {cartItems.length > 0 && (
                       <Badge
                         size="xs"
                         color="orange"
@@ -1331,7 +1327,7 @@ const RestaurantMenuPage = () => {
                           justifyContent: 'center',
                         }}
                       >
-                        {cart.length}
+                        {cartItems.length}
                       </Badge>
                     )}
                   </ActionIcon>
@@ -1340,25 +1336,30 @@ const RestaurantMenuPage = () => {
                   <Stack gap="md" p="md" style={{ backgroundColor: 'var(--mantine-color-orange-0)' }}>
                     <Group justify="space-between">
                       <Title order={5}>Your Cart</Title>
-                      <Button variant="subtle" color="orange" size="xs">
+                      <Button 
+                        variant="subtle" 
+                        color="orange" 
+                        size="xs"
+                        onClick={() => clearCart()}
+                      >
                         Clear all
                       </Button>
                     </Group>
-                    {cart.length > 0 ? (
+                    {cartItems.length > 0 ? (
                       <ScrollArea style={{ maxHeight: '320px' }}>
                         <Stack gap="sm">
-                          {cart.map((item, index) => (
+                          {cartItems.map((item, index) => (
                             <Card key={index} p="sm" withBorder>
                               <Group justify="space-between" align="flex-start">
                                 <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
                                   <Text size="sm" fw={500} truncate>{item.name}</Text>
-                                  <Text size="xs" c="dimmed">${(item.price_cents / 100).toFixed(2)}</Text>
+                                  <Text size="xs" c="dimmed">${(item.price_cents / 100).toFixed(2)} x {item.quantity}</Text>
                                 </Stack>
                                 <ActionIcon
                                   variant="subtle"
                                   color="red"
                                   onClick={() => {
-                                    setCart(prev => prev.filter((_, i) => i !== index));
+                                    removeFromCartContext(item.id);
                                   }}
                                 >
                                   <IconX size={16} />
@@ -1369,14 +1370,14 @@ const RestaurantMenuPage = () => {
                           <Divider />
                           <Group justify="space-between" mb="sm">
                             <Text fw={600}>
-                              Total: ${(cart.reduce((total, item) => total + (item.price_cents * item.quantity), 0) / 100).toFixed(2)}
+                              Total: ${(cartItems.reduce((total, item) => total + (item.price_cents * item.quantity), 0) / 100).toFixed(2)}
                             </Text>
                           </Group>
                           <Button
                             fullWidth
                             color="orange"
                             onClick={() => {
-                              localStorage.setItem('checkout_cart', JSON.stringify(cart));
+                              localStorage.setItem('checkout_cart', JSON.stringify(cartItems));
                               localStorage.setItem('checkout_restaurant', JSON.stringify(restaurant));
                               localStorage.setItem('checkout_delivery_method', deliveryMethod);
                               navigate('/checkout');
@@ -2289,7 +2290,7 @@ const RestaurantMenuPage = () => {
             </Box>
 
             {/* Floating Cart Button - Mobile (DoorDash Style) */}
-            {cart.length > 0 && (
+            {cartItems.length > 0 && (
               <Box
                 style={{
                   display: 'block',
@@ -2328,12 +2329,12 @@ const RestaurantMenuPage = () => {
                         justifyContent: 'center',
                       }}
                     >
-                      {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                      {cartItems.reduce((sum, item) => sum + item.quantity, 0)}
                     </Badge>
                   }
                   rightSection={
                     <Text fw={700} size="lg">
-                      ${(cart.reduce((sum, item) => sum + item.quantity * item.price_cents, 0) / 100).toFixed(2)}
+                      ${(cartItems.reduce((sum, item) => sum + item.quantity * item.price_cents, 0) / 100).toFixed(2)}
                     </Text>
                   }
                 >
@@ -2343,7 +2344,7 @@ const RestaurantMenuPage = () => {
             )}
 
             {/* Floating Cart Button - Desktop */}
-            {cart.length > 0 && showCartButton && (
+            {cartItems.length > 0 && showCartButton && (
               <Box
                 style={{
                   display: 'none',
@@ -2368,7 +2369,7 @@ const RestaurantMenuPage = () => {
                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
                   }}
                 >
-                  Cart ({cart.length})
+                  Cart ({cartItems.length})
                 </Button>
               </Box>
             )}

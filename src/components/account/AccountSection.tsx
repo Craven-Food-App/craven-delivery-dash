@@ -209,12 +209,19 @@ export const AccountSection = () => {
     setUpdating(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to update your profile",
+          variant: "destructive"
+        });
+        return;
+      }
 
       // Check if profile exists first
       const { data: existingProfile, error: checkError } = await supabase
         .from('user_profiles')
-        .select('id, user_id')
+        .select('id, user_id, role')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -223,25 +230,33 @@ export const AccountSection = () => {
         throw checkError;
       }
 
+      // Remove email from updates if present (email is in auth.users, not user_profiles)
+      const { email, ...profileUpdates } = updates as any;
+      
+      const updateData = {
+        ...profileUpdates,
+        updated_at: new Date().toISOString()
+      };
+
       let result;
       if (existingProfile) {
         // Update existing profile
         result = await supabase
           .from('user_profiles')
-          .update({
-            ...updates,
-            updated_at: new Date().toISOString()
-          })
+          .update(updateData)
           .eq('user_id', user.id)
           .select()
           .single();
       } else {
-        // Create new profile
+        // Create new profile with required fields
         result = await supabase
           .from('user_profiles')
           .insert({
             user_id: user.id,
-            ...updates
+            role: 'customer', // Required field
+            preferences: {},
+            settings: {},
+            ...profileUpdates
           })
           .select()
           .single();
@@ -262,9 +277,10 @@ export const AccountSection = () => {
       });
     } catch (error: any) {
       console.error('Error updating profile:', error);
+      const errorMessage = error?.message || error?.details || 'Failed to update profile. Please try again.';
       toast({
         title: "Error",
-        description: "Failed to update profile",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -298,31 +314,79 @@ export const AccountSection = () => {
     setUpdating(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { error } = await supabase
-        .from('user_profiles')
-        .upsert({
-          user_id: user.id,
-          full_name: editingProfile.full_name,
-          phone: editingProfile.phone,
-          updated_at: new Date().toISOString()
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to update your profile",
+          variant: "destructive"
         });
+        return;
+      }
 
-      if (error) throw error;
+      // Check if profile exists first
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('user_profiles')
+        .select('id, user_id, role')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      setProfile(prev => prev ? { ...prev, full_name: editingProfile.full_name, phone: editingProfile.phone } : null);
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking profile:', checkError);
+        throw checkError;
+      }
+
+      const updateData: any = {
+        full_name: editingProfile.full_name || null,
+        phone: editingProfile.phone || null,
+        updated_at: new Date().toISOString()
+      };
+
+      let result;
+      if (existingProfile) {
+        // Update existing profile
+        result = await supabase
+          .from('user_profiles')
+          .update(updateData)
+          .eq('user_id', user.id)
+          .select()
+          .single();
+      } else {
+        // Create new profile with required role field
+        result = await supabase
+          .from('user_profiles')
+          .insert({
+            user_id: user.id,
+            full_name: editingProfile.full_name || null,
+            phone: editingProfile.phone || null,
+            role: 'customer', // Required field
+            preferences: {},
+            settings: {}
+          })
+          .select()
+          .single();
+      }
+
+      if (result.error) {
+        console.error('Profile operation error:', result.error);
+        throw result.error;
+      }
+
+      if (result.data) {
+        setProfile(result.data);
+      }
+
       setShowProfileEdit(false);
       
       toast({
         title: "Success",
         description: "Profile updated successfully"
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
+      const errorMessage = error?.message || error?.details || 'Failed to update profile. Please try again.';
       toast({
         title: "Error",
-        description: "Failed to update profile",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
