@@ -33,21 +33,21 @@ import {
   IconShoppingCart,
   IconX,
   IconChevronLeft,
-  IconUtensils,
+  IconToolsKitchen2,
   IconHeart,
   IconShare,
   IconMapPin,
   IconPhone,
   IconNavigation,
   IconMessageCircle,
-  IconCheckCircle,
+  IconCircleCheck,
   IconFilter,
   IconSearch,
   IconChefHat,
   IconLeaf,
   IconInfoCircle,
   IconArrowUp,
-  IconTimer,
+  IconClock,
   IconFlame,
   IconCar,
   IconHome,
@@ -1595,7 +1595,7 @@ const RestaurantMenuPage = () => {
                   </Group>
 
                   {/* Delivery/Pickup Toggle - Mobile */}
-                  <Button.Group fullWidth>
+                  <Group grow>
                     <Button
                       variant={deliveryMethod === 'delivery' ? 'filled' : 'light'}
                       color={deliveryMethod === 'delivery' ? 'dark' : 'gray'}
