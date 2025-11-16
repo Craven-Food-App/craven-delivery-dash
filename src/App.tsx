@@ -62,6 +62,7 @@ import { ProfileCompletionForm } from "./components/onboarding/ProfileCompletion
 import { VehiclePhotosUpload } from "./components/onboarding/VehiclePhotosUpload";
 import { PayoutSetup } from "./components/onboarding/PayoutSetup";
 import { SafetyQuiz } from "./components/onboarding/SafetyQuiz";
+import { DriverReferralPage } from "./components/onboarding/DriverReferralPage";
 import BoardPortal from "./pages/BoardPortal";
 import CFOPortal from "./pages/CFOPortal";
 import CEOPortal from "./pages/CEOPortal";
@@ -268,6 +269,7 @@ const App = () => {
                 <Route path="/enhanced-onboarding/vehicle-photos" element={<VehiclePhotosUpload />} />
                 <Route path="/enhanced-onboarding/payout" element={<PayoutSetup />} />
                 <Route path="/enhanced-onboarding/safety-quiz" element={<SafetyQuiz />} />
+                <Route path="/enhanced-onboarding/referral" element={<DriverReferralPage />} />
                 <Route path="*" element={<Navigate to="/mobile" replace />} />
               </Routes>
             </HashRouter>
@@ -341,6 +343,7 @@ const App = () => {
                   <Route path="/enhanced-onboarding/vehicle-photos" element={<VehiclePhotosUpload />} />
                   <Route path="/enhanced-onboarding/payout" element={<PayoutSetup />} />
                   <Route path="/enhanced-onboarding/safety-quiz" element={<SafetyQuiz />} />
+                  <Route path="/enhanced-onboarding/referral" element={<DriverReferralPage />} />
                   <Route path="/mobile" element={<MobileDriverDashboard />} />
                   <Route path="/mobile/background-check-status" element={<MobileBackgroundCheckStatus />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
@@ -554,6 +557,7 @@ const App = () => {
           <Route path="/enhanced-onboarding/vehicle-photos" element={<VehiclePhotosUpload />} />
           <Route path="/enhanced-onboarding/payout" element={<PayoutSetup />} />
           <Route path="/enhanced-onboarding/safety-quiz" element={<SafetyQuiz />} />
+          <Route path="/enhanced-onboarding/referral" element={<DriverReferralPage />} />
           <Route path="/admin/waitlist" element={<AdminDriverWaitlist />} />
           <Route path="/customer-dashboard" element={<Navigate to="/order-history" replace />} />
           <Route path="/account" element={<CustomerDashboard />} />

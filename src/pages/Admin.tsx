@@ -18,6 +18,7 @@ import { PromoCodeManager } from '@/components/admin/PromoCodeManager';
 import { DriverRatingManagement } from '@/components/admin/DriverRatingManagement';
 import { DriverPromoManagement } from '@/components/admin/DriverPromoManagement';
 import { DriverSupportDashboard } from '@/components/admin/DriverSupportDashboard';
+import { DriverQuizManagement } from '@/components/admin/DriverQuizManagement';
 import { TestCustomer } from '@/components/testing/TestCustomer';
 import { TestDriver } from '@/components/testing/TestDriver';
 import { TestRestaurant } from '@/components/testing/TestRestaurant';
@@ -68,6 +69,7 @@ const Admin: React.FC = () => {
         { id: 'driver-background', label: 'Background Checks', icon: FileCheck },
         { id: 'driver-background-settings', label: 'BG Check Settings', icon: Settings },
         { id: 'driver-onboarding', label: 'Onboarding', icon: GraduationCap },
+        { id: 'driver-quiz', label: 'Quiz Management', icon: FileText },
         { id: 'driver-ratings', label: 'Ratings & Performance', icon: TrendingUp },
         { id: 'driver-promos', label: 'Promos & Challenges', icon: Tags },
         { id: 'driver-support', label: 'Support Chat', icon: MessageCircle },
@@ -135,6 +137,8 @@ const Admin: React.FC = () => {
         return <BackgroundCheckSettings />;
       case 'driver-onboarding':
         return <AdminDriverOnboardingDashboard />;
+      case 'driver-quiz':
+        return <DriverQuizManagement />;
       case 'driver-ratings':
         return <DriverRatingManagement />;
       case 'driver-promos':

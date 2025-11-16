@@ -385,19 +385,20 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
         );
       case 'upload_documents':
         // Auto-completed if documents were uploaded during application
+        // This task is required - all documents must be uploaded
         return (
-          <Badge variant="outline" color="green">
-            Auto-Checking...
+          <Badge variant="outline" color="orange">
+            Required - Upload All Documents
           </Badge>
         );
       case 'refer_friend':
         return (
           <Button
             size="sm"
-            onClick={getReferralLink}
+            onClick={() => navigate('/enhanced-onboarding/referral')}
             color="violet"
           >
-            Get Referral Link
+            Start Referral Program
           </Button>
         );
       case 'download_mobile_app':
@@ -607,7 +608,17 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
                           <Clock size={20} style={{ color: 'var(--mantine-color-gray-6)' }} />
                         )}
                         <div>
-                          <Text fw={500}>{task.task_name}</Text>
+                          <Group gap="xs" align="center">
+                            <Text fw={500}>{task.task_name}</Text>
+                            {(task.task_key === 'complete_profile' || 
+                              task.task_key === 'upload_documents' || 
+                              task.task_key === 'pass_safety_quiz' || 
+                              task.task_key === 'refer_friend') && (
+                              <Badge size="xs" color="red" variant="filled">
+                                Required
+                              </Badge>
+                            )}
+                          </Group>
                           <Text size="sm" c="dimmed">{task.description}</Text>
                         </div>
                       </Group>
@@ -630,31 +641,45 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
             </Stack>
           </Card>
 
-          {/* Referral Section */}
+          {/* Referral Program Section */}
           <Card>
             <Stack gap="md" p="lg">
               <div>
                 <Group gap="xs" mb="xs">
                   <Gift size={20} style={{ color: '#a855f7' }} />
-                  <Text fw={600} size="lg">Refer Friends & Earn Bonus Points</Text>
+                  <Text fw={600} size="lg">Driver Referral Program</Text>
                 </Group>
                 <Text size="sm" c="dimmed">
-                  Share your referral link to earn 50 bonus points for each friend who joins!
+                  Refer drivers and earn up to $400 per driver! This task is required.
                 </Text>
               </div>
+              <Card p="md" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', borderColor: '#22c55e' }}>
+                <Stack gap="sm">
+                  <Text fw={600} size="md" c="#166534">💸 Earn $400 Per Driver</Text>
+                  <Text size="sm" c="#166534">
+                    • $100 when they complete their first delivery
+                  </Text>
+                  <Text size="sm" c="#166534">
+                    • $300 when they complete 20 deliveries with 4.5+ rating
+                  </Text>
+                  <Text size="sm" c="#166534" fw={500} mt="xs">
+                    Refer 11 drivers = $4,400 total earnings!
+                  </Text>
+                </Stack>
+              </Card>
               <Group gap="lg" align="flex-start">
                 <Button
-                  onClick={getReferralLink}
+                  onClick={() => navigate('/enhanced-onboarding/referral')}
                   color="violet"
                   size="lg"
                   leftSection={<Share2 size={16} />}
                 >
-                  Get Referral Link
+                  Start Referral Program
                 </Button>
                 <Stack gap="xs">
-                  <Text size="sm" c="dimmed">• Earn 50 points per referral</Text>
-                  <Text size="sm" c="dimmed">• Move up in the queue faster</Text>
-                  <Text size="sm" c="dimmed">• Help friends join Crave'n!</Text>
+                  <Text size="sm" c="dimmed">• This task is required</Text>
+                  <Text size="sm" c="dimmed">• Must refer at least 1 driver to complete</Text>
+                  <Text size="sm" c="dimmed">• Earn real cash, not just points!</Text>
                 </Stack>
               </Group>
             </Stack>
