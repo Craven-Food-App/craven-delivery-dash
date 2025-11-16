@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { IconUsers, IconMapPin, IconClock, IconCurrencyDollar, IconNavigation, IconX, IconPackage, IconPhone, IconMessageSquare, IconStar } from '@tabler/icons-react';
+import { IconUsers, IconMapPin, IconClock, IconCurrencyDollar, IconNavigation, IconX, IconPackage, IconPhone, IconMessage, IconStar } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { supabase } from '@/integrations/supabase/client';
 import { DeliveryMap } from './DeliveryMap';
