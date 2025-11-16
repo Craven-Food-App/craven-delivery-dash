@@ -37,6 +37,7 @@ const SecuritySafetyPage: React.FC<SecuritySafetyPageProps> = ({ onBack }) => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       notifications.show({
         title: 'New passwords do not match',
+        message: '',
         color: 'red',
       });
       return;
@@ -45,6 +46,7 @@ const SecuritySafetyPage: React.FC<SecuritySafetyPageProps> = ({ onBack }) => {
     if (passwordData.newPassword.length < 6) {
       notifications.show({
         title: 'Password must be at least 6 characters',
+        message: '',
         color: 'red',
       });
       return;
@@ -59,6 +61,7 @@ const SecuritySafetyPage: React.FC<SecuritySafetyPageProps> = ({ onBack }) => {
 
       notifications.show({
         title: 'Password updated successfully',
+        message: '',
         color: 'green',
       });
       setShowPasswordForm(false);
@@ -67,6 +70,7 @@ const SecuritySafetyPage: React.FC<SecuritySafetyPageProps> = ({ onBack }) => {
       console.error('Error updating password:', error);
       notifications.show({
         title: error.message || 'Failed to update password',
+        message: '',
         color: 'red',
       });
     }
@@ -91,12 +95,14 @@ const SecuritySafetyPage: React.FC<SecuritySafetyPageProps> = ({ onBack }) => {
 
       notifications.show({
         title: 'Emergency contact saved',
+        message: '',
         color: 'green',
       });
     } catch (error: any) {
       console.error('Error saving emergency contact:', error);
       notifications.show({
         title: 'Failed to save emergency contact',
+        message: '',
         color: 'red',
       });
     }
@@ -108,9 +114,8 @@ const SecuritySafetyPage: React.FC<SecuritySafetyPageProps> = ({ onBack }) => {
       <Paper
         pos="sticky"
         top={0}
-        style={{ zIndex: 10 }}
         bg="white"
-        style={{ borderBottom: '1px solid var(--mantine-color-gray-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+        style={{ zIndex: 10, borderBottom: '1px solid var(--mantine-color-gray-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
         className="safe-area-top"
       >
         <Group px="xl" py="md" justify="space-between" align="center">

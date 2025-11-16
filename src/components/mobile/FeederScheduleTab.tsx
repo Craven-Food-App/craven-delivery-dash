@@ -109,6 +109,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       console.error('Error fetching schedules:', error);
       notifications.show({
         title: 'Failed to load schedule',
+        message: '',
         color: 'red',
       });
     }
@@ -301,6 +302,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       if (!user) {
         notifications.show({
           title: 'Please sign in to delete shifts',
+          message: '',
           color: 'red',
         });
         return;
@@ -316,6 +318,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
 
       notifications.show({
         title: 'Shift removed successfully',
+        message: '',
         color: 'green',
       });
       await fetchSchedules();
@@ -323,6 +326,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       console.error('Error deleting shift:', error);
       notifications.show({
         title: 'Failed to remove shift',
+        message: '',
         color: 'red',
       });
     }
@@ -336,6 +340,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       if (!user) {
         notifications.show({
           title: 'Please sign in to start a shift',
+          message: '',
           color: 'red',
         });
         return;
@@ -364,6 +369,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
 
       notifications.show({
         title: 'Shift started! You are now online.',
+        message: '',
         color: 'green',
       });
       window.dispatchEvent(new CustomEvent('driverStatusChange', { detail: { status: 'online' } }));
@@ -371,6 +377,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       console.error('Error starting shift:', error);
       notifications.show({
         title: 'Failed to start shift',
+        message: '',
         color: 'red',
       });
     }
@@ -478,6 +485,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       if (!user) {
         notifications.show({
           title: 'Please sign in to schedule a shift',
+          message: '',
           color: 'red',
         });
         return;
@@ -502,6 +510,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
 
       notifications.show({
         title: 'Shift scheduled successfully!',
+        message: '',
         color: 'green',
       });
       setShowTimePicker(false);
@@ -512,6 +521,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
       console.error('Error scheduling shift:', error);
       notifications.show({
         title: 'Failed to schedule shift',
+        message: '',
         color: 'red',
       });
     }
@@ -577,6 +587,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
             } else {
               notifications.show({
                 title: 'Menu coming soon.',
+                message: '',
                 color: 'blue',
               });
             }
@@ -594,6 +605,7 @@ const FeederScheduleTab: React.FC<FeederScheduleTabProps> = ({
             } else {
               notifications.show({
                 title: 'Notifications coming soon.',
+                message: '',
                 color: 'blue',
               });
             }

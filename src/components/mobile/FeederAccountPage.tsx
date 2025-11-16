@@ -244,6 +244,7 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
       await supabase.auth.signOut();
       notifications.show({
         title: "Signed out successfully",
+        message: '',
         color: "green",
       });
       navigate('/mobile');
@@ -251,6 +252,7 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
       console.error("Error signing out:", error);
       notifications.show({
         title: "Failed to sign out",
+        message: '',
         color: "red",
       });
       navigate('/mobile');
@@ -483,6 +485,7 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
                   setShowPinDialog(false);
                   notifications.show({
                     title: "PIN updated successfully",
+                    message: '',
                     color: "green",
                   });
                 }}
@@ -573,6 +576,7 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
               } else {
                 notifications.show({
                   title: "Menu coming soon.",
+                  message: '',
                   color: "blue",
                 });
               }
@@ -590,6 +594,7 @@ const FeederAccountPage: React.FC<FeederAccountPageProps> = ({ onOpenMenu, onOpe
               } else {
                 notifications.show({
                   title: "Notifications coming soon.",
+                  message: '',
                   color: "blue",
                 });
               }

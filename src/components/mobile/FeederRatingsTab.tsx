@@ -169,6 +169,7 @@ const FeederRatingsTab: React.FC<FeederRatingsTabProps> = ({
       console.error('Error fetching ratings:', error);
       notifications.show({
         title: 'Failed to load ratings',
+        message: '',
         color: 'red',
       });
     } finally {
@@ -223,6 +224,7 @@ const FeederRatingsTab: React.FC<FeederRatingsTabProps> = ({
             } else {
               notifications.show({
                 title: 'Menu coming soon.',
+                message: '',
                 color: 'blue',
               });
             }
@@ -240,6 +242,7 @@ const FeederRatingsTab: React.FC<FeederRatingsTabProps> = ({
             } else {
               notifications.show({
                 title: 'Notifications coming soon.',
+                message: '',
                 color: 'blue',
               });
             }
@@ -348,7 +351,7 @@ const FeederRatingsTab: React.FC<FeederRatingsTabProps> = ({
                         root: {
                           backgroundColor: 'var(--mantine-color-gray-2)',
                         },
-                        bar: {
+                        section: {
                           background: 'linear-gradient(to right, var(--mantine-color-yellow-4), var(--mantine-color-orange-5))',
                         },
                       }}

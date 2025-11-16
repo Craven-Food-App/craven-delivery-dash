@@ -333,9 +333,8 @@ export const EarningsSection = () => {
         <Paper
           pos="sticky"
           top={0}
-          style={{ zIndex: 10 }}
           bg="white"
-          style={{ borderBottom: '1px solid var(--mantine-color-slate-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+          style={{ zIndex: 10, borderBottom: '1px solid var(--mantine-color-slate-2)', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
           className="safe-area-top"
         >
           <Box p="md">
