@@ -337,9 +337,9 @@ export default function ScheduleSection() {
                   style={{
                     borderColor: isToday ? 'var(--mantine-color-orange-5)' : 'var(--mantine-color-slate-2)',
                     backgroundColor: isToday ? 'var(--mantine-color-orange-0)' : 'white',
+                    cursor: 'pointer',
                   }}
                   onClick={() => setSelectedDay(index)}
-                  style={{ cursor: 'pointer' }}
                 >
                   <Group justify="space-between">
                     <Group gap="md">
