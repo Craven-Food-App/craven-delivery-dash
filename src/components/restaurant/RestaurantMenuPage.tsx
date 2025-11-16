@@ -1091,62 +1091,62 @@ const RestaurantMenuPage = () => {
         </Box>
     );
 
-    if (loading) {
-        return (
-            <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-                <Stack align="center" gap="md">
-                    <Loader size="lg" color="orange" />
-                    <Text c="dimmed">Loading restaurant...</Text>
-                </Stack>
-            </Box>
-        );
-    }
-
-    if (!restaurant) {
-        return (
-            <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-                <Stack align="center" gap="md">
-                    <Text size="xl" c="dimmed">Restaurant not found</Text>
-                    <Button onClick={() => navigate('/restaurants')} color="orange">
-                        Back to Restaurants
-                    </Button>
-                </Stack>
-            </Box>
-        );
-    }
-
+  if (loading) {
     return (
-        <Box style={{ minHeight: '100vh', backgroundColor: 'white' }}>
-            {/* Mobile Header - DoorDash Style */}
-            <MobileHeader 
-                restaurant={restaurant}
-                onBack={() => navigate('/restaurants')}
-                onShare={() => {
-                    if (navigator.share) {
-                        navigator.share({
-                            title: restaurant?.name,
-                            text: `Check out ${restaurant?.name} on Crave'N`,
-                            url: window.location.href
-                        });
-                    }
-                }}
-            />
+      <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <Stack align="center" gap="md">
+          <Loader size="lg" color="orange" />
+          <Text c="dimmed">Loading restaurant...</Text>
+        </Stack>
+      </Box>
+    );
+  }
 
-            {/* Desktop Header - Hidden on Mobile */}
-            <Box
-                style={{
-                    display: 'none',
-                    '@media (min-width: 1024px)': { display: 'block' },
-                    position: 'sticky',
-                    top: 0,
-                    zIndex: 50,
-                    backgroundColor: 'white',
-                    borderBottom: '1px solid var(--mantine-color-gray-3)',
-                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-                }}
-            >
-                <Box style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 16px' }}>
-                    <Group justify="space-between" align="center" style={{ height: '64px' }}>
+  if (!restaurant) {
+    return (
+      <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <Stack align="center" gap="md">
+          <Text size="xl" c="dimmed">Restaurant not found</Text>
+          <Button onClick={() => navigate('/restaurants')} color="orange">
+            Back to Restaurants
+          </Button>
+        </Stack>
+      </Box>
+    );
+  }
+
+  return (
+    <Box style={{ minHeight: '100vh', backgroundColor: 'white' }}>
+      {/* Mobile Header - DoorDash Style */}
+      <MobileHeader 
+        restaurant={restaurant}
+        onBack={() => navigate('/restaurants')}
+        onShare={() => {
+          if (navigator.share) {
+            navigator.share({
+              title: restaurant?.name,
+              text: `Check out ${restaurant?.name} on Crave'N`,
+              url: window.location.href
+            });
+          }
+        }}
+      />
+
+      {/* Desktop Header - Hidden on Mobile */}
+      <Box
+        style={{
+          display: 'none',
+          '@media (min-width: 1024px)': { display: 'block' },
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+          backgroundColor: 'white',
+          borderBottom: '1px solid var(--mantine-color-gray-3)',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+        }}
+      >
+        <Box style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 16px' }}>
+          <Group justify="space-between" align="center" style={{ height: '64px' }}>
             {/* Left: Logo */}
             <Group gap="md">
               <MantineImage src={cravenLogo} alt="CRAVE'N" style={{ height: '40px' }} />
