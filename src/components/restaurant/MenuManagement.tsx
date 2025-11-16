@@ -549,7 +549,7 @@ export function MenuManagement({ restaurantId }: { restaurantId: string }) {
               <NumberInput
                 label="Price *"
                 value={(currentItem?.price || 0) / 100}
-                onChange={(value) => setCurrentItem(prev => prev ? { ...prev, price: Math.round((value || 0) * 100) } : null)}
+                onChange={(value) => setCurrentItem(prev => prev ? { ...prev, price: Math.round(Number(value || 0) * 100) } : null)}
                 placeholder="0.00"
                 min={0}
                 step={0.01}
@@ -572,7 +572,7 @@ export function MenuManagement({ restaurantId }: { restaurantId: string }) {
           <NumberInput
             label="Prep Time (minutes)"
             value={currentItem?.prep_time_minutes || undefined}
-            onChange={(value) => setCurrentItem(prev => prev ? { ...prev, prep_time_minutes: value || 0 } : null)}
+            onChange={(value) => setCurrentItem(prev => prev ? { ...prev, prep_time_minutes: Number(value || 0) } : null)}
             placeholder="15"
             min={0}
             leftSection={<IconClock size={16} />}

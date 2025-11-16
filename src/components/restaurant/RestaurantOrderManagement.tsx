@@ -21,11 +21,12 @@ import {
   IconPhone,
   IconCopy,
 } from "@tabler/icons-react";
+import { Grid } from "@mantine/core";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Order {
   id: string;
-  status: 'pending' | 'assigned' | 'picked_up' | 'delivered' | 'cancelled';
+  status: string;
   created_at: string;
   updated_at: string;
   pickup_name: string;
@@ -37,6 +38,20 @@ interface Order {
   assigned_craver_id?: string;
   order_number?: string;
   pickup_code?: string;
+  restaurant_id?: string;
+  customer_id?: string;
+  customer_name?: string;
+  customer_phone?: string;
+  delivery_address?: any;
+  delivery_fee?: number;
+  delivery_fee_cents?: number;
+  pickup_lat?: number;
+  pickup_lng?: number;
+  dropoff_lat?: number;
+  dropoff_lng?: number;
+  subtotal_cents?: number;
+  total_cents?: number;
+  [key: string]: any; // Allow additional fields from database
 }
 
 interface RestaurantOrderManagementProps {
@@ -119,7 +134,7 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
 
       if (error) throw error;
 
-      setOrders(data || []);
+      setOrders((data || []) as unknown as Order[]);
     } catch (error) {
       console.error("Error fetching orders:", error);
       notifications.show({
@@ -215,14 +230,16 @@ export const RestaurantOrderManagement = ({ restaurantId }: RestaurantOrderManag
         dropoff_lng: -83.5552,
         payout_cents: Math.floor(Math.random() * 1000) + 800, // $8-18
         distance_km: Math.random() * 10 + 2, // 2-12 km
-        status: 'pending' as const
+        status: 'pending' as const,
+        subtotal_cents: 2500,
+        total_cents: 3000
       };
 
       console.log('Order data:', orderData);
 
       const { data, error } = await supabase
         .from('orders')
-        .insert(orderData)
+        .insert([orderData])
         .select();
 
       if (error) {

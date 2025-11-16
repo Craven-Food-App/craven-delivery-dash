@@ -105,10 +105,10 @@ const RestaurantAuth: React.FC = () => {
     e.preventDefault();
     
     if (!email || !password) {
-      toast({
+      notifications.show({
         title: "Error",
-        description: "Please enter both email and password",
-        variant: "destructive",
+        message: "Please fill in all fields",
+        color: 'red',
       });
       return;
     }
