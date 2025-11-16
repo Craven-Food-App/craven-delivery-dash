@@ -241,6 +241,8 @@ const Restaurants = () => {
   const [loadingDeals, setLoadingDeals] = useState(true);
   const [promotionalBanners, setPromotionalBanners] = useState<any[]>([]);
   const [loadingBanners, setLoadingBanners] = useState(true);
+  const [heroImageUrl, setHeroImageUrl] = useState<string>('');
+  const [loadingHeroImage, setLoadingHeroImage] = useState(true);
   const [activeFilter, setActiveFilter] = useState('deals');
   const [showMobileNav, setShowMobileNav] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
@@ -443,6 +445,7 @@ const Restaurants = () => {
     fetchWeeklyDeals();
     fetchNotifications();
     fetchPromotionalBanners();
+    fetchHeroImage();
   }, []);
 
   // Update filter options based on delivery mode
@@ -540,6 +543,29 @@ const Restaurants = () => {
     }
   };
 
+  // Fetch hero image from marketing settings
+  const fetchHeroImage = async () => {
+    try {
+      setLoadingHeroImage(true);
+      const { data, error } = await supabase
+        .from('marketing_settings')
+        .select('mobile_hero_image_url')
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows returned
+      
+      const imageUrl = data?.mobile_hero_image_url || '';
+      setHeroImageUrl(imageUrl);
+    } catch (error) {
+      console.error('Error fetching hero image:', error);
+      // Fallback to empty string if fetch fails
+      setHeroImageUrl('');
+    } finally {
+      setLoadingHeroImage(false);
+    }
+  };
+
   // Restaurant data - transform from database
   const getRestaurantData = () => {
     const fastest = weeklyDeals.slice(0, 3).map((r) => ({
@@ -612,7 +638,7 @@ const Restaurants = () => {
           {/* Hero Image - Promotional Banner */}
           <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
             <MantineImage 
-              src={heroPromoImage} 
+              src={heroImageUrl || heroPromoImage} 
               alt="Crave'n Delivery Hero" 
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />

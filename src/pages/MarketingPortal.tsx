@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MarketingAccessGuard } from '@/components/MarketingAccessGuard';
 import { PromoCodeManager } from '@/components/admin/PromoCodeManager';
 import { PromotionalBannerManager } from '@/components/admin/PromotionalBannerManager';
+import { HeroImageManager } from '@/components/admin/HeroImageManager';
 import { CustomerManagement } from '@/components/admin/CustomerManagement';
 import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 import { ReferralProgram } from '@/components/ReferralProgram';
@@ -138,6 +139,7 @@ const MarketingPortal: React.FC = () => {
       items: [
         { id: 'promo-codes', label: 'Promo Codes', icon: Tag },
         { id: 'promotional-banners', label: 'Promotional Banners', icon: ImageIcon },
+        { id: 'hero-image', label: 'Hero Image', icon: ImageIcon },
         { id: 'referral-program', label: 'Referral Program', icon: UserPlus },
         { id: 'loyalty-program', label: 'Loyalty Program', icon: Award },
       ]
@@ -230,6 +232,8 @@ const MarketingPortal: React.FC = () => {
         return <PromoCodeManager />;
       case 'promotional-banners':
         return <PromotionalBannerManager />;
+      case 'hero-image':
+        return <HeroImageManager />;
       case 'referral-program':
         return (
           <div className="space-y-6">
