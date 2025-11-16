@@ -881,70 +881,7 @@ const Restaurants = () => {
           </Box>
         </ScrollArea>
 
-        {/* Bottom Navigation: Floating and Robust */}
-        <Box component="nav" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, maxWidth: '430px', margin: '0 auto', backgroundColor: 'white', borderTop: '1px solid #e5e7eb', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', zIndex: 30 }}>
-          <Group justify="space-around" py="xs" px="xs">
-            {NAV_ITEMS.map(item => {
-              const IconComponent = item.icon;
-              return (
-                <Button
-                  key={item.name}
-                  onClick={() => handleNavClick(item.path)}
-                  variant="subtle"
-                  style={{ 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    alignItems: 'center', 
-                    gap: '2px', 
-                    padding: '2px 4px',
-                    minWidth: 'auto',
-                    flex: '1 1 0',
-                    color: item.current ? '#b91c1c' : '#737373',
-                    position: 'relative'
-                  }}
-                >
-                  <IconComponent size={18} style={{ color: item.current ? '#b91c1c' : '#737373' }} />
-                  <Text size="10px" fw={500} c={item.current ? 'red.7' : 'gray.6'} style={{ lineHeight: 1 }}>{item.name}</Text>
-                  
-                  {item.name === 'Favorites' && likedItems.size > 0 && (
-                    <Badge size="xs" color="red" style={{ position: 'absolute', top: -2, right: 2, minWidth: '14px', height: '14px', padding: '0 3px', fontSize: '9px' }}>
-                      {likedItems.size}
-                    </Badge>
-                  )}
-
-                  {item.name === 'Orders' && (
-                    <Box style={{ position: 'absolute', top: -2, right: 2, width: '8px', height: '8px', backgroundColor: '#22c55e', borderRadius: '50%', border: '2px solid white' }} />
-                  )}
-                </Button>
-              );
-            })}
-            
-            {/* Dedicated Cart Button */}
-            <Button
-              onClick={() => navigate('/cart')}
-              variant="subtle"
-              style={{ 
-                display: 'flex', 
-                flexDirection: 'column', 
-                alignItems: 'center', 
-                gap: '2px', 
-                padding: '2px 4px',
-                minWidth: 'auto',
-                flex: '1 1 0',
-                color: '#b91c1c',
-                position: 'relative'
-              }}
-            >
-              <IconShoppingCart size={18} style={{ color: '#b91c1c', fill: 'rgba(185, 28, 28, 0.1)' }} />
-              <Text size="10px" fw={600} c="red.7" style={{ lineHeight: 1 }}>Cart</Text>
-              {cartCount > 0 && (
-                <Badge size="xs" color="red" style={{ position: 'absolute', top: -4, right: 4, minWidth: '14px', height: '14px', padding: '0 3px', fontSize: '9px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                  {cartCount}
-                </Badge>
-              )}
-            </Button>
-          </Group>
-        </Box>
+        {/* Bottom Navigation removed - using global navigation */}
       </Box>
     );
   }

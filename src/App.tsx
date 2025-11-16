@@ -7,7 +7,11 @@ import { BrowserRouter, Routes, Route, Link, Navigate, HashRouter, useLocation }
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
 import MobileBottomNav from "@/components/mobile/MobileBottomNav";
+import GlobalMobileBottomNav from "@/components/mobile/GlobalMobileBottomNav";
+import { CartProvider } from "@/contexts/CartContext";
 import Index from "./pages/Index";
+import Favorites from "./pages/Favorites";
+import OrderHistory from "./pages/OrderHistory";
 import DriverAuth from "./pages/DriverAuth";
 import FeederHub from "./pages/FeederHub";
 import CustomerDashboard from "./pages/CustomerDashboard";
@@ -525,6 +529,7 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter>
+            <CartProvider>
             {/* iOS PWA Install Banner */}
             <InstallAppBanner />
             
@@ -533,6 +538,8 @@ const App = () => {
               <Route path="/business-auth" element={<BusinessAuthWrapper />} />
               <Route path="/" element={<Index />} />
           <Route path="/restaurants" element={<Restaurants />} />
+          <Route path="/favorites" element={<Favorites />} />
+          <Route path="/order-history" element={<OrderHistory />} />
           <Route path="/crave-more" element={<CraveMore />} />
           <Route path="/driver/auth" element={<DriverAuth />} />
           <Route path="/feeder" element={<FeederHub />} />
@@ -631,8 +638,9 @@ const App = () => {
           </ChatButton>
         </div>
 
-        {/* Global Mobile Bottom Navigation - Hide on driver routes and restaurants page (has its own nav) */}
-        <ConditionalMobileBottomNav user={user} />
+        {/* Global Mobile Bottom Navigation - Shows on all customer pages */}
+        <GlobalMobileBottomNav />
+        </CartProvider>
       </BrowserRouter>
     </TooltipProvider>
     </ThemeProvider>

@@ -1,32 +1,36 @@
-/**
- * Customer Order History Page
- * Shows past orders with reorder functionality and favorites
- * Competes with DoorDash's order history and reorder features
- */
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Package,
-  Clock,
-  Star,
-  Heart,
-  RefreshCw,
-  MapPin,
-  Store,
-  DollarSign,
-  ChevronRight,
-  Filter,
-  Search
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+  Box,
+  Card,
+  Text,
+  Group,
+  Stack,
+  Badge,
+  Button,
+  Loader,
+  Center,
+  Tabs,
+  Image,
+  ActionIcon,
+  TextInput,
+} from '@mantine/core';
+import {
+  IconPackage,
+  IconClock,
+  IconStar,
+  IconHeart,
+  IconRefreshCw,
+  IconMapPin,
+  IconStore,
+  IconDollarSign,
+  IconChevronRight,
+  IconFilter,
+  IconSearch,
+} from '@tabler/icons-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface OrderHistoryItem {
   id: string;
@@ -52,18 +56,19 @@ interface OrderHistoryItem {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
-  pending: { label: 'Pending', color: 'bg-yellow-500', icon: Clock },
-  confirmed: { label: 'Confirmed', color: 'bg-blue-500', icon: Package },
-  preparing: { label: 'Preparing', color: 'bg-purple-500', icon: Clock },
-  ready_for_pickup: { label: 'Ready', color: 'bg-green-500', icon: Package },
-  picked_up: { label: 'On the Way', color: 'bg-orange-500', icon: MapPin },
-  delivered: { label: 'Delivered', color: 'bg-green-600', icon: Package },
-  cancelled: { label: 'Cancelled', color: 'bg-red-500', icon: Package },
+  pending: { label: 'Pending', color: 'yellow', icon: IconClock },
+  confirmed: { label: 'Confirmed', color: 'blue', icon: IconPackage },
+  preparing: { label: 'Preparing', color: 'violet', icon: IconClock },
+  ready_for_pickup: { label: 'Ready', color: 'green', icon: IconPackage },
+  picked_up: { label: 'On the Way', color: 'orange', icon: IconMapPin },
+  delivered: { label: 'Delivered', color: 'green', icon: IconPackage },
+  cancelled: { label: 'Cancelled', color: 'red', icon: IconPackage },
 };
 
 export default function OrderHistory() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [orders, setOrders] = useState<OrderHistoryItem[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<OrderHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -144,7 +149,7 @@ export default function OrderHistory() {
       filtered = filtered.filter(order =>
         order.restaurant?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.order_items.some(item => 
+        order.order_items.some(item =>
           item.name?.toLowerCase().includes(searchQuery.toLowerCase())
         )
       );
@@ -156,7 +161,7 @@ export default function OrderHistory() {
     } else if (activeTab === 'delivered') {
       filtered = filtered.filter(order => order.order_status === 'delivered');
     } else if (activeTab === 'active') {
-      filtered = filtered.filter(order => 
+      filtered = filtered.filter(order =>
         !['delivered', 'cancelled'].includes(order.order_status)
       );
     }
@@ -201,7 +206,6 @@ export default function OrderHistory() {
       if (!user) return;
 
       if (currentlyFavorite) {
-        // Remove from favorites
         await supabase
           .from('favorite_restaurants')
           .delete()
@@ -213,7 +217,6 @@ export default function OrderHistory() {
           description: 'Restaurant removed from your favorites',
         });
       } else {
-        // Add to favorites
         await supabase
           .from('favorite_restaurants')
           .insert({
@@ -227,7 +230,6 @@ export default function OrderHistory() {
         });
       }
 
-      // Refresh orders
       fetchOrderHistory();
     } catch (error) {
       console.error('Error toggling favorite:', error);
@@ -243,196 +245,230 @@ export default function OrderHistory() {
     navigate(`/track-order/${orderId}`);
   };
 
-  const handleViewReceipt = (orderId: string) => {
-    navigate(`/receipt/${orderId}`);
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50 p-4">
-        <div className="max-w-4xl mx-auto space-y-4">
-          <Skeleton className="h-12 w-64" />
-          <Skeleton className="h-96 w-full" />
-        </div>
-      </div>
+      <Box style={{ minHeight: '100vh', backgroundColor: 'var(--mantine-color-gray-0)' }}>
+        <Center style={{ height: '100vh' }}>
+          <Stack align="center" gap="md">
+            <Loader size="lg" color="#ff7a00" />
+            <Text c="dimmed">Loading order history...</Text>
+          </Stack>
+        </Center>
+      </Box>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50">
+    <Box style={{ minHeight: '100vh', backgroundColor: 'var(--mantine-color-gray-0)', paddingBottom: '80px' }}>
       {/* Header */}
-      <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-6 shadow-lg">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">Order History</h1>
-          <p className="text-orange-100">Your past orders and favorites</p>
-        </div>
-      </div>
+      <Box
+        style={{
+          background: 'linear-gradient(135deg, #ff7a00 0%, #ff9f40 100%)',
+          color: 'white',
+          padding: '24px 16px',
+        }}
+      >
+        <Box style={{ maxWidth: isMobile ? '100%' : '1200px', margin: '0 auto' }}>
+          <Text fw={700} size="2xl" mb="xs">
+            Order History
+          </Text>
+          <Text c="rgba(255,255,255,0.9)">
+            Your past orders and favorites
+          </Text>
+        </Box>
+      </Box>
 
-      <div className="max-w-4xl mx-auto p-4 space-y-4 mt-4">
-        {/* Search & Filter */}
-        <Card className="p-4">
-          <div className="flex gap-4 items-center">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <Input
-                placeholder="Search orders, restaurants, or items..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-        </Card>
+      <Box style={{ maxWidth: isMobile ? '100%' : '1200px', margin: '0 auto', padding: '16px' }}>
+        <Stack gap="lg">
+          {/* Search */}
+          <Card p="md">
+            <TextInput
+              placeholder="Search orders, restaurants, or items..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              leftSection={<IconSearch size={16} />}
+            />
+          </Card>
 
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="all">All ({orders.length})</TabsTrigger>
-            <TabsTrigger value="active">
-              Active ({orders.filter(o => !['delivered', 'cancelled'].includes(o.order_status)).length})
-            </TabsTrigger>
-            <TabsTrigger value="delivered">
-              Delivered ({orders.filter(o => o.order_status === 'delivered').length})
-            </TabsTrigger>
-            <TabsTrigger value="favorites">
-              <Heart className="w-4 h-4 mr-1 fill-current" />
-              Favorites ({orders.filter(o => o.is_favorite).length})
-            </TabsTrigger>
-          </TabsList>
+          {/* Tabs */}
+          <Tabs value={activeTab} onChange={(value) => setActiveTab(value || 'all')}>
+            <Tabs.List>
+              <Tabs.Tab value="all">
+                All ({orders.length})
+              </Tabs.Tab>
+              <Tabs.Tab value="active">
+                Active ({orders.filter(o => !['delivered', 'cancelled'].includes(o.order_status)).length})
+              </Tabs.Tab>
+              <Tabs.Tab value="delivered">
+                Delivered ({orders.filter(o => o.order_status === 'delivered').length})
+              </Tabs.Tab>
+              <Tabs.Tab value="favorites">
+                <Group gap={4}>
+                  <IconHeart size={14} />
+                  Favorites ({orders.filter(o => o.is_favorite).length})
+                </Group>
+              </Tabs.Tab>
+            </Tabs.List>
 
-          <TabsContent value={activeTab} className="space-y-4 mt-4">
-            {filteredOrders.length === 0 ? (
-              <Card className="p-12 text-center">
-                <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                <h3 className="font-bold text-lg mb-2">No Orders Found</h3>
-                <p className="text-gray-600 mb-4">
-                  {searchQuery ? 'Try a different search term' : "You haven't placed any orders yet"}
-                </p>
-                <Button onClick={() => navigate('/')}>
-                  Start Ordering
-                </Button>
-              </Card>
-            ) : (
-              filteredOrders.map((order) => {
-                const statusInfo = STATUS_CONFIG[order.order_status] || STATUS_CONFIG.pending;
-                const StatusIcon = statusInfo.icon;
+            <Tabs.Panel value={activeTab} pt="lg">
+              {filteredOrders.length === 0 ? (
+                <Card p="xl">
+                  <Stack align="center" gap="md">
+                    <IconPackage size={48} style={{ color: 'var(--mantine-color-gray-4)' }} />
+                    <Text fw={600} size="lg">No Orders Found</Text>
+                    <Text c="dimmed" ta="center">
+                      {searchQuery ? 'Try a different search term' : "You haven't placed any orders yet"}
+                    </Text>
+                    <Button onClick={() => navigate('/restaurants')} color="#ff7a00">
+                      Start Ordering
+                    </Button>
+                  </Stack>
+                </Card>
+              ) : (
+                <Stack gap="md">
+                  {filteredOrders.map((order) => {
+                    const statusInfo = STATUS_CONFIG[order.order_status] || STATUS_CONFIG.pending;
+                    const StatusIcon = statusInfo.icon;
 
-                return (
-                  <Card key={order.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="p-6">
-                      {/* Header */}
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-start gap-4 flex-1">
-                          {/* Restaurant Image */}
-                          {order.restaurant?.image_url ? (
-                            <img 
-                              src={order.restaurant.image_url}
-                              alt={order.restaurant.name}
-                              className="w-20 h-20 rounded-lg object-cover"
-                            />
-                          ) : (
-                            <div className="w-20 h-20 bg-gradient-to-br from-orange-100 to-red-100 rounded-lg flex items-center justify-center">
-                              <Store className="w-10 h-10 text-orange-300" />
-                            </div>
-                          )}
-
-                          {/* Order Info */}
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-bold text-xl">{order.restaurant?.name}</h3>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleToggleFavorite(order.restaurant.id, order.is_favorite || false)}
-                                className="p-1"
-                              >
-                                <Heart 
-                                  className={`w-5 h-5 ${order.is_favorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}`}
+                    return (
+                      <Card key={order.id} withBorder p="lg" style={{ cursor: 'pointer' }}>
+                        <Stack gap="md">
+                          {/* Header */}
+                          <Group justify="space-between" align="flex-start">
+                            <Group gap="md" align="flex-start" style={{ flex: 1 }}>
+                              {/* Restaurant Image */}
+                              {order.restaurant?.image_url ? (
+                                <Image
+                                  src={order.restaurant.image_url}
+                                  alt={order.restaurant.name}
+                                  width={80}
+                                  height={80}
+                                  radius="md"
+                                  style={{ objectFit: 'cover' }}
                                 />
+                              ) : (
+                                <Box
+                                  style={{
+                                    width: 80,
+                                    height: 80,
+                                    backgroundColor: 'var(--mantine-color-gray-2)',
+                                    borderRadius: '8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                  }}
+                                >
+                                  <IconStore size={40} style={{ color: 'var(--mantine-color-gray-5)' }} />
+                                </Box>
+                              )}
+
+                              {/* Order Info */}
+                              <Stack gap="xs" style={{ flex: 1 }}>
+                                <Group gap="xs">
+                                  <Text fw={600} size="lg">
+                                    {order.restaurant?.name}
+                                  </Text>
+                                  <ActionIcon
+                                    variant="subtle"
+                                    color="red"
+                                    size="sm"
+                                    onClick={() => handleToggleFavorite(order.restaurant.id, order.is_favorite || false)}
+                                  >
+                                    <IconHeart
+                                      size={18}
+                                      style={{
+                                        fill: order.is_favorite ? 'currentColor' : 'none',
+                                        color: order.is_favorite ? 'var(--mantine-color-red-6)' : 'var(--mantine-color-gray-6)',
+                                      }}
+                                    />
+                                  </ActionIcon>
+                                </Group>
+                                {order.restaurant?.address && (
+                                  <Group gap={4}>
+                                    <IconMapPin size={14} style={{ color: 'var(--mantine-color-gray-6)' }} />
+                                    <Text size="sm" c="dimmed">
+                                      {order.restaurant.address}, {order.restaurant.city}
+                                    </Text>
+                                  </Group>
+                                )}
+                                <Group gap="md" wrap="wrap">
+                                  <Badge color={statusInfo.color} leftSection={<StatusIcon size={12} />}>
+                                    {statusInfo.label}
+                                  </Badge>
+                                  <Text size="sm" c="dimmed">
+                                    {new Date(order.created_at).toLocaleDateString()}
+                                  </Text>
+                                  <Text size="sm" c="dimmed">
+                                    Order #{order.order_number || order.id.substring(0, 8).toUpperCase()}
+                                  </Text>
+                                </Group>
+                              </Stack>
+                            </Group>
+
+                            {/* Total */}
+                            <Stack align="flex-end" gap={4}>
+                              <Text fw={700} size="xl" c="#ff7a00">
+                                ${(order.total_amount / 100).toFixed(2)}
+                              </Text>
+                              <Text size="sm" c="dimmed">
+                                {order.order_items?.length || 0} items
+                              </Text>
+                            </Stack>
+                          </Group>
+
+                          {/* Items */}
+                          <Card p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
+                            <Stack gap="xs">
+                              {order.order_items?.slice(0, 3).map((item, idx) => (
+                                <Group key={idx} justify="space-between">
+                                  <Text size="sm">
+                                    {item.quantity}x {item.name}
+                                  </Text>
+                                  <Text size="sm" c="dimmed">
+                                    ${(item.price / 100).toFixed(2)}
+                                  </Text>
+                                </Group>
+                              ))}
+                              {order.order_items?.length > 3 && (
+                                <Text size="sm" c="dimmed">
+                                  +{order.order_items.length - 3} more items
+                                </Text>
+                              )}
+                            </Stack>
+                          </Card>
+
+                          {/* Actions */}
+                          <Group gap="md">
+                            <Button
+                              onClick={() => handleReorder(order)}
+                              variant="outline"
+                              leftSection={<IconRefreshCw size={16} />}
+                              style={{ flex: 1 }}
+                            >
+                              Reorder
+                            </Button>
+
+                            {!['delivered', 'cancelled'].includes(order.order_status) && (
+                              <Button
+                                onClick={() => handleTrackOrder(order.id)}
+                                leftSection={<IconMapPin size={16} />}
+                                style={{ flex: 1 }}
+                                color="#ff7a00"
+                              >
+                                Track Order
                               </Button>
-                            </div>
-                            <p className="text-sm text-gray-600 mb-2">
-                              {order.restaurant?.address}, {order.restaurant?.city}
-                            </p>
-                            <div className="flex items-center gap-3 flex-wrap">
-                              <Badge className={`${statusInfo.color} text-white`}>
-                                <StatusIcon className="w-3 h-3 mr-1" />
-                                {statusInfo.label}
-                              </Badge>
-                              <span className="text-sm text-gray-600">
-                                {new Date(order.created_at).toLocaleDateString()}
-                              </span>
-                              <span className="text-sm text-gray-600">
-                                Order #{order.order_number || order.id.substring(0, 8).toUpperCase()}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Total */}
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-orange-600">
-                            ${(order.total_amount / 100).toFixed(2)}
-                          </div>
-                          <p className="text-sm text-gray-600">{order.order_items?.length || 0} items</p>
-                        </div>
-                      </div>
-
-                      {/* Items */}
-                      <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                        <div className="space-y-2">
-                          {order.order_items?.slice(0, 3).map((item, idx) => (
-                            <div key={idx} className="flex justify-between text-sm">
-                              <span>{item.quantity}x {item.name}</span>
-                              <span className="text-gray-600">${(item.price / 100).toFixed(2)}</span>
-                            </div>
-                          ))}
-                          {order.order_items?.length > 3 && (
-                            <p className="text-sm text-gray-500">
-                              +{order.order_items.length - 3} more items
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex gap-2 flex-wrap">
-                        <Button
-                          onClick={() => handleReorder(order)}
-                          variant="outline"
-                          className="flex-1"
-                        >
-                          <RefreshCw className="w-4 h-4 mr-2" />
-                          Reorder
-                        </Button>
-
-                        {!['delivered', 'cancelled'].includes(order.order_status) && (
-                          <Button
-                            onClick={() => handleTrackOrder(order.id)}
-                            className="bg-gradient-to-r from-orange-500 to-red-500 flex-1"
-                          >
-                            <MapPin className="w-4 h-4 mr-2" />
-                            Track Order
-                          </Button>
-                        )}
-
-                        <Button
-                          onClick={() => handleViewReceipt(order.id)}
-                          variant="ghost"
-                        >
-                          View Receipt
-                          <ChevronRight className="w-4 h-4 ml-1" />
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
+                            )}
+                          </Group>
+                        </Stack>
+                      </Card>
+                    );
+                  })}
+                </Stack>
+              )}
+            </Tabs.Panel>
+          </Tabs>
+        </Stack>
+      </Box>
+    </Box>
   );
 }
-
