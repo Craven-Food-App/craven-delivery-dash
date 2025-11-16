@@ -1614,7 +1614,7 @@ const RestaurantMenuPage = () => {
                     >
                       Pickup
                     </Button>
-                  </Button.Group>
+                  </Group>
                 </Card>
 
                 {/* Sticky Category Tabs - Mobile */}
