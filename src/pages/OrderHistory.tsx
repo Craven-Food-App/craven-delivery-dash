@@ -218,11 +218,11 @@ export default function OrderHistory() {
       );
 
       setOrders(ordersWithDrivers as Order[]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching active orders:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load active orders',
+        description: error?.message || 'Failed to load active orders',
         variant: 'destructive',
       });
     } finally {
