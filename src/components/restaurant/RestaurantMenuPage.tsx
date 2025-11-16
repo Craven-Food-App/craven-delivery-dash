@@ -1029,7 +1029,7 @@ const RestaurantMenuPage = () => {
                     },
                     width: '100%',
                     maxWidth: '320px',
-                } : {}),
+                } : {})
             }}
         >
             <Stack gap="md">
