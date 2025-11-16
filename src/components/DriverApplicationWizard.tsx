@@ -357,7 +357,6 @@ export const DriverApplicationWizard = ({ onClose }: DriverApplicationWizardProp
                 {/* Step indicators */}
                 <Stepper
                   active={currentStep - 1}
-                  breakpoint="sm"
                   mt="md"
                 >
                   {STEPS.map((step, index) => (

@@ -592,10 +592,10 @@ export const EnhancedOnboardingDashboard: React.FC = () => {
                   <Box
                     key={task.id}
                     p="md"
-                    withBorder
                     style={{
                       backgroundColor: task.completed ? 'rgba(34, 197, 94, 0.1)' : 'var(--mantine-color-gray-0)',
                       borderColor: task.completed ? '#22c55e' : 'var(--mantine-color-gray-3)',
+                      border: '1px solid',
                       borderRadius: 8,
                     }}
                   >
