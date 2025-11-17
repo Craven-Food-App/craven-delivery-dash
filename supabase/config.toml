@@ -106,6 +106,9 @@ verify_jwt = true
 [functions.get-stripe-connect-status]
 verify_jwt = true
 
+[functions.generate-exclusive-orders]
+verify_jwt = true
+
 [functions.complete-onboarding-task]
 verify_jwt = true
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { MantineProvider, createTheme } from '@mantine/core';
+import { MantineProvider, createTheme, MantineThemeOverride } from '@mantine/core';
 import { ModalsProvider } from '@mantine/modals';
 import { Notifications } from '@mantine/notifications';
 import '@mantine/core/styles.css';
@@ -10,8 +10,11 @@ import App from './App.tsx';
 import './index.css';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-const theme = createTheme({
+const theme: MantineThemeOverride = createTheme({
+  colorScheme: 'dark',
   primaryColor: 'orange',
+  fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+  defaultRadius: 'md',
   colors: {
     orange: [
       '#fff5f0',
@@ -25,6 +28,15 @@ const theme = createTheme({
       '#b32d00',
       '#992600',
     ],
+  },
+  shadows: {
+    glow: '0 0 16px rgba(255,106,0,0.6)',
+    glowStrong: '0 0 24px rgba(255,106,0,0.8)',
+  },
+  other: {
+    cravenOrangeGradient: 'linear-gradient(135deg, #FF6A00 0%, #D45400 100%)',
+    neonGlow: '0 0 16px rgba(255,106,0,0.6)',
+    pulsingShadow: '0 0 20px rgba(255,106,0,0.4)',
   },
 });
 

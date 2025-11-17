@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { Box, Stack, Text, Group } from '@mantine/core';
+import { ExclusiveOrdersFeed } from '@/components/diamond-orders/ExclusiveOrdersFeed';
+import { DiamondPointsBadge } from '@/components/diamond-orders/DiamondPointsBadge';
+import { useDriverTier } from '@/hooks/diamond-orders/useDriverTier';
+import { useDiamondPoints } from '@/hooks/diamond-orders/useDiamondPoints';
 
 type CorporateEarningsDashboardProps = {
   onOpenMenu?: () => void;
@@ -23,6 +28,8 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
   const [weeklyData, setWeeklyData] = useState<Array<{ payments: number; tips: number }>>([]);
   const [availableOrder, setAvailableOrder] = useState<any>(null);
   const [cravingLevel, setCravingLevel] = useState(70); // Percentage for craving meter
+  const { isDiamond } = useDriverTier();
+  const { points: diamondPoints } = useDiamondPoints();
 
   useEffect(() => {
     fetchEarningsData();
@@ -97,9 +104,7 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
       const acceptedAssignments = assignments?.filter(a => a.status === 'accepted').length || 0;
       const acceptanceRate = totalAssignments > 0 ? Math.round((acceptedAssignments / totalAssignments) * 100) : 100;
 
-      // Fetch available order for "UP FOR GRABS"
-      // Get orders that need a driver (pending, confirmed, preparing, ready)
-      // and don't have an accepted assignment
+      // Keep legacy available order fetch for fallback
       const { data: allOrders } = await supabase
         .from('orders')
         .select(`
@@ -111,13 +116,12 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
           order_assignments!left(id, status)
         `)
         .in('order_status', ['pending', 'confirmed', 'preparing', 'ready'])
+        .eq('exclusive_type', 'none')
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(1);
 
-      // Filter out orders that have accepted assignments
       const availableOrders = allOrders?.filter(order => {
         const assignments = order.order_assignments || [];
-        // Order is available if it has no assignments or no accepted assignments
         return !assignments.some((a: any) => a.status === 'accepted');
       }) || [];
 
@@ -127,7 +131,6 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
         const tip = (order.tip_cents || 0) / 100;
         const totalPay = deliveryFee + tip;
 
-        // Calculate ETA (minutes from now)
         const eta = order.estimated_delivery_time 
           ? Math.max(1, Math.round((new Date(order.estimated_delivery_time).getTime() - now.getTime()) / 60000))
           : 15;
@@ -136,7 +139,7 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
           id: order.id,
           eta: `${eta}m`,
           pay: totalPay,
-          distance: '3.2mi', // Would need to calculate actual distance
+          distance: '3.2mi',
           restaurant: order.restaurant?.name || 'Restaurant'
         });
       } else {
@@ -312,35 +315,71 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
         </div>
       </div>
 
-      {/* UP FOR GRABS */}
-      {availableOrder && (
-        <div className="px-5 mb-3">
-          <h3 className="text-white text-sm font-bold mb-2 tracking-wide">UP FOR GRABS</h3>
-          <div className="bg-orange-50 rounded-2xl p-4 relative overflow-hidden shadow-xl">
-            {/* Decorative blob */}
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-red-400 to-orange-400 rounded-bl-full opacity-80"></div>
-            
-            <div className="relative flex items-center justify-between">
-              <div>
-                <p className="text-orange-800 text-xs font-semibold mb-0.5">{availableOrder.eta} ETA</p>
-                <h4 className="text-2xl font-black text-gray-900 mb-0.5">${availableOrder.pay.toFixed(2)} Pay</h4>
-                <p className="text-orange-800 text-xs font-semibold">{availableOrder.distance}</p>
-              </div>
-              <div className="flex flex-col items-end gap-1.5">
-                <div className="bg-red-600 rounded-full px-3 py-1 flex items-center gap-1 shadow-lg">
-                  <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
-                  <span className="text-white text-xs font-bold">LIVE</span>
-                </div>
-                {cravingLevel > 70 && (
-                  <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl px-3 py-1.5 shadow-lg rotate-3">
-                    <span className="text-red-800 text-xs font-black italic">ON FIRE</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* DIAMOND EXCLUSIVE ORDERS - UP FOR GRABS */}
+      <Box px="md" mb="md">
+        <Group position="apart" mb="xs">
+          <Text fw={700} size="sm" c="white" style={{ letterSpacing: '0.05em' }}>
+            UP FOR GRABS
+          </Text>
+          {isDiamond && (
+            <DiamondPointsBadge points={diamondPoints} tier="Diamond" />
+          )}
+        </Group>
+        <Box
+          sx={(theme) => ({
+            backgroundColor: '#1a1a1a',
+            borderRadius: theme.radius.md,
+            padding: theme.spacing.md,
+            minHeight: 200,
+          })}
+        >
+          <ExclusiveOrdersFeed
+            onClaim={async (orderId: string, type: string) => {
+              try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) throw new Error('Not authenticated');
+
+                // Create order assignment
+                const { error: assignError } = await supabase
+                  .from('order_assignments')
+                  .insert({
+                    order_id: orderId,
+                    driver_id: user.id,
+                    status: 'accepted',
+                    expires_at: new Date(Date.now() + 300000).toISOString(), // 5 minutes
+                  });
+
+                if (assignError) throw assignError;
+
+                // Add diamond points based on type
+                const pointsMap: Record<string, number> = {
+                  flash_drop: 10,
+                  mystery: 15,
+                  batch: 25,
+                  hotspot: 5,
+                  arena: 20,
+                  vault: 10,
+                };
+
+                const points = pointsMap[type] || 0;
+                if (points > 0) {
+                  await supabase.rpc('add_diamond_points', {
+                    p_driver_id: user.id,
+                    p_points: points,
+                    p_source: type,
+                    p_order_id: orderId,
+                  });
+                }
+
+                toast.success('Order claimed successfully!');
+              } catch (error: any) {
+                console.error('Error claiming order:', error);
+                throw error;
+              }
+            }}
+          />
+        </Box>
+      </Box>
 
       {/* EARNINGS SNAPSHOT */}
       <div className="px-5 mb-3">

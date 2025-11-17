@@ -24,10 +24,11 @@ import { TestDriver } from '@/components/testing/TestDriver';
 import { TestRestaurant } from '@/components/testing/TestRestaurant';
 import { TestDataManager } from '@/components/testing/TestDataManager';
 import { LiveDriverTesting } from '@/components/testing/LiveDriverTesting';
+import { TestDiamondExclusiveOrders } from '@/components/testing/TestDiamondExclusiveOrders';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, BarChart3, Users, Store, Car, ShoppingBag, MessageCircle, Bell, DollarSign, Tags, GraduationCap, FileCheck, Shield, ChevronRight, Package, Settings, AlertCircle, TrendingUp, LifeBuoy, FileText, TestTube, Zap, Database, Clock, Eye } from 'lucide-react';
+import { ArrowLeft, BarChart3, Users, Store, Car, ShoppingBag, MessageCircle, Bell, DollarSign, Tags, GraduationCap, FileCheck, Shield, ChevronRight, Package, Settings, AlertCircle, TrendingUp, LifeBuoy, FileText, TestTube, Zap, Database, Clock, Eye, Gem } from 'lucide-react';
 import cravenLogo from "@/assets/craven-logo.png";
 import { cn } from '@/lib/utils';
 import RefundManagement from '@/components/admin/RefundManagement';
@@ -109,6 +110,7 @@ const Admin: React.FC = () => {
         { id: 'test-restaurant', label: 'Restaurant Testing', icon: Store },
         { id: 'test-live', label: 'Live Driver Testing', icon: Zap },
         { id: 'test-data', label: 'Test Data Manager', icon: Database },
+        { id: 'test-diamond-exclusive', label: 'Diamond Exclusive Orders', icon: Gem },
       ]
     }
   ];
@@ -177,6 +179,8 @@ const Admin: React.FC = () => {
         return <LiveDriverTesting />;
       case 'test-data':
         return <TestDataManager />;
+      case 'test-diamond-exclusive':
+        return <TestDiamondExclusiveOrders />;
       default:
         return <LiveDashboard />;
     }
