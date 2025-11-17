@@ -250,13 +250,13 @@ export const TestDiamondExclusiveOrders: React.FC = () => {
           <Box>
             <Text size="sm" fw={500} mb="xs">Select Orders ({selectedOrderIds.length} selected)</Text>
             <Box
-              sx={(theme) => ({
-                border: `1px solid ${theme.colors.gray[3]}`,
-                borderRadius: theme.radius.md,
+              style={{
+                border: '1px solid #dee2e6',
+                borderRadius: '8px',
                 maxHeight: 200,
                 overflowY: 'auto',
-                padding: theme.spacing.xs,
-              })}
+                padding: '8px',
+              }}
             >
               {availableOrders.length === 0 ? (
                 <Text c="dimmed" ta="center" py="md">
@@ -265,7 +265,7 @@ export const TestDiamondExclusiveOrders: React.FC = () => {
               ) : (
                 <Stack gap="xs">
                   {availableOrders.map((order) => (
-                    <Group key={order.id} position="apart">
+                    <Group key={order.id} justify="apart">
                       <Group gap="xs">
                         <input
                           type="checkbox"
@@ -314,7 +314,7 @@ export const TestDiamondExclusiveOrders: React.FC = () => {
 
       <Card p="lg" radius="md" withBorder>
         <Stack gap="md">
-          <Group position="apart">
+          <Group justify="apart">
             <Text fw={700} size="xl">Current Exclusive Orders</Text>
             <Button variant="outline" size="xs" onClick={fetchExclusiveOrders} loading={loading}>
               Refresh

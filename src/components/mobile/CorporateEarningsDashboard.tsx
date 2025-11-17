@@ -317,7 +317,7 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
 
       {/* DIAMOND EXCLUSIVE ORDERS - UP FOR GRABS */}
       <Box px="md" mb="md">
-        <Group position="apart" mb="xs">
+        <Group justify="apart" mb="xs">
           <Text fw={700} size="sm" c="white" style={{ letterSpacing: '0.05em' }}>
             UP FOR GRABS
           </Text>
@@ -326,12 +326,12 @@ const CorporateEarningsDashboard: React.FC<CorporateEarningsDashboardProps> = ({
           )}
         </Group>
         <Box
-          sx={(theme) => ({
+          style={{
             backgroundColor: '#1a1a1a',
-            borderRadius: theme.radius.md,
-            padding: theme.spacing.md,
+            borderRadius: '8px',
+            padding: '16px',
             minHeight: 200,
-          })}
+          }}
         >
           <ExclusiveOrdersFeed
             onClaim={async (orderId: string, type: string) => {
