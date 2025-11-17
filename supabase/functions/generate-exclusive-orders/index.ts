@@ -36,7 +36,7 @@ serve(async (req) => {
           .update({
             exclusive_type: 'flash_drop',
             diamond_only_until: diamondUntil,
-            status: 'pending',
+            order_status: 'pending',
           })
           .in('id', orderIds)
           .select();
@@ -69,7 +69,7 @@ serve(async (req) => {
           .update({
             exclusive_type: 'vault',
             diamond_only_until: null, // Vault orders are always Diamond-only
-            status: 'pending',
+            order_status: 'pending',
           })
           .in('id', orderIds)
           .select();
@@ -104,7 +104,7 @@ serve(async (req) => {
             exclusive_type: 'mystery',
             payout_hidden: true,
             diamond_only_until: mysteryUntil,
-            status: 'pending',
+            order_status: 'pending',
           })
           .in('id', orderIds)
           .select();
@@ -153,7 +153,7 @@ serve(async (req) => {
             exclusive_type: 'batch',
             batch_id: batch.id,
             diamond_only_until: batchUntil,
-            status: 'pending',
+            order_status: 'pending',
           })
           .in('id', orderIds)
           .select();
