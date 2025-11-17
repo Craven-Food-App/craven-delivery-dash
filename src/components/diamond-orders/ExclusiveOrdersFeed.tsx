@@ -15,8 +15,15 @@ interface ExclusiveOrdersFeedProps {
 }
 
 export const ExclusiveOrdersFeed: React.FC<ExclusiveOrdersFeedProps> = ({ onClaim }) => {
-  const { tier, isDiamond } = useDriverTier();
-  const { orders, loading } = useExclusiveOrders(isDiamond);
+  const { tier, isDiamond, loading: tierLoading } = useDriverTier();
+  const { orders, loading: ordersLoading } = useExclusiveOrders(isDiamond);
+
+  const loading = tierLoading || ordersLoading;
+
+  // Debug logging
+  useEffect(() => {
+    console.log('ExclusiveOrdersFeed - tier:', tier, 'isDiamond:', isDiamond, 'orders:', orders.length);
+  }, [tier, isDiamond, orders.length]);
   const [batches, setBatches] = useState<OrderBatch[]>([]);
 
   useEffect(() => {

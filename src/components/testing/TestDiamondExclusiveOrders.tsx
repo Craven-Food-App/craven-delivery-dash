@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Button, Select, TextInput, Stack, Group, Text, Box, Badge, Table, Loader, Center, Alert } from '@mantine/core';
 import { supabase } from '@/integrations/supabase/client';
 import { notifications } from '@mantine/notifications';
-import { Zap, Lock, Eye, Package, Sparkles } from 'lucide-react';
+import { Zap, Lock, Eye, Package, Sparkles, Gem } from 'lucide-react';
 
 interface Order {
   id: string;
@@ -23,10 +23,93 @@ export const TestDiamondExclusiveOrders: React.FC = () => {
   const [exclusiveType, setExclusiveType] = useState<string>('flash_drop');
   const [diamondSeconds, setDiamondSeconds] = useState<string>('90');
   const [availableOrders, setAvailableOrders] = useState<Order[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentTier, setCurrentTier] = useState<string>('Bronze');
 
   useEffect(() => {
     fetchAvailableOrders();
+    fetchCurrentUserTier();
   }, []);
+
+  const fetchCurrentUserTier = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      setCurrentUserId(user.id);
+
+      const { data: profile } = await supabase
+        .from('driver_profiles')
+        .select('rating_tier')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profile) {
+        setCurrentTier(profile.rating_tier || 'Bronze');
+      }
+    } catch (error) {
+      console.error('Error fetching current tier:', error);
+    }
+  };
+
+  const handleSetDiamondTier = async () => {
+    if (!currentUserId) {
+      notifications.show({
+        title: 'Error',
+        message: 'No user ID found. Please log in as a driver.',
+        color: 'red',
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Check if driver profile exists
+      const { data: existingProfile } = await supabase
+        .from('driver_profiles')
+        .select('id')
+        .eq('user_id', currentUserId)
+        .single();
+
+      if (existingProfile) {
+        // Update existing profile
+        const { error } = await supabase
+          .from('driver_profiles')
+          .update({ rating_tier: 'Diamond' })
+          .eq('user_id', currentUserId);
+
+        if (error) throw error;
+      } else {
+        // Create new profile with Diamond tier
+        const { error } = await supabase
+          .from('driver_profiles')
+          .insert({
+            user_id: currentUserId,
+            rating_tier: 'Diamond',
+            status: 'offline',
+            is_available: false,
+          });
+
+        if (error) throw error;
+      }
+
+      notifications.show({
+        title: 'Success',
+        message: 'Driver tier set to Diamond! Refresh the driver app to see exclusive orders.',
+        color: 'green',
+      });
+
+      setCurrentTier('Diamond');
+    } catch (error: any) {
+      notifications.show({
+        title: 'Error',
+        message: error.message || 'Failed to set Diamond tier',
+        color: 'red',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchAvailableOrders = async () => {
     setLoading(true);
@@ -220,6 +303,40 @@ export const TestDiamondExclusiveOrders: React.FC = () => {
 
   return (
     <Stack gap="lg">
+      {/* Driver Tier Management */}
+      <Card p="lg" radius="md" withBorder sx={{ backgroundColor: '#fef3c7' }}>
+        <Stack gap="md">
+          <Group position="apart">
+            <Group gap="xs">
+              <Gem size={24} color="#9333ea" />
+              <Text fw={700} size="xl">Driver Tier Management</Text>
+            </Group>
+            <Badge size="lg" color={currentTier === 'Diamond' ? 'violet' : 'gray'}>
+              Current Tier: {currentTier}
+            </Badge>
+          </Group>
+          <Text size="sm" c="dimmed">
+            User ID: {currentUserId || 'Not logged in'}
+          </Text>
+          <Alert color="blue">
+            <Text size="sm">
+              To see exclusive orders in the driver app, you need to be Diamond tier. 
+              Click the button below to set your tier to Diamond for testing.
+            </Text>
+          </Alert>
+          <Button
+            onClick={handleSetDiamondTier}
+            loading={loading}
+            disabled={!currentUserId}
+            color="violet"
+            leftSection={<Gem size={16} />}
+            size="lg"
+          >
+            Set My Driver Tier to Diamond
+          </Button>
+        </Stack>
+      </Card>
+
       <Card p="lg" radius="md" withBorder>
         <Stack gap="md">
           <Text fw={700} size="xl">Generate Diamond Exclusive Orders</Text>

@@ -13,7 +13,10 @@ export const useDriverTier = () => {
   const fetchDriverTier = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       const { data, error } = await supabase
         .from('driver_profiles')
@@ -21,10 +24,20 @@ export const useDriverTier = () => {
         .eq('user_id', user.id)
         .single();
 
-      if (error) throw error;
-      setTier((data?.rating_tier as RatingTier) || 'Bronze');
+      if (error) {
+        console.error('Error fetching driver tier:', error);
+        // Default to Bronze if profile doesn't exist
+        setTier('Bronze');
+        setLoading(false);
+        return;
+      }
+
+      const tierValue = (data?.rating_tier as RatingTier) || 'Bronze';
+      console.log('Driver tier:', tierValue, 'isDiamond:', tierValue === 'Diamond');
+      setTier(tierValue);
     } catch (error) {
       console.error('Error fetching driver tier:', error);
+      setTier('Bronze');
     } finally {
       setLoading(false);
     }
