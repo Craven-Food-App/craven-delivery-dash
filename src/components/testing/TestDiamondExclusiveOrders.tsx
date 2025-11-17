@@ -304,9 +304,9 @@ export const TestDiamondExclusiveOrders: React.FC = () => {
   return (
     <Stack gap="lg">
       {/* Driver Tier Management */}
-      <Card p="lg" radius="md" withBorder sx={{ backgroundColor: '#fef3c7' }}>
+      <Card p="lg" radius="md" withBorder style={{ backgroundColor: '#fef3c7' }}>
         <Stack gap="md">
-          <Group position="apart">
+          <Group justify="apart">
             <Group gap="xs">
               <Gem size={24} color="#9333ea" />
               <Text fw={700} size="xl">Driver Tier Management</Text>

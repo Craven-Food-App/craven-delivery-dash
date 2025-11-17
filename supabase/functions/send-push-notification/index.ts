@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { sendWebPush } from "./web-push-helper.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,10 +30,12 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const firebaseServerKey = Deno.env.get("FIREBASE_SERVER_KEY");
+    const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY");
+    const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY");
+    const vapidSubject = Deno.env.get("VAPID_SUBJECT") || "mailto:support@cravenusa.com";
 
-    if (!firebaseServerKey) {
-      throw new Error("Firebase Server Key not configured");
+    if (!vapidPublicKey || !vapidPrivateKey) {
+      throw new Error("VAPID keys not configured");
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -43,61 +46,82 @@ serve(async (req) => {
       throw new Error("Missing required parameters");
     }
 
-    // Get user's FCM token
-    const { data: profile, error: profileError } = await supabase
-      .from("user_profiles")
-      .select("fcm_token")
-      .eq("user_id", userId)
-      .single();
+    console.log(`Sending push notification to user ${userId}`);
 
-    if (profileError || !profile?.fcm_token) {
-      console.warn(`No FCM token found for user ${userId}`);
+    // Get user's push subscriptions
+    const { data: subscriptions, error: subscriptionError } = await supabase
+      .from("push_subscriptions")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("is_active", true);
+
+    if (subscriptionError || !subscriptions || subscriptions.length === 0) {
+      console.warn(`No active push subscriptions found for user ${userId}`);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: "No FCM token found for user" 
+          message: "No active push subscriptions found for user" 
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200, // Not an error - user just doesn't have notifications enabled
+          status: 200,
         }
       );
     }
 
-    // Send push notification via Firebase Cloud Messaging
-    const fcmPayload = {
-      to: profile.fcm_token,
-      notification: {
-        title: notification.title,
-        body: notification.body,
-        icon: notification.icon || "/logo.png",
-        badge: "/logo.png",
-        click_action: notification.data?.url || "/",
-        tag: type,
+    // Prepare push payload
+    const pushPayload = {
+      title: notification.title,
+      body: notification.body,
+      icon: notification.icon || "/logo.png",
+      badge: "/logo.png",
+      data: {
+        url: notification.data?.url || "/",
+        type: type,
+        ...notification.data,
       },
-      data: notification.data || {},
-      priority: "high",
-      content_available: true,
+      actions: notification.actions || [],
     };
 
-    const fcmResponse = await fetch(
-      "https://fcm.googleapis.com/fcm/send",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `key=${firebaseServerKey}`,
-        },
-        body: JSON.stringify(fcmPayload),
-      }
+    // Send to all active subscriptions
+    const results = await Promise.allSettled(
+      subscriptions.map(async (sub) => {
+        const subscription = {
+          endpoint: sub.endpoint,
+          keys: {
+            p256dh: sub.p256dh_key,
+            auth: sub.auth_key,
+          },
+        };
+
+        const result = await sendWebPush(
+          subscription,
+          pushPayload,
+          {
+            publicKey: vapidPublicKey,
+            privateKey: vapidPrivateKey,
+            subject: vapidSubject,
+          }
+        );
+
+        // If push failed, mark subscription as inactive
+        if (!result.success) {
+          console.warn(`Push failed for subscription ${sub.id}: ${result.error}`);
+          await supabase
+            .from("push_subscriptions")
+            .update({ is_active: false })
+            .eq("id", sub.id);
+        }
+
+        return result;
+      })
     );
 
-    const fcmResult = await fcmResponse.json();
+    const successCount = results.filter(
+      (r) => r.status === "fulfilled" && r.value.success
+    ).length;
 
-    if (!fcmResponse.ok) {
-      console.error("FCM Error:", fcmResult);
-      throw new Error(`FCM Error: ${JSON.stringify(fcmResult)}`);
-    }
+    console.log(`Push notification sent: ${successCount}/${subscriptions.length} successful`);
 
     // Log notification in database for tracking
     const { error: logError } = await supabase
@@ -108,19 +132,18 @@ serve(async (req) => {
         title: notification.title,
         body: notification.body,
         data: notification.data,
-        status: "sent",
-        fcm_message_id: fcmResult.results?.[0]?.message_id,
+        status: successCount > 0 ? "sent" : "failed",
       });
 
     if (logError) {
       console.error("Error logging notification:", logError);
-      // Don't fail the request if logging fails
     }
 
     return new Response(
       JSON.stringify({ 
-        success: true, 
-        messageId: fcmResult.results?.[0]?.message_id 
+        success: successCount > 0,
+        sentCount: successCount,
+        totalSubscriptions: subscriptions.length,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
