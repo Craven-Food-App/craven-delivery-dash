@@ -23,20 +23,20 @@ export const SurpriseBatchCard: React.FC<SurpriseBatchCardProps> = ({ batch, onC
     <Card
       p="lg"
       radius="md"
-      sx={(theme) => ({
+      style={{
         background: isLocked 
           ? 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)'
-          : theme.other.cravenOrangeGradient,
+          : 'linear-gradient(135deg, #FF6A00 0%, #D45400 100%)',
         border: `2px solid ${isLocked ? '#444' : '#FF6A00'}`,
-        boxShadow: isLocked ? 'none' : theme.shadows.glow,
+        boxShadow: isLocked ? 'none' : '0 0 16px rgba(255,106,0,0.6)',
         position: 'relative',
         overflow: 'hidden',
         filter: isLocked ? 'blur(1px)' : 'none',
         opacity: isLocked ? 0.7 : 1,
-      })}
+      }}
     >
       <Stack gap="md">
-        <Group position="apart">
+        <Group justify="apart">
           <Group gap="xs">
             <Package size={24} color={isLocked ? '#666' : '#fff'} />
             <Text fw={700} size="lg" c={isLocked ? 'dimmed' : 'white'}>
@@ -67,12 +67,12 @@ export const SurpriseBatchCard: React.FC<SurpriseBatchCardProps> = ({ batch, onC
               key={order.id}
               p="xs"
               radius="sm"
-              sx={(theme) => ({
+              style={{
                 background: isLocked ? '#333' : 'rgba(255,255,255,0.2)',
                 flex: 1,
                 transform: `translateY(${index * -4}px)`,
                 zIndex: 3 - index,
-              })}
+              }}
             >
               <Text size="xs" c={isLocked ? 'dimmed' : 'white'} ta="center">
                 ${(((order.base_pay || order.delivery_fee_cents || 0) / 100) + ((order.tip || order.tip_cents || 0) / 100)).toFixed(0)}
@@ -83,10 +83,10 @@ export const SurpriseBatchCard: React.FC<SurpriseBatchCardProps> = ({ batch, onC
             <Paper
               p="xs"
               radius="sm"
-              sx={(theme) => ({
+              style={{
                 background: isLocked ? '#333' : 'rgba(255,255,255,0.2)',
                 flex: 1,
-              })}
+              }}
             >
               <Text size="xs" c={isLocked ? 'dimmed' : 'white'} ta="center">
                 +{orderCount - 3}
@@ -103,18 +103,12 @@ export const SurpriseBatchCard: React.FC<SurpriseBatchCardProps> = ({ batch, onC
           disabled={isLocked}
           onClick={() => onClaim(batch.id)}
           leftSection={<Package size={16} />}
-          sx={(theme) => ({
+          style={{
             background: isLocked 
               ? 'transparent'
-              : theme.other.cravenOrangeGradient,
-            '&:hover': {
-              background: isLocked 
-                ? 'transparent'
-                : 'linear-gradient(135deg, #D45400 0%, #FF6A00 100%)',
-              transform: 'scale(1.02)',
-            },
+              : 'linear-gradient(135deg, #FF6A00 0%, #D45400 100%)',
             transition: 'all 0.2s',
-          })}
+          }}
         >
           {isLocked ? '🔒 Diamond Only' : `Claim Entire Batch (${orderCount} orders)`}
         </Button>

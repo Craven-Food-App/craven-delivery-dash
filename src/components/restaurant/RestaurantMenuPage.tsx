@@ -203,7 +203,7 @@ const RestaurantMenuPage = () => {
   
     const [activeSection, setActiveSection] = useState('featured');
     const [isMenuFixed, setIsMenuFixed] = useState(false);
-    const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup'>('delivery');
+    const [deliveryMethod, setDeliveryMethod] = useState('delivery' as 'delivery' | 'pickup');
     // Use deliveryMethod for both mobile and desktop - synced state
            const [pickupInfo, setPickupInfo] = useState({
                address: '',
@@ -2005,45 +2005,45 @@ const RestaurantMenuPage = () => {
           
                 {/* RIGHT: Delivery Tabs, Price/Time, and Scrollable Menu Content */}
                 <Grid.Col span={{ base: 12, lg: 9 }} style={{ minWidth: 0 }}>
-                  {/* Delivery Tabs and Price/Time (Sticky Top Bar) - Only for Delivery */}
-                  {deliveryMethod === 'delivery' && (
-                    <Box
-                      ref={tabsRef}
-                      style={{
-                        position: 'sticky',
-                        top: 0,
-                        backgroundColor: 'var(--mantine-color-gray-0)',
-                        paddingTop: '16px',
-                        paddingBottom: '24px',
-                        zIndex: 20,
-                        borderBottom: '1px solid var(--mantine-color-gray-3)',
-                        margin: '0 -16px',
-                        paddingLeft: '16px',
-                        paddingRight: '16px',
-                      }}
-                    >
-                      <Group justify="space-between" align="center" gap="lg">
-                        {/* Delivery/Pickup Tabs */}
-                        <Button.Group>
-                          <Button
-                            variant={deliveryMethod === 'delivery' ? 'filled' : 'outline'}
-                            color={deliveryMethod === 'delivery' ? 'orange' : 'gray'}
-                            size="sm"
-                            onClick={() => setDeliveryMethod('delivery')}
-                          >
-                            Delivery
-                          </Button>
-                          <Button
-                            variant={deliveryMethod === 'pickup' ? 'filled' : 'outline'}
-                            color={deliveryMethod === 'pickup' ? 'orange' : 'gray'}
-                            size="sm"
-                            onClick={() => setDeliveryMethod('pickup')}
-                          >
-                            Pickup
-                          </Button>
-                        </Button.Group>
+                  {/* Delivery/Pickup Tabs (Always visible) */}
+                  <Box
+                    ref={tabsRef}
+                    style={{
+                      position: 'sticky',
+                      top: 0,
+                      backgroundColor: 'var(--mantine-color-gray-0)',
+                      paddingTop: '16px',
+                      paddingBottom: '24px',
+                      zIndex: 20,
+                      borderBottom: '1px solid var(--mantine-color-gray-3)',
+                      margin: '0 -16px',
+                      paddingLeft: '16px',
+                      paddingRight: '16px',
+                    }}
+                  >
+                    <Group justify="space-between" align="center" gap="lg">
+                      {/* Delivery/Pickup Tabs */}
+                      <Button.Group>
+                        <Button
+                          variant={deliveryMethod === 'delivery' ? 'filled' : 'outline'}
+                          color={deliveryMethod === 'delivery' ? 'orange' : 'gray'}
+                          size="sm"
+                          onClick={() => setDeliveryMethod('delivery')}
+                        >
+                          Delivery
+                        </Button>
+                        <Button
+                          variant={deliveryMethod === 'pickup' ? 'filled' : 'outline'}
+                          color={deliveryMethod === 'pickup' ? 'orange' : 'gray'}
+                          size="sm"
+                          onClick={() => setDeliveryMethod('pickup')}
+                        >
+                          Pickup
+                        </Button>
+                      </Button.Group>
             
-                        {/* Price/Time Info Box */}
+                      {/* Price/Time Info Box - Only show for delivery */}
+                      {deliveryMethod === 'delivery' && (
                         <Group gap="md">
                           {/* Delivery Fee Box */}
                           <Box p="sm" style={{ backgroundColor: 'var(--mantine-color-green-0)', borderRadius: '8px' }}>
@@ -2064,9 +2064,9 @@ const RestaurantMenuPage = () => {
                             <Text size="sm" c="dimmed">delivery time</Text>
                           </Stack>
                         </Group>
-                      </Group>
-                    </Box>
-                  )}
+                      )}
+                    </Group>
+                  </Box>
 
                   {/* Pickup Interface - Show when pickup is selected */}
                   {deliveryMethod === 'pickup' && <PickupInterface />}

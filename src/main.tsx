@@ -11,7 +11,6 @@ import './index.css';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 const theme: MantineThemeOverride = createTheme({
-  colorScheme: 'dark',
   primaryColor: 'orange',
   fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
   defaultRadius: 'md',

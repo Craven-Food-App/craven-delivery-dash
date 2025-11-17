@@ -58,7 +58,7 @@ export const useExclusiveOrders = (isDiamond: boolean) => {
         return !assignments.some((a: any) => a.status === 'accepted');
       });
 
-      setOrders(availableOrders as ExclusiveOrder[]);
+      setOrders(availableOrders as unknown as ExclusiveOrder[]);
     } catch (error) {
       console.error('Error fetching exclusive orders:', error);
     } finally {
